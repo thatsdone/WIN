@@ -1,0 +1,86 @@
+#!/bin/sh
+# insert_raw2 : fast version of insert_raw
+#   wdisk and wadd2 are required.
+# 2002.5.28 Urabe
+## insert_raw.prm
+#/dat/raw        # raw data dir
+#/dat/raw_late   # time-out data dir
+#/dat/tmp        # temporary dir
+#3               # wait min. from raw LATEST
+# read prm file
+cleanup(){
+rm -rf $tmpdir1; exit
+}
+
+if [ ! -f "$1" ]
+then
+  echo insert_raw2 [paramfile]
+  exit
+fi
+rawdir=`grep -v '^#' $1|head -1|awk '{print $1}'`
+latedir=`grep -v '^#' $1|head -2|tail -1|awk '{print $1}'`
+tmpdir=`grep -v '^#' $1|head -3|tail -1|awk '{print $1}'`
+waitmin=`grep -v '^#' $1|head -4|tail -1|awk '{print $1}'`
+#echo $rawdir $latedir $tmpdir $waitmin
+#
+if [ ! -d $rawdir ]
+then
+  echo $rawdir : no directory !
+  exit
+fi
+if [ ! -d $latedir ]
+then
+  echo $latedir : no directory !
+  exit
+fi
+if [ ! -d $rawdir ]
+then
+  echo $tmpdir : no directory !
+  exit
+fi
+if [ -s $latedir/USED ]
+then
+  latest1=`cat $latedir/USED`
+  latest1=`date -j -v +1M -f %y%m%d%H.%M "$latest1" +%y%m%d%H.%M`
+else
+  latest=`cat $rawdir/LATEST`
+  latest1=`date -j -v -"$waitmin"M -f %y%m%d%H.%M "$latest" +%y%m%d%H.%M`
+fi
+#echo $latest $latest1
+#
+trap cleanup 2 15
+tmpdir1=$tmpdir/insert_raw2.$$
+mkdir $tmpdir1
+#
+# start
+#
+while true
+do
+  if [ -s "$latedir/$latest1" ]
+  then
+#    echo $latedir/$latest1
+    cat $latedir/$latest1 | wdisk - $tmpdir1 0 > /dev/null 2>&1
+    (cd $tmpdir1;ls -1 [0-9]*)|
+    while read file
+    do
+      if [ ! -f "$rawdir/$file" ]
+      then
+        touch $rawdir/$file
+      fi
+#      echo wadd2 $rawdir/$file $tmpdir1/$file
+      wadd2 $rawdir/$file $tmpdir1/$file
+    done
+    rm -f $tmpdir1/*
+  fi
+  echo $latest1 > $latedir/USED
+  latest1=`date -j -v +1M -f %y%m%d%H.%M "$latest1" +%y%m%d%H.%M`
+  latest=`cat $rawdir/LATEST`
+  latest2=`date -j -v -"$waitmin"M -f %y%m%d%H.%M "$latest" +%y%m%d%H.%M`
+  while [ "$latest1" \> "$latest2" ]
+  do
+#    echo sleep
+    sleep 20
+    latest=`cat $rawdir/LATEST`
+    latest2=`date -j -v -"$waitmin"M -f %y%m%d%H.%M "$latest" +%y%m%d%H.%M`
+  done
+done

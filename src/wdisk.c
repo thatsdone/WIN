@@ -1,4 +1,4 @@
-/* $Id: wdisk.c,v 1.6 2002/05/02 10:50:14 urabe Exp $ */
+/* $Id: wdisk.c,v 1.7 2002/05/28 09:55:32 urabe Exp $ */
 /*
   program "wdisk.c"   4/16/93-5/13/93,7/2/93,7/5/94  urabe
                       1/6/95 bug in adj_time fixed (tm[0]--)
@@ -13,6 +13,7 @@
                       2000.4.24 strerror()
                       2002.3.2 eobsize_in(auto)
                       2002.5.2 i<1000 -> 1000000
+                      2002.5.28 read from stdin
 */
 
 #ifdef HAVE_CONFIG_H
@@ -93,137 +94,42 @@ err_sys(ptr)
    ctrlc();
 }
 
-adj_time_m(tm)
-     int *tm;
-{
-   if(tm[4]==60){
-      tm[4]=0;
-      if(++tm[3]==24){
-	 tm[3]=0;
-	 tm[2]++;
-	 switch(tm[1]){
-	  case 2:
-	    if(tm[0]%4==0){
-	       if(tm[2]==30){
-		  tm[2]=1;
-		  tm[1]++;
-	       }
-	       break;
-            }
-	    else{
-	       if(tm[2]==29){
-		  tm[2]=1;
-		  tm[1]++;
-	       }
-	       break;
-            }
-	  case 4:
-	  case 6:
-	  case 9:
-	  case 11:
-	    if(tm[2]==31){
-	       tm[2]=1;
-	       tm[1]++;
-            }
-	    break;
-	  default:
-	    if(tm[2]==32){
-	       tm[2]=1;
-	       tm[1]++;
-            }
-	    break;
-	 }
-	 if(tm[1]==13){
-	    tm[1]=1;
-	    if(++tm[0]==100) tm[0]=0;
-	 }
-      }
-   }
-   else if(tm[4]==-1){
-      tm[4]=59;
-      if(--tm[3]==-1){
-	 tm[3]=23;
-	 if(--tm[2]==0){
-	    switch(--tm[1]){
-	     case 2:
-	       if(tm[0]%4==0)
-		 tm[2]=29;
-	       else tm[2]=28;
-	       break;
-	     case 4:
-	     case 6:
-	     case 9:
-	     case 11:
-	       tm[2]=30;
-	       break;
-	     default:
-	       tm[2]=31;
-	       break;
-	    }
-	    if(tm[1]==0){
-	       tm[1]=12;
-	       if(--tm[0]==-1) tm[0]=99;
-	    }
-	 }
-      }
-   }
-}
-
-time_cmp(t1,t2,i)
-  int *t1,*t2,i;  
-  {
-  int cntr;
-  cntr=0;
-  if(t1[cntr]<70 && t2[cntr]>70) return 1;
-  if(t1[cntr]>70 && t2[cntr]<70) return -1;
-  for(;cntr<i;cntr++)
-    {
-    if(t1[cntr]>t2[cntr]) return 1;
-    if(t1[cntr]<t2[cntr]) return -1;
-    } 
-  return 0;  
-  }
-
-check_time(tm)
-     int *tm;
-{
-   static int tm_prev[6],flag;
-   int rt1[6],rt2[6],i,j;
-   
-   if(flag && time_cmp(tm,tm_prev,5)==0) return 0;
-   else flag=0;
-   
-   /* compare time with real time */
-   get_time(rt1);
-   for(i=0;i<5;i++) rt2[i]=rt1[i];
-   for(i=0;i<30;i++){  /* within 30 minutes ? */
-      if(time_cmp(tm,rt1,5)==0 || time_cmp(tm,rt2,5)==0){
-	 for(j=0;j<5;j++) tm_prev[j]=tm[j];
-	 flag=1;
-#if DEBUG2
-	 printf("diff=%d m\n",i);
-#endif
-	 return 0;
-      }
-      rt1[4]++;
-      adj_time_m(rt1);
-      rt2[4]--;
-      adj_time_m(rt2);
-   }
-#if DEBUG2
-   printf("diff>%d m\n",i);
-#endif
-   return 1; /* illegal time */
-}
-
 bcd_dec(dest,sour)
-     char *sour;
-     int *dest;
-{
-   int cntr;
-  for(cntr=0;cntr<6;cntr++)
-    dest[cntr]=((sour[cntr]>>4)&0xf)*10+(sour[cntr]&0xf);
-}
+  unsigned char *sour;
+  int *dest;
+  {
+  static int b2d[]={
+     0, 1, 2, 3, 4, 5, 6, 7, 8, 9,-1,-1,-1,-1,-1,-1,  /* 0x00 - 0x0F */  
+    10,11,12,13,14,15,16,17,18,19,-1,-1,-1,-1,-1,-1,
+    20,21,22,23,24,25,26,27,28,29,-1,-1,-1,-1,-1,-1,
+    30,31,32,33,34,35,36,37,38,39,-1,-1,-1,-1,-1,-1,
+    40,41,42,43,44,45,46,47,48,49,-1,-1,-1,-1,-1,-1,
+    50,51,52,53,54,55,56,57,58,59,-1,-1,-1,-1,-1,-1,
+    60,61,62,63,64,65,66,67,68,69,-1,-1,-1,-1,-1,-1,
+    70,71,72,73,74,75,76,77,78,79,-1,-1,-1,-1,-1,-1,
+    80,81,82,83,84,85,86,87,88,89,-1,-1,-1,-1,-1,-1,
+    90,91,92,93,94,95,96,97,98,99,-1,-1,-1,-1,-1,-1,  /* 0x90 - 0x9F */
+    -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+    -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+    -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+    -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+    -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+    -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1};
+  int i;
+  i=b2d[sour[0]];
+  if(i>=0 && i<=99) dest[0]=i; else return 0;
+  i=b2d[sour[1]];
+  if(i>=1 && i<=12) dest[1]=i; else return 0;
+  i=b2d[sour[2]];
+  if(i>=1 && i<=31) dest[2]=i; else return 0;
+  i=b2d[sour[3]];
+  if(i>=0 && i<=23) dest[3]=i; else return 0;
+  i=b2d[sour[4]];
+  if(i>=0 && i<=59) dest[4]=i; else return 0;
+  i=b2d[sour[5]];
+  if(i>=0 && i<=60) dest[5]=i; else return 0;
+  return 1;
+  }
 
 get_time(rt)
      int *rt;
@@ -336,10 +242,12 @@ main(argc,argv)
      int argc;
      char **argv;
 {
+#define BUFSZ 500000
+#define BUFLIM 1000000
    FILE *fp;
-   int i,j,last_min,shmid,shid,tm[6],eobsize,eobsize_count;
+   int i,j,last_min,shmid,shid,tm[6],eobsize,eobsize_count,bufsiz;
    unsigned long shp,shp_save,size,c_save,size2;
-   unsigned char *ptr,*ptr_save,ptw[4];
+   unsigned char *ptr,*ptr_save,ptw[4],*buf;
    key_t shmkey;
    struct Shm {
       unsigned long p;    /* write point */
@@ -356,12 +264,17 @@ main(argc,argv)
    
    if(argc<3){
       fprintf(stderr,
-	      " usage : '%s [shm_key] [out dir] ([N of files] ([log file]))'\n",
+	      " usage : '%s [shm_key]/- [out dir] ([N of files] ([log file]))'\n",
 	      progname);
       exit(0);
    }
    
-   shmkey=atoi(argv[1]);
+   if(strcmp(argv[1],"-")) shmkey=atoi(argv[1]);
+   else
+     {
+     shmkey=0;
+     buf=(unsigned char *)malloc(bufsiz=BUFSZ);
+     }
    strcpy(outdir,argv[2]);
    if(argc>3) count_max=atoi(argv[3]);
    else count_max=0;
@@ -374,47 +287,74 @@ main(argc,argv)
    else *logfile=0;
 
    *latest=(*oldest)=(*busy)=0;
-   if((shmid=shmget(shmkey,0,0))<0) err_sys("shmget");
-   if((shm=(struct Shm *)shmat(shmid,(char *)0,0))==(struct Shm *)-1)
-     err_sys("shmat");
+   if(shmkey)
+     {
+     if((shmid=shmget(shmkey,0,0))<0) err_sys("shmget");
+     if((shm=(struct Shm *)shmat(shmid,(char *)0,0))==(struct Shm *)-1)
+       err_sys("shmat");
    
-   sprintf(tbuf,"start, shm_key=%d sh=%d",shmkey,shm);
-   write_log(logfile,tbuf);
+     sprintf(tbuf,"start, shm_key=%d sh=%d",shmkey,shm);
+     write_log(logfile,tbuf);
+     }
    
+   signal(SIGPIPE,(void *)ctrlc);
    signal(SIGTERM,(void *)ctrlc);
    signal(SIGINT,(void *)ctrlc);
    
  reset:
    last_min=(-1);
    fd=NULL;
-   while(shm->r==(-1)) sleep(1);
-   shp=shp_save=shm->r;    /* read position */
 
-   size=mklong(ptr_save=shm->d+shp);
-   if(mklong(shm->d+shp+size-4)==size) eobsize=1;
-   else eobsize=0;
-   eobsize_count=eobsize;
-   sprintf(tbuf,"eobsize=%d",eobsize);
-   write_log(logfile,tbuf);
-  
+   if(shmkey)
+     {
+     while(shm->r==(-1)) sleep(1);
+     shp=shp_save=shm->r;    /* read position */
+
+     size=mklong(ptr_save=shm->d+shp);
+     if(mklong(shm->d+shp+size-4)==size) eobsize=1;
+     else eobsize=0;
+     eobsize_count=eobsize;
+     sprintf(tbuf,"eobsize=%d",eobsize);
+     write_log(logfile,tbuf);
+     }
+   else
+     {
+     if(fread(buf,4,1,stdin)<1) ctrlc();
+     size=mklong(buf);
+     if(size>bufsiz)
+       {
+       if(size>BUFLIM || (buf=realloc(buf,size))==NULL)
+         {
+         sprintf(tbuf,"malloc size=%d",size);
+         write_log(logfile,tbuf);
+         ctrlc();
+         }
+       else bufsiz=size;
+       }
+     if(fread(buf+4,size-4,1,stdin)<1) ctrlc();
+     }
+ 
    while(1){
       if(eobsize) size2=size-4;
       else size2=size;
 
-      c_save=shm->c;
-      bcd_dec(tm,shm->d+shp+4); /* YMDhms */
-      if(check_time(tm)){
-	 sprintf(tbuf,
-	 "illegal time %02X%02X%02X.%02X%02X%02X:%02X%02X%02X.%02X%02X%02X (%d)",
-	 shm->d[shp+4],shm->d[shp+5],shm->d[shp+6],
-	 shm->d[shp+7],shm->d[shp+8],shm->d[shp+9],
-	 shm->d[shp+10],shm->d[shp+11],shm->d[shp+12],
-	 shm->d[shp+13],shm->d[shp+14],shm->d[shp+15],size);
-	 write_log(logfile,tbuf);
-	 if(fd!=NULL) fclose(fd);
-         sleep(5);
-	 goto reset;
-      }
+      if(shmkey)
+        {
+        c_save=shm->c;
+        ptr=shm->d+shp+4;
+        }
+      else ptr=buf+4;
+      if(!bcd_dec(tm,ptr)) /* YMDhms */
+        {
+        sprintf(tbuf,
+          "illegal time %02X%02X%02X.%02X%02X%02X:%02X%02X%02X.%02X%02X%02X (%d)",
+          ptr[0],ptr[1],ptr[2],ptr[3],ptr[4],ptr[5],
+          ptr[6],ptr[7],ptr[8],ptr[9],ptr[10],ptr[11],size);
+        write_log(logfile,tbuf);
+        if(fd!=NULL) fclose(fd);
+        if(shmkey) sleep(5);
+        goto reset;
+        }
  
       if(mode==60)
         {
@@ -439,24 +379,44 @@ main(argc,argv)
       ptw[2]=size2>>8;
       ptw[3]=size2;
       if(fwrite(ptw,1,4,fd)<4) write_log(logfile,"fwrite");
-      if(fwrite(shm->d+shp+4,1,size2-4,fd)<size2-4) write_log(logfile,"fwrite");
+      if(fwrite(ptr,1,size2-4,fd)<size2-4) write_log(logfile,"fwrite");
       if(mode==60) fflush(fd);
 	   
 #if DEBUG
       printf("%d>(fd=%d) r=%d\n",size2,fd,shp);
 #endif
-      if((shp+=size)>shm->pl) shp=shp_save=0;
-      while(shm->p==shp) sleep(1);
-      i=shm->c-c_save;
-      if(!(i<1000000 && i>=0) || mklong(ptr_save)!=size){
-	 write_log(logfile,"reset");
-	 goto reset;
-      }
+      if(shmkey)
+        {
+        if((shp+=size)>shm->pl) shp=shp_save=0;
+        while(shm->p==shp) sleep(1);
+        i=shm->c-c_save;
+        if(!(i<1000000 && i>=0) || mklong(ptr_save)!=size){
+  	 write_log(logfile,"reset");
+  	 goto reset;
+        }
 
-      size=mklong(ptr_save=shm->d+shp);
-      if(size==mklong(ptr_save+size-4)) eobsize_count++;
-      else eobsize_count=0;
-      if(eobsize && eobsize_count==0) goto reset;
-      if(!eobsize && eobsize_count>3) goto reset;
+        size=mklong(ptr_save=shm->d+shp);
+        if(size==mklong(ptr_save+size-4)) eobsize_count++;
+        else eobsize_count=0;
+        if(eobsize && eobsize_count==0) goto reset;
+        if(!eobsize && eobsize_count>3) goto reset;
+        }
+      else
+        {
+        if(fread(buf,4,1,stdin)<1) ctrlc();
+        size=mklong(buf);
+        if(size>bufsiz)
+          {
+          if(size>BUFLIM || (buf=realloc(buf,size))==NULL)
+            {
+            sprintf(tbuf,"malloc size=%d",size);
+            write_log(logfile,tbuf);
+            ctrlc();
+            }
+          else bufsiz=size;
+          }
+        if(fread(buf+4,size-4,1,stdin)<1) ctrlc();
+        }
+
    }
 }

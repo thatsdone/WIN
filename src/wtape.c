@@ -1,4 +1,4 @@
-/* $Id: wtape.c,v 1.3.2.1 2001/11/02 11:43:41 uehira Exp $ */
+/* $Id: wtape.c,v 1.3.2.2 2001/11/06 02:43:01 uehira Exp $ */
 /*
   program "wtape.c"
   8/23/89 - 8/8/90, 6/27/91, 12/24/91, 2/29/92  urabe
@@ -62,12 +62,12 @@
   int  wait_min;
   char param_name[FILENAME_MAX];
   char *progname;
-  static char rcsid[]="$Id: wtape.c,v 1.3.2.1 2001/11/02 11:43:41 uehira Exp $";
+  static char rcsid[]="$Id: wtape.c,v 1.3.2.2 2001/11/06 02:43:01 uehira Exp $";
 
 switch_sig()
   {
   switch_req=1;
-  signal(SIGHUP,switch_sig);
+  signal(SIGHUP,(void *)switch_sig);
   }
 
 strncmp2(s1,s2,i)
@@ -519,9 +519,9 @@ main(argc,argv)
 /* initialize parameters */
   init_param();
 
-  signal(SIGTERM,ctrlc);      /* set up ctrlc routine */
-  signal(SIGINT,ctrlc);     /* set up ctrlc routine */
-  signal(SIGHUP,switch_sig);
+  signal(SIGTERM,(void *)ctrlc);      /* set up ctrlc routine */
+  signal(SIGINT,(void *)ctrlc);     /* set up ctrlc routine */
+  signal(SIGHUP,(void *)switch_sig);
 
   rmemo("COUNT",max_c);
   max_num=atoi(max_c);

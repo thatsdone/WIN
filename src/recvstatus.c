@@ -1,4 +1,4 @@
-/* $Id: recvstatus.c,v 1.2.2.1 2001/11/02 11:43:38 uehira Exp $ */
+/* $Id: recvstatus.c,v 1.2.2.2 2001/11/06 02:43:01 uehira Exp $ */
 /* "recvstatus.c"      5/24/95    urabe */
 /* 97.7.17 two lines of "if() continue;" in the main loop */
 /* 2000.4.24 strerror() */
@@ -127,9 +127,9 @@ main(argc,argv)
   if(bind(sock,(struct sockaddr *)&to_addr,sizeof(to_addr))<0)
     err_sys("bind");
 
-  signal(SIGTERM,ctrlc);
-  signal(SIGINT,ctrlc);
-  signal(SIGPIPE,ctrlc);
+  signal(SIGTERM,(void *)ctrlc);
+  signal(SIGINT,(void *)ctrlc);
+  signal(SIGPIPE,(void *)ctrlc);
 
   for(i=0;i<65535;i++) stt[i]=0xff;
   while(1)

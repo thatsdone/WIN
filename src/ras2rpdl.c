@@ -1,4 +1,4 @@
-/* $Id: ras2rpdl.c,v 1.2.2.1 2001/11/02 11:43:37 uehira Exp $ */
+/* $Id: ras2rpdl.c,v 1.2.2.2 2001/11/06 02:43:01 uehira Exp $ */
 /********************************************************/
 /*  ras2rpdl.c   97.10.31-97.11.27             urabe    */
 /*               98.3.4      LITTLE ENDIAN    uehira    */
@@ -124,9 +124,9 @@ main(argc, argv)
   {
   FILE *fp;
   int i;
-  signal(SIGINT,wabort);
-  signal(SIGTERM,wabort);
-  signal(SIGPIPE,wabort);
+  signal(SIGINT,(void *)wabort);
+  signal(SIGTERM,(void *)wabort);
+  signal(SIGPIPE,(void *)wabort);
   printf("\033\022!@R00\033 "); /* enter RPDL */
   printf("\0334");   /* end graphic mode */
   printf("\033\022YA04,%d,1 ",1); /* resolution - 1:400/2:240/3:600 */

@@ -1,4 +1,4 @@
-/* $Id: send_raw_old.c,v 1.3.2.1 2001/11/02 11:43:39 uehira Exp $ */
+/* $Id: send_raw_old.c,v 1.3.2.2 2001/11/06 02:43:01 uehira Exp $ */
 /*
     program "send_raw_old/send_mon_old.c"   1/24/94 - 1/25/94,5/25/94 urabe
                                     6/15/94 - 6/16/94
@@ -184,7 +184,7 @@ read_chfile()
     n_ch=i;
     write_log(logfile,"all channels");
     }
-  signal(SIGHUP,read_chfile);
+  signal(SIGHUP,(void *)read_chfile);
   }
 
 main(argc,argv)
@@ -272,9 +272,9 @@ main(argc,argv)
   if(bind(sock,(struct sockaddr *)&from_addr,sizeof(from_addr))<0)
     err_sys("bind");
 
-  signal(SIGPIPE,ctrlc);
-  signal(SIGINT,ctrlc);
-  signal(SIGTERM,ctrlc);
+  signal(SIGPIPE,(void *)ctrlc);
+  signal(SIGINT,(void *)ctrlc);
+  signal(SIGTERM,(void *)ctrlc);
   for(i=0;i<BUFNO;i++) psize[i]=(-1);
   no=bufno=0;
 

@@ -1,0 +1,7 @@
+#!/bin/sh
+# ras2png [rasfile] [outdir] [basename]
+PATH=/usr/local/bin:/usr/X11R6/bin
+rasttopnm $1|pnmtopng>$2/$3.png
+rasttopnm $1|pbmreduce -threshold -value 0.8 2|pnmtopng>$2/$3.2.png
+rasttopnm $1|pbmreduce -threshold -value 0.8 3|pnmtopng>$2/$3.3.png
+rasttopnm $1|pbmreduce -threshold -value 0.8 4|pnmtopng>$2/$3.4.png

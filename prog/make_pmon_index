@@ -1,9 +1,10 @@
 #!/bin/sh
+# 2001.4.25 added ".png"
 if [ "$1" ]
 then
   pmondir=$1
 else
-  echo 'usage : make_pmon_index [gif_dir] ([scale ...])'
+  echo 'usage : make_pmon_index [img_dir] ([scale ...])'
   echo '               scale - 1,2,3 or 4.'
   exit
 fi
@@ -28,7 +29,7 @@ do
 END
 # Body
   day_prev=000000
-  (cd $pmondir;ls -1|grep '[0-9]*0'."$scale"gif|tail -1008)|
+  (cd $pmondir;ls -1|egrep '[0-9]*0'."$scale"gif'|''[0-9]*0'."$scale"png|tail -1008)|
   while read filename
   do
     day=`echo $filename|cut -c1-6`

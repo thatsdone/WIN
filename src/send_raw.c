@@ -1,4 +1,4 @@
-/* $Id: send_raw.c,v 1.7 2002/01/14 09:41:17 urabe Exp $ */
+/* $Id: send_raw.c,v 1.8 2002/01/14 11:32:59 uehira Exp $ */
 /*
     program "send_raw/send_mon.c"   1/24/94 - 1/25/94,5/25/94 urabe
                                     6/15/94 - 6/16/94
@@ -26,6 +26,7 @@
                                   2000.4.17 deleted definition of usleep() 
                                   2000.4.24 strerror()
                                   2001.8.19 send interval control
+                                  2001.11.14 strerror(),ntohs()
                                   2002.1.7  option '-i' to specify multicast IF
                                   2002.1.8  option '-b' for max IP packet size
                                   2002.1.11 bug fixed for '-r'/'-m'

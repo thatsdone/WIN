@@ -1,4 +1,4 @@
-/* $Id: recvt.c,v 1.9 2002/01/14 09:41:17 urabe Exp $ */
+/* $Id: recvt.c,v 1.10 2002/01/14 11:32:58 uehira Exp $ */
 /* "recvt.c"      4/10/93 - 6/2/93,7/2/93,1/25/94    urabe */
 /*                2/3/93,5/25/94,6/16/94 */
 /*                1/6/95 bug in adj_time fixed (tm[0]--) */
@@ -26,6 +26,7 @@
 /*                2000.4.26 host control, statistics, -a, -m, -p options */
 /*                2001.2.20 wincpy() improved */
 /*                2001.3.9 debugged for sh->r */
+/*                2001.11.14 strerror(),ntohs() */
 /*                2002.1.7 implemented multicasting (options -g, -i) */
 /*                2002.1.7 option -n to suppress info on abnormal packets */
 /*                2002.1.8 MAXMESG increased to 32768 bytes */

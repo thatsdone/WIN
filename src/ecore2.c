@@ -13,21 +13,20 @@
 
 /*                      2003/4/16  configure for any machine N.Nakawaji  */
 /*                      2003/6/10  '#include <errno.h>' deleted by Urabe */
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/types.h>
-#include <sys/ipc.h>
-#include <sys/shm.h>
-#include <sys/file.h>
-
-#include "subst_func.h"
+/*                      2003/7/2   introduced strerror() by Urabe/Nakagawa */
 
 /*--- for config   2003/05/02  by N.Nakawaji ---*/
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
+
+#include <stdio.h>
+#include <signal.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
 
 #if TIME_WITH_SYS_TIME
 #include <sys/time.h>
@@ -40,12 +39,16 @@
 #endif  /* !HAVE_SYS_TIME_H */
 #endif  /* !TIME_WITH_SYS_TIME */
 
+#include <sys/types.h>
+#include <errno.h>
+
+#include "subst_func.h"
 
 /*--------------------------------------------*/
 
+#include <sys/file.h>
 #include <memory.h>
 #include <dirent.h>
-#include <signal.h>
 #include <ctype.h>
 
 /* following parameters give M=3 (6-th order) */
@@ -59,10 +62,6 @@
 #define	NCH		5000	/* max of output channels */
 #define	MAX_FILT	25		/* max of filter order */
 #define	NUMLEN		256
-
-extern const int sys_nerr;
-extern const char *const sys_errlist[];
-extern int errno;
 
 char	Tbuf[512], *Progname, Logfile[512];
 short	Pos_table[CHMASK + 1];
@@ -166,8 +165,8 @@ err_sys(ptr)
 {
 	perror(ptr);
 	write_log(Logfile, ptr);
-	if (errno < sys_nerr)
-		write_log(Logfile, sys_errlist[errno]);
+	if(NULL!=strerror(errno))
+		write_log(Logfile, strerror(errno));
 	ctrlc(0);
 }
 
@@ -451,7 +450,7 @@ get_ch_size(dp)
 	return 4 + g_size;
 }
 
-/* $Id: ecore2.c,v 1.3 2003/06/09 16:40:14 urabe Exp $ */
+/* $Id: ecore2.c,v 1.4 2003/07/02 04:17:57 urabe Exp $ */
 
 win2fix(ptr,abuf,sys_ch,sr) /* returns group size in bytes */
   unsigned char *ptr; /* input */
@@ -526,7 +525,7 @@ win2fix(ptr,abuf,sys_ch,sr) /* returns group size in bytes */
   return g_size;  /* normal return */
   }
 
-/* $Id: ecore2.c,v 1.3 2003/06/09 16:40:14 urabe Exp $ */
+/* $Id: ecore2.c,v 1.4 2003/07/02 04:17:57 urabe Exp $ */
 /* winform.c  4/30/91,99.4.19   urabe */
 /* winform converts fixed-sample-size-data into win's format */
 /* winform returns the length in bytes of output data */

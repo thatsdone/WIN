@@ -1,4 +1,4 @@
-/* $Id: events.c,v 1.2 2000/04/30 10:05:22 urabe Exp $ */
+/* $Id: events.c,v 1.3 2001/01/22 05:57:34 urabe Exp $ */
 /****************************************************************************
 *****************************************************************************
 **     program "events.c" for NEWS                                  *********
@@ -29,13 +29,14 @@
 **     99.5.29        quit if pmon.out won't open at first          *********
 **     99.6.12        not make zero-size waveform file              *********
 **     99.11.9        SGI IRIX                                      *********
+**     2001.1.22      used_raw & check_path                         *********
 **                                                                  *********
 **   Example of parameter file (events.prm)                         *********
 =============================================================================
 /dat/etc/pmon.out      # trigger file
 /dat/raw               # input raw file directory
 /dat/trg               # output trg file directory
-100                    # free space (MB) to keep in the output directory
+100:1000               # min.free space and max.used amount in outdir (MB)
 /tmp                   # working directory for temporary file
 20                     # pre event time in sec (<60)
 3.0                    # post event time factor; LEN=PRE+TRG+POST*sqrt(TRG)
@@ -63,6 +64,7 @@ sso     /dat/etc/sso.station    cut-jc3
 #include  <string.h>
 #include  <math.h>
 #include  <ctype.h>
+#include  <unistd.h>
 #include  <sys/types.h>
 #include  <sys/stat.h>
 #include  <dirent.h>
@@ -92,7 +94,7 @@ sso     /dat/etc/sso.station    cut-jc3
 #define LEN       1024
 #define NSYS      20   /* n of remote system to request data */
 
-int space_raw,time_flag;
+int space_raw,used_raw,time_flag;
 char *progname,temp_path[LEN];
 
 owari()
@@ -105,6 +107,61 @@ owari()
   printf("*****  %s end  *****\n",progname);
   exit(0);
   }
+
+#define FILE_R 0
+#define FILE_W 1
+#define DIR_R  2
+#define DIR_W  3
+check_path(path,idx)
+  char *path;
+  int idx;
+  {
+  DIR *dir_ptr;
+  char tb[1024];
+  FILE *fp;
+  if(idx==DIR_R || idx==DIR_W)
+    {
+    if((dir_ptr=opendir(path))==NULL)
+      {
+      printf("%s(%d):directory not open '%s'\n",progname,getpid(),path);
+      owari();
+      }
+    else closedir(dir_ptr);
+    if(idx==DIR_W)
+      {
+      sprintf(tb,"%s/%s.test.%d",path,progname,getpid());
+      if((fp=fopen(tb,"w+"))==NULL)
+        {
+        printf("%s(%d):directory not R/W '%s'\n",progname,getpid(),path);
+        owari();
+        }
+      else
+        {
+        fclose(fp);
+        unlink(tb);
+        }
+      }
+    }
+  else if(idx==FILE_R)
+    {
+    if((fp=fopen(path,"r"))==NULL)
+      {
+      printf("%s(%d):file not readable '%s'\n",progname,getpid(),path);
+      owari();
+      }
+    else fclose(fp);
+    }
+  else if(idx==FILE_W)
+    {
+    if((fp=fopen(path,"r+"))==NULL)
+      {
+      printf("%s(%d):file not R/W '%s'\n",progname,getpid(),path);
+      owari();
+      }
+    else fclose(fp);
+    }
+  return 1;
+  } 
 
 extend_time(tm1,tm2,pre,post_fac)
   int *tm1,*tm2,pre;
@@ -333,31 +390,34 @@ check_space(path)
   {
   FILE *fp;
   struct statfs fsbuf;
-  int i;
+  int i,dirblocks;
   struct dirent *dir_ent;
   DIR *dir_ptr;
   char name_buf[256],oldest[256],oldest2[256],newest[256],path1[256];
+  struct stat st_buf;
+
   /* check disk space */
   sprintf(path1,"%s/.",path);
-  if(statfs(path1,&fsbuf)<0)
+  while(1)
     {
-    printf("%s:statfs : %s (%d)",progname,path1,getpid());
-    owari();
-    }
-  while(fsbuf.f_bavail/((1024*1024)/fsbuf.f_bsize)<space_raw)
-    {
-    /* find and delete oldest file */
+    /* find oldest file and sum up file sizes */
     if((dir_ptr=opendir(path))==NULL)
       {
       printf("%s:data path open error '%s' (%d)",progname,path,getpid());
       owari();
       }
-    i=0;
+    i=dirblocks=0;
     *oldest=(*oldest2)=(*newest)=0;
     while((dir_ent=readdir(dir_ptr))!=NULL)
       {
-      if(!isdigit(dir_ent->d_name[0]) ||
-        !isdigit(dir_ent->d_name[strlen(dir_ent->d_name)-1])) continue;
+      if(!isdigit(dir_ent->d_name[0])) continue;
+      else if(!isdigit(dir_ent->d_name[strlen(dir_ent->d_name)-1]))
+        {
+        sprintf(name_buf,"%s/%s",path,dir_ent->d_name);
+        stat(name_buf,&st_buf);
+        dirblocks+=st_buf.st_blocks;
+        continue;
+        }
       if(*oldest==0)
         {
         strcpy(oldest,dir_ent->d_name);
@@ -377,38 +437,58 @@ check_space(path)
           }
         if(strcmp2(dir_ent->d_name,newest)>0) strcpy(newest,dir_ent->d_name);
         }
+      sprintf(name_buf,"%s/%s",path,dir_ent->d_name);
+      stat(name_buf,&st_buf);
+      dirblocks+=st_buf.st_blocks;
       i++;
       }
-/*    printf("%d files in %s, oldest=%s 2nd-oldest=%s newest=%s\n",
-      i,path,oldest,oldest2,newest);
-*/    closedir(dir_ptr);
-    sprintf(name_buf,"rm -f %s/%s*",path,oldest);
-    system(name_buf);
-    printf("%s\n",name_buf);
-    i--;
+#if 0
+    printf("%d files in %s, %d KB used, oldest=%s 2nd-oldest=%s newest=%s\n",
+      i,path,(dirblocks+1)/2,oldest,oldest2,newest);
+#endif
+    closedir(dir_ptr);
     if(statfs(path1,&fsbuf)<0)
       {
       printf("%s:statfs : %s (%d)",progname,path1,getpid());
       owari();
       }
-/*    sprintf(name_buf,"%s/%s",path,"LATEST");
+    printf("%dMB free(min.%dMB), %d MB used(max.%dMB)\n",
+      fsbuf.f_bavail/((1024*1024)/fsbuf.f_bsize),space_raw,
+      (dirblocks+1)/(2*1024),used_raw);
+    sprintf(name_buf,"%s/%s",path,"FREESPACE");
     fp=fopen(name_buf,"w+");
-    fprintf(fp,"%s\n",newest);
+    fprintf(fp,"%d %d %d %d\n",fsbuf.f_bavail/((1024*1024)/fsbuf.f_bsize),
+      space_raw,(dirblocks+1)/(2*1024),used_raw);
     fclose(fp);
-*/    sprintf(name_buf,"%s/%s",path,"OLDEST");
-    fp=fopen(name_buf,"w+");
-    fprintf(fp,"%s\n",oldest2);
-    fclose(fp);
-    sprintf(name_buf,"%s/%s",path,"COUNT");
-    fp=fopen(name_buf,"w+");
-    fprintf(fp,"%d\n",i);
-    fclose(fp);
+    /* check free/used spaces */
+    if(fsbuf.f_bavail/((1024*1024)/fsbuf.f_bsize)<space_raw ||
+        (used_raw>0 && (dirblocks+1)/(2*1024)>used_raw))
+      {
+      sprintf(name_buf,"rm -f %s/%s*",path,oldest);
+      system(name_buf);
+      printf("%s\n",name_buf);
+      sprintf(name_buf,"%s/%s",path,"OLDEST");
+      fp=fopen(name_buf,"w+");
+      fprintf(fp,"%s\n",oldest2);
+      fclose(fp);
+      sprintf(name_buf,"%s/%s",path,"COUNT");
+      fp=fopen(name_buf,"w+");
+      fprintf(fp,"%d\n",--i);
+      fclose(fp);
+      }
+    else
+      {
+      sprintf(name_buf,"%s/%s",path,"OLDEST");
+      fp=fopen(name_buf,"w+");
+      fprintf(fp,"%s\n",oldest);
+      fclose(fp);
+      sprintf(name_buf,"%s/%s",path,"COUNT");
+      fp=fopen(name_buf,"w+");
+      fprintf(fp,"%d\n",i);
+      fclose(fp);
+      break;
+      }
     }
-  printf("%dMB free\n",fsbuf.f_bavail/((1024*1024)/fsbuf.f_bsize));
-  sprintf(name_buf,"%s/%s",path,"FREESPACE");
-  fp=fopen(name_buf,"w+");
-  fprintf(fp,"%d %d\n",fsbuf.f_bavail/((1024*1024)/fsbuf.f_bsize),space_raw);
-  fclose(fp);
   }
 
 read_param(f_param,textbuf)
@@ -531,24 +611,42 @@ printf("       option: -x [zone to be ignored]\n");
     }
   read_param(f_param,textbuf);
   sscanf(textbuf,"%s",trig_file);
+  check_path(trig_file,FILE_R);
   read_param(f_param,textbuf);
   sscanf(textbuf,"%s",raw_path);
+  check_path(raw_path,DIR_R);
   read_param(f_param,textbuf);
   sscanf(textbuf,"%s",out_path);
-  read_param(f_param,textbuf);
-  sscanf(textbuf,"%d",&space_raw);
+  check_path(out_path,DIR_W);
+  read_param(f_param,textbuf1);
+  sscanf(textbuf1,"%s",textbuf);
+  if((ptr=strchr(textbuf,':'))==0)
+    {
+    sscanf(textbuf,"%d",&space_raw);
+    used_raw=0;
+    }
+  else
+    {
+    *ptr=0;
+    sscanf(textbuf,"%d",&space_raw);
+    sscanf(ptr+1,"%d",&used_raw);
+    }
   read_param(f_param,textbuf);
   sscanf(textbuf,"%s",temp_path);
+  check_path(temp_path,DIR_W);
   read_param(f_param,textbuf);
   sscanf(textbuf,"%d",&pre_event_sec);
   read_param(f_param,textbuf);
   sscanf(textbuf,"%lf",&post_event_fac);
   read_param(f_param,textbuf);
   sscanf(textbuf,"%s",ch_file);
+  check_path(ch_file,FILE_R);
   read_param(f_param,textbuf);
   sscanf(textbuf,"%s",zone_file);
+  check_path(zone_file,FILE_R);
   read_param(f_param,textbuf);
   sscanf(textbuf,"%s",nxt_file);
+  check_path(nxt_file,FILE_R);
   read_param(f_param,textbuf);
   sscanf(textbuf,"%s",auto_path);
   read_param(f_param,textbuf);

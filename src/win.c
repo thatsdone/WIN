@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.12 2001/08/01 16:41:00 urabe Exp $
+   $Id: win.c,v 1.13 2001/08/06 16:18:55 urabe Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -13,7 +13,7 @@
    98.7.2 yo2000
 */
 #define NAME_PRG      "win"
-#define VERSION       "2001.8.2"
+#define VERSION       "2001.8.6"
 #define DEBUG_AP      0   /* for debugging auto-pick */
 /* 5:sr, 4:ch, 3:sec, 2:find_pick, 1:all */
 /************ HOW TO COMPILE THE PROGRAM **************************
@@ -172,17 +172,17 @@ LOCAL
   struct ms_event {
     struct ms_data mse_data; /* mouse X, Y and button status */
     char mse_trig;      /* trigger that caused this event */
-#define MSE_MOTION  0   /* mouse movement */
-#define MSE_BUTTON  1   /* mouse buttons */
-#define MSE_EXP   2     /* exposure */
-    char mse_dir;       /* key or button direction */
-#define MSE_DOWN  0     /* down */
-#define MSE_UP    1     /* up */
-#define MSE_UNKOWN  2   /* unkown */
-    char mse_code;      /* key or button code */
-#define MSE_BUTNR 0     /* right button */
-#define MSE_BUTNM 1     /* middle button */
-#define MSE_BUTNL 2     /* left button */
+#define MSE_MOTION 0 /* mouse movement */
+#define MSE_BUTTON 1 /* mouse buttons */
+#define MSE_EXP    2 /* exposure */
+    char mse_dir;    /* key or button direction */
+#define MSE_DOWN   0 /* down */
+#define MSE_UP     1 /* up */
+#define MSE_UNKOWN 2 /* unkown */
+    char mse_code;   /* key or button code */
+#define MSE_BUTNR 0  /* right button */
+#define MSE_BUTNM 1  /* middle button */
+#define MSE_BUTNL 2  /* left button */
     struct timeval mse_time; /* time when this event occurred */
     };
 
@@ -222,11 +222,11 @@ LOCAL
 #define PI          3.141592654
 #define HP          (PI/2.0)
 #define WHITE       0x00
-#define MAX_SHORT     32000
-#define MEMORY_LIMIT    (1000000*8) /* pixels for one bitmap */
-#define WIDTH_TEXT      8
-#define HEIGHT_TEXT     16
-#define CODE_START      32
+#define MAX_SHORT    32000
+#define MEMORY_LIMIT (1000000*8) /* pixels for one bitmap */
+#define WIDTH_TEXT   8
+#define HEIGHT_TEXT  16
+#define CODE_START   32
 #define N_BM        100   /* size of text buffer (chars) */
 #define WB          (WIDTH_TEXT*5)    /* width of a box */
 #define HW          (WIDTH_TEXT/2)    /* half of font width */
@@ -235,13 +235,13 @@ LOCAL
 #define YBASE_MON   (MARGIN+HEIGHT_FUNC)
 #define TICKL       (WIDTH_TEXT*3/2)
 #define PIXELS_PER_SEC_MON  10
-#define SR_LOW        1   /* lower limit of sampling rate */
-#define N_CH_NAME     0x10000 /* maximum n of name channels */
-                  /* 16 bit channel field */
-#define NAMLEN        80
-#define STNLEN        11   /* (length of station code)+1 */
-#define CMPLEN        7    /* (length of component code)+1 */
-#define WIDTH_INFO_C    18
+#define SR_LOW       1  /* lower limit of sampling rate */
+#define N_CH_NAME    0x10000 /* maximum n of name channels */
+                             /* 16 bit channel field */
+#define NAMLEN       80
+#define STNLEN       11 /* (length of station code)+1 */
+#define CMPLEN       7  /* (length of component code)+1 */
+#define WIDTH_INFO_C 18
 #define WIDTH_INFO      (WIDTH_TEXT*WIDTH_INFO_C)
 #define WIDTH_INFO_ZOOM (WIDTH_TEXT*WIDTH_INFO_C)
 #define PSUP_LMARGIN    (WIDTH_TEXT*16)
@@ -287,22 +287,22 @@ LOCAL
 #define N_LABELS      30
 #define N_FILTERS     30
 
-#define PARAM_PATH    1 /* default directory for data file */
-#define PARAM_CHS     2 /* channel table file */
-#define PARAM_ZONES   3 /* name of zone file */
-#define PARAM_OUT     4 /* directory for pick files (R/W) */
-#define PARAM_HYPO    5 /* name of hypo-location program file */
-#define PARAM_STRUCT  6 /* name of structure file */
-#define PARAM_MAP     7 /* name of map data file */
-#define PARAM_WAVE    8 /* directory for cutout data files */
-#define PARAM_FMT     9 /* cutout data format */
-#define PARAM_FILT    10  /* name of filter setting file */
-#define PARAM_PRINTER 11  /* printer name */
-#define PARAM_HEMI    12  /* upper or lower hemisphere projection */
-#define PARAM_LABELS  13  /* name of label table (NOISE,FAR etc.) */
-#define PARAM_FINAL   14  /* directory for other hypos */
-#define PARAM_DPI     15  /* dot/inch of hardcopy printer */
-#define PARAM_TEMP    16  /* temporary working directory */
+#define PARAM_PATH    1  /* default directory for data file */
+#define PARAM_CHS     2  /* channel table file */
+#define PARAM_ZONES   3  /* name of zone file */
+#define PARAM_OUT     4  /* directory for pick files (R/W) */
+#define PARAM_HYPO    5  /* name of hypo-location program file */
+#define PARAM_STRUCT  6  /* name of structure file */
+#define PARAM_MAP     7  /* name of map data file */
+#define PARAM_WAVE    8  /* directory for cutout data files */
+#define PARAM_FMT     9  /* cutout data format */
+#define PARAM_FILT    10 /* name of filter setting file */
+#define PARAM_PRINTER 11 /* printer name */
+#define PARAM_HEMI    12 /* upper or lower hemisphere projection */
+#define PARAM_LABELS  13 /* name of label table (NOISE,FAR etc.) */
+#define PARAM_FINAL   14 /* directory for other hypos */
+#define PARAM_DPI     15 /* dot/inch of hardcopy printer */
+#define PARAM_TEMP    16 /* temporary working directory */
 
 #define X_Z_CHN       0
 #define Y_Z_CHN       (PIXELS_PER_LINE*0)
@@ -362,6 +362,8 @@ LOCAL
 /* main screen */
 #define EVDET       1
 #define AUTPK       2
+#define HYPO        3
+#define SAVE        4
 #define LR          6
 #define UD          7
 #define OPEN        0
@@ -370,14 +372,13 @@ LOCAL
 #define QUIT        2
 #define COPY        3
 #define MAP         4
-#define LIST        5
-#define SAVE        6
-#define HYPO        7
-#define LOAD        8
-#define CANL        9
+#define FINL        5
+#define LIST        6
+#define LOAD        7
+#define UNLD        8
+#define CLER        9
 #define MECH       10
-#define FINL       11
-#define PSTUP      12
+#define PSTUP      11
 /* map scrreen */
 #define RETN        2
 #define VERT        4
@@ -387,18 +388,17 @@ LOCAL
 #define RATIO       1
 /* psup screen */
 /* mech screen */
-#define UPPER       7
+#define UPPER       6
 
   char cursor_color[20]={"blue"},
-    *func_main[]={"OPEN" ,"EVDET","AUTPK","","","","    ","    ","$"},
-    *func_map[] ={""     ,"RFSH" ,"RETN" ,"COPY" ,"VERT" ,"STNS" ,"T-S"  ,"$"},
-    *func_map2[]={""     ,"OTHRS","$"},
-    *func_map3[]={""     ,"RATIO","$"},
-    *func_main2[]={""     ,"RFSH" ,"QUIT" ,"COPY" ,"MAP"  ,"LIST" ,"SAVE" ,
-            "HYPO" ,"LOAD" ,"CANL" ,"MECH" ,"FINL" ,"PSTUP","$"},
-    *func_psup[]={""     ,"RFSH" ,"RETN" ,"COPY" ,"MAP"  ,"$"},
-    *func_mech[]={""     ,"RFSH" ,"RETN" ,"COPY" ,"MAP"  ,"STNS" ,
-            "SAVE" ,"UP/LO","LOAD" ,"CANL" ,"$"};
+    *func_main[]={"OPEN" ,"EVDET","AUTPK","HYPO","SAVE","","    ","    ","$"},
+    *func_main2[]={"","RFSH","QUIT","COPY","MAP","FINL","LIST","LOAD","UNLD",
+            "CLER","MECH","PSTUP","$"},
+    *func_map[] ={"","RFSH","RETN","COPY","VERT","STNS","T-S","$"},
+    *func_map2[]={"","OTHRS","$"},
+    *func_map3[]={"","RATIO","$"},
+    *func_psup[]={"","RFSH","RETN","COPY","MAP","$"},
+    *func_mech[]={"","RFSH","RETN","COPY","MAP","STNS","UP/LO","$"};
 
 #define put_reverse(bm,xzero,yzero,xsize,ysize) \
   put_bitblt(bm,xzero,yzero,xsize,ysize,bm,xzero,yzero,BF_DI)
@@ -725,14 +725,14 @@ LOCAL
     };
   struct Pick_Time
     {
-    int valid;      /* 1:valid, 0:invalid / max_defl(float) */
+    int valid;    /* 1:valid, 0:invalid / max_defl(float) */
     int sec1;     /* sec(1) / sec of max_defl */
-    int msec1;      /* msec(1) / msec of max_defl */
+    int msec1;    /* msec(1) / msec of max_defl */
     int sec2;     /* sec(2) */
-    int msec2;      /* msec(2) */
-    int polarity;   /* polarity +1/0/-1 / unit(power of (s)) */
-    int period;     /* period (ms) */
-    int sec_sdp;    /* last quiet sec */
+    int msec2;    /* msec(2) */
+    int polarity; /* polarity +1/0/-1 / unit(power of (s)) */
+    int period;   /* period (ms) */
+    int sec_sdp;  /* last quiet sec */
     };
   struct Filter
     {
@@ -797,8 +797,8 @@ LOCAL
     char final_opt[NAMLEN];   /* final file(dir) by command line option */
     char pick_server[NAMLEN]; /* pick file server host name or IP address */
     unsigned short pick_server_port; /* pick file server TCP port */
-    FILE *fp_log;       /* fp of log file */
-    char mailer[NAMLEN];    /* mailer printer */
+    FILE *fp_log;             /* fp of log file */
+    char mailer[NAMLEN];      /* mailer printer */
     struct Hypo hypo;         /* final data from hypo */
     struct Hypo hypoall;      /* final data from hypo (TT of all stations) */
     char label_file[NAMLEN];  /* label file */
@@ -843,11 +843,11 @@ LOCAL
    *****************************************************************/
   struct Filt
     {
-    char tfilt[14];     /* filter text */
+    char tfilt[14];   /* filter text */
     int m_filt;       /* order of filter */
     int n_filt;       /* order of Butterworth function */
-    double gn_filt;     /* gain factor of filter */
-    double coef[MAX_FILT*4];/* filter coefficients */
+    double gn_filt;   /* gain factor of filter */
+    double coef[MAX_FILT*4]; /* filter coefficients */
     };
   struct Psup
     {
@@ -3230,29 +3230,32 @@ auto_pick_pick(sec_now,hint)
   int hint;
   {
   struct Pick_Time pt;
-  int i,j,k,sec,msec,idx,n,n_max,n_min,c_max,c_min,ip;
+  int i,j,k,sec,msec,idx,idx_s,n,n_max,n_min,c_max,c_min,ip;
   double *db,zero;
   /* (3) pick each station (P, and then S) */
   for(i=0;i<ft.n_trigch;i++)
     {
     if(ft.pick[idx=ft.trigch[i]][P].valid)
       {
-      if(pick_phase(idx,P))
-        {
-        if(hint)
+      if(pick_phase(idx,P)) /* pick P phase */
+        { /* if P is picked, then pick S and measure max ampl. */
+        /* 'pt' is the range for max ampl. measurement */
+        if(hint) /* in hint mode, S always exists for idx */
           {
           pt.sec2=ft.pick[idx][S].sec2;
           pt.msec2=ft.pick[idx][S].msec2;
           }
-        pick_s(idx,sec_now,hint);
-      /* measure max in the range from P to 10 sec after S */
         pt.sec1=ft.pick[idx][P].sec1;
         pt.msec1=ft.pick[idx][P].msec1;
-        if(ft.pick[idx][S].valid && hint);
-        else if(ft.pick[idx][S].valid && ft.pick[idx][S].sec2+10<=sec_now)
+
+        idx_s=pick_s(idx,sec_now,hint); /* pick S phase for the station */
+
+      /* measure max in the range from P to 10 sec after S */
+        if(hint);
+        else if(ft.pick[idx_s][S].valid && ft.pick[idx_s][S].sec2+10<=sec_now)
           {
-          pt.sec2=ft.pick[idx][S].sec2+10;
-          pt.msec2=ft.pick[idx][S].msec2;
+          pt.sec2=ft.pick[idx_s][S].sec2+10;
+          pt.msec2=ft.pick[idx_s][S].msec2;
           }
         else
           {
@@ -3611,7 +3614,8 @@ pick_s(idx,sec_now,hint)
   double *db,zero;
 
   done=0;
-  if(ft.pick[idx][P].valid==0) return 0;
+  idx_s=(-1);
+  if(ft.pick[idx][P].valid==0) return -1;
   if(!hint)
     {
     if((period=ft.pick[idx][P].period)==0)
@@ -3633,11 +3637,11 @@ pt.period,ft.period,period);
 #if DEBUG_AP>=2
 fprintf(stderr,"%2d.%03d - %2d.%03d\n",pt1.sec1,pt1.msec1,pt1.sec2,pt1.msec2);
 #endif
-    if(get_width(&pt1)<1000) return 0;  /* too short, something wrong. */
+    if(get_width(&pt1)<1000) return -1;  /* too short, something wrong. */
     }
   else
     {
-    if(ft.pick[idx][S].valid==0) return 0;
+    if(ft.pick[idx][S].valid==0) return -1;
     pt_ss=ft.pick[idx][S];
     }
   name=ft.stn[idx].name;
@@ -3692,7 +3696,7 @@ fprintf(stderr,"%2d.%03d : %2d.%03d\n",pt.sec1,pt.msec1,pt.sec2,pt.msec2);
     }
   if(done) show_pick(idx_s,&pt_s,S);
   else cancel_picks(name,S);
-  return done;
+  return idx_s;
   }
 
 get_trigch()
@@ -4770,7 +4774,11 @@ do_auto_pick_hint()
     strcpy(apbuf," AUTOPICK W/HINT ");
     put_text(&dpy,x_time_file,Y_TIME,apbuf,BF_S);
     }
-  auto_pick_hint(1);
+  do /* repeat auto_pick_hint() as many as pick files */
+    {
+    auto_pick_hint(1);
+    } while(load_data(MSE_BUTNR));
+
   if(bye) end_process(0);
   else bye_process();
   auto_flag_hint=0;
@@ -4893,9 +4901,7 @@ plot_zoom(izoom,leng,pt,put)
   struct Pick_Time *pt;
   {
   FILE *fp;
-  int flg;
-  unsigned char *ptr,path[NAMLEN],filename[NAMLEN],text_buf[LINELEN],
-    endian[5],flag[5];
+  unsigned char *ptr,path[NAMLEN],filename[NAMLEN],text_buf[LINELEN],endian[5];
   char cc;
   short ss;
   long ll;
@@ -4908,12 +4914,6 @@ plot_zoom(izoom,leng,pt,put)
     read_parameter(PARAM_WAVE,path);
     read_parameter(PARAM_FMT,text_buf);
     sscanf(text_buf,"%4s",endian);
-    if((ptr=(unsigned char *)strchr(endian,'*')))
-      {
-      *ptr=0;
-      flg=1;
-      }
-    else flg=0;
     endian[0]=toupper(endian[0]);
     }
   /* reverse mon */
@@ -4984,23 +4984,16 @@ plot_zoom(izoom,leng,pt,put)
         if(!strncmp(path,"/dev/",5)) sprintf(filename,"%s",path); /* device */
         else /* path contains directory name */
           {
-          if(flg)
-            sprintf(filename,"%s/%02x%02x%02x.%02x%02x%02x.%d.%04X.%s-%s.%s",
-            path,ft.ptr[j].time[0],ft.ptr[j].time[1],ft.ptr[j].time[2],
-            ft.ptr[j].time[3],ft.ptr[j].time[4],ft.ptr[j].time[5],
-            sr,zoom_win[izoom].sys_ch,
-            ft.stn[ft.ch2idx[zoom_win[izoom].sys_ch]].name,
-            ft.stn[ft.ch2idx[zoom_win[izoom].sys_ch]].comp,
-            endian);
-          else sprintf(filename,"%s/%02x%02x%02x.%02x%02x%02x.%d.%04X.%s",
+          sprintf(filename,"%s/%02x%02x%02x.%02x%02x%02x.%d.%04X.%s",
             path,ft.ptr[j].time[0],ft.ptr[j].time[1],ft.ptr[j].time[2],
             ft.ptr[j].time[3],ft.ptr[j].time[4],ft.ptr[j].time[5],
             sr,zoom_win[izoom].sys_ch,endian);
           if(zoom_win[izoom].filt)
-            {
-            sprintf(flag,".F%d",zoom_win[izoom].filt);
-            strcat(filename,flag);
-            }
+            sprintf(filename+strlen(filename),".F%d",zoom_win[izoom].filt);
+          if(ft.stn[ft.ch2idx[zoom_win[izoom].sys_ch]].name[0]!='*')
+            sprintf(filename+strlen(filename),".%s-%s",
+            ft.stn[ft.ch2idx[zoom_win[izoom].sys_ch]].name,
+            ft.stn[ft.ch2idx[zoom_win[izoom].sys_ch]].comp);
           }
         if((fp=fopen(filename,"w+"))==NULL) goto write_error;
         }
@@ -5789,25 +5782,6 @@ proc_main()
           put_reverse(&dpy,x_func(FINL),0,WB,MARGIN);
           ring_bell=0;
           break;
-        case SAVE:
-          raise_ttysw(1);
-          put_reverse(&dpy,x_func(SAVE),0,WB,MARGIN);
-          switch(event.mse_code)
-            {
-            case MSE_BUTNL:
-            case MSE_BUTNM: if(save_data(0)) ring_bell=0;break;
-            case MSE_BUTNR: if(save_data(1)) ring_bell=0;break;
-            }
-          put_reverse(&dpy,x_func(SAVE),0,WB,MARGIN);
-          break;
-        case HYPO:
-          raise_ttysw(1);
-          put_reverse(&dpy,x_func(HYPO),0,WB,MARGIN);
-          locate(1,0);
-          get_calc();
-          put_reverse(&dpy,x_func(HYPO),0,WB,MARGIN);
-          ring_bell=0;
-          break;
         case LOAD:
           raise_ttysw(1);
           put_reverse(&dpy,x_func(LOAD),0,WB,MARGIN);
@@ -5819,24 +5793,35 @@ proc_main()
             }
           put_reverse(&dpy,x_func(LOAD),0,WB,MARGIN);
           break;
-        case CANL:
+        case UNLD:
           raise_ttysw(1);
-          put_reverse(&dpy,x_func(CANL),0,WB,MARGIN);
+          put_reverse(&dpy,x_func(UNLD),0,WB,MARGIN);
           if(cancel_picks(NULL,-1)) plot_flag=1;
+          flag_hypo=0;
           cancel_picks_calc();
           set_diagnos("",getname(geteuid()));
           flag_change=0;
           list_picks(0);
           if(*ft.save_file)
             {
-            if(event.mse_code==MSE_BUTNL)
-              {
-              *ft.save_file=0;
-              fprintf(stderr,"using no pick file\n");
-              }
-            else fprintf(stderr,"using pick file '%s'\n",ft.save_file);
+            *ft.save_file=0;
+            fprintf(stderr,"using no pick file\n");
             }
-          put_reverse(&dpy,x_func(CANL),0,WB,MARGIN);
+          put_reverse(&dpy,x_func(UNLD),0,WB,MARGIN);
+          ring_bell=0;
+          break;
+        case CLER:
+          raise_ttysw(1);
+          put_reverse(&dpy,x_func(CLER),0,WB,MARGIN);
+          if(cancel_picks(NULL,-1)) plot_flag=1;
+          flag_hypo=0;
+          cancel_picks_calc();
+          set_diagnos("",getname(geteuid()));
+          flag_change=0;
+          list_picks(0);
+          if(*ft.save_file)
+            fprintf(stderr,"using pick file '%s'\n",ft.save_file);
+          put_reverse(&dpy,x_func(CLER),0,WB,MARGIN);
           ring_bell=0;
           break;
         }
@@ -5919,6 +5904,25 @@ proc_main()
               if((xx+=(width_win_mon/SHIFT))>x_zero_max) xx=x_zero_max;
               break;
             }
+          break;
+        case SAVE:
+          raise_ttysw(1);
+          put_reverse(&dpy,x_func(SAVE),0,WB,MARGIN);
+          switch(event.mse_code)
+            {
+            case MSE_BUTNL:
+            case MSE_BUTNM: if(save_data(0)) ring_bell=0;break;
+            case MSE_BUTNR: if(save_data(1)) ring_bell=0;break;
+            }
+          put_reverse(&dpy,x_func(SAVE),0,WB,MARGIN);
+          break;
+        case HYPO:
+          raise_ttysw(1);
+          put_reverse(&dpy,x_func(HYPO),0,WB,MARGIN);
+          locate(1,0);
+          get_calc();
+          put_reverse(&dpy,x_func(HYPO),0,WB,MARGIN);
+          ring_bell=0;
           break;
         case EVDET:
           strcpy(apbuf,"EVDET & AUTO-PICK");
@@ -9002,11 +9006,11 @@ load_data(btn) /* return=1 means success */
   char **picks_list;
   *name_low=(*name_high)=0;
   if(*ft.save_file) find_file=0;  /* pick file name already fixed */
-  else find_file=1;       /* search file name here */
+  else find_file=1;               /* search file name here */
   if(btn==MSE_BUTNM) find_file=1; /* discard present pick file name */
-                  /* and search again */
-  else if(btn==MSE_BUTNR && find_file==0)
-    { /* search the "next" pick file */
+                                  /* and search again */
+  else if(btn==MSE_BUTNR && find_file==0) /* search the "next" pick file */
+    {
     strcpy(name_low,ft.save_file);
     find_file=1;
     }
@@ -9163,7 +9167,7 @@ load_data(btn) /* return=1 means success */
     ft.pick[ft.ch2idx[i]][j].polarity=k5;
     if(j==MD) *(float *)&ft.pick[ft.ch2idx[i]][j].valid=k6;
     if(k3>sec_max) sec_max=k3;
-    put_mark(j,ft.idx2pos[ft.ch2idx[i]]);
+    if(!just_hypo) put_mark(j,ft.idx2pos[ft.ch2idx[i]]);
     }
   fprintf(stderr,"loaded from pick file '%s'\n",filename);
   if(just_hypo)
@@ -9292,17 +9296,11 @@ proc_mecha()
             put_reverse(&dpy,x_func(COPY),0,WB,MARGIN);
             ring_bell=0;
             break;
-          case SAVE:
-            break;
           case STNS:
             if(mech_name) mech_name=0;
             else mech_name=1;
             refresh();
             ring_bell=0;
-            break;
-          case LOAD:
-            break;
-          case CANL:
             break;
           }
         }
@@ -10140,7 +10138,7 @@ save_data(private)
     {
     sprintf(filename,"%s/%s",ft.hypo_dir,ft.save_file);
     sprintf(filename1,"%s/%s",ft.hypo_dir1,ft.save_file);
-    if((fp=fopen(filename,"r+"))==0)
+    if((fp=fopen(filename,"r+"))==0) /* check 'write' permission */
       {
       fprintf(stderr,"you can't delete PRIVATE pick file '%s'\n",filename);
       return 0;
@@ -10160,12 +10158,10 @@ save_data(private)
         fprintf(stderr,"deleted pick file '%s'\n",filename);
         if(mailer_flag)   /* cancel (delete) */
           {
-          sprintf(textbuf,"echo '- %s' | lpr -P%s",
-            ft.save_file,ft.mailer);
+          sprintf(textbuf,"echo '- %s' | lpr -P%s",ft.save_file,ft.mailer);
           system(textbuf);
           fprintf(stderr,"canceled submission to '%s'\n",ft.mailer);
           }
-        *ft.save_file=0;
         }
       }
     }
@@ -10173,33 +10169,41 @@ save_data(private)
   /* search picks */
   k=0;
   for(i=0;i<ft.n_ch;i++) for(j=0;j<4;j++) if(ft.pick[i][j].valid) k=1;
-  if(k==0 && diagnos[1]==' ') return 0;
-  flag_change=0;
-  /* write and read seis file */
-  /* make save file name */
-  if(!just_hypo) if(k)
+  if(k==0 && diagnos[1]==' ')
     {
-    fp=fopen(ft.seis_file,"w+");
-    output_pick(fp);
-    fseek(fp,0L,0);   /* rewind file */
-    fgets(textbuf,LINELEN,fp);
-    sscanf(textbuf,"%2d/%2d/%2d %2d:%2d",&year,&month,&day,&hour,&minute);
-    fgets(textbuf,LINELEN,fp);
-    sscanf(textbuf,"%*s%*s%f",&sec);
-    fclose(fp);
-    if(sec==0.0) /* 2001.6.7 for picks only with max ampl. */
+    *ft.save_file=0;
+    return 0;
+    }
+  flag_change=0;
+
+  /* make save file name */
+  if(*ft.save_file==0 && !just_hypo)
+    {
+    if(k) /* there is at least one pick */
+      {
+      /* get the earliest P time from the 'seis' file */
+      fp=fopen(ft.seis_file,"w+");
+      output_pick(fp);
+      fseek(fp,0L,0);   /* rewind file */
+      fgets(textbuf,LINELEN,fp);
+      sscanf(textbuf,"%2d/%2d/%2d %2d:%2d",&year,&month,&day,&hour,&minute);
+      fgets(textbuf,LINELEN,fp);
+      sscanf(textbuf,"%*s%*s%f",&sec); /* read the earliest P time */
+      fclose(fp);
+      if(sec==0.0) /* 2001.6.7 for picks only with max ampl. */
+        sprintf(ft.save_file,"%02X%02x%02x%1c%02X%02x%02x.000",
+          ft.ptr[0].time[0],ft.ptr[0].time[1],ft.ptr[0].time[2],dot,
+          ft.ptr[0].time[3],ft.ptr[0].time[4],ft.ptr[0].time[5]);
+      else
+        sprintf(ft.save_file,"%02d%02d%02d%1c%02d%02d%02d.%03d",
+          year,month,day,dot,hour,minute,(int)sec,(int)(sec*1000.0)%1000);
+      }
+    else /* there is no pick */
+      {
       sprintf(ft.save_file,"%02X%02x%02x%1c%02X%02x%02x.000",
         ft.ptr[0].time[0],ft.ptr[0].time[1],ft.ptr[0].time[2],dot,
         ft.ptr[0].time[3],ft.ptr[0].time[4],ft.ptr[0].time[5]);
-    else
-      sprintf(ft.save_file,"%02d%02d%02d%1c%02d%02d%02d.%03d",
-        year,month,day,dot,hour,minute,(int)sec,(int)(sec*1000.0)%1000);
-    }
-  else
-    {
-    sprintf(ft.save_file,"%02X%02x%02x%1c%02X%02x%02x.000",
-      ft.ptr[0].time[0],ft.ptr[0].time[1],ft.ptr[0].time[2],dot,
-      ft.ptr[0].time[3],ft.ptr[0].time[4],ft.ptr[0].time[5]);
+      }
     }
 
   /* open save(hypo) file */

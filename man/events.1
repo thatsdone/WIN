@@ -1,5 +1,5 @@
 '\" t
-.TH events 1W "1998.1.28" "WIN SYSTEM" "WIN SYSTEM"
+.TH events 1W "2001.1.22" "WIN SYSTEM" "WIN SYSTEM"
 .SH 名称
 events, eventsrtape - リストに従ったイベント波形の切り出し
 .SH 形式
@@ -83,9 +83,12 @@ events/eventsrtape の動作のしかたは設定ファイル
 .IP
 .ti -5n
 ４行目：切り出したイベントファイルを書き込むディレクトリで常に確保
-しておくべき空きスペース(MB)。新たに切り出した１つのイベントファイルを
-書き込む前に、ここに指定した大きさの空きスペースができるまで、
-同じディレクトリの中で（"yymmdd.HHMMSS" で表される名前が）最も古い
+しておくべき空きスペース(MB)。":"で区切った後に、そのディレクトリ中の
+ファイルが合計で占めることのできる最大スペース(MB)を指定することも
+でき、この場合は両方の制限を同時に満たすようになります。events は
+新たに切り出した１つのイベントファイルを書き込む前に、ここに
+指定した大きさの空きスペースができるまで、同じディレクトリの
+中で（"yymmdd.HHMMSS" で表される名前が）最も古い
 ファイルから順に削除していきます。
 .IP
 .ti -5n
@@ -163,7 +166,7 @@ events/eventsrtape はイベントファイルを切り出す際に、
 /dat/etc/pmon.out      # trigger file 
 /dat/raw               # input raw file directory 
 /dat/trg               # output trg file directory 
-100                    # free space (MB) to keep in the output directory 
+100:1000               # min.free space and max.used amount in outdir (MB)
 /dat/tmp               # working directory for temporary file 
 20                     # pre event time in sec (<60) 
 3.0                    # post event time factor; LEN=PRE+TRG+POST*sqrt(TRG) 

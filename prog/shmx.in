@@ -1,6 +1,6 @@
 #! @WISH@
 #
-# $Id: shmx.in,v 1.2 2002/08/08 12:28:53 uehira Exp $
+# $Id: shmx.in,v 1.3 2002/08/12 04:48:48 tsuru Exp $
 # shmx
 # 2002.06.28 - (C) Hiroshi TSURUOKA / All Rights Researved.
 #
@@ -16,8 +16,9 @@
 #	  1.0.0 2002/08/05 
 #         1.0.1 2002/08/07 clip level
 #         1.0.2 2002/08/07 wy=lsb
+#	  1.3 2002/08/12 add canvas0
 #
-set version 1.0.2
+set version 1.3
 #fconfigure stdin -buffering none
 #console show
 
@@ -211,13 +212,14 @@ for { set j 0 } { $j < $maxch } { incr j } {
 	} else {
 	pack .v($j).gain($j).large .v($j).gain($j).small .v($j).gain($j).text
 	}
+	canvas .v($j).canvas0 -background $bk -width 50 -height $ch -relief sunken -border 1
 	canvas .v($j).canvas($j) -background $bk -width $cw -height $ch -relief sunken -border 1
 	for { set i 0 } { $i < $nline } { incr i } {
 		set y0 [expr $wy*($i + 1.0 + $wdy)]
 		eval .v($j).canvas($j) create line 0 $y0 $cw $y0 -fill #333333 -width 1
 	}
 	label .v($j).chinfo -text "CHINFO" -textvariable CHINFO($tmpch) -width 10
-	pack .v($j).info($j) .v($j).gain($j) .v($j).canvas($j) .v($j).chinfo -side left
+	pack .v($j).info($j) .v($j).gain($j) .v($j).canvas0 .v($j).canvas($j) .v($j).chinfo -side left
 }
 for { set j 0 } { $j < $maxch } { incr j } {
 	pack .v($j)
@@ -286,7 +288,13 @@ for { set j 0 } { $j < $maxch } { incr j } {
 	}
 }
 
+set mm [expr 60*$hr+$mi]
+set nx [expr 60*($mm%$min)+$sc+1]
+set ny [expr int($mm/$min)%$nline]
+set tag [format "line%d" [expr $ny % $nline]]
+
 while {![eof $fp]} {
+#	after 100
 	gets $fp line
 	scan $line "%d %d %d %d %d %d %d" yr mo dy hr mi sc nch
 	if { $pipe } { puts $line }
@@ -371,6 +379,11 @@ while {![eof $fp]} {
 		}
 		if { $freq2 > 0 } {
 			eval .v($j).canvas($j) create line $g($j) -fill $color -tags $tag -width 1
+			if { $nx==0 } {
+			set chtimehhmm($j) [format "%02d:%02d" $hr $mi]
+			eval .v($j).canvas0 create text 25 [expr $wy*($ny+1.0+$wdy)] -fill white -text $chtimehhmm($j) -anchor center -tags $tag
+			}
+
 		}
 	  }
  	  update	
@@ -380,6 +393,7 @@ while {![eof $fp]} {
 			set tag [format "line%d" [expr $ny % $nline]]
 			for { set j 0 } { $j < $maxch } { incr j } {
 				eval .v($j).canvas($j) delete $tag
+				eval .v($j).canvas0 delete $tag
 			}
 			set nx [expr $nx % $nsec]
 		}

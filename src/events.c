@@ -1,4 +1,4 @@
-/* $Id: events.c,v 1.3 2001/01/22 05:57:34 urabe Exp $ */
+/* $Id: events.c,v 1.4 2001/02/13 01:31:07 urabe Exp $ */
 /****************************************************************************
 *****************************************************************************
 **     program "events.c" for NEWS                                  *********
@@ -413,9 +413,12 @@ check_space(path)
       if(!isdigit(dir_ent->d_name[0])) continue;
       else if(!isdigit(dir_ent->d_name[strlen(dir_ent->d_name)-1]))
         {
-        sprintf(name_buf,"%s/%s",path,dir_ent->d_name);
-        stat(name_buf,&st_buf);
-        dirblocks+=st_buf.st_blocks;
+        if(used_raw)
+          {
+          sprintf(name_buf,"%s/%s",path,dir_ent->d_name);
+          stat(name_buf,&st_buf);
+          dirblocks+=st_buf.st_blocks;
+          }
         continue;
         }
       if(*oldest==0)
@@ -437,9 +440,12 @@ check_space(path)
           }
         if(strcmp2(dir_ent->d_name,newest)>0) strcpy(newest,dir_ent->d_name);
         }
-      sprintf(name_buf,"%s/%s",path,dir_ent->d_name);
-      stat(name_buf,&st_buf);
-      dirblocks+=st_buf.st_blocks;
+      if(used_raw)
+        {
+        sprintf(name_buf,"%s/%s",path,dir_ent->d_name);
+        stat(name_buf,&st_buf);
+        dirblocks+=st_buf.st_blocks;
+        }
       i++;
       }
 #if 0
@@ -711,7 +717,7 @@ printf("       option: -x [zone to be ignored]\n");
     *mess=(*mess1)=(*mess2)=0;
     sscanf(textbuf,"%2d%2d%2d.%2d%2d%2d%s%s%s",&tm1[0],&tm1[1],
       &tm1[2],&tm1[3],&tm1[4],&tm1[5],mess,mess1,mess2);
-    if(strncmp(mess,"on",2))
+    if(strncmp(mess,"on",2)||strlen(mess2)==0)
       {
       printf("%s:illegal line : %s\n",progname,textbuf);
       continue;

@@ -1,10 +1,11 @@
-/* $Id: elist.c,v 1.5 2001/02/06 14:54:34 urabe Exp $ */
+/* $Id: elist.c,v 1.6 2001/02/13 01:31:07 urabe Exp $ */
 /* program elist.c    2/5/91 - 2/25/91 ,  4/16/92, 4/22/92  urabe */
 /*                      6/10/92, 8/18/92, 10/25/92, 6/8/93, 1/5/94  */
 /*      4/21/94,12/5/94,6/2/95 bug in dat_dir fixed */
 /*      98.1.22 getpwuid()==NULL */
 /*      98.6.26 yo2000           */
 /*      2001.2.6 a lot of functions added (options -h/u/p/o/n/s) */
+/*      2001.2.9 use "tac", instead of "tail -r", for Linux */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -18,6 +19,11 @@
 #define   NAMLEN    128
 #define   LINELEN   512
 #define   NPICK   10000  /* this is NOT the limit */
+#if defined(__linux__)
+#define   TAIL    "tac"
+#else
+#define   TAIL    "tail -r"
+#endif
 
 adj_time(tm)
   int *tm;
@@ -546,7 +552,7 @@ fprintf(fpp,"-------------------------------------------------------------------
     fprintf(fee," date   time                       M      triggered\n");
     fprintf(fee,"---------------------------------------------------\n");
     fclose(fee);
-    if(reverse) sprintf(tbuf,"tail -r %s >> %s",tmpfile,eefile);
+    if(reverse) sprintf(tbuf,"%s %s >> %s",TAIL,tmpfile,eefile);
     else sprintf(tbuf,"cat %s >> %s",tmpfile,eefile);
     system(tbuf);
     }
@@ -557,7 +563,7 @@ fprintf(fpp,"-------------------------------------------------------------------
     printf(" date   time                       M      triggered\n");
     printf("---------------------------------------------------\n");
     fflush(stdout);
-    if(reverse) sprintf(tbuf,"tail -r %s",tmpfile);
+    if(reverse) sprintf(tbuf,"%s %s",TAIL,tmpfile);
     else sprintf(tbuf,"cat %s",tmpfile);
     system(tbuf);
     }

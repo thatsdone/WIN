@@ -1,4 +1,4 @@
-/* $Id: wdiskts.c,v 1.4 2005/03/16 05:52:17 uehira Exp $ */
+/* $Id: wdiskts.c,v 1.5 2005/03/18 14:34:42 uehira Exp $ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -31,6 +31,9 @@
 #include <setjmp.h>
 #include <syslog.h>
 
+#ifdef GC_MEMORY_LEAK_TEST
+#include "gc_leak_detector.h"
+#endif
 #include "daemon_mode.h"
 #include "subst_func.h"
 
@@ -754,5 +757,8 @@ main(argc,argv)
 	if(shp>shm->pl) shp=0;
       } /* while(shp!=shm->p)  */
       sleep(1);
+#ifdef GC_MEMORY_LEAK_TEST
+      CHECK_LEAKS();
+#endif
    }  /* while(1) */
 }

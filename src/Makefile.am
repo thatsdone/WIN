@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.30 2005/03/17 19:03:54 uehira Exp $
+# $Id: Makefile.am,v 1.31 2005/03/18 14:34:42 uehira Exp $
 #
 
 if SUNOS4
@@ -165,8 +165,8 @@ fromtape_SOURCES = fromtape.c $(SUBFUNC_H)
 wdisk_SOURCES = wdisk.c $(SUBFUNC_H) $(DAEMON_MODE)
 wdisk_LDADD = @LIBSHMGET@
 
-wdiskts_SOURCES = wdiskts.c $(SUBFUNC_H) $(DAEMON_MODE)
-wdiskts_LDADD = @LIBSHMGET@
+wdiskts_SOURCES = wdiskts.c $(SUBFUNC_H) $(DAEMON_MODE) $(GC_CHECK_INCLUDE)
+wdiskts_LDADD = @LIBSHMGET@ $(GC_CHECK_LIB)
 
 ras2rpdl_SOURCES = ras2rpdl.c $(SUBFUNC_H)
 

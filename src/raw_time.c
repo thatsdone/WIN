@@ -1,4 +1,4 @@
-/* $Id: raw_time.c,v 1.3 2005/03/17 19:03:54 uehira Exp $ */
+/* $Id: raw_time.c,v 1.4 2005/03/18 14:34:42 uehira Exp $ */
 
 /* raw_time.c -- online version of wtime(1W) */
 
@@ -43,7 +43,6 @@
 #ifdef GC_MEMORY_LEAK_TEST
 #include "gc_leak_detector.h"
 #endif
-
 #include "daemon_mode.h"
 #include "subst_func.h"
 #include "win_log.h"
@@ -52,8 +51,9 @@
 
 #define MAXMESG   2048
 
+
 static char rcsid[] =
-  "$Id: raw_time.c,v 1.3 2005/03/17 19:03:54 uehira Exp $";
+  "$Id: raw_time.c,v 1.4 2005/03/18 14:34:42 uehira Exp $";
 
 char *progname, *logfile;
 int  daemon_mode, syslog_mode;
@@ -67,7 +67,6 @@ static int     ch_mask[WIN_CH_MAX_NUM];
 static void usage(void);
 static void read_chtbl(void);
 static time_t shift_sec(unsigned char *, int);
-
 int main(int, char *[]);
 
 
@@ -83,7 +82,7 @@ main(int argc, char *argv[])
   unsigned char  *ptr, *ptr_save, *ptw;
   unsigned char  *ptr1, *ptr1_lim, *ptr2;
   WIN_blocksize  sizein, sizein2;
-  unsigned long  c_save, p_save;
+  unsigned long  c_save;
   long  *fixbuf1 = NULL, *fixbuf2 = NULL;
   WIN_sr fixbuf_num;
   time_t      ltime[WIN_CH_MAX_NUM], ltime_prev[WIN_CH_MAX_NUM];
@@ -315,24 +314,23 @@ main(int argc, char *argv[])
 	  ptw += 4;
 	}
 
-	p_save = shm_out->p;
+	shm_out->r = shm_out->p;        /* latest */
 	if (eobsize_out && ptw > shm_out->d + pl_out) {
 	  shm_out->pl = ptw - shm_out->d - 4;
 	  ptw = shm_out->d;
 	}
 	if (!eobsize_out && ptw > shm_out->d + shm_out->pl)
 	  ptw = shm_out->d;
-	shm_out->p = ptw - shm_out->d;
-	shm_out->c++;         /* conuter */
-	shm_out->r = p_save;  /* latest */
+	shm_out->c++;                   /* conuter */
+	shm_out->p = ptw - shm_out->d;  /* busy */
       }   /* if (ch_mask[chn]) */
       ptr1 += gsize;
     } while (ptr1 < ptr1_lim);
 #if DEBUG
-	printf("-------------------------\n");
+    printf("-------------------------\n");
 #endif
 
-    /* advance pointer */
+    /* advance read pointer */
     ptr = ptr_save + sizein;
     if (ptr > shm_in->d + shm_in->pl)
       ptr = shm_in->d;

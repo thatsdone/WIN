@@ -1,5 +1,9 @@
- $Id: ChangeLog,v 1.104 2005/03/17 19:03:54 uehira Exp $
+ $Id: ChangeLog,v 1.105 2005/03/18 14:34:42 uehira Exp $
 
+2005-03-18 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* insert_raw.c, insert_trg.c, wdiskts.c, raw_time.c
+	  - memory leak check code
+	  
 2005-03-17 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* raw_time : time shift filter (raw format version of wtime)
 	* added configure option: --enable-memory-leak-check

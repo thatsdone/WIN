@@ -1,4 +1,4 @@
-/* $Id: shmdump.c,v 1.9 2002/06/25 02:02:26 urabe Exp $ */
+/* $Id: shmdump.c,v 1.10 2002/06/25 03:01:33 urabe Exp $ */
 /*  program "shmdump.c" 6/14/94 urabe */
 /*  revised 5/29/96 */
 /*  Little Endian (uehira) 8/27/96 */
@@ -279,7 +279,7 @@ main(argc,argv)
   unsigned long tow,wsize,time_end,time_now;
   unsigned int packet_id;
   unsigned char *ptr,tbuf[256],*ptr_lim,*buf,chlist[65536/8],*ptw,tms[6],
-    tb[256],*ptr1,chlist2[65536/8];
+    tb[256],*ptr1;
   struct Shm *shm_in;
   struct tm *nt;
   int rt[6],ts[6];
@@ -290,8 +290,6 @@ main(argc,argv)
   static unsigned int mask[8]={0x80,0x40,0x20,0x10,0x08,0x04,0x02,0x01};
 #define setch(a) (chlist[a>>3]|=mask[a&0x07])
 #define testch(a) (chlist[a>>3]&mask[a&0x07])
-#define resetch2(a) (chlist2[a>>3]&=~mask[a&0x07])
-#define testch2(a) (chlist2[a>>3]&mask[a&0x07])
 
   if(progname=strrchr(argv[0],'/')) progname++;
   else progname=argv[0];
@@ -331,6 +329,8 @@ main(argc,argv)
         break;
       case 't':   /* text out */
         tout=out=1;
+        fpout=stdout;
+        fplist=stderr;
         break;
       case 's':   /* period in sec */
         seconds=atoi(optarg);
@@ -412,13 +412,14 @@ reset:
   if(mklong(shm_in->d+shp_in+size_in-4)==size_in) eobsize=1;
   else eobsize=0;
   eobsize_count=eobsize;
+  nch=0;
 
   while(1)
     {
     i=advance_s(shm_in,&shp_in,&c_save_in,&size_in);
     if(i==0)
       {
-      usleep(200000);
+      usleep(100000);
       continue;
       }
     else if(i<0) goto reset;
@@ -527,19 +528,12 @@ reset:
                   fprintf(fpout,"%02X %02X %02X %02X %02X %02X %d\n",
                     buf[4],buf[5],buf[6],buf[7],buf[8],buf[9],nch);
                   ptw=buf+10;
-                  for(i=0;i<65536/8;i++) chlist2[i]=chlist[i];
                   while(ptw<buf+wsize)
                     {
                     ptw+=win2fix(ptw,abuf,&ch,&sr);
                     fprintf(fpout,"%04X %d",ch,sr);
                     for(i=0;i<sr;i++) fprintf(fpout," %d",abuf[i]);
                     fprintf(fpout,"\n");
-                    resetch2(ch); 
-                    }
-                  for(i=0;i<65536;i++)
-                    {
-                    if(testch2(i)) fprintf(fpout,"%04X 0\n",i); 
-                    resetch2(i);
                     }
                   }
                 else
@@ -552,11 +546,12 @@ reset:
               ptw=buf+4;
               memcpy(ptw,tms,6); /* TS */
               ptw+=6;
+              nch=0;
               }
             memcpy(ptw,ptr,gs);
             ptw+=gs;
+            nch++;
             }
-          i=1;
           }
         ptr+=gs;
         } while(ptr<ptr_lim);

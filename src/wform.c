@@ -1,10 +1,6 @@
-/* $Id: wform.c,v 1.3 2002/04/26 11:47:50 uehira Exp $ */
+/* $Id: wform.c,v 1.4 2002/05/15 04:02:00 uehira Exp $ */
 /* wform.c - a program to make a win format file */
 /* wform [ch] [sr] */
-
-/* winform.c  4/30/91   urabe */
-/* winform converts fixed-sample-size-data into win's format */
-/* winform returns the length in bytes of output data */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -16,6 +12,12 @@
 
 #define SR 4096
 
+/* $Id: wform.c,v 1.4 2002/05/15 04:02:00 uehira Exp $ */
+/* winform.c  4/30/91,99.4.19   urabe */
+/* winform converts fixed-sample-size-data into win's format */
+/* winform returns the length in bytes of output data */
+
+static
 winform(inbuf,outbuf,sr,sys_ch)
   long *inbuf;      /* input data array for one sec*/
   unsigned char *outbuf;  /* output data array for one sec */
@@ -24,7 +26,7 @@ winform(inbuf,outbuf,sr,sys_ch)
   {
   int dmin,dmax,aa,bb,br,i,byte_leng;
   long *ptr;
-  unsigned char *buf,*bf;
+  unsigned char *buf;
 
   /* differentiate and obtain min and max */
   ptr=inbuf;
@@ -41,22 +43,14 @@ winform(inbuf,outbuf,sr,sys_ch)
 
   /* determine sample size */
   if(((dmin&0xfffffff8)==0xfffffff8 || (dmin&0xfffffff8)==0) &&
-    ((dmax&0xfffffff8)==0xfffffff8 || (dmax&0xfffffff8)==0))
-    byte_leng=0;
-  else
-  if(((dmin&0xffffff80)==0xffffff80 || (dmin&0xffffff80)==0) &&
-    ((dmax&0xffffff80)==0xffffff80 || (dmax&0xffffff80)==0))
-    byte_leng=1;
-  else
-  if(((dmin&0xffff8000)==0xffff8000 || (dmin&0xffff8000)==0) &&
-    ((dmax&0xffff8000)==0xffff8000 || (dmax&0xffff8000)==0))
-    byte_leng=2;
-  else
-  if(((dmin&0xff800000)==0xff800000 || (dmin&0xff800000)==0) &&
-    ((dmax&0xff800000)==0xff800000 || (dmax&0xff800000)==0))
-    byte_leng=3;
+    ((dmax&0xfffffff8)==0xfffffff8 || (dmax&0xfffffff8)==0)) byte_leng=0;
+  else if(((dmin&0xffffff80)==0xffffff80 || (dmin&0xffffff80)==0) &&
+    ((dmax&0xffffff80)==0xffffff80 || (dmax&0xffffff80)==0)) byte_leng=1;
+  else if(((dmin&0xffff8000)==0xffff8000 || (dmin&0xffff8000)==0) &&
+    ((dmax&0xffff8000)==0xffff8000 || (dmax&0xffff8000)==0)) byte_leng=2;
+  else if(((dmin&0xff800000)==0xff800000 || (dmin&0xff800000)==0) &&
+    ((dmax&0xff800000)==0xff800000 || (dmax&0xff800000)==0)) byte_leng=3;
   else byte_leng=4;
-
   /* make a 4 byte long header */
   buf=outbuf;
   *buf++=(sys_ch>>8)&0xff;
@@ -65,12 +59,10 @@ winform(inbuf,outbuf,sr,sys_ch)
   *buf++=sr&0xff;
 
   /* first sample is always 4 byte long */
-  bf=(unsigned char *)inbuf;
-  *buf++=(*bf++);
-  *buf++=(*bf++);
-  *buf++=(*bf++);
-  *buf++=(*bf++);
-
+  *buf++=inbuf[0]>>24;
+  *buf++=inbuf[0]>>16;
+  *buf++=inbuf[0]>>8;
+  *buf++=inbuf[0];
   /* second and after */
   switch(byte_leng)
     {
@@ -86,28 +78,25 @@ winform(inbuf,outbuf,sr,sys_ch)
     case 2:
       for(i=1;i<sr;i++)
         {
-        bf=(unsigned char *)&inbuf[i]+2;
-        *buf++=(*bf++);
-        *buf++=(*bf++);
+        *buf++=inbuf[i]>>8;
+        *buf++=inbuf[i];
         }
       break;
     case 3:
       for(i=1;i<sr;i++)
         {
-        bf=(unsigned char *)&inbuf[i]+1;
-        *buf++=(*bf++);
-        *buf++=(*bf++);
-        *buf++=(*bf++);
+        *buf++=inbuf[i]>>16;
+        *buf++=inbuf[i]>>8;
+        *buf++=inbuf[i];
         }
       break;
     case 4:
       for(i=1;i<sr;i++)
         {
-        bf=(unsigned char *)&inbuf[i];
-        *buf++=(*bf++);
-        *buf++=(*bf++);
-        *buf++=(*bf++);
-        *buf++=(*bf++);
+        *buf++=inbuf[i]>>24;
+        *buf++=inbuf[i]>>16;
+        *buf++=inbuf[i]>>8;
+        *buf++=inbuf[i];
         }
       break;
     }

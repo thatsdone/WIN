@@ -1,5 +1,10 @@
-$Id: ChangeLog,v 1.8 2002/05/03 10:49:48 uehira Exp $
+$Id: ChangeLog,v 1.9 2002/05/15 04:02:00 uehira Exp $
 	
+2002-05-15 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 1.1.1 released.
+	* wform.c
+	  import winform() function from winform.c
+
 2002-05-03 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* Version 1.0.4 released.
 	* Add wck_wdisk.c wck_wdisk.1 ck_wdisk.sh

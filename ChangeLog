@@ -1,5 +1,9 @@
-$Id: ChangeLog,v 1.69 2004/09/09 03:36:47 urabe Exp $
+$Id: ChangeLog,v 1.70 2004/09/13 10:10:37 uehira Exp $
 
+2004-09-13 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* win2raw : bug fixed.
+	* Version 1.1.41 released.
+	
 2004-09-09 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
 	* relay : fixed a bug in -s option ("sinterface")
 	* Version 1.1.40 released.

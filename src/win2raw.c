@@ -1,5 +1,5 @@
 /*
- * $Id: win2raw.c,v 1.4 2004/02/29 12:17:47 uehira Exp $
+ * $Id: win2raw.c,v 1.5 2004/09/13 10:10:37 uehira Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -16,7 +16,7 @@
 #include "subst_func.h"
 
 static const char  rcsid[] =
-   "$Id: win2raw.c,v 1.4 2004/02/29 12:17:47 uehira Exp $";
+   "$Id: win2raw.c,v 1.5 2004/09/13 10:10:37 uehira Exp $";
 static char  *progname;
 
 static void usage(void);
@@ -57,9 +57,10 @@ main(int argc, char *argv[])
 	mode = 4;
       else if (optarg[0] == 'd') /* day mode */
 	mode = 3;
-      else
+      else {
 	(void)fprintf(stderr, "Invalid option: -m\n");
 	usage();
+      }
       break;
     case 'u':  /* unlink mode */
       uflag = 1;

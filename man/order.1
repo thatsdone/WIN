@@ -1,8 +1,17 @@
 .TH order 1W "2002.5.31" "WIN SYSTEM" "WIN SYSTEM"
 .SH 名称
-order - 共有メモリ中の win 形式データの時間順整列
+order, orderd - 共有メモリ中の win 形式データの時間順整列
 .SH 形式
-order [\-\fBaB\fR] [\-\fBl\fI key:size\fR]
+order [\-\fBaBD\fR] [\-\fBl\fI key:size\fR]
+.I inkey
+.I outkey
+.I shmsize
+.I limit
+[
+.I logfile
+]
+.LP
+orderd [\-\fBaB\fR] [\-\fBl\fI key:size\fR]
 .I inkey
 .I outkey
 .I shmsize
@@ -54,11 +63,16 @@ order の入力側と出力側の間では、最大
 .I \ limit
 秒遅延しています。
 .LP
+orderd は daemon モードで起動します。order でオプション
+\fB\-D\fR
+を指定した時と同じ動作です。
+.LP
 ログファイル名
 .I \ logfile
-を指定すると、ここに動作ログがとられ、
+を指定すると、ここに動作ログがとられます。
 指定しないとログ情報は標準出力に
-送られます。ログファイルは書き込みのたび毎に
+送られます(ただし、daemon モードで動いている時は syslogd(8) に送られま
+す)。ログファイルは書き込みのたび毎に
 オープン／クローズされます。
 .LP
 order は引数なしで起動すると簡単な使用法を表示します。
@@ -155,6 +169,8 @@ c
 使用することができるとともに、後方サーチの起点(先頭から折り返して戻る点)
 として利用することができます。読み出し側プログラムでは、共有メモリが
 この形式であるかどうかを自動判別するのが普通です。
+.IP \fB\-D 5
+daemon モードで起動します。
 .IP "\fB\-l \fkey:size" 5
 .I limit
 秒のソート期限に遅れたデータは、大きさ

@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.20 2004/10/21 11:30:15 uehira Exp $
+# $Id: Makefile.am,v 1.21 2004/10/21 12:54:41 uehira Exp $
 #
 
 if SUNOS4
@@ -70,6 +70,7 @@ install-exec-hook:
 	(rm -f @bindir@/wdiskd; cd @bindir@ && @LN_S@ wdisk wdiskd)
 	(rm -f @bindir@/wdisk60; cd @bindir@ && @LN_S@ wdisk wdisk60)
 	(rm -f @bindir@/wdisk60d; cd @bindir@ && @LN_S@ wdisk wdisk60d)
+	(rm -f @bindir@/orderd; cd @bindir@ && @LN_S@ order orderd)
 
 win_SOURCES = win.c $(SUBFUNC_H)
 win_CFLAGS = @X_CFLAGS@ $(AM_CFLAGS)
@@ -152,7 +153,7 @@ elist_LDADD = -lm
 events_SOURCES = events.c $(SUBFUNC_H)
 events_LDADD = -lm
 
-order_SOURCES = order.c $(SUBFUNC_H)
+order_SOURCES = order.c $(SUBFUNC_H) $(DAEMON_MODE)
 order_LDADD = @LIBSHMGET@
 
 raw_mon_SOURCES = raw_mon.c $(SUBFUNC_H)

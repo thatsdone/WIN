@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.15 2004/10/21 11:30:14 uehira Exp $
+# $Id: Makefile.am,v 1.16 2004/10/21 12:54:40 uehira Exp $
 #
 #  Makefile.am in man subdirectory.
 #
@@ -29,3 +29,4 @@ install-data-hook:
 	(rm -f $(man1dir)/wdisk60.1; cd $(man1dir) && @LN_S@ wdisk.1 wdisk60.1)
 	(rm -f $(man1dir)/wdiskd.1; cd $(man1dir) && @LN_S@ wdisk.1 wdiskd.1)
 	(rm -f $(man1dir)/wdisk60d.1; cd $(man1dir) && @LN_S@ wdisk.1 wdisk60d.1)
+	(rm -f $(man1dir)/orderd.1; cd $(man1dir) && @LN_S@ order.1 orderd.1)

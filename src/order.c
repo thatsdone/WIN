@@ -1,4 +1,4 @@
-/* $Id: order.c,v 1.9 2003/04/25 13:47:27 uehira Exp $ */
+/* $Id: order.c,v 1.10 2004/10/21 12:54:41 uehira Exp $ */
 /*  program "order.c" 1/26/94 - 2/7/94, 6/14/94 urabe */
 /*                              1/6/95 bug in adj_time(tm[0]--) fixed */
 /*                              3/17/95 write_log() */
@@ -16,6 +16,7 @@
 /*                              2002.5.2 i<1000 -> 1000000 */
 /*                              2002.5.7 mktime2() */
 /*                              2002.5.11 timezone for SVR4 */
+/*                              2004.10.21 daemon mode (uehira) */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -41,14 +42,20 @@
 #endif  /* !TIME_WITH_SYS_TIME */
 
 #include <errno.h>
+#include <syslog.h>
 
+#include "daemon_mode.h"
 #include "subst_func.h"
 
 #define SWAPL(a) a=(((a)<<24)|((a)<<8)&0xff0000|((a)>>8)&0xff00|((a)>>24)&0xff)
 #define DEBUG     0
 #define DEBUG1    0
 
-char *progname,logfile[256];
+#define NAMELEN  1025
+
+char *progname,logfile[NAMELEN];
+int  daemon_mode, syslog_mode;
+
 struct Shm {
   unsigned long p;    /* write point */
   unsigned long pl;   /* write limit */
@@ -216,25 +223,38 @@ write_log(logfil,ptr)
 {
   FILE *fp;
   int tm[6];
-  if(*logfil) fp=fopen(logfil,"a");
-  else fp=stdout;
-  get_time(tm);
-  fprintf(fp,"%02d%02d%02d.%02d%02d%02d %s %s\n",
-    tm[0],tm[1],tm[2],tm[3],tm[4],tm[5],progname,ptr);
-  if(*logfil) fclose(fp);
+
+  if (syslog_mode)
+    syslog(LOG_NOTICE, "%s", ptr);
+  else
+    {
+      if(*logfil) fp=fopen(logfil,"a");
+      else fp=stdout;
+      get_time(tm);
+      fprintf(fp,"%02d%02d%02d.%02d%02d%02d %s %s\n",
+	      tm[0],tm[1],tm[2],tm[3],tm[4],tm[5],progname,ptr);
+      if(*logfil) fclose(fp);
+    }
 }
 
 ctrlc()
 {
   write_log(logfile,"end");
+  if (syslog_mode)
+    closelog();
   exit(0);
 }
 
 err_sys(ptr)
   char *ptr;
 {
-  perror(ptr);
-  write_log(logfile,ptr);
+  if (syslog_mode)
+    syslog(LOG_NOTICE, "%s", ptr);
+  else
+    {
+      perror(ptr);
+      write_log(logfile,ptr);
+    }
   if(strerror(errno)) write_log(logfile,strerror(errno));
   ctrlc();
 }
@@ -271,8 +291,8 @@ main(argc,argv)
   int tm_out[6],c_save_in,shp_in,sec,sec_1,size,sizej,shmid_in,late,c,pl_out,
     shmid_out,shmid_late,size_in,shp,c_save,n_sec,no_data,sysclk,sysclk_org,
     timeout_flag,size_next,eobsize_in,eobsize_out,i,eobsize_in_count,size2;
-  unsigned char *ptr,*ptr_save,*ptw,*ptw_save,*ptw_late,tbuf[256],tb[256],
-    *ptr_prev;
+  unsigned char *ptr,*ptr_save,*ptw,*ptw_save,*ptw_late,
+    tbuf[NAMELEN],tb[NAMELEN],*ptr_prev;
   struct Shm *shm_in,*shm_out,*shm_late;
   unsigned int shp_busy_save;
   extern int optind;
@@ -280,12 +300,16 @@ main(argc,argv)
 
   if(progname=strrchr(argv[0],'/')) progname++;
   else progname=argv[0];
+
+  daemon_mode = syslog_mode = 0;
+  if(strcmp(progname,"orderd")==0) daemon_mode=1;
+
   sprintf(tb,
-" usage : '%s (-aB) (-l [shm_key_late]:[shm_size_late(KB)]) [shm_key_in] \\\n\
+" usage : '%s (-aBD) (-l [shm_key_late]:[shm_size_late(KB)]) [shm_key_in] \\\n\
            [shm_key_out] [shm_size(KB)] [limit_sec] ([log file])'", progname);
 
   sysclk_org=late=eobsize_in=eobsize_out=0;
-  while((c=getopt(argc,argv,"aBl:"))!=EOF)
+  while((c=getopt(argc,argv,"aBDl:"))!=EOF)
     {
     switch(c)
       {
@@ -295,6 +319,9 @@ main(argc,argv)
       case 'B':   /* write blksiz at EOB in shm_out */
         eobsize_out=1;
         break;
+      case 'D':
+	daemon_mode = 1;  /* daemon mode */
+	break;   
       case 'l':   /* output late packets (i.e. order2 mode) */
         strcpy(tbuf,optarg);
         if((ptr=strchr(tbuf,':'))==0)
@@ -328,7 +355,18 @@ main(argc,argv)
   size=atoi(argv[3+optind])*1000;
   n_sec=atoi(argv[4+optind]);
   if(argc>5+optind) strcpy(logfile,argv[5+optind]);
-  else *logfile=0;
+  else
+    {
+      *logfile=0;
+      if (daemon_mode)
+	syslog_mode = 1;
+    }
+
+   /* daemon mode */
+   if (daemon_mode) {
+     daemon_init(progname, LOG_USER, syslog_mode);
+     umask(022);
+   }
    
   /* shared memory */
   if((shmid_in=shmget(shm_key_in,0,0))<0) err_sys("shmget");

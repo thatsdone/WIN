@@ -1,4 +1,4 @@
-/* $Id: cormeisei.c,v 1.2.2.1 2001/11/02 11:43:35 uehira Exp $ */
+/* $Id: cormeisei.c,v 1.2.2.2 2001/11/19 01:59:47 uehira Exp $ */
 /* "cormeisei.c"    June'97 Ide changed from*/
 /* "raw_raw.c"      3/4/96 urabe */
 /*                  revised on 5/20/96 */
@@ -117,7 +117,7 @@ char *ptr;
 {
   perror(ptr);
   write_log(logfile,ptr);
-  if(strerror(errno)) write_log(strerror(errno));
+  if(strerror(errno)) write_log(logfile,strerror(errno));
   ctrlc();
 }
 

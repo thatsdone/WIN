@@ -1,4 +1,4 @@
-/* $Id: order.c,v 1.2.2.1 2001/11/02 11:43:37 uehira Exp $ */
+/* $Id: order.c,v 1.2.2.2 2001/11/19 01:59:47 uehira Exp $ */
 /*  program "order.c" 1/26/94 - 2/7/94, 6/14/94 urabe */
 /*                              1/6/95 bug in adj_time(tm[0]--) fixed */
 /*                              3/17/95 write_log() */
@@ -335,7 +335,7 @@ err_sys(ptr)
 {
   perror(ptr);
   write_log(logfile,ptr);
-  if(strerror(errno)) write_log(strerror(errno));
+  if(strerror(errno)) write_log(logfile,strerror(errno));
   ctrlc();
 }
 

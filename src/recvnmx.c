@@ -1,4 +1,4 @@
-/* $Id: recvnmx.c,v 1.6.2.1 2001/11/02 11:43:38 uehira Exp $ */
+/* $Id: recvnmx.c,v 1.6.2.2 2001/11/19 01:59:47 uehira Exp $ */
 /* "recvnmx.c"    2001.7.18-19 modified from recvt.c and nmx2raw.c  urabe */
 /*                2001.8.18 */
 /*                2001.10.5 workaround for hangup */
@@ -268,7 +268,7 @@ err_sys(ptr)
   {
   perror(ptr);
   write_log(logfile,ptr);
-  if(strerror(errno)) write_log(strerror(errno));
+  if(strerror(errno)) write_log(logfile,strerror(errno));
   ctrlc();
   }
 

@@ -1,4 +1,4 @@
-/* $Id: extraw.c,v 1.1.2.1 2001/11/02 11:43:36 uehira Exp $ */
+/* $Id: extraw.c,v 1.1.2.2 2001/11/19 01:59:47 uehira Exp $ */
 /* "extraw.c"    2000.3.17 urabe */
 /* 2000.4.24 strerror() */
 
@@ -84,7 +84,7 @@ err_sys(ptr)
   {
   perror(ptr);
   write_log(logfile,ptr);
-  if(strerror(errno)) write_log(strerror(errno));
+  if(strerror(errno)) write_log(logfile,strerror(errno));
   ctrlc();
   }
 

@@ -1,4 +1,4 @@
-/* $Id: recvs.c,v 1.1.2.1 2001/11/02 11:43:38 uehira Exp $ */
+/* $Id: recvs.c,v 1.1.2.2 2001/11/19 01:59:47 uehira Exp $ */
 /* "recvs.c"    receive sync frames      2000.3.14       urabe */
 /* 2000.3.21 */
 /* 2000.4.17 */
@@ -95,7 +95,7 @@ err_sys(ptr)
   {
   perror(ptr);
   write_log(logfile,ptr);
-  if(strerror(errno)) write_log(strerror(errno));
+  if(strerror(errno)) write_log(logfile,strerror(errno));
   ctrlc();
   }
 

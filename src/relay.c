@@ -1,4 +1,4 @@
-/* $Id: relay.c,v 1.2.2.1 2001/11/02 11:43:38 uehira Exp $ */
+/* $Id: relay.c,v 1.2.2.2 2001/11/19 01:59:48 uehira Exp $ */
 /* "relay.c"      5/23/94-5/25/94,6/15/94-6/16/94,6/23/94,3/16/95 urabe */
 /*                3/26/95 check_packet_no; port# */
 /*                5/24/96 added processing of "host table full" */
@@ -108,7 +108,7 @@ err_sys(ptr)
   {
   perror(ptr);
   write_log(logfile,ptr);
-  if(strerror(errno)) write_log(strerror(errno));
+  if(strerror(errno)) write_log(logfile,strerror(errno));
   close(sock_in);
   close(sock_out);
   ctrlc();

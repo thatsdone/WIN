@@ -1,4 +1,4 @@
-/* $Id: sends.c,v 1.2.2.1 2001/11/02 11:43:39 uehira Exp $ */
+/* $Id: sends.c,v 1.2.2.2 2001/11/19 01:59:48 uehira Exp $ */
 /*   program "sends"   2000.3.20 urabe                   */
 /*   2000.3.21 */
 /*   2000.4.17 */
@@ -105,7 +105,7 @@ err_sys(ptr)
   {
   perror(ptr);
   write_log(logfile,ptr);
-  if(strerror(errno)) write_log(strerror(errno));
+  if(strerror(errno)) write_log(logfile,strerror(errno));
   write_log(logfile,"end");
   close(sock);
   exit(1);

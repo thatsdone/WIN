@@ -1,4 +1,4 @@
-/* $Id: raw_ch.c,v 1.1.2.1 2001/11/02 11:43:38 uehira Exp $ */
+/* $Id: raw_ch.c,v 1.1.2.2 2001/11/19 01:59:47 uehira Exp $ */
 /* "raw_ch.c"    99.12.8 urabe */
 /*                  modified from raw_raw.c */
 /*                  byte-order-free */
@@ -89,7 +89,7 @@ err_sys(ptr)
   {
   perror(ptr);
   write_log(logfile,ptr);
-  if(strerror(errno)) write_log(strerror(errno));
+  if(strerror(errno)) write_log(logfile,strerror(errno));
   ctrlc();
   }
 

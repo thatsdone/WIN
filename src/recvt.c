@@ -1,4 +1,4 @@
-/* $Id: recvt.c,v 1.5.2.1 2001/11/02 11:43:38 uehira Exp $ */
+/* $Id: recvt.c,v 1.5.2.2 2001/11/19 01:59:48 uehira Exp $ */
 /* "recvt.c"      4/10/93 - 6/2/93,7/2/93,1/25/94    urabe */
 /*                2/3/93,5/25/94,6/16/94 */
 /*                1/6/95 bug in adj_time fixed (tm[0]--) */
@@ -317,7 +317,7 @@ err_sys(ptr)
   {
   perror(ptr);
   write_log(logfile,ptr);
-  if(strerror(errno)) write_log(strerror(errno));
+  if(strerror(errno)) write_log(logfile,strerror(errno));
   ctrlc();
   }
 

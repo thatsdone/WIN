@@ -1,4 +1,4 @@
-/* $Id: send_raw_old.c,v 1.3.2.2 2001/11/06 02:43:01 uehira Exp $ */
+/* $Id: send_raw_old.c,v 1.3.2.3 2001/11/19 01:59:48 uehira Exp $ */
 /*
     program "send_raw_old/send_mon_old.c"   1/24/94 - 1/25/94,5/25/94 urabe
                                     6/15/94 - 6/16/94
@@ -111,7 +111,7 @@ err_sys(ptr)
   {
   perror(ptr);
   write_log(logfile,ptr);
-  if(strerror(errno)) write_log(strerror(errno));
+  if(strerror(errno)) write_log(logfile,strerror(errno));
   write_log(logfile,"end");
   close(sock);
   exit(1);

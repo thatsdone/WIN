@@ -1,4 +1,4 @@
-/* $Id: raw_mon.c,v 1.2.2.1 2001/11/02 11:43:38 uehira Exp $ */
+/* $Id: raw_mon.c,v 1.2.2.2 2001/11/19 01:59:47 uehira Exp $ */
 /* "raw_mon.c"      7/2/93,6/17/94,6/28/94    urabe */
 /*                  3/17/95 write_log(), 4/17/95 MAX_SR safety */
 /*                  usleep -> sleep */
@@ -254,7 +254,7 @@ err_sys(ptr)
   {
   perror(ptr);
   write_log(logfile,ptr);
-  if(strerror(errno)) write_log(strerror(errno));
+  if(strerror(errno)) write_log(logfile,strerror(errno));
   ctrlc();
   }
 

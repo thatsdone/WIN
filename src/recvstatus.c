@@ -1,4 +1,4 @@
-/* $Id: recvstatus.c,v 1.2.2.2 2001/11/06 02:43:01 uehira Exp $ */
+/* $Id: recvstatus.c,v 1.2.2.3 2001/11/19 01:59:47 uehira Exp $ */
 /* "recvstatus.c"      5/24/95    urabe */
 /* 97.7.17 two lines of "if() continue;" in the main loop */
 /* 2000.4.24 strerror() */
@@ -80,7 +80,7 @@ err_sys(ptr)
   {
   perror(ptr);
   write_log(logfile,ptr);
-  if(strerror(errno)) write_log(strerror(errno));
+  if(strerror(errno)) write_log(logfile,strerror(errno));
   close(sock);
   ctrlc();
   }

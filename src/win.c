@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.29 2003/07/24 02:14:14 urabe Exp $
+   $Id: win.c,v 1.30 2003/07/30 01:28:39 urabe Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -13,7 +13,7 @@
    98.7.2 yo2000
 */
 #define NAME_PRG      "win"
-#define WIN_VERSION   "2003.7.19"
+#define WIN_VERSION   "2003.7.30"
 #define DEBUG_AP      0   /* for debugging auto-pick */
 /* 5:sr, 4:ch, 3:sec, 2:find_pick, 1:all */
 /************ HOW TO COMPILE THE PROGRAM **************************
@@ -5517,10 +5517,11 @@ proc_main()
     if(y>=YBASE_MON+height_win_mon)  /* zoom area */
       {
       i=(height_dpy-1-y)/HEIGHT_ZOOM;   /* zoom no. */
-      if(x<WIDTH_INFO_ZOOM)        /* zoom info */
+      if(x<WIDTH_INFO_ZOOM) /* zoom info */
         {
         j=(i+1)*HEIGHT_ZOOM-(height_dpy-1-y); /* relative y */
-        switch(j/PIXELS_PER_LINE)      /* line no */
+        if((height_dpy-1-y)%HEIGHT_ZOOM && j%PIXELS_PER_LINE)
+            switch(j/PIXELS_PER_LINE) /* line no */
           {
           case 0:
             if(zoom_win[i].valid==0) break;
@@ -5777,7 +5778,8 @@ proc_main()
             break;
           }
         }
-      else              /* zoom trace */
+      else if((height_dpy-1-y)%HEIGHT_ZOOM &&
+             (height_dpy-1-y)%HEIGHT_ZOOM!=HEIGHT_ZOOM-1) /* zoom trace */
         {
         if(main_mode==MODE_GET && zoom_win[i].valid)
           {

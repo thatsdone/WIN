@@ -1,4 +1,4 @@
-/* $Id: send_raw.c,v 1.20 2005/02/18 09:14:18 urabe Exp $ */
+/* $Id: send_raw.c,v 1.21 2005/02/20 13:56:18 urabe Exp $ */
 /*
     program "send_raw/send_mon.c"   1/24/94 - 1/25/94,5/25/94 urabe
                                     6/15/94 - 6/16/94
@@ -44,6 +44,7 @@
                2004.10.26 daemon mode (Uehira)
 	       2004.11.26 some systems (exp. Linux), select(2) changes timeout value
 	       2005.2.18 option -f for use and write list of requested chs
+               2005.2.20 added fclose() in read_chfile()
 */
 
 #ifdef HAVE_CONFIG_H
@@ -298,6 +299,7 @@ read_chfile()
       if(negate_channel) sprintf(tbuf,"-%d channels",n_ch);
       else sprintf(tbuf,"%d channels",n_ch);
       write_log(logfile,tbuf);
+      fclose(fp);
       }
     else
       {

@@ -1,4 +1,4 @@
-/* $Id: wch.c,v 1.7 2003/10/29 14:44:12 urabe Exp $ */
+/* $Id: wch.c,v 1.8 2005/02/20 13:56:18 urabe Exp $ */
 /*
 program "wch.c"
 "wch" edits a win format data file by channles
@@ -9,6 +9,7 @@ program "wch.c"
 2000.4.17 wabort
 2002.2.18 delete duplicated data & negate_channel
 2003.10.29 exit()->exit(0)
+2005.2.20 added fclose() in read_chfile()
 */
 
 #ifdef HAVE_CONFIG_H
@@ -64,6 +65,7 @@ read_chfile(chfile)
           }
         i++;
         }
+      fclose(fp);
       if(negate_channel) fprintf(stderr,"-%d channels\n",j);
       else fprintf(stderr,"%d channels\n",j);
       return j;

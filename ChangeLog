@@ -1,4 +1,9 @@
- $Id: ChangeLog,v 1.95 2005/02/18 09:14:18 urabe Exp $
+ $Id: ChangeLog,v 1.96 2005/02/20 13:56:16 urabe Exp $
+
+2005-02-20 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
+	* recvt.c : option -f [ch file] for additional channels file(s)
+	* many programs : added fclose() in read_chfile()
+	* Version 1.1.56 released.
 
 2005-02-14,17,18 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
 	* recvt.c : option -o [source host]:[port] for send request

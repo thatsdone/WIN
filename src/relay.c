@@ -1,4 +1,4 @@
-/* $Id: relay.c,v 1.13 2004/11/26 14:09:45 uehira Exp $ */
+/* $Id: relay.c,v 1.14 2005/02/20 13:56:18 urabe Exp $ */
 /* "relay.c"      5/23/94-5/25/94,6/15/94-6/16/94,6/23/94,3/16/95 urabe */
 /*                3/26/95 check_packet_no; port# */
 /*                5/24/96 added processing of "host table full" */
@@ -24,6 +24,7 @@
 /*                2004.11.15 corrected byte-order of port no. in log */
 /*                2004.11.16 maximize size of receive socket buffer (-b) */
 /*                2004.11.26 some systems (exp. Linux), select(2) changes timeout value */
+/*                2005.2.20 added fclose() in read_chfile() */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -249,6 +250,7 @@ read_chfile()
         else sprintf(tb,"%d channels",n_ch=j);
         }
       write_log(logfile,tb);
+      fclose(fp);
       }
     else
       {

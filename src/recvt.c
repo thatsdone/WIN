@@ -1,4 +1,4 @@
-/* $Id: recvt.c,v 1.26 2005/02/17 01:39:13 urabe Exp $ */
+/* $Id: recvt.c,v 1.27 2005/02/20 13:56:17 urabe Exp $ */
 /* "recvt.c"      4/10/93 - 6/2/93,7/2/93,1/25/94    urabe */
 /*                2/3/93,5/25/94,6/16/94 */
 /*                1/6/95 bug in adj_time fixed (tm[0]--) */
@@ -47,6 +47,7 @@
 /*                2004.10.26 daemon mode (Uehira) */
 /*                2004.11.15 corrected byte-order of port no. in log */
 /*                2005.2.17 option -o [source host]:[port] for send request */
+/*                2005.2.20 option -f [ch_file] for additional ch files */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -90,10 +91,11 @@
 #define N_PACKET  128   /* N of old packets to be requested */  
 #define N_HOST    100   /* max N of hosts */  
 #define N_HIST    10    /*  length of packet history */
+#define N_CHFILE  30    /*  length of packet history */
 
 unsigned char rbuf[MAXMESG],ch_table[65536];
-char *progname,logfile[256],chfile[256];
-int n_ch,negate_channel,hostlist[N_HOST][2],n_host,no_pinfo;
+char *progname,logfile[256],chfile[N_CHFILE][256];
+int n_ch,negate_channel,hostlist[N_HOST][2],n_host,no_pinfo,n_chfile;
 int  daemon_mode, syslog_mode;
 
 struct {
@@ -247,18 +249,18 @@ err_sys(ptr)
 read_chfile()
   {
   FILE *fp;
-  int i,j,k,ii;
+  int i,j,k,ii,i_chfile;
   char tbuf[1024],host_name[80],tb[256];
   struct hostent *h;
   static time_t ltime,ltime_p;
 
   n_host=0;
-  if(*chfile)
+  if(*chfile[0])
     {
-    if((fp=fopen(chfile,"r"))!=NULL)
+    if((fp=fopen(chfile[0],"r"))!=NULL)
       {
 #if DEBUG
-      fprintf(stderr,"ch_file=%s\n",chfile);
+      fprintf(stderr,"ch_file=%s\n",chfile[0]);
 #endif
       if(negate_channel) for(i=0;i<65536;i++) ch_table[i]=1;
       else for(i=0;i<65536;i++) ch_table[i]=0;
@@ -325,26 +327,14 @@ read_chfile()
       if(ii>0 && n_host==0) n_host=ii;
       sprintf(tb,"%d host rules",n_host);
       write_log(logfile,tb);
-      n_ch=0;
-      for(i=0;i<65536;i++) if(ch_table[i]==1) n_ch++;
-      if(negate_channel)
-        {
-        if(n_ch==0) sprintf(tb,"-all channels");
-        else sprintf(tb,"-%d channels",65536-n_ch);
-        }
-      else
-        {
-        if(n_ch==65536) sprintf(tb,"all channels");
-        else sprintf(tb,"%d channels",n_ch);
-        }
-      write_log(logfile,tb);
+      fclose(fp);
       }
     else
       {
 #if DEBUG
-      fprintf(stderr,"ch_file '%s' not open\n",chfile);
+      fprintf(stderr,"ch_file '%s' not open\n",chfile[0]);
 #endif
-      sprintf(tb,"channel list file '%s' not open",chfile);
+      sprintf(tb,"channel list file '%s' not open",chfile[0]);
       write_log(logfile,tb);
       write_log(logfile,"end");
       exit(1);
@@ -353,10 +343,43 @@ read_chfile()
   else
     {
     for(i=0;i<65536;i++) ch_table[i]=1;
-    n_ch=i;
     n_host=0;
-    write_log(logfile,"all channels");
     }
+
+  for(i_chfile=1;i_chfile<n_chfile;i_chfile++)
+    {
+    if((fp=fopen(chfile[i_chfile],"r"))!=NULL)
+      {
+#if DEBUG
+      fprintf(stderr,"ch_file=%s\n",chfile[i_chfile]);
+#endif
+      while(fgets(tbuf,1024,fp))
+        {
+        if(*tbuf==0 || *tbuf=='#') continue;
+        sscanf(tbuf,"%x",&k);
+        k&=0xffff;
+#if DEBUG
+        fprintf(stderr," %04X",k);
+#endif
+        ch_table[k]=1;
+        }
+      fclose(fp);
+      }
+    else
+      {
+#if DEBUG
+      fprintf(stderr,"ch_file '%s' not open\n",chfile[i_chfile]);
+#endif
+      sprintf(tb,"channel list file '%s' not open",chfile[i_chfile]);
+      write_log(logfile,tb);
+      }
+    }
+
+  n_ch=0;
+  for(i=0;i<65536;i++) if(ch_table[i]==1) n_ch++;
+  if(n_ch==65536) sprintf(tb,"all channels");
+  else sprintf(tb,"%d (-%d) channels",n_ch,65536-n_ch);
+  write_log(logfile,tb);
 
   time(&ltime);
   j=ltime-ltime_p;
@@ -686,14 +709,14 @@ main(argc,argv)
     sprintf(tb,
 	    " usage : '%s (-AaBnMNr) (-d [len(s)]) (-m [pre(m)]) (-p [post(m)]) \\\n\
               (-i [interface]) (-g [mcast_group]) (-s sbuf(KB)) \\\n\
-              (-o [src_host]:[src_port]) \\\n\
+              (-o [src_host]:[src_port]) (-f [ch file]) \\\n\
               [port] [shm_key] [shm_size(KB)] ([ctl file]/- ([log file]))'",
 	    progname);
   else
     sprintf(tb,
 	    " usage : '%s (-AaBDnMNr) (-d [len(s)]) (-m [pre(m)]) (-p [post(m)]) \\\n\
               (-i [interface]) (-g [mcast_group]) (-s sbuf(KB)) \\\n\
-              (-o [src_host]:[src_port]) \\\n\
+              (-o [src_host]:[src_port]) (-f [ch file]) \\\n\
               [port] [shm_key] [shm_size(KB)] ([ctl file]/- ([log file]))'",
 	    progname);
 
@@ -702,7 +725,8 @@ main(argc,argv)
   *interface=(*mcastgroup)=(*host_name)=0;
   sbuf=256;
   chhist.n=N_HIST;
-  while((c=getopt(argc,argv,"AaBDd:g:i:m:MNno:p:rs:"))!=EOF)
+  n_chfile=1;
+  while((c=getopt(argc,argv,"AaBDd:f:g:i:m:MNno:p:rs:"))!=EOF)
     {
     switch(c)
       {
@@ -723,6 +747,9 @@ main(argc,argv)
         break;
       case 'i':   /* interface (ordinary IP address) which receive mcast */
         strcpy(interface,optarg);
+        break;
+      case 'f':   /* channel list file */
+        strcpy(chfile[n_chfile++],optarg);
         break;
       case 'g':   /* multicast group (multicast IP address) */
         strcpy(mcastgroup,optarg);
@@ -780,24 +807,26 @@ main(argc,argv)
   to_port=atoi(argv[1+optind]);
   shm_key=atoi(argv[2+optind]);
   size=atoi(argv[3+optind])*1000;
-  *chfile=0;
+  *chfile[0]=0;
   if(argc>4+optind)
     {
-    if(strcmp("-",argv[4+optind])==0) *chfile=0;
+    if(strcmp("-",argv[4+optind])==0) *chfile[0]=0;
     else
       {
       if(argv[4+optind][0]=='-')
         {
-        strcpy(chfile,argv[4+optind]+1);
+        strcpy(chfile[0],argv[4+optind]+1);
         negate_channel=1;
         }
       else
         {
-        strcpy(chfile,argv[4+optind]);
+        strcpy(chfile[0],argv[4+optind]);
         negate_channel=0;
         }
       }
     }
+  if(n_chfile==1 && (*chfile[0])==0) n_chfile=0;
+
   if(argc>5+optind) strcpy(logfile,argv[5+optind]);
   else
     {

@@ -1,9 +1,10 @@
-/* $Id: raw_ch.c,v 1.3 2002/01/13 06:57:51 uehira Exp $ */
+/* $Id: raw_ch.c,v 1.4 2005/02/20 13:56:17 urabe Exp $ */
 /* "raw_ch.c"    99.12.8 urabe */
 /*                  modified from raw_raw.c */
 /*                  byte-order-free */
 /*                  2000.3.21 c_save=shr->c; bug fixed */
 /*                  2000.4.24/2001.11.14 strerror() */
+/*                  2005.2.20 added fclose() in read_chfile() */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -127,6 +128,7 @@ read_chfile()
       if(negate_channel) sprintf(tbuf,"%d channels exclusively",n_ch);
       else sprintf(tbuf,"%d channels set",n_ch);
       write_log(logfile,tbuf);
+      fclose(fp);
       }
     else
       {

@@ -1,4 +1,4 @@
-/* $Id: send_raw_old.c,v 1.8 2004/11/26 14:09:45 uehira Exp $ */
+/* $Id: send_raw_old.c,v 1.9 2005/02/20 13:56:18 urabe Exp $ */
 /*
     program "send_raw_old/send_mon_old.c"   1/24/94 - 1/25/94,5/25/94 urabe
                                     6/15/94 - 6/16/94
@@ -13,6 +13,7 @@
                           2000.9.7 multiple resend-request by MEISEI < 1/30/97
                                   2001.11.14 strerror(),ntohs()
 				  2004.11.26 some systems (exp. Linux), select(2) changes timeout value
+                                  2005.2.20 added fclose() in read_chfile()
 */
 
 #ifdef HAVE_CONFIG_H
@@ -167,6 +168,7 @@ read_chfile()
       n_ch=j;
       sprintf(tbuf,"%d channels",n_ch);
       write_log(logfile,tbuf);
+      fclose(fp);
       }
     else
       {

@@ -1,6 +1,7 @@
-/* $Id: raw_shift.c,v 1.1 2002/04/30 01:32:09 urabe Exp $ */
+/* $Id: raw_shift.c,v 1.2 2005/02/20 13:56:17 urabe Exp $ */
 /* "raw_shift.c"    2002.4.1 - 4.1 urabe */
 /*                  modified from raw_100.c */
+/*                  2005.2.20 added fclose() in read_chfile() */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -138,6 +139,7 @@ read_chfile()
       if(negate_channel) sprintf(tbuf,"-%d channels",n_ch);
       else sprintf(tbuf,"%d channels",n_ch);
       write_log(logfile,tbuf);
+      fclose(fp);
       }
     else
       {

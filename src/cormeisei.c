@@ -1,4 +1,4 @@
-/* $Id: cormeisei.c,v 1.5 2002/05/31 09:33:04 urabe Exp $ */
+/* $Id: cormeisei.c,v 1.6 2005/02/20 13:56:17 urabe Exp $ */
 /* "cormeisei.c"    June'97 Ide changed from*/
 /* "raw_raw.c"      3/4/96 urabe */
 /*                  revised on 5/20/96 */
@@ -17,6 +17,7 @@
 /*                  2000.4.17 deleted definition of usleep() */
 /*                  2000.4.24/2001.11.14 strerror() */
 /*                  2002.5.31 MAX_SEC_SIZE 500000 -> 1000000 */
+/*                  2005.2.20 added fclose() in read_chfile() */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -164,6 +165,7 @@ char tbuf[256];
     n_chl=jl;
     sprintf(tbuf,"100Hz %d channels  20Hz %d channels",n_chh,n_chl);
     write_log(logfile,tbuf);
+    fclose(fp);
   } else {
 #if DEBUG
     fprintf(stderr,"ch_file '%s' not open\n",chfile);

@@ -1,11 +1,12 @@
-.TH recvt 1W "2005.2.14" "WIN SYSTEM" "WIN SYSTEM"
+.TH recvt 1W "2005.2.20" "WIN SYSTEM" "WIN SYSTEM"
 .UC 4
 .SH 名称
 recvt, recvtd - IPによる win 形式データの受信
 .SH 形式
 .IP
 .ti -7
-recvt [\-\fBAaDBnMNr\fR] [\-\fBd\fI pkts\fR] [\-\fBg\fI group\fR]
+recvt [\-\fBAaDBnMNr\fR] [\-\fBd\fI pkts\fR] [\-\fBf\fI chfile\fR]
+[\-\fBg\fI group\fR]
 [\-\fBi\fI interface\fR] [\-\fBm\fI before\fR] [\-\fBo\fI src_host:src_port\fR]
 [\-\fBp\fI after\fR] [\-\fBs\fI bufsiz\fR]
 .I port
@@ -17,7 +18,8 @@ recvt [\-\fBAaDBnMNr\fR] [\-\fBd\fI pkts\fR] [\-\fBg\fI group\fR]
 .I logfile
 ]]
 .LP
-recvtd [\-\fBAaBnMNr\fR] [\-\fBd\fI pkts\fR] [\-\fBg\fI group\fR]
+recvtd [\-\fBAaBnMNr\fR] [\-\fBd\fI pkts\fR] [\-\fBf\fI chfile\fR]
+[\-\fBg\fI group\fR]
 [\-\fBi\fI interface\fR] [\-\fBm\fI before\fR] [\-\fBo\fI src_host:src_port\fR]
 [\-\fBp\fI after\fR] [\-\fBs\fI bufsiz\fR]
 .I port
@@ -293,6 +295,34 @@ IPマルチキャストアドレスに対して送信されるパケットを受信する場合に、
 IPアドレス
 .I interface
 で指定します。
+.IP "\fB\-f \fIchfile" 5
+ファイル
+.I chfile
+に指定されたチャネルを受信します。これは
+.I ctlfile
+での設定を補足するものです。まず
+.I ctlfile
+にしたがって受信すべきチャネルが決定され、
+さらに
+.I chfile
+に指定されたチャネルが、受信すべきチャネルのリストに
+追加されます。
+.I chfile
+では、いずれの行も空白またはタブで区切られた左端の項目だけが読まれ、
+その行の以降の部分は読み飛ばされます。'#'で始まる行はコメントと
+見なされます。
+.I ctlfile
+と違って
+.I chfile
+にはホスト制御やワイルドカードによるチャネルの指定は
+できません。
+このオプションは複数個指定することができ、それにより複数（最大30個）の
+チャネルファイルを使用することができます。
+recvt プロセスが HUPシグナルを受けたとき、
+.I ctlfile
+とともに
+.I chfile
+も読み直されます。
 .IP "\fB\-g \fIgroup" 5
 IPマルチキャストアドレス
 .I group

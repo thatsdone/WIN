@@ -1,4 +1,4 @@
-/* $Id: raw_mon.c,v 1.5 2004/10/27 03:49:47 uehira Exp $ */
+/* $Id: raw_mon.c,v 1.6 2005/02/20 13:56:17 urabe Exp $ */
 /* "raw_mon.c"      7/2/93,6/17/94,6/28/94    urabe */
 /*                  3/17/95 write_log(), 4/17/95 MAX_SR safety */
 /*                  usleep -> sleep */
@@ -14,6 +14,7 @@
 /*                  2000.4.24 skip ch with>MAX_SR, strerror() */
 /*                  2001.11.14 strerror()*/
 /*                  2004.10.27 daemon mode (Uehira) */
+/*                  2005.2.20 added fclose() in read_chfile() */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -324,6 +325,7 @@ read_chfile()
       if(negate_channel) sprintf(tbuf,"-%d channels",n_ch);
       else sprintf(tbuf,"%d channels",n_ch);
       write_log(logfile,tbuf);
+      fclose(fp);
       }
     else
       {

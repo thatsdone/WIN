@@ -1,4 +1,4 @@
-/* $Id: wchch.c,v 1.4 2003/10/29 14:44:12 urabe Exp $ */
+/* $Id: wchch.c,v 1.5 2005/02/20 13:56:18 urabe Exp $ */
 /*
 program "wchch.c"
 "wchch" changes channel no. in a win format data file
@@ -6,6 +6,7 @@ program "wchch.c"
 1999.4.20    byte-order free
 2000.4.17   wabort
 2003.10.29 exit()->exit(0)
+2005.2.20 added fclose() in read_chfile()
 */
 
 #ifdef HAVE_CONFIG_H
@@ -56,6 +57,7 @@ read_chfile(chfile)
 #if DEBUG
     fprintf(stderr,"\n");
 #endif
+    fclose(fp);
     }
   else
     {

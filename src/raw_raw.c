@@ -1,4 +1,4 @@
-/* $Id: raw_raw.c,v 1.7 2002/05/02 10:50:13 urabe Exp $ */
+/* $Id: raw_raw.c,v 1.8 2005/02/20 13:56:17 urabe Exp $ */
 /* "raw_raw.c"    97.8.5 urabe */
 /*                  modified from raw_100.c */
 /*                  98.4.17 FreeBSD */
@@ -10,6 +10,7 @@
 /* 2002.3.5 eobsize_in(auto), eobsize_out(-B) */
 /* 2002.3.28 sleep(1) -> usleep(10000) */
 /* 2002.5.2 i<1000 -> 1000000 */
+/* 2005.2.20 added fclose() in read_chfile() */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -146,6 +147,7 @@ read_chfile()
       if(negate_channel) sprintf(tbuf,"-%d channels",n_ch);
       else sprintf(tbuf,"%d channels",n_ch);
       write_log(logfile,tbuf);
+      fclose(fp);
       }
     else
       {

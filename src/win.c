@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.16.2.2 2001/11/06 02:26:21 uehira Exp $
+   $Id: win.c,v 1.16.2.3 2002/01/09 10:36:56 urabe Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -13,7 +13,7 @@
    98.7.2 yo2000
 */
 #define NAME_PRG      "win"
-#define WIN_VERSION   "2001.8.22"
+#define WIN_VERSION   "2002.1.9"
 #define DEBUG_AP      0   /* for debugging auto-pick */
 /* 5:sr, 4:ch, 3:sec, 2:find_pick, 1:all */
 /************ HOW TO COMPILE THE PROGRAM **************************
@@ -32,7 +32,7 @@ HP-UX          : cc win.c -DSYSTEMV -I/usr/include/X11R4 -lm -lX11 -o win'
 /dat/etc/channels.tbl        - 2- channel table file
 /dat/etc/zones.tbl           - 3- file for grouping of stations
 /dat/picks/man/              - 4- directory for pick files(:WO dir)
-/dat/bin/SPARC/hypomh        - 5- hypomh program
+hypomh                       - 5- hypomh program
 /dat/etc/struct.eri          - 6- velocity structure for hypomh
 /dat/etc/map.japan.km        - 7- map data file
 .                            - 8- output directory for cut-out wave data
@@ -2632,7 +2632,7 @@ show_pick(idx,pt,i)
     {
     cancel_picks(ft.stn[idx].name,i);
     ft.pick[idx][i]=(*pt);
-    put_mark(i,ft.idx2pos[idx]);
+    put_mark(i,ft.idx2pos[idx],0);
     make_visible(idx);
     put_mon(x_zero,y_zero);
     return 1;
@@ -2687,11 +2687,15 @@ typedef struct
 #define   LEVEL_2   0.030   /* good sharpness */
 #define   LEVEL_3   0.100   /* lower limit of (aic_all-aic) */
 
-char *alloc_mem(size)
+char *alloc_mem(size,mes)
   long size;
   {
-  char *almem;
-  if((almem=(char *)malloc(size))==0) emalloc("alloc_mem");
+  char *almem,tb[100];
+  if((almem=(char *)malloc(size))==0)
+    {
+    sprintf(tb,"%s(%d)",mes,size);
+    emalloc(tb);
+    }
   return almem;
   }
 
@@ -2714,7 +2718,7 @@ getdata(idx,pt,dbp,ip)
   n2=(pt.sec2-pt.sec1-1)*sr;
   if(n2<0) n=n3-n1;
   else n=(sr-n1)+n2+n3;
-  *dbp=(double *)alloc_mem((long)sizeof(double)*n);
+  *dbp=(double *)alloc_mem((long)sizeof(double)*n,"dbp");
   db=(*dbp);
   if(read_one_sec(sec++,(long)ft.idx2ch[idx],buf2,NOT_KILL_SPIKE)==0)
     fill((int *)buf2,ft.sr[idx],0);
@@ -2877,7 +2881,7 @@ pick_phase(idx,iph)   /* pick an onset in a range of time */
 
   if(doing_auto_pick && background==0)
     {
-    sprintf(apbuf," '%s' in %-.4s-%-.2s  ",marks[iph],
+    sprintf(apbuf," '%s' in %-.4s-%-.2s   ",marks[iph],
       ft.stn[idx].name,ft.stn[idx].comp);
     put_text(&dpy,x_time_file,Y_TIME,apbuf,BF_S);
     }
@@ -2904,12 +2908,12 @@ pt.sec1,pt.msec1,pt.sec2,pt.msec2,pt.polarity);
   sec=pt.sec1;
   msec=pt.msec1;
   n=getdata(idx,pt,&db,&i);         /* get raw data */
-  db2=(double *)alloc_mem((long)(n*sizeof(double)));  /* AR residual squared */
-  aic=(float *)alloc_mem((long)(n*sizeof(float)));  /* AIC */
-  sd1=(float *)alloc_mem((long)(n*sizeof(float)));  /* sd1 */
-  sd2=(float *)alloc_mem((long)(n*sizeof(float)));  /* sd2 */
-  c=(double *)alloc_mem((long)(nm*sizeof(double))); /* AR filter coefficient */
-  rec=(double *)alloc_mem((long)(nm*sizeof(double))); /* reserved data for filter */
+  db2=(double *)alloc_mem((long)(n*sizeof(double)),"db2"); /* AR resid squared */
+  aic=(float *)alloc_mem((long)(n*sizeof(float)),"aic");  /* AIC */
+  sd1=(float *)alloc_mem((long)(n*sizeof(float)),"sd1");  /* sd1 */
+  sd2=(float *)alloc_mem((long)(n*sizeof(float)),"sd2");  /* sd2 */
+  c=(double *)alloc_mem((long)(nm*sizeof(double)),"c"); /* AR filter coef */
+  rec=(double *)alloc_mem((long)(nm*sizeof(double)),"rec"); /* rsvd data for filt */
   smeadl(db,n,&zero);         /* remove offset */
   getar(db,nm,&sd,&m,c,&zero,0);    /* get AR from first NM data */
 #if DEBUG_AP>=2
@@ -3020,7 +3024,7 @@ cancel_picks(name,idx)  /* cancel picks */
       if((name==NULL || strcmp(ft.stn[i].name,name)==0)
           && ft.pick[i][idx].valid)
         {
-        put_mark(idx,ft.idx2pos[i]);
+        put_mark(idx,ft.idx2pos[i],0);
         ft.pick[i][idx].valid=0;
         j=1;
         }
@@ -3031,7 +3035,7 @@ cancel_picks(name,idx)  /* cancel picks */
       if((name==NULL || strcmp(ft.stn[i].name,name)==0)
           && ft.pick[i][idx].valid)
         {
-        put_mark(idx,ft.idx2pos[i]);
+        put_mark(idx,ft.idx2pos[i],0);
         ft.pick[i][idx].valid=0;
         j=1;
         }
@@ -3176,7 +3180,7 @@ set_max(d,sec,msec,ch)
   if(i) return(1);
 
   ft.pick[idx][MD]=pt;
-  put_mark(MD,ft.idx2pos[idx]);
+  put_mark(MD,ft.idx2pos[idx],0);
   return(1);
   }
 
@@ -3269,43 +3273,42 @@ auto_pick_pick(sec_now,hint)
       {
       if(pick_phase(idx,P)) /* pick P phase */
         { /* if P is picked, then pick S and measure max ampl. */
-        /* 'pt' is the range for max ampl. measurement */
-        if(hint) /* in hint mode, S always exists for idx */
-          {
-          pt.sec2=ft.pick[idx][S].sec2;
-          pt.msec2=ft.pick[idx][S].msec2;
-          }
-        pt.sec1=ft.pick[idx][P].sec1;
-        pt.msec1=ft.pick[idx][P].msec1;
-
         idx_s=pick_s(idx,sec_now,hint); /* pick S phase for the station */
-
-      /* measure max in the range from P to 10 sec after S */
-        if(hint);
-        else if(ft.pick[idx_s][S].valid && ft.pick[idx_s][S].sec2+10<=sec_now)
-          {
-          pt.sec2=ft.pick[idx_s][S].sec2+10;
-          pt.msec2=ft.pick[idx_s][S].msec2;
-          }
-        else
-          {
-          pt.msec2=1000;
-          pt.sec2=sec_now;
-          }
-        pt.valid=j=1;
-        k=ft.idx2pos[idx];
-        while(1)
-          {
-          n=getdata(idx,pt,&db,&ip);
-          if(ip==0) /* not interpolated */
+        j=1;
+        if(!hint || (hint && ft.pick[idx_s][S].valid))
+          { /* measure max in the range from P to 10 sec after S, or 'pt' */
+          pt.sec1=ft.pick[idx][P].sec1;
+          pt.msec1=ft.pick[idx][P].msec1;
+          if(hint)
             {
-            smeadl(db,n,&zero);
-            if((j=get_max(db,n,&n_max,&n_min,&c_max,&c_min))==0) break;
+            pt.sec2=ft.pick[idx][S].sec2;
+            pt.msec2=ft.pick[idx][S].msec2;
             }
-          free(db);
-          if(--k<0 || strcmp(ft.stn[ft.pos2idx[k]].name,ft.stn[idx].name))
-            break;
-          idx=ft.pos2idx[k];
+          else if(ft.pick[idx_s][S].valid && ft.pick[idx_s][S].sec2+10<=sec_now)
+            {
+            pt.sec2=ft.pick[idx_s][S].sec2+10;
+            pt.msec2=ft.pick[idx_s][S].msec2;
+            }
+          else
+            {
+            pt.msec2=1000;
+            pt.sec2=sec_now;
+            }
+          pt.valid=1;
+          k=ft.idx2pos[idx];
+          while(1)
+            {
+            n=getdata(idx,pt,&db,&ip);
+            if(ip==0) /* not interpolated */
+              {
+              smeadl(db,n,&zero);
+              if((j=get_max(db,n,&n_max,&n_min,&c_max,&c_min))==0) break;
+              }
+            free(db);
+            if(--k<0 || strcmp(ft.stn[ft.pos2idx[k]].name,ft.stn[idx].name))
+              break;
+            idx=ft.pos2idx[k];
+            }
           }
         if(j==0)  /* 'max' has been read */
           {
@@ -5434,7 +5437,7 @@ proc_main()
             if(x<W_Z_POL)    /* POLARITY */
               {
               if(ft.pick[ft.ch2idx[zoom_win[i].sys_ch]][P].valid==0) break;
-              put_mark(P,zoom_win[i].pos);
+              put_mark(P,zoom_win[i].pos,0);
               switch(event.mse_code)
                 {
                 case MSE_BUTNL:
@@ -5447,7 +5450,7 @@ proc_main()
                   ft.pick[ft.ch2idx[zoom_win[i].sys_ch]][P].polarity=(-1);
                   break;
                 }
-              put_mark(P,zoom_win[i].pos);
+              put_mark(P,zoom_win[i].pos,0);
               ring_bell=0;
               }
             else        /* SCALE */
@@ -5936,31 +5939,33 @@ proc_main()
           break;
         case SAVE:
           raise_ttysw(1);
-          put_reverse(&dpy,x_func(SAVE),0,WB,MARGIN);
+          put_reverse(&dpy,x_func(SAVE),HEIGHT_FUNC,WB,MARGIN);
           switch(event.mse_code)
             {
             case MSE_BUTNL:
             case MSE_BUTNM: if(save_data(0)) ring_bell=0;break;
             case MSE_BUTNR: if(save_data(1)) ring_bell=0;break;
             }
-          put_reverse(&dpy,x_func(SAVE),0,WB,MARGIN);
+          put_reverse(&dpy,x_func(SAVE),HEIGHT_FUNC,WB,MARGIN);
           break;
         case HYPO:
           raise_ttysw(1);
-          put_reverse(&dpy,x_func(HYPO),0,WB,MARGIN);
+          put_reverse(&dpy,x_func(HYPO),HEIGHT_FUNC,WB,MARGIN);
           locate(1,0);
           get_calc();
-          put_reverse(&dpy,x_func(HYPO),0,WB,MARGIN);
+          put_reverse(&dpy,x_func(HYPO),HEIGHT_FUNC,WB,MARGIN);
           ring_bell=0;
           break;
         case EVDET:
           strcpy(apbuf,"EVDET & AUTO-PICK");
           put_text(&dpy,x_time_file,Y_TIME,apbuf,BF_S);
+          put_reverse(&dpy,x_func(EVDET),HEIGHT_FUNC,WB,MARGIN);
           if(auto_pick(1)) ring_bell=0;
           break;
         case AUTPK:
           strcpy(apbuf," AUTOPICK W/HINT ");
           put_text(&dpy,x_time_file,Y_TIME,apbuf,BF_S);
+          put_reverse(&dpy,x_func(AUTPK),HEIGHT_FUNC,WB,MARGIN);
           if(auto_pick_hint(0)) ring_bell=0;
           break;
         }
@@ -6030,7 +6035,7 @@ proc_main()
             }
           cancel_picks(ft.stn[ft.pos2idx[k]].name,i);
           ft.pick[ft.pos2idx[k]][i]=pt;
-          put_mark(i,k);
+          put_mark(i,k,0);
           plot_flag=1;
           ring_bell=0;
           }
@@ -6066,7 +6071,7 @@ proc_main()
           pt.polarity=0;
           cancel_picks(ft.stn[ft.pos2idx[k]].name,j);
           ft.pick[ft.pos2idx[k]][j]=pt;
-          put_mark(j,k);
+          put_mark(j,k,0);
           plot_flag=1;
           ring_bell=0;
           }
@@ -6074,7 +6079,7 @@ proc_main()
           {
           if(ft.pick[ft.pos2idx[k]][j].valid)
             {
-            put_mark(j,k);
+            put_mark(j,k,0);
             ft.pick[ft.pos2idx[k]][j].valid=0;
             plot_flag=1;
             ring_bell=0;
@@ -6115,7 +6120,7 @@ measure_max_zoom(izoom)
   if(i) return(1);
 
   ft.pick[ft.ch2idx[ch]][MD]=pt;
-  put_mark(MD,ft.idx2pos[ft.ch2idx[ch]]);
+  put_mark(MD,ft.idx2pos[ft.ch2idx[ch]],0);
   return(1);
   }
 
@@ -6531,13 +6536,26 @@ put_text(bm,xzero,yzero,text,func)
   XFreePixmap(disp,bbuf.drw);
   }
 
-put_mark(idx,pos)
-  int idx,pos;
+put_mark(idx,pos,loaded)
+  int idx,pos,loaded;
   {
   int i;
+  char tb1[20],tb2[20];
   if(ft.pick[ft.pos2idx[pos]][idx].valid==0) return 0;
   /* mon */
   put_mark_mon(idx,pos);
+  if(flag_change==0)
+    {
+    flag_change=1;
+    if(!loaded)
+      {
+      *tb1=(*tb2)=0;
+      sscanf(diagnos,"%s%s",tb1,tb2);
+      if(strcmp(getname(geteuid()),tb1) && strcmp(getname(geteuid()),tb2))
+        set_diagnos("",getname(geteuid()));
+      }
+    }
+  flag_hypo=0;  /* calling put_mark_mon() means change of pick data */
   /* zoom */
   if(loop==LOOP_MAIN) for(i=0;i<n_zoom;i++)
     if(zoom_win[i].valid && zoom_win[i].pos==pos)
@@ -6553,19 +6571,6 @@ put_mark_mon(idx,pos)
   {
   int x,y,i_map,xz;
   struct Pick_Time *pt;
-  char tb1[20],tb2[20];
-  if(flag_change==0)
-    {
-    flag_change=1;
-    if(loop==LOOP_MAIN)
-      {
-      *tb1=(*tb2)=0;
-      sscanf(diagnos,"%s%s",tb1,tb2);
-      if(strcmp(getname(geteuid()),tb1) && strcmp(getname(geteuid()),tb2))
-        set_diagnos("",getname(geteuid()));
-      }
-    }
-  flag_hypo=0;  /* calling put_mark_mon() means change of pick data */
   pt=(&(ft.pick[ft.pos2idx[pos]][idx]));
   x=((pt->sec1+pt->sec2)*PIXELS_PER_SEC_MON+
     ((pt->msec1+pt->msec2)*PIXELS_PER_SEC_MON+500)/1000)/2;
@@ -9115,7 +9120,6 @@ load_data(btn) /* return=1 means success */
   *diagbuf=(*userbuf)=0;
   sscanf(text_buf+3,"%s %s %s",namebuf,diagbuf,userbuf);
   if(strcmp(diagbuf,".")==0) *diagbuf=0;
-  set_diagnos(diagbuf,userbuf);
   if(just_hypo)
     {
     ft.pick=(struct Pick_Time (*)[4])
@@ -9123,6 +9127,7 @@ load_data(btn) /* return=1 means success */
     for(i=0;i<ft.n_ch;i++) for(j=0;j<4;j++) ft.pick[i][j].valid=0;
     }
   cancel_picks(NULL,-1);    /* cancel all picks */
+  set_diagnos(diagbuf,userbuf);
   /* read picks */
   flag_hypo=flag_mech=sec_max=0;
   for(ii=0;;ii++)
@@ -9172,7 +9177,7 @@ load_data(btn) /* return=1 means success */
     ft.pick[ft.ch2idx[i]][j].polarity=k5;
     if(j==MD) *(float *)&ft.pick[ft.ch2idx[i]][j].valid=k6;
     if(k3>sec_max) sec_max=k3;
-    if(!just_hypo) put_mark(j,ft.idx2pos[ft.ch2idx[i]]);
+    if(!just_hypo) put_mark(j,ft.idx2pos[ft.ch2idx[i]],1);
     }
   fprintf(stderr,"loaded from pick file '%s'\n",filename);
   if(just_hypo)

@@ -1,4 +1,7 @@
-$Id: ChangeLog,v 1.30 2003/05/11 15:38:59 urabe Exp $
+$Id: ChangeLog,v 1.31 2003/05/14 02:46:25 urabe Exp $
+
+2003-05-14 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
+	* shmdump.c : fflush(fpout) inserted for rawdump
 
 2003-05-12 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
 	* win.c : 2003.5.2 version, added options -e and -i

@@ -14,6 +14,7 @@
 /*  2002.10.27 stdin input */
 /*  2003.3.26,4.4 rawdump (-r) mode */
 /*  2003.4.16 bug fix (last sec not outputted in stdin mode) */
+/*  2003.5.14 fflush(fpout) inserted for rawdump */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -607,7 +608,7 @@ last_out:     if((wsize=ptw-buf)>10)
       sprintf(tbuf+strlen(tbuf),"...\n");
       fputs(tbuf,fplist);
       }
-    if(rawdump) fwrite(ptr_save,1,ptr_lim-ptr_save,fpout);
+    if(rawdump) {fwrite(ptr_save,1,ptr_lim-ptr_save,fpout);fflush(fpout);}
     time(&time_now);
     if(end || (seconds && (time_now>time_end || nsec>=seconds))) ctrlc();
     }

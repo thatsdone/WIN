@@ -1,31 +1,17 @@
 #!/bin/sh
+# check_status_sh   1999.8.16 urabe, 2002.2.14
 #
-# $Id: check_status_sh,v 1.1 2000/04/30 10:10:37 urabe Exp $
-# check_status_sh   1999.8.16 urabe
-#
-echo -n 'GTA-45U last status report at '
+host=`hostname -s`
+echo -n $host 'GTA-45U last status report at '
 date +'%y/%m/%d %H:%M'
 echo
 echo 'stn  ch   date   time   report host:port      time stamp    ch ... status'
 echo
 #
-cat /home/auto/GTA-45U.ch.goemon|
+cat /home/auto/GTA-45U.ch.$host|
 while read ch stan
 do
-  out=`rsh -n goemon grep \" $ch \" /dat/log/recvstatus.log\|tail -1|sed 's/recvstatus//'`
+  out=`grep " $ch " /dat/log/recvstatus.log|tail -1|sed 's/recvstatus//'`
   echo $stan $ch $out
 done
 #
-cat /home/auto/GTA-45U.ch.sso1|
-while read ch stan
-do
-  out=`rsh -n sso1 grep \" $ch \" /dat/log/recvstatus.log\|tail -1|sed 's/recvstatus//'`
-  echo $stan $ch $out
-done
-#
-cat /home/auto/GTA-45U.ch.fco1|
-while read ch stan
-do
-  out=`rsh -n fco1 grep \" $ch \" /dat/log/recvstatus.log\|tail -1|sed 's/recvstatus//'`
-  echo $stan $ch $out
-done

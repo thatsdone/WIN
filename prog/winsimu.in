@@ -1,0 +1,38 @@
+#! @TCLSH@
+
+# $Id: winsimu.in,v 1.1 2004/10/20 07:41:31 tsuru Exp $
+
+if { $argc < 1 } {
+    puts "winsimu -sSPEED --> print simulation data"
+    exit
+}
+
+set version 1.0
+set fpin stdin
+set fpout stdout
+set fp $fpin
+set cat 1
+set speed 1
+
+
+for { set j 0 } { $j < $argc } { incr j } {
+    set tmpargv [lindex $argv $j]
+    set optflag [string range $tmpargv 0 1]
+    if { $optflag == "-s" } {
+        set speed [string range $tmpargv 2 [string length $tmpargv]]
+        set ms [expr 1000/$speed]
+    }
+}
+
+while {![eof $fp]} {
+    gets $fp line
+    scan $line "%d %d %d %d %d %d %d" yr mo dy hr mi sc nch
+    puts $line
+    for { set i 0 } { $i < $nch } { incr i } {
+        gets $fp tmpdata
+        puts $tmpdata
+    }
+    flush $fpout
+    after $ms
+}
+close $fp

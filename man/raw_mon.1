@@ -1,9 +1,19 @@
 '\" t
 .TH raw_mon 1W "2000.12.21" "WIN SYSTEM" "WIN SYSTEM"
 .SH 名称
-raw_mon - RAW 形式データから MON 形式データへの変換
+raw_mon, raw_mond - RAW 形式データから MON 形式データへの変換
 .SH 形式
 raw_mon
+.I rawkey
+.I monkey
+.I shmsize
+[
+.I chfile
+[
+.I logfile
+]]
+.LP
+raw_mond
 .I rawkey
 .I monkey
 .I shmsize
@@ -39,11 +49,13 @@ raw_mon は、キー
 \ (KB) よりも小さいとエラーになります。
 共有メモリ・キーは32ビットの整数値です。
 .LP
+raw_mond は daemon モードで起動します。
+.LP
 ログファイル名
 .I \ logfile
-を指定すると、ここに動作ログがとられ、
-指定しないとログ情報は標準出力に
-送られます。ログファイルは書き込みのたび毎に
+を指定すると、ここに動作ログがとられます。
+指定しないとログ情報は標準出力に送られます(ただし、daemon モードで動い
+ている時は syslogd(8) に送られます)。ログファイルは書き込みのたび毎に
 オープン／クローズされます。
 .LP
 raw_mon は、引数なしで起動すると簡単な使用法を表示します。

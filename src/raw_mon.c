@@ -1,4 +1,4 @@
-/* $Id: raw_mon.c,v 1.4 2002/01/13 06:57:51 uehira Exp $ */
+/* $Id: raw_mon.c,v 1.5 2004/10/27 03:49:47 uehira Exp $ */
 /* "raw_mon.c"      7/2/93,6/17/94,6/28/94    urabe */
 /*                  3/17/95 write_log(), 4/17/95 MAX_SR safety */
 /*                  usleep -> sleep */
@@ -13,6 +13,7 @@
 /*                  2000.4.17 deleted definition of usleep() */
 /*                  2000.4.24 skip ch with>MAX_SR, strerror() */
 /*                  2001.11.14 strerror()*/
+/*                  2004.10.27 daemon mode (Uehira) */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -40,7 +41,9 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <errno.h>
+#include <syslog.h>
 
+#include "daemon_mode.h"
 #include "subst_func.h"
 
 #define DEBUG       0
@@ -52,6 +55,7 @@ long buf_raw[MAX_SR],buf_mon[SR_MON][2];
 unsigned char ch_table[65536];
 char *progname,logfile[256],chfile[256];
 int n_ch,negate_channel;
+int  daemon_mode, syslog_mode;
 
 mklong(ptr)
   unsigned char *ptr;
@@ -83,17 +87,25 @@ write_log(logfil,ptr)
   {
   FILE *fp;
   int tm[6];
-  if(*logfil) fp=fopen(logfil,"a");
-  else fp=stdout;
-  get_time(tm);
-  fprintf(fp,"%02d%02d%02d.%02d%02d%02d %s %s\n",
-    tm[0],tm[1],tm[2],tm[3],tm[4],tm[5],progname,ptr);
-  if(*logfil) fclose(fp);
+
+  if (syslog_mode)
+    syslog(LOG_NOTICE, "%s", ptr);
+  else
+    {
+      if(*logfil) fp=fopen(logfil,"a");
+      else fp=stdout;
+      get_time(tm);
+      fprintf(fp,"%02d%02d%02d.%02d%02d%02d %s %s\n",
+	      tm[0],tm[1],tm[2],tm[3],tm[4],tm[5],progname,ptr);
+      if(*logfil) fclose(fp);
+    }
   }
 
 ctrlc()
   {
   write_log(logfile,"end");
+  if (syslog_mode)
+    closelog();
   exit(0);
   }
 
@@ -251,10 +263,16 @@ win2fix(ptr,abuf,sys_ch,sr) /* returns group size in bytes */
   }
 
 err_sys(ptr)
-  char *ptr;
-  {
-  perror(ptr);
-  write_log(logfile,ptr);
+     char *ptr;
+{
+
+  if (syslog_mode)
+    syslog(LOG_NOTICE, "%s", ptr);
+  else
+    {
+      perror(ptr);
+      write_log(logfile,ptr);
+    }
   if(strerror(errno)) write_log(logfile,strerror(errno));
   ctrlc();
   }
@@ -348,17 +366,21 @@ main(argc,argv)
 
   if(progname=strrchr(argv[0],'/')) progname++;
   else progname=argv[0];
+
+  daemon_mode = syslog_mode = 0;
+  if(strcmp(progname,"raw_mond")==0) daemon_mode=1;
+
   if(argc<4)
     {
-    fprintf(stderr,
-      " usage : '%s [raw_key] [mon_key] [shm_size(KB)] ([ch_file]/- ([log file]))'\n",
-      progname);
-    exit(1);
+      fprintf(stderr,
+	      " usage : '%s [raw_key] [mon_key] [shm_size(KB)] ([ch_file]/- ([log file]))'\n",
+	      progname);
+      exit(1);
     }
   rawkey=atoi(argv[1]);
   monkey=atoi(argv[2]);
   size_shm=atoi(argv[3])*1000;
-  *chfile=(*logfile)=0;
+  *chfile=0;
   if(argc>4)
     {
     if(strcmp("-",argv[4])==0) *chfile=0;
@@ -377,7 +399,19 @@ main(argc,argv)
       }
     }    
   if(argc>5) strcpy(logfile,argv[5]);
-    
+  else
+    {
+      *logfile=0;
+      if (daemon_mode)
+	syslog_mode = 1;
+    }
+	       
+  /* daemon mode */
+  if (daemon_mode) {
+    daemon_init(progname, LOG_USER, syslog_mode);
+    umask(022);
+  }
+
   read_chfile();
 
   /* raw shared memory */

@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.22 2004/10/26 14:42:01 uehira Exp $
+# $Id: Makefile.am,v 1.23 2004/10/27 03:49:47 uehira Exp $
 #
 
 if SUNOS4
@@ -77,6 +77,7 @@ install-exec-hook:
 	(rm -f @bindir@/orderd; cd @bindir@ && @LN_S@ order orderd)
 	(rm -f @bindir@/recvtd; cd @bindir@ && @LN_S@ recvt recvtd)
 	(rm -f @bindir@/relayd; cd @bindir@ && @LN_S@ relay relayd)
+	(rm -f @bindir@/raw_mond; cd @bindir@ && @LN_S@ raw_mon raw_mond)
 
 win_SOURCES = win.c $(SUBFUNC_H)
 win_CFLAGS = @X_CFLAGS@ $(AM_CFLAGS)
@@ -162,7 +163,7 @@ events_LDADD = -lm
 order_SOURCES = order.c $(SUBFUNC_H) $(DAEMON_MODE)
 order_LDADD = @LIBSHMGET@
 
-raw_mon_SOURCES = raw_mon.c $(SUBFUNC_H)
+raw_mon_SOURCES = raw_mon.c $(SUBFUNC_H) $(DAEMON_MODE)
 raw_mon_LDADD = @LIBSHMGET@
 
 wtape_SOURCES = wtape.c $(SUBFUNC_H)

@@ -1,5 +1,8 @@
- $Id: ChangeLog,v 1.75 2004/10/26 15:00:44 uehira Exp $
+ $Id: ChangeLog,v 1.76 2004/10/27 03:49:47 uehira Exp $
 
+2004-10-27 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* raw_mon : added daemon mode (raw_mond)
+	
 2004-10-26 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* recvt : added option -D : daemon mode (recvtd)
 	* relay : added option -D : daemon mode (relayd)

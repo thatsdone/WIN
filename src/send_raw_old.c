@@ -1,4 +1,4 @@
-/* $Id: send_raw_old.c,v 1.3.2.3 2001/11/19 01:59:48 uehira Exp $ */
+/* $Id: send_raw_old.c,v 1.3.2.4 2001/11/19 02:23:47 uehira Exp $ */
 /*
     program "send_raw_old/send_mon_old.c"   1/24/94 - 1/25/94,5/25/94 urabe
                                     6/15/94 - 6/16/94
@@ -428,7 +428,7 @@ reset:
           sbuf[bufno][1]=no_f;  /* old packet no. */
           re=sendto(sock,sbuf[bufno],psize[bufno],0,&to_addr,sizeof(to_addr));
           sprintf(tbuf,"resend to %s:%d #%d as #%d, %d B",
-            inet_ntoa(to_addr.sin_addr),to_addr.sin_port,no_f,no,re);
+            inet_ntoa(to_addr.sin_addr),ntohs(to_addr.sin_port),no_f,no,re);
           write_log(logfile,tbuf);
           if(++bufno==BUFNO) bufno=0;
           no++;

@@ -1,4 +1,4 @@
-/* $Id: send_raw.c,v 1.3.2.2 2001/11/19 01:59:48 uehira Exp $ */
+/* $Id: send_raw.c,v 1.3.2.3 2001/11/19 02:23:47 uehira Exp $ */
 /*
     program "send_raw/send_mon.c"   1/24/94 - 1/25/94,5/25/94 urabe
                                     6/15/94 - 6/16/94
@@ -648,7 +648,8 @@ reset:
                 fprintf(stderr,"\n");
 #endif
                 sprintf(tbuf,"resend for %s:%d #%d as #%d, %d B",
-                  inet_ntoa(from_addr.sin_addr),from_addr.sin_port,no_f,no,re);
+                  inet_ntoa(from_addr.sin_addr),ntohs(from_addr.sin_port),
+                  no_f,no,re);
                 write_log(logfile,tbuf);
                 if(++bufno==BUFNO) bufno=0;
                 no++;

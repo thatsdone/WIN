@@ -1,4 +1,4 @@
-/* $Id: recvs.c,v 1.1.2.2 2001/11/19 01:59:47 uehira Exp $ */
+/* $Id: recvs.c,v 1.1.2.3 2001/11/19 02:23:47 uehira Exp $ */
 /* "recvs.c"    receive sync frames      2000.3.14       urabe */
 /* 2000.3.21 */
 /* 2000.4.17 */
@@ -315,7 +315,7 @@ check_pno_s(to_addr,pn,pn_f,sock,fd_req) /* returns -1 if duplicated */
       {
       sendto(sock,pnc,8,0,to_addr,sizeof(*to_addr));
       sprintf(tb,"request resend %s:%d #%02X",
-        inet_ntoa(to_addr->sin_addr),to_addr->sin_port,pn_1);
+        inet_ntoa(to_addr->sin_addr),ntohs(to_addr->sin_port),pn_1);
       write_log(logfile,tb);
 #if DEBUG1
       printf("<%d ",pn_1);

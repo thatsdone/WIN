@@ -1,4 +1,4 @@
-/* $Id: recvnmx.c,v 1.6.2.2 2001/11/19 01:59:47 uehira Exp $ */
+/* $Id: recvnmx.c,v 1.6.2.3 2001/11/19 02:23:46 uehira Exp $ */
 /* "recvnmx.c"    2001.7.18-19 modified from recvt.c and nmx2raw.c  urabe */
 /*                2001.8.18 */
 /*                2001.10.5 workaround for hangup */
@@ -524,7 +524,11 @@ proc_soh(struct Nmx_Packet *pk)
         for(j=1;j<4;j++){
           u.c[0]=pk->b[i].u.uc[j][3]; u.c[1]=pk->b[i].u.uc[j][2];
           u.c[2]=pk->b[i].u.uc[j][1]; u.c[3]=pk->b[i].u.uc[j][0];
-          sprintf(tb+strlen(tb),"%10.5f ",u.f);
+/*        sprintf(tb+strlen(tb),"%10.5f ",u.f);*/
+          sprintf(tb+strlen(tb),"%02X",u.c[0]);
+          sprintf(tb+strlen(tb),"%02X",u.c[1]);
+          sprintf(tb+strlen(tb),"%02X",u.c[2]);
+          sprintf(tb+strlen(tb),"%02X ",u.c[3]);
         }
         break;
       case 15:
@@ -713,7 +717,7 @@ main(argc,argv)
     else winch=(pk.serno<<5)+pk.ch;
     if(verbose)
  printf("%s:%d>%02X %02d/%02d/%02d %02d:%02d:%02d.%04d %s#%d p#%d %dHz ch%d x0=%d %04X\n",
-        inet_ntoa(from_addr.sin_addr),from_addr.sin_port,
+        inet_ntoa(from_addr.sin_addr),ntohs(from_addr.sin_port),
         pk.ptype,pk.t->tm_year%100,pk.t->tm_mon+1,pk.t->tm_mday,pk.t->tm_hour,
         pk.t->tm_min,pk.t->tm_sec,pk.subsec,pk.model,pk.serno,pk.seq,
         pk.sr,pk.ch,pk.first,winch);

@@ -1,5 +1,14 @@
-$Id: ChangeLog,v 1.1.2.1 2001/11/02 11:43:34 uehira Exp $
+$Id: ChangeLog,v 1.1.2.2 2001/11/19 02:23:46 uehira Exp $
 
+2001-11-19 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* MFC: fixed bug in port no. with ntohs()
+	  recvnmx.c recvs.c recvstatus.c recvt.c relay.c send_raw.c 
+	  send_raw_old.c sends.c 
+	* MFC: fixed write_log(strerror()) bug
+	  cormeisei.c extraw.c order.c raw_100.c raw_ch.c raw_mon.c 
+	  raw_raw.c recvnmx.c recvs.c recvstatus.c recvt.c relay.c 
+	  send_raw.c send_raw_old.c sends.c
+	
 2001-11-2 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* autmake-1.5 と autoconf-2.13 にとりあえず対応．
 	* 代替関数は subst_func.h で与える予定．現在，strerror(3) と 

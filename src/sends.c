@@ -1,4 +1,4 @@
-/* $Id: sends.c,v 1.2.2.2 2001/11/19 01:59:48 uehira Exp $ */
+/* $Id: sends.c,v 1.2.2.3 2001/11/19 02:23:47 uehira Exp $ */
 /*   program "sends"   2000.3.20 urabe                   */
 /*   2000.3.21 */
 /*   2000.4.17 */
@@ -491,7 +491,7 @@ reset:
           fprintf(stderr,"\n");
 #endif
           sprintf(tbuf,"resend for %s:%d #%d as #%d, %d B",
-            inet_ntoa(from_addr.sin_addr),from_addr.sin_port,no_f,no,re);
+            inet_ntoa(from_addr.sin_addr),ntohs(from_addr.sin_port),no_f,no,re);
           write_log(logfile,tbuf);
           if(++bufno==BUFNO) bufno=0;
           no++;

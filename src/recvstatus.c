@@ -1,4 +1,4 @@
-/* $Id: recvstatus.c,v 1.2.2.3 2001/11/19 01:59:47 uehira Exp $ */
+/* $Id: recvstatus.c,v 1.2.2.4 2001/11/19 02:23:47 uehira Exp $ */
 /* "recvstatus.c"      5/24/95    urabe */
 /* 97.7.17 two lines of "if() continue;" in the main loop */
 /* 2000.4.24 strerror() */
@@ -139,7 +139,7 @@ main(argc,argv)
     if(rbuf[0]!=rbuf[8]) continue;
     if(rbuf[9]==stt[(rbuf[7]<<8)+rbuf[8]]) continue;
     sprintf(tb,"%s:%d %02X %02X%02X%02X %02X%02X%02X %02X%02X ... %02X",
-      inet_ntoa(from_addr.sin_addr),from_addr.sin_port,
+      inet_ntoa(from_addr.sin_addr),ntohs(from_addr.sin_port),
       rbuf[0],rbuf[1],rbuf[2],rbuf[3],rbuf[4],rbuf[5],rbuf[6],
       rbuf[7],rbuf[8],rbuf[9]);
     write_log(logfile,tb);

@@ -1,4 +1,4 @@
-# $Id: makefile,v 1.10 2001/02/07 09:31:42 urabe Exp $
+# $Id: makefile,v 1.11 2001/03/09 07:50:27 urabe Exp $
 #########################
 #                       #
 # win system makefile   #
@@ -32,7 +32,7 @@ ONL_X86=recvts
 #CFLAGS=-Dconst=
 
 
-ONLINE_SO=recvt send_raw recvstatus send_raw_old relay $(ONLINE_SOL2)
+ONLINE_SO=recvt send_raw recvstatus send_raw_old relay $(ONL_SOL2)
 TAPE_USER_MATH=pmon elist events
 ONLINE_MATH=ecore
 OFFLINE_USER_MATH=wtime

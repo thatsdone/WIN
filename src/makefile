@@ -1,4 +1,4 @@
-# $Id: makefile,v 1.12 2001/08/06 16:18:55 urabe Exp $
+# $Id: makefile,v 1.13 2001/08/20 07:39:36 uehira Exp $
 #########################
 #                       #
 # win system makefile   #
@@ -42,7 +42,7 @@ OFFLINE_F77=hypomh
 
 OFFLINE_USER=win $(OFFLINE_F77) wed wck wadd $(OFFLINE_MATH) wchch pick2tseis \
              wch pick2finalb pick2final finalb2final final2finalb finalb2seis \
-             wform $(OFFLINE_USER_MATH)
+             wform $(OFFLINE_USER_MATH) winadd
 TAPE_USER=rtape fromtape wdisk wdiskts ras2rpdl ras2lips file_older raw2mon \
           $(TAPE_USER_MATH)
 ONLINE=order raw_mon wtape setexb timeout raw_raw raw_100 cormeisei shmdump \
@@ -99,7 +99,10 @@ insert_raw : insert_raw.o $(WIN_OBJ) $(WIN_INC)
 insert_trg : insert_trg.o $(WIN_OBJ) $(WIN_INC)
 	$(CC) $(CFLAGS) $@.o $(WIN_OBJ) -o $@
 
+winadd : winadd.o $(WIN_OBJ) $(WIN_INC)
+	$(CC) $(CFLAGS) $@.o $(WIN_OBJ) -o $@
 
 insert_raw.o : $(WIN_INC)
 insert_trg.o : $(WIN_INC)
+winadd.o : $(WIN_INC)
 $(WIN_OBJ) : $(WIN_INC)

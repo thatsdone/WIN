@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.21 2002/06/13 04:23:59 urabe Exp $
+   $Id: win.c,v 1.22 2002/06/19 02:31:58 urabe Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -13,7 +13,7 @@
    98.7.2 yo2000
 */
 #define NAME_PRG      "win"
-#define WIN_VERSION   "2002.6.13"
+#define WIN_VERSION   "2002.6.19"
 #define DEBUG_AP      0   /* for debugging auto-pick */
 /* 5:sr, 4:ch, 3:sec, 2:find_pick, 1:all */
 /************ HOW TO COMPILE THE PROGRAM **************************
@@ -195,6 +195,10 @@ LOCAL
 #define MSE_BUTNR 0  /* right button */
 #define MSE_BUTNM 1  /* middle button */
 #define MSE_BUTNL 2  /* left button */
+    char mse_key;    /* modifier key */
+#define MSE_NONE  0  /* no modifier */
+#define MSE_SHIFT 1  /* +shift */
+#define MSE_CTRL  2  /* +control */
     struct timeval mse_time; /* time when this event occurred */
     };
 
@@ -5302,7 +5306,7 @@ close_zoom(izoom)
 proc_main()
   {
   static struct Pick_Time pt;
-  int xx,yy,x,y,i,j,k,kk,ring_bell,plot_flag,xshift;
+  int xx,yy,x,y,i,j,k,kk,ring_bell,plot_flag,xshift,yshift;
   static int pos_zoom;
   char textbuf[LINELEN],textbuf1[LINELEN],tbuf[20],unit[10];
 
@@ -5914,26 +5918,32 @@ proc_main()
             }
           break;
         case UD:
+          if(event.mse_key==MSE_CTRL) yshift=pixels_per_trace*50;
+          else if(event.mse_key==MSE_SHIFT) yshift=pixels_per_trace*500;
+          else yshift=height_win_mon/SHIFT;
           switch(event.mse_code)
             {
             case MSE_BUTNL:
-              if((yy-=(height_win_mon/SHIFT))<0) yy=0;
+              if((yy-=yshift)<0) yy=0;
               break;
             case MSE_BUTNM: break;
             case MSE_BUTNR:
-              if((yy+=(height_win_mon/SHIFT))>y_zero_max) yy=y_zero_max;
+              if((yy+=yshift)>y_zero_max) yy=y_zero_max;
               break;
             }
           break;
         case LR:
+          if(event.mse_key==MSE_CTRL) xshift=PIXELS_PER_SEC_MON*60;
+          else if(event.mse_key==MSE_SHIFT) xshift=PIXELS_PER_SEC_MON*600;
+          else xshift=width_win_mon/SHIFT;
           switch(event.mse_code)
             {
             case MSE_BUTNL:
-              if((xx-=(width_win_mon/SHIFT))<0) xx=0;
+              if((xx-=xshift)<0) xx=0;
               break;
             case MSE_BUTNM: break;
             case MSE_BUTNR:
-              if((xx+=(width_win_mon/SHIFT))>x_zero_max) xx=x_zero_max;
+              if((xx+=xshift)>x_zero_max) xx=x_zero_max;
               break;
             }
           break;
@@ -6441,7 +6451,7 @@ put_mon(xzero,yzero)
     {
     put_bitblt(&mon[i],xz,yzero,width_win_mon,height_win_mon,&dpy,
       xwm,y_win_mon,BF_S);
-    if(i==ft.n_mon-1 && width_win_mon>(j=ft.w_mon*PIXELS_PER_SEC_MON-xzero))
+    if(i==ft.n_mon-1 && width_win_mon>(j=ft.w_mon*ft.n_mon-xzero))
       put_white(&dpy,j,y_win_mon,width_win_mon-j,height_win_mon);
     xzero=ft.w_mon*i;
     xwm+=ft.w_mon-xz;
@@ -6972,8 +6982,10 @@ wait_mouse()
     case Button3: event.mse_code=MSE_BUTNR;break;
     default:    event.mse_code=(-1);break;
     }
-  if(xevent.type==Expose)
-    while(XCheckTypedEvent(disp,Expose,&xevent)==True);
+  if(xevent.xbutton.state & ShiftMask) event.mse_key=MSE_SHIFT;
+  else if(xevent.xbutton.state & ControlMask) event.mse_key=MSE_CTRL;
+  else event.mse_key=MSE_NONE;
+  if(xevent.type==Expose) while(XCheckTypedEvent(disp,Expose,&xevent)==True);
   XSync(disp,False);
   }
 

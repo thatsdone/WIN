@@ -1,6 +1,6 @@
-/* $Id: recvnmx.c,v 1.3 2001/08/10 00:39:14 urabe Exp $ */
+/* $Id: recvnmx.c,v 1.4 2001/08/18 10:10:28 urabe Exp $ */
 /* "recvnmx.c"    2001.7.18-19 modified from recvt.c and nmx2raw.c  urabe */
-/*                2001.8.10 */
+/*                2001.8.18 */
 
 #include <stdio.h>
 #include <signal.h>
@@ -22,7 +22,6 @@
 #define BELL      0
 #define MAXMESG   2048
 #define NB        60    /* max n of bundles */
-#define BUFSIZ    1024
 #define MAXCH     1024
 
 char *progname,logfile[256];
@@ -53,6 +52,7 @@ struct Nmx_Packet {
   } b[NB];
   int crc_calculated;
   int crc_given;
+  int bpp;
 };
 static unsigned char d2b[]={
     0x00,0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x09,
@@ -442,17 +442,17 @@ parse_one_packet(unsigned char *inbuf,int len,struct Nmx_Packet *pk)
   printf("(%d %d %02X)",nb,cnt,b);
 #endif
   }
-  return nb-1;
+  return pk->bpp=nb-1;
 }
 
-int bundle2fix(int bpp,struct Nmx_Packet *pk,int *dbuf)
+int bundle2fix(struct Nmx_Packet *pk,int *dbuf)
 {
   int n,i,j,k,difsize[4],data;
   long diff4;
   short diff2;
   n=0;
   dbuf[n++]=data=pk->first;
-  for(k=0;k<bpp;k++){
+  for(k=0;k<pk->bpp;k++){
     difsize[0]=((pk->b[k].bundle_type)>>6)&0x3;
     difsize[1]=((pk->b[k].bundle_type)>>4)&0x3;
     difsize[2]=((pk->b[k].bundle_type)>>2)&0x3;
@@ -477,7 +477,7 @@ int bundle2fix(int bpp,struct Nmx_Packet *pk,int *dbuf)
   return n;
 }
 
-proc_soh(int bpp,struct Nmx_Packet *pk)
+proc_soh(struct Nmx_Packet *pk)
 {
   struct tm *t;
   time_t tim;
@@ -490,7 +490,7 @@ proc_soh(int bpp,struct Nmx_Packet *pk)
 #if SOH
   write_log(logfile,tb);
 #endif
-  for(i=0;i<bpp;i++){ /* decode time */
+  for(i=0;i<pk->bpp;i++){ /* decode time */
     tim=pk->b[i].u.uc[0][0]+(pk->b[i].u.uc[0][1]<<8)+
       (pk->b[i].u.uc[0][2]<<16)+(pk->b[i].u.uc[0][3]<<24);
     t=localtime(&tim);
@@ -525,29 +525,29 @@ proc_soh(int bpp,struct Nmx_Packet *pk)
   return 0;
 }
 
-ch2idx(rbuf,serno,ch)
-  int *rbuf[];
-  int serno,ch;
+ch2idx(int *rbuf[],struct Nmx_Packet *pk)
 {
   char tb[256];
   static int s[MAXCH],c[MAXCH],n_idx;
-  int i;
+  int i,bufsize;
   for(i=0;i<n_idx;i++){
-    if(serno==s[i] && ch==c[i]) break;
+    if(pk->serno==s[i] && pk->ch==c[i]) break;
   }
   if(i==n_idx){
     if(n_idx==MAXCH){
       fprintf(stderr,"n_idx=%d at limit.\n",n_idx);
       return -1;
       }
-    if((rbuf[i]=(int *)malloc(BUFSIZ))==NULL){
+    bufsize=(16*pk->bpp+pk->sr+1)*sizeof(int);
+    if((rbuf[i]=(int *)malloc(bufsize))==NULL){
       fprintf(stderr,"malloc failed. n_idx=%d\n",n_idx);
       return -1;
       }
-    s[i]=serno;
-    c[i]=ch;
+    s[i]=pk->serno;
+    c[i]=pk->ch;
     n_idx++;
-    sprintf(tb,"registered serno=%d ch=%d idx=%d",serno,ch,i);
+    sprintf(tb,"registered serno=%d ch=%d idx=%d bufsiz=%d",pk->serno,pk->ch,i,
+      bufsize);
     write_log(logfile,tb);
   }
   return i;
@@ -563,7 +563,7 @@ main(argc,argv)
   int *rbuf[MAXCH],*ptr,idx;
   unsigned long uni;
   struct Nmx_Packet pk;
-  int i,j,k,size_shm,n,fd,baud,c,bpp,oldest,nn,verbose,rbuf_ptr,sock,fromlen,
+  int i,j,k,size_shm,n,fd,baud,c,oldest,nn,verbose,rbuf_ptr,sock,fromlen,
     winch,use_chmap;
   static unsigned short chmap[MAXCH];
   key_t shm_key;
@@ -586,7 +586,6 @@ main(argc,argv)
     " usage : '%s (-c ch_map) (-i interface) (-m mcast_group) (-v) [port] [shm_key] [shm_size(KB)] ([log file])'",
     progname);
 
-  bpp=19; /* Lynx default */
   station=verbose=use_chmap=0;
   *interface=(*mcastgroup)=(*chmapfile)=0;
   while((c=getopt(argc,argv,"c:i:m:v"))!=EOF) {
@@ -670,19 +669,23 @@ main(argc,argv)
     fclose(fp);
     use_chmap=1;
     }
+    else{
+      fprintf(stderr,"channel map file '%s' not open!\n",chmapfile);
+      exit(1);
+    }
   }
 
   while(1){
     fromlen=sizeof(from_addr);
     n=recvfrom(sock,pbuf,MAXMESG,0,&from_addr,&fromlen);
-    if((bpp=parse_one_packet(pbuf,n,&pk))<0) continue;
+    if(parse_one_packet(pbuf,n,&pk)<0) continue;
 #if DEBUG1
     p=pbuf;
     printf("%d ",n);
     for(i=0;i<16;i++) printf("%02X",*p++);
     printf(" ");
     for(i=0;i<17;i++) printf("%02X",*p++);
-    printf(" bpp=%d\n",bpp);
+    printf(" bpp=%d\n",pk.bpp);
 #endif
     if(use_chmap) {
       if(chmap[pk.serno]==0xffff) winch=(-1); /* do not use the ch */
@@ -696,9 +699,9 @@ main(argc,argv)
         pk.t->tm_min,pk.t->tm_sec,pk.subsec,pk.model,pk.serno,pk.seq,
         pk.sr,pk.ch,pk.first,winch);
     if((pk.ptype&0x0f)==1){ /* compressed data packet */
-      idx=ch2idx(rbuf,pk.serno,pk.ch);
+      idx=ch2idx(rbuf,&pk);
       rbuf_ptr=(pk.subsec*pk.sr+5000)/10000;
-      n=bundle2fix(bpp,&pk,rbuf[idx]+rbuf_ptr);
+      n=bundle2fix(&pk,rbuf[idx]+rbuf_ptr);
 #if DEBUG1
       for(ptr=rbuf[idx]+rbuf_ptr,i=0;i<n;i++) printf("%d ",*ptr++);
       printf("\n");
@@ -709,7 +712,7 @@ main(argc,argv)
       for(k=i;k<rbuf_ptr+n;k++) rbuf[idx][k-i]=rbuf[idx][k]; 
     }
     else if((pk.ptype&0x0f)==2){ /* status packet */
-      proc_soh(bpp,&pk);
+      proc_soh(&pk);
     }
   }
 }

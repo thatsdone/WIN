@@ -3,7 +3,7 @@
 .SH 名称
 wdisk, wdisk60 - win 形式データのディスクファイルへの書き込み
 .SH 形式
-wdisk
+wdisk [\-\fBn\fR]
 .I shmkey
 .I outdir
 [
@@ -12,7 +12,7 @@ wdisk
 .I logfile
 ]]
 .br
-wdisk60
+wdisk60 [\-\fBn\fR]
 .I shmkey
 .I outdir
 [
@@ -56,11 +56,18 @@ wdisk60 では、ファイルは
 wdisk, wdisk60 は引数なしで起動すると簡単な使用法を表示します。
 .SH 共有メモリ上の形式
 order(1W) を参照してください。
+.SH オプション
+.IP "\fB\-n" 5
+次節に書いてある動作状況を示すファイルのうち、MAX を除く BUSY、COUNT、
+LATEST、OLDEST のファイルを作りません。このオプションを指定した時は、
+events(1W)、insert_raw(1W)、wtape(1W)といったこれらの動作状況を見るプ
+ログラムは動かせません。
 .SH ファイル
 wdisk, wdisk60 は出力ディレクトリ
 .I \ outdir
 に次のようなテキストファイルを作り、
 それぞれの内容によって動作状況を示します。
+ただし、オプション \fB\-n\fR を指定した場合は MAX のみ作成します。
 
 .RS
 .TS

@@ -1,5 +1,9 @@
-$Id: ChangeLog,v 1.60 2004/07/30 02:47:52 uehira Exp $
+$Id: ChangeLog,v 1.61 2004/08/01 04:07:58 uehira Exp $
 
+2004-08-01 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* wdisk : added option -n
+	* Version 1.1.33 released.
+	
 2004-07-30 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* If there are no X libraries or X includes, or if you set
 	--without-x option in 'configure' command, don't compile program

@@ -1,4 +1,4 @@
-/* $Id: wdisk.c,v 1.7 2002/05/28 09:55:32 urabe Exp $ */
+/* $Id: wdisk.c,v 1.8 2004/08/01 04:07:59 uehira Exp $ */
 /*
   program "wdisk.c"   4/16/93-5/13/93,7/2/93,7/5/94  urabe
                       1/6/95 bug in adj_time fixed (tm[0]--)
@@ -43,6 +43,7 @@
 #include <signal.h>
 #include <ctype.h>
 #include <errno.h>
+#include <unistd.h>
 
 #include "subst_func.h"
 
@@ -54,6 +55,7 @@ char *progname,logfile[256];
 unsigned char *buf;
 int count,count_max,mode;
 FILE *fd;
+int  nflag;
 
 mklong(ptr)
   unsigned char *ptr;
@@ -157,8 +159,10 @@ switch_file(tm)
 #if DEBUG
       printf("closed fd=%d\n",fd);
 #endif
-      strcpy(latest,busy);
-      wmemo("LATEST",latest);
+      if (!nflag) {
+	strcpy(latest,busy);
+	wmemo("LATEST",latest);
+      }
    }
    /* delete oldest file */
    sprintf(tbuf,"%s/MAX",outdir);
@@ -177,8 +181,10 @@ switch_file(tm)
       printf("%s deleted\n",tbuf);
 #endif
    }
-   strcpy(oldest,oldst);
-   wmemo("OLDEST",oldest);
+   if (!nflag) {
+     strcpy(oldest,oldst);
+     wmemo("OLDEST",oldest);
+   }
    
    /* make new file name */
    if(mode==60) sprintf(busy,"%02d%02d%02d%02d",tm[0],tm[1],tm[2],tm[3]);
@@ -190,11 +196,13 @@ switch_file(tm)
 #if DEBUG
    if(fd!=NULL) printf("%s opened fd=%d\n",tbuf,fd);
 #endif
-   wmemo("BUSY",busy);
-   sprintf(tbuf,"%s/COUNT",outdir);
-   fp=fopen(tbuf,"w+");
-   fprintf(fp,"%d\n",count);
-   fclose(fp);
+   if (!nflag) {
+     wmemo("BUSY",busy);
+     sprintf(tbuf,"%s/COUNT",outdir);
+     fp=fopen(tbuf,"w+");
+     fprintf(fp,"%d\n",count);
+     fclose(fp);
+   }
    return 0;
 }
 
@@ -238,6 +246,14 @@ wmemo(f,c)
    fclose(fp);
 }
 
+usage()
+{
+
+  fprintf(stderr,
+	  " usage : '%s (-n) [shm_key]/- [out dir] ([N of files] ([log file]))'\n",
+	  progname);
+}
+
 main(argc,argv)
      int argc;
      char **argv;
@@ -249,6 +265,7 @@ main(argc,argv)
    unsigned long shp,shp_save,size,c_save,size2;
    unsigned char *ptr,*ptr_save,ptw[4],*buf;
    key_t shmkey;
+   int c;
    struct Shm {
       unsigned long p;    /* write point */
       unsigned long pl;   /* write limit */
@@ -261,29 +278,41 @@ main(argc,argv)
    else progname=argv[0];
    if(strcmp(progname,"wdisk60")==0) mode=60;
    else mode=1;
-   
-   if(argc<3){
-      fprintf(stderr,
-	      " usage : '%s [shm_key]/- [out dir] ([N of files] ([log file]))'\n",
-	      progname);
-      exit(0);
+
+   nflag = 0;
+   while ((c = getopt(argc, argv, "n")) != -1) {
+     switch (c) {
+     case 'n':
+       nflag = 1;  /* don't make control files except 'MAX' */
+       break;
+     default:
+       usage();
+       exit(1);
+     }
+   }
+   argc -= optind;
+   argv += optind;
+
+   if(argc<2){
+     usage();
+     exit(0);
    }
    
-   if(strcmp(argv[1],"-")) shmkey=atoi(argv[1]);
+   if(strcmp(argv[0],"-")) shmkey=atoi(argv[0]);
    else
      {
      shmkey=0;
      buf=(unsigned char *)malloc(bufsiz=BUFSZ);
      }
-   strcpy(outdir,argv[2]);
-   if(argc>3) count_max=atoi(argv[3]);
+   strcpy(outdir,argv[1]);
+   if(argc>2) count_max=atoi(argv[2]);
    else count_max=0;
    sprintf(tbuf,"%s/MAX",outdir);
    fp=fopen(tbuf,"w+");
    fprintf(fp,"%d\n",count_max);
    fclose(fp);
    
-   if(argc>4) strcpy(logfile,argv[4]);
+   if(argc>3) strcpy(logfile,argv[3]);
    else *logfile=0;
 
    *latest=(*oldest)=(*busy)=0;

@@ -1,4 +1,4 @@
-/* $Id: send_raw.c,v 1.2 2000/04/30 10:05:23 urabe Exp $ */
+/* $Id: send_raw.c,v 1.3 2001/08/22 09:39:25 urabe Exp $ */
 /*
     program "send_raw/send_mon.c"   1/24/94 - 1/25/94,5/25/94 urabe
                                     6/15/94 - 6/16/94
@@ -25,6 +25,7 @@
                                   2000.3.13  "all" mode / options -amrt
                                   2000.4.17 deleted definition of usleep() 
                                   2000.4.24 strerror()
+                                  2001.8.19 send interval control
 */
 
 #include <stdio.h>
@@ -48,6 +49,8 @@
 #define MAXMESG   (1500-28)  /* max of UDP data size, +28 <= IP MTU  */
 #define SR_MON      5
 #define BUFNO     128
+#define NWSTEP    4000  /* 4000 for Ultra1 */
+#define NWLIMIT 100000
 
 #if defined(SUNOS4)
 #define mktime timelocal
@@ -351,7 +354,8 @@ main(argc,argv)
   FILE *fp;
   key_t shm_key;
   unsigned long uni;
-  int i,j,k,c_save,shp,aa,bb,ii,bufno,bufno_f,fromlen,hours_shift,sec_shift,c;
+  int i,j,k,c_save,shp,aa,bb,ii,bufno,bufno_f,fromlen,hours_shift,sec_shift,c,
+    kk,nw,nwloop;
   struct sockaddr_in to_addr,from_addr;
   struct hostent *h;
   unsigned short host_port,ch;
@@ -504,12 +508,16 @@ reset:
   *ptw++=no;  /* packet no. */
   *ptw++=no;  /* packet no.(2) */
   if(!all) *ptw++=0xA0;
+  nwloop=0;
 
   while(1)
     {
     if(shp+size>shm->pl) shp=0; /* advance pointer */
     else shp+=size;
-    while(shm->p==shp) usleep(10000);
+    nw=0;
+    while(shm->p==shp) {usleep(10000);nw++;}
+    if(nw>1 && nwloop<NWLIMIT) nwloop+=NWSTEP;
+    else if(nw==0 && nwloop>0) nwloop-=NWSTEP;
     i=mklong(ptr_save);
     if(shm->c<c_save || i!=size)
       {   /* previous block has been destroyed */
@@ -526,6 +534,7 @@ reset:
       {
       memcpy(ptw,ptr,size-8);
       ptw+=size-8;
+      for(kk=0;kk<nwloop;kk++);
       re=sendto(sock,ptw_save,ptw-ptw_save,0,&to_addr,sizeof(to_addr));
 #if DEBUG1
       fprintf(stderr,"%5d>  ",re);
@@ -584,8 +593,9 @@ reset:
 #if TEST_RESEND
           if(no%10!=9) {
 #endif
-          re=sendto(sock,ptw_save,psize[bufno]=ptw-ptw_save,
-            0,&to_addr,sizeof(to_addr));
+          for(kk=0;kk<nwloop;kk++);
+          re=sendto(sock,ptw_save,psize[bufno]=ptw-ptw_save,0,
+            &to_addr,sizeof(to_addr));
 #if DEBUG1
           fprintf(stderr,"%5d>  ",re);
           for(k=0;k<20;k++) fprintf(stderr,"%02X",ptw_save[k]);
@@ -613,7 +623,7 @@ reset:
                 sbuf[bufno][0]=no;    /* packet no. */
                 sbuf[bufno][1]=no_f;  /* old packet no. */
                 re=sendto(sock,sbuf[bufno],psize[bufno],0,&to_addr,
-                    sizeof(to_addr));
+                  sizeof(to_addr));
 #if DEBUG1
                 fprintf(stderr,"%5d>  ",re);
                 for(k=0;k<20;k++) fprintf(stderr,"%02X",sbuf[bufno][k]);

@@ -1,4 +1,4 @@
-/* $Id: elist.c,v 1.7 2001/02/20 08:26:01 urabe Exp $ */
+/* $Id: elist.c,v 1.8 2001/08/22 09:39:25 urabe Exp $ */
 /* program elist.c    2/5/91 - 2/25/91 ,  4/16/92, 4/22/92  urabe */
 /*                      6/10/92, 8/18/92, 10/25/92, 6/8/93, 1/5/94  */
 /*      4/21/94,12/5/94,6/2/95 bug in dat_dir fixed */
@@ -7,6 +7,7 @@
 /*      2001.2.6 a lot of functions added (options -h/u/p/o/n/s) */
 /*      2001.2.9 use "tac", instead of "tail -r", for Linux */
 /*      2001.2.20 increase size of line-buffer to avoid overflow */
+/*      2001.8.22 use pickers name read from #p line if exists */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -139,11 +140,13 @@ time_cmp(t1,t2,i)
   return 0;
   }
 
-char *getname(id)
+char *getname(name,id)
+  char *name;
   int id;
   {
   static char t[10];
   struct passwd *pwd;
+  if(*name) return name;
   if(pwd=getpwuid(id)) return pwd->pw_name;
   else
     {
@@ -296,9 +299,9 @@ main(argc,argv)
     pk[i].user=st_buf.st_uid;
     pk[i].mode=st_buf.st_mode;
     fgets(textbuf,LINELEN,fp);
-    pk[i].diagnos[0]=0;
+    pk[i].diagnos[0]=pk[i].name[0]=0;
     sscanf(textbuf,"%*s%s%s%s",pk[i].dfname,pk[i].diagnos,pk[i].name);
-    pk[i].diagnos[5]=0;
+    pk[i].diagnos[5]=pk[i].name[5]=0;
     pk[i].pick=pk[i].hypo=pk[i].mech=pk[i].np=pk[i].ns=pk[i].nm=0;
     pk[i].mag=9.9;
     pn=sn=fn=mn=0;
@@ -381,7 +384,7 @@ fprintf(fpp,"-------------------------------------------------------------------
       for(i=0;i<npick;i++)
         {
         fprintf(fpp,"%s %s %4.4s%4d%4d%4d",pk[i].fname,pk[i].dfname,
-          getname(pk[i].user),pk[i].np,pk[i].ns,pk[i].nm);
+          getname(pk[i].name,pk[i].user),pk[i].np,pk[i].ns,pk[i].nm);
         if(pk[i].hypo) fprintf(fpp,"%6.2f%7.2f%4.0f M%3.1f %4.4s\n",
             pk[i].lat,pk[i].lon,pk[i].dep,pk[i].mag,pk[i].near);
         else fprintf(fpp," -     -       -    -    -\n");
@@ -473,7 +476,7 @@ fprintf(fpp,"-------------------------------------------------------------------
         if(strcmp(pk[i].dfname,textbuf)==0)
           {
         /* picker name */
-          ptr=getname(pk[i].user);
+          ptr=getname(pk[i].name,pk[i].user);
           if((pk[i].mode & S_IWGRP) == 0) /* PRIVATE */
             {
             strcat(outbuf," ");

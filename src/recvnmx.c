@@ -1,4 +1,4 @@
-/* $Id: recvnmx.c,v 1.4 2001/08/18 10:10:28 urabe Exp $ */
+/* $Id: recvnmx.c,v 1.5 2001/08/22 09:39:25 urabe Exp $ */
 /* "recvnmx.c"    2001.7.18-19 modified from recvt.c and nmx2raw.c  urabe */
 /*                2001.8.18 */
 
@@ -22,6 +22,8 @@
 #define BELL      0
 #define MAXMESG   2048
 #define NB        60    /* max n of bundles */
+#define MAXSR     200
+#define BUFSIZ    ((16*NB+MAXSR+1)*4)
 #define MAXCH     1024
 
 char *progname,logfile[256];
@@ -525,7 +527,7 @@ proc_soh(struct Nmx_Packet *pk)
   return 0;
 }
 
-ch2idx(int *rbuf[],struct Nmx_Packet *pk)
+ch2idx(int *rbuf[],struct Nmx_Packet *pk,int winch)
 {
   char tb[256];
   static int s[MAXCH],c[MAXCH],n_idx;
@@ -538,16 +540,15 @@ ch2idx(int *rbuf[],struct Nmx_Packet *pk)
       fprintf(stderr,"n_idx=%d at limit.\n",n_idx);
       return -1;
       }
-    bufsize=(16*pk->bpp+pk->sr+1)*sizeof(int);
-    if((rbuf[i]=(int *)malloc(bufsize))==NULL){
+    if((rbuf[i]=(int *)malloc(BUFSIZ))==NULL){
       fprintf(stderr,"malloc failed. n_idx=%d\n",n_idx);
       return -1;
       }
     s[i]=pk->serno;
     c[i]=pk->ch;
     n_idx++;
-    sprintf(tb,"registered serno=%d ch=%d idx=%d bufsiz=%d",pk->serno,pk->ch,i,
-      bufsize);
+    sprintf(tb,"registered serno=%d ch=%d idx=%d",pk->serno,pk->ch,i);
+    if(winch>=0) sprintf(tb+strlen(tb)," winch=%04X",winch);
     write_log(logfile,tb);
   }
   return i;
@@ -699,7 +700,7 @@ main(argc,argv)
         pk.t->tm_min,pk.t->tm_sec,pk.subsec,pk.model,pk.serno,pk.seq,
         pk.sr,pk.ch,pk.first,winch);
     if((pk.ptype&0x0f)==1){ /* compressed data packet */
-      idx=ch2idx(rbuf,&pk);
+      idx=ch2idx(rbuf,&pk,winch);
       rbuf_ptr=(pk.subsec*pk.sr+5000)/10000;
       n=bundle2fix(&pk,rbuf[idx]+rbuf_ptr);
 #if DEBUG1

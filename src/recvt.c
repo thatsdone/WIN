@@ -1,4 +1,4 @@
-/* $Id: recvt.c,v 1.4 2001/02/20 10:21:04 urabe Exp $ */
+/* $Id: recvt.c,v 1.5 2001/03/09 06:34:56 urabe Exp $ */
 /* "recvt.c"      4/10/93 - 6/2/93,7/2/93,1/25/94    urabe */
 /*                2/3/93,5/25/94,6/16/94 */
 /*                1/6/95 bug in adj_time fixed (tm[0]--) */
@@ -25,6 +25,7 @@
 /*                2000.4.25 added check_time() in >=A1 format */
 /*                2000.4.26 host control, statistics, -a, -m, -p options */
 /*                2001.2.20 wincpy() improved */
+/*                2001.3.9 debugged for sh->r */
 
 #include <stdio.h>
 #include <signal.h>
@@ -656,7 +657,8 @@ main(argc,argv)
   /* initialize buffer */
   sh->c=0;
   sh->pl=(size-sizeof(*sh))/10*9;
-  sh->p=sh->r=(-1);
+  sh->p=0;
+  sh->r=(-1);
 
   sprintf(tb,"start shm_key=%d id=%d size=%d",shm_key,shmid,size);
   write_log(logfile,tb);
@@ -685,7 +687,7 @@ main(argc,argv)
   signal(SIGPIPE,(void *)ctrlc);
 
   for(i=0;i<6;i++) tm[i]=(-1);
-  ptr=ptr_size=sh->d;
+  ptr=ptr_size=sh->d+sh->p;
   read_chfile();
 
   while(1)
@@ -777,6 +779,7 @@ main(argc,argv)
           {
           nn=wincpy(ptr,rbuf+j+6,n-8);
           ptr+=nn;
+          uni=time(0);
           ptr_size[4]=uni>>24;  /* tow (H) */
           ptr_size[5]=uni>>16;
           ptr_size[6]=uni>>8;
@@ -784,7 +787,7 @@ main(argc,argv)
           }
         else
           {
-          if((uni=ptr-ptr_size)>14)
+          if((uni=ptr-ptr_size)>14) /* data copied - close the sec block */
             {
             ptr_size[0]=uni>>24;  /* size (H) */
             ptr_size[1]=uni>>16;
@@ -795,9 +798,15 @@ main(argc,argv)
             for(i=8;i<14;i++) printf("%02X",ptr_size[i]);
             printf(" : %d > %d\n",uni,ptr_size-sh->d);
 #endif
+            sh->r=sh->p;      /* latest */
+            if(ptr>sh->d+sh->pl) ptr=sh->d;
+            sh->p=ptr-sh->d;
+            sh->c++;
+            ptr_size=ptr;
             }
-          else ptr=ptr_size;
-          if(check_time(rbuf+j,pre,post))
+          else /* sec block empty - reuse the space */
+            ptr=ptr_size;
+          if(check_time(rbuf+j,pre,post)) /* illegal time */
             {
 #if DEBUG2
             sprintf(tb,"ill time %02X%02X%02X.%02X%02X%02X:%02X%02X%02X%02X%02X%02X%02X%02X from %s:%d",
@@ -808,15 +817,9 @@ main(argc,argv)
             write_log(logfile,tb);
 #endif
             for(i=0;i<6;i++) tm[i]=(-1);
-            goto next;
             }
-          else
+          else /* valid time stamp */
             {
-            sh->r=sh->p;      /* latest */
-            if(ptr>sh->d+sh->pl) ptr=sh->d;
-            sh->p=ptr-sh->d;
-            sh->c++;
-            ptr_size=ptr;
             ptr+=4;   /* size */
             ptr+=4;   /* time of write */
             memcpy(ptr,rbuf+j,6);
@@ -831,7 +834,7 @@ main(argc,argv)
             ptr_size[7]=uni;      /* tow (L) */
             }
           }
-next:   nlen-=n;
+        nlen-=n;
         j+=n-2;
         }
       }

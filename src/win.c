@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.26 2003/04/04 04:29:31 urabe Exp $
+   $Id: win.c,v 1.27 2003/05/11 15:38:59 urabe Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -13,7 +13,7 @@
    98.7.2 yo2000
 */
 #define NAME_PRG      "win"
-#define WIN_VERSION   "2003.4.3"
+#define WIN_VERSION   "2003.5.2"
 #define DEBUG_AP      0   /* for debugging auto-pick */
 /* 5:sr, 4:ch, 3:sec, 2:find_pick, 1:all */
 /************ HOW TO COMPILE THE PROGRAM **************************
@@ -835,8 +835,10 @@ LOCAL
     int n_filt;               /* n of filters */
     int n_label;              /* n of labels */
     int label_idx;            /* label index */
+    int ch_exclusive;         /* label index */
     struct Filter filt[N_FILTERS];  /* filter parameters */
-    short ch2idx[N_CH_NAME];  /* index for each sys_ch */
+    int ch2idx[N_CH_NAME];    /* index for each sys_ch */
+    short ch_use[N_CH_NAME];  /* use(1) or not use(0) */
     unsigned short *idx2ch;   /* sys_ch for each index
                   (from the order in the first sec) */
     struct Stn *stn;          /* station parameters */
@@ -1260,6 +1262,7 @@ reset_blockmode:
 	  }
 #endif  /* OLD_FORMAT */
           if(sr<SR_LOW) continue;   /* exclude ch with sr<SR_LOW */
+          if(ft.ch_exclusive && ft.ch_use[i]==0) continue;
           if(ft.ch2idx[i]<0)
             {
             ft.ch2idx[i]=ft.n_ch;
@@ -1901,8 +1904,10 @@ print_usage()
   fprintf(stderr,"                  b    - background mode\n");
   fprintf(stderr,"                  c    - mapconv (text -> binary)\n");
   fprintf(stderr,"                  d [file] - hypo data file\n");
+  fprintf(stderr,"                  e [file] - exclusively use ch file\n");
   fprintf(stderr,"                  f    - fit window to screen (X only)\n");
   fprintf(stderr,"                  h    - print usage\n");
+  fprintf(stderr,"                  i [ch# initial] - exclusively use ch\n");
   fprintf(stderr,"                  m ([period]h/d) ([interval]m) - 'just map' mode\n");
   fprintf(stderr,"                  n    - 'no save' in auto-pick\n");
   fprintf(stderr,"                  o    - remove offset from MON traces\n");
@@ -4358,8 +4363,9 @@ main(argc,argv)
   int argc;
   char *argv[];
   {
+  FILE *fp;
   int xx,yy,i,j,k,base_sec,mon_len,i_mon,c,mc;
-  char textbuf[LINELEN],tbuf[20];
+  char textbuf[LINELEN],tbuf[LINELEN],chstr[100],file_exclusive[LINELEN];
   unsigned char *buf_mon,*ptr;
   short i2p;
   XEvent xevent;
@@ -4386,12 +4392,13 @@ main(argc,argv)
   else ft.pick_server_port=PICK_SERVER_PORT;
   sprintf(ft.param_file,"%s.prm",NAME_PRG);
   background=map_only=mc=bye=auto_flag=auto_flag_hint=not_save=0;
-  copy_file=got_hup=0;
+  copy_file=got_hup=ft.ch_exclusive=0;
   mon_offset=just_hypo=just_hypo_offset=0;
   flag_save=sec_block=1;
   *ft.final_opt=0;
   dot='.';
-  while((c=getopt(argc,argv,"abcd:fhmnop:qrs:twx:BC:S_"))!=EOF)
+  *chstr=0;
+  while((c=getopt(argc,argv,"abcd:e:fhi:mnop:qrs:twx:BC:S_"))!=EOF)
     {
     switch(c)
       {
@@ -4407,8 +4414,16 @@ main(argc,argv)
       case 'd':   /* final (hypocenter) data file or dir */
         strcpy(ft.final_opt,optarg);
         break;
+      case 'e':   /* ch exclusive */
+        strcpy(file_exclusive,optarg);
+        ft.ch_exclusive|=1;
+        break;
       case 'f':   /* fit height */
         fit_height=1;
+        break;
+      case 'i':   /* ch inclusive */
+        strcpy(chstr,optarg);
+        ft.ch_exclusive|=2;
         break;
       case 'm':   /* just map */
         map_only=1;
@@ -4490,6 +4505,44 @@ main(argc,argv)
   *mec_hemi=0;
   pu.valid=doing_auto_pick=0;
 /* initialization process */
+  if(ft.ch_exclusive)
+    {
+    flag_save=0;
+    if(ft.ch_exclusive&1)
+      {
+      for(i=0;i<N_CH_NAME;i++) ft.ch_use[i]=0;
+      if(*file_exclusive)
+        {
+        if((fp=fopen(file_exclusive,"r"))!=NULL)
+          {
+          while(fgets(tbuf,1024,fp))
+            {
+            if(*tbuf=='#') continue;
+            if(sscanf(tbuf,"%x",&k)!=1) continue;
+            k&=0xffff;
+            ft.ch_use[k]=1;
+            }
+          fclose(fp);
+          }
+        else
+          {
+          fprintf(stderr,"exclusive ch file '%s' not open\n",file_exclusive);
+          exit(1); 
+          }
+        }
+      }
+    else for(i=0;i<N_CH_NAME;i++) ft.ch_use[i]=1;
+    if(ft.ch_exclusive&2)
+      {
+      j=strlen(chstr);
+      for(i=0;i<N_CH_NAME;i++)
+        {
+        sprintf(tbuf,"%04X",i);
+        if(strncmp(tbuf,chstr,j)==0) ft.ch_use[i]&=1;
+        else ft.ch_use[i]=0;
+        } 
+      }
+    }
   if(init_process(argc,argv,optind)==0) exit(1);
   if(NULL == (dbuf  =(double *)malloc((ft.sr_max+1)*sizeof(double)))){
      fprintf(stderr, "Cannot malloc dbuf\n");

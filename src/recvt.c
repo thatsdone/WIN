@@ -1,4 +1,4 @@
-/* $Id: recvt.c,v 1.25 2005/02/14 09:34:08 urabe Exp $ */
+/* $Id: recvt.c,v 1.26 2005/02/17 01:39:13 urabe Exp $ */
 /* "recvt.c"      4/10/93 - 6/2/93,7/2/93,1/25/94    urabe */
 /*                2/3/93,5/25/94,6/16/94 */
 /*                1/6/95 bug in adj_time fixed (tm[0]--) */
@@ -46,7 +46,7 @@
 /*                2004.8.9 fixed bug introduced in 2002.5.23 */
 /*                2004.10.26 daemon mode (Uehira) */
 /*                2004.11.15 corrected byte-order of port no. in log */
-/*                2005.2.14 option -o [source host]:[port] for send request */
+/*                2005.2.17 option -o [source host]:[port] for send request */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -1071,11 +1071,12 @@ main(argc,argv)
           {
           if(!no_pinfo)
             {
-sprintf(tb,"ill blk n=%d(%02X%02X) %02X%02X%02X.%02X%02X%02X:%02X%02X%02X%02X%02X%02X%02X%02X from %s:%d",
+sprintf(tb,"ill blk n=%d(%02X%02X) %02X%02X%02X.%02X%02X%02X:%02X%02X%02X%02X%02X%02X%02X%02X from %s:%d #%d(#%d) at %d",
               n,rbuf[j],rbuf[j+1],rbuf[j+2],rbuf[j+3],rbuf[j+4],rbuf[j+5],
               rbuf[j+6],rbuf[j+7],rbuf[j+8],rbuf[j+9],rbuf[j+10],rbuf[j+11],
               rbuf[j+12],rbuf[j+13],rbuf[j+14],rbuf[j+15],
-              inet_ntoa(from_addr.sin_addr),ntohs(from_addr.sin_port));
+              inet_ntoa(from_addr.sin_addr),ntohs(from_addr.sin_port),
+              rbuf[0],rbuf[1],j);
             write_log(logfile,tb);
             }
           for(i=0;i<6;i++) tm[i]=(-1);

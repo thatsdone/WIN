@@ -1,6 +1,6 @@
- $Id: ChangeLog,v 1.93 2005/02/14 09:34:08 urabe Exp $
+ $Id: ChangeLog,v 1.94 2005/02/17 01:39:12 urabe Exp $
 
-2005-02-14 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
+2005-02-14,17 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
 	* recvt.c : option -o [source host]:[port] for send request
 	* send_raw.c : option -f for use and write list of requested chs
 	* Version 1.1.55 released.

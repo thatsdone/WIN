@@ -1,4 +1,4 @@
-/* $Id: send_raw.c,v 1.18 2005/02/14 09:34:08 urabe Exp $ */
+/* $Id: send_raw.c,v 1.19 2005/02/17 01:39:13 urabe Exp $ */
 /*
     program "send_raw/send_mon.c"   1/24/94 - 1/25/94,5/25/94 urabe
                                     6/15/94 - 6/16/94
@@ -43,7 +43,7 @@
                2003.4.8 added option -1 for 1 packet/sec mode
                2004.10.26 daemon mode (Uehira)
 	       2004.11.26 some systems (exp. Linux), select(2) changes timeout value
-	       2005.2.14 option -f for use and write list of requested chs
+	       2005.2.17 option -f for use and write list of requested chs
 */
 
 #ifdef HAVE_CONFIG_H
@@ -101,7 +101,7 @@ int sock,raw,tow,all,psize[NBUF],n_ch,negate_channel,mtu,nbuf,slptime,
 unsigned char *sbuf[NBUF],ch_table[65536],rbuf[RSIZE],ch_req[65536],
     ch_req_tmp[65536];
      /* sbuf[NBUF][mtu-28+8] ; +8 for overrun by "size" and "time" */
-char *progname,logfile[256],chfile[256];
+char *progname,logfile[1024],chfile[1024],file_req[1024];
 int  daemon_mode, syslog_mode;
 
 static int b2d[]={
@@ -334,6 +334,126 @@ read_chfile()
   signal(SIGHUP,(void *)read_chfile);
   }
 
+recv_pkts(sock,to_addr,no,bufno,standby,seq_exp,n_seq_exp,time_req,req_timo)
+  int sock,*bufno,standby,*seq_exp,*n_seq_exp,*req_timo;
+  struct sockaddr_in *to_addr;
+  unsigned char *no;
+  time_t *time_req;
+  {
+  FILE *fp;
+  int i,j,k,fromlen,len,bufno_f,re,seq,n_seq,n_ch_req;
+  struct timeval timeout;
+  struct sockaddr_in from_addr;
+  unsigned char no_f,tbuf[1024];
+
+  while(1)   /* process resend or send request packets */
+    {
+    k=1<<sock;
+    timeout.tv_sec=timeout.tv_usec=0;
+    if(select(sock+1,(fd_set *)&k,NULL,NULL,&timeout)>0)
+      {
+      fromlen=sizeof(from_addr);
+      len=recvfrom(sock,rbuf,RSIZE,0,(struct sockaddr *)&from_addr,&fromlen);
+#if DEBUG1
+      fprintf(stderr,"len=%d : ",len);
+      for(k=0;k<20;k++) fprintf(stderr,"%02X",rbuf[k]);
+      fprintf(stderr,"\n");
+#endif
+      if(len==1 && (bufno_f=get_packet(*bufno,no_f=(*rbuf)))>=0)
+        { /* resend request packet */
+        memcpy(sbuf[*bufno],sbuf[bufno_f],psize[*bufno]=psize[bufno_f]);
+        sbuf[*bufno][0]=*no;    /* packet no. */
+        sbuf[*bufno][1]=no_f;  /* old packet no. */
+        if(!standby)
+          {
+          re=sendto(sock,sbuf[*bufno],psize[*bufno],0,
+            (struct sockaddr *)to_addr,sizeof(*to_addr));
+          if(re>=0) {n_packets++;n_bytes+=re;}
+          }
+#if DEBUG1
+        fprintf(stderr,"%5d>  ",re);
+        for(k=0;k<20;k++) fprintf(stderr,"%02X",sbuf[*bufno][k]);
+        fprintf(stderr,"\n");
+#endif
+        sprintf(tbuf,"resend for %s:%d #%d as #%d, %d B",
+          inet_ntoa(from_addr.sin_addr),ntohs(from_addr.sin_port),
+          no_f,*no,re);
+        write_log(logfile,tbuf);
+        if(++(*bufno)==nbuf) *bufno=0;
+        (*no)++;
+        }
+      else if(len>=8 && strncmp(rbuf,"REQ",4)==0)
+        { /* send request packet (channels list) */
+        seq=mkshort(&rbuf[4]);
+        n_seq=mkshort(&rbuf[6]);
+        j=0; /* change flag */
+        n_ch_req=0;
+        if(len==8 && seq==0 && n_seq==0) /* all channels */
+          {
+          for(i=0;i<65536;i++)
+            {
+            if(ch_req[i]==0)
+              {
+              ch_req[i]=1;
+              j=1;
+              }
+            n_ch_req++;
+            }
+          }
+        else /* must be len>0 and seq>=0 and n_seq>0 */
+          {
+          if(*n_seq_exp==0) *n_seq_exp=n_seq;
+          if(seq==(*seq_exp))
+            {
+            for(i=8;i<len;i+=2) ch_req_tmp[mkshort(rbuf+i)]=1;
+            if(seq==n_seq)
+              {
+              for(i=0;i<65536;i++)
+                {
+                if(ch_req[i]!=ch_req_tmp[i])
+                  {
+                  ch_req[i]=ch_req_tmp[i];
+                  j=1;
+                  }
+                ch_req_tmp[i]=0;
+                if(ch_req[i]) n_ch_req++;
+                }
+              *seq_exp=1;
+              }
+            else (*seq_exp)++;
+            }
+          else /* was not as expected */
+            {
+            *seq_exp=1;
+            }
+          }
+#if DEBUG2
+        printf("received channel list from %s:%d (%d): %s %d/%d\n",
+        inet_ntoa(from_addr.sin_addr),ntohs(from_addr.sin_port),
+        n_ch_req,rbuf,seq,n_seq);
+#endif
+        if(seq==n_seq) {time(time_req);*req_timo=0;}
+        if(j)
+          {
+          if((fp=fopen(file_req,"w"))==0)
+            {
+            fprintf(stderr,"requested channels file '%s' not open.\n",
+              file_req);
+            exit(1);
+            }
+          for(i=0;i<65536;i++) if(ch_req[i]) fprintf(fp,"%04X\n",i);
+          fclose(fp);
+          sprintf(tbuf,"req < %s:%d (%d) > %s",
+            inet_ntoa(from_addr.sin_addr),ntohs(from_addr.sin_port),
+            n_ch_req,file_req);
+          write_log(logfile,tbuf);
+          }
+        }
+      }
+    else break;
+    }       /* process resend or send request packets */
+  }
+
 main(argc,argv)
   int argc;
   char *argv[];
@@ -344,13 +464,13 @@ main(argc,argv)
   unsigned long uni;
   int i,j,k,c_save,shp,aa,bb,ii,bufno,bufno_f,fromlen,hours_shift,sec_shift,c,
     kk,nw,eobsize,eobsize_count,size2,size,gs,sr,re,shmid,shwid,atm,c_save_w,
-    standby,ttl,single,len,seq,n_seq,seq_exp,n_seq_exp,n_ch_req,req_timo;
+    standby,ttl,single,len,seq,n_seq,seq_exp,n_seq_exp,n_ch_req,req_timo,jj;
   struct sockaddr_in to_addr,from_addr;
   struct hostent *h;
   unsigned short host_port,ch,src_port;
   unsigned long gh;
   unsigned char *ptr,*ptr1,*ptr_save,*ptr_lim,*ptw,*ptw_save,*ptw_size,
-    no,no_f,host_name[100],tbuf[1024],file_req[1024];
+    no,no_f,host_name[100],tbuf[1024];
   struct Shm {
     unsigned long p;    /* write point */
     unsigned long pl;   /* write limit */
@@ -360,7 +480,6 @@ main(argc,argv)
     } *shm,*shw;
   extern int optind;
   extern char *optarg;
-  struct timeval timeout;
   char interface[256]; /* multicast interface */
   unsigned long mif; /* multicast interface address */
 
@@ -614,10 +733,6 @@ reset:
     }
   c_save=shm->c;
   size=mklong(ptr_save=shm->d+(shp=shm->r));
-  ptw=ptw_save=sbuf[bufno];
-  *ptw++=no;  /* packet no. */
-  *ptw++=no;  /* packet no.(2) */
-  if(!all) *ptw++=0xA0;
   slptime=1;
 
   if(mklong(ptr_save+size-4)==size) eobsize=1;
@@ -636,121 +751,8 @@ reset:
     nw=atm=0;
     while(shm->p==shp)
       {
-/* resend if requested */
-      while(1)
-        {
-        k=1<<sock;
-        timeout.tv_sec=timeout.tv_usec=0;
-        if(select(sock+1,(fd_set *)&k,NULL,NULL,&timeout)>0)
-          {
-          fromlen=sizeof(from_addr);
-          len=recvfrom(sock,rbuf,RSIZE,0,(struct sockaddr *)&from_addr,
-              &fromlen);
-#if DEBUG1
-          fprintf(stderr,"len=%d : ",len);
-          for(k=0;k<20;k++) fprintf(stderr,"%02X",rbuf[k]);
-          fprintf(stderr,"\n");
-#endif
-          if(len==1 && (bufno_f=get_packet(bufno,no_f=(*rbuf)))>=0)
-            { /* resend request packet */
-            memcpy(sbuf[bufno],sbuf[bufno_f],psize[bufno]=psize[bufno_f]);
-            sbuf[bufno][0]=no;    /* packet no. */
-            sbuf[bufno][1]=no_f;  /* old packet no. */
-            if(!standby)
-              {
-              re=sendto(sock,sbuf[bufno],psize[bufno],0,
-                (struct sockaddr *)&to_addr,sizeof(to_addr));
-              if(re>=0) {n_packets++;n_bytes+=re;}
-              }
-#if DEBUG1
-            fprintf(stderr,"%5d>  ",re);
-            for(k=0;k<20;k++) fprintf(stderr,"%02X",sbuf[bufno][k]);
-            fprintf(stderr,"\n");
-#endif
-            sprintf(tbuf,"resend for %s:%d #%d as #%d, %d B",
-              inet_ntoa(from_addr.sin_addr),ntohs(from_addr.sin_port),
-              no_f,no,re);
-            write_log(logfile,tbuf);
-            if(++bufno==nbuf) bufno=0;
-            no++;
-            }
-          else if(len>=8 && strncmp(rbuf,"REQ",4)==0)
-            { /* send request packet (channels list) */
-            seq=mkshort(&rbuf[4]);
-            n_seq=mkshort(&rbuf[6]);
-            j=0; /* change flag */
-            n_ch_req=0;
-            if(len==8 && seq==0 && n_seq==0) /* all channels */
-              {
-              for(i=0;i<65536;i++)
-                {
-                if(ch_req[i]==0)
-                  {
-                  ch_req[i]=1;
-                  j=1;
-                  }
-                n_ch_req++;
-                }
-              }
-            else /* must be len>0 and seq>=0 and n_seq>0 */
-              {
-              if(n_seq_exp==0) n_seq_exp=n_seq;
-              if(seq==seq_exp)
-                {
-                for(i=8;i<len;i+=2) ch_req_tmp[mkshort(rbuf+i)]=1;
-                if(seq==n_seq)
-                  {
-                  for(i=0;i<65536;i++)
-                    {
-                    if(ch_req[i]!=ch_req_tmp[i])
-                      {
-                      ch_req[i]=ch_req_tmp[i];
-                      j=1;
-                      }
-                    ch_req_tmp[i]=0;
-                    if(ch_req[i]) n_ch_req++;
-                    }
-                  seq_exp=1;
-                  }
-                else seq_exp++;
-                }
-              else /* was not as expected */
-                {
-                seq_exp=1;
-                }
-              }
-#if DEBUG2
-            printf("received channel list from %s:%d (%d): %s %d/%d\n",
-            inet_ntoa(from_addr.sin_addr),ntohs(from_addr.sin_port),
-            n_ch_req,rbuf,seq,n_seq);
-#endif
-            if(seq==n_seq) {time(&time_req);req_timo=0;}
-            if(j)
-              {
-              if((fp=fopen(file_req,"w"))==0)
-                {
-                fprintf(stderr,"requested channels file '%s' not open.\n",
-                  file_req);
-                exit(1);
-                }
-              for(i=0;i<65536;i++) if(ch_req[i]) fprintf(fp,"%04X\n",i);
-              fclose(fp);
-              sprintf(tbuf,"req < %s:%d (%d) > %s",
-                inet_ntoa(from_addr.sin_addr),ntohs(from_addr.sin_port),
-                n_ch_req,file_req);
-              write_log(logfile,tbuf);
-              }
-            }
-          }
-        else break;
-        }
-      time(&ltime);
-      if(*file_req && time_req && !req_timo && ltime-time_req>REQ_TIMO)
-        {
-        for(i=0;i<65536;i++) ch_req[i]=0;
-        req_timo=1;
-        write_log(logfile,"request timeout");
-        }
+      recv_pkts(sock,&to_addr,&no,&bufno,standby,&seq_exp,&n_seq_exp,
+        &time_req,&req_timo);
       usleep(10000);
       nw++;
       }
@@ -803,15 +805,20 @@ reset:
     ptr+=4;
     if(tow) ptr+=4;
 
+    ptw=ptw_save=sbuf[bufno];
+    ptw+=2;
+
     if(all)
       {
       memcpy(ptw,ptr,size2-8);
       ptw+=size2-8;
       for(atm+=(slptime-1);atm>=100;atm-=100) usleep(10000);
+      ptw_save[0]=no; /* packet no. */
+      ptw_save[1]=no; /* packet no.(2) */
       if(!standby)
         {
-        re=sendto(sock,ptw_save,ptw-ptw_save,0,(struct sockaddr *)&to_addr,
-          sizeof(to_addr));
+        re=sendto(sock,ptw_save,psize[bufno]=ptw-ptw_save,0,
+          (struct sockaddr *)&to_addr,sizeof(to_addr));
         if(re>=0) {n_packets++;n_bytes+=re;}
         }
 #if DEBUG1
@@ -819,12 +826,12 @@ reset:
       for(k=0;k<20;k++) fprintf(stderr,"%02X",ptw_save[k]);
       fprintf(stderr,"\n");
 #endif
-      ptw=ptw_save=sbuf[bufno];
+      if(++bufno==nbuf) bufno=0;
       no++;
-      *ptw++=no;  /* packet no. */
-      *ptw++=no;  /* packet no.(2) */
+      ptw=ptw_save=sbuf[bufno];
       continue;
       }
+    else *ptw++=0xA0;
 
     ptw_size=ptw;
     ptw+=2;                            /* size */
@@ -836,7 +843,7 @@ reset:
     fprintf(stderr," : %d  ",size2);
 #endif
     /* send data packets */
-    i=j=re=0;
+    ii=jj=re=0;
     while(ptr<ptr_lim)
       {
     /* obtain gs(group size) and advance ptr by gs */
@@ -853,7 +860,7 @@ reset:
         {
         ch=mkshort(ptr1=ptr);
         ptr+=2;
-        for(ii=0;ii<SR_MON;ii++)
+        for(i=0;i<SR_MON;i++)
           {
           aa=(*(ptr++));
           bb=aa&3;
@@ -867,12 +874,14 @@ reset:
         {
         if(ptw+gs-ptw_save>mtu-28)
           {
-          if(j==0) ptw-=8;
+          if(jj==0) ptw-=8;
 send_packet:
 #if TEST_RESEND
           if(no%10!=9) {
 #endif
           for(atm+=(slptime-1);atm>=100;atm-=100) usleep(10000);
+          ptw_save[0]=no; /* packet no. */
+          ptw_save[1]=no; /* packet no.(2) */
           if(!standby)
             {
             re=sendto(sock,ptw_save,psize[bufno]=ptw-ptw_save,0,
@@ -892,111 +901,20 @@ send_packet:
 #endif
           if(++bufno==nbuf) bufno=0;
           no++;
-#if 0
-/* resend if requested */
-          while(1)
-            {
-            k=1<<sock;
-	    timeout.tv_sec=timeout.tv_usec=0;
-            if(select(sock+1,(fd_set *)&k,NULL,NULL,&timeout)>0)
-              {
-              fromlen=sizeof(from_addr);
-              len=recvfrom(sock,rbuf,RSIZE,0,(struct sockaddr *)&from_addr,
-                  &fromlen);
-#if DEBUG1
-              fprintf(stderr,"len=%d",len);
-              for(k=0;k<20;k++) fprintf(stderr,"%02X",rbuf[k]);
-              fprintf(stderr,"\n");
-#endif
-              if(len==1 && (bufno_f=get_packet(bufno,no_f=(*rbuf)))>=0)
-                { /* resend request packet */
-                memcpy(sbuf[bufno],sbuf[bufno_f],psize[bufno]=psize[bufno_f]);
-                sbuf[bufno][0]=no;    /* packet no. */
-                sbuf[bufno][1]=no_f;  /* old packet no. */
-                if(!standby)
-                  {
-                  re=sendto(sock,sbuf[bufno],psize[bufno],0,
-                    (struct sockaddr *)&to_addr,sizeof(to_addr));
-                  if(re>=0) {n_packets++;n_bytes+=re;}
-                  }
-#if DEBUG1
-                fprintf(stderr,"%5d>  ",re);
-                for(k=0;k<20;k++) fprintf(stderr,"%02X",sbuf[bufno][k]);
-                fprintf(stderr,"\n");
-#endif
-                sprintf(tbuf,"resend for %s:%d #%d as #%d, %d B",
-                  inet_ntoa(from_addr.sin_addr),ntohs(from_addr.sin_port),
-                  no_f,no,re);
-                write_log(logfile,tbuf);
-                if(++bufno==nbuf) bufno=0;
-                no++;
-                }
-              else if(len>=8 && strncmp(rbuf,"REQ",4)==0)
-                { /* send request packet (channels list) */
-                seq=mkshort(rbuf+4);
-                n_seq=mkshort(rbuf+6);
-                j=0; /* change flag */
-                if(len==8 && seq==0 && n_seq==0) /* all channels */
-                  {
-                  for(i=0;i<65536;i++)
-                    {
-                    if(ch_req[i]==0)
-                      {
-                      ch_req[i]=1;
-                      j=1;
-                      }
-                    }
-                  }
-                else /* must be len>0 and seq>=0 and n_seq>0 */
-                  {
-                  if(n_seq_exp==0) n_seq_exp=n_seq;
-                  if(seq==seq_exp)
-                    {
-                    for(i=8;i<len;i+=2) ch_req_tmp[mkshort(rbuf+i)]=1;
-                    if(seq==n_seq)
-                      {
-                      for(i=0;i<65536;i++)
-                        {
-                        if(ch_req[i]!=ch_req_tmp[i])
-                          {
-                          ch_req[i]=ch_req_tmp[i];
-                          j=1;
-                          }
-                        ch_req_tmp[i]=0;
-                        }
-                      seq_exp=1;
-                      }
-                    else seq_exp++;
-                    }
-                  else /* was not as expected */
-                    {
-                    seq_exp=1;
-                    }
-                  }
-        printf("recvd channel list from %s:%d : %s %d/%d\n",
-          inet_ntoa(from_addr.sin_addr),ntohs(from_addr.sin_port),
-          *rbuf,seq,n_seq);
-                if(j)
-                  {
-                  if((fp=fopen(file_req,"w"))==0)
-                    {
-                    fprintf(stderr,"requested channels file '%s' not open.\n",
-                      file_req);
-                    exit(1);
-                    }
-                  for(i=0;i<65536;i++) if(ch_req[i]) fprintf(fp,"%04X\n",i);
-                  fclose(fp);
-                  }
-                }
-              }
-            else break;
-            }
-#endif
 
+          recv_pkts(sock,&to_addr,&no,&bufno,standby,&seq_exp,&n_seq_exp,
+            &time_req,&req_timo);
+
+          time(&ltime);
+          if(*file_req && time_req && !req_timo && ltime-time_req>REQ_TIMO)
+            {
+            for(i=0;i<65536;i++) ch_req[i]=0;
+            req_timo=1;
+            write_log(logfile,"request timeout");
+            }
           for(k=2;k<8;k++) sbuf[bufno][3+k]=ptw_size[k];
           ptw=ptw_save=sbuf[bufno];
-          *ptw++=no; /* packet no. */
-          *ptw++=no; /* packet no.(2) */
+          ptw+=2;
           *ptw++=0xA0;
           ptw_size=ptw;
           ptw+=2;  /* size */
@@ -1007,9 +925,9 @@ send_packet:
         uni=ptw-ptw_size;
         ptw_size[0]=uni>>8;
         ptw_size[1]=uni;
-        j++;
+        jj++;
         }
-      i++;
+      ii++;
       if(single && ptr>=ptr_lim && ptw-ptw_save>11)
         {
         gs=0;
@@ -1018,7 +936,7 @@ send_packet:
       }
 #if DEBUG
     fprintf(stderr,"\007");
-    fprintf(stderr," %d/%d\n",j,i); /* nch_sent/nch */
+    fprintf(stderr," %d/%d\n",jj,ii); /* nch_sent/nch */
 #endif
     if((uni=ptw-ptw_size)>8)
       {

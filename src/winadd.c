@@ -1,4 +1,4 @@
-/* $Id: winadd.c,v 1.3 2003/11/03 10:08:02 uehira Exp $ */
+/* $Id: winadd.c,v 1.4 2003/11/03 12:20:59 uehira Exp $ */
 
 /*
  * winadd.c  (Uehira Kenji)
@@ -51,7 +51,7 @@ typedef struct data_index  INDX;
 
 /* global variables */
 static const char rcsid[] =
-   "$Id: winadd.c,v 1.3 2003/11/03 10:08:02 uehira Exp $";
+   "$Id: winadd.c,v 1.4 2003/11/03 12:20:59 uehira Exp $";
 static int  dummy_flag, verbose_flag;
 
 /* prototypes */
@@ -85,11 +85,6 @@ main(int argc, char *argv[])
 {
   int  c;
 
-  if (argc == 1) {
-    usage();
-    exit(0);
-  }
-
   dummy_flag = 1;
   verbose_flag = 0;
   while ((c = getopt(argc, argv, "nvh")) != -1) {
@@ -108,6 +103,11 @@ main(int argc, char *argv[])
   }
   argc -= optind;
   argv += optind;
+
+  if (argc < 1) {
+    usage();
+    exit(0);
+  }
 
 #if DEBUG
   fprintf(stderr,"verbose flag = %d, dummy flag=%d\n",
@@ -402,6 +402,9 @@ file_mode_run(int argcc, char *argvv[])
     win_file_read(argvv[i], ch, &ch_num, &ch_num_arr,
 		  time, &time_num, &time_num_arr);
   }
+  if ((ch_num == 0) || (time_num == 0))
+      exit(1);
+
   /* malloc memory for INDX */
   if (NULL == (indx = MALLOC(INDX *, ch_num)))
     memory_error();
@@ -786,6 +789,8 @@ memory_mode_run(int argcc, char *argvv[])
     win_file_read_from_buf(rawbuf[i], raw_size[i], ch, &ch_num, &ch_num_arr,
 		  time, &time_num, &time_num_arr);
   }  /* for (i = 0; i < argcc; ++i) */
+  if ((ch_num == 0) || (time_num == 0))
+      exit(1);
 
   /* malloc memory for INDX */
   if (NULL == (indx = MALLOC(INDX *, ch_num)))

@@ -1,5 +1,9 @@
-$Id: ChangeLog,v 1.68 2004/09/08 06:50:53 urabe Exp $
+$Id: ChangeLog,v 1.69 2004/09/09 03:36:47 urabe Exp $
 
+2004-09-09 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
+	* relay : fixed a bug in -s option ("sinterface")
+	* Version 1.1.40 released.
+	
 2004-09-08 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
 	* win : allow initial depth  down to -3 km
 	* Version 1.1.39 released.

@@ -1,4 +1,4 @@
-/* $Id: relay.c,v 1.9 2003/10/26 07:48:24 urabe Exp $ */
+/* $Id: relay.c,v 1.10 2004/09/09 03:36:47 urabe Exp $ */
 /* "relay.c"      5/23/94-5/25/94,6/15/94-6/16/94,6/23/94,3/16/95 urabe */
 /*                3/26/95 check_packet_no; port# */
 /*                5/24/96 added processing of "host table full" */
@@ -15,6 +15,7 @@
 /*                2003.3.26 bug fixed in psize for stdin  */
 /*                2003.9.9 no req resend(-r), receive mcast(-g), send delay(-d) */
 /*                2003.10.26 "sinterface" */
+/*                2004.9.9 fixed a bug in -s option ("sinterface") */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -247,7 +248,7 @@ main(argc,argv)
   ttl=1;
   src_port=delay=noreq=0;
 
-  while((c=getopt(argc,argv,"d:g:i:p:rt:T:"))!=EOF)
+  while((c=getopt(argc,argv,"d:g:i:p:rs:t:T:"))!=EOF)
     {
     switch(c)
       {

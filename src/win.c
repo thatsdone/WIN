@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.34 2004/12/28 02:11:01 urabe Exp $
+   $Id: win.c,v 1.35 2004/12/28 06:30:51 urabe Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -14,7 +14,7 @@
 */
 #define HINET_EXTENTION_1 1  /* roll over the monitor window */
 #define HINET_EXTENTION_2 1  /* search */
-#define HINET_EXTENTION_3 1  /* paste-up in the monitor window */
+#define HINET_EXTENTION_3 0  /* paste-up in the monitor window */
 #define HINET_WIN32   0      /* Hi-net WIN32 format */
 #if ! HINET_WIN32
 #define NAME_PRG      "win"

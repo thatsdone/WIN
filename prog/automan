@@ -1,7 +1,6 @@
 #! /bin/sh
 #
-# $Id: automan,v 1.2 2000/04/30 10:10:37 urabe Exp $
-#   automan 99.4.15  urabe
+#   automan 2000.7.1  urabe
 #
 if [ -n "$1" ]
 then
@@ -28,7 +27,8 @@ do
         if [ "`ls -1 $dirs/$ws|wc -l`" -eq 0 ]
         then
           echo mv $dir/$file $dirs/$ws
-          mv $dir/$file $dirs/$ws
+          cp $dir/$file $dirs/$ws
+          rm $dir/$file
           touch $tmp
           break
         fi

@@ -1,4 +1,4 @@
-/* $Id: recvt.c,v 1.3 2000/12/27 10:23:28 urabe Exp $ */
+/* $Id: recvt.c,v 1.4 2001/01/08 15:05:05 urabe Exp $ */
 /* "recvt.c"      4/10/93 - 6/2/93,7/2/93,1/25/94    urabe */
 /*                2/3/93,5/25/94,6/16/94 */
 /*                1/6/95 bug in adj_time fixed (tm[0]--) */
@@ -595,6 +595,7 @@ main(argc,argv)
     unsigned long c;    /* counter */
     unsigned char d[1];   /* data buffer */
     } *sh,*sh2;
+  struct timeval timeout;
 #define USAGE \
 "(-a) (-m pre) (-p post) [port] [shmkey(:shmkey2)] [shmsize(:shmsize2)(KB)] ([ctlfile]/- ([logfile]))"
   if(progname=strrchr(argv[0],'/')) progname++;
@@ -602,6 +603,7 @@ main(argc,argv)
 
   all=0;
   pre=post=30;
+  timeout.tv_sec=timeout.tv_usec=0;
   while((c=getopt(argc,argv,"am:p:"))!=EOF)
     {
     switch(c)
@@ -730,11 +732,48 @@ main(argc,argv)
   for(i=0;i<6;i++) tm[i]=(-1);
   ptr=ptr_size=sh->d;
   read_chfile();
+  if(sh2->r==(-1)) shp2=(-1);
+  else
+    {
+    c_save2=sh2->c;
+    size2=mklong(ptr_save2=sh2->d+(shp2=sh2->r));
+    }
 
   while(1)
     {
-    fromlen=sizeof(from_addr);
-    n=recvfrom(sock,rbuf,MAXMESG,0,&from_addr,&fromlen);
+    k=1<<sock;
+    if(select(sock+1,&k,NULL,NULL,&timeout)>0)
+      {
+      fromlen=sizeof(from_addr);
+      n=recvfrom(sock,rbuf,MAXMESG,0,&from_addr,&fromlen);
+      }
+    else /* check input packets from shm2 */
+      {
+      if(shp2>=0) /* read next in shm2 */
+        {
+        if(shp2+size2>sh2->pl) shp2=0; /* advance pointer */
+        else shp2+=size2;
+        if(sh2->p==shp2) continue;
+        i=mklong(ptr_save2);
+        if(sh2->c<c_save2 || i!=size2)
+          {   /* previous block has been destroyed */
+          write_log(logfile,"reset");
+          goto reset;
+          }
+        c_save2=sh2->c;
+        size2=mklong(ptr_save2=ptr2=sh2->d+shp2);
+        ptr_lim2=ptr2+size2;
+        ptr2+=4;
+        if(tow) ptr2+=4;
+
+        }
+      else if(sh2->r>=0) /* shm2 started to be written */
+        {
+        c_save2=sh2->c;
+        size2=mklong(ptr_save2=sh2->d+(shp2=sh2->r));
+        }
+      else continue; /* shm2 not written yet */
+      } 
 #if DEBUG1
     if(rbuf[0]==rbuf[1]) printf("%d ",rbuf[0]);
     else printf("%d(%d) ",rbuf[0],rbuf[1]);

@@ -1,4 +1,4 @@
-/* $Id: wform.c,v 1.2 2002/01/13 06:57:52 uehira Exp $ */
+/* $Id: wform.c,v 1.3 2002/04/26 11:47:50 uehira Exp $ */
 /* wform.c - a program to make a win format file */
 /* wform [ch] [sr] */
 
@@ -118,7 +118,7 @@ main(argc,argv)
   int argc;
   char *argv[];
   {
-  static unsigned char inbuf[SR*4],outbuf[4+4*SR],tt[6];
+  static unsigned char inbuf[SR*4],outbuf[4+4*SR],tt[6],cbuf;
   int sr,ch,size,t[6],i;
 
   if(argc<4)
@@ -134,7 +134,10 @@ main(argc,argv)
   if((size=fread(inbuf,4,sr,stdin))<sr) exit(1);
   size=0;
   size=winform(inbuf,outbuf,sr,ch)+10;
-  fwrite(&size,4,1,stdout);
+  cbuf=size>>24; fwrite(&cbuf,1,1,stdout);
+  cbuf=size>>16; fwrite(&cbuf,1,1,stdout);
+  cbuf=size>>8; fwrite(&cbuf,1,1,stdout);
+  cbuf=size; fwrite(&cbuf,1,1,stdout);
   fwrite(tt,6,1,stdout);
   fwrite(outbuf,size,1,stdout);
   }

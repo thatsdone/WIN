@@ -1,5 +1,10 @@
-$Id: ChangeLog,v 1.5 2002/01/25 04:01:23 uehira Exp $
+$Id: ChangeLog,v 1.6 2002/04/26 11:47:50 uehira Exp $
 	
+2002-04-26 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 1.0.3 released.
+	* wform.c
+	  byte-order free.
+
 2002-01-25 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* recvts はX86マシンの時だけコンパイルする．
 

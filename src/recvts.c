@@ -4,7 +4,7 @@
 /*                98.6.26  yo2000 */
 /*                99.2.4   moved signal(HUP) to read_chfile() by urabe */
 /*                99.4.19  byte-order-free */
-/*                2001.2.18 wincpy() */
+/*                2001.2.20 wincpy() */
 
 #include <stdio.h>
 #include <signal.h>
@@ -348,15 +348,19 @@ wincpy(ptw,ptr,size)
     ch=(gh>>16)&0xffff;
     sr=gh&0xfff;
     ss=(gh>>12)&0xf;
-    if(sr>MAX_SR || ss>MAX_SS)
-      {
-      sprintf(tb,"ill ch hdr %02X%02X%02X%02X %02X%02X%02X%02X",
-            ptr[0],ptr[1],ptr[2],ptr[3],ptr[4],ptr[5],ptr[6],ptr[7]);
-      write_log(logfile,tb);
-      return n;
-      }
     if(ss) gs=ss*(sr-1)+8;
     else gs=(sr>>1)+8;
+    if(sr>MAX_SR || ss>MAX_SS || ptr+gs>ptr_lim)
+      {
+#if DEBUG2
+      sprintf(tb,
+"ill ch hdr %02X%02X%02X%02X %02X%02X%02X%02X psiz=%d sr=%d ss=%d gs=%d rest=%d",
+        ptr[0],ptr[1],ptr[2],ptr[3],ptr[4],ptr[5],ptr[6],ptr[7],
+        size,sr,ss,gs,ptr_lim-ptr);
+      write_log(logfile,tb);
+#endif
+      return n;
+      }
     if(ch_table[ch] && ptr+gs<=ptr_lim)
       {
 #if DEBUG1

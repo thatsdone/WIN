@@ -1,4 +1,4 @@
-/* $Id: recvts.c,v 1.2 2000/04/30 10:05:23 urabe Exp $ */
+/* $Id: recvts.c,v 1.3 2000/08/14 07:41:52 urabe Exp $ */
 /* "recvts.c"     97.9.19 modified from recvt.c      urabe */
 /*                97.9.21  ch_table */
 /*                98.4.23  b2d[] etc. */
@@ -6,6 +6,7 @@
 /*                99.2.4   moved signal(HUP) to read_chfile() by urabe */
 /*                99.4.19  byte-order-free */
 /*                2000.4.24 strerror() */
+/*                2000.5.2 data amount statistics */
 
 #include <stdio.h>
 #include <signal.h>
@@ -27,6 +28,7 @@
 unsigned char rbuf[MAXMESG],ch_table[65536];
 char tb[100],*progname,logfile[256],chfile[256];
 int n_ch,negate_channel;
+unsigned long n_packets,n_bytes,last_time;
 
 get_time(rt)
   int *rt;
@@ -254,6 +256,7 @@ read_chfile()
   FILE *fp;
   int i,j,k;
   char tbuf[1024];
+  unsigned long ltime;
   if(*chfile)
     {
     if((fp=fopen(chfile,"r"))!=NULL)
@@ -315,6 +318,13 @@ read_chfile()
     n_ch=i;
     write_log(logfile,"all channels");
     }
+/* statistics */
+  time(&ltime);
+  i=ltime-last_time;
+  sprintf(tbuf,"np=%d nb=%d per=%d s",n_packets,n_bytes,i);
+  write_log(logfile,tbuf);
+  last_time=ltime;
+  n_packets=n_bytes=0;
   signal(SIGHUP,(void *)read_chfile);
   }
 
@@ -332,6 +342,8 @@ get_packet(fd,pbuf)
     printf("%d\n",len);
 #endif
     p=18;
+    n_packets++;
+    n_bytes+=len;
     }
   psize=(buf[p]<<8)+buf[p+1];
   p+=2;

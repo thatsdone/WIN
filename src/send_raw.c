@@ -1,4 +1,4 @@
-/* $Id: send_raw.c,v 1.11 2002/05/07 00:04:57 urabe Exp $ */
+/* $Id: send_raw.c,v 1.12 2002/05/15 02:29:19 urabe Exp $ */
 /*
     program "send_raw/send_mon.c"   1/24/94 - 1/25/94,5/25/94 urabe
                                     6/15/94 - 6/16/94
@@ -37,6 +37,7 @@
                2002.5.2  improved send interval control (slptime/atm)
                2002.5.2  i<1000 -> 1000000
                2002.5.3  NBUF 128->250
+               2002.5.15 standby mode (-w SHMKEY) / packet statistics on HUP
 */
 
 #ifdef HAVE_CONFIG_H
@@ -85,7 +86,8 @@
 #endif
 */
 
-int sock,raw,tow,all,psize[NBUF],n_ch,negate_channel,mtu,nbuf,slptime;
+int sock,raw,tow,all,psize[NBUF],n_ch,negate_channel,mtu,nbuf,slptime,
+    n_bytes,n_packets;
 unsigned char *sbuf[NBUF],ch_table[65536],rbuf[RSIZE];
      /* sbuf[NBUF][mtu-28+8] ; +8 for overrun by "size" and "time" */
 char *progname,logfile[256],chfile[256];
@@ -220,6 +222,8 @@ read_chfile()
   FILE *fp;
   int i,j,k;
   char tbuf[1024];
+  static unsigned long ltime,ltime_p;
+
   if(*chfile)
     {
     if((fp=fopen(chfile,"r"))!=NULL)
@@ -283,6 +287,19 @@ read_chfile()
     }
   sprintf(tbuf,"slptime=%d (LIMIT=%d)",slptime,SLPLIMIT);
   write_log(logfile,tbuf);
+
+  time(&ltime);
+  j=ltime-ltime_p;
+  k=j/2;
+  if(ltime_p)
+    {
+    sprintf(tbuf,"%d pkts %d B in %d s ( %d pkts/s %d B/s ) ",
+      n_packets,n_bytes,j,(n_packets+k)/j,(n_bytes+k)/j);
+    write_log(logfile,tbuf);
+    n_packets=n_bytes=0;
+    }
+  ltime_p=ltime;
+
   signal(SIGHUP,(void *)read_chfile);
   }
 
@@ -291,10 +308,12 @@ main(argc,argv)
   char *argv[];
   {
   FILE *fp;
-  key_t shm_key;
+  time_t watch;
+  key_t shm_key,shw_key;
   unsigned long uni;
   int i,j,k,c_save,shp,aa,bb,ii,bufno,bufno_f,fromlen,hours_shift,sec_shift,c,
-    kk,nw,eobsize,eobsize_count,size2,size,gs,sr,re,shmid,atm;
+    kk,nw,eobsize,eobsize_count,size2,size,gs,sr,re,shmid,shwid,atm,c_save_w,
+    standby;
   struct sockaddr_in to_addr,from_addr;
   struct hostent *h;
   unsigned short host_port,ch;
@@ -307,7 +326,7 @@ main(argc,argv)
     unsigned long r;    /* latest */
     unsigned long c;    /* counter */
     unsigned char d[1];   /* data buffer */
-    } *shm;
+    } *shm,*shw;
   extern int optind;
   extern char *optarg;
   struct timeval timeout,tp;
@@ -326,12 +345,15 @@ main(argc,argv)
   else if(strcmp(progname,"sendt_mon")==0) {raw=0;tow=1;}
   else exit(1);
   sprintf(tbuf,
-" usage : '%s (-amrt) (-b [mtu]) (-h [h]) (-i [interface]) (-s [s]) \\\n\
-           [shmkey] [dest] [port] ([chfile]/- ([logfile]))'",progname);
+" usage : '%s (-amrt) (-b [mtu]) (-h [h]) (-i [interface]) (-s [s])\\\n\
+           (-w [key]) [shmkey] [dest] [port] ([chfile]/- ([logfile]))'",
+    progname);
 
   *interface=0;
   mtu=MTU;
-  while((c=getopt(argc,argv,"ab:h:i:mrs:t"))!=EOF)
+  shw_key=(-1);
+  standby=0;
+  while((c=getopt(argc,argv,"ab:h:i:mrs:tw:"))!=EOF)
     {
     switch(c)
       {
@@ -358,6 +380,9 @@ main(argc,argv)
         break;
       case 't':   /* "tow" mode */
         tow=1;
+        break;
+      case 'w':   /* shm key to watch */
+        shw_key=atoi(optarg);
         break;
       default:
         fprintf(stderr," option -%c unknown\n",c);
@@ -394,7 +419,6 @@ main(argc,argv)
       }
     }    
   if(argc>5+optind) strcpy(logfile,argv[5+optind]);
-    
   read_chfile();
   if(hours_shift!=0)
     {
@@ -415,6 +439,15 @@ main(argc,argv)
   sprintf(tbuf,"start shm_key=%d id=%d",shm_key,shmid);
   write_log(logfile,tbuf);
 
+  if(shw_key>0)
+    {
+    if((shwid=shmget(shw_key,0,0))<0) err_sys("shmget(watch)");
+    if((shw=(struct Shm *)shmat(shwid,(char *)0,0))==(struct Shm *)-1)
+      err_sys("shmat(watch)");
+    sprintf(tbuf,"start shm_key=%d id=%d for standby watch",shw_key,shwid);
+    write_log(logfile,tbuf);
+    }
+
   /* destination host/port */
   if(!(h=gethostbyname(host_name))) err_sys("can't find host");
   memset((char *)&to_addr,0,sizeof(to_addr));
@@ -422,7 +455,6 @@ main(argc,argv)
   memcpy((caddr_t)&to_addr.sin_addr,h->h_addr,h->h_length);
 /*  to_addr.sin_addr.s_addr=mklong(h->h_addr);*/
   to_addr.sin_port=htons(host_port);
-
   /* my socket */
   if((sock=socket(AF_INET,SOCK_DGRAM,0))<0) err_sys("socket");
   i=65535;
@@ -460,10 +492,19 @@ main(argc,argv)
       }
     }
   nbuf=i;
-  no=bufno=0;
+  no=bufno=n_packets=n_bytes=0;
 
 reset:
   while(shm->r==(-1)) sleep(1);
+  if(shw_key>0)
+    {
+    c_save_w=shw->c;
+    watch=time(NULL);
+    standby=1;
+    sprintf(tbuf,"watching shm_key=%d - enter standby",shw_key);
+    write_log(logfile,tbuf);
+    sleep(1);
+    }
   c_save=shm->c;
   size=mklong(ptr_save=shm->d+(shp=shm->r));
   ptw=ptw_save=sbuf[bufno];
@@ -493,6 +534,33 @@ reset:
       goto reset;
       }
     c_save=shm->c;
+
+    if(shw_key>0) /* check standby state */
+      {
+      if(standby) /* at standby becase master was working */
+        {
+        if(time(NULL)>watch)
+          {
+          if(shw->c==c_save_w) /* master is not working */
+            {
+            standby=0;
+            sprintf(tbuf,"shm_key=%d stopped - begin sending",shw_key);
+            write_log(logfile,tbuf);
+            }
+          watch=time(NULL);
+          c_save_w=shw->c;
+          }
+        }
+      else if(shw->c!=c_save_w) /* master is working */
+        {
+        standby=1;
+        c_save_w=shw->c;
+        watch=time(NULL);
+        sprintf(tbuf,"shm_key=%d working - enter standby",shw_key);
+        write_log(logfile,tbuf);
+        }
+      }
+
     size=mklong(ptr_save=ptr=shm->d+shp);
 
     if(size==mklong(shm->d+shp+size-4)) eobsize_count++;
@@ -511,8 +579,12 @@ reset:
       memcpy(ptw,ptr,size2-8);
       ptw+=size2-8;
       for(atm+=(slptime-1);atm>=100;atm-=100) usleep(10000);
-      re=sendto(sock,ptw_save,ptw-ptw_save,0,(struct sockaddr *)&to_addr,
-        sizeof(to_addr));
+      if(!standby)
+        {
+        re=sendto(sock,ptw_save,ptw-ptw_save,0,(struct sockaddr *)&to_addr,
+          sizeof(to_addr));
+        if(re>=0) {n_packets++;n_bytes+=re;}
+        }
 #if DEBUG1
       fprintf(stderr,"%5d>  ",re);
       for(k=0;k<20;k++) fprintf(stderr,"%02X",ptw_save[k]);
@@ -571,8 +643,12 @@ reset:
           if(no%10!=9) {
 #endif
           for(atm+=(slptime-1);atm>=100;atm-=100) usleep(10000);
-          re=sendto(sock,ptw_save,psize[bufno]=ptw-ptw_save,0,
-            (struct sockaddr *)&to_addr,sizeof(to_addr));
+          if(!standby)
+            {
+            re=sendto(sock,ptw_save,psize[bufno]=ptw-ptw_save,0,
+              (struct sockaddr *)&to_addr,sizeof(to_addr));
+            if(re>=0) {n_packets++;n_bytes+=re;}
+            }
 #if DEBUG1
           fprintf(stderr,"%5d>  ",re);
           for(k=0;k<20;k++) fprintf(stderr,"%02X",ptw_save[k]);
@@ -599,8 +675,12 @@ reset:
                 memcpy(sbuf[bufno],sbuf[bufno_f],psize[bufno]=psize[bufno_f]);
                 sbuf[bufno][0]=no;    /* packet no. */
                 sbuf[bufno][1]=no_f;  /* old packet no. */
-                re=sendto(sock,sbuf[bufno],psize[bufno],0,
-                  (struct sockaddr *)&to_addr,sizeof(to_addr));
+                if(!standby)
+                  {
+                  re=sendto(sock,sbuf[bufno],psize[bufno],0,
+                    (struct sockaddr *)&to_addr,sizeof(to_addr));
+                  if(re>=0) {n_packets++;n_bytes+=re;}
+                  }
 #if DEBUG1
                 fprintf(stderr,"%5d>  ",re);
                 for(k=0;k<20;k++) fprintf(stderr,"%02X",sbuf[bufno][k]);

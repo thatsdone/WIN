@@ -1,4 +1,4 @@
-/* $Id: wtape.c,v 1.8 2002/05/31 06:06:12 urabe Exp $ */
+/* $Id: wtape.c,v 1.9 2004/01/26 02:47:08 urabe Exp $ */
 /*
   program "wtape.c"
   8/23/89 - 8/8/90, 6/27/91, 12/24/91, 2/29/92  urabe
@@ -11,6 +11,8 @@
   99.4.19 byte-order-free
   2000.4.17 deleted definition of usleep()
   2001.6.21 add options '-p', '-d' and '?'   (uehira)
+  2004.1.20 avoid N*64*1024 byte block
+            SIZE_MAX  1000000->2000000
 */
 
 #ifdef HAVE_CONFIG_H
@@ -43,7 +45,7 @@
 #include "subst_func.h"
 
 #define   DEBUGFLAG 1
-#define   SIZE_MAX  1000000
+#define   SIZE_MAX  2000000
 #define   NAMLEN    80
 #define   N_EXABYTE 8
 #define   DEFAULT_WAIT_MIN  0
@@ -61,7 +63,7 @@
   int  wait_min;
   char param_name[WIN_FILENAME_MAX];
   char *progname;
-  static char rcsid[]="$Id: wtape.c,v 1.8 2002/05/31 06:06:12 urabe Exp $";
+  static char rcsid[]="$Id: wtape.c,v 1.9 2004/01/26 02:47:08 urabe Exp $";
 
 switch_sig()
   {
@@ -652,6 +654,7 @@ main(argc,argv)
 #endif
 */
         /* write one sec */
+        if(j%(64*1024)==0) j++;
         if((re=write(fd_exb,buf,j))<j)
           {
 #if DEBUGFLAG

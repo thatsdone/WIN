@@ -1,4 +1,4 @@
-/* $Id: recvnmx.c,v 1.14 2002/07/05 09:06:57 urabe Exp $ */
+/* $Id: recvnmx.c,v 1.15 2002/08/09 03:50:59 urabe Exp $ */
 /* "recvnmx.c"    2001.7.18-19 modified from recvt.c and nmx2raw.c  urabe */
 /*                2001.8.18 */
 /*                2001.10.5 workaround for hangup */
@@ -7,7 +7,8 @@
 /*                2002.2.20 allow SR of only 20/100/200Hz */
 /*                2002.3.3  read ch_map file on HUP */
 /*                2002.3.5  eobsize on -B option */
-/*                2002.7.5  added Trident and changed format of ch file */
+/*                2002.7.5  Trident */
+/*                2002.8.9  process re-tx packets properly */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -20,6 +21,7 @@
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
+#include <dirent.h>
 
 #if TIME_WITH_SYS_TIME
 #include <sys/time.h>
@@ -43,6 +45,8 @@
 #define DEBUG1    0
 #define DEBUG2    0
 #define DEBUG3    0
+#define DEBUG4    0
+#define DEBUG5    0
 #define BELL      0
 #define MAXMESG   2048
 #define NB        60    /* max n of bundles */
@@ -71,8 +75,8 @@ struct Nmx_Packet {
   int subsec;
   int model;
   int serno;
-  int oldest;
-  int seq;
+  unsigned int oldest;
+  unsigned int seq;
   int sr;
   int ch;
   int first;
@@ -502,16 +506,20 @@ main(argc,argv)
   char *argv[];
   {
   char tb[256];
+  DIR *dir_ptr;
   FILE *fp;
   unsigned char pbuf[MAXMESG];
-  int *rbuf[MAXCH],*ptr,idx;
+  int *rbuf[MAXCH],*ptr,idx,seq_rbuf[MAXCH],fsize_rbuf[MAXCH];
+  time_t tim_rbuf[MAXCH];
   unsigned long uni;
   struct Nmx_Packet pk;
   int i,j,k,size_shm,n,fd,baud,c,oldest,nn,verbose,rbuf_ptr,sock,fromlen,winch,
-    eobsize,pl;
+    eobsize,pl,nr;
   key_t shm_key;
   int shmid;
   struct Shm *shm;
+  char name[100];
+  char fragdir[1024]; /* directory for fragment data */
   char mcastgroup[256]; /* multicast address */
   char interface[256];  /* multicast interface */
 #define MCASTGROUP  "224.0.1.1"
@@ -526,14 +534,17 @@ main(argc,argv)
   else progname=argv[0];
   sprintf(tb,
     " usage : '%s (-c [ch_map]) (-i [interface]) (-m [mcast_group]) (-vB) \\\n\
-         [port] [shm_key] [shm_size(KB)] ([log file])'",progname);
+         (-d [fragdir]) [port] [shm_key] [shm_size(KB)] ([log file])'",progname);
 
   station=verbose=use_chmap=eobsize=0;
-  *interface=(*mcastgroup)=(*chmapfile)=0;
-  while((c=getopt(argc,argv,"c:i:m:vB"))!=EOF) {
+  *interface=(*mcastgroup)=(*chmapfile)=(*fragdir)=0;
+  while((c=getopt(argc,argv,"c:d:i:m:vB"))!=EOF) {
     switch(c) {
       case 'c':   /* channel map file */
         strcpy(chmapfile,optarg);
+        break;
+      case 'd':   /* fragment data directory */
+        strcpy(fragdir,optarg);
         break;
       case 'i':   /* interface (ordinary IP address) which receive mcast */
         strcpy(interface,optarg);
@@ -604,11 +615,17 @@ main(argc,argv)
 
   read_ch_map();
 
+  if(*fragdir)
+    {
+    if((dir_ptr=opendir(fragdir))==NULL) err_sys("opendir");
+    else closedir(dir_ptr);
+    }
+
   while(1){
     fromlen=sizeof(from_addr);
     n=recvfrom(sock,pbuf,MAXMESG,0,(struct sockaddr *)&from_addr,&fromlen);
     if(parse_one_packet(pbuf,n,&pk)<0) continue;
-#if DEBUG1
+#if DEBUG5
     p=pbuf;
     printf("%d ",n);
     for(i=0;i<16;i++) printf("%02X",*p++);
@@ -631,15 +648,138 @@ main(argc,argv)
          /* compressed data packet */
       idx=ch2idx(rbuf,&pk,winch);
       rbuf_ptr=(pk.subsec*pk.sr+5000)/10000;
+#if DEBUG4
+      printf("seq=%d(%d) expected=%d(%d)\n",pk.seq,rbuf_ptr,seq_rbuf[idx]+1,
+        fsize_rbuf[idx]);
+#endif
+      if(pk.seq!=seq_rbuf[idx]+1)
+        {
+        if(*fragdir==0)
+          {
+          for(k=fsize_rbuf[idx];k<pk.sr;k++) rbuf[idx][k]=0;
+#if DEBUG4
+          printf("rest filled with zero\n");
+#endif
+          nn=write_shm(winch,pk.sr,tim_rbuf[idx],rbuf[idx],shm,eobsize,pl);
+          }
+        else
+          {
+          /* look for first fragment of seq_rbuf[idx]+1 */
+          sprintf(name,"%s/%s%d-%d.%d.F",fragdir,model[pk.model],pk.serno,
+            pk.ch,seq_rbuf[idx]+1);
+          if((fp=fopen(name,"r"))==NULL)
+            {
+#if DEBUG4
+            printf("%s not found - write rbuf to file\n",name);
+#endif
+            sprintf(name,"%s/%s%d-%d.%d.L",fragdir,model[pk.model],pk.serno,
+              pk.ch,seq_rbuf[idx]);
+            if((fp=fopen(name,"w+"))==NULL)
+              {
+              sprintf(tb,"file %s not open for write",name);
+              write_log(logfile,tb);
+              }
+            else
+              {
+              if(fwrite(rbuf[idx],4,fsize_rbuf[idx],fp)<fsize_rbuf[idx])
+                {
+                sprintf(tb,"file %s write failed",name);
+                write_log(logfile,tb);
+                }
+              fclose(fp);
+              }
+            }
+          else /* found */
+            {
+            nr=fread(rbuf[idx]+fsize_rbuf[idx],4,pk.sr,fp);
+            if(nr!=pk.sr-fsize_rbuf[idx] && nr!=pk.sr-fsize_rbuf[idx]+1)
+              {
+              sprintf(tb,"file %s size=%d inconsistent (%d)",
+                name,nr,pk.sr-fsize_rbuf[idx]);
+              write_log(logfile,tb);
+              }
+            fclose(fp);
+            unlink(name);
+#if DEBUG4
+            printf("%s found. %d(%d) read\n",name,nr,pk.sr-fsize_rbuf[idx]);
+#endif
+            nn=write_shm(winch,pk.sr,tim_rbuf[idx],rbuf[idx],shm,eobsize,pl);
+            }
+          }
+        }
+
       n=bundle2fix(&pk,rbuf[idx]+rbuf_ptr);
+
+      j=0;
+      if(pk.seq!=seq_rbuf[idx]+1)
+        {
+        if(*fragdir==0)
+          {
+          for(k=0;k<rbuf_ptr;k++) rbuf[idx][k]=0;
+#if DEBUG4
+          printf("first part filled with zero\n");
+#endif
+          }
+        else
+          {
+          /* look for last fragment of pk.seq-1 */
+          sprintf(name,"%s/%s%d-%d.%d.L",fragdir,model[pk.model],pk.serno,
+            pk.ch,pk.seq-1);
+          if((fp=fopen(name,"r"))==NULL)
+            {
+#if DEBUG4
+            printf("%s not found - write rbuf to file\n",name);
+#endif
+            sprintf(name,"%s/%s%d-%d.%d.F",fragdir,model[pk.model],pk.serno,
+              pk.ch,pk.seq);
+            if((fp=fopen(name,"w+"))==NULL)
+              {
+              sprintf(tb,"file %s not open for write",name);
+              write_log(logfile,tb);
+              }
+            else
+              {
+              if(fwrite(rbuf[idx]+rbuf_ptr,4,pk.sr-rbuf_ptr,fp)<pk.sr-rbuf_ptr)
+                {
+                sprintf(tb,"file %s write failed",name);
+                write_log(logfile,tb);
+                }
+              fclose(fp);
+              j=1; /* skip the first sec */
+              }
+            }
+          else /* found */
+            {
+            nr=fread(rbuf[idx],4,pk.sr,fp);
+            if(nr!=rbuf_ptr && nr!=rbuf_ptr+1)
+              {
+              sprintf(tb,"file %s size=%d inconsistent (%d)",name,nr,rbuf_ptr);
+              write_log(logfile,tb);
+              }
+            fclose(fp);
+            unlink(name);
+#if DEBUG4
+            printf("%s found. %d(%d) read\n",name,nr,rbuf_ptr);
+#endif
+            }
+          }
+        }
+
 #if DEBUG1
       for(ptr=rbuf[idx]+rbuf_ptr,i=0;i<n;i++) printf("%d ",*ptr++);
       printf("\n");
 #endif
-      for(i=0,j=0;i+pk.sr<rbuf_ptr+n;i+=pk.sr){
+      for(i=j*pk.sr;i+pk.sr<rbuf_ptr+n;i+=pk.sr){
         nn=write_shm(winch,pk.sr,pk.tim+j++,rbuf[idx]+i,shm,eobsize,pl);
       }
       for(k=i;k<rbuf_ptr+n;k++) rbuf[idx][k-i]=rbuf[idx][k]; 
+      seq_rbuf[idx]=pk.seq;
+      tim_rbuf[idx]=pk.tim;
+      fsize_rbuf[idx]=rbuf_ptr+n-i;
+#if DEBUG4
+      printf("n=%d i=%d rbuf_ptr=%d fsize_rbuf[idx]=%d\n",
+        n,i,rbuf_ptr,fsize_rbuf[idx]);
+#endif
     }
     else if((pk.ptype&0x0f)==2){ /* status packet */
       proc_soh(&pk);

@@ -1,4 +1,4 @@
-/* $Id: wed.c,v 1.3 2002/01/13 06:57:52 uehira Exp $ */
+/* $Id: wed.c,v 1.4 2002/08/09 03:50:59 urabe Exp $ */
 /* program "wed.c"
 	"wed" edits a win format data file by time range and channles
 	6/26/91,7/13/92,3/11/93,4/20/94,8/5/94,12/8/94   urabe
@@ -7,6 +7,7 @@
         98.6.26 yo20000
         99.4.19 byte-order-free
         2000.4.17   wabort
+        2002.8.5    ignore illegal lines in ch file
 */
 
 #ifdef HAVE_CONFIG_H
@@ -271,6 +272,7 @@ main(argc,argv)
      char *argv[];
 {
    int i;
+   char tb[100];
    signal(SIGINT,(void *)wabort);
    signal(SIGTERM,(void *)wabort);
    
@@ -288,11 +290,14 @@ main(argc,argv)
 	 exit(1);
       }
       nch=0;
-      while(fscanf(f_param,"%x",&sysch[nch])!=EOF)
+      while(fscanf(f_param,"%s",tb)!=EOF)
+        {
+        if(sscanf(tb,"%x",&sysch[nch])!=1) continue;
 #if DEBUG
-	fprintf(stderr," %04X",sysch[nch++]);
+	fprintf(stderr," %04X",sysch[nch]);
 #endif
-      nch++;
+        nch++;
+        }
 #if DEBUG
       fprintf(stderr,"\n  <- %d chs according to '%s'\n",nch-1,argv[4]);
 #endif

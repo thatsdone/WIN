@@ -1,4 +1,4 @@
-/* $Id: relay.c,v 1.6 2002/01/13 08:34:33 uehira Exp $ */
+/* $Id: relay.c,v 1.7 2002/12/12 02:28:17 urabe Exp $ */
 /* "relay.c"      5/23/94-5/25/94,6/15/94-6/16/94,6/23/94,3/16/95 urabe */
 /*                3/26/95 check_packet_no; port# */
 /*                5/24/96 added processing of "host table full" */
@@ -10,6 +10,7 @@
 /*                98.6.30 FreeBSD */ 
 /*                2000.4.24/2001.11.14 strerror() */
 /*                2001.11.14 ntohs() */
+/*                2002.12.10 multicast(-i,-t), stdin(to_port=0), src_port(-p) */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -206,53 +207,90 @@ main(argc,argv)
   char *argv[];
   {
   struct timeval timeout;
-  int i,re,fromlen,n,bufno,bufno_f,pts;
+  int c,i,re,fromlen,n,bufno,bufno_f,pts,ttl;
   struct sockaddr_in to_addr,from_addr;
   unsigned short to_port;
   struct hostent *h;
-  unsigned short host_port,ch;
+  unsigned short host_port,src_port;
   unsigned char no,no_f;
+  char tb[256];
+  char interface[256]; /* multicast interface */
+  extern int optind;
+  extern char *optarg;
+  unsigned long mif; /* multicast interface address */
 
   if(progname=strrchr(argv[0],'/')) progname++;
   else progname=argv[0];
-  if(argc<4)
-    {
-    fprintf(stderr," usage : '%s [in_port] [host] [host_port] ([log file])'\n",
+  sprintf(tb,
+" usage : '%s (-i [interface]) (-p [src port]) (-t [ttl]) [in_port] [host] [host_port] ([log file])'\n",
       progname);
+
+  *interface=0;
+  ttl=1;
+  src_port=0;
+
+  while((c=getopt(argc,argv,"i:p:t:T:"))!=EOF)
+    {
+    switch(c)
+      {
+      case 'i':   /* interface (ordinary IP address) which sends mcast */
+        strcpy(interface,optarg);
+        break;
+      case 'p':   /* source port */
+        src_port=atoi(optarg);
+        break;
+      case 'T':   /* ttl for MCAST */
+      case 't':   /* ttl for MCAST */
+        ttl=atoi(optarg);
+        break;
+      default:
+        fprintf(stderr," option -%c unknown\n",c);
+        fprintf(stderr,"%s\n",tb);
+        exit(1);
+      }
+    }
+  optind--;
+  if(argc<4+optind)
+    {
+    fprintf(stderr,"%s\n",tb);
     exit(1);
     }
-  to_port=atoi(argv[1]);
-  strcpy(host_name,argv[2]);
-  host_port=atoi(argv[3]);
-  if(argc>4) strcpy(logfile,argv[4]);
+
+  to_port=atoi(argv[1+optind]);
+  strcpy(host_name,argv[2+optind]);
+  host_port=atoi(argv[3+optind]);
+  if(argc>4) strcpy(logfile,argv[4+optind]);
   else *logfile=0;
 
   sprintf(tb,"start in_port=%d to host '%s' port=%d",
     to_port,host_name,host_port);
   write_log(logfile,tb);
 
-  /* 'in' port */
-  if((sock_in=socket(AF_INET,SOCK_DGRAM,0))<0) err_sys("sock_in");
-  i=65535;
-  if(setsockopt(sock_in,SOL_SOCKET,SO_RCVBUF,(char *)&i,sizeof(i))<0)
+  if(to_port>0)
     {
-    i=50000;
+    /* 'in' port */
+    if((sock_in=socket(AF_INET,SOCK_DGRAM,0))<0) err_sys("sock_in");
+    i=65535;
     if(setsockopt(sock_in,SOL_SOCKET,SO_RCVBUF,(char *)&i,sizeof(i))<0)
-      err_sys("SO_RCVBUF setsockopt error\n");
-    }
-  memset((char *)&to_addr,0,sizeof(to_addr));
-  to_addr.sin_family=AF_INET;
-  to_addr.sin_addr.s_addr=htonl(INADDR_ANY);
-  to_addr.sin_port=htons(to_port);
-  if(bind(sock_in,(struct sockaddr *)&to_addr,sizeof(to_addr))<0)
+      {
+      i=50000;
+      if(setsockopt(sock_in,SOL_SOCKET,SO_RCVBUF,(char *)&i,sizeof(i))<0)
+        err_sys("SO_RCVBUF setsockopt error\n");
+      }
+    memset((char *)&to_addr,0,sizeof(to_addr));
+    to_addr.sin_family=AF_INET;
+    to_addr.sin_addr.s_addr=htonl(INADDR_ANY);
+    to_addr.sin_port=htons(to_port);
+    if(bind(sock_in,(struct sockaddr *)&to_addr,sizeof(to_addr))<0)
     err_sys("bind_in");
+    }
 
   /* destination host/port */
   if(!(h=gethostbyname(host_name))) err_sys("can't find host");
   memset((char *)&to_addr,0,sizeof(to_addr));
   to_addr.sin_family=AF_INET;
+  memcpy((caddr_t)&to_addr.sin_addr,h->h_addr,h->h_length);
 /*  to_addr.sin_addr.s_addr=inet_addr(inet_ntoa(h->h_addr));*/
-  to_addr.sin_addr.s_addr=mklong(h->h_addr);
   to_addr.sin_port=htons(host_port);
   if((sock_out=socket(AF_INET,SOCK_DGRAM,0))<0) err_sys("sock_out");
   i=1;
@@ -265,11 +303,28 @@ main(argc,argv)
     if(setsockopt(sock_out,SOL_SOCKET,SO_SNDBUF,(char *)&i,sizeof(i))<0)
       err_sys("SO_SNDBUF setsockopt error\n");
     }
+  if(*interface)
+    {
+    mif=inet_addr(interface);
+    if(setsockopt(sock_out,IPPROTO_IP,IP_MULTICAST_IF,(char *)&mif,sizeof(mif))<0)
+      err_sys("IP_MULTICAST_IF setsockopt error\n");
+    }
+  if(ttl>1)
+    {
+    no=ttl;
+    if(setsockopt(sock_out,IPPROTO_IP,IP_MULTICAST_TTL,&no,sizeof(no))<0)
+      err_sys("IP_MULTICAST_TTL setsockopt error\n");
+    }
   /* bind my socket to a local port */
   memset((char *)&from_addr,0,sizeof(from_addr));
   from_addr.sin_family=AF_INET;
   from_addr.sin_addr.s_addr=htonl(INADDR_ANY);
-  from_addr.sin_port=htons(0);
+  from_addr.sin_port=htons(src_port);
+  if(src_port)
+    {
+    sprintf(tb,"src_port=%d",src_port);
+    write_log(logfile,tb);
+    }
   if(bind(sock_out,(struct sockaddr *)&from_addr,sizeof(from_addr))<0)
     err_sys("bind_out");
 
@@ -282,22 +337,31 @@ main(argc,argv)
 
   while(1)
     {
-    fromlen=sizeof(from_addr);
-    psize[bufno]=recvfrom(sock_in,sbuf[bufno],MAXMESG,0,
+    if(to_port>0)
+      {
+      fromlen=sizeof(from_addr);
+      psize[bufno]=recvfrom(sock_in,sbuf[bufno],MAXMESG,0,
 			  (struct sockaddr *)&from_addr,&fromlen);
 #if DEBUG1
-    if(sbuf[bufno][0]==sbuf[bufno][1]) printf("%d ",sbuf[bufno][0]);
-    else printf("%d(%d) ",sbuf[bufno][0],sbuf[bufno][1]);
+      if(sbuf[bufno][0]==sbuf[bufno][1]) printf("%d ",sbuf[bufno][0]);
+      else printf("%d(%d) ",sbuf[bufno][0],sbuf[bufno][1]);
 #endif
 
-    if(check_pno(&from_addr,sbuf[bufno][0],sbuf[bufno][1],sock_in,fromlen)<0)
-      {
+      if(check_pno(&from_addr,sbuf[bufno][0],sbuf[bufno][1],sock_in,fromlen)<0)
+        {
 #if DEBUG2
-      sprintf(tb,"discard duplicated resent packet #%d as #%d",
-        sbuf[bufno][0],sbuf[bufno][1]);
-      write_log(logfile,tb);
+        sprintf(tb,"discard duplicated resent packet #%d as #%d",
+          sbuf[bufno][0],sbuf[bufno][1]);
+        write_log(logfile,tb);
 #endif
-      continue;
+        continue;
+        }
+      }
+    else /* read from stdin */
+      {
+      if(fgets(sbuf[bufno]+2,MAXMESG-2,stdin)==NULL) ctrlc();
+      if(sbuf[bufno][2]==0x04) ctrlc();
+      psize[bufno]=strlen(sbuf[bufno]+2);
       }
 
     sbuf[bufno][0]=sbuf[bufno][1]=no;

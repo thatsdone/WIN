@@ -1,4 +1,7 @@
-$Id: ChangeLog,v 1.20 2002/12/08 04:55:37 urabe Exp $
+$Id: ChangeLog,v 1.21 2002/12/12 02:28:17 urabe Exp $
+
+2002-12-10 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
+	* relay.c : added options -i, -p, -t(-T) and in_port=0 for stdin
 
 2002-11-29 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
 	* recvt.c : corrected byte-order of port no. in log

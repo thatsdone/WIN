@@ -5,6 +5,7 @@
 /*                99.2.4   moved signal(HUP) to read_chfile() by urabe */
 /*                99.4.19  byte-order-free */
 /*                2001.2.20 wincpy() */
+/*                2002.5.11 pre/post */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -43,7 +44,7 @@ extern const char *const sys_errlist[];
 extern int errno;
 
 unsigned char rbuf[MAXMESG],ch_table[65536];
-char tb[100],*progname,logfile[256],chfile[256];
+char tb[256],*progname,logfile[256],chfile[256];
 int n_ch,negate_channel;
 
 get_time(rt)
@@ -59,111 +60,6 @@ get_time(rt)
   rt[3]=nt->tm_hour;
   rt[4]=nt->tm_min;
   rt[5]=nt->tm_sec;
-  }
-
-adj_time_m(tm)
-  int *tm;
-  {
-  if(tm[4]==60)
-    {
-    tm[4]=0;
-    if(++tm[3]==24)
-      {
-      tm[3]=0;
-      tm[2]++;
-      switch(tm[1])
-        {
-        case 2:
-          if(tm[0]%4==0)
-            {
-            if(tm[2]==30)
-              {
-              tm[2]=1;
-              tm[1]++;
-              }
-            break;
-            }
-          else
-            {
-            if(tm[2]==29)
-              {
-              tm[2]=1;
-              tm[1]++;
-              }
-            break;
-            }
-        case 4:
-        case 6:
-        case 9:
-        case 11:
-          if(tm[2]==31)
-            {
-            tm[2]=1;
-            tm[1]++;
-            }
-          break;
-        default:
-          if(tm[2]==32)
-            {
-            tm[2]=1;
-            tm[1]++;
-            }
-          break;
-        }
-      if(tm[1]==13)
-        {
-        tm[1]=1;
-        if(++tm[0]==100) tm[0]=0;
-        }
-      }
-    }
-  else if(tm[4]==-1)
-    {
-    tm[4]=59;
-    if(--tm[3]==-1)
-      {
-      tm[3]=23;
-      if(--tm[2]==0)
-        {
-        switch(--tm[1])
-          {
-          case 2:
-            if(tm[0]%4==0)
-              tm[2]=29;else tm[2]=28;
-            break;
-          case 4:
-          case 6:
-          case 9:
-          case 11:
-            tm[2]=30;
-            break;
-          default:
-            tm[2]=31;
-            break;
-          }
-        if(tm[1]==0)
-          {
-          tm[1]=12;
-          if(--tm[0]==-1) tm[0]=99;
-          }
-        }
-      }
-    }
-  }
-
-time_cmp(t1,t2,i)
-  int *t1,*t2,i;  
-  {
-  int cntr;
-  cntr=0;
-  if(t1[cntr]<70 && t2[cntr]>70) return 1;
-  if(t1[cntr]>70 && t2[cntr]<70) return -1;
-  for(;cntr<i;cntr++)
-    {
-    if(t1[cntr]>t2[cntr]) return 1;
-    if(t1[cntr]<t2[cntr]) return -1;
-    } 
-  return 0;  
   }
 
 bcd_dec(dest,sour)
@@ -201,41 +97,6 @@ bcd_dec(dest,sour)
   i=b2d[sour[5]];
   if(i>=0 && i<=60) dest[5]=i; else return 0;
   return 1;
-  }
-
-check_time(ptr)
-  char *ptr;
-  {
-  static int tm_prev[6],flag;
-  int tm[6],rt1[6],rt2[6],i,j;
-
-  if(!bcd_dec(tm,ptr)) return 1; /* out of range */
-  if(flag && time_cmp(tm,tm_prev,5)==0) return 0;
-  else flag=0;
-
-  /* compare time with real time */
-  get_time(rt1);
-  for(i=0;i<5;i++) rt2[i]=rt1[i];
-  for(i=0;i<30;i++)  /* within 30 minutes ? */
-    {
-    if(time_cmp(tm,rt1,5)==0 || time_cmp(tm,rt2,5)==0)
-      {
-      for(j=0;j<5;j++) tm_prev[j]=tm[j];
-      flag=1;
-#if DEBUG1
-      printf("diff=%d m\n",i);
-#endif
-      return 0;
-      }
-    rt1[4]++;
-    adj_time_m(rt1);
-    rt2[4]--;
-    adj_time_m(rt2);
-    }
-#if DEBUG1
-  printf("diff>%d m\n",i);
-#endif
-  return 1; /* illegal time */
   }
 
 write_log(logfil,ptr)
@@ -425,6 +286,33 @@ get_packet(fd,pbuf)
   return psize-5;
   }
 
+time_t check_ts(ptr,pre,post)
+  char *ptr;
+  int pre,post;
+  {
+  int diff,tm[6];
+  time_t ts,rt;
+  struct tm mt;
+  if(!bcd_dec(tm,ptr)) return 0; /* out of range */
+  memset((char *)&mt,0,sizeof(mt));
+  if((mt.tm_year=tm[0])<50) mt.tm_year+=100;   
+  mt.tm_mon=tm[1]-1;
+  mt.tm_mday=tm[2];
+  mt.tm_hour=tm[3];
+  mt.tm_min=tm[4];
+  mt.tm_sec=tm[5];
+  mt.tm_isdst=0;
+  ts=mktime(&mt);
+  /* compare time with real time */
+  time(&rt);
+  diff=ts-rt;
+  if((pre==0 || pre<diff) && (post==0 || diff<post)) return ts;
+#if DEBUG1
+  printf("diff %d s out of range (%ds - %ds)\n",diff,pre,post);
+#endif
+  return 0;
+  }
+
 main(argc,argv)
   int argc;
   char *argv[];
@@ -433,7 +321,9 @@ main(argc,argv)
   int shmid;
   unsigned long uni;
   unsigned char *ptr,tm[6],*ptr_size;
-  int i,j,k,size,n,re,fd,nn;
+  int i,j,k,c,size,n,re,fd,nn,pre,post;
+  extern int optind;
+  extern char *optarg;
   struct Shm {
     unsigned long p;    /* write point */
     unsigned long pl;   /* write limit */
@@ -441,37 +331,61 @@ main(argc,argv)
     unsigned long c;    /* counter */
     unsigned char d[1];   /* data buffer */
     } *sh;
+  time_t ts;
 
   if(progname=strrchr(argv[0],'/')) progname++;
   else progname=argv[0];
-  if(argc<3)
-    {
-    fprintf(stderr,
-      " usage : '%s [shm_key] [shm_size(KB)] ([ch file]/- ([log file]))'\n",
+  sprintf(tb,
+" usage : '%s (-m [pre(m)]) (-p [post(m)]) [shm_key] [shm_size(KB)] ([ch file]/- ([log file]))'\n",
       progname);
+  pre=post=0;
+  while((c=getopt(argc,argv,"m:p:"))!=EOF)
+    {
+    switch(c)
+      {
+      case 'm':   /* time limit before RT in minutes */
+        pre=atoi(optarg);
+        if(pre<0) pre=(-pre);
+        break;
+      case 'p':   /* time limit after RT in minutes */
+        post=atoi(optarg);
+        break;
+      default:
+        fprintf(stderr," option -%c unknown\n",c);
+        fprintf(stderr,"%s\n",tb);
+        exit(1);
+      }
+    }
+  optind--;
+  if(argc<3+optind)
+    {
+    fprintf(stderr,"%s\n",tb);
     exit(1);
     }
-  shm_key=atoi(argv[1]);
-  size=atoi(argv[2])*1000;
+  pre=(-pre*60);
+  post*=60;
+
+  shm_key=atoi(argv[1+optind]);
+  size=atoi(argv[2+optind])*1000;
   *chfile=(*logfile)=0;
-  if(argc>3)
+  if(argc>3+optind)
     {
-    if(strcmp("-",argv[3])==0) *chfile=0;
+    if(strcmp("-",argv[3+optind])==0) *chfile=0;
     else
       {
-      if(argv[3][0]=='-')
+      if(argv[3+optind][0]=='-')
         {
-        strcpy(chfile,argv[3]+1);
+        strcpy(chfile,argv[3+optind]+1);
         negate_channel=1;
         }
       else
         {
-        strcpy(chfile,argv[3]);
+        strcpy(chfile,argv[3+optind]);
         negate_channel=0;
         }
       }
     }
-  if(argc>4) strcpy(logfile,argv[4]);
+  if(argc>4+optind) strcpy(logfile,argv[4+optind]);
 
   /* shared memory */
   if((shmid=shmget(shm_key,size,IPC_CREAT|0666))<0) err_sys("shmget");
@@ -533,7 +447,7 @@ main(argc,argv)
 #endif
           }
         else ptr=ptr_size;
-        if(check_time(rbuf+1))
+        if(!(ts=check_ts(rbuf+1,pre,post)))
           {
 #if DEBUG2
           sprintf(tb,"illegal time %02X%02X%02X.%02X%02X%02X in ch %02X%02X",

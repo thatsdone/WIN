@@ -16,6 +16,9 @@
     <h2>1. はじめに</h2>
     <p>　最新の win のソースファイルをインターネット経由で取得可能な Anonymous CVS server が立ち上がりました。CVS(Concurrent Versions System) とはバージョン管理システムであり、ソース・ファイルの変遷を記録するのに使用します。大規模なソフトウェア開発(例えば OS の開発等)で用いられています。CVS の詳細は下記の<a href="#LINK">リンク集</a>を御覧下さい。Anonymous CVS server を利用することにより日々(?)バージョンアップされる win のソースファイル群を追跡することが出来ます。</p>
     <p>　Anonymous CVS (もしくは, <i>anoncvs</i> として知られています)は離れたところにある CVS リポジトリと同期を取るための機能です。win のユーザが、特別な権限なしに win の公式な anoncvs サーバに読み取り専用で CVS の操作をすることができるようにするためのものです。それを使うには、単に <tt>CVSROOT</tt> 環境変数を設定して適切な anoncvs サーバを指定し、<tt>cvs login</tt> を使ってパスワード "anoncvs" を入力して下さい。そして次に、cvs(1) コマンドを使うことで、手元にあるリポジトリと同じようにアクセスでるようになります。</p>
+    <p>　2002年1月13日より win パッケージは autoconf・automake に対応
+    しました。それに伴い Anonymous CVS server より取得したパッケージを
+    コンパイル・インストールするためには予め GNU m4、autoconf-2.13 以上と automake-1.5 以上がインストールされている必要があります。勿論、2002年1月12日以前のソースに関しては必要ありません。</p>
 
     <h2>2. Anonymous CVS を使う</h2>
     <p>　cvs(1) を設定して Anonymous CVS リポジトリを使うには単に <tt>CVSROOT</tt> 環境変数を設定して win の <i>anoncvs</i> サーバを指定するだけのことです。次のサーバが利用できるようになっています。</p>
@@ -66,19 +69,40 @@
      <tt>% </tt><tt><b>cvs logout</b></tt>
     </pre>
     
+    <h2>4. コンパイルの方法</h2>
+    <p>　「はじめに」にも書きましたが、まず autoconf-2.13 以上と automake-1.5 以上をインストールしましょう。autoconf を動かすためには GNU m4 も必要です。</p>
+    <p>　これらのツールのインストールが終わりましたらコンパイルに必要なファイルを作ります。必要なファイルの作るコマンド及び生成されるファイルは以下の通りです([]内が生成されるファイル)。</p>
+    <pre>
+      <tt>% </tt><tt><b>aclocal  [aclocal.m4]</b></tt>
+      <tt>% </tt><tt><b>autoconf  [configure]</b></tt>
+      <tt>% </tt><tt><b>autoheader  [config.h.in]</b></tt>
+      <tt>% </tt><tt><b>automake  [Makefile.in]</b></tt>
+    </pre>
+    <p>この状態で、ftp site にあるパッケージと同じ状態になっているので、後は付属のドキュメントに従ってコンパイルを行えば良いです。</p>
+    <pre>
+      <tt>% </tt><tt><b>./configure [Makefile, config.h] [aclocal.m4]</b></tt>
+      <tt>% </tt><tt><b>make [win 等の実行ファイル]</b></tt>
+    </pre>
+
     
-    <h2><a name="LINK"></a>4. リンク集</h2>
-    <p>　win と cvs に関するリンク集です。</p>
-    <h3>4.1. win に関するもの</h3>
+    <h2><a name="LINK"></a>付録　リンク集</h2>
+    <p>　win, cvs, autoconf&automake に関するリンク集です。</p>
+    <h3>1. win に関するもの</h3>
     <ul>
       <li><a href="http://eoc.eri.u-tokyo.ac.jp/WIN/index.html">win のホームページ</a>。win に関する情報やマニュアルがあります。</li>
     </ul>
-    <h3>4.2. cvs に関するもの</h3>
+    <h3>2. cvs に関するもの</h3>
     <ul>
       <li><a href="http://www-vox.dj.kit.ac.jp/nishi/cvs/cvs.html">CVS Manual</a></li>
       <li><a href="http://www.naney.org/comp/cvs/">Concurrent Versions 
       System CVS (Japanese Page)</a></li>
       <li><a href="http://www.sodan.org/~penny/vc/index.html">Concurrent Version Control (CVS)</a></li>
+    </ul>
+    <h3>3. autoconf & automake に関するもの</h3>
+    <ul>
+      <li><a href="http://www.itojun.org/hack/">はっかーずぱらだいす</a></li>
+      <li><a href="http://www.ainet.or.jp/~inoue/gnu/autoconf.html">autoconf and automake</a></li>
+      <li><a href="http://larse-gtk.hoops.ne.jp/automake.html">Automake -- Larse</a></li>
     </ul>
 
     <hr>
@@ -86,7 +110,7 @@
       植平 賢司(Uehira Kenji)<br>
       <a href="mailto:uehira@sevo.kyushu-u.ac.jp">uehira@sevo.kyushu-u.ac.jp</a><br>
       <a href="http://www2.sevo.kyushu-u.ac.jp/~uehira/uehira.pubkey">PGP fingerprint: EA 93 D1 A7 16 6B 61 76 ED 48 5E D5 F8 C3 B1 A2</a><br>
-      $Date: 2001/02/24 09:06:41 $<br>
+      $Date: 2002/01/23 12:07:05 $<br>
     </address>
   </body>
 </html>

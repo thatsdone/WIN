@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.10 2001/06/07 10:20:47 urabe Exp $
+   $Id: win.c,v 1.11 2001/07/02 15:50:40 urabe Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -13,7 +13,7 @@
    98.7.2 yo2000
 */
 #define NAME_PRG      "win"
-#define VERSION       "2001.6.7"
+#define VERSION       "2001.6.27"
 #define DEBUG_AP      0   /* for debugging auto-pick */
 /* 5:sr, 4:ch, 3:sec, 2:find_pick, 1:all */
 /************ HOW TO COMPILE THE PROGRAM **************************
@@ -22,7 +22,7 @@ Sun-OS 4.x     : cc win.c -O -lm -lX11 -o win
 Solaris 2.x    : cc win.c -w -O -I/usr/openwin/include -L/usr/openwin/lib \
                           -lm -lX11 -o win
 IRIX 6.5       : cc win.c -n32 -signed -w -O -D__SVR4 -lm -lX11 -o win
-FreeBSD 2/3    : cc win.c -w -I/usr/X11R6/include -L/usr/X11R6/lib -lm \
+FreeBSD 2/3/4  : cc win.c -w -I/usr/X11R6/include -L/usr/X11R6/lib -lm \
                           -lX11 -o win
 HP-UX          : cc win.c -DSYSTEMV -I/usr/include/X11R4 -lm -lX11 -o win'
                            (contrib. T.Matsuzawa)
@@ -231,6 +231,8 @@ LOCAL
 #define WB          (WIDTH_TEXT*5)    /* width of a box */
 #define HW          (WIDTH_TEXT/2)    /* half of font width */
 #define MARGIN      (HEIGHT_TEXT+4)
+#define HEIGHT_FUNC (MARGIN+1)
+#define YBASE_MON   (MARGIN+HEIGHT_FUNC)
 #define TICKL       (WIDTH_TEXT*3/2)
 #define PIXELS_PER_SEC_MON  10
 #define SR_LOW        1   /* lower limit of sampling rate */
@@ -257,7 +259,8 @@ LOCAL
 #define BORDER        2
 #define MIN_ZOOM      BORDER
 #define MAX_ZOOM      (HEIGHT_ZOOM-1)
-#define Y_TIME        ((MARGIN-HEIGHT_TEXT)/2)
+#define Y_LINE1       ((MARGIN-HEIGHT_TEXT)/2)
+#define Y_TIME        ((MARGIN-HEIGHT_TEXT)/2+HEIGHT_FUNC)
 #define ZOOM_LENGTH        4     /* initial value */
 #define ZOOM_LENGTH_MAX  240     /* max */
 #define ZOOM_LENGTH_MIN    1     /* min */
@@ -349,31 +352,25 @@ LOCAL
 #define MODE_UP     1 /* for mecha_mode */
 #define LOOP_NO   (-1)
 #define LOOP_MAIN   0
-#define LOOP_LIST   1
-#define LOOP_MAP    2
-#define LOOP_MECHA  3
-#define LOOP_PSUP   4
+#define LOOP_MAP    1
+#define LOOP_MECHA  2
+#define LOOP_PSUP   3
 
 #define N_SYM      11   /* n of hypo symbols */
 #define N_SYM_USE   5   /* not N_SYM */
 #define N_SYM_STN   4   /* n of stn symbols */
 /* main screen */
+#define EVDET       1
+#define AUTPK       2
+#define LR          6
+#define UD          7
+#define OPEN        0
+/* main screen(2) */
 #define RFSH        1
 #define QUIT        2
 #define COPY        3
 #define MAP         4
 #define LIST        5
-#define LR          6
-#define UD          7
-#define OPEN        0
-/* map scrreen */
-#define RETN        2
-#define VERT        4
-#define STNS        5
-#define TMSP        6
-#define OTHRS       1
-#define RATIO       1
-/* list screen */
 #define SAVE        6
 #define HYPO        7
 #define LOAD        8
@@ -381,25 +378,30 @@ LOCAL
 #define MECH       10
 #define FINL       11
 #define PSTUP      12
+/* map scrreen */
+#define RETN        2
+#define VERT        4
+#define STNS        5
+#define TMSP        6
+#define OTHRS       1
+#define RATIO       1
 /* psup screen */
 /* mech screen */
 #define UPPER       7
 
   char cursor_color[20]={"blue"},
-    *func_main[]={"OPEN" ,"RFSH" ,"QUIT" ,"COPY" ,"MAP"  ,"LIST" ,
-            " "    ," "    ,"$"},
+    *func_main[]={"OPEN" ,"EVDET","AUTPK","","","","    ","    ","$"},
     *func_map[] ={""     ,"RFSH" ,"RETN" ,"COPY" ,"VERT" ,"STNS" ,"T-S"  ,"$"},
     *func_map2[]={""     ,"OTHRS","$"},
     *func_map3[]={""     ,"RATIO","$"},
-    *func_list[]={""     ,"RFSH" ,"RETN" ,"COPY" ,"MAP"  ,"LIST" ,
-            "SAVE" ,"HYPO" ,"LOAD" ,"CANL" ,"MECH" ,"FINL" ,
-            "PSTUP","$"},
+    *func_main2[]={""     ,"RFSH" ,"QUIT" ,"COPY" ,"MAP"  ,"LIST" ,"SAVE" ,
+            "HYPO" ,"LOAD" ,"CANL" ,"MECH" ,"FINL" ,"PSTUP","$"},
     *func_psup[]={""     ,"RFSH" ,"RETN" ,"COPY" ,"MAP"  ,"$"},
     *func_mech[]={""     ,"RFSH" ,"RETN" ,"COPY" ,"MAP"  ,"STNS" ,
             "SAVE" ,"UP/LO","LOAD" ,"CANL" ,"$"};
 
 #define put_reverse(bm,xzero,yzero,xsize,ysize) \
-  put_bitblt(bm,xzero,yzero,xsize,ysize,bm,xzero,yzero,BF_DI);
+  put_bitblt(bm,xzero,yzero,xsize,ysize,bm,xzero,yzero,BF_DI)
 #define put_white(bm,xzero,yzero,xsize,ysize) \
   put_fill(bm,xzero,yzero,xsize,ysize,0)
 #define put_black(bm,xzero,yzero,xsize,ysize) \
@@ -408,6 +410,10 @@ LOCAL
   put_fill(bm,xzero,yzero,xsize,ysize,1); \
   put_fill(bm,xzero+1,yzero+1,xsize-2,ysize-2,0)
 #define p2w(p)  ((p+15)/16)
+
+#if defined(SUNOS4)
+#define mktime timelocal
+#endif
 
   lBitmap dpy,*mon,info,cursor,cursor_mask,zoom,epi_s,epi_l,arrows_ud,
     arrows_lr,arrows_lr_zoom,arrows_leng,arrows_scale,bbuf,sym,sym_stn;
@@ -424,8 +430,7 @@ LOCAL
   float magsteps[]=
     {-9.0,-2.0,-1.5,-1.0,-0.5,0.0,0.5,1.0,1.5,2.0,2.5,3.0,3.5,
      4.0,4.5,5.0,5.5,6.0,6.5,7.0,9.5};
-  double mapsteps[]={800.0,500.0,300.0,200.0,100.0,50.0,20.0,10.0,
-     5.0,2.5,1.0};
+  double mapsteps[]={800.0,500.0,300.0,200.0,100.0,50.0,20.0,10.0,5.0,2.5,1.0};
   struct YMDhms {
     int ye,mo,da,ho,mi,se;
     };
@@ -760,6 +765,13 @@ LOCAL
     char stn[STNLEN],pol[5];
     double delta,azim,emerg,incid,pt,pe,pomc,st,se,somc,amp,mag;
     };
+  struct Hypo {
+    int valid,tm[5],tm_c[7],ndata,ellipse;
+    char diag[10],textbuf[100];
+    double se,se_c,alat,along,dep,mag,xe,ye,ze,c[3][3],
+      alat0,along0,dep0,xe0,ye0,ze0,pomc_rms,somc_rms;
+    struct Fnl *fnl;
+    };
   struct File_Table     /* Data File Information */
     {
     char data_file[NAMLEN];   /* data file name */
@@ -770,6 +782,10 @@ LOCAL
     char init_file[NAMLEN];   /* init file for hypo */
     char rept_file[NAMLEN];   /* rept file for hypo */
     char finl_file[NAMLEN];   /* finl file for hypo */
+    char seis_file2[NAMLEN];  /* seis file for hypo (2) */
+    char init_file2[NAMLEN];  /* init file for hypo (2) */
+    char rept_file2[NAMLEN];  /* rept file for hypo (2) */
+    char finl_file2[NAMLEN];  /* finl file for hypo (2) */
     char othrs_file[NAMLEN];  /* othrs file for map */
     char mech_file[NAMLEN];   /* mech file for mecha() */
     char save_file[NAMLEN];   /* pick/hypo/mech data file */
@@ -783,15 +799,8 @@ LOCAL
     unsigned short pick_server_port; /* pick file server TCP port */
     FILE *fp_log;       /* fp of log file */
     char mailer[NAMLEN];    /* mailer printer */
-    struct {
-      int valid,tm[5],tm_c[7],ndata,ellipse;
-      char diag[10],textbuf[100];
-      double se,se_c,alat,along,dep,mag,
-        xe,ye,ze,c[3][3],
-        alat0,along0,dep0,xe0,ye0,ze0,
-        pomc_rms,somc_rms;
-      struct Fnl *fnl;
-      } hypo;
+    struct Hypo hypo;         /* final data from hypo */
+    struct Hypo hypoall;      /* final data from hypo (TT of all stations) */
     char label_file[NAMLEN];  /* label file */
     int fd;                   /* fd for data file */
     int fd_save;              /* fd for save file */
@@ -819,6 +828,8 @@ LOCAL
     char label[N_LABELS][20]; /* labels */
     struct Pick_Time (*pick)[4];  /* phase times : P,S,X times */
     struct Pick_Time (*pick_save)[4]; /* phase times : P,S,X times */
+    struct Pick_Time (*pick_calc)[4]; /* phase times : P,S,X times */
+    struct Pick_Time pick_calc_ot;    /* origin time for 'C' */
     short *trigch;            /* idx list of chs for trig */
     int n_trigch;             /* n of chs for trig */
     int period;               /* averaged period */ 
@@ -861,6 +872,8 @@ LOCAL
     int length_save; /* in sec (to be saved) */
     int sec_save;    /* counted from the top (to be saved) */
     int scale;       /* amplitude scale */
+    int w_scale;     /* amplitude scale */
+    int nounit;      /* if 1, show raw amplitude */
     int offset;      /* offset nulling,  1:on, 0:off */
     int zero;        /* offset level */
     int integ;       /* integral flag */
@@ -881,11 +894,11 @@ LOCAL
     } HypoData;     /* 24 bytes / event */
 
   int eventmask,readfds,fd_mouse,fd_fb,n_zoom_max,n_zoom,main_mode,
-    loop,loop_stack[5],loop_stack_ptr,rfsh_req,x_zero_max,
+    loop,loop_stack[5],loop_stack_ptr,x_zero_max,
     y_zero_max,width_win_mon,height_win_mon,width_mon,mailer_flag,
     width_mon_max,height_mon,flag_change,width_info,height_info,
     width_dpy,height_dpy,not_save,other_epis,map_only,flag_save,
-    auto_flag,background,doing_auto_pick,x_win_mon,y_win_mon,
+    auto_flag,auto_flag_hint,background,doing_auto_pick,x_win_mon,y_win_mon,
     x_win_info,y_win_info,x_zero,y_zero,expose_list,width_win_info,
     map_vert,width_horiz,height_horiz,map_dir,copy_file,ratio_vert,
     map_name,ppk_idx,map_true,map_vstn,map_ellipse,bye,got_hup,
@@ -895,15 +908,13 @@ LOCAL
     init_depe,init_dep_init,init_depe_init,com_dep1,com_dep2,
     com_depe1,com_depe2,mec_xzero,mec_yzero,map_period,first_map,
     first_map_others,map_update,com_diag1,map_all,map_period_save,
-    com_diag2,mecha_mode,hypo_use_ratio,map_f1x,map_f1y,
-    map_f2x,map_f2y,map_n_find,map_line,fit_height,
-    rapid_report,read_hypo,map_interval,mon_offset,just_hypo,
-    just_hypo_offset,list_on_map;
+    com_diag2,mecha_mode,hypo_use_ratio,map_f1x,map_f1y,map_f2x,map_f2y,
+    map_n_find,map_line,fit_height,read_hypo,map_interval,mon_offset,
+    just_hypo,just_hypo_offset,list_on_map,sec_block;
   float init_lat_init,init_lon_init,init_late_init,init_lone_init;
   char mec_hemi[10],diagnos[50],apbuf[20],monbuf[20],mapbuf[20],
     map_period_unit,dot;
-  double pixels_per_km,lat_cent,lon_cent,mec_rc,
-    alat0,along0,pdpi;
+  double pixels_per_km,lat_cent,lon_cent,mec_rc,alat0,along0,pdpi;
   static double  *dbuf,*dbuf2;
   static long *buf,*buf2;
 
@@ -1091,8 +1102,9 @@ put_fill(bm,xzero,yzero,xsize,ysize,blk)
 
 make_sec_table()
   {
-  int i,ii,j,size,ptr,size_max,sr;
-  unsigned char c[4];
+  int i,ii,j,size,ptr,size_max,sr,tm[6];
+  time_t lsec_done,lsec;
+  unsigned char c[4],t[6];
 #if OLD_FORMAT
    unsigned int gh;
 #else
@@ -1119,15 +1131,46 @@ make_sec_table()
     {
     if((ft.ptr=(struct File_Ptr *)malloc(sizeof(*(ft.ptr))*100))==0)
       emalloc("ft.ptr");
-  /* make sec pointers */
+  /* get the number of sec blocks and make sec pointers */
+reset_blockmode:
     lseek(ft.fd,(off_t)0,0);  /* BOF */
-    ft.len=ptr=size_max=0;
+    ft.len=ptr=size_max=i=ii=0;
     while(read(ft.fd,c,4))
       {
       size=(c[0]<<24)+(c[1]<<16)+(c[2]<<8)+c[3];
       if(size==0) break;
       else if(size>size_max) size_max=size;
       read(ft.fd,(char *)ft.ptr[ft.len].time,6);
+      bcd_dec(tm,ft.ptr[ft.len].time);
+      if(sec_block && ft.ptr[ft.len].time[5]==0){
+        if(i>=2 && i==ii){
+          sec_block=0;
+          writelog("not assuming second blocks");
+          goto reset_blockmode;
+        }
+        ii++;
+      }
+      i++;
+      lsec=time2lsec(tm);
+      if(sec_block && ft.len>0)
+        {
+        if(lsec_done<lsec-1)
+          {
+          memcpy(t,ft.ptr[ft.len].time,6);
+          while(lsec_done<lsec-1)
+            {
+            lsec2time(++lsec_done,tm);
+            dec_bcd(ft.ptr[ft.len].time,tm);
+            ft.ptr[ft.len].size=0;
+            ft.ptr[ft.len++].offset=ptr;
+            if(ft.len%100==0)
+              if((ft.ptr=(struct File_Ptr *)realloc((char *)ft.ptr,
+                sizeof(*(ft.ptr))*(ft.len+100)))==0) emalloc("ft.ptr");
+            }
+          memcpy(ft.ptr[ft.len].time,t,6);
+          }
+        }
+      lsec_done=lsec;
       ft.ptr[ft.len].size=size;
       ft.ptr[ft.len++].offset=ptr;
       if(ft.len%100==0)
@@ -1220,7 +1263,11 @@ make_sec_table()
     malloc(sizeof(struct Pick_Time)*4*ft.n_ch);
   ft.pick_save=(struct Pick_Time (*)[4])
     malloc(sizeof(struct Pick_Time)*4*ft.n_ch);
-  for(i=0;i<ft.n_ch;i++) for(j=0;j<4;j++) ft.pick[i][j].valid=0;
+  ft.pick_calc=(struct Pick_Time (*)[4])
+    malloc(sizeof(struct Pick_Time)*4*ft.n_ch);
+  for(i=0;i<ft.n_ch;i++) for(j=0;j<4;j++)
+    ft.pick[i][j].valid=ft.pick_calc[i][j].valid=0;
+  ft.pick_calc_ot.valid=0;
 
 /* make one second buffer */
   if((ft.secbuf=(unsigned char *)malloc(size_max))==0) emalloc("ft.secbuf");
@@ -1282,7 +1329,7 @@ read_one_sec(ptr,sys_ch,abuf,spike)
       }
     }
 
-  if(ptr>=ft.len) return 0;
+  if(ptr>=ft.len || ft.ptr[ptr].size==0) return 0;
   if(ft.ptr_secbuf!=ptr)
     {
     lseek(ft.fd,(off_t)(ft.ptr[ptr].offset),0);
@@ -1472,6 +1519,7 @@ read_one_sec_mon(ptr,sys_ch,abuf,ppsm)
   short shreg;
   int inreg;
 
+  if(ptr>=ft.len || ft.ptr[ptr].size==0) return 0;
   abuf_save=abuf;
   if(ft.ptr_secbuf!=ptr)
     {
@@ -1825,13 +1873,14 @@ print_usage()
   fprintf(stderr,"                  o    - remove offset from MON traces\n");
   fprintf(stderr,"                  p [parameter file]\n");
   fprintf(stderr,"                  q    - 'quit' mode\n");
-  fprintf(stderr,"                  r    - 'rapid report' in auto-pick\n");
+  fprintf(stderr,"                  r    - do 'auto-pick' with prelim. hypo\n");
   fprintf(stderr,"                  s [server(:port)] - pick file server & port\n");
   fprintf(stderr,"                  t    - copy data-file to local\n");
   fprintf(stderr,"                  w    - write bitmap (.sv) file\n");
   fprintf(stderr,"                  x [pick file] - just calculate hypocenter\n");
   fprintf(stderr,"                  B    - don't use bitmap (.sv) file\n");
   fprintf(stderr,"                  C [color] - set color of cursor\n");
+  fprintf(stderr,"                  S    - don't assume second blocks\n");
   fprintf(stderr,"                  _    - use '_' in pick file names\n");
   fprintf(stderr,"\n");
   fprintf(stderr,"`ee` command may show you a list of event files, but it depends on installation\n");
@@ -1894,6 +1943,10 @@ init_process(argc,argv,args)
   sprintf(ft.init_file,"%s/%s.init.%d",text_buf,NAME_PRG,getpid());
   sprintf(ft.finl_file,"%s/%s.final.%d",text_buf,NAME_PRG,getpid());
   sprintf(ft.rept_file,"%s/%s.report.%d",text_buf,NAME_PRG,getpid());
+  sprintf(ft.seis_file2,"%s/%s.seis2.%d",text_buf,NAME_PRG,getpid());
+  sprintf(ft.init_file2,"%s/%s.init2.%d",text_buf,NAME_PRG,getpid());
+  sprintf(ft.finl_file2,"%s/%s.final2.%d",text_buf,NAME_PRG,getpid());
+  sprintf(ft.rept_file2,"%s/%s.report2.%d",text_buf,NAME_PRG,getpid());
   sprintf(ft.othrs_file,"%s/%s.othrs.%d",text_buf,NAME_PRG,getpid());
   sprintf(ft.log_file,"%s/%s.log.%d",text_buf,NAME_PRG,getpid());
 
@@ -2479,7 +2532,6 @@ refresh(idx)
   switch(loop)
     {
     case LOOP_MAIN:   return put_main();
-    case LOOP_LIST:   return put_list(idx);
     case LOOP_MAP:    return put_map(idx);
     case LOOP_MECHA:  return put_mecha();
     case LOOP_PSUP:   return put_psup();
@@ -2511,14 +2563,18 @@ set_pick(pt,sec,msec,ms_width1,ms_width2)
   struct Pick_Time *pt;
   int sec,msec,ms_width1,ms_width2;
   {
-  pt->sec1=pt->sec2=sec;
-  pt->msec1=msec-ms_width1;
-  while(pt->msec1<0) {pt->msec1+=1000;pt->sec1--;}
-  if(pt->sec1<0) pt->msec1=pt->sec1=0;
-  pt->msec2=msec+ms_width2;
-  while(pt->msec2>=1000) {pt->msec2-=1000;pt->sec2++;}
-  if(pt->sec2>=ft.len) {pt->msec2=1000;pt->sec2=ft.len-1;}
-  pt->valid=1;
+  if(sec<0 || sec>=ft.len) pt->valid=0;
+  else
+    {
+    pt->sec1=pt->sec2=sec;
+    pt->msec1=msec-ms_width1;
+    while(pt->msec1<0) {pt->msec1+=1000;pt->sec1--;}
+    if(pt->sec1<0) pt->msec1=pt->sec1=0;
+    pt->msec2=msec+ms_width2;
+    while(pt->msec2>=1000) {pt->msec2-=1000;pt->sec2++;}
+    if(pt->sec2>=ft.len) {pt->msec2=1000;pt->sec2=ft.len-1;}
+    pt->valid=1;
+    }
   pt->polarity=0;
   }
 
@@ -2953,6 +3009,27 @@ cancel_picks(name,idx)  /* cancel picks */
   return j;
   }
 
+cancel_picks_calc()  /* cancel calculated picks */
+  {
+  int i,j,jj,k,idx;
+  j=0;
+  for(i=0;i<ft.n_ch;i++)
+    {
+    jj=0;
+    for(idx=0;idx<4;idx++) if(ft.pick_calc[i][idx].valid)
+      {
+      ft.pick_calc[i][idx].valid=0;
+      j=jj=1;
+      }
+    if(jj) for(k=0;k<n_zoom;k++)
+      if(zoom_win[k].valid && i==ft.ch2idx[zoom_win[k].sys_ch])
+        plot_zoom(k,0,0,0);
+    j=1;
+    }
+  ft.pick_calc_ot.valid=0;
+  return j;
+  }
+
 get_pick(name,idx,pt) /* get picks */
   char *name;     /* station name or NULL */
   int idx;      /* P/S/X/-1 */
@@ -2969,7 +3046,8 @@ get_pick(name,idx,pt) /* get picks */
   return j;
   }
 
-auto_pick()     /* automatic pick & locate routine */
+auto_pick(single)     /* automatic pick & locate routine */
+  int single; /* process just one event */
   {
   static Evdet ev={
     3,0,0,        /* int n_min_trig,n_trig_off,trigger, */
@@ -2984,6 +3062,10 @@ auto_pick()     /* automatic pick & locate routine */
 
   doing_auto_pick=1;
   cancel_picks(NULL,-1);
+  fprintf(stderr,"canceled all picks\n");
+  fprintf(stderr,"event detection, auto-pick and locate ");
+  if(single) fprintf(stderr,"(single event)\n");
+  else fprintf(stderr,"(entire file)\n");
   put_mon(x_zero,y_zero);
   /* some 'pick' file may have been loaded, but it will be deleted  */
   if(fp=fopen("winap.prm","r"))
@@ -3022,8 +3104,9 @@ auto_pick()     /* automatic pick & locate routine */
   fprintf(ft.fp_log,"fl         = %lf\n",ev.fl);
   fprintf(ft.fp_log,"fh         = %lf\n",ev.fh);
   fprintf(ft.fp_log,"fs         = %lf\n",ev.fs);
-  if(done=evdet(&ev) && background==0) load_data(MSE_BUTNM);
-  /* load the earliest 'pick' file */
+  done=evdet(&ev,single);
+  if(done && background==0 && single==0)
+    load_data(MSE_BUTNM); /* load the earliest 'pick' file */
   doing_auto_pick=0;
   fclose(ft.fp_log);
   ft.fp_log=0;
@@ -3067,89 +3150,11 @@ set_max(d,sec,msec,ch)
   return(1);
   }
 
-auto_pick_single(ev,tbl,sec_now,sec_on) /* automatic pick & locate (single) */
-  Evdet *ev;
+auto_pick_range(tbl)
   Evdet_Tbl *tbl;
-  int sec_now,sec_on;
   {
-  struct Pick_Time pt,*p;
-  int i,j,k,sec,msec,idx,ch,leng,leng_lim,period,n,n_max,n_min,
-    c_max,c_min,ip;
-  double *db,zero,tlim,rat,omc;
-  char *name,tbuf[20];
-  char tb[80];
-
-  j=0;
-  for(i=0;i<ft.n_trigch;i++) if(ft.pick[ft.trigch[i]][P].valid)
-    {
-    j++;
-    if(ft.pick[ft.trigch[i]][X].valid==0)
-      ft.stn[ft.trigch[i]].ratio=tbl[i].ratio;
-    }
-
-  /* (0) preliminary location (for rapid report) */
-  if(rapid_report && j>=10 && sec_now-sec_on>=30)
-    {         /* for 'large' event */
-    for(i=0;i<ft.n_ch;i++) for(j=0;j<4;j++)
-      ft.pick_save[i][j]=ft.pick[i][j];
-    /* go to LIST */
-    loop_stack[loop_stack_ptr++]=LOOP_MAIN;
-    loop=LOOP_LIST;
-    init_list();
-    /* hypo */
-    for(;;)
-      {
-      k=0;
-      for(i=0;i<ft.n_trigch;i++)
-        if(get_pick(ft.stn[ft.trigch[i]].name,P,0)) k++;
-      if(k<3) break; /* if less than three P data, quit location */
-      fprintf(stderr,"RAPID REPORT ...\n");
-      hypo_use_ratio=1;
-      locate(1);
-      for(i=0;i<ft.hypo.ndata;i++)
-        {
-        omc=ft.hypo.fnl[i].pomc;
-        if((tlim=ft.hypo.pomc_rms*2.0)>=3.0)
-          if(ft.hypo.fnl[i].pt!=0.0 && (omc>tlim || omc<-tlim))
-            cancel_picks(ft.hypo.fnl[i].stn,-1);
-        }
-      if(flag_hypo) break;
-      }
-    hypo_use_ratio=0;
-    if(flag_hypo)
-      {
-      /* go to MAP */
-      raise_ttysw(0);
-      loop_stack[loop_stack_ptr++]=LOOP_LIST;
-      loop=LOOP_MAP;
-      first_map=1;
-      init_map(MSE_BUTNR);
-      sleep(1);
-      /* return to LIST */
-      loop=loop_stack[--loop_stack_ptr];
-      if(!background) refresh(0);
-      raise_ttysw(1);
-      }
-    /* save pick file */
-    strcpy(tbuf,"PRELM");
-    set_diagnos(tbuf,getname(geteuid()));
-    save_data(0);
-    /* return to MAIN */
-    raise_ttysw(0);
-    loop=loop_stack[--loop_stack_ptr];
-    if(!background) refresh(0);
-    for(i=0;i<ft.n_trigch;i++)  /* restore pick data */
-      {
-      if(ft.pick_save[ft.trigch[i]][P].valid) for(j=0;j<4;j++)
-        {
-        if(ft.pick[ft.trigch[i]][P].valid)
-          put_mark(j,ft.idx2pos[ft.trigch[i]]); /* erase */
-        ft.pick[ft.trigch[i]][j]=ft.pick_save[ft.trigch[i]][j];
-        put_mark(j,ft.idx2pos[ft.trigch[i]]);   /* put */
-        }
-      }
-    refresh(0);
-    }
+  struct Pick_Time *p;
+  int i,j,sec,msec,period;
 
   /* (1) measure predominant period and set P range */
   period=j=0;
@@ -3218,7 +3223,15 @@ fprintf(stderr,"%d %d %d %d\n",p->sec1,p->msec1,p->sec2,p->msec2);
 #endif
       }
     }
+  }
 
+auto_pick_pick(sec_now,hint)
+  int sec_now; /* limit of sec < ft.len */
+  int hint;
+  {
+  struct Pick_Time pt;
+  int i,j,k,sec,msec,idx,n,n_max,n_min,c_max,c_min,ip;
+  double *db,zero;
   /* (3) pick each station (P, and then S) */
   for(i=0;i<ft.n_trigch;i++)
     {
@@ -3226,8 +3239,8 @@ fprintf(stderr,"%d %d %d %d\n",p->sec1,p->msec1,p->sec2,p->msec2);
       {
       if(pick_phase(idx,P))
         {
-        pick_s(idx,sec_now);
-      /* measure max */
+        pick_s(idx,sec_now,hint);
+      /* measure max in the range from P to 10 sec after S */
         pt.sec1=ft.pick[idx][P].sec1;
         pt.msec1=ft.pick[idx][P].msec1;
         if(ft.pick[idx][S].valid && ft.pick[idx][S].sec2+10<=sec_now)
@@ -3251,8 +3264,8 @@ fprintf(stderr,"%d %d %d %d\n",p->sec1,p->msec1,p->sec2,p->msec2);
             if((j=get_max(db,n,&n_max,&n_min,&c_max,&c_min))==0) break;
             }
           free(db);
-          if(--k<0 || strcmp(ft.stn[ft.pos2idx[k]].name,
-            ft.stn[idx].name)) break;
+          if(--k<0 || strcmp(ft.stn[ft.pos2idx[k]].name,ft.stn[idx].name))
+            break;
           idx=ft.pos2idx[k];
           }
         if(j==0)  /* 'max' has been read */
@@ -3268,35 +3281,34 @@ fprintf(stderr,"%d %d %d %d\n",p->sec1,p->msec1,p->sec2,p->msec2);
       else cancel_picks(ft.stn[idx].name,-1);
       }
     }
+  }
 
-  /* go to LIST */
-  loop_stack[loop_stack_ptr++]=LOOP_MAIN;
-  loop=LOOP_LIST;
-  init_list();
-
+auto_pick_hypo(tbuf,hint)
+  char *tbuf;
+  int hint;
+  {
+  int i,j,k;
+  double tlim,omc,rat;
+  char *name,tb[80];
   /************** hypocenter determination ***************/
-  for(i=0;i<ft.n_trigch;i++)
-    {
-    sprintf(tb,"%s %f",ft.stn[ft.trigch[i]].name,ft.stn[ft.trigch[i]].ratio);
-    writelog(tb);
-    }
-
   for(j=0;;j++)
     {
     k=0;
-    for(i=0;i<ft.n_trigch;i++)
-      if(get_pick(ft.stn[ft.trigch[i]].name,P,0)) k++;
+    for(i=0;i<ft.n_trigch;i++) if(get_pick(ft.stn[ft.trigch[i]].name,P,0)) k++;
     if(k<3)
       {
       strcpy(tbuf,"FAIL");
       fprintf(stderr,"location failed (less than three 'P' data)\n");
       break;  /* if less than three P data, quit location */
       }
+    if(hint && j==0) j++;
     if(j==0)
       {
+      raise_ttysw(1);
       fprintf(stderr,"PRELIMINARY TRY ...\n");
       hypo_use_ratio=1;
       locate(1);
+      raise_ttysw(0);
     /* omit 2*RMS(O-C) or 3.0 s for P */ 
     /* omit 2*RMS(O-C) or 5.0 s for S */
       for(i=0;i<ft.hypo.ndata;i++)
@@ -3321,60 +3333,59 @@ fprintf(stderr,"%d %d %d %d\n",p->sec1,p->msec1,p->sec2,p->msec2);
       }
     else
       {
+      raise_ttysw(1);
       if(j==1) fprintf(stderr,"FIRST TRY ...\n");
       else if(j==2) fprintf(stderr,"SECOND TRY ...\n");
       else if(j==3) fprintf(stderr,"THIRD TRY ...\n");
       else fprintf(stderr,"%dTH TRY ...\n",j);
       locate(1);
+      raise_ttysw(0);
       }
     /* check O-C (TT/2 or 3 s (5 s for S)) and omit bad data */
     for(i=0;i<ft.hypo.ndata;i++)
       {
-      get_ratio(ft.hypo.fnl[i].stn,&rat);
-/*      omc=ft.hypo.fnl[i].pomc/(rat/3.0);*/
       omc=ft.hypo.fnl[i].pomc;
     /* if RMS>=0.5s, it must be (O-C)<RMS*2 for P */
       if((tlim=ft.hypo.pomc_rms*2.0)>=1.0)
         if(ft.hypo.fnl[i].pt!=0.0 && (omc>tlim || omc<-tlim))
-{
+          {
           cancel_picks(ft.hypo.fnl[i].stn,P);
-sprintf(tb,"1:canceled %s(%d)",ft.hypo.fnl[i].stn,P);
-writelog(tb);
-}
-/*      omc=ft.hypo.fnl[i].somc/(rat/3.0);*/
+          sprintf(tb,"1:canceled %s(%d)",ft.hypo.fnl[i].stn,P);
+          writelog(tb);
+          }
       omc=ft.hypo.fnl[i].somc;
     /* if RMS>=1.0s, it must be (O-C)<RMS*2 for S */
       if((tlim=ft.hypo.somc_rms*2.0)>=2.0)
         if(ft.hypo.fnl[i].st!=0.0 && (omc>tlim || omc<-tlim))
-{
+          {
           cancel_picks(ft.hypo.fnl[i].stn,S);
-sprintf(tb,"1:canceled %s(%d)",ft.hypo.fnl[i].stn,S);
-writelog(tb);
-}
+          sprintf(tb,"1:canceled %s(%d)",ft.hypo.fnl[i].stn,S);
+          writelog(tb);
+          }
       }
-    if(flag_hypo) for(i=0;i<ft.hypo.ndata;i++)
+    if(flag_hypo && hint==0) for(i=0;i<ft.hypo.ndata;i++)
       {
       get_ratio(ft.hypo.fnl[i].stn,&rat);
       omc=ft.hypo.fnl[i].pomc/(rat/3.0);
       tlim=5.0;
     /* (O-C)<5.0 for P */
       if(ft.hypo.fnl[i].pt!=0.0 && (omc>tlim || omc<-tlim))
-{
+        {
         cancel_picks(ft.hypo.fnl[i].stn,P);
-sprintf(tb,"2:canceled %s(%d)",ft.hypo.fnl[i].stn,P);
-writelog(tb);
-}
+        sprintf(tb,"2:canceled %s(%d)",ft.hypo.fnl[i].stn,P);
+        writelog(tb);
+        }
       omc=ft.hypo.fnl[i].somc/(rat/3.0);
       tlim=8.0;
     /* (O-C)<8.0 for S */
       if(ft.hypo.fnl[i].st!=0.0 && (omc>tlim || omc<-tlim))
-{
+        {
         cancel_picks(ft.hypo.fnl[i].stn,S);
-sprintf(tb,"2:canceled %s(%d)",ft.hypo.fnl[i].stn,S);
-writelog(tb);
-}
+        sprintf(tb,"2:canceled %s(%d)",ft.hypo.fnl[i].stn,S);
+        writelog(tb);
+        }
       }
-    if(flag_hypo) for(i=0;i<ft.hypo.ndata;i++)
+    if(flag_hypo && hint==0) for(i=0;i<ft.hypo.ndata;i++)
       {
       /* (O-C)<0.05*(TT/2)+(2*error)) */ 
       if(ft.hypo.fnl[i].pt!=0.0)
@@ -3384,11 +3395,11 @@ writelog(tb);
         if(tlim>3.0) tlim=3.0;
         else if(tlim<0.3) tlim=0.3;
         if(ft.hypo.fnl[i].pomc>tlim || ft.hypo.fnl[i].pomc<-tlim)
-{
+          {
           cancel_picks(ft.hypo.fnl[i].stn,P);
-sprintf(tb,"3:canceled %s(%d)",ft.hypo.fnl[i].stn,P);
-writelog(tb);
-}
+          sprintf(tb,"3:canceled %s(%d)",ft.hypo.fnl[i].stn,P);
+          writelog(tb);
+          }
         }
       if(ft.hypo.fnl[i].st!=0.0)
         {
@@ -3397,11 +3408,11 @@ writelog(tb);
         if(tlim>5.0) tlim=5.0;
         else if(tlim<0.5) tlim=0.5;
         if(ft.hypo.fnl[i].somc>tlim || ft.hypo.fnl[i].somc<-tlim)
-{
+          {
           cancel_picks(ft.hypo.fnl[i].stn,S);
-sprintf(tb,"3:canceled %s(%d)",ft.hypo.fnl[i].stn,S);
-writelog(tb);
-}
+          sprintf(tb,"3:canceled %s(%d)",ft.hypo.fnl[i].stn,S);
+          writelog(tb);
+          }
         }
       }
     for(i=0;i<ft.n_trigch;i++)
@@ -3413,19 +3424,21 @@ writelog(tb);
       {
       if(ft.hypo.dep<-1.0)
         {
+        raise_ttysw(1);
         fprintf(stderr,"AIR FOCUS - DEPTH FIXED ...\n");
         init_dep =0.0;
         init_depe=0.5;
         locate(1);
         init_dep =init_dep_init;
         init_depe=init_depe_init;
+        raise_ttysw(0);
         strcpy(tbuf,"Z-FIX");
         }
       else sprintf(tbuf,"M%.1f",ft.hypo.mag);
       if(background) break;
       /* go to MAP */
       raise_ttysw(0);
-      loop_stack[loop_stack_ptr++]=LOOP_LIST;
+      loop_stack[loop_stack_ptr++]=loop;
       loop=LOOP_MAP;
       first_map=1;
       init_map(MSE_BUTNR);
@@ -3443,23 +3456,105 @@ writelog(tb);
       }
     }
   /************** end of hypocenter determination ***************/
+  }
+
+auto_pick_hint(save) /* automatic pick & locate with a preliminary hypocenter */
+  int save;
+  {
+  int i,width;
+  char tbuf[20];
+  struct Pick_Time pt;
+  double tt;
+
+  if(ft.pick_calc_ot.valid==0)
+    {
+    fprintf(stderr,"no preliminary hypocenter\n");
+    return 0;
+    }
+  doing_auto_pick=1;
+  cancel_picks(NULL,-1);    /* cancel all picks */
+  fprintf(stderr,"canceled all picks\n");
+  fprintf(stderr,"auto-pick and locate with a preliminary hypocenter\n");
+  put_mon(x_zero,y_zero);
+  get_trigch();
+  /* set P & S range */
+  for(i=0;i<ft.n_trigch;i++)
+    {
+    if(ft.pick_calc[ft.trigch[i]][P].valid)
+      {
+      tt=(double)(ft.pick_calc[ft.trigch[i]][P].sec1-ft.pick_calc_ot.sec1)+
+      (double)(ft.pick_calc[ft.trigch[i]][P].msec1-ft.pick_calc_ot.msec1)*0.001;
+      pt=ft.pick_calc[ft.trigch[i]][P];
+      width=(int)((tt*0.05+0.5)*1000); /* 5% of TT plus 0.5 sec */
+      set_width(&pt,width,width);
+      show_pick(ft.trigch[i],&pt,P);
+      }
+    if(ft.pick_calc[ft.trigch[i]][S].valid)
+      {
+      tt=(double)(ft.pick_calc[ft.trigch[i]][S].sec1-ft.pick_calc_ot.sec1)+
+      (double)(ft.pick_calc[ft.trigch[i]][S].msec1-ft.pick_calc_ot.msec1)*0.001;
+      pt=ft.pick_calc[ft.trigch[i]][S];
+      width=(int)((tt*0.05+0.5)*1000); /* 5% of TT plus 0.5 sec */
+      set_width(&pt,width,width);
+      show_pick(ft.trigch[i],&pt,S);
+      }
+    }
+
+  auto_pick_pick(ft.len-1,1); /* pick each station (P, and then S) */
+  auto_pick_hypo(tbuf,1); /* hypocenter determination */
+  get_calc();           /* calculate theoretical travel times for all stns */
 
   /* save result to a pick file */
   set_diagnos(tbuf,getname(geteuid()));
-  save_data(0);
-  if(load_data(MSE_BUTNR)==0)   /* load the next 'pick' file */
-    {
-    *ft.save_file=0;
-    cancel_picks(NULL,-1);
-    }
+  if(save) save_data(0);
 
   /* return to MAIN */
-  raise_ttysw(0);
-  loop=loop_stack[--loop_stack_ptr];
-  if(!background) refresh(0);
   main_mode=MODE_NORMAL;
-  refresh(0);
-  rfsh_req=0;
+  raise_ttysw(0);
+  if(!background) refresh(0);
+  doing_auto_pick=0;
+  return 1;
+  }
+
+auto_pick_single(tbl,sec_now,save) /* automatic pick & locate (single) */
+  Evdet_Tbl *tbl;
+  int sec_now;
+  int save; /* if 1, save result */
+  {
+  int i;
+  char tbuf[20],tb[80];
+
+  for(i=0;i<ft.n_trigch;i++) if(ft.pick[ft.trigch[i]][P].valid)
+    {
+    if(ft.pick[ft.trigch[i]][X].valid==0)
+      ft.stn[ft.trigch[i]].ratio=tbl[i].ratio;
+    }
+
+  auto_pick_range(tbl);    /* measure predominant period and set P range */
+  auto_pick_pick(sec_now,0); /* pick each station (P, and then S) */
+  for(i=0;i<ft.n_trigch;i++)
+    {
+    sprintf(tb,"%s %f",ft.stn[ft.trigch[i]].name,ft.stn[ft.trigch[i]].ratio);
+    writelog(tb);
+    }
+  auto_pick_hypo(tbuf,0); /* hypocenter determination */
+  get_calc();           /* calculate theoretical travel times for all stns */
+
+  /* save result to a pick file */
+  set_diagnos(tbuf,getname(geteuid()));
+  if(save)
+    {
+    save_data(0);
+    if(auto_flag) if(load_data(MSE_BUTNR)==0)
+      {  /* load the next 'pick' file */
+      *ft.save_file=0;
+      cancel_picks(NULL,-1);
+      }
+    }
+  /* return to MAIN */
+  main_mode=MODE_NORMAL;
+  raise_ttysw(0);
+  if(!background) refresh(0);
   return 1;
   }
 
@@ -3500,10 +3595,10 @@ set_diagnos(tb,ub)
     }
   }
 
-pick_s(idx,sec_now)
-  int idx,sec_now;
+pick_s(idx,sec_now,hint)
+  int idx,sec_now,hint;
   {
-  struct Pick_Time pt,pt_s,pt1;
+  struct Pick_Time pt,pt_s,pt1,pt_ss;
   int n,pos,done,sec,msec,idxs,width_s,idx_s,period,ms,n_max,n_min,
     c_max,c_min,i,j;
   char *name,*comp;
@@ -3511,26 +3606,34 @@ pick_s(idx,sec_now)
 
   done=0;
   if(ft.pick[idx][P].valid==0) return 0;
-  if((period=ft.pick[idx][P].period)==0)
-    if((period=ft.period)==0) period=4*1000/ft.sr[idx];
+  if(!hint)
+    {
+    if((period=ft.pick[idx][P].period)==0)
+      if((period=ft.period)==0) period=4*1000/ft.sr[idx];
 #if DEBUG_AP>=2
 pt=ft.pick[idx][P];
 fprintf(stderr,"%2d.%03d - %2d.%03d %d %d %d\n",pt.sec1,pt.msec1,pt.sec2,pt.msec2,
 pt.period,ft.period,period);
 #endif
-  /* from 10T after P time, */
-  pt1.sec1=ft.pick[idx][P].sec2;
-  pt1.msec1=ft.pick[idx][P].msec2+period*10;
-  while(pt1.msec1>=1000) {pt1.msec1-=1000;pt1.sec1++;}
-  /* to 'sec_now' */
-  pt1.sec2=sec_now;
-  pt1.msec2=0;
-  pt1.valid=1;
-  /* pt1 is the range to search the MAXIMUM AMPLITUDE */
+    /* from 10T after P time, */
+    pt1.sec1=ft.pick[idx][P].sec2;
+    pt1.msec1=ft.pick[idx][P].msec2+period*10;
+    while(pt1.msec1>=1000) {pt1.msec1-=1000;pt1.sec1++;}
+    /* to 'sec_now' */
+    pt1.sec2=sec_now;
+    pt1.msec2=0;
+    pt1.valid=1;
+    /* pt1 is the range to search the MAXIMUM AMPLITUDE */
 #if DEBUG_AP>=2
 fprintf(stderr,"%2d.%03d - %2d.%03d\n",pt1.sec1,pt1.msec1,pt1.sec2,pt1.msec2);
 #endif
-  if(get_width(&pt1)<1000) return 0;  /* too short, something wrong. */
+    if(get_width(&pt1)<1000) return 0;  /* too short, something wrong. */
+    }
+  else
+    {
+    if(ft.pick[idx][S].valid==0) return 0;
+    pt_ss=ft.pick[idx][S];
+    }
   name=ft.stn[idx].name;
   for(j=0;j<2;j++) /* j==0 - horizontal, j==1 - vertical */
     {
@@ -3541,25 +3644,29 @@ fprintf(stderr,"%2d.%03d - %2d.%03d\n",pt1.sec1,pt1.msec1,pt1.sec2,pt1.msec2);
       if((j==0 && (*comp!='N' && *comp!='S' && *comp!='E' &&
         *comp!='W' && *comp!='H')) || (j==1 &&
         (*comp!='V' && *comp!='U' && *comp!='D'))) continue;
-      n=getdata(idxs,pt1,&db,&i); /* get data of the range pt1 */ 
-      smeadl(db,n,&zero);     /* offset nulling */
-      get_max(db,n,&n_max,&n_min,&c_max,&c_min);  /* search MAX */
-      if(db[n_max]==db[n_min]) {free(db);continue;}
+      if(!hint)
+        {
+        n=getdata(idxs,pt1,&db,&i); /* get data of the range pt1 */ 
+        smeadl(db,n,&zero);     /* offset nulling */
+        get_max(db,n,&n_max,&n_min,&c_max,&c_min);  /* search MAX */
+        if(db[n_max]==db[n_min]) {free(db);continue;}
 #if DEBUG_AP>=2
 fprintf(stderr,"n=%d n_max=%d n_min=%d\n",n,n_max,n_min);
 #endif
-      if(db[n_max]<-db[n_min]) n_max=n_min;
-      free(db);
-      msec=(n_max*1000)/ft.sr[idxs]+pt1.msec1;
-      sec=pt1.sec1+msec/1000;
-      msec%=1000;     /* sec.msec is the time of MAX */
+        if(db[n_max]<-db[n_min]) n_max=n_min;
+        free(db);
+        msec=(n_max*1000)/ft.sr[idxs]+pt1.msec1;
+        sec=pt1.sec1+msec/1000;
+        msec%=1000;     /* sec.msec is the time of MAX */
       /* set 'pt' range to start from midpoint of P and MAX */
-      pt=ft.pick[idx][P]; /* this is 'valid',  of course. */
-      ms=(msec+pt.msec1+(sec+pt.sec1)*1000)/2;
-      pt.msec1=ms%1000;
-      pt.sec1=ms/1000;
-      pt.msec2=msec;
-      pt.sec2=sec+1;  /* set pt range to end at 1 s after MAX */
+        pt=ft.pick[idx][P]; /* this is 'valid',  of course. */
+        ms=(msec+pt.msec1+(sec+pt.sec1)*1000)/2;
+        pt.msec1=ms%1000;
+        pt.sec1=ms/1000;
+        pt.msec2=msec;
+        pt.sec2=sec+1;  /* set pt range to end at 1 s after MAX */
+        }
+      else pt=pt_ss;
 #if DEBUG_AP>=2
 fprintf(stderr,"%2d.%03d : %2d.%03d\n",pt.sec1,pt.msec1,pt.sec2,pt.msec2);
 #endif
@@ -3582,21 +3689,13 @@ fprintf(stderr,"%2d.%03d : %2d.%03d\n",pt.sec1,pt.msec1,pt.sec2,pt.msec2);
   return done;
   }
 
-evdet(ev)
-  Evdet *ev;
+get_trigch()
   {
-  static Evdet_Tbl *tbl;
-  int n,i,k,j,jj,idx,sec,ch,sr,trig,x1,x2,y1,y2,d,m,done,sub,
-    trig_off,sec_on;
-  struct Pick_Time pt;
-  unsigned int st;
-  double sd,zero,c[MAX_FILT*4],dmin,dmax,drange,dd,lta,ratio;
-
+  int i,k,j,jj;
   if(ft.trigch==0)
     if((ft.trigch=(short *)malloc(sizeof(ft.trigch)*ft.n_ch))==0)
       emalloc("ft.trigch");
-  done=0;
-/* select V/VH chs */
+  /* select V/VH chs */
   k=j=0;
   while(j<ft.n_ch)
     {
@@ -3619,17 +3718,34 @@ evdet(ev)
     j=jj;
     }
   ft.n_trigch=k;
+  }
+
+evdet(ev,single)
+  Evdet *ev;
+  int single; /* process just one event */
+  {
+  static Evdet_Tbl *tbl;
+  int n,i,k,j,jj,idx,sec,ch,sr,trig,x1,x2,y1,y2,d,m,done,sub,trig_off,sec_on,
+    sec_start,save;
+  struct Pick_Time pt;
+  unsigned int st;
+  double sd,zero,c[MAX_FILT*4],dmin,dmax,drange,dd,lta,ratio;
+
+  if(single) {sec_start=x_zero/PIXELS_PER_SEC_MON;save=0;}
+  else {sec_start=0;save=1;}
+  get_trigch(); /* select vertical component chs -> ft.trigch */
+  done=0;
   if(tbl==0 && (tbl=(Evdet_Tbl *)malloc(sizeof(*tbl)*ft.n_trigch))==0)
     emalloc("tbl");
 /* get AR models from one of the first 5 sec */
 /* get first trig level from RMS of AR filter output */
   for(ch=0;ch<ft.n_trigch;ch++) tbl[ch].use=0;
-  for(sec=1;sec<5;sec++)
+  for(sec=sec_start+1;sec<sec_start+5;sec++)
     {
     for(ch=0;ch<ft.n_trigch;ch++)
       {
-      if((sr=read_one_sec(sec,ft.idx2ch[ft.trigch[ch]],buf,
-        KILL_SPIKE))==0) continue;
+      if((sr=read_one_sec(sec,ft.idx2ch[ft.trigch[ch]],buf,KILL_SPIKE))==0)
+        continue;
       for(j=0;j<sr;j++) dbuf[j]=(double)buf[j];
       if(getar(dbuf,sr,&sd,&m,c,&zero,0)>=0 && m>0 && sd>0.0)
         {
@@ -3680,7 +3796,7 @@ tbl[ch].m,tbl[ch].zero,tbl[ch].f.m_filt);
 fprintf(stderr,"n=%d\n",ft.n_trigch);
 #endif
 /* scan ft.n_trigch channels data, applying AR filter, to find trigger */
-  for(sec=1;sec<ft.len;sec++)
+  for(sec=sec_start+1;sec<ft.len;sec++)
     {
     if(background==0)
       {
@@ -3695,8 +3811,8 @@ fprintf(stderr,"%2d ",sec);if((sec+1)%20==0) fprintf(stderr,"\n");fflush(stderr)
 #endif
     for(ch=0;ch<ft.n_trigch;ch++) if(tbl[ch].use)
       {
-      if((sr=read_one_sec(sec,ft.idx2ch[ft.trigch[ch]],buf,
-        KILL_SPIKE))==0) continue;
+      if((sr=read_one_sec(sec,ft.idx2ch[ft.trigch[ch]],buf,KILL_SPIKE))==0)
+        continue;
       jj=k=buf[0];
 #if DEBUG_AP>=6
 #define SSS 0
@@ -3866,7 +3982,8 @@ tbl[ch].sta,tbl[ch].lta,ratio,dmax,dmin,sd);}
       {
       ev->trigger=0;
       fprintf(ft.fp_log,"%02d -\n",sec);fflush(ft.fp_log);
-      done=auto_pick_single(ev,tbl,sec,sec_on);
+      done=auto_pick_single(tbl,sec,save);
+      if(single) break;
       }
 #if DEBUG_AP>=4
 for(ch=0;ch<ft.n_trigch;ch++)
@@ -3881,12 +3998,12 @@ fprintf(stderr,"\n");
   if(ev->trigger)
     {
     fprintf(ft.fp_log,"%02d - EOF\n",sec);fflush(ft.fp_log);
-    done=auto_pick_single(ev,tbl,sec-1,sec_on);
+    done=auto_pick_single(tbl,sec-1,save);
     }
   if(done==0)
     {
     set_diagnos("NOTRG",getname(geteuid()));
-    save_data(0);
+    if(single==0) save_data(0);
     }
   return done;
   }
@@ -4139,6 +4256,10 @@ end_process(ret)
   unlink(ft.init_file);
   unlink(ft.finl_file);
   unlink(ft.rept_file);
+  unlink(ft.seis_file2);
+  unlink(ft.init_file2);
+  unlink(ft.finl_file2);
+  unlink(ft.rept_file2);
   unlink(ft.othrs_file);
   unlink(ft.dat_file);
   unlink(ft.log_file);
@@ -4164,14 +4285,14 @@ set_geometry()
 
 /* window position & size */
   x_win_mon=WIDTH_INFO;
-  y_win_mon=MARGIN;
+  y_win_mon=MARGIN+HEIGHT_FUNC;
   if((n_zoom_max=(height_dpy-1-MARGIN)/HEIGHT_ZOOM)>N_ZOOM_MAX)
     n_zoom_max=N_ZOOM_MAX;
   while(n_zoom>n_zoom_max) close_zoom(n_zoom-1);
-  height_win_mon=height_dpy-1-MARGIN-n_zoom*HEIGHT_ZOOM;
+  height_win_mon=height_dpy-1-MARGIN-HEIGHT_FUNC-n_zoom*HEIGHT_ZOOM;
   width_win_mon =width_dpy-WIDTH_INFO;
   x_win_info=0;
-  y_win_info=MARGIN;
+  y_win_info=MARGIN+HEIGHT_FUNC;
   width_win_info =WIDTH_INFO;
   width_zoom=width_dpy+1;
   height_zoom=HEIGHT_ZOOM+1;
@@ -4208,12 +4329,13 @@ main(argc,argv)
     ft.pick_server_port=atoi(ptr);
   else ft.pick_server_port=PICK_SERVER_PORT;
   sprintf(ft.param_file,"%s.prm",NAME_PRG);
-  background=map_only=mc=bye=auto_flag=not_save=copy_file=got_hup=0;
-  rapid_report=mon_offset=just_hypo=just_hypo_offset=0;
-  flag_save=1;
+  background=map_only=mc=bye=auto_flag=auto_flag_hint=not_save=0;
+  copy_file=got_hup=0;
+  mon_offset=just_hypo=just_hypo_offset=0;
+  flag_save=sec_block=1;
   *ft.final_opt=0;
   dot='.';
-  while((c=getopt(argc,argv,"abcd:fhmnop:qrs:twx:BC:_"))!=EOF)
+  while((c=getopt(argc,argv,"abcd:fhmnop:qrs:twx:BC:S_"))!=EOF)
     {
     switch(c)
       {
@@ -4248,8 +4370,8 @@ main(argc,argv)
       case 'q':   /* 'bye' mode */
         bye=1;
         break;
-      case 'r':   /* rapid report */
-        rapid_report=1;
+      case 'r':   /* auto pick (with hint) */
+        auto_flag_hint=1;
         break;
       case 's':   /* specify find_picks server & port */
         if(ptr=(unsigned char *)strchr(optarg,':'))
@@ -4275,6 +4397,9 @@ main(argc,argv)
       case 'C':   /* cursor color */
         strcpy(cursor_color,optarg);
         break;
+      case 'S':   /* don't assume second block */
+        sec_block=0;
+        break;
       case '_':   /* use '_' instead '.' for pick file */
         dot='_';
         break;
@@ -4284,7 +4409,7 @@ main(argc,argv)
         exit(0);
       }
     }
-  if(auto_flag==0) not_save=0;
+  if(auto_flag==0 || auto_flag_hint==0) not_save=0;
   if(mc)
     {
     mapconv(argc,argv,optind);
@@ -4293,7 +4418,7 @@ main(argc,argv)
   signal(SIGINT,(void *)end_process);
   signal(SIGTERM,(void *)end_process);
   signal(SIGHUP,(void *)bye_entry);
-  fprintf(stderr,"***  %s   X11 version (%s)  ***\n",NAME_PRG,VERSION);
+  fprintf(stderr,"***  %s  (%s)  ***\n",NAME_PRG,VERSION);
 
   lat_cent=lon_cent=200.0;  /* unrealistic position */
   first_map=first_map_others=1;
@@ -4597,6 +4722,7 @@ skip_mon:
 /*  auto_wrap_off();*/
   if(map_only) do_map();
   else if(auto_flag) do_auto_pick();
+  else if(auto_flag_hint) do_auto_pick_hint();
   else if(background) end_process(0);
   else
     {
@@ -4620,13 +4746,28 @@ do_auto_pick()
   else
     {
     refresh(0);
-    strcpy(apbuf," DOING AUTO-PICK ");
+    strcpy(apbuf,"EVDET & AUTO-PICK");
     put_text(&dpy,x_time_file,Y_TIME,apbuf,BF_S);
     }
-  auto_pick();
+  auto_pick(0);
   if(bye) end_process(0);
   else bye_process();
   auto_flag=0;
+  }
+
+do_auto_pick_hint()
+  {
+  if(background) fprintf(stderr,"AUTO-PICK W/HINT mode\n");
+  else
+    {
+    refresh(0);
+    strcpy(apbuf," AUTOPICK W/HINT ");
+    put_text(&dpy,x_time_file,Y_TIME,apbuf,BF_S);
+    }
+  auto_pick_hint(1);
+  if(bye) end_process(0);
+  else bye_process();
+  auto_flag_hint=0;
   }
 
 do_just_hypo()
@@ -4670,7 +4811,6 @@ window_main_loop()
     switch(loop)
       {
       case LOOP_MAIN: proc_main();break;
-      case LOOP_LIST: proc_list();break;
       case LOOP_MAP:  proc_map();break;
       case LOOP_MECHA:proc_mecha();break;
       case LOOP_PSUP: proc_psup();break;
@@ -4903,7 +5043,7 @@ plot_zoom(izoom,leng,pt,put)
             }
           else pt->polarity=1;
           }
-        if(*tbuf1!='*')
+        if(*tbuf1!='*' && zoom_win[izoom].nounit==0)
           {
           if(zoom_win[izoom].integ)
             {
@@ -4920,7 +5060,10 @@ plot_zoom(izoom,leng,pt,put)
             ft.stn[ft.ch2idx[zoom_win[izoom].sys_ch]].unit);
           }
         else sprintf(tbuf,"%d",HEIGHT_ZOOM<<zoom_win[izoom].scale);
-        put_text(&dpy,xzero+2,yzero+MAX_ZOOM-HEIGHT_TEXT,tbuf,BF_S);
+        if(zoom_win[izoom].nounit)
+          put_text(&dpy,xzero+2,yzero+MAX_ZOOM-HEIGHT_TEXT,tbuf,BF_SI);
+        else put_text(&dpy,xzero+2,yzero+MAX_ZOOM-HEIGHT_TEXT,tbuf,BF_S);
+        zoom_win[izoom].w_scale=strlen(tbuf)*WIDTH_TEXT;
         start=0;
         }
       if(join) points[0]=points[np_last-1];
@@ -5068,7 +5211,9 @@ plot_zoom(izoom,leng,pt,put)
 
   /* put marks */
   for(j=0;j<4;j++) if(ft.pick[ft.ch2idx[zoom_win[izoom].sys_ch]][j].valid)
-    put_mark_zoom(j,izoom);
+    put_mark_zoom(j,izoom,&ft.pick[ft.ch2idx[zoom_win[izoom].sys_ch]][j],0);
+  for(j=0;j<2;j++) if(ft.pick_calc[ft.ch2idx[zoom_win[izoom].sys_ch]][j].valid)
+    put_mark_zoom(j,izoom,&ft.pick_calc[ft.ch2idx[zoom_win[izoom].sys_ch]][j],1);
   if(put && strcmp(endian,"A")) sleep(1);
   return;
 
@@ -5122,14 +5267,15 @@ proc_main()
     {
     strcpy(textbuf,diagnos);
     strcpy(textbuf1,monbuf);
-    if(y>=MARGIN+height_win_mon)
+    if(y>=YBASE_MON+height_win_mon)
       {
       i=(height_dpy-1-y)/HEIGHT_ZOOM;   /* zoom no. */
       if(x>=WIDTH_INFO_ZOOM && zoom_win[i].valid)  /* zoom trace */
         {
         kk=((height_dpy-1-(i+1)*HEIGHT_ZOOM+CENTER_ZOOM-y)<<
           zoom_win[i].scale)+zoom_win[i].zero;
-        if(*ft.stn[ft.ch2idx[zoom_win[i].sys_ch]].unit!='*')
+        if(*ft.stn[ft.ch2idx[zoom_win[i].sys_ch]].unit!='*' &&
+             zoom_win[i].nounit==0)
           {
           if(zoom_win[i].integ)
             {
@@ -5151,16 +5297,19 @@ proc_main()
           (zoom_win[i].pixels>>1))/zoom_win[i].pixels;
         k=zoom_win[i].sec+(x-WIDTH_INFO_ZOOM-xshift)/zoom_win[i].pixels;
         if(k<ft.len) sprintf(textbuf,"%04X %02x:%02x.%03d %s",
-                zoom_win[i].sys_ch,ft.ptr[k].time[4],
-                ft.ptr[k].time[5],j,tbuf);
+                zoom_win[i].sys_ch,ft.ptr[k].time[4],ft.ptr[k].time[5],j,tbuf);
         }
       }
-    else if(y<MARGIN) /* function area */
+    else if(y<MARGIN) /* function(1) area - LIST */
+      {
+      ; /* nothing associated to MOTION for LIST */
+      }
+    else if(y<YBASE_MON) /* function(2) area */
       {
       if(x>x_time_file && x<x_time_file+WIDTH_TEXT*17)
         strcpy(textbuf1,"    AUTO-PICK    ");
       }
-    else if(y<MARGIN+height_mon)
+    else if(y<YBASE_MON+height_mon)
       {
       k=(y_zero+y-y_win_mon)/pixels_per_trace;
       if(x>=WIDTH_INFO && k<ft.n_ch)     /* mon traces */
@@ -5176,8 +5325,7 @@ proc_main()
           (PIXELS_PER_SEC_MON>>1))/PIXELS_PER_SEC_MON;
         i=(x_zero+x-x_win_mon)/PIXELS_PER_SEC_MON;
         if(i<ft.len) sprintf(textbuf,"%04X %02x:%02x.%d   %s",
-                ft.idx2ch[ft.pos2idx[k]],
-                ft.ptr[i].time[4],ft.ptr[i].time[5],j,tbuf);
+          ft.idx2ch[ft.pos2idx[k]],ft.ptr[i].time[4],ft.ptr[i].time[5],j,tbuf);
         }
       }
     put_text(&dpy,x_time_now,Y_TIME,textbuf,BF_SI);
@@ -5186,7 +5334,7 @@ proc_main()
   else if(event.mse_trig==MSE_BUTTON && event.mse_dir==MSE_DOWN)
     {
     ring_bell=1;
-    if(y>=MARGIN+height_win_mon)  /* zoom area */
+    if(y>=YBASE_MON+height_win_mon)  /* zoom area */
       {
       i=(height_dpy-1-y)/HEIGHT_ZOOM;   /* zoom no. */
       if(x<WIDTH_INFO_ZOOM)        /* zoom info */
@@ -5454,6 +5602,8 @@ proc_main()
         if(main_mode==MODE_GET && zoom_win[i].valid)
           {
           zoom_win[pos_zoom].scale=zoom_win[i].scale;
+          zoom_win[pos_zoom].w_scale=zoom_win[i].w_scale;
+          zoom_win[pos_zoom].nounit=zoom_win[i].nounit;
           zoom_win[pos_zoom].offset=zoom_win[i].offset;
           zoom_win[pos_zoom].integ=zoom_win[i].integ;
           zoom_win[pos_zoom].zero=zoom_win[i].zero;
@@ -5471,31 +5621,210 @@ proc_main()
           }
         else if(zoom_win[i].valid)
           {
-          xshift=zoom_win[i].shift*zoom_win[i].pixels/1000;
-          pt.msec1=(((x-WIDTH_INFO_ZOOM-xshift)%zoom_win[i].pixels)*1000+
-            (zoom_win[i].pixels>>1))/zoom_win[i].pixels;
-          pt.sec1=zoom_win[i].sec+(x-WIDTH_INFO_ZOOM-xshift)/zoom_win[i].pixels;
-          pt.valid=i;  /* zoom window no. */
-          main_mode=MODE_PICK;
-          ring_bell=0;
+          if(x<WIDTH_INFO_ZOOM+zoom_win[i].w_scale &&
+              ((i+1)*HEIGHT_ZOOM-(height_dpy-1-y))/PIXELS_PER_LINE==4)
+            { /* use raw amplitude */
+            if(ft.stn[ft.ch2idx[zoom_win[i].sys_ch]].unit!='*')
+              {
+              zoom_win[i].nounit=(++zoom_win[i].nounit)&1;
+              plot_zoom(i,0,0,0);
+              ring_bell=0;
+              }
+            }
+          else
+            {
+            xshift=zoom_win[i].shift*zoom_win[i].pixels/1000;
+            pt.msec1=(((x-WIDTH_INFO_ZOOM-xshift)%zoom_win[i].pixels)*1000+
+              (zoom_win[i].pixels>>1))/zoom_win[i].pixels;
+            pt.sec1=zoom_win[i].sec+
+              (x-WIDTH_INFO_ZOOM-xshift)/zoom_win[i].pixels;
+            pt.valid=i;  /* zoom window no. */
+            main_mode=MODE_PICK;
+            ring_bell=0;
+            }
           }
         }
       }
-    else if(y<MARGIN) /* command area */
+    else if(y<MARGIN) /* command area (1) - LIST */
       {
-      if(x_time_file<=x && x<=x_time_file+WIDTH_TEXT*17)
+      if(com_dep1<=x && x<=com_dep2)
         {
+        ring_bell=0;
         switch(event.mse_code)
           {
           case MSE_BUTNL:
-          case MSE_BUTNM: break;
-          case MSE_BUTNR: not_save=1;break;
+            if(init_dep<10) init_dep+=1;
+            else if(init_dep< 50) init_dep=(init_dep/5+1)*5;
+            else if(init_dep<100) init_dep=(init_dep/10+1)*10;
+            else if(init_dep<700) init_dep=(init_dep/50+1)*50;
+            else ring_bell=1;
+            break;
+          case MSE_BUTNM:
+            init_dep =init_dep_init;
+            init_depe=init_depe_init;
+            break;
+          case MSE_BUTNR:
+            if(init_dep==0) ring_bell=1;
+            else if(init_dep<= 10) init_dep-=1;
+            else if(init_dep<= 50) init_dep=(init_dep/5-1)*5;
+            else if(init_dep<=100) init_dep=(init_dep/10-1)*10;
+            else init_dep=(init_dep/50-1)*50;
+            break;
           }
+        if(init_depe>init_dep) init_depe=init_dep;
+        if(ring_bell==0) put_init_depth();
+        }
+      else if(com_depe1<=x && x<=com_depe2)
+        {
+        ring_bell=0;
+        switch(event.mse_code)
+          {
+          case MSE_BUTNL:
+            if(init_depe<10) init_depe+=1;
+            else if(init_depe< 50) init_depe=(init_depe/5+1)*5;
+            else if(init_depe<100) init_depe=(init_depe/10+1)*10;
+            else if(init_depe<700) init_depe=(init_depe/50+1)*50;
+            else ring_bell=1;
+            break;
+          case MSE_BUTNM:
+            init_depe=init_dep;
+            break;
+          case MSE_BUTNR:
+            if(init_depe==0) ring_bell=1;
+            else if(init_depe<= 10) init_depe-=1;
+            else if(init_depe<= 50) init_depe=(init_depe/5-1)*5;
+            else if(init_depe<=100) init_depe=(init_depe/10-1)*10;
+            else init_depe=(init_depe/50-1)*50;
+            break;
+          }
+        if(init_depe>init_dep)
+          {
+          init_depe=init_dep;
+          ring_bell=1;
+          }
+        if(ring_bell==0) put_init_depth();
+        }
+      else switch(get_func(x))
+        {
+        case QUIT:
+          if(event.mse_code==MSE_BUTNR) end_process(0);
+          k=0;
+          if(diagnos[1]!=' ') k=1;
+          else
+            {
+            for(i=0;i<ft.n_ch;i++) for(j=0;j<4;j++)
+              if(ft.pick[ft.pos2idx[i]][j].valid) k=1;
+            }
+          if(k==0 || flag_change==0) end_process(0);
+              /* no picks or no changes */
+          break;
+        case RFSH:
+          raise_ttysw(0);
+          refresh(1);
+          ring_bell=0;
+          break;
+        case MAP:
+          raise_ttysw(0);
+          loop_stack[loop_stack_ptr++]=loop;
+          loop=LOOP_MAP;
+          init_map(event.mse_code);
+          return;
+        case MECH:
+          raise_ttysw(0);
+          loop_stack[loop_stack_ptr++]=loop;
+          loop=LOOP_MECHA;
+          init_mecha();
+          return;
+        case PSTUP:
+          raise_ttysw(0);
+          loop_stack[loop_stack_ptr++]=loop;
+          loop=LOOP_PSUP;
+          init_psup();
+          return;
+        case COPY:
+          put_reverse(&dpy,x_func(COPY),0,WB,MARGIN);
+          switch(event.mse_code)
+            {
+            case MSE_BUTNL: hard_copy(3);break;
+            case MSE_BUTNM: hard_copy(2);break;
+            case MSE_BUTNR: hard_copy(1);break;
+            }
+          put_reverse(&dpy,x_func(COPY),0,WB,MARGIN);
+          ring_bell=0;
+          break;
+        case LIST:
+          raise_ttysw(1);
+          put_reverse(&dpy,x_func(LIST),0,WB,MARGIN);
+          list_picks(1);
+          put_reverse(&dpy,x_func(LIST),0,WB,MARGIN);
+          ring_bell=0;
+          break;
+        case FINL:
+          raise_ttysw(1);
+          put_reverse(&dpy,x_func(FINL),0,WB,MARGIN);
+          list_finl(1);
+          put_reverse(&dpy,x_func(FINL),0,WB,MARGIN);
+          ring_bell=0;
+          break;
+        case SAVE:
+          raise_ttysw(1);
+          put_reverse(&dpy,x_func(SAVE),0,WB,MARGIN);
+          switch(event.mse_code)
+            {
+            case MSE_BUTNL:
+            case MSE_BUTNM: if(save_data(0)) ring_bell=0;break;
+            case MSE_BUTNR: if(save_data(1)) ring_bell=0;break;
+            }
+          put_reverse(&dpy,x_func(SAVE),0,WB,MARGIN);
+          break;
+        case HYPO:
+          raise_ttysw(1);
+          put_reverse(&dpy,x_func(HYPO),0,WB,MARGIN);
+          locate(1);
+          get_calc();
+          put_reverse(&dpy,x_func(HYPO),0,WB,MARGIN);
+          ring_bell=0;
+          break;
+        case LOAD:
+          raise_ttysw(1);
+          put_reverse(&dpy,x_func(LOAD),0,WB,MARGIN);
+          if(load_data(event.mse_code))
+            {
+            list_picks(0);
+            plot_flag=1;
+            ring_bell=0;
+            }
+          put_reverse(&dpy,x_func(LOAD),0,WB,MARGIN);
+          break;
+        case CANL:
+          raise_ttysw(1);
+          put_reverse(&dpy,x_func(CANL),0,WB,MARGIN);
+          if(cancel_picks(NULL,-1)) plot_flag=1;
+          cancel_picks_calc();
+          set_diagnos("",getname(geteuid()));
+          flag_change=0;
+          list_picks(0);
+          if(*ft.save_file)
+            {
+            if(event.mse_code==MSE_BUTNL)
+              {
+              *ft.save_file=0;
+              fprintf(stderr,"using no pick file\n");
+              }
+            else fprintf(stderr,"using pick file '%s'\n",ft.save_file);
+            }
+          put_reverse(&dpy,x_func(CANL),0,WB,MARGIN);
+          ring_bell=0;
+          break;
+        }
+      }
+    else if(y<YBASE_MON) /* command area (2) */
+      {
+      if(x_time_file<=x && x<=x_time_file+WIDTH_TEXT*17)
+        {
         strcpy(apbuf," DOING AUTO-PICK ");
         put_text(&dpy,x_time_file,Y_TIME,apbuf,BF_S);
-        if(auto_pick()) ring_bell=0;
-        refresh(0);
-        not_save=0;
+        if(auto_pick(0)) ring_bell=0;
         }
       if(com_diag1<=x && x<=com_diag2)
         {
@@ -5537,22 +5866,12 @@ proc_main()
             zoom_win[n_zoom-1].filt=0;
             zoom_win[n_zoom-1].valid=0;
             zoom_win[n_zoom-1].shift=0;
+            zoom_win[n_zoom-1].nounit=0;
+            zoom_win[n_zoom-1].w_scale=0;
             if(n_zoom==1) draw_seg(0,height_dpy-1,width_dpy,
               height_dpy-1,LPTN_FF,BF_SDO,&dpy);
             ring_bell=0;
             }
-          break;
-        case QUIT:
-          if(event.mse_code==MSE_BUTNR) end_process(0);
-          k=0;
-          if(diagnos[1]!=' ') k=1;
-          else
-            {
-            for(i=0;i<ft.n_ch;i++) for(j=0;j<4;j++)
-              if(ft.pick[ft.pos2idx[i]][j].valid) k=1;
-            }
-          if(k==0 || flag_change==0) end_process(0);
-              /* no picks or no changes */
           break;
         case UD:
           switch(event.mse_code)
@@ -5578,37 +5897,19 @@ proc_main()
               break;
             }
           break;
-        case RFSH:
-          main_mode=MODE_NORMAL;
-          refresh(0);
-          ring_bell=0;
+        case EVDET:
+          strcpy(apbuf,"EVDET & AUTO-PICK");
+          put_text(&dpy,x_time_file,Y_TIME,apbuf,BF_S);
+          if(auto_pick(1)) ring_bell=0;
           break;
-        case LIST:
-          loop_stack[loop_stack_ptr++]=LOOP_MAIN;
-          loop=LOOP_LIST;
-          init_list();
-          return;
-        case MAP:
-          loop_stack[loop_stack_ptr++]=LOOP_MAIN;
-          loop=LOOP_MAP;
-          init_map(event.mse_code);
-          return;
-        case COPY:
-          put_reverse(&dpy,x_func(COPY),0,WB,MARGIN);
-          sprintf(textbuf,"     %s      ",get_time(0,0));
-          put_text(&dpy,x_time_now,Y_TIME,textbuf,BF_SI);
-          switch(event.mse_code)
-            {
-            case MSE_BUTNL: hard_copy(3);break;
-            case MSE_BUTNM: hard_copy(2);break;
-            case MSE_BUTNR: hard_copy(1);break;
-            }
-          put_reverse(&dpy,x_func(COPY),0,WB,MARGIN);
-          ring_bell=0;
+        case AUTPK:
+          strcpy(apbuf," AUTOPICK W/HINT ");
+          put_text(&dpy,x_time_file,Y_TIME,apbuf,BF_S);
+          if(auto_pick_hint(0)) ring_bell=0;
           break;
         }
       }
-    else if(y<MARGIN+height_mon)  /* mon area */
+    else if(y<YBASE_MON+height_mon)  /* mon area */
       {
       i=(x_zero+x-x_win_mon)/PIXELS_PER_SEC_MON;
       j=(((x_zero+x-x_win_mon)%PIXELS_PER_SEC_MON)*10+
@@ -5733,8 +6034,7 @@ proc_main()
     refresh(0);
     ring_bell=0;
     }
-  if(!(xx==x_zero && yy==y_zero) || plot_flag)
-    put_mon(x_zero=xx,y_zero=yy);
+  if(!(xx==x_zero && yy==y_zero) || plot_flag) put_mon(x_zero=xx,y_zero=yy);
   else if(ring_bell) bell();
   }
 
@@ -5801,11 +6101,15 @@ get_max(db,n,n_max,n_min,c_max,c_min)
 
 put_function()
   {
-  put_funcs(func_main,0);
+  int y;
+  put_init_depth();
+  put_funcs(func_main2,0);
+  y=HEIGHT_FUNC;
+  put_funcs(func_main,y);
   put_bitblt(&arrows_ud,0,0,32,16,&dpy,x_func(UD)+(WB-32)/2,
-    (MARGIN-16)/2,BF_SI);
+    (MARGIN-16)/2+y,BF_SI);
   put_bitblt(&arrows_lr,0,0,32,16,&dpy,x_func(LR)+(WB-32)/2,
-    (MARGIN-16)/2,BF_SI);
+    (MARGIN-16)/2+y,BF_SI);
   put_text(&dpy,x_time_now,Y_TIME,diagnos,BF_SI);
   }
 
@@ -5817,20 +6121,14 @@ put_function_map()
   put_funcs(func_map2,height_dpy-MARGIN);
   if(mapsteps[ppk_idx]<10.0) sprintf(textbuf,"%3.1f",mapsteps[ppk_idx]);
   else sprintf(textbuf,"%3d",(int)mapsteps[ppk_idx]);
-  put_func(textbuf,QUIT,height_dpy-MARGIN+Y_TIME,0,1);
+  put_func(textbuf,QUIT,height_dpy-MARGIN+Y_LINE1,0,1);
   if(map_vert && map_mode!=MODE_TS3)
     {
     put_funcs(func_map3,height_dpy-MARGIN*2-HW);
     if(map_dir>=0) sprintf(textbuf,"N%2dE",map_dir);
     else sprintf(textbuf,"N%2dW",(-map_dir));
-    put_func(textbuf,QUIT,height_dpy-MARGIN*2-HW+Y_TIME,0,1);
+    put_func(textbuf,QUIT,height_dpy-MARGIN*2-HW+Y_LINE1,0,1);
     }
-  }
-
-put_function_list()
-  {
-  put_init_depth();
-  put_funcs(func_list,0);
   }
 
 put_init_depth()
@@ -5838,8 +6136,8 @@ put_init_depth()
   char textbuf[LINELEN];
   sprintf(textbuf,"DEPTH=>%3dkm+%3dkm",init_dep,init_depe);
   put_black(&dpy,0,0,WIDTH_TEXT*(strlen(textbuf)+1),MARGIN);
-  put_text(&dpy,HW,Y_TIME,textbuf,BF_SI);
-  put_text(&dpy,WIDTH_TEXT*12+HW,Y_TIME,"_",BF_SIDA);
+  put_text(&dpy,HW,Y_LINE1,textbuf,BF_SI);
+  put_text(&dpy,WIDTH_TEXT*12+HW,Y_LINE1,"_",BF_SIDA);
   }
 
 put_function_mecha()
@@ -5848,7 +6146,7 @@ put_function_mecha()
   put_funcs(func_mech,0);
   sprintf(textbuf,"%s HEMISPHERE PROJECTION",mec_hemi);
   put_black(&dpy,0,0,WIDTH_TEXT*(strlen(textbuf)+1),MARGIN);
-  put_text(&dpy,HW,Y_TIME,textbuf,BF_SI);
+  put_text(&dpy,HW,Y_LINE1,textbuf,BF_SI);
   }
 
 put_function_psup()
@@ -6030,12 +6328,12 @@ draw_line(pts,np,lptn,func,bm,xzero,yzero,xsize,ysize,disjoin)
   XFlush(disp);
   }
 
-put_mark_zoom(idx,izoom)
+put_mark_zoom(idx,izoom,pt,mode)
   int idx,izoom;
-  {
+  int mode; /* 0 for observed, 1 for calculated */
   struct Pick_Time *pt;
+  {
   int x,y,i,xshift;
-  pt=(&(ft.pick[ft.ch2idx[zoom_win[izoom].sys_ch]][idx]));
   if(zoom_win[izoom].sec<=pt->sec2 &&
       zoom_win[izoom].sec+zoom_win[izoom].length>pt->sec1)
     {
@@ -6047,9 +6345,11 @@ put_mark_zoom(idx,izoom)
         (zoom_win[izoom].pixels*pt->msec2+500)/1000+xshift;
     if(x>WIDTH_INFO_ZOOM)
       {
-      put_reverse(&dpy,x,y,i-x+1,MAX_ZOOM-MIN_ZOOM+1);
+      if(mode==0) put_reverse(&dpy,x,y,i-x+1,MAX_ZOOM-MIN_ZOOM+1);
+      else draw_seg(x,y,x,y+MAX_ZOOM-MIN_ZOOM+1,LPTN_33,BF_SDO,&dpy);
       if(x>WIDTH_INFO_ZOOM+WIDTH_TEXT)
         {
+        if(mode==1) y+=MAX_ZOOM-HEIGHT_TEXT-1;
         put_text(&dpy,x-WIDTH_TEXT,y,marks[idx],BF_SDXI);
         if(idx<MD && pt->polarity>0)
           put_text(&dpy,x-WIDTH_TEXT,y+HEIGHT_TEXT,"+",BF_SDXI);
@@ -6076,6 +6376,9 @@ put_mon(xzero,yzero)
   /* put mon */
   for(;i<ft.n_mon;i++)
     {
+/*printf("%d %d %d %d %d %d\n",xz,yzero,width_win_mon,height_win_mon,
+xwm,y_win_mon);
+*/
     put_bitblt(&mon[i],xz,yzero,width_win_mon,height_win_mon,&dpy,
       xwm,y_win_mon,BF_S);
     if(i==ft.n_mon-1 && width_win_mon>(j=ft.w_mon*PIXELS_PER_SEC_MON-xzero))
@@ -6181,7 +6484,8 @@ put_mark(idx,pos)
   put_mark_mon(idx,pos);
   /* zoom */
   if(loop==LOOP_MAIN) for(i=0;i<n_zoom;i++)
-    if(zoom_win[i].valid && zoom_win[i].pos==pos) put_mark_zoom(idx,i);
+    if(zoom_win[i].valid && zoom_win[i].pos==pos)
+      put_mark_zoom(idx,i,&ft.pick[ft.pos2idx[pos]][idx],0);
 #if DEBUG_AP>=1
 if(background==0) XSync(disp,0);
 #endif
@@ -6232,14 +6536,6 @@ make_visible(idx)
     }
   }
 
-init_list()
-  {
-  int i;
-  raise_ttysw(1);
-  refresh(1);
-  rfsh_req=0;
-  }
-
 list_line()
   {
   int i;
@@ -6261,10 +6557,10 @@ raise_ttysw(idx)
       {
       xgetorigin(disp,dpy.drw,&x,&y,&w,&h,&d,&root,&parent);
       xgetorigin(disp,ttysw,&xt,&yt,&w,&h,&d,&root,&parent);
-      if(y+MARGIN+fit_height+3>yt)
-        XMoveWindow(disp,ttysw,xt,y+MARGIN+3);
+      if(y+MARGIN+fit_height+3>yt) XMoveWindow(disp,ttysw,xt,y+MARGIN+3);
       }
     XRaiseWindow(disp,ttysw);
+    XSync(disp,False);
     }
   else
     {
@@ -6277,6 +6573,94 @@ raise_ttysw(idx)
     }
   expose_list=idx;
   }
+
+time_t time2lsec(int *tarray)
+{
+  static struct tm tm;
+  tm.tm_year=tarray[0];
+  if(tm.tm_year<70) tm.tm_year+=100;
+  tm.tm_mon=tarray[1]-1;
+  tm.tm_mday=tarray[2];
+  tm.tm_hour=tarray[3];
+  tm.tm_min=tarray[4];
+  tm.tm_sec=tarray[5];
+  return mktime(&tm);
+}
+
+lsec2time(time_t sec, int *tarray)
+{
+  struct tm *tm;
+  tm=localtime(&sec);
+  if((tarray[0]=tm->tm_year)>=100) tarray[0]-=100;
+  tarray[1]=tm->tm_mon+1;
+  tarray[2]=tm->tm_mday;
+  tarray[3]=tm->tm_hour;
+  tarray[4]=tm->tm_min;
+  tarray[5]=tm->tm_sec;
+}
+
+adj_sec(tm,se,tmc,sec)
+  int *tm,*tmc;
+  double *se,*sec;
+  {
+  int i;
+  double f;
+  for(i=0;i<5;i++) tmc[i]=tm[i]; /* copy YMDhm */
+  tmc[5]=(int)(f=floor(*se));
+  f=(*se)-f;
+  lsec2time(time2lsec(tmc),tmc);
+  tmc[6]=(int)(f*1000.0);
+  *sec=(double)tmc[5]+f;
+  }
+
+get_calc()  /* get calculated arrival times for all stations */
+{
+  int iz,i,j,tm_p[7],tm_s[7],tm_ot[7],tm_base[6];
+  time_t lsec_bs;
+  double sec;
+  FILE *fp;
+  char prog[NAMLEN],stan[NAMLEN],text_buf[LINELEN];
+  read_parameter(PARAM_HYPO,prog);
+  read_parameter(PARAM_STRUCT,stan);
+  /* write seis file */
+  fp=fopen(ft.seis_file2,"w+");
+  output_all(fp);
+  fclose(fp);
+  /* make init file */
+  fp=fopen(ft.init_file2,"w+");
+  fprintf(fp,"\n\n%d %d %d %d %d %.3f %.5f %.5f %.3f %.1f\n",
+    ft.hypo.tm[0],ft.hypo.tm[1],ft.hypo.tm[2],ft.hypo.tm[3],ft.hypo.tm[4],
+    ft.hypo.se,ft.hypo.alat,ft.hypo.along,ft.hypo.dep,ft.hypo.mag);
+  fclose(fp);
+  /* run hypo program */
+  sprintf(text_buf,"%s %s %s %s %s %s > /dev/null",
+    prog,stan,ft.seis_file2,ft.finl_file2,ft.rept_file2,ft.init_file2);
+  system(text_buf);
+  read_final(ft.finl_file2,&ft.hypoall);
+  bcd_dec(tm_base,ft.ptr[0].time);
+  lsec_bs=time2lsec(tm_base);
+  adj_sec(ft.hypoall.tm,&ft.hypoall.se,tm_ot,&sec);
+  cancel_picks_calc();
+  set_pick(&ft.pick_calc_ot,(int)(time2lsec(tm_ot)-lsec_bs),tm_ot[6],0,0);
+  for(i=0;i<ft.hypoall.ndata;i++){ /* station loop */
+    adj_sec(ft.hypoall.tm,&ft.hypoall.fnl[i].pt,tm_p,&sec);
+    adj_sec(ft.hypoall.tm,&ft.hypoall.fnl[i].st,tm_s,&sec);
+    for(j=0;j<ft.n_ch;j++) {
+      if(strcmp(ft.hypoall.fnl[i].stn,ft.stn[j].name)) continue;
+      /* station name = ft.stn[j].name, idx=j */
+      set_pick(&ft.pick_calc[j][P],(int)(time2lsec(tm_p)-lsec_bs),tm_p[6],0,0);
+      set_pick(&ft.pick_calc[j][S],(int)(time2lsec(tm_s)-lsec_bs),tm_s[6],0,0);
+      for(iz=0;iz<n_zoom;iz++) if(j==ft.ch2idx[zoom_win[iz].sys_ch]) {
+        put_mark_zoom(P,iz,&ft.pick_calc[j][P],1);
+        put_mark_zoom(S,iz,&ft.pick_calc[j][S],1);
+      }
+    }
+  }
+  fprintf(stderr,
+   "calculated for '%02d %02d %02d %02d %02d %02.3f %.5f %.5f %.3f %.1f'\n",
+       tm_ot[0],tm_ot[1],tm_ot[2],tm_ot[3],tm_ot[4],sec,ft.hypoall.alat,
+       ft.hypoall.along,ft.hypoall.dep,ft.hypoall.mag);
+}
 
 locate(flag)
   int flag; /* 1:output on display */
@@ -6319,201 +6703,12 @@ locate(flag)
   if(flag==0) strcat(text_buf," > /dev/null");
   system(text_buf);
   bell();
-  read_final();
+  read_final(ft.finl_file,&ft.hypo);
   flag_hypo=flag_change=1;
   }
 
-proc_list()
-  {
-  int i,j,ring_bell,x,y;
-  if(!expose_list) raise_ttysw(1);
-  x=event.mse_data.md_x;
-  y=event.mse_data.md_y;
-  if(event.mse_trig==MSE_BUTTON && event.mse_dir==MSE_DOWN)
-    {
-    ring_bell=1;
-    if(y<MARGIN)  /* function line */
-      {
-      if(com_dep1<=x && x<=com_dep2)
-        {
-        ring_bell=0;
-        switch(event.mse_code)
-          {
-          case MSE_BUTNL:
-            if(init_dep<10) init_dep+=1;
-            else if(init_dep< 50) init_dep=(init_dep/5+1)*5;
-            else if(init_dep<100) init_dep=(init_dep/10+1)*10;
-            else if(init_dep<700) init_dep=(init_dep/50+1)*50;
-            else ring_bell=1;
-            break;
-          case MSE_BUTNM:
-            init_dep =init_dep_init;
-            init_depe=init_depe_init;
-            break;
-          case MSE_BUTNR:
-            if(init_dep==0) ring_bell=1;
-            else if(init_dep<= 10) init_dep-=1;
-            else if(init_dep<= 50) init_dep=(init_dep/5-1)*5;
-            else if(init_dep<=100) init_dep=(init_dep/10-1)*10;
-            else init_dep=(init_dep/50-1)*50;
-            break;
-          }
-        if(init_depe>init_dep) init_depe=init_dep;
-        if(ring_bell==0) put_init_depth();
-        }
-      else if(com_depe1<=x && x<=com_depe2)
-        {
-        ring_bell=0;
-        switch(event.mse_code)
-          {
-          case MSE_BUTNL:
-            if(init_depe<10) init_depe+=1;
-            else if(init_depe< 50) init_depe=(init_depe/5+1)*5;
-            else if(init_depe<100) init_depe=(init_depe/10+1)*10;
-            else if(init_depe<700) init_depe=(init_depe/50+1)*50;
-            else ring_bell=1;
-            break;
-          case MSE_BUTNM:
-            init_depe=init_dep;
-            break;
-          case MSE_BUTNR:
-            if(init_depe==0) ring_bell=1;
-            else if(init_depe<= 10) init_depe-=1;
-            else if(init_depe<= 50) init_depe=(init_depe/5-1)*5;
-            else if(init_depe<=100) init_depe=(init_depe/10-1)*10;
-            else init_depe=(init_depe/50-1)*50;
-            break;
-          }
-        if(init_depe>init_dep)
-          {
-          init_depe=init_dep;
-          ring_bell=1;
-          }
-        if(ring_bell==0) put_init_depth();
-        }
-      else switch(get_func(x))
-        {
-        case RETN:
-          raise_ttysw(0);
-          loop=loop_stack[--loop_stack_ptr];
-          if(!background) refresh(0);    
-          if(rfsh_req)
-            {
-            main_mode=MODE_NORMAL;
-            refresh(0);
-            rfsh_req=0;
-            }
-          return;
-        case RFSH:
-          refresh(1);
-          ring_bell=0;
-          break;
-        case MAP:
-          raise_ttysw(0);
-          loop_stack[loop_stack_ptr++]=LOOP_LIST;
-          loop=LOOP_MAP;
-          init_map(event.mse_code);
-          return;
-        case MECH:
-          raise_ttysw(0);
-          loop_stack[loop_stack_ptr++]=LOOP_LIST;
-          loop=LOOP_MECHA;
-          init_mecha();
-          return;
-        case PSTUP:
-          raise_ttysw(0);
-          loop_stack[loop_stack_ptr++]=LOOP_LIST;
-          loop=LOOP_PSUP;
-          init_psup();
-          return;
-        case COPY:
-          put_reverse(&dpy,x_func(COPY),0,WB,MARGIN);
-          switch(event.mse_code)
-            {
-            case MSE_BUTNL: hard_copy(3);break;
-            case MSE_BUTNM: hard_copy(2);break;
-            case MSE_BUTNR: hard_copy(1);break;
-            }
-          put_reverse(&dpy,x_func(COPY),0,WB,MARGIN);
-          ring_bell=0;
-          break;
-        case LIST:
-          put_reverse(&dpy,x_func(LIST),0,WB,MARGIN);
-          list_picks();
-          put_reverse(&dpy,x_func(LIST),0,WB,MARGIN);
-          ring_bell=0;
-          break;
-        case FINL:
-          put_reverse(&dpy,x_func(FINL),0,WB,MARGIN);
-          list_finl();
-          put_reverse(&dpy,x_func(FINL),0,WB,MARGIN);
-          ring_bell=0;
-          break;
-        case SAVE:
-          put_reverse(&dpy,x_func(SAVE),0,WB,MARGIN);
-          switch(event.mse_code)
-            {
-            case MSE_BUTNL:
-            case MSE_BUTNM: if(save_data(0)) ring_bell=0;break;
-            case MSE_BUTNR: if(save_data(1)) ring_bell=0;break;
-            }
-          put_reverse(&dpy,x_func(SAVE),0,WB,MARGIN);
-          break;
-        case HYPO:
-          put_reverse(&dpy,x_func(HYPO),0,WB,MARGIN);
-          locate(1);
-          put_reverse(&dpy,x_func(HYPO),0,WB,MARGIN);
-          ring_bell=0;
-          break;
-        case LOAD:
-          put_reverse(&dpy,x_func(LOAD),0,WB,MARGIN);
-          if(load_data(event.mse_code))
-            {
-            list_picks();
-            rfsh_req=1;
-            ring_bell=0;
-            }
-          put_reverse(&dpy,x_func(LOAD),0,WB,MARGIN);
-          break;
-        case CANL:
-          put_reverse(&dpy,x_func(CANL),0,WB,MARGIN);
-          if(cancel_picks(NULL,-1)) rfsh_req=1;
-          set_diagnos("",getname(geteuid()));
-          flag_change=0;
-          list_picks();
-          if(*ft.save_file)
-            {
-            if(event.mse_code==MSE_BUTNL)
-              {
-              *ft.save_file=0;
-              fprintf(stderr,"using no pick file\n");
-              }
-            else fprintf(stderr,"using pick file '%s'\n",ft.save_file);
-            }
-          put_reverse(&dpy,x_func(CANL),0,WB,MARGIN);
-          ring_bell=0;
-          break;
-        }
-      }
-    if(ring_bell) bell();
-    }
-  else if(event.mse_trig==MSE_EXP)
-    {
-    put_white(&dpy,0,0,width_dpy,height_dpy);
-    put_function_list();
-    }
-  }
-
-put_list(idx)
-  int idx;
-  {
-  fflush(stderr);
-  put_white(&dpy,0,0,width_dpy,height_dpy);
-  put_function_list();
-  if(idx) list_picks();
-  }
-
-list_picks()
+list_picks(more)
+  int more; /* if 1, use more */
   {
   char textbuf[LINELEN];
   FILE *fp;
@@ -6524,38 +6719,68 @@ list_picks()
   k=0;
   for(i=0;i<ft.n_ch;i++) for(j=0;j<4;j++)
     if(ft.pick[i][j].valid) k=1;
+  if(doing_auto_pick) more=0;
   if(k)
     {
     fp=fopen(ft.seis_file,"w+");
     output_pick(fp);
     fclose(fp);
-    if(doing_auto_pick) sprintf(textbuf,"cat %s",ft.seis_file);
-    else sprintf(textbuf,"more -f %s",ft.seis_file);
+    if(more) sprintf(textbuf,"more -f %s",ft.seis_file);
+    else sprintf(textbuf,"cat %s",ft.seis_file);
     system(textbuf);
     }
   else fprintf(stderr,"no picks\n");
   }
 
-list_finl()
+list_finl(more)
+  int more; /* if 1, use more */
   {
   char textbuf[LINELEN];
   int i;
   list_line();
   if(flag_hypo==1)
     {
-    if(doing_auto_pick) sprintf(textbuf,"cat %s",ft.finl_file);
-    else sprintf(textbuf,"more -f %s",ft.finl_file);
+    if(doing_auto_pick) more=0;
+    if(more) sprintf(textbuf,"more -f %s",ft.finl_file);
+    else sprintf(textbuf,"cat %s",ft.finl_file);
     system(textbuf);
     }
   else fprintf(stderr,"no hypocenter\n");
   }
 
+output_all(fp)
+  FILE *fp;
+  {
+  int i,idx,tm_base[6];
+  char stn[20];
+  bcd_dec(tm_base,ft.ptr[0].time);
+  fprintf(fp,"%02d/%02d/%02d %02d:%02d                   %14s\n",
+    tm_base[0],tm_base[1],tm_base[2],tm_base[3],tm_base[4],get_time(0,0));
+  *stn=0;
+  for(i=0;i<ft.n_ch;i++) /* i : pos */
+    {
+    idx=ft.pos2idx[i];
+    if(ft.stn[idx].north==0.0 || ft.stn[idx].east==0.0) continue;
+    if(strcmp(stn,ft.stn[idx].name)==0) continue;
+    fprintf(fp,"%-10s ",ft.stn[idx].name);
+    fprintf(fp,".   0.000 1.000   0.000 1.000   0.0 0.00e+00");
+    fprintf(fp," %10.5f %10.5f %6d",ft.stn[idx].north,ft.stn[idx].east,
+      ft.stn[idx].z);
+    if(ft.stn[idx].stcp!=0.0 || ft.stn[idx].stcs!=0.0)
+      fprintf(fp," %6.3f %6.3f\n",ft.stn[idx].stcp,ft.stn[idx].stcs);
+    else fprintf(fp,"\n");
+    strcpy(stn,ft.stn[idx].name);
+    }
+  fprintf(fp,"\n");
+  }
+ 
 output_pick(fp)
   FILE *fp;
   {
   long minu,time1,time2,sec,msec,sec_err,msec_err;
-  int i,j,k,init,tm_base[6],tm[6],cnt,pos[4],sys_ch;
+  int i,j,k,init,tm_base[6],tm[6],pos[4],sys_ch;
   double err,rat;
+  time_t lsec_base;
   struct Pick_Time *pt;
   for(i=0;i<ft.n_ch;i++) for(j=0;j<4;j++)
     if(ft.pick[i][j].valid) ft.pick[i][j].valid=(-ft.pick[i][j].valid);
@@ -6588,6 +6813,8 @@ output_pick(fp)
       {
       if((k=ft.pick[pos[j]][j].sec1)<0) k=0;
       bcd_dec(tm_base,ft.ptr[k].time);
+      tm_base[5]=0;
+      lsec_base=time2lsec(tm_base);
       fprintf(fp,"%02d/%02d/%02d %02d:%02d",tm_base[0],tm_base[1],tm_base[2],
         tm_base[3],tm_base[4]);
       fprintf(fp,"                   %14s\n",get_time(0,0));
@@ -6628,14 +6855,7 @@ output_pick(fp)
           }
         if(err>99.0) err=99.0;
         bcd_dec(tm,ft.ptr[sec].time);
-        cnt=0;
-        while(time_cmp(tm,tm_base,6)>0)
-          {
-          tm[5]--;
-          adj_time(tm);
-          cnt++;
-          }
-        fprintf(fp," %3d.%03d%6.3f",tm_base[5]+cnt,msec,err);
+        fprintf(fp," %3d.%03d%6.3f",(int)(time2lsec(tm)-lsec_base),msec,err);
         ft.pick[pos[i]][i].valid=(-ft.pick[pos[i]][i].valid);
         }
       else fprintf(fp,"   0.000 0.000");
@@ -6650,14 +6870,7 @@ output_pick(fp)
       sec_err=((time2-time1)/2)/1000;
       if((msec_err=((time2-time1)/2)%1000)==0) msec_err=1;
       bcd_dec(tm,ft.ptr[sec].time);
-      cnt=0;
-      while(time_cmp(tm,tm_base,6)>0)
-        {
-        tm[5]--;
-        adj_time(tm);
-        cnt++;
-        }
-      fprintf(fp," %3d.%1d",tm_base[5]+cnt,msec/100);
+      fprintf(fp," %3d.%1d",(int)(time2lsec(tm)-lsec_base),msec/100);
       ft.pick[pos[i]][i].valid=(-ft.pick[pos[i]][i].valid);
       }
     else fprintf(fp,"   0.0");
@@ -6676,10 +6889,8 @@ output_pick(fp)
     if(sys_ch<0) fprintf(fp,"\n");
     else
       {
-      fprintf(fp," %10.5f %10.5f %6d",
-        ft.stn[ft.ch2idx[sys_ch]].north,
-        ft.stn[ft.ch2idx[sys_ch]].east,
-        ft.stn[ft.ch2idx[sys_ch]].z);
+      fprintf(fp," %10.5f %10.5f %6d",ft.stn[ft.ch2idx[sys_ch]].north,
+        ft.stn[ft.ch2idx[sys_ch]].east,ft.stn[ft.ch2idx[sys_ch]].z);
       if(ft.stn[ft.ch2idx[sys_ch]].stcp!=0.0 ||
           ft.stn[ft.ch2idx[sys_ch]].stcs!=0.0)
         fprintf(fp," %6.3f %6.3f\n",ft.stn[ft.ch2idx[sys_ch]].stcp,
@@ -6897,7 +7108,7 @@ put_time1(itv,t,t1,t1a,ye,mo,da,ho,mi,tbuf)
     {
     *t1a=(*t1);
     sprintf(tbuf,"%02d/%02d/%02d %02d:%02d -",ye,mo,da,ho,mi);
-    put_text(&dpy,WIDTH_TEXT*6,height_dpy-MARGIN+Y_TIME,tbuf,BF_SI);
+    put_text(&dpy,WIDTH_TEXT*6,height_dpy-MARGIN+Y_LINE1,tbuf,BF_SI);
     }
   *t1=t;
   }
@@ -6911,7 +7122,7 @@ put_time2(itv,t,t2,t2a,ye,mo,da,ho,mi,tbuf)
     {
     *t2a=(*t2);
     sprintf(tbuf,"- %02d/%02d/%02d %02d:%02d",ye,mo,da,ho,mi);
-    put_text(&dpy,WIDTH_TEXT*(6+15),height_dpy-MARGIN+Y_TIME,tbuf,BF_SI);
+    put_text(&dpy,WIDTH_TEXT*(6+15),height_dpy-MARGIN+Y_LINE1,tbuf,BF_SI);
     }
   *t2=t;
   }
@@ -6926,7 +7137,7 @@ draw_ticks_ts(j,jj,it,step,k)
     long2time((struct YMDhms *)tim,&sel.t1);
     sprintf(textbuf,"%d",tim[k-1]);
     put_text(&dpy,map_f2x+MARGIN*3/2-strlen(textbuf)*WIDTH_TEXT/2,
-      map_f1y-HEIGHT_TEXT-Y_TIME,textbuf,BF_SDO);
+      map_f1y-HEIGHT_TEXT-Y_LINE1,textbuf,BF_SDO);
     t=tim[k-1];
     }
   if(jj<sel.t1) jj+=step;
@@ -6941,11 +7152,11 @@ draw_ticks_ts(j,jj,it,step,k)
       long2time((struct YMDhms *)tim,(long *)&jj);
       sprintf(textbuf,"%d",tim[k]);
       put_text(&dpy,x-WIDTH_TEXT*strlen(textbuf)/2,
-        map_f2y+Y_TIME,textbuf,BF_SDO);
+        map_f2y+Y_LINE1,textbuf,BF_SDO);
       if(k>0 && t!=tim[k-1])
         {
         sprintf(textbuf,"%d",tim[k-1]);
-        put_text(&dpy,x+HW,map_f1y-HEIGHT_TEXT-Y_TIME,textbuf,BF_SDO);
+        put_text(&dpy,x+HW,map_f1y-HEIGHT_TEXT-Y_LINE1,textbuf,BF_SDO);
         t=tim[k-1];
         }
       }
@@ -6967,13 +7178,12 @@ draw_ticks_ts2(j,jj,it,k,tim,t)
   if(it==2 || k==0)
     {
     sprintf(textbuf,"%d",tim[k]);
-    put_text(&dpy,x-WIDTH_TEXT*strlen(textbuf)/2,
-      map_f2y+Y_TIME,textbuf,BF_SDO);
+    put_text(&dpy,x-WIDTH_TEXT*strlen(textbuf)/2,map_f2y+Y_LINE1,
+      textbuf,BF_SDO);
     if(k>0 && t!=tim[k-1])
       {
       sprintf(textbuf,"%d",tim[k-1]);
-      put_text(&dpy,x+HW,map_f1y-HEIGHT_TEXT-Y_TIME,
-        textbuf,BF_SDO);
+      put_text(&dpy,x+HW,map_f1y-HEIGHT_TEXT-Y_LINE1,textbuf,BF_SDO);
       t=tim[k-1];
       }
     }
@@ -7704,7 +7914,7 @@ is_a_file:  fread(textbuf,1,20,fp);
           {
           sprintf(textbuf,"%d",t=tim1.mo);
           put_text(&dpy,map_f2x+MARGIN*3/2-strlen(textbuf)*WIDTH_TEXT/2,
-            map_f1y-HEIGHT_TEXT-Y_TIME,textbuf,BF_SDO);
+            map_f1y-HEIGHT_TEXT-Y_LINE1,textbuf,BF_SDO);
           }
         if(jj<sel.t1) jj+=istep;
         while(jj<=sel.t2)
@@ -7722,7 +7932,7 @@ is_a_file:  fread(textbuf,1,20,fp);
           {
           sprintf(textbuf,"%d",t=tim1.ye);
           put_text(&dpy,map_f2x+MARGIN*3/2-strlen(textbuf)*WIDTH_TEXT/2,
-            map_f1y-HEIGHT_TEXT-Y_TIME,textbuf,BF_SDO);
+            map_f1y-HEIGHT_TEXT-Y_LINE1,textbuf,BF_SDO);
           }
         if(jj<sel.t1) jj+=istep;
         while(jj<=sel.t2)
@@ -7740,7 +7950,7 @@ is_a_file:  fread(textbuf,1,20,fp);
           {
           sprintf(textbuf,"%d",t=tim1.ye);
           put_text(&dpy,map_f2x+MARGIN*3/2-strlen(textbuf)*WIDTH_TEXT/2,
-            map_f1y-HEIGHT_TEXT-Y_TIME,textbuf,BF_SDO);
+            map_f1y-HEIGHT_TEXT-Y_LINE1,textbuf,BF_SDO);
           }
         if(jj<sel.t1) jj+=istep;
         while(jj<=sel.t2)
@@ -7923,14 +8133,14 @@ tsjump: map_mode=MODE_TS3;
     /* 0-4 */
     if(*sel.o) sprintf(textbuf,"%-5.5s",sel.o);
     else sprintf(textbuf," ALL ");
-    put_text(&dpy,0,height_dpy-MARGIN+Y_TIME,textbuf,BF_SI);
+    put_text(&dpy,0,height_dpy-MARGIN+Y_LINE1,textbuf,BF_SI);
     /* 6-36 */
     sprintf(textbuf,
       "%02d/%02d/%02d %02d:%02d - %02d/%02d/%02d %02d:%02d",
       sel.time1.ye,sel.time1.mo,sel.time1.da,sel.time1.ho,sel.time1.mi,
       sel.time2.ye,sel.time2.mo,sel.time2.da,sel.time2.ho,sel.time2.mi);
-    put_text(&dpy,WIDTH_TEXT*6-HW,height_dpy-MARGIN+Y_TIME," ",BF_SI);
-    put_text(&dpy,WIDTH_TEXT*6,height_dpy-MARGIN+Y_TIME,textbuf,BF_SI);
+    put_text(&dpy,WIDTH_TEXT*6-HW,height_dpy-MARGIN+Y_LINE1," ",BF_SI);
+    put_text(&dpy,WIDTH_TEXT*6,height_dpy-MARGIN+Y_LINE1,textbuf,BF_SI);
 
     /* 53-69 */
     if(sel.mag1_idx==0) sprintf(textbuf,"    < M <");
@@ -7940,15 +8150,15 @@ tsjump: map_mode=MODE_TS3;
     else sprintf(textbuf+strlen(textbuf),"%4.1f ",sel.mag2);
     if(sel.mag_ud) sprintf(textbuf+strlen(textbuf),"+UD");
     else sprintf(textbuf+strlen(textbuf),"-UD");
-    put_text(&dpy,WIDTH_TEXT*53-HW,height_dpy-MARGIN+Y_TIME," ",BF_SI);
-    put_text(&dpy,WIDTH_TEXT*53,height_dpy-MARGIN+Y_TIME,textbuf,BF_SI);
-    put_text(&dpy,WIDTH_TEXT*57,height_dpy-MARGIN+Y_TIME,"_",BF_SIDA);
+    put_text(&dpy,WIDTH_TEXT*53-HW,height_dpy-MARGIN+Y_LINE1," ",BF_SI);
+    put_text(&dpy,WIDTH_TEXT*53,height_dpy-MARGIN+Y_LINE1,textbuf,BF_SI);
+    put_text(&dpy,WIDTH_TEXT*57,height_dpy-MARGIN+Y_LINE1,"_",BF_SIDA);
 
     /* 71-73 */
     if(sel.no_blast) sprintf(textbuf,"-BL");
     else sprintf(textbuf,"+BL");
-    put_text(&dpy,WIDTH_TEXT*71-HW,height_dpy-MARGIN+Y_TIME," ",BF_SI);
-    put_text(&dpy,WIDTH_TEXT*71,height_dpy-MARGIN+Y_TIME,textbuf,BF_SI);
+    put_text(&dpy,WIDTH_TEXT*71-HW,height_dpy-MARGIN+Y_LINE1," ",BF_SI);
+    put_text(&dpy,WIDTH_TEXT*71,height_dpy-MARGIN+Y_LINE1,textbuf,BF_SI);
     }
 
   if(other_epis || map_vert)
@@ -7959,15 +8169,15 @@ tsjump: map_mode=MODE_TS3;
     if(sel.dep2==depsteps[sizeof(depsteps)/sizeof(*depsteps)-1])
       sprintf(textbuf+strlen(textbuf),"    km");
     else sprintf(textbuf+strlen(textbuf),"%3d km",(int)sel.dep2);
-    put_text(&dpy,WIDTH_TEXT*38-HW,height_dpy-MARGIN+Y_TIME," ",BF_SI);
-    put_text(&dpy,WIDTH_TEXT*38,height_dpy-MARGIN+Y_TIME,textbuf,BF_SI);
-    put_text(&dpy,WIDTH_TEXT*41,height_dpy-MARGIN+Y_TIME,"_",BF_SIDA);
+    put_text(&dpy,WIDTH_TEXT*38-HW,height_dpy-MARGIN+Y_LINE1," ",BF_SI);
+    put_text(&dpy,WIDTH_TEXT*38,height_dpy-MARGIN+Y_LINE1,textbuf,BF_SI);
+    put_text(&dpy,WIDTH_TEXT*41,height_dpy-MARGIN+Y_LINE1,"_",BF_SIDA);
     }
 
   put_white(&dpy,0,0,width_dpy,MARGIN);
   if(flag_hypo)
     {
-    put_text(&dpy,0,Y_TIME,ft.hypo.textbuf,BF_SI);
+    put_text(&dpy,0,Y_LINE1,ft.hypo.textbuf,BF_SI);
     pltxy(alat0,along0,&ft.hypo.alat,&ft.hypo.along,&xd,&yd,0);
     if(map_ellipse && ft.hypo.ellipse)
       {
@@ -8009,7 +8219,7 @@ tsjump: map_mode=MODE_TS3;
     {
     /* 75- */
     sprintf(mapbuf," N= %d ",jj);
-    put_text(&dpy,WIDTH_TEXT*75,height_dpy-MARGIN+Y_TIME,mapbuf,BF_SI);
+    put_text(&dpy,WIDTH_TEXT*75,height_dpy-MARGIN+Y_LINE1,mapbuf,BF_SI);
     }
   put_function_map();
   return;
@@ -8199,17 +8409,17 @@ proc_map()
       }
     if(flag_hypo)
       {
-      put_text(&dpy,0,Y_TIME,textbuf2,BF_SI);
+      put_text(&dpy,0,Y_LINE1,textbuf2,BF_SI);
       i=WIDTH_TEXT*strlen(textbuf2)+HW;
       }
     else i=0;
-    put_text(&dpy,i,Y_TIME,textbuf,BF_SI);
+    put_text(&dpy,i,Y_LINE1,textbuf,BF_SI);
     if(other_epis)
       if(map_mode==MODE_NORMAL) put_text(&dpy,WIDTH_TEXT*75,
-        height_dpy-MARGIN+Y_TIME,textbuf1,BF_SI);
+        height_dpy-MARGIN+Y_LINE1,textbuf1,BF_SI);
       else if(map_mode==MODE_FIND1 || map_mode==MODE_FIND2)
         put_text(&dpy,WIDTH_TEXT*75,
-        height_dpy-MARGIN+Y_TIME,textbuf1,BF_S);
+        height_dpy-MARGIN+Y_LINE1,textbuf1,BF_S);
     }
   else if(event.mse_trig==MSE_BUTTON && event.mse_dir==MSE_DOWN)
     {
@@ -8322,7 +8532,7 @@ proc_map()
             sprintf(textbuf,"%-5.5s",sel.o);
             break;
           }
-        put_text(&dpy,0,height_dpy-MARGIN+Y_TIME,textbuf,BF_S);
+        put_text(&dpy,0,height_dpy-MARGIN+Y_LINE1,textbuf,BF_S);
         ring_bell=0;
         }
       else if(other_epis && WIDTH_TEXT*6<=x && x<=WIDTH_TEXT*37)
@@ -8370,10 +8580,8 @@ proc_map()
             "%02d/%02d/%02d %02d:%02d - %02d/%02d/%02d %02d:%02d",
             sel.time1.ye,sel.time1.mo,sel.time1.da,sel.time1.ho,sel.time1.mi,
             sel.time2.ye,sel.time2.mo,sel.time2.da,sel.time2.ho,sel.time2.mi);
-          put_text(&dpy,WIDTH_TEXT*6-HW,height_dpy-MARGIN+Y_TIME,
-            " ",BF_S);
-          put_text(&dpy,WIDTH_TEXT*6,height_dpy-MARGIN+Y_TIME,
-            textbuf,BF_S);
+          put_text(&dpy,WIDTH_TEXT*6-HW,height_dpy-MARGIN+Y_LINE1," ",BF_S);
+          put_text(&dpy,WIDTH_TEXT*6,height_dpy-MARGIN+Y_LINE1,textbuf,BF_S);
           ring_bell=0;
           }
         if(j==1) map_update=0;
@@ -8436,12 +8644,9 @@ change_dep:
           if(sel.dep2==depsteps[sizeof(depsteps)/sizeof(*depsteps)-1])
             sprintf(textbuf+strlen(textbuf),"    km");
           else sprintf(textbuf+strlen(textbuf),"%3d km",(int)sel.dep2);
-          put_text(&dpy,WIDTH_TEXT*38-HW,height_dpy-MARGIN+Y_TIME,
-            " ",BF_S);
-          put_text(&dpy,WIDTH_TEXT*38,height_dpy-MARGIN+Y_TIME,
-            textbuf,BF_S);
-          put_text(&dpy,WIDTH_TEXT*41,height_dpy-MARGIN+Y_TIME,
-            "_",BF_SDO);
+          put_text(&dpy,WIDTH_TEXT*38-HW,height_dpy-MARGIN+Y_LINE1," ",BF_S);
+          put_text(&dpy,WIDTH_TEXT*38,height_dpy-MARGIN+Y_LINE1,textbuf,BF_S);
+          put_text(&dpy,WIDTH_TEXT*41,height_dpy-MARGIN+Y_LINE1,"_",BF_SDO);
 
           if(sel.dep1_idx==0) sprintf(textbuf,"0  ");
           else sprintf(textbuf,"%-3d",(int)sel.dep1);
@@ -8512,12 +8717,9 @@ change_dep:
           else sprintf(textbuf+strlen(textbuf),"%4.1f ",sel.mag2);
           if(sel.mag_ud) sprintf(textbuf+strlen(textbuf),"+UD");
           else sprintf(textbuf+strlen(textbuf),"-UD");
-          put_text(&dpy,WIDTH_TEXT*53-HW,height_dpy-MARGIN+Y_TIME,
-            " ",BF_S);
-          put_text(&dpy,WIDTH_TEXT*53,height_dpy-MARGIN+Y_TIME,
-            textbuf,BF_S);
-          put_text(&dpy,WIDTH_TEXT*57,height_dpy-MARGIN+Y_TIME,
-            "_",BF_SDO);
+          put_text(&dpy,WIDTH_TEXT*53-HW,height_dpy-MARGIN+Y_LINE1," ",BF_S);
+          put_text(&dpy,WIDTH_TEXT*53,height_dpy-MARGIN+Y_LINE1,textbuf,BF_S);
+          put_text(&dpy,WIDTH_TEXT*57,height_dpy-MARGIN+Y_LINE1,"_",BF_SDO);
           }
         }
       else if(other_epis && WIDTH_TEXT*71<=x && x<=WIDTH_TEXT*74) /* no blast */
@@ -8532,8 +8734,8 @@ change_dep:
           sel.no_blast=1;
           sprintf(textbuf,"-BL");
           }
-        put_text(&dpy,WIDTH_TEXT*71-HW,height_dpy-MARGIN+Y_TIME," ",BF_S);
-        put_text(&dpy,WIDTH_TEXT*71,height_dpy-MARGIN+Y_TIME,textbuf,BF_S);
+        put_text(&dpy,WIDTH_TEXT*71-HW,height_dpy-MARGIN+Y_LINE1," ",BF_S);
+        put_text(&dpy,WIDTH_TEXT*71,height_dpy-MARGIN+Y_LINE1,textbuf,BF_S);
         ring_bell=0;
         }
       else if(map_mode==MODE_NORMAL && other_epis && WIDTH_TEXT*75<=x &&
@@ -8541,8 +8743,7 @@ change_dep:
         {
         /* enter FIND mode */
         map_mode=MODE_FIND1;
-        put_text(&dpy,WIDTH_TEXT*75,
-          height_dpy-MARGIN+Y_TIME,textbuf1,BF_S);
+        put_text(&dpy,WIDTH_TEXT*75,height_dpy-MARGIN+Y_LINE1,textbuf1,BF_S);
         if(event.mse_code==MSE_BUTNR) list_on_map=0;
         else list_on_map=1;
         ring_bell=0;
@@ -8565,7 +8766,7 @@ change_dep:
             if(mapsteps[ppk_idx]<10.0)
               sprintf(textbuf,"%3.1f",mapsteps[ppk_idx]);
             else sprintf(textbuf,"%3d",(int)mapsteps[ppk_idx]);
-            put_func(textbuf,QUIT,height_dpy-MARGIN+Y_TIME,1,1);
+            put_func(textbuf,QUIT,height_dpy-MARGIN+Y_LINE1,1,1);
             ring_bell=0;
             }
           break;
@@ -8669,7 +8870,7 @@ change_dep:
             map_dir=i;
             if(map_dir>=0) sprintf(textbuf,"N%2dE",map_dir);
             else sprintf(textbuf,"N%2dW",(-map_dir));
-            put_func(textbuf,QUIT,height_dpy-MARGIN*2-HW+Y_TIME,1,1);
+            put_func(textbuf,QUIT,height_dpy-MARGIN*2-HW+Y_LINE1,1,1);
             ring_bell=0;
             }
           break;
@@ -8752,7 +8953,7 @@ open_sock(host,port)
   return sockfd;
   }
 
-load_data(btn)
+load_data(btn) /* return=1 means success */
   int btn;  /* MSE_BUTNL, MSE_BUTNM or MSE_BUTNR */
   {
   FILE *fp,*fq;
@@ -8760,6 +8961,7 @@ load_data(btn)
   DIR *dir_ptr;
   int re,ii,i,j,k1,k2,k3,k4,k5,find_file,tm_begin[6],tm[6],sec_max,sockfd;
   float k6;
+  time_t lsec_begin;
   char text_buf[LINELEN],*ptr,name1[NAMLEN],name2[NAMLEN],pickfile[NAMLEN],
     name_low[NAMLEN],name_high[NAMLEN],filename[NAMLEN],
     namebuf[NAMLEN],namebuf1[NAMLEN],diagbuf[50],userbuf[50];
@@ -8889,8 +9091,7 @@ load_data(btn)
       if(strlen(text_buf)<25) /* for compatibility to old format */
         /* new format has time of beginning of data */
         {
-        sscanf(text_buf+3,"%d%d%d%d%d%d",
-          &tm_begin[0],&tm_begin[1],&tm_begin[2],
+        sscanf(text_buf+3,"%d%d%d%d%d%d",&tm_begin[0],&tm_begin[1],&tm_begin[2],
           &tm_begin[3],&tm_begin[4],&tm_begin[5]);
         if(!just_hypo)
           {
@@ -8906,15 +9107,11 @@ load_data(btn)
         }
       else if(just_hypo)
         {
-        fprintf(stderr,"time offset : 'FileName - %d sec'\n",
-          just_hypo_offset);
+        fprintf(stderr,"time offset : 'FileName - %d sec'\n",just_hypo_offset);
         sscanf(ft.data_file+strlen(ft.data_file)-13,"%2d%2d%2d.%2d%2d%2d",
           &tm_begin[0],&tm_begin[1],&tm_begin[2],
           &tm_begin[3],&tm_begin[4],&tm_begin[5]);
-        if(just_hypo_offset>0) for(j=0;j<just_hypo_offset;j++)
-          {tm_begin[5]--;adj_time(tm_begin);}
-        else if(just_hypo_offset<0) for(j=0;j>just_hypo_offset;j--)
-          {tm_begin[5]++;adj_time(tm_begin);}
+        lsec2time(time2lsec(tm_begin)-just_hypo_offset,tm_begin);
         }
       }
     sscanf(text_buf+3,"%x%d%d%d%d%d%d%e",&i,&j,&k1,&k2,&k3,&k4,&k5,&k6);
@@ -8932,22 +9129,22 @@ load_data(btn)
     ft.pick[ft.ch2idx[i]][j].polarity=k5;
     if(j==MD) *(float *)&ft.pick[ft.ch2idx[i]][j].valid=k6;
     if(k3>sec_max) sec_max=k3;
+    put_mark(j,ft.idx2pos[ft.ch2idx[i]]);
     }
+  fprintf(stderr,"loaded from pick file '%s'\n",filename);
   if(just_hypo)
     {
     ft.len=sec_max+1;
     if((ft.ptr=(struct File_Ptr *)malloc(sizeof(*(ft.ptr))*ft.len))==0)
       emalloc("ft.ptr");
+    lsec_begin=time2lsec(tm_begin);
     for(i=0;i<ft.len;i++)
       {
       dec_bcd(ft.ptr[i].time,tm_begin);
-      tm_begin[5]++;
-      adj_time(tm_begin);
+      lsec2time(++lsec_begin,tm_begin);
       }
     return 1;
     }
-  for(i=0;i<ft.n_ch;i++) for(j=0;j<4;j++)
-    if(ft.pick[ft.pos2idx[i]][j].valid) put_mark_mon(j,i);
   /* read seis */
   if(strncmp(text_buf,"#s",2)==0)
     {
@@ -8971,8 +9168,9 @@ load_data(btn)
       if(fgets(text_buf,LINELEN,fp)==NULL) break;
       } while(strncmp(text_buf,"#f",2)==0);
     fclose(fq);
-    read_final();
+    read_final(ft.finl_file,&ft.hypo);
     flag_hypo=1;
+    get_calc();
     }
   /* read mecha */
   if(strncmp(text_buf,"#m",2)==0)
@@ -8988,7 +9186,6 @@ load_data(btn)
     flag_mech=1;
     }
   fclose(fp);
-  fprintf(stderr,"loaded from pick file '%s'\n",filename);
   flag_change=0;
   return 1;
   }
@@ -9001,6 +9198,7 @@ init_mecha()
   if(flag_hypo==0)
     {
     loop=loop_stack[--loop_stack_ptr];
+    raise_ttysw(1);
     list_line();
     fprintf(stderr,"no hypocenter\007\n");
     return;
@@ -9045,7 +9243,7 @@ proc_mecha()
             ring_bell=0;
             break;
           case MAP:
-            loop_stack[loop_stack_ptr++]=LOOP_MECHA;
+            loop_stack[loop_stack_ptr++]=loop;
             loop=LOOP_MAP;
             init_map(event.mse_code);
             return;
@@ -9139,77 +9337,75 @@ xy_pt(x,y,p,t,idx)
     }
   }
 
-read_final()
+read_final(char *final_file,struct Hypo *hypo)
   {
   FILE *fp;
   int i,j;
   char textbuf[LINELEN],*ptr,tb[20],ulat,ulon;
   double lat,lon;
 
-  if((fp=fopen(ft.finl_file,"r"))==NULL) return(ft.hypo.valid=0);
+  if((fp=fopen(final_file,"r"))==NULL) return(hypo->valid=0);
   fgets(textbuf,LINELEN,fp);
   sscanf(textbuf,"%d%d%d%d%d%lf%lf%lf%lf%lf",
-    &ft.hypo.tm[0],&ft.hypo.tm[1],&ft.hypo.tm[2],&ft.hypo.tm[3],
-    &ft.hypo.tm[4],&ft.hypo.se,&ft.hypo.alat,&ft.hypo.along,
-    &ft.hypo.dep,&ft.hypo.mag);
+    &hypo->tm[0],&hypo->tm[1],&hypo->tm[2],&hypo->tm[3],&hypo->tm[4],
+    &hypo->se,&hypo->alat,&hypo->along,&hypo->dep,&hypo->mag);
   fgets(textbuf,LINELEN,fp);
-  sscanf(textbuf,"%s%*lf%lf%lf%lf",ft.hypo.diag,&ft.hypo.ye,
-    &ft.hypo.xe,&ft.hypo.ze);
+  sscanf(textbuf,"%s%*lf%lf%lf%lf",hypo->diag,&hypo->ye,&hypo->xe,&hypo->ze);
   fgets(textbuf,LINELEN,fp);
   if(strchr(textbuf,'*')==0)
     {
-    sscanf(textbuf,"%lf%lf%lf%lf%lf%lf",&ft.hypo.c[0][0],&ft.hypo.c[0][1],
-      &ft.hypo.c[0][2],&ft.hypo.c[1][1],&ft.hypo.c[1][2],&ft.hypo.c[2][2]);
-    ft.hypo.c[0][1]=(-ft.hypo.c[0][1]); /* because Y axis is positive */
-    ft.hypo.c[1][2]=(-ft.hypo.c[1][2]); /* downward on display */
-    mat_sym(ft.hypo.c);
-    ft.hypo.ellipse=1;
+    sscanf(textbuf,"%lf%lf%lf%lf%lf%lf",&hypo->c[0][0],&hypo->c[0][1],
+      &hypo->c[0][2],&hypo->c[1][1],&hypo->c[1][2],&hypo->c[2][2]);
+    hypo->c[0][1]=(-hypo->c[0][1]); /* because Y axis is positive */
+    hypo->c[1][2]=(-hypo->c[1][2]); /* downward on display */
+    mat_sym(hypo->c);
+    hypo->ellipse=1;
     }
-  else ft.hypo.ellipse=0;
+  else hypo->ellipse=0;
   fgets(textbuf,LINELEN,fp);
-  sscanf(textbuf,"%lf%lf%lf%lf%lf%lf",&ft.hypo.alat0,&ft.hypo.ye0,
-    &ft.hypo.along0,&ft.hypo.xe0,&ft.hypo.dep0,&ft.hypo.ze0);
+  sscanf(textbuf,"%lf%lf%lf%lf%lf%lf",&hypo->alat0,&hypo->ye0,
+    &hypo->along0,&hypo->xe0,&hypo->dep0,&hypo->ze0);
   fgets(textbuf,LINELEN,fp);
-  sscanf(textbuf,"%d",&ft.hypo.ndata);
-  if(ft.hypo.fnl==0) ft.hypo.fnl=
-      (struct Fnl *)malloc(sizeof(*ft.hypo.fnl)*ft.hypo.ndata);
-  else ft.hypo.fnl=(struct Fnl *)realloc((char *)ft.hypo.fnl,
-      sizeof(*ft.hypo.fnl)*ft.hypo.ndata);
-  if(ft.hypo.fnl==0) emalloc("ft.hypo.fnl");
-  for(i=0;i<ft.hypo.ndata;i++)
+  sscanf(textbuf,"%d",&hypo->ndata);
+  if(hypo->fnl==0)
+    hypo->fnl=(struct Fnl *)malloc(sizeof(*hypo->fnl)*hypo->ndata);
+  else hypo->fnl=(struct Fnl *)realloc((char *)hypo->fnl,
+         sizeof(*hypo->fnl)*hypo->ndata);
+  if(hypo->fnl==0) emalloc("hypo->fnl");
+  for(i=0;i<hypo->ndata;i++)
     {
     fgets(textbuf,LINELEN,fp);
-    sscanf(textbuf,"%s%s",ft.hypo.fnl[i].stn,ft.hypo.fnl[i].pol);
-    str2double(textbuf,13,8,&ft.hypo.fnl[i].delta);
-    str2double(textbuf,21,6,&ft.hypo.fnl[i].azim);
-    str2double(textbuf,27,6,&ft.hypo.fnl[i].emerg);
-    str2double(textbuf,33,6,&ft.hypo.fnl[i].incid);
-    str2double(textbuf,39,7,&ft.hypo.fnl[i].pt);
-    str2double(textbuf,46,6,&ft.hypo.fnl[i].pe);
-    str2double(textbuf,52,7,&ft.hypo.fnl[i].pomc);
-    str2double(textbuf,59,7,&ft.hypo.fnl[i].st);
-    str2double(textbuf,66,6,&ft.hypo.fnl[i].se);
-    str2double(textbuf,72,7,&ft.hypo.fnl[i].somc);
-    str2double(textbuf,79,10,&ft.hypo.fnl[i].amp);
-    str2double(textbuf,89,5,&ft.hypo.fnl[i].mag);
-    ft.hypo.fnl[i].azim *=PI/180.0;
-    ft.hypo.fnl[i].emerg*=PI/180.0;
-    ft.hypo.fnl[i].incid*=PI/180.0;
+    sscanf(textbuf,"%s%s",hypo->fnl[i].stn,hypo->fnl[i].pol);
+    str2double(textbuf,13,8,&hypo->fnl[i].delta);
+    str2double(textbuf,21,6,&hypo->fnl[i].azim);
+    str2double(textbuf,27,6,&hypo->fnl[i].emerg);
+    str2double(textbuf,33,6,&hypo->fnl[i].incid);
+    str2double(textbuf,39,7,&hypo->fnl[i].pt);
+    str2double(textbuf,46,6,&hypo->fnl[i].pe);
+    str2double(textbuf,52,7,&hypo->fnl[i].pomc);
+    str2double(textbuf,59,7,&hypo->fnl[i].st);
+    str2double(textbuf,66,6,&hypo->fnl[i].se);
+    str2double(textbuf,72,7,&hypo->fnl[i].somc);
+    str2double(textbuf,79,10,&hypo->fnl[i].amp);
+    str2double(textbuf,89,5,&hypo->fnl[i].mag);
+    hypo->fnl[i].azim *=PI/180.0;
+    hypo->fnl[i].emerg*=PI/180.0;
+    hypo->fnl[i].incid*=PI/180.0;
     }
   fgets(textbuf,LINELEN,fp);
-  sscanf(textbuf,"%lf%lf",&ft.hypo.pomc_rms,&ft.hypo.somc_rms);
+  sscanf(textbuf,"%lf%lf",&hypo->pomc_rms,&hypo->somc_rms);
   fclose(fp);
-  adj_sec(ft.hypo.tm,&ft.hypo.se,ft.hypo.tm_c,&ft.hypo.se_c);
-  if(ft.hypo.alat<0.0) {lat=(-ft.hypo.alat);ulat='S';}
-  else {lat=ft.hypo.alat;ulat='N';}
-  if(ft.hypo.along<0.0) {lon=(-ft.hypo.along);ulon='W';}
-  else {lon=ft.hypo.along;ulon='E';}
-  sprintf(ft.hypo.textbuf,
+  adj_sec(hypo->tm,&hypo->se,hypo->tm_c,&hypo->se_c);
+  if(hypo->alat<0.0) {lat=(-hypo->alat);ulat='S';}
+  else {lat=hypo->alat;ulat='N';}
+  if(hypo->along<0.0) {lon=(-hypo->along);ulon='W';}
+  else {lon=hypo->along;ulon='E';}
+  sprintf(hypo->textbuf,
     "%02d/%02d/%02d %02d:%02d:%02d.%d %7.4f%1c %8.4f%1c %.1fkm M%.1f",
-    ft.hypo.tm_c[0],ft.hypo.tm_c[1],ft.hypo.tm_c[2],ft.hypo.tm_c[3],
-    ft.hypo.tm_c[4],ft.hypo.tm_c[5],ft.hypo.tm_c[6]/100,
-    lat,ulat,lon,ulon,ft.hypo.dep,ft.hypo.mag);
-  return(ft.hypo.valid=1);
+    hypo->tm_c[0],hypo->tm_c[1],hypo->tm_c[2],hypo->tm_c[3],
+    hypo->tm_c[4],hypo->tm_c[5],hypo->tm_c[6]/100,
+    lat,ulat,lon,ulon,hypo->dep,hypo->mag);
+  return(hypo->valid=1);
   }
 
 str2double(t,n,m,d)
@@ -9290,7 +9486,6 @@ switch_psup(idx,sw)
     }
   put_reverse(&info,0,pixels_per_trace*ft.idx2pos[idx],WIDTH_TEXT*4,
     HEIGHT_TEXT);
-  rfsh_req=1;
   }
 
 init_psup()
@@ -9301,6 +9496,7 @@ init_psup()
   if(flag_hypo==0)
     {
     loop=loop_stack[--loop_stack_ptr];
+    raise_ttysw(1);
     list_line();
     fprintf(stderr,"no hypocenter\007\n");
     return;
@@ -9310,13 +9506,14 @@ init_psup()
     loop=loop_stack[--loop_stack_ptr];
     if(!background) refresh(0);    
     bell();
+    raise_ttysw(1);
     return;
     }
   }
 
 bell()
   {
-  if(background || auto_flag) return;
+  if(background || auto_flag || auto_flag_hint) return;
   fprintf(stderr,"\007");
   fflush(stderr);
   }
@@ -9345,7 +9542,7 @@ proc_psup()
       }
     else strcpy(textbuf,"                    ");
     put_text(&dpy,x_func(MAP)-WIDTH_TEXT*strlen(textbuf)-HW,
-      Y_TIME,textbuf,BF_SI);
+      Y_LINE1,textbuf,BF_SI);
     }
   else if(event.mse_trig==MSE_BUTTON && event.mse_dir==MSE_DOWN)
     {
@@ -9369,7 +9566,7 @@ proc_psup()
           else ring_bell=0;
           break;
         case MAP:
-            loop_stack[loop_stack_ptr++]=LOOP_PSUP;
+            loop_stack[loop_stack_ptr++]=loop;
             loop=LOOP_MAP;
             init_map(event.mse_code);
             return;
@@ -9677,7 +9874,7 @@ put_psup()
   put_white(&dpy,0,0,width_dpy,height_dpy); /* clear */
   put_function_psup();
   for(i=0;i<7;i++) pu.ot[i]=ft.hypo.tm_c[i];
-  put_text(&dpy,0,Y_TIME,ft.hypo.textbuf,BF_SI);
+  put_text(&dpy,0,Y_LINE1,ft.hypo.textbuf,BF_SI);
   /* calculate epicentral distances for marked channels */
   k=1;
   for(j=0;j<ft.n_ch;j++) if(ft.stn[ft.pos2idx[j]].psup)
@@ -9823,12 +10020,11 @@ plot_psup(idx)
   tred_s=(int)tred+pu.t1;
   tred_ms=(int)(tred*1000.0)%1000;
   for(i=0;i<7;i++) tm1[i]=pu.ot[i];
-  if(tred_s>=0) j=1;
-  else j=(-1);
-  for(i=0;i!=tred_s;i+=j) {tm1[5]+=j;adj_time(tm1);}
-  if((tm1[6]+=tred_ms)>=1000) {tm1[6]-=1000;tm1[5]++;adj_time(tm1);}
+
+  lsec2time(time2lsec(tm1)+tred_s,tm1);
+  if((tm1[6]+=tred_ms)>=1000) {tm1[6]-=1000;lsec2time(time2lsec(tm1)+1,tm1);}
   for(i=0;i<7;i++) tm2[i]=tm1[i];
-  for(i=0;i<(pu.t2-pu.t1);i++) {tm2[5]++;adj_time(tm2);}
+  lsec2time(time2lsec(tm2)+(pu.t2-pu.t1),tm2);
 
   /* reduced time range : tm1 - tm2 */
   join=0;
@@ -9841,9 +10037,7 @@ plot_psup(idx)
     if(cp1<0) continue;
     if(cp2>0) break;
   /* obtain plot position (time) xzero */
-    for(j=0;j<6;j++) tm0[j]=tm[j];
-    sec=0;
-    while(time_cmp(tm1,tm0,6)<0) {tm0[5]--;adj_time(tm0);sec++;}
+    sec=(int)(time2lsec(tm)-time2lsec(tm1));
     xzero=pu.xx1+pu.pixels_per_sec*sec-pu.pixels_per_sec*tm1[6]/1000;
 
     sr=read_one_sec((long)i,(long)ft.idx2ch[idx],buf,NOT_KILL_SPIKE);
@@ -10920,73 +11114,6 @@ long2time(tm,tl)
   if(tm->ye>99) tm->ye-=100;
   }
 
-adj_time(tm)
-  int *tm;
-  {
-  if(tm[5]==60)
-    {
-    tm[5]=0;
-    if(++tm[4]==60)
-      {
-      tm[4]=0;
-      if(++tm[3]==24)
-        {
-        tm[3]=0;
-        tm[2]++;
-        switch(tm[1])
-          {
-          case 2:
-            if(tm[0]%4==0)
-              {if(tm[2]==30) {tm[2]=1;tm[1]++;}break;}
-            else
-              {if(tm[2]==29) {tm[2]=1;tm[1]++;}break;}
-          case 4:
-          case 6:
-          case 9:
-          case 11:  if(tm[2]==31) {tm[2]=1;tm[1]++;}break;
-          default:  if(tm[2]==32) {tm[2]=1;tm[1]++;}break;
-          }
-        if(tm[1]==13)
-          {
-          tm[1]=1;
-          if(++tm[0]==100) tm[0]=0;
-          }
-        }
-      }
-    }
-  else if(tm[5]==-1)
-    {
-    tm[5]=59;
-    if(--tm[4]==-1)
-      {
-      tm[4]=59;
-      if(--tm[3]==-1)
-        {
-        tm[3]=23;
-        if(--tm[2]==0)
-          {
-          switch(--tm[1])
-            {
-            case 2:
-              if(tm[0]%4==0) tm[2]=30;else tm[2]=29;break;
-            case 4:
-            case 6:
-            case 9:
-            case 11:  tm[2]=30;break;
-            default:  tm[2]=31;break;
-            }
-          if(tm[1]==0)
-            {
-            tm[1]=12;
-            if(--tm[0]==-1) tm[0]=99;
-            }
-          }
-        }
-      }
-    }
-  return 0;
-  }
-
 time_cmp(t1,t2,i)
   int *t1,*t2,i;  
   {
@@ -11020,25 +11147,6 @@ dec_bcd(dest,sour)
   for(cntr=0;cntr<6;cntr++)
     dest[cntr]=(((sour[cntr]/10)<<4)&0xf0)|(sour[cntr]%10&0xf);
   return 0;
-  }
-
-adj_sec(tm,se,tmc,sec)
-  int *tm,*tmc;
-  double *se,*sec;
-  {
-  int i,j;
-  for(i=0;i<5;i++) tmc[i]=tm[i];
-  if((*sec=(*se))<0)
-    {
-    tmc[5]=0;
-    i=(int)(-(*sec));
-    if((double)i==(-(*sec))) i--;
-    i++;
-    for(j=0;j<i;j++) {tmc[5]--;adj_time(tmc);}
-    *sec+=(double)(tmc[5]+i);
-    }
-  else tmc[5]=(int)(*sec);
-  tmc[6]=(int)(*sec*1000.0)%1000;
   }
 
 fill(buffer,count,data)

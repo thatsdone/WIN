@@ -1,4 +1,4 @@
-C $Id: hypomh.f,v 1.3 2001/01/07 07:21:37 urabe Exp $
+C $Id: hypomh.f,v 1.4 2001/07/02 15:50:40 urabe Exp $
 C HYPOMH   : main program for hypocenter location
 C           original version was made on March 13, 1984  and
 C            modified by N.H. on Feb. 8, 1985, May 8, 1985.
@@ -13,6 +13,7 @@ C        MAXIMUM N OF STATIONS IS 100              6/12/91
 C        AMPLITUDE MAGNITUDE IS CALCULATED IN FINAL 6/30/92
 C        BUG IN SDATA (read station height) FIXED  7/28/93
 C        MAXIMUM N OF STATIONS IS 999              JAN06,2001 K.Katsumata
+C        TRAVEL-TIME CALCULATION MODE              6/12/2001 Urabe
 C
       PROGRAM HYPOMH
 C
@@ -76,6 +77,7 @@ C                 22 : FINAL RESULTS
       IMPLICIT REAL*8(A-H,O-Z)
       CHARACTER*80 FILE,BLK
       COMMON /INITL/ALAT00,ALNG00,DEPT00,ELAT00,ELNG00,EDPT00
+      COMMON /INITLX/IYEAR,IMONT,IDAY,IHOUR,IMINU,SECC,AMAG00
       DATA BLK/'              '/
       WRITE(6,'(A)') '************ HYPOMH ***********'
 C STRUCTURE LIST FILE NAME
@@ -92,13 +94,17 @@ C REPORT FILE NAME
       OPEN(21,FILE=FILE,STATUS='unknown')
 C INITIAL VALUE FILE NAME
       IF(IARGC().GE.5) THEN
-                call getarg(5,FILE)
+        call getarg(5,FILE)
         OPEN(12,FILE=FILE,STATUS='OLD')
         READ(12,100) ALAT00,ALNG00,DEPT00
         READ(12,100) ELAT00,ELNG00,EDPT00
+        IYEAR=-1
+C If third line exists, enter 'travel-time calculation only' mode.
+        READ(12,*,END=10) IYEAR,IMONT,IDAY,IHOUR,IMINU,SECC,ALAT00,
+     1   ALNG00,DEPT00,AMAG00
       END IF
   100 FORMAT(3F10.3)
-      RETURN
+   10 RETURN
       END
 C
       SUBROUTINE HYPINI
@@ -147,6 +153,8 @@ C              PUT JUDG=4 AND RE-CALCULATION: PE(I) OR SE(I)=-2.0
       COMMON /RSLT/ XM1(3),EX1(3),H(3,3),RSL(3),COT,EOT,
      1              RPT(1000),RST(1000),TAG(1000),TBG(1000)
       COMMON /OCOD/ ALAT0,ALNG0,DEPT0
+      COMMON /INITL/ALAT00,ALNG00,DEPT00,ELAT00,ELNG00,EDPT00
+      COMMON /INITLX/IYEAR,IMONT,IDAY,IHOUR,IMINU,SECC,AMAG00
       NPR=3
       PI=3.1415926D0
       PD=1.8D2/PI
@@ -211,6 +219,12 @@ C
         AMAG=AMAG/NMAG
       ELSE
         AMAG=9.9
+      END IF
+      IF(IYEAR.GE.0) THEN
+C this is to avoid trivial error by PLTXY()
+        ALATF=ALAT00
+        ALNGF=ALNG00
+        AMAG=AMAG00
       END IF
 C
       WRITE(21,2100)
@@ -317,6 +331,7 @@ C     INVERSION OF ARRIVAL TIME DATA FOR HYPOCENTER COORDINATES
       COMMON /STRT/ XM0(3),EX0(3)
       COMMON /RSLT/ XM1(3),EX1(3),H(3,3),RSL(3),COT,EOT,
      1              RPT(1000),RST(1000),TAG(1000),TBG(1000)
+      COMMON /INITLX/IYEAR,IMONT,IDAY,IHOUR,IMINU,SECC,AMAG00
       DIMENSION A(1000,3),B(3,3),XMC(3),RVX(3),VXM(3),VPS(1000),XW(3)
       DIMENSION CP(1000,3),CS(1000,3),DP(3,3),DS(3,3),FP(1000,1000),
      1              FS(1000,1000)
@@ -378,6 +393,24 @@ C     INVERSION OF ARRIVAL TIME DATA FOR HYPOCENTER COORDINATES
       A(I,1)=SN*XX/RR/VRE
       A(I,2)=SN*YY/RR/VRE
   140 A(I,3)=-CN/VRE
+      IF(IYEAR.GE.0) THEN
+         DO 18 I=1,ND
+C   PT(I) and ST(I) contains STCP(I) and STCS(I), respectively.
+         PE(I)=PT(I)
+         SE(I)=ST(I)
+         PT(I)=SECC+TPT(I)-PT(I)
+         ST(I)=SECC+ALP*TPT(I)-ST(I)
+         RPT(I)=0.0D0
+   18    RST(I)=0.0D0
+         IYR=IYEAR
+         MNT=IMONT
+         IDY=IDAY
+         IHR=IHOUR
+         MIN=IMINU
+         COT=SECC
+         JUDG=0
+         RETURN
+      END IF
       SRB=0.0D0
       SRC=0.0D0
       DO 20 I=1,ND

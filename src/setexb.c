@@ -1,21 +1,31 @@
-/* $Id: setexb.c,v 1.2 2000/04/30 10:05:23 urabe Exp $ */
+/* $Id: setexb.c,v 1.3 2001/06/23 01:05:13 uehira Exp $ */
 /* program "setexb.c"
-	2/27/90, 3/8/93,1/17/94,5/27/94  urabe	*/
+	2/27/90, 3/8/93,1/17/94,5/27/94  urabe
+        2001.6.22  add options '-p' and '-?'  uehira */
 
 #include	<stdio.h>
+#include	<stdlib.h>
 #include	<string.h>
 #include	<sys/types.h>
+#include        <unistd.h>
+
 #define         N_EXABYTE	8
+#define         DEFAULT_PARAM_FILE  "wtape.prm"
+#ifndef         FILENAME_MAX
+#define         FILENAME_MAX 1024
+#endif
 
 	int exb_status[N_EXABYTE],n_exb;
-	char exb_name[N_EXABYTE][20],raw_dir[50],raw_dir1[50];
+	char exb_name[N_EXABYTE][20],
+	  raw_dir[FILENAME_MAX],raw_dir1[FILENAME_MAX],
+	  param_name[FILENAME_MAX];
 
 read_param(f_param,textbuf)
         FILE *f_param;
         unsigned char *textbuf;
         {
         do      {
-                if(fgets(textbuf,200,f_param)==NULL) return 1;
+                if(fgets(textbuf,(FILENAME_MAX<<1)+32,f_param)==NULL) return 1;
                 } while(*textbuf=='#');
         return 0;
         }
@@ -24,7 +34,7 @@ read_units(file)
         char *file;
         {
         FILE *fp;
-        char tb[50],tb1[50];
+        char tb[FILENAME_MAX],tb1[FILENAME_MAX+50];
         int i;
         for(i=0;i<n_exb;i++) exb_status[i]=0;
         sprintf(tb,"%s/%s",raw_dir1,file);
@@ -46,7 +56,7 @@ write_units(file)
         char *file;
         {
         FILE *fp;
-        char tb[50];
+        char tb[FILENAME_MAX];
         int i;
         sprintf(tb,"%s/%s",raw_dir1,file);
         fp=fopen(tb,"w+");
@@ -56,13 +66,14 @@ write_units(file)
 
 init_param()
         {
-        char tb[100],*ptr;
+	char tb[(FILENAME_MAX<<1)+32],*ptr;
         FILE *fp;
-        int i,j;
 
-        if((fp=fopen("wtape.prm","r"))==NULL)
+        if((fp=fopen(param_name,"r"))==NULL)
                 {
-                fprintf(stderr,"parameter file 'wtape.prm' not found\007\n");
+                fprintf(stderr,"parameter file '%s' not found\007\n",
+			param_name);
+		usage();
                 exit(1);
                 }
         read_param(fp,tb);
@@ -89,9 +100,35 @@ init_param()
         write_units("_UNITS");
         }
 
-main()
+usage()
+{
+
+  fprintf(stderr,"usage: setexb (-p [param file])\n");
+  exit(1);
+}
+
+main(argc,argv)
+     int argc;
+     char *argv[];
 	{
-	int i;
+	int i,ch;
+
+	sprintf(param_name,"%s",DEFAULT_PARAM_FILE);
+	while((ch=getopt(argc,argv,"p:?"))!=-1)
+	  {
+	    switch (ch)
+	      {
+	      case 'p':   /* parameter file */
+		strcpy(param_name,optarg);
+		break;
+	      case '?':
+	      default:
+		usage();
+	      }
+	  }
+	argc-=optind;
+	argv+=optind;
+
 	init_param();
 	printf("**** EXABYTES *****\n");
 	printf("***  unit  use  ***\n");

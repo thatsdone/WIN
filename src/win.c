@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.4 2000/07/26 12:24:16 urabe Exp $
+   $Id: win.c,v 1.5 2000/08/02 05:34:36 urabe Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -13,7 +13,7 @@
    98.7.2 yo2000
 */
 #define NAME_PRG      "win"
-#define VERSION       "2000.7.26"
+#define VERSION       "2000.7.31"
 #define DEBUG_AP      0   /* for debugging auto-pick */
 /* 5:sr, 4:ch, 3:sec, 2:find_pick, 1:all */
 /************ HOW TO COMPILE THE PROGRAM **************************
@@ -152,6 +152,7 @@ LOCAL
     XID drw;     /* Window or Pixmap */
     } lBitmap;
 
+#define PICK_SERVER_PORT   7130
 #define W_X     150
 #define W_Y     60
 #define BM_FB   0 /* frame buffer */
@@ -774,6 +775,8 @@ LOCAL
     char hypo_dir[NAMLEN];    /* pick dir */
     char hypo_dir1[NAMLEN];   /* pick dir(2) */
     char final_opt[NAMLEN];   /* final file(dir) by command line option */
+    char pick_server[NAMLEN]; /* pick file server host name or IP address */
+    int pick_server_port;     /* pick file server TCP port */
     FILE *fp_log;       /* fp of log file */
     char mailer[NAMLEN];    /* mailer printer */
     struct {
@@ -1819,6 +1822,7 @@ print_usage()
   fprintf(stderr,"                  p [parameter file]\n");
   fprintf(stderr,"                  q    - 'quit' mode\n");
   fprintf(stderr,"                  r    - 'rapid report' in auto-pick\n");
+  fprintf(stderr,"                  s [server:port] - pick file server & port\n");
   fprintf(stderr,"                  t    - copy data-file to local\n");
   fprintf(stderr,"                  w    - write bitmap (.sv) file\n");
   fprintf(stderr,"                  x [pick file] - just calculate hypocenter\n");
@@ -4171,7 +4175,7 @@ main(argc,argv)
   {
   int xx,yy,i,j,k,base_sec,mon_len,i_mon,c,mc;
   char textbuf[LINELEN],tbuf[20];
-  unsigned char *buf_mon;
+  unsigned char *buf_mon,*ptr;
   short i2p;
   XEvent xevent;
   int x,y;
@@ -4181,13 +4185,17 @@ main(argc,argv)
   extern char *optarg;
   lPoint pts[10];
 
+  if(ptr=getenv("WIN_PICK_SERVER")) strcpy(ft.pick_server,ptr);
+  else *ft.pick_server=0;
+  if(ptr=getenv("WIN_PICK_SERVER_PORT")) ft.pick_server_port=atoi(ptr);
+  else ft.pick_server_port=PICK_SERVER_PORT;
   sprintf(ft.param_file,"%s.prm",NAME_PRG);
   background=map_only=mc=bye=auto_flag=not_save=copy_file=got_hup=0;
   rapid_report=mon_offset=just_hypo=just_hypo_offset=0;
   flag_save=1;
   *ft.final_opt=0;
   dot='.';
-  while((c=getopt(argc,argv,"abcd:fhmnop:qrtwx:BC:_"))!=EOF)
+  while((c=getopt(argc,argv,"abcd:fhmnop:qrs:twx:BC:_"))!=EOF)
     {
     switch(c)
       {
@@ -4224,6 +4232,14 @@ main(argc,argv)
         break;
       case 'r':   /* rapid report */
         rapid_report=1;
+        break;
+      case 's':   /* specify find_picks server & port */
+        if(ptr=strchr(optarg,':'))
+          {
+          *ptr=0;
+          ft.pick_server_port=atoi(ptr+1);
+          }
+        strcpy(ft.pick_server,optarg);
         break;
       case 't':   /* use temporary data file in temp dir */
         copy_file=1;
@@ -8693,12 +8709,12 @@ load_data(btn)
   FILE *fp,*fq;
   struct dirent *dir_ent;
   DIR *dir_ptr;
-  int ii,i,j,k1,k2,k3,k4,k5,find_file,tm_begin[6],tm[6],sec_max;
+  int re,ii,i,j,k1,k2,k3,k4,k5,find_file,tm_begin[6],tm[6],sec_max;
   float k6;
-  char text_buf[LINELEN],*ptr,name1[NAMLEN],name2[NAMLEN],
+  char text_buf[LINELEN],*ptr,name1[NAMLEN],name2[NAMLEN],pickfile[NAMLEN],
     name_low[NAMLEN],name_high[NAMLEN],filename[NAMLEN],
     namebuf[NAMLEN],namebuf1[NAMLEN],diagbuf[50],userbuf[50];
-
+  char **picks_list;
   *name_low=(*name_high)=0;
   if(*ft.save_file) find_file=0;  /* pick file name already fixed */
   else find_file=1;       /* search file name here */
@@ -8720,40 +8736,71 @@ load_data(btn)
     sprintf(name2,"%02x%02x%02x%1c%02x%02x%02x",ft.ptr[i].time[0],
       ft.ptr[i].time[1],ft.ptr[i].time[2],dot,ft.ptr[i].time[3],
       ft.ptr[i].time[4],ft.ptr[i].time[5]);
-    if((dir_ptr=opendir(ft.hypo_dir))==NULL)
+
+    re=0;
+    if(*ft.pick_server) /* try pick file server */
       {
-      fprintf(stderr,"directory '%s' not open\007\007\n",ft.hypo_dir);
-      return 0;
-      }
-    while((dir_ent=readdir(dir_ptr))!=NULL)
-      {
-      if(*dir_ent->d_name=='.') continue; /* skip "." & ".." */
-    /* pick file name must be in the time range of data file */
-      if(strncmp2(dir_ent->d_name,name1,13)<0 ||
-        strncmp2(dir_ent->d_name,name2,13)>0) continue;
-    /* read the first line */
-      sprintf(filename,"%s/%s",ft.hypo_dir,dir_ent->d_name);
-      if((fp=fopen(filename,"r"))==NULL) continue;
-      *text_buf=0;
-      fgets(text_buf,LINELEN,fp);
-      fclose(fp);
-    /* first line must be "#p [data file name] ..." */
       if((ptr=strrchr(ft.data_file,'/'))==NULL) ptr=ft.data_file;
       else ptr++;
-      sscanf(text_buf,"%s%s",filename,namebuf);
-      strcpy(namebuf1,namebuf);
-      if(namebuf[6]=='.') namebuf1[6]='_';
-      else if(namebuf[6]=='_') namebuf1[6]='.';
-      if(strcmp(filename,"#p") ||
-        (strcmp(namebuf,ptr) && strcmp(namebuf1,ptr))) continue;
-    /* find the earliest (but later than "name_low") pick file */
-      if(*name_low && strncmp2(dir_ent->d_name,name_low,17)<=0) continue;
-      if(*name_high && strncmp2(dir_ent->d_name,name_high,17)>=0) continue;
-      strcpy(name_high,dir_ent->d_name);
+      sprintf(text_buf,"telnet %s %d",ft.pick_server,ft.pick_server_port);
+      if(fp=popen(text_buf,"r+"))
+        {
+        while(fgets(text_buf,LINELEN,fp)) if(strncmp(text_buf,"PICKS OK",8)==0)
+          {
+          re=1;
+          break;
+          }
+        if(re && (re=fprintf(fp,"%s %s %s %s\n",name1,name2,ptr,ft.hypo_dir))>0)
+            while(fgets(text_buf,LINELEN,fp))
+          {
+          sscanf(text_buf,"%s",pickfile);
+          /* find the earliest (but later than "name_low") pick file */
+          if(*name_low && strncmp2(pickfile,name_low,17)<=0) continue;
+          if(*name_high && strncmp2(pickfile,name_high,17)>=0) continue;
+          strcpy(name_high,pickfile);
+          } 
+        pclose(fp);
+        if(*name_high) strcpy(ft.save_file,name_high);
+        else if(re) return 0;
+        }
       }
-    closedir(dir_ptr);
-    if(*name_high) strcpy(ft.save_file,name_high);
-    else return 0;
+    if(re==0) /* search pick directory */
+      { 
+      if((dir_ptr=opendir(ft.hypo_dir))==NULL)
+        {
+        fprintf(stderr,"directory '%s' not open\007\007\n",ft.hypo_dir);
+        return 0;
+        }
+      while((dir_ent=readdir(dir_ptr))!=NULL)
+        {
+        if(*dir_ent->d_name=='.') continue; /* skip "." & ".." */
+      /* pick file name must be in the time range of data file */
+        if(strncmp2(dir_ent->d_name,name1,13)<0 ||
+          strncmp2(dir_ent->d_name,name2,13)>0) continue;
+      /* read the first line */
+        sprintf(filename,"%s/%s",ft.hypo_dir,dir_ent->d_name);
+        if((fp=fopen(filename,"r"))==NULL) continue;
+        *text_buf=0;
+        fgets(text_buf,LINELEN,fp);
+        fclose(fp);
+      /* first line must be "#p [data file name] ..." */
+        if((ptr=strrchr(ft.data_file,'/'))==NULL) ptr=ft.data_file;
+        else ptr++;
+        sscanf(text_buf,"%s%s",filename,namebuf);
+        strcpy(namebuf1,namebuf);
+        if(namebuf[6]=='.') namebuf1[6]='_';
+        else if(namebuf[6]=='_') namebuf1[6]='.';
+        if(strcmp(filename,"#p") ||
+          (strcmp(namebuf,ptr) && strcmp(namebuf1,ptr))) continue;
+      /* find the earliest (but later than "name_low") pick file */
+        if(*name_low && strncmp2(dir_ent->d_name,name_low,17)<=0) continue;
+        if(*name_high && strncmp2(dir_ent->d_name,name_high,17)>=0) continue;
+        strcpy(name_high,dir_ent->d_name);
+        }
+      closedir(dir_ptr);
+      if(*name_high) strcpy(ft.save_file,name_high);
+      else return 0;
+      }
     }
   /* file name fixed */
   sprintf(filename,"%s/%s",ft.hypo_dir,ft.save_file);

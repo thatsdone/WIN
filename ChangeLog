@@ -1,4 +1,7 @@
-$Id: ChangeLog,v 1.38 2003/06/09 16:40:14 urabe Exp $
+$Id: ChangeLog,v 1.39 2003/06/22 08:47:08 tsuru Exp $
+
+2003-06-22 Tsuruoka Hiroshi <tsuru@eri.u-tokyo.ac.jp>
+        * wintowin.c : win text format to win format
 
 2003-06-10 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
 	* ecore2.c : deleted '#include <errno.h>' and recovored ext defs.

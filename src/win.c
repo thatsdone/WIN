@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.15 2001/08/07 07:58:48 urabe Exp $
+   $Id: win.c,v 1.16 2001/08/22 10:05:06 urabe Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -13,7 +13,7 @@
    98.7.2 yo2000
 */
 #define NAME_PRG      "win"
-#define VERSION       "2001.8.7"
+#define VERSION       "2001.8.22"
 #define DEBUG_AP      0   /* for debugging auto-pick */
 /* 5:sr, 4:ch, 3:sec, 2:find_pick, 1:all */
 /************ HOW TO COMPILE THE PROGRAM **************************
@@ -1088,6 +1088,31 @@ put_fill(bm,xzero,yzero,xsize,ysize,blk)
   XFillRectangle(disp,bm->drw,*gc,xzero,yzero,xsize,ysize);
   XFlush(disp);
   }
+
+time_t time2lsec(int *tarray)
+{
+  static struct tm tm;
+  tm.tm_year=tarray[0];
+  if(tm.tm_year<70) tm.tm_year+=100;
+  tm.tm_mon=tarray[1]-1;
+  tm.tm_mday=tarray[2];
+  tm.tm_hour=tarray[3];
+  tm.tm_min=tarray[4];
+  tm.tm_sec=tarray[5];
+  return mktime(&tm);
+}
+
+lsec2time(time_t sec, int *tarray)
+{
+  struct tm *tm;
+  tm=localtime(&sec);
+  if((tarray[0]=tm->tm_year)>=100) tarray[0]-=100;
+  tarray[1]=tm->tm_mon+1;
+  tarray[2]=tm->tm_mday;
+  tarray[3]=tm->tm_hour;
+  tarray[4]=tm->tm_min;
+  tarray[5]=tm->tm_sec;
+}
 
 make_sec_table()
   {
@@ -3035,8 +3060,8 @@ get_pick(name,idx,pt) /* get picks */
   return j;
   }
 
-auto_pick(single)     /* automatic pick & locate routine */
-  int single; /* process just one event */
+auto_pick(singl)     /* automatic pick & locate routine */
+  int singl; /* process just one event */
   {
   static Evdet ev={
     3,0,0,        /* int n_min_trig,n_trig_off,trigger, */
@@ -3053,7 +3078,7 @@ auto_pick(single)     /* automatic pick & locate routine */
   cancel_picks(NULL,-1);
   fprintf(stderr,"canceled all picks\n");
   fprintf(stderr,"event detection, auto-pick and locate ");
-  if(single) fprintf(stderr,"(single event)\n");
+  if(singl) fprintf(stderr,"(single event)\n");
   else fprintf(stderr,"(entire file)\n");
   put_mon(x_zero,y_zero);
   /* some 'pick' file may have been loaded, but it will be deleted  */
@@ -3093,8 +3118,8 @@ auto_pick(single)     /* automatic pick & locate routine */
   fprintf(ft.fp_log,"fl         = %lf\n",ev.fl);
   fprintf(ft.fp_log,"fh         = %lf\n",ev.fh);
   fprintf(ft.fp_log,"fs         = %lf\n",ev.fs);
-  done=evdet(&ev,single);
-  if(done && background==0 && single==0)
+  done=evdet(&ev,singl);
+  if(done && background==0 && singl==0)
     load_data(MSE_BUTNM); /* load the earliest 'pick' file */
   doing_auto_pick=0;
   fclose(ft.fp_log);
@@ -3719,9 +3744,9 @@ get_trigch()
   ft.n_trigch=k;
   }
 
-evdet(ev,single)
+evdet(ev,singl)
   Evdet *ev;
-  int single; /* process just one event */
+  int singl; /* process just one event */
   {
   static Evdet_Tbl *tbl;
   int n,i,k,j,jj,idx,sec,ch,sr,trig,x1,x2,y1,y2,d,m,done,sub,trig_off,sec_on,
@@ -3730,7 +3755,7 @@ evdet(ev,single)
   unsigned int st;
   double sd,zero,c[MAX_FILT*4],dmin,dmax,drange,dd,lta,ratio;
 
-  if(single) {sec_start=x_zero/PIXELS_PER_SEC_MON;save=0;}
+  if(singl) {sec_start=x_zero/PIXELS_PER_SEC_MON;save=0;}
   else {sec_start=0;save=1;}
   get_trigch(); /* select vertical component chs -> ft.trigch */
   done=0;
@@ -3982,7 +4007,7 @@ tbl[ch].sta,tbl[ch].lta,ratio,dmax,dmin,sd);}
       ev->trigger=0;
       fprintf(ft.fp_log,"%02d -\n",sec);fflush(ft.fp_log);
       done=auto_pick_single(tbl,sec,save);
-      if(single) break;
+      if(singl) break;
       }
 #if DEBUG_AP>=4
 for(ch=0;ch<ft.n_trigch;ch++)
@@ -4002,7 +4027,7 @@ fprintf(stderr,"\n");
   if(done==0)
     {
     set_diagnos("NOTRG",getname(geteuid()));
-    if(single==0) save_data(0);
+    if(singl==0) save_data(0);
     }
   return done;
   }
@@ -6588,31 +6613,6 @@ raise_ttysw(idx)
     }
   expose_list=idx;
   }
-
-time_t time2lsec(int *tarray)
-{
-  static struct tm tm;
-  tm.tm_year=tarray[0];
-  if(tm.tm_year<70) tm.tm_year+=100;
-  tm.tm_mon=tarray[1]-1;
-  tm.tm_mday=tarray[2];
-  tm.tm_hour=tarray[3];
-  tm.tm_min=tarray[4];
-  tm.tm_sec=tarray[5];
-  return mktime(&tm);
-}
-
-lsec2time(time_t sec, int *tarray)
-{
-  struct tm *tm;
-  tm=localtime(&sec);
-  if((tarray[0]=tm->tm_year)>=100) tarray[0]-=100;
-  tarray[1]=tm->tm_mon+1;
-  tarray[2]=tm->tm_mday;
-  tarray[3]=tm->tm_hour;
-  tarray[4]=tm->tm_min;
-  tarray[5]=tm->tm_sec;
-}
 
 adj_sec(tm,se,tmc,sec)
   int *tm,*tmc;

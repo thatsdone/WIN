@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.7 2000/08/10 15:31:37 urabe Exp $
+   $Id: win.c,v 1.8 2000/08/14 10:51:00 urabe Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -13,7 +13,7 @@
    98.7.2 yo2000
 */
 #define NAME_PRG      "win"
-#define VERSION       "2000.8.10"
+#define VERSION       "2000.8.14"
 #define DEBUG_AP      0   /* for debugging auto-pick */
 /* 5:sr, 4:ch, 3:sec, 2:find_pick, 1:all */
 /************ HOW TO COMPILE THE PROGRAM **************************
@@ -133,6 +133,9 @@ LOCAL
 #include <ctype.h>
 #include <pwd.h>
 #include <unistd.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netdb.h>
 
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
@@ -8717,9 +8720,6 @@ open_sock(host,port)
   char *host;
   unsigned short port;
   {
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <netdb.h>
   int sockfd;
   struct sockaddr_in serv_addr;
   struct hostent *h;

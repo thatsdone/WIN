@@ -1,4 +1,4 @@
-# $Id: makefile,v 1.7 2000/08/02 08:49:38 uehira Exp $
+# $Id: makefile,v 1.8 2000/08/14 10:51:00 urabe Exp $
 #########################
 #                       #
 # win system makefile   #
@@ -14,7 +14,7 @@ BINDIR = ../bin
 #CFLAGS=-w -O
 #XF=-I/usr/openwin/include -L/usr/openwin/lib
 #SF=-lsocket -lnsl
-#ONL_SOL2=recvs sents
+#ONL_SOL2=recvs sends
 
 #### <SUN-OS4.X>
 #CFLAGS=-O -Bstatic -Dconst= -DSUNOS4
@@ -40,7 +40,8 @@ OFFLINE_MATH=dewin select_stations
 OFFLINE_F77=hypomh
 
 OFFLINE_USER=win $(OFFLINE_F77) wed wck wadd $(OFFLINE_MATH) wchch pick2tseis \
-             wch pick2finalb pick2final finalb2final final2finalb finalb2seis
+             wch pick2finalb pick2final finalb2final final2finalb finalb2seis \
+             wtime
 TAPE_USER=rtape fromtape wdisk wdiskts ras2rpdl ras2lips file_older raw2mon \
           $(TAPE_USER_MATH)
 ONLINE=order raw_mon wtape setexb timeout raw_raw raw_100 cormeisei shmdump \
@@ -86,7 +87,7 @@ $(TAPE_USER_MATH) $(ONLINE_MATH) $(OFFLINE_MATH) :
 	cc $@.c $(CFLAGS) -lm -o $@
 
 win :
-	cc $@.c $(CFLAGS) $(XF) -lm -lX11 -o $@
+	cc $@.c $(CFLAGS) $(XF) $(SF) -lm -lX11 -o $@
 
 hypomh : hypomh.f
 	f77 $@.f -o $@

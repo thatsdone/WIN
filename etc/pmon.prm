@@ -1,0 +1,45 @@
+ASHIO-NET, EARTHQUAKE RESEARCH INSTITUTE,  UNIVERSITY OF TOKYO
+#                     /* (1) the first line (to CR) is the footnote */
+/dat/mon:/dat/mon1    /* (2) mon data directory */
+/dat/tmp              /* (3) temporary work directory */
+../etc/channels.tbl   /* (4) channel table file */
+ricoh2a               /* (5) print name or '*' for no print */
+12                    /* (6) rows/sheet (10 min/row) */
+5                     /* (7) N of channels, or traces/row */
+# ****** LIST OF POSSIBLE N OF CHS *************
+#   n_rows(6)   min/sheet   max_ch(7)(at 20 pixels/trace)
+#     1           10          209
+#     2           20          103
+#     3           30           67
+#     6           60           32
+#     9           90           20
+#    12          120           14
+# **********************************************/
+#
+#
+#
+#  EVENT DETECTION PARAMETERS
+#
+../etc/pmon.out  /* ( 8) file for event trigger report */
+../etc/zones.tbl /* ( 9) file fo definition of zones */
+3                  /* (10) minimum number of stations to trigger */
+0.3                /* (11) time constant (sec) of STA */
+60.0               /* (12) time constant (sec) of LTA */
+1000.0             /* (13) time constant (sec) of LTA (during trigger) */
+2.0                /* (14) duration time (sec) for trigger */
+10.0               /* (15) post-event time (sec) to declare end */
+1                  /* (16) trigger report level (0:no - 3:full) */
+#
+#
+#
+#
+#  CHANNEL TABLE
+#
+#  comp sta/lta(0.0 for unuse) 
+#name  scl
+#
+KBH  U  2 2.5
+KRO  U  1 2.5
+ASO  U  1 2.5
+GNZ  U  1 2.5
+NIK  U  1 2.5

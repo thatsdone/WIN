@@ -1,0 +1,21 @@
+../etc/pmon.out      # trigger file
+../raw               # input raw file directory
+../trg               # output trg file directory
+500                  # free space (MB) to keep in the output directory
+/var/tmp             # working directory for temporary file
+20                   # pre event time in sec (<60)
+3.0                  # post event time factor; LEN=PRE+TRG+POST*sqrt(TRG)
+../etc/channels.tbl  # master channel table file
+../etc/zones.tbl     # zone table file
+../etc/nxtzones.tbl  # list of neighboring zones
+../auto              # touch directory for auto-pick
+../request           # request touch directory
+eri                  # my system code
+../log/request-lpr   # log file
+#
+# list of remote data servers follows.
+# local (my) server may be included, but it will not be used.
+#<sys>	<station list>		<printcap entry of data server>
+#tky     /dat/etc/tky.station    request-saemon
+#sso     /dat/etc/sso.station    request-sso-jc3
+#takayama  /dat/etc/takayama.station    request-hyogo

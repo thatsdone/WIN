@@ -14,6 +14,7 @@
 #include <string.h>
 #include <stddef.h>
 
+#include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
 
@@ -33,7 +34,7 @@
 /* #define SR 4096 */
 #define SR 200
 
-/* $Id: wintowin.c,v 1.3 2004/10/14 10:30:58 tsuru Exp $ */
+/* $Id: wintowin.c,v 1.4 2004/10/15 12:41:23 tsuru Exp $ */
 /* winform.c  4/30/91,99.4.19   urabe */
 /* winform converts fixed-sample-size-data into win's format */
 /* winform returns the length in bytes of output data */

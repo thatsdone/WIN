@@ -1,4 +1,7 @@
- $Id: ChangeLog,v 1.82 2004/11/26 14:09:45 uehira Exp $
+ $Id: ChangeLog,v 1.83 2004/11/30 14:16:30 uehira Exp $
+
+2004-11-30 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* relaym.c : end_program() moved to win_log.c
 
 2004-11-26 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* relaym : MF relay.c

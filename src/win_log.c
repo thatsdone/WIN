@@ -1,10 +1,11 @@
-/* $Id: win_log.c,v 1.1 2004/11/11 10:50:30 uehira Exp $ */
+/* $Id: win_log.c,v 1.2 2004/11/30 14:16:30 uehira Exp $ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <errno.h>
 
 #if TIME_WITH_SYS_TIME
@@ -63,7 +64,19 @@ err_sys(char *ptr)
   if (strerror(errno))
     write_log((char *)strerror(errno));
 
-  end_program(1);
+  exit_status = EXIT_FAILURE;
+  end_program();
+}
+
+void
+end_program(void)
+{
+
+  write_log("end");
+  if (syslog_mode)
+    closelog();
+  /*  printf("%d\n", status); */
+  exit(exit_status);
 }
 
 static void

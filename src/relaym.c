@@ -1,4 +1,4 @@
-/* $Id: relaym.c,v 1.4 2004/11/26 13:55:38 uehira Exp $ */
+/* $Id: relaym.c,v 1.5 2004/11/30 14:16:30 uehira Exp $ */
 
 /* 2004/11/26 MF relay.c: 
  *   - check_pno() and read_chfile() brought from relay.c
@@ -54,7 +54,7 @@
 #define MAXMSG       1025
 
 static char rcsid[] =
-  "$Id: relaym.c,v 1.4 2004/11/26 13:55:38 uehira Exp $";
+  "$Id: relaym.c,v 1.5 2004/11/30 14:16:30 uehira Exp $";
 
 /* destination host info. */
 struct hostinfo {
@@ -72,6 +72,7 @@ struct hostinfo {
 
 char *progname, *logfile;
 int  daemon_mode, syslog_mode;
+int  exit_status;
 
 static ssize_t        psize[BUFNO];
 static unsigned char  sbuf[BUFNO][MAXMESG];
@@ -101,7 +102,6 @@ static int check_pno(struct sockaddr *, unsigned int, unsigned int,
 		     int, socklen_t, int, int);
 static void read_chfile(void);
 
-void end_program(int);
 int main(int, char *[]);
 
 int
@@ -132,6 +132,7 @@ main(int argc, char *argv[])
   else
     progname = argv[0];
 
+  exit_status = EXIT_SUCCESS;
   daemon_mode = syslog_mode = 0;
   if (strcmp(progname,"relaymd") == 0)
     daemon_mode = 1;
@@ -358,17 +359,6 @@ main(int argc, char *argv[])
   }  /* for (;;) (main loop) */
 }
 
-void
-end_program(int status)
-{
-
-  write_log("end");
-  if (syslog_mode)
-    closelog();
-  /*  printf("%d\n", status); */
-  exit(status);
-}
-
 static void
 usage(void)
 {
@@ -556,7 +546,9 @@ read_chfile(void)
       (void)snprintf(tb, sizeof(tb),
 		     "channel list file '%s' not open", chfile);
       write_log(tb);
-      end_program(1);
+
+      exit_status = EXIT_FAILURE;
+      end_program();
     }
 
     if (negate_channel)

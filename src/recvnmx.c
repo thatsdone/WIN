@@ -1,6 +1,7 @@
-/* $Id: recvnmx.c,v 1.5 2001/08/22 09:39:25 urabe Exp $ */
+/* $Id: recvnmx.c,v 1.6 2001/10/05 04:30:24 urabe Exp $ */
 /* "recvnmx.c"    2001.7.18-19 modified from recvt.c and nmx2raw.c  urabe */
 /*                2001.8.18 */
+/*                2001.10.5 workaround for hangup */
 
 #include <stdio.h>
 #include <signal.h>
@@ -699,7 +700,7 @@ main(argc,argv)
         pk.ptype,pk.t->tm_year%100,pk.t->tm_mon+1,pk.t->tm_mday,pk.t->tm_hour,
         pk.t->tm_min,pk.t->tm_sec,pk.subsec,pk.model,pk.serno,pk.seq,
         pk.sr,pk.ch,pk.first,winch);
-    if((pk.ptype&0x0f)==1){ /* compressed data packet */
+    if((pk.ptype&0x0f)==1 && winch>=0){ /* compressed data packet */
       idx=ch2idx(rbuf,&pk,winch);
       rbuf_ptr=(pk.subsec*pk.sr+5000)/10000;
       n=bundle2fix(&pk,rbuf[idx]+rbuf_ptr);

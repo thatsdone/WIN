@@ -1,4 +1,4 @@
-/* $Id: raw_raw.c,v 1.5 2002/03/24 15:35:46 urabe Exp $ */
+/* $Id: raw_raw.c,v 1.6 2002/04/30 01:31:08 urabe Exp $ */
 /* "raw_raw.c"    97.8.5 urabe */
 /*                  modified from raw_100.c */
 /*                  98.4.17 FreeBSD */
@@ -8,6 +8,7 @@
 /* 2000.4.24 with -g, shift 1Hz SR data by 4 bits rightward for GTA-45 LP chs */
 /* 2000.4.24/2001.11.14 strerror() */
 /* 2002.3.5 eobsize_in(auto), eobsize_out(-B) */
+/* 2002.3.28 sleep(1) -> usleep(10000) */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -397,7 +398,7 @@ reset:
     fflush(stderr);
 #endif
     if((ptr=ptr_save+size)>shr->d+shr->pl) ptr=shr->d;
-    while(ptr==shr->d+shr->p) sleep(1);
+    while(ptr==shr->d+shr->p) usleep(10000);
     i=shr->c-c_save;
     if(!(i<1000 && i>=0) || mklong(ptr_save)!=size)
       {

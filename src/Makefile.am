@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.3 2002/01/25 04:01:23 uehira Exp $
+# $Id: Makefile.am,v 1.4 2002/04/30 01:31:08 urabe Exp $
 #
 
 if SUNOS4
@@ -34,7 +34,7 @@ OFFLINE_USER=win $(OFFLINE_F77) wed wck wadd $(OFFLINE_MATH) wchch pick2tseis \
 TAPE_USER=rtape fromtape wdisk wdiskts ras2rpdl ras2lips file_older raw2mon \
           $(TAPE_USER_MATH)
 ONLINE=order raw_mon wtape setexb timeout raw_raw raw_100 cormeisei shmdump \
-       raw_ch extraw order2 insert_raw insert_trg find_picks \
+       raw_ch extraw order2 insert_raw insert_trg find_picks raw_shift \
        $(ONLINE_SO) $(ONLINE_MATH) $(ONL_X86)
 
 ONL_OPT_=robot
@@ -136,6 +136,8 @@ setexb_SOURCES = setexb.c $(SUBFUNC_H)
 timeout_SOURCES = timeout.c $(SUBFUNC_H)
 
 raw_raw_SOURCES = raw_raw.c $(SUBFUNC_H)
+
+raw_shift_SOURCES = raw_shift.c $(SUBFUNC_H)
 
 raw_100_SOURCES = raw_100.c $(SUBFUNC_H)
 

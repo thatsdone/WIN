@@ -1,4 +1,4 @@
-/* $Id: fromtape.c,v 1.4 2002/01/13 06:57:50 uehira Exp $ */
+/* $Id: fromtape.c,v 1.5 2002/04/30 01:31:08 urabe Exp $ */
 /*
   program "fromtape.c"
   12/10/90 - 12/13/90, 9/19/91, 10/30/91, 6/19/92  urabe
@@ -8,7 +8,8 @@
   98.6.30  FreeBSD  urabe
   98.9.8   Multi-block sec
   99.4.19  byte-order-free
-  2000.5.10 deleted size=<0x3c000 limit               
+  2000.5.10 deleted size=<0x3c000 limit
+  2002.4.30 MAXSIZE 500K->1M, SIZE_WBUF 50K->300K
 */
 
 #ifdef HAVE_CONFIG_H
@@ -29,8 +30,8 @@
 #define   N_FILE    30
 #define   TRY_LIMIT 10
 #define   NAMLEN    100
-#define   MAXSIZE   500000
-#define   SIZE_WBUF 50000
+#define   MAXSIZE   1000000
+#define   SIZE_WBUF 300000
 #define   SR_MON    5
 #define   MAX_SR    1024
 

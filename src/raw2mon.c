@@ -1,10 +1,11 @@
-/* $Id: raw2mon.c,v 1.3 2002/01/13 06:57:51 uehira Exp $ */
+/* $Id: raw2mon.c,v 1.4 2002/04/30 01:31:08 urabe Exp $ */
 /*
   program "raw2mon.c"
   6/3/93,6/17/94,8/17/95 urabe
   98.6.30 FreeBSD
   99.4.19 byte-order-free
   2000.4.24 skip ch with >MAX_SR
+  2002.4.30 MAXSIZE 500K->1M, SIZE_WBUF 50K->300K
 */
 
 #ifdef HAVE_CONFIG_H
@@ -21,8 +22,8 @@
 
 #include "subst_func.h"
 
-#define   MAXSIZE   500000
-#define   SIZE_WBUF 50000
+#define   MAXSIZE   1000000
+#define   SIZE_WBUF 300000
 #define   SR_MON    5
 #define   MAX_SR    1024
 

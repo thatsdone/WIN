@@ -1,4 +1,4 @@
-.TH recvt 1W "2002.3.24" "WIN SYSTEM" "WIN SYSTEM"
+.TH recvt 1W "2002.10.26" "WIN SYSTEM" "WIN SYSTEM"
 .UC 4
 .SH 名称
 recvnmx - Nanometrics UDP/IPパケットの受信
@@ -7,13 +7,15 @@ recvnmx - Nanometrics UDP/IPパケットの受信
 .ti -7
 renvnmx
 [
+.I \-vB
+] [
 .I \-c map
+] [
+.I \-d dir
 ] [
 .I \-i interface
 ] [
 .I \-m group
-] [
-.I \-vB
 ]
 .I port
 .I shmkey
@@ -83,6 +85,23 @@ WIN形式の先頭チャネル番号から始まるチャネル数だけのチャネル番号が
 recvnmx は HUPシグナルを受けると、ファイル
 .I map
 を読み直します。
+.IP "\fB\-d \fIdir" 5
+半端なデータをディレクトリ
+.I dir
+に一時保存します。
+WIN形式のパケットは秒単位ですが、
+Nanometrics形式のそれは秒単位ではないため、パケットが正しい順序で
+届かなかった場合は、
+秒パケットを構成できない１秒未満の長さの半端なデータが残ります。
+このオプションを指定すると、この半端なデータを保存しておき、
+あとで不足部分を含むパケットが届いた時に、保存しておいたそれを
+読み出して正しい秒パケットを構成して出力します。
+.br
+recvnmx は
+.I dir
+にある使用済の半端なデータのファイルを削除しますが、不足部分が
+結局届かなくて使用されなかったファイルは残ります。このような古いファイルを
+定期的に削除するためのプログラムに clean_nmx(1W) があります。
 .IP "\fB\-i \fIinterface" 5
 IPマルチキャストアドレスに対して送信されるパケットを受信する場合に、
 パケットを受信するネットワークインターフェースを、そのインターフェースの
@@ -116,4 +135,4 @@ Nanometrics機器のNMXPパケットのタイムスタンプでも閏秒は考慮されていない
 .TP
 `recvnmx.c'
 .SH 関連事項
-winformat(1W), recvt(1W)
+clean_nmx(1W), winformat(1W), recvt(1W)

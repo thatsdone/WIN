@@ -1,0 +1,35 @@
+.TH clean_nmx 1W "2003.10.26" "WIN SYSTEM" "WIN SYSTEM"
+.SH 名称
+clean_nmx - ディレクトリ中の古いファイルを削除する
+.SH 形式
+clean_nmx [ 
+.I dir 
+[
+.I period
+]]
+.LP
+.SH 解説
+clean_nmx はディレクトリ
+.I dir
+の、
+.I period
+以上前のタイムスタンプをもつファイルを削除します。
+.I dir
+のデフォルトは /dat/nmx、
+.I period
+のデフォルトは 1H (１時間)です。
+.I period
+の指定のしかたについては date(1) のオプション
+を見てください。
+.LP
+clean_nmx は recvnmx(1W) が生成した半端なデータのファイルの
+うち古いものを定期的に削除するために、cron(8) によって実行される
+ように設定されます。
+.SH オプション
+.TP 
+なし。
+.SH ソース
+.TP
+`clean_nmx'
+.SH 関連事項
+recvnmx(1W), date(1)

@@ -1,4 +1,4 @@
-/* $Id: relay.c,v 1.8 2003/04/04 04:29:30 urabe Exp $ */
+/* $Id: relay.c,v 1.9 2003/10/26 07:48:24 urabe Exp $ */
 /* "relay.c"      5/23/94-5/25/94,6/15/94-6/16/94,6/23/94,3/16/95 urabe */
 /*                3/26/95 check_packet_no; port# */
 /*                5/24/96 added processing of "host table full" */
@@ -13,6 +13,8 @@
 /*                2002.12.10 multicast(-i,-t), stdin(to_port=0), src_port(-p) */
 /*                2003.3.25 bug fixed in optind */
 /*                2003.3.26 bug fixed in psize for stdin  */
+/*                2003.9.9 no req resend(-r), receive mcast(-g), send delay(-d) */
+/*                2003.10.26 "sinterface" */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -118,11 +120,12 @@ err_sys(ptr)
   ctrlc();
   }
 
-check_pno(from_addr,pn,pn_f,sock,fromlen) /* returns -1 if duplicated */
+check_pno(from_addr,pn,pn_f,sock,fromlen,nr) /* returns -1 if duplicated */
   struct sockaddr_in *from_addr;  /* sender address */
   unsigned int pn,pn_f;           /* present and former packet Nos. */
   int sock;                       /* socket */
   int fromlen;                    /* length of from_addr */
+  int nr;                         /* no resend request if 1 */
   {
 #define N_HOST  100
   static int host[N_HOST],no[N_HOST];
@@ -172,18 +175,27 @@ check_pno(from_addr,pn,pn_f,sock,fromlen) /* returns -1 if duplicated */
   else /* check packet no */
     {
     pn_1=(j+1)&0xff;
-    if(pn!=pn_1 && ((pn-pn_1)&0xff)<N_PACKET) do
-      { /* send request-resend packet(s) */
-      pnc=pn_1;
-      sendto(sock,&pnc,1,0,(const struct sockaddr *)from_addr,fromlen);
-      sprintf(tb,"request resend %s:%d #%d",
-        inet_ntoa(from_addr->sin_addr),ntohs(from_addr->sin_port),pn_1);
-      write_log(logfile,tb);
+    if(!nr && (pn!=pn_1))
+      {
+      if(pn!=pn_1 && ((pn-pn_1)&0xff)<N_PACKET) do
+        { /* send request-resend packet(s) */
+        pnc=pn_1;
+        sendto(sock,&pnc,1,0,(const struct sockaddr *)from_addr,fromlen);
+        sprintf(tb,"request resend %s:%d #%d",
+          inet_ntoa(from_addr->sin_addr),ntohs(from_addr->sin_port),pn_1);
+        write_log(logfile,tb);
 #if DEBUG1
-      printf("<%d ",pn_1);
+        printf("<%d ",pn_1);
 #endif
-      h[i].nos[pn_1>>3]&=~mask[pn_1&0x03]; /* reset bit for the packet no */
-      } while((pn_1=(++pn_1&0xff))!=pn);
+        h[i].nos[pn_1>>3]&=~mask[pn_1&0x03]; /* reset bit for the packet no */
+        } while((pn_1=(++pn_1&0xff))!=pn);
+      else
+        {
+        sprintf(tb,"no request resend %s:%d #%d-#%d",
+          inet_ntoa(from_addr->sin_addr),ntohs(from_addr->sin_port),pn_1,pn);
+        write_log(logfile,tb);
+        }
+      }
     }
   if(pn!=pn_f && h[i].nos[pn_f>>3]&mask[pn_f&0x03]) return -1;
      /* if the resent packet is duplicated, return with -1 */
@@ -208,15 +220,19 @@ main(argc,argv)
   int argc;
   char *argv[];
   {
-  struct timeval timeout;
-  int c,i,re,fromlen,n,bufno,bufno_f,pts,ttl;
+  struct timeval timeout,tv1,tv2;
+  double idletime;
+  int c,i,re,fromlen,n,bufno,bufno_f,pts,ttl,delay,noreq;
   struct sockaddr_in to_addr,from_addr;
   unsigned short to_port;
   struct hostent *h;
   unsigned short host_port,src_port;
   unsigned char no,no_f;
   char tb[256];
-  char interface[256]; /* multicast interface */
+  struct ip_mreq stMreq;
+  char mcastgroup[256]; /* multicast address */
+  char interface[256]; /* multicast interface for receive */
+  char sinterface[256]; /* multicast interface for send */
   extern int optind;
   extern char *optarg;
   unsigned long mif; /* multicast interface address */
@@ -224,22 +240,34 @@ main(argc,argv)
   if(progname=strrchr(argv[0],'/')) progname++;
   else progname=argv[0];
   sprintf(tb,
-" usage : '%s (-i [interface]) (-p [src port]) (-t [ttl]) [in_port] [host] [host_port] ([log file])'\n",
+" usage : '%s (-r) (-d [delay_ms]) (-g [mcast_group]) (-i [interface]) (-s [sinterface]) (-p [src port]) (-t [ttl]) [in_port] [host] [host_port] ([log file])'\n",
       progname);
 
-  *interface=0;
+  *interface=(*mcastgroup)=(*sinterface)=0;
   ttl=1;
-  src_port=0;
+  src_port=delay=noreq=0;
 
-  while((c=getopt(argc,argv,"i:p:t:T:"))!=EOF)
+  while((c=getopt(argc,argv,"d:g:i:p:rt:T:"))!=EOF)
     {
     switch(c)
       {
-      case 'i':   /* interface (ordinary IP address) which sends mcast */
+      case 'd':   /* delay time in msec */
+        delay=atoi(optarg);
+        break;
+      case 'g':   /* multicast group for input (multicast IP address) */
+        strcpy(mcastgroup,optarg);
+        break;
+      case 'i':   /* interface (ordinary IP address) which receive mcast */
         strcpy(interface,optarg);
         break;
       case 'p':   /* source port */
         src_port=atoi(optarg);
+        break;
+      case 'r':   /* disable resend request */
+        noreq=1;
+        break;
+      case 's':   /* interface (ordinary IP address) which sends mcast */
+        strcpy(sinterface,optarg);
         break;
       case 'T':   /* ttl for MCAST */
       case 't':   /* ttl for MCAST */
@@ -285,6 +313,15 @@ main(argc,argv)
     to_addr.sin_port=htons(to_port);
     if(bind(sock_in,(struct sockaddr *)&to_addr,sizeof(to_addr))<0)
     err_sys("bind_in");
+
+    if(*mcastgroup)
+      {
+      stMreq.imr_multiaddr.s_addr=inet_addr(mcastgroup);
+      if(*interface) stMreq.imr_interface.s_addr=inet_addr(interface);
+      else stMreq.imr_interface.s_addr=INADDR_ANY;
+      if(setsockopt(sock_in,IPPROTO_IP,IP_ADD_MEMBERSHIP,(char *)&stMreq,
+        sizeof(stMreq))<0) err_sys("IP_ADD_MEMBERSHIP setsockopt error\n");
+      }
     }
 
   /* destination host/port */
@@ -305,9 +342,9 @@ main(argc,argv)
     if(setsockopt(sock_out,SOL_SOCKET,SO_SNDBUF,(char *)&i,sizeof(i))<0)
       err_sys("SO_SNDBUF setsockopt error\n");
     }
-  if(*interface)
+  if(*sinterface)
     {
-    mif=inet_addr(interface);
+    mif=inet_addr(sinterface);
     if(setsockopt(sock_out,IPPROTO_IP,IP_MULTICAST_IF,(char *)&mif,sizeof(mif))<0)
       err_sys("IP_MULTICAST_IF setsockopt error\n");
     }
@@ -330,6 +367,7 @@ main(argc,argv)
   if(bind(sock_out,(struct sockaddr *)&from_addr,sizeof(from_addr))<0)
     err_sys("bind_out");
 
+  if(noreq) write_log(logfile,"resend request disabled");
   signal(SIGTERM,(void *)ctrlc);
   signal(SIGINT,(void *)ctrlc);
   no=0;
@@ -341,15 +379,20 @@ main(argc,argv)
     {
     if(to_port>0)
       {
+      gettimeofday(&tv1,NULL);
       fromlen=sizeof(from_addr);
       psize[bufno]=recvfrom(sock_in,sbuf[bufno],MAXMESG,0,
 			  (struct sockaddr *)&from_addr,&fromlen);
+      gettimeofday(&tv2,NULL);
+      idletime=(double)(tv2.tv_sec-tv1.tv_sec)+
+                 (double)(tv2.tv_usec-tv1.tv_usec)*0.000001;
 #if DEBUG1
+      printf("idletime=%f\n",idletime);
       if(sbuf[bufno][0]==sbuf[bufno][1]) printf("%d ",sbuf[bufno][0]);
       else printf("%d(%d) ",sbuf[bufno][0],sbuf[bufno][1]);
 #endif
 
-      if(check_pno(&from_addr,sbuf[bufno][0],sbuf[bufno][1],sock_in,fromlen)<0)
+      if(check_pno(&from_addr,sbuf[bufno][0],sbuf[bufno][1],sock_in,fromlen,noreq)<0)
         {
 #if DEBUG2
         sprintf(tb,"discard duplicated resent packet #%d as #%d",
@@ -358,6 +401,7 @@ main(argc,argv)
 #endif
         continue;
         }
+      if(delay>0 && idletime>0.5) usleep(delay*1000);
       }
     else /* read from stdin */
       {

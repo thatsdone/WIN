@@ -1,4 +1,10 @@
-$Id: ChangeLog,v 1.47 2003/08/09 02:11:50 uehira Exp $
+$Id: ChangeLog,v 1.48 2003/10/26 07:48:23 urabe Exp $
+
+2003-10-26 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
+	* relay.c : added options -r, -g, -d and -s
+	* man/relay.1 : updated
+	* man/recvnmx.1 : updated
+	* man/clean_nmx.1 : created
 
 2003-08-09 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* wchasn.c : channel number assignment filter.

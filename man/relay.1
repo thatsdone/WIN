@@ -1,10 +1,12 @@
-.TH relay 1W "2003.2.4" "WIN SYSTEM" "WIN SYSTEM"
+.TH relay 1W "2003.10.26" "WIN SYSTEM" "WIN SYSTEM"
 .SH 名称
 relay - win 形式データのIP上の中継
 .SH 形式
 .IP
 .ti -7
-relay [\-\fBi\fI\ interface\fR] [\-\fBp\fI\ src_port\fR] [\-\fBt\fI\ ttl\fR]
+relay [\-\fBr\fR] [\-\fBd\fI\ delay\fR] [\-\fBg\fI\ group\fR] 
+[\-\fBi\fI\ interface\fR] [\-\fBp\fI\ src_port\fR] [\-\fBs\fI\ sinterface\fR] 
+[\-\fBt\fI\ ttl\fR]
 .I inport
 .I dest
 .I outport
@@ -18,7 +20,8 @@ relay は、自ホストの UDP ポート番号
 .I \ dest
 の UDP ポート番号
 .I \ outport
-へ送信します。
+へ送信します。relay は受信したパケットのパケット番号を検査しますが
+タイムスタンプは検査しません。
 .LP
 ただし
 .I \ inport
@@ -48,17 +51,35 @@ relay はパケット番号の連続性を監視して
 できます。100ヶ所を超えると、recvt は送信元テーブルを一旦白紙に戻し、
 改めて登録を始めます。
 .SH オプション
+.IP "\fB\-d \fIdelay" 5
+前のパケットを中継してから0.5秒以上経過した後に
+パケットが届いたとき、そのパケットを送信する前に
+.I delay
+ミリ秒の遅延を挿入します。
+.IP "\fB\-g \fIgroup" 5
+IPマルチキャストアドレス
+.I group
+に対して送信されるパケットを受信します。
 .IP "\fB\-i \fIinterface" 5
-宛先
-.I dest
-がIPマルチキャストアドレスであるとき、パケットを送信する
+IPマルチキャストアドレス宛のパケットを受信する
 ネットワークインターフェースを、そのインターフェースのIPアドレス
 .I interface
 で指定します。
 .IP "\fB\-p \fIsrc_port" 5
 送信元UDPポート番号を \fIsrc_port\fR にします。通常指定する必要はありません。
+.IP "\fB\-r" 5
+再送要求パケットを送信しません。
+DVB衛星配信ボードによる受信のような一方通行の伝送路の場合には、
+これにより不要なパケット送信を抑制することができます。
+.IP "\fB\-s \fIsinterface" 5
+宛先
+.I dest
+がIPマルチキャストアドレスであるとき、パケットを送信する
+ネットワークインターフェースを、そのインターフェースのIPアドレス
+.I sinterface
+で指定します。
 .IP "\fB\-t \fIttl" 5
-送信先がマルチキャストアドレスであるとき、送信パケットのTTLの
+送信先がIPマルチキャストアドレスであるとき、送信パケットのTTLの
 値をデフォルトの 1 ではなくて \fIttl\fR にします。
 .SH ソース 
 .TP

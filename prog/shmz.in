@@ -162,6 +162,11 @@ if { $table == 1 } {
     close $ft
 }
 
+if { $table < 1 } {
+    puts "please set channels table"
+    exit
+}
+
 set title "SHMZ version $version"
 
 #set wx  0.25; set wy 20; set nsec 3600; set nline 24; # 1 day

@@ -1,0 +1,29 @@
+.TH wintosac 1W "2002.8.12" "WIN SYSTEM" "WIN SYSTEM" 
+.SH 名称 
+wintosac - WIN テキストフォーマット -> SAC/SAC2000 フォーマット 変換ツール
+.SH 形式
+wintosac
+.I (-l) (-b[BEGIN]) (-t[TABLE]) (-o[OUTPUT]) CHID 
+.LP
+.SH 解説
+wintosac は、shmdump -tq で出力されるデータを入力として SACおよびSAC2000フォーマット
+の波形データを出力します．欠測がある場合にはデータを0で埋めます．ただし，単一チャネル
+変換用です．
+.LP
+wintosac は引数なしで起動すると簡単な使用法を表示します。
+.SH オプション
+.IP -l
+SAC2000フォーマットで出力します．デフォルトはSACフォーマットで出力します．
+.IP -b[BEGIN]
+SACヘッダー B を BEGIN に設定します．
+.IP -o[SACFILE]
+標準では，出力ファイル名は，YYMMDDHHMM_CHID.s ですが，このオプションを指定した場合には
+そのファイル名で出力します．
+.IP -t[ChannelTable]
+WINのチャネルテーブルを読み込みます．データはチャネルテーブルに従って物理量変換されます．
+また，出力ファイル名は，YYMMDDHHMM_STN_COMP.sとなります．
+.SH ソース 
+.TP
+`wintosac'
+.SH 関連事項
+shmdump(1W)

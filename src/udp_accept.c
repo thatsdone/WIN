@@ -1,4 +1,4 @@
-/* $Id: udp_accept.c,v 1.2 2004/11/11 11:36:52 uehira Exp $ */
+/* $Id: udp_accept.c,v 1.3 2004/11/26 13:55:38 uehira Exp $ */
 
 /*
  * Copyright (c) 2001-2004
@@ -30,7 +30,8 @@
 #include "udpu.h"
 #include "win_log.h"
 
-#define  SOCKET_RCV_BUFSIZ   65535
+#define MIN_RECV_BUFSIZ  16   /* min. bufsize in KB */
+
 
 #ifdef INET6
 /*
@@ -39,7 +40,7 @@
  *  listen IPv6 & IPv4 address.
  */
 struct conntable *
-udp_accept(const char *port, int *maxsoc)
+udp_accept(const char *port, int *maxsoc, int sockbuf)
 {
   int  sockfd, gai_error;
   struct conntable  *ct_top = NULL, *ct, **ctp = &ct_top, *ct_next;
@@ -47,6 +48,7 @@ udp_accept(const char *port, int *maxsoc)
   int    sock_bufsiz;
   char  hbuf[NI_MAXHOST], sbuf[NI_MAXSERV];
   char  buf[1024];
+  int   j;
 
   *maxsoc = -1;
 
@@ -62,16 +64,20 @@ udp_accept(const char *port, int *maxsoc)
     return (NULL);
   }
 
-  sock_bufsiz = SOCKET_RCV_BUFSIZ;
-
   /* search connectable address(es) */
   for (ai = res; ai != NULL; ai = ai->ai_next) {
     sockfd = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
     if (sockfd < 0)
       continue;
 
-    if (setsockopt(sockfd, SOL_SOCKET, SO_RCVBUF,
-		   &sock_bufsiz, sizeof(sock_bufsiz)) < 0) {
+    /* set socket opttion: recv. bufsize */
+    for (j = sockbuf; j >= MIN_RECV_BUFSIZ; j -= 4) {
+      sock_bufsiz = (j << 10);
+      if (setsockopt(sockfd, SOL_SOCKET, SO_RCVBUF,
+		     &sock_bufsiz, sizeof(sock_bufsiz)) >= 0)
+	break;
+    }
+    if (j < MIN_RECV_BUFSIZ) {
       (void)close(sockfd);
       continue;
     }
@@ -88,6 +94,7 @@ udp_accept(const char *port, int *maxsoc)
     }
     memset(ct, 0, sizeof(*ct));
     ct->soc = sockfd;
+    ct->sockbuf = sock_bufsiz;
     *ctp = ct;
     ctp = &ct->next;
 
@@ -99,7 +106,8 @@ udp_accept(const char *port, int *maxsoc)
 		      sbuf, sizeof(sbuf),
 		      NI_DGRAM | NI_NUMERICHOST | NI_NUMERICSERV);
     (void)snprintf(buf, sizeof(buf),
-		   "listen: host=%s, serv=%s", hbuf, sbuf);
+		   "listen: host=%s, serv=%s, RCVBUF size=%d",
+		   hbuf, sbuf, ct->sockbuf);
     write_log(buf);
   }  /* for (ai = res; ai != NULL; ai = ai->next) */
 

@@ -1,4 +1,12 @@
- $Id: ChangeLog,v 1.80 2004/11/24 06:43:41 uehira Exp $
+ $Id: ChangeLog,v 1.81 2004/11/26 13:55:38 uehira Exp $
+
+2004-11-26 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* relaym : MF relay.c
+	  - check_pno() and read_chfile() brought from relay.c
+	  - with host contol but without channel control (option -f)
+	  - write host statistics on HUP signal
+	  - no packet info option -n
+	  - maximize size of receive socket buffer (option -b)
 
 2004-11-24 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* pick2final, pick2finalb : get owner information from pickfile

@@ -1,4 +1,4 @@
-/* $Id: recvt.c,v 1.10 2002/01/14 11:32:58 uehira Exp $ */
+/* $Id: recvt.c,v 1.11 2002/01/17 15:06:38 urabe Exp $ */
 /* "recvt.c"      4/10/93 - 6/2/93,7/2/93,1/25/94    urabe */
 /*                2/3/93,5/25/94,6/16/94 */
 /*                1/6/95 bug in adj_time fixed (tm[0]--) */
@@ -31,6 +31,7 @@
 /*                2002.1.7 option -n to suppress info on abnormal packets */
 /*                2002.1.8 MAXMESG increased to 32768 bytes */
 /*                2002.1.12 trivial fixes on 'usage' */
+/*                2002.1.15 option '-M' necessary for receiving mon data */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -88,6 +89,14 @@ mklong(ptr)
   unsigned long a;
   a=((ptr[0]<<24)&0xff000000)+((ptr[1]<<16)&0xff0000)+
     ((ptr[2]<<8)&0xff00)+(ptr[3]&0xff);
+  return a;
+  }
+
+mkshort(ptr)
+  unsigned char *ptr;
+  {
+  unsigned short a;
+  a=((ptr[0]<<8)&0xff00)+(ptr[1]&0xff);
   return a;
   }
 
@@ -549,16 +558,17 @@ check_pno(from_addr,pn,pn_f,sock,fromlen,n) /* returns -1 if duplicated */
   return 0;
   }
 
-wincpy(ptw,ptr,size)
+wincpy(ptw,ptr,size,mon)
   unsigned char *ptw,*ptr;
-  int size;
+  int size,mon;
   {
 #define MAX_SR 500
 #define MAX_SS 4
+#define SR_MON 5
   int sr,n,ss;
-  unsigned char *ptr_lim;
+  unsigned char *ptr_lim,*ptr1;
   unsigned short ch;
-  int gs;
+  int gs,i,aa,bb,k;
   unsigned long gh;
   char tb[256];
 
@@ -566,23 +576,51 @@ wincpy(ptw,ptr,size)
   n=0;
   do    /* loop for ch's */
     {
-    gh=mklong(ptr);
-    ch=(gh>>16)&0xffff;
-    sr=gh&0xfff;
-    ss=(gh>>12)&0xf;
-    if(ss) gs=ss*(sr-1)+8;
-    else gs=(sr>>1)+8;
-    if(sr>MAX_SR || ss>MAX_SS || ptr+gs>ptr_lim)
+    if(!mon)
       {
-      if(!no_pinfo)
+      gh=mklong(ptr);
+      ch=(gh>>16)&0xffff;
+      sr=gh&0xfff;
+      ss=(gh>>12)&0xf;
+      if(ss) gs=ss*(sr-1)+8;
+      else gs=(sr>>1)+8;
+      if(sr>MAX_SR || ss>MAX_SS || ptr+gs>ptr_lim)
         {
-        sprintf(tb,
+        if(!no_pinfo)
+          {
+          sprintf(tb,
 "ill ch hdr %02X%02X%02X%02X %02X%02X%02X%02X psiz=%d sr=%d ss=%d gs=%d rest=%d",
-          ptr[0],ptr[1],ptr[2],ptr[3],ptr[4],ptr[5],ptr[6],ptr[7],
-          size,sr,ss,gs,ptr_lim-ptr);
-        write_log(logfile,tb);
+            ptr[0],ptr[1],ptr[2],ptr[3],ptr[4],ptr[5],ptr[6],ptr[7],
+            size,sr,ss,gs,ptr_lim-ptr);
+          write_log(logfile,tb);
+          }
+        return n;
         }
-      return n;
+      }
+    else /* mon format */
+      {
+      ch=mkshort(ptr1=ptr);
+      ptr1+=2;
+      for(i=0;i<SR_MON;i++)
+        {
+        aa=(*(ptr1++));
+        bb=aa&3;
+        if(bb) for(k=0;k<bb*2;k++) ptr1++;
+        else ptr1++;
+        }
+      gs=ptr1-ptr;
+      if(ptr+gs>ptr_lim)
+        {
+        if(!no_pinfo)
+          {
+          sprintf(tb,
+"ill ch blk %02X%02X%02X%02X %02X%02X%02X%02X psiz=%d sr=%d gs=%d rest=%d",
+            ptr[0],ptr[1],ptr[2],ptr[3],ptr[4],ptr[5],ptr[6],ptr[7],
+            size,sr,gs,ptr_lim-ptr);
+          write_log(logfile,tb);
+          }
+        return n;
+        }
       }
     if(ch_table[ch] && ptr+gs<=ptr_lim)
       {
@@ -606,7 +644,7 @@ main(argc,argv)
   int shmid;
   unsigned long uni;
   unsigned char *ptr,tm[6],*ptr_size;
-  int i,j,k,size,fromlen,n,re,nlen,sock,nn,all,pre,post,c;
+  int i,j,k,size,fromlen,n,re,nlen,sock,nn,all,pre,post,c,mon;
   struct sockaddr_in to_addr,from_addr;
   unsigned short to_port;
   extern int optind;
@@ -625,14 +663,14 @@ main(argc,argv)
   if(progname=strrchr(argv[0],'/')) progname++;
   else progname=argv[0];
   sprintf(tb,
-" usage : '%s (-an) (-m pre) (-p post) (-i interface) (-g mcast_group) \\\n\
+" usage : '%s (-anM) (-m pre) (-p post) (-i interface) (-g mcast_group) \\\n\
              [port] [shm_key] [shm_size(KB)] ([ctl file]/- ([log file]))'",
           progname);
 
-  all=no_pinfo=0;
+  all=no_pinfo=mon=0;
   pre=post=30;
   *interface=(*mcastgroup)=0;
-  while((c=getopt(argc,argv,"ag:i:m:p:"))!=EOF)
+  while((c=getopt(argc,argv,"ag:i:m:Mp:"))!=EOF)
     {
     switch(c)
       {
@@ -647,6 +685,9 @@ main(argc,argv)
         break;
       case 'm':   /* time limit before RT in minutes */
         pre=atoi(optarg);
+        break;
+      case 'M':   /* 'mon' format data */
+        mon=1;
         break;
       case 'n':   /* supress info on abnormal packets */
         no_pinfo=1;
@@ -756,7 +797,7 @@ main(argc,argv)
       for(i=0;i<6;i++) if(rbuf[i+2]!=tm[i]) break;
       if(i==6)  /* same time */
         {
-        nn=wincpy(ptr,rbuf+8,n-8);
+        nn=wincpy(ptr,rbuf+8,n-8,mon);
         ptr+=nn;
         uni=time(0);
         ptr_size[4]=uni>>24;  /* tow (H) */
@@ -803,7 +844,7 @@ main(argc,argv)
           ptr+=4;   /* time of write */
           memcpy(ptr,rbuf+2,6);
           ptr+=6;
-          nn=wincpy(ptr,rbuf+8,n-8);
+          nn=wincpy(ptr,rbuf+8,n-8,mon);
           ptr+=nn;
           memcpy(tm,rbuf+2,6);
           uni=time(0);
@@ -825,7 +866,7 @@ main(argc,argv)
         for(i=0;i<6;i++) if(rbuf[j+i]!=tm[i]) break;
         if(i==6)  /* same time */
           {
-          nn=wincpy(ptr,rbuf+j+6,n-8);
+          nn=wincpy(ptr,rbuf+j+6,n-8,mon);
           ptr+=nn;
           uni=time(0);
           ptr_size[4]=uni>>24;  /* tow (H) */
@@ -873,7 +914,7 @@ main(argc,argv)
             ptr+=4;   /* time of write */
             memcpy(ptr,rbuf+j,6);
             ptr+=6;
-            nn=wincpy(ptr,rbuf+j+6,n-8);
+            nn=wincpy(ptr,rbuf+j+6,n-8,mon);
             ptr+=nn;
             memcpy(tm,rbuf+j,6);
             uni=time(0);

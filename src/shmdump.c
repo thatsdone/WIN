@@ -1,4 +1,4 @@
-/* $Id: shmdump.c,v 1.5 2002/01/13 06:57:51 uehira Exp $ */
+/* $Id: shmdump.c,v 1.6 2002/01/17 15:06:38 urabe Exp $ */
 /*  program "shmdump.c" 6/14/94 urabe */
 /*  revised 5/29/96 */
 /*  Little Endian (uehira) 8/27/96 */
@@ -8,6 +8,7 @@
 /*  2000.4.17 deleted definition of usleep() */
 /*  2000.4.24 strerror() */
 /*  2000.4.28 -aonwz -s [s] -f [chfile] options */
+/*  2002.1.15 -m for MON data */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -53,7 +54,7 @@ struct Shm
   unsigned char d[1]; /* data buffer */
   };
 
-mklong(ptr)       
+mklong(ptr)
   unsigned char *ptr;
   {
   unsigned long a;
@@ -188,17 +189,19 @@ main(argc,argv)
   int argc;
   char *argv[];
   {
+#define SR_MON 5
   key_t shm_key_in;
   union {
     unsigned long i;
     unsigned short s;
     char c[4];
     } un;
-  int i,j,k,c_save_in,shp_in,shmid_in,size_in,shp,c_save,wtow,c,out,all,
-    ch,sr,gs,size,chsel,nch,search,seconds,tbufp,bufsize,zero,nsec;
+  int i,j,k,c_save_in,shp_in,shmid_in,size_in,shp,c_save,wtow,c,out,all,mon,
+    ch,sr,gs,size,chsel,nch,search,seconds,tbufp,bufsize,zero,nsec,aa,bb;
   unsigned long tow,wsize,time_end,time_now;
   unsigned int packet_id;
-  unsigned char *ptr,tbuf[100],*ptr_lim,*buf,chlist[65536/8],*ptw,tms[6];
+  unsigned char *ptr,tbuf[256],*ptr_lim,*buf,chlist[65536/8],*ptw,tms[6],
+    tb[256],*ptr1;
   struct Shm *shm_in;
   struct tm *nt;
   int rt[6],ts[6];
@@ -212,10 +215,13 @@ main(argc,argv)
 
   if(progname=strrchr(argv[0],'/')) progname++;
   else progname=argv[0];
-  search=out=all=seconds=win=zero=0;
+  sprintf(tb,
+    " usage : '%s (-amoqwz) (-s [s]) (-f [chfile]/-) [shm_key] ([ch] ...)'",
+      progname);
+  search=out=all=seconds=win=zero=mon=0;
   fplist=stdout;
 
-  while((c=getopt(argc,argv,"aoqs:wf:z"))!=EOF)
+  while((c=getopt(argc,argv,"amoqs:wf:z"))!=EOF)
     {
     switch(c)
       {
@@ -230,6 +236,9 @@ main(argc,argv)
         else sprintf(outfile,"%s.%d",progname,getpid());
         if((fpout=fopen(outfile,"w+"))==0) err_sys(outfile);
         win=out=1;
+        break;
+      case 'm':   /* MON format */
+        mon=1;
         break;
       case 'a':   /* list all channels */
         all=1;
@@ -258,15 +267,16 @@ main(argc,argv)
         if(nch) search=1;
         break;
       default:
-        fprintf(stderr," usage : '%s (-aoqwz) (-s [s]) (-f [chfile]/-) [shm_key] ([ch] ...)'\n",progname);
+        fprintf(stderr," option -%c unknown\n",c);
+        fprintf(stderr,"%s\n",tb);
         exit(1);
       }
     }
   optind--;
   if(argc<2+optind)
     {
-    fprintf(stderr," usage : '%s (-aoqwz) (-s [s]) (-f [chfile]/-) [shm_key] ([ch] ...)'\n",progname);
-    exit(0);
+    fprintf(stderr,"%s\n",tb);
+    exit(1);
     }
 
   shm_key_in=atoi(argv[1+optind]);
@@ -366,10 +376,26 @@ reset:
         {
         tbuf[tbufp]=0;
         ch=ptr[1]+(((long)ptr[0])<<8);
-        sr=ptr[3]+(((long)(ptr[2]&0x0f))<<8);
-        size=(ptr[2]>>4)&0x7;
-        if(size) gs=size*(sr-1)+8;
-        else gs=(sr>>1)+8;
+        if(!mon)
+          {
+          sr=ptr[3]+(((long)(ptr[2]&0x0f))<<8);
+          size=(ptr[2]>>4)&0x7;
+          if(size) gs=size*(sr-1)+8;
+          else gs=(sr>>1)+8;
+          }
+        else
+          {
+          ptr1=ptr;
+          ptr1+=2;
+          for(j=0;j<SR_MON;j++)
+            {
+            aa=(*(ptr1++));
+            bb=aa&3;
+            if(bb) for(k=0;k<bb*2;k++) ptr1++;
+            else ptr1++;
+            }
+          gs=ptr1-ptr;
+          }
         if(all ||(search && testch(ch)))
           {
           for(j=0;j<8;j++) sprintf(tbuf+strlen(tbuf),"%02X",ptr[j]);

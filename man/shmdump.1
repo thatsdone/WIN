@@ -151,6 +151,9 @@ shmdump -wf aso.ch -s 10 11
 
 grep -w HIT /dat/etc/channels.tbl|shmdump -ws 10 -f - 11
   観測点 HIT の波形を約10秒分winで表示
+
+cat 041222.1717|shmdump -tq - 0252
+  ディスクファイル041222.1717からチャネル0252をテキスト形式で出力
 .fi
 .SH ソース
 .TP

@@ -1,4 +1,4 @@
-/* $Id: recvt.c,v 1.1 2000/12/25 10:45:23 urabe Exp $ */
+/* $Id: recvt.c,v 1.2 2000/12/26 10:10:01 urabe Exp $ */
 /* "recvt.c"      4/10/93 - 6/2/93,7/2/93,1/25/94    urabe */
 /*                2/3/93,5/25/94,6/16/94 */
 /*                1/6/95 bug in adj_time fixed (tm[0]--) */
@@ -566,6 +566,16 @@ wincpy(ptw,ptr,size)
   return n;
   }
 
+set_long(ptr,uni)
+  unsigned char *ptr;
+  unsigned long uni;
+  {
+  ptr[0]=uni>>24;
+  ptr[1]=uni>>16;
+  ptr[2]=uni>>8;
+  ptr[3]=uni;
+  }
+
 main(argc,argv)
   int argc;
   char *argv[];
@@ -671,22 +681,24 @@ main(argc,argv)
     err_sys("shmat");
   if(downgo) /* recvt creates shm for reading too */
     {
-    if((shmid2=shmget(shm_key2,size2,IPC_CREAT|0666))<0) err_sys("shmget");
+    if((shmid2=shmget(shm_key2,size2,IPC_CREAT|EXCL|0666))<0)
+      {
+      if((shmid2=shmget(shm_key2,size2,IPC_CREAT|0666))<0) err_sys("shmget(2)");
+      }
+    else /* created */
+     {
+     sh2->c=0;
+     sh2->pl=(size-sizeof(*sh2))/10*9;
+     sh2->p=sh2->r=(-1);
+     }
     if((sh2=(struct Shm *)shmat(shmid2,(char *)0,0))==(struct Shm *)-1)
-      err_sys("shmat(downgo)");
+      err_sys("shmat(2)");
     }
 
   /* initialize buffer */
   sh->c=0;
   sh->pl=(size-sizeof(*sh))/10*9;
   sh->p=sh->r=(-1);
-
-  if(sh2->
-    {
-    sh->c=0;
-    sh->pl=(size-sizeof(*sh))/10*9;
-    sh->p=sh->r=(-1);
-    }
 
   sprintf(tb,"start shm_key=%d id=%d size=%d",shm_key,shmid,size);
   write_log(logfile,tb);
@@ -739,22 +751,14 @@ main(argc,argv)
       for(i=0;i<6;i++) if(rbuf[i+2]!=tm[i]) break;
       if(i==6)  /* same time */
         {
-        nn=wincpy(ptr,rbuf+8,n-8);
-        ptr+=nn;
-        uni=time(0);
-        ptr_size[4]=uni>>24;  /* tow (H) */
-        ptr_size[5]=uni>>16;
-        ptr_size[6]=uni>>8;
-        ptr_size[7]=uni;      /* tow (L) */
+        ptr+=wincpy(ptr,rbuf+8,n-8);
+        set_long(ptr_size+4,time(0)); /* tow */
         }
       else
         {
         if((uni=ptr-ptr_size)>14)
           {
-          ptr_size[0]=uni>>24;  /* size (H) */
-          ptr_size[1]=uni>>16;
-          ptr_size[2]=uni>>8;
-          ptr_size[3]=uni;      /* size (L) */
+          set_long(ptr_size,uni); /* size */
 #if DEBUG1
           printf("(%d)",time(0));
           for(i=8;i<14;i++) printf("%02X",ptr_size[i]);
@@ -785,14 +789,9 @@ main(argc,argv)
           ptr+=4;   /* time of write */
           memcpy(ptr,rbuf+2,6);
           ptr+=6;
-          nn=wincpy(ptr,rbuf+8,n-8);
-          ptr+=nn;
+          ptr+=wincpy(ptr,rbuf+8,n-8);
           memcpy(tm,rbuf+2,6);
-          uni=time(0);
-          ptr_size[4]=uni>>24;  /* tow (H) */
-          ptr_size[5]=uni>>16;
-          ptr_size[6]=uni>>8;
-          ptr_size[7]=uni;      /* tow (L) */
+          set_long(ptr_size+4,time(0)); /* tow */
           }
         }
       }
@@ -807,21 +806,14 @@ main(argc,argv)
         for(i=0;i<6;i++) if(rbuf[j+i]!=tm[i]) break;
         if(i==6)  /* same time */
           {
-          nn=wincpy(ptr,rbuf+j+6,n-8);
-          ptr+=nn;
-          ptr_size[4]=uni>>24;  /* tow (H) */
-          ptr_size[5]=uni>>16;
-          ptr_size[6]=uni>>8;
-          ptr_size[7]=uni;      /* tow (L) */
+          ptr+=wincpy(ptr,rbuf+j+6,n-8);
+          set_long(ptr_size+4,time(0)); /* tow */
           }
         else
           {
           if((uni=ptr-ptr_size)>14)
             {
-            ptr_size[0]=uni>>24;  /* size (H) */
-            ptr_size[1]=uni>>16;
-            ptr_size[2]=uni>>8;
-            ptr_size[3]=uni;      /* size (L) */
+            set_long(ptr_size,uni); /* size */
 #if DEBUG1
             printf("(%d)",time(0));
             for(i=8;i<14;i++) printf("%02X",ptr_size[i]);
@@ -853,14 +845,9 @@ main(argc,argv)
             ptr+=4;   /* time of write */
             memcpy(ptr,rbuf+j,6);
             ptr+=6;
-            nn=wincpy(ptr,rbuf+j+6,n-8);
-            ptr+=nn;
+            ptr+=wincpy(ptr,rbuf+j+6,n-8);
             memcpy(tm,rbuf+j,6);
-            uni=time(0);
-            ptr_size[4]=uni>>24;  /* tow (H) */
-            ptr_size[5]=uni>>16;
-            ptr_size[6]=uni>>8;
-            ptr_size[7]=uni;      /* tow (L) */
+            set_long(ptr_size+4,time(0)); /* tow */
             }
           }
 next:   nlen-=n;
@@ -888,18 +875,9 @@ next:   nlen-=n;
         ptr+=4;   /* time of write */
         memcpy(ptr,rbuf+2,n-2);
         ptr+=n-2;
-        uni=ptr-ptr_size;
-        ptr_size[0]=uni>>24;  /* size (H) */
-        ptr_size[1]=uni>>16;
-        ptr_size[2]=uni>>8;
-        ptr_size[3]=uni;      /* size (L) */
+        set_long(ptr_size,ptr-ptr_size); /* size */
         memcpy(tm,rbuf+3,6);
-        uni=time(0);
-        ptr_size[4]=uni>>24;  /* tow (H) */
-        ptr_size[5]=uni>>16;
-        ptr_size[6]=uni>>8;
-        ptr_size[7]=uni;      /* tow (L) */
-
+        set_long(ptr_size+4,time(0)); /* tow */
         sh->r=sh->p;      /* latest */
         if(ptr>sh->d+sh->pl) ptr=sh->d;
         sh->p=ptr-sh->d;

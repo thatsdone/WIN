@@ -1,17 +1,19 @@
-# $Id: README,v 1.2 2002/01/13 06:57:49 uehira Exp $
-WIN system package                           20011102
+# $Id: README,v 1.1 2002/01/17 11:26:13 uehira Exp $
+WIN system package                           20020117
 
 To compile, 
 
 (1)run configure. For example
-     ./configure --bindir=/dat/bin/X86
+     ./configure --prefix=/usr/local/win
+   see detail by
+     ./configure --help
 (2)compile by
      make
    and install by
      make install
 (3)add 'bin' directory to your search path,
 (4)run the program 'win' for test by
-     cd ../etc
+     cd etc
      win 991109.064607
 
 Manual pages in Japanese are available at

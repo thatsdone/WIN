@@ -1,6 +1,7 @@
-$Id: ChangeLog,v 1.5 2002/01/14 11:52:18 uehira Exp $
+$Id: ChangeLog,v 1.1 2002/01/17 11:26:13 uehira Exp $
 
-2002-01-14 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+2002-01-17 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* use sub directories.
 	* Version 1.0.0 released.
 
 2002-01-13 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>

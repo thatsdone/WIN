@@ -1,0 +1,17 @@
+bpf fl=5.0  fh=20.0 fs=30.0 ap=0.5 as=5.0
+hpf fp=1.0  fs=0.5          ap=0.5 as=5.0
+lpf fp=2.0  fs=4.0          ap=0.5 as=5.0
+lpf fp=1.0  fs=2.0          ap=0.5 as=5.0
+lpf fp=0.5  fs=1.0          ap=0.5 as=5.0
+bpf fl=0.5  fh=1.0  fs=1.5  ap=0.5 as=5.0
+bpf fl=1.0  fh=2.0  fs=3.0  ap=0.5 as=5.0
+bpf fl=2.0  fh=4.0  fs=6.0  ap=0.5 as=5.0
+bpf fl=4.0  fh=8.0  fs=12.0 ap=0.5 as=5.0
+bpf fl=8.0  fh=16.0 fs=24.0 ap=0.5 as=5.0
+bpf fl=16.0 fh=32.0 fs=48.0 ap=0.5 as=5.0
+#
+# number of filters given here is up to 30
+#
+# for description of parameters, see
+# "斉藤正徳,1978,漸化式ディジタル・フィルターの自動設計,物理探鉱,
+# 31,112-135"

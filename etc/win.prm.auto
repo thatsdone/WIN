@@ -1,0 +1,16 @@
+../trg                  /* default directory for data file */
+../etc/channels.tbl     /* channel table file */
+../etc/zones.tbl        /* file for grouping of stations */
+../picks/man/:../picks/auto/      /* directory for pick files */
+../bin/hypomh           /* hypomh program */
+../etc/struct.tbl       /* velocity structure for hypomh */
+../etc/map.japan.km     /* map data file */
+.                       /* output directory for cut-out wave data */
+B4                      /*              data format (B4/B2/L4/L2) */
+../etc/filter.prm       /* filter setting file */
+lp:mailer               /* printer */
+upper                   /* upper or lower hemisphere projection */
+../etc/labels.tbl       /* NOISE, FAR etc. */
+../etc/final.man        /* directory for hypocenter data */
+100.0                   /* printer's DPI for hardcopy */
+/var/tmp                /* temporary working directory */

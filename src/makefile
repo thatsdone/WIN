@@ -1,4 +1,4 @@
-# $Id: makefile,v 1.2 2000/04/30 10:05:22 urabe Exp $
+# $Id: makefile,v 1.3 2000/05/10 07:48:16 urabe Exp $
 #########################
 #                       #
 # win system makefile   #
@@ -20,7 +20,7 @@ BINDIR = ../bin
 #CFLAGS=-O -Bstatic -Dconst= -DSUNOS4
 #XF=-I/usr/openwin/include -L/usr/openwin/lib
 
-#### <FreeBSD>
+#### <FreeBSD & Linux>
 CFLAGS=-w -O
 XF=-I/usr/X11R6/include -L/usr/X11R6/lib
 ONL_X86=recvts

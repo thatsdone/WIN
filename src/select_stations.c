@@ -1,5 +1,6 @@
-/* $Id: select_stations.c,v 1.2 2002/01/13 06:57:51 uehira Exp $ */
+/* $Id: select_stations.c,v 1.3 2004/01/29 01:58:16 urabe Exp $ */
 /* select_stations  1999.11.9  urabe */
+/* debugged 2004.1.28  urabe */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -11,6 +12,7 @@
 #include "subst_func.h"
 
 #define NAME_PRG "select_stations"
+#define DEBUG 0
 
 /*  this program was translated from HYPOMH(HIRATA and MATSU'URA) */
 /*  PLTXY TRANSFORMS (X,Y) TO (ALAT,ALONG) IF IND.EQ.1  */
@@ -62,9 +64,10 @@ pltxy(alt0,alng0,alat,along,x,y,ind)
 print_usage() 
   {
   fprintf(stderr,"usage of '%s' :\n",NAME_PRG);
-  fprintf(stderr,"   %s [points_file] [polygon_file]\n",NAME_PRG);
-  fprintf(stderr,"       points_file : WIN's ch file lines with Lat/Long\n");
+  fprintf(stderr,"   %s [stations_file] [polygon_file]\n",NAME_PRG);
+  fprintf(stderr,"       stationss_file : WIN's ch file lines with Lat/Long\n");
   fprintf(stderr,"       polygon_file: Lat and Long of vertexes, clockwise !\n");
+  fprintf(stderr,"                     Polygon must be closed.\n");
   }
 
 /* example of polygon_file
@@ -195,7 +198,8 @@ printf("(%8.3f,%8.3f) (%8.3f,%8.3f)",x0,y0,x1,y1);
 #if DEBUG
 printf("d=%8.3f,a=%8.3f ,dmin=%8.3f,amin=%8.3f",d,a,dmin,amin);
 #endif
-        if(init2 || d<dmin)
+        if(init2 || d<dmin ||
+            (dmin==d && !(a>=0.0 && a<180.0) && !(a<-180.0 && a>=(-360.0))))
           {
           dmin=d;
           amin=a;

@@ -1,4 +1,10 @@
-$Id: ChangeLog,v 1.54 2004/01/26 02:47:08 urabe Exp $
+$Id: ChangeLog,v 1.55 2004/01/29 01:58:16 urabe Exp $
+
+2004-01-29 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
+	* select_stations.c : fatal bug fixed !
+	* wtape.c : avoid odd byte block size for some SCSI cards
+        * renlog  : touch '*.log'
+	* Version 1.1.27 released.
 
 2004-01-21 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
 	* wtape.c : avoid N*64*1024 byte block (FreeBSD sa driver's bug?)

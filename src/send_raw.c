@@ -1,4 +1,4 @@
-/* $Id: send_raw.c,v 1.21 2005/02/20 13:56:18 urabe Exp $ */
+/* $Id: send_raw.c,v 1.22 2005/03/12 03:05:59 uehira Exp $ */
 /*
     program "send_raw/send_mon.c"   1/24/94 - 1/25/94,5/25/94 urabe
                                     6/15/94 - 6/16/94
@@ -493,7 +493,7 @@ main(argc,argv)
   daemon_mode = syslog_mode =0;
 
   if(strcmp(progname,"send_raw")==0) raw=1;
-  else if(strcmp(progname,"send_rawd")==0) {raw=0;daemon_mode=1;}
+  else if(strcmp(progname,"send_rawd")==0) {raw=1;daemon_mode=1;}
   else if(strcmp(progname,"send_mon")==0) raw=0;
   else if(strcmp(progname,"send_mond")==0) {raw=0;daemon_mode=1;}
   else if(strcmp(progname,"sendt_raw")==0) {raw=1;tow=1;}

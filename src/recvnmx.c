@@ -1,6 +1,6 @@
-/* $Id: recvnmx.c,v 1.2 2001/08/06 06:35:11 urabe Exp $ */
+/* $Id: recvnmx.c,v 1.3 2001/08/10 00:39:14 urabe Exp $ */
 /* "recvnmx.c"    2001.7.18-19 modified from recvt.c and nmx2raw.c  urabe */
-/*                2001.8.6 */
+/*                2001.8.10 */
 
 #include <stdio.h>
 #include <signal.h>
@@ -468,8 +468,8 @@ int bundle2fix(int bpp,struct Nmx_Packet *pk,int *dbuf)
         dbuf[n++]=data=data+diff2;
       }
       else if(difsize[i]==3){
-        diff4=pk->b[k].u.uc[i][0]+(pk->b[k].u.uc[i][1]<<8);
-        +(pk->b[k].u.uc[i][2]<<16)+(pk->b[k].u.uc[i][3]<<24);
+        diff4=pk->b[k].u.uc[i][0]+(pk->b[k].u.uc[i][1]<<8)
+          +(pk->b[k].u.uc[i][2]<<16)+(pk->b[k].u.uc[i][3]<<24);
         dbuf[n++]=data=data+diff4;
       }
     }

@@ -1,5 +1,5 @@
 /*
-  $Id: hypomhc.c,v 1.4 2003/05/25 12:40:01 uehira Exp $
+  $Id: hypomhc.c,v 1.5 2003/06/09 11:52:46 uehira Exp $
    hypomhc.c    : main program for hypocenter location
      original version was made on March 13, 1984 and
      modified by N.H. on Feb. 8, 1985, May 8, 1985.
@@ -16,6 +16,7 @@
        Translate to C language (by Uehira Kenji)  4/ 8/97
        fixed format of 'year' in format#2200 in sub final()  11/19/2001
        TRAVEL-TIME CALCULATION MODE               5/24/2003
+       bug fixed by Honda/Nagai for initialization of IYEAR 6/9/2003
 
      HYPOCENTER LOCATION USING A BAYESIAN APPROACH DEVELOPED BY
         MATSU'URA (1984): PROGRAMED BY MATSU'URA AND HIRATA ON
@@ -31,6 +32,7 @@
                                              2/8/1985 N.H.
 */
 #define    DEBUG   0
+#define    DEBUGS  0
 
 #define    CHK_RSLT 0
 
@@ -41,6 +43,7 @@
 #include   <stdio.h>
 #include   <stdlib.h>
 #include   <string.h>
+#include   <unistd.h>
 #include   <math.h>
 
 #ifdef __FreeBSD__
@@ -92,6 +95,7 @@ struct station_data {
    double  stcp;       /* Station correction of P-wave (in SEC) */
    double  stcs;       /* Station correction of S-wave (in SEC) */
    double  xst, yst;
+   int     flag;       /* structure flag 1=special*/
 };
 typedef struct station_data     STATION;
 
@@ -112,6 +116,7 @@ struct station_for_calc_data {
    double  cp[3],cs[3];
    double  dl,az,ta,tb,bmag;
    char    pola[2];
+   int     flag;        /* structure flag */
 };
 typedef struct station_for_calc_data    FOR_CALC;
 
@@ -545,9 +550,10 @@ main(argc, argv)
    double  va, vb, vlct;
    int     nn;
    double  *th, eot, ex1[3];
-   static STRUCT  strc;
+   static STRUCT  strc, strc1;
    double  zmin, zmax;
-   char    vst[4];
+   double  zmin1, zmax1;
+   char    vst[4], svst[4];
    int     na, npd, nsd, nd;
    int     iyr, mnt, idy, ihr, min;
    static STATION  *sta;
@@ -556,8 +562,9 @@ main(argc, argv)
    double   xm0[3],ex0[3];
    int      ll,lm,jm,judg;
    double   ccp,al2,alp,vxm[3],xm1[3],as;
-   int      jj, ln,np;
+   int      jj,ln,ln1,np,np1;
    double   *ang,*trv,*bng;
+   double   *ang1,*trv1,*bng1;
    double   sn,cn,vre,srb,src,wpt,wst,bcp;
    double   xw[3],rmx,rvx[3],aa,sra;  /* sra=0.0 need? */
    double   zm1,zm2,xmc[3]/*shokika?*/,acp/*shokika?*/;
@@ -573,15 +580,85 @@ main(argc, argv)
 #if CHK_RSLT
    int      icheck;
 #endif
-
    int     i, j, k, l;
    char    txtbuf[LINELEN];
    double  xt, xx, yy, rr;
+
+   int     cflag = 0, sflag = 0, smode = 0;
+   char    sstrname[1024], schname[1024];
+   FILE    *fp_sstr, *fp_sch;
+   int     sstanum;
+   char    **ssta;
 
 #ifdef __FreeBSD__
    /* allow divide by zero -- Inf */
    fpsetmask(fpgetmask() & ~(FP_X_DZ|FP_X_INV));
 #endif
+
+   /* get option */
+   while ((i = getopt(argc, argv, "c:hs:")) != -1) {
+     switch (i) {
+     case 'c':  /* special channels table */
+       fp_sch = fopen(optarg, "r");
+       if (fp_sch == NULL) {
+	 fprintf(stderr, "Cannot open FILE : %s\n", optarg);
+	 usage();
+	 end_hypomhc(1);
+       }
+       sstanum = 0;
+       while (!feof(fp_sch)) {
+	 fgets(txtbuf, LINELEN, fp_sch);
+	 if (txtbuf[0] == '#')
+	   continue;
+	 sstanum++;
+       }
+       sstanum--;
+       if (sstanum < 0)
+	 sstanum = 0;
+       ssta = (char **)calloc(sstanum, sizeof(char *));
+       for (j = 0; j < sstanum; ++j)
+	 ssta[j] = (char *)calloc(11, sizeof(char));
+       rewind(fp_sch);
+       j = 0;
+       while (!feof(fp_sch)) {
+	 fgets(txtbuf, LINELEN, fp_sch);
+	 if (txtbuf[0] == '#')
+	   continue;
+	 sscanf(txtbuf, "%10s", ssta[j]);
+	 ssta[j][10] = '\0';
+	 j++;
+	 if (j == sstanum)
+	   break;
+       }
+#if DEBUGS
+       printf("sstanum=%d\n", sstanum);
+       for (j = 0; j < sstanum; ++j)
+	 printf("SSta %s.\n", ssta[j]);
+#endif
+       cflag = 1;
+       strncpy(schname, optarg, sizeof(schname));
+       break;
+     case 's':  /* special structure */
+       fp_sstr = fopen(optarg, "r");
+       if (fp_sstr == NULL) {
+	 fprintf(stderr, "Cannot open FILE : %s\n", optarg);
+	 usage();
+	 end_hypomhc(1);
+       }
+       sflag = 1;
+       strncpy(sstrname, optarg, sizeof(sstrname));
+       break;
+     case 'h':
+     default:
+       usage();
+       end_hypomhc(0);
+       /* NOTREACHED */
+     }
+   }
+   argc -= (optind - 1);
+   argv += (optind - 1);
+   if ((cflag == 1) && (sflag == 1))
+     smode = 1;
 
    sra=acp=xmc[0]=xmc[1]=xmc[2]=0.0;
 
@@ -613,6 +690,7 @@ main(argc, argv)
       usage();
       end_hypomhc(1);
    }
+   iyear = -1;
    if(argc==6){
       if(NULL==(fp_init=fopen(argv[5],"r"))){
          fprintf(stderr, "Cannot open FILE : %s\n", argv[5]);
@@ -643,7 +721,7 @@ main(argc, argv)
    fgets(txtbuf, LINELEN, fp_11);
    sscanf(txtbuf, "%lf%lf%lf", &alat0,&alng0,&dept0);
    fgets(txtbuf, LINELEN, fp_11);
-   sscanf(txtbuf, "%d%s%lf%lf", &nn, vst, &va, &vb);
+   sscanf(txtbuf, "%d%3s%lf%lf", &nn, vst, &va, &vb);
    vst[3] = '\0';
    strc.n1 = nn+1;
 
@@ -688,6 +766,9 @@ main(argc, argv)
          /strc.vlg[i];
    zmin = -strc.vr[0]/strc.vlg[0]+1.0e-1;
    zmax = strc.y[strc.n1]-1.0e-1;
+#if DEBUGS
+   printf("%lf %lf\n", zmin, zmax);
+#endif
    /* output report */
    fprintf(fp_21, " ***** VELOCITY STRUCTURE (%s) *****\n", vst);
    fprintf(fp_21, "         I    Y(I)      VR(I)     ALPHA(I)    VLG(I)\n");
@@ -699,6 +780,64 @@ main(argc, argv)
    fprintf(fp_21, "     %5d%10.4lf%10.4lf\n",
            strc.n1, strc.y[strc.n1], strc.vr[strc.n1]);
    free(th);
+
+/****** Read Special Struct data *****/
+   if (smode) {
+     fgets(txtbuf, LINELEN, fp_sstr);
+     /*  sscanf(txtbuf, "%lf%lf%lf", &alat0,&alng0,&dept0); */
+     fgets(txtbuf, LINELEN, fp_sstr);
+     sscanf(txtbuf, "%d%s%lf%lf", &nn, svst, &va, &vb);
+     svst[3] = '\0';
+     strc1.n1 = nn+1;
+     
+     if(NULL == (strc1.vr=(double *)malloc(sizeof(double)*(strc1.n1+1))))
+       memory_error();
+     if(NULL == (strc1.y=(double *)malloc(sizeof(double)*(strc1.n1+1))))
+       memory_error();
+     if(NULL == (th=(double *)malloc(sizeof(double)*(strc1.n1))))
+       memory_error();
+     if(NULL == (strc1.vlg=(double *)malloc(sizeof(double)*(strc1.n1))))
+       memory_error();
+     if(NULL == (strc1.v=(double *)malloc(sizeof(double)*(strc1.n1))))
+       memory_error();
+     /*  vlct = 0.0; */
+     for(i=0; i<=strc1.n1; ++i)  /* nn+2 */
+       fscanf(fp_sstr, "%lf", strc1.vr+i);  /* P-wave velocity of each layer */
+     for(i=0; i<strc1.n1; ++i)    /* nn+1 */
+       fscanf(fp_sstr, "%lf", th+i);  /* Thickness of each layer */
+
+     for(i=0; i<strc1.n1; ++i)
+       strc1.vlg[i] = (strc1.vr[i+1]-strc1.vr[i])/th[i];
+     strc1.y[0] = 0.0;
+     for(i=0; i<strc1.n1; ++i)
+       strc1.y[i+1] = strc1.y[i]+th[i];
+     strc1.v[0] = strc1.vr[0]/strc1.vlg[0];
+     for(i=1; i<strc1.n1; ++i)
+       strc1.v[i] = 
+	 (strc1.vlg[i-1]*strc1.v[i-1]+(strc1.vlg[i-1]-strc1.vlg[i])*strc1.y[i])
+         /strc1.vlg[i];
+     zmin1 = -strc1.vr[0]/strc1.vlg[0]+1.0e-1;
+     zmax1 = strc1.y[strc1.n1]-1.0e-1;
+     zmin = zmin < zmin1 ? zmin1 : zmin;
+     zmax = zmax > zmax1 ? zmax1 : zmax;
+#if DEBUGS
+     printf("%lf %lf\n", zmin1, zmax1);
+#endif
+     /* output report */
+     fprintf(fp_21, " ***** SPECIAL VELOCITY STRUCTURE (%s) *****\n", svst);
+     fprintf(fp_21, "         I    Y(I)      VR(I)     ALPHA(I)    VLG(I)\n");
+     for(i=0; i<strc1.n1; ++i){
+       fprintf(fp_21, "     %5d%10.4lf%10.4lf\n", i, strc1.y[i], strc1.vr[i]);
+       fprintf(fp_21, "                              %12.3lE%12.3lE\n",
+	       strc1.v[i], strc1.vlg[i]);
+     }
+     fprintf(fp_21, "     %5d%10.4lf%10.4lf\n",
+	     strc1.n1, strc1.y[strc1.n1], strc1.vr[strc1.n1]);
+     free(th);
+   }  /* if (smode) */
+#if DEBUGS
+   printf("%lf %lf\n", zmin, zmax);
+#endif
 
 /***** Read arrival time data *****/
    na=0;
@@ -749,10 +888,18 @@ main(argc, argv)
         sta[i].fmp = 0.0;
 
       sta[i].ahgt*=0.001;
-#if DEBUG
-      printf("%d\n", strlen(txtbuf));
-      printf("%s %s %lf %lf\n",
-             sta[i].sa1, sta[i].pola1,sta[i].stcp,sta[i].stcs);
+
+      sta[i].flag = 0;
+      if (smode) {
+	for (j = 0; j < sstanum; ++j)
+	  if (strncmp(sta[i].sa1, ssta[j], strlen(ssta[j])) == 0)
+	    sta[i].flag = 1;
+      }
+
+#if DEBUGS
+      /*  printf("%d\n", strlen(txtbuf)); */
+      printf("%s %s %lf %lf %d\n",
+             sta[i].sa1, sta[i].pola1,sta[i].stcp,sta[i].stcs, sta[i].flag);
 #endif
    }
    /* make data for calculate hypocenter */
@@ -764,11 +911,11 @@ main(argc, argv)
      memory_error();
    for(i=0; i<na; ++i){
       fprintf(fp_21,
-              "%-10s %s%8.3lf%6.3lf%8.3lf%6.3lf%6.1lf%10.3lE%11.5lf%11.5lf%7.3lf%7.3lf%7.3lf\n",
+              "%-10s %s%8.3lf%6.3lf%8.3lf%6.3lf%6.1lf%10.3lE%11.5lf%11.5lf%7.3lf%7.3lf%7.3lf %d\n",
               sta[i].sa1,sta[i].pola1,sta[i].pt1,sta[i].pe1,
               sta[i].st1,sta[i].se1,sta[i].fmp,sta[i].amp,
               sta[i].alat,sta[i].alng,sta[i].ahgt,
-              sta[i].stcp,sta[i].stcs);
+              sta[i].stcp,sta[i].stcs,sta[i].flag);
       /*  if(sta[i].alat==9999.0||sta[i].alng==9999.0||sta[i].ahgt==9.999){ */
       if ((sta[i].alat == 0.0) && (sta[i].alng == 0.0)) {
          fprintf(fp_21, "*** %s IS NOT CATALOGUED ***\n", sta[i].sa1);
@@ -796,6 +943,7 @@ main(argc, argv)
       calc[k].se = sta[i].se1;
       calc[k].apt = sta[i].pt1;
       strcpy(calc[k].pola, sta[i].pola1);
+      calc[k].flag = sta[i].flag;
       k++;
    }
    nd = k;
@@ -934,12 +1082,22 @@ main(argc, argv)
      memory_error();
    if(NULL == (bng=(double *)malloc(sizeof(double)*(strc.n1+1))))
      memory_error();
+   if (smode) {
+     if(NULL == (ang1=(double *)malloc(sizeof(double)*(strc1.n1+1))))
+       memory_error();
+     if(NULL == (trv1=(double *)malloc(sizeof(double)*(strc1.n1+1))))
+       memory_error();
+     if(NULL == (bng1=(double *)malloc(sizeof(double)*(strc1.n1+1))))
+       memory_error();
+   }
    while(1){
       jj=0;
     line200:
       where(&strc,xm1[2],&ln);
-#if DEBUG
-      printf("depth=%lf where=%d\n",xm1[2],ln);
+      if (smode)
+	where(&strc1,xm1[2],&ln1);
+#if DEBUGS
+      printf("depth=%lf where=%d where1=%d\n",xm1[2],ln,ln1);
 #endif
       for(i=0; i<nd; ++i){
          xx=xm1[0]-calc[i].sc[0];
@@ -953,11 +1111,21 @@ main(argc, argv)
 		,xm1[0],xm1[1],xm1[2],i,calc[i].sc[2]);*/
 /*         printf("rr=%lf  xm1[2]=%lf  sc=%lf\n",
                 rr,xm1[2],calc[i].sc[2]);*/
-         travel(rr,xm1[2],calc[i].sc[2],&np,ang,trv,bng,&strc);
-#if DEBUG
-         printf("np=%d\n",np);
-         for(j=0; j<np; ++j)
-           printf("%d ang=%lf trv=%lf bng=%lf\n",j,ang[j],trv[j],bng[j]);
+	 if (smode && calc[i].flag)
+	   travel(rr,xm1[2],calc[i].sc[2],&np1,ang1,trv1,bng1,&strc1);
+	 else
+	   travel(rr,xm1[2],calc[i].sc[2],&np,ang,trv,bng,&strc);
+#if DEBUGS
+	 if (smode && calc[i].flag) {
+	   printf("np1=%d\n",np1);
+	   for(j=0; j<np1; ++j)
+	     printf("%d ang1=%lf trv1=%lf bng1=%lf\n",
+		    j,ang1[j],trv1[j],bng1[j]);
+	 } else {
+	   printf("np=%d\n",np);
+	   for(j=0; j<np; ++j)
+	     printf("%d ang=%lf trv=%lf bng=%lf\n",j,ang[j],trv[j],bng[j]);
+	 }
 #endif
          if(np==0){
             fprintf(fp_21,
@@ -965,19 +1133,42 @@ main(argc, argv)
             judg=10;
             goto end_NLINV;
          }
+         if(smode && np1==0){
+            fprintf(fp_21,
+                    " *** RAY PATH TO %d-STATION IS NOT FOUND ***\n", i);
+            judg=10;
+            goto end_NLINV;
+         }
          calc[i].tpt=1.0e5;
-         for(j=0; j<np; ++j){
-            if(trv[j] > calc[i].tpt)
-              continue;
-            else{
+
+	 if (smode && calc[i].flag) {
+	   for(j=0; j<np1; ++j){
+	     if(trv1[j] > calc[i].tpt)
+	       continue;
+	     else{
+               calc[i].tpt = trv1[j];
+               calc[i].tag = ang1[j];
+               calc[i].tbg = bng1[j];
+	     }
+	   }
+	 } else {
+	   for(j=0; j<np; ++j){
+	     if(trv[j] > calc[i].tpt)
+	       continue;
+	     else{
                calc[i].tpt = trv[j];
                calc[i].tag = ang[j];
                calc[i].tbg = bng[j];
-            }
-         }
+	     }
+	   }
+	 }
+
          sn = sin(calc[i].tag);
          cn = cos(calc[i].tag);
-         vre = strc.vlg[ln]*(xm1[2]+strc.v[ln]);
+	 if (smode && calc[i].flag)
+	   vre = strc1.vlg[ln1]*(xm1[2]+strc1.v[ln1]);
+	 else
+	   vre = strc.vlg[ln]*(xm1[2]+strc.v[ln]);
 /*         printf("tpt=%.11lf  tag=%.11lf  tbg=%.11lf  vre=%.13lf\n",
                 calc[i].tpt,calc[i].tag,calc[i].tbg,vre);*/
          calc[i].a[0] = sn*xx/rr/vre;

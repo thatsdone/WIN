@@ -12,7 +12,7 @@
 */
 
 /*                      2003/4/16  configure for any machine N.Nakawaji  */
-/*                      2003/6/3   '#include <errno.h>' by Urabe */
+/*                      2003/6/10  '#include <errno.h>' deleted by Urabe */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -60,7 +60,9 @@
 #define	MAX_FILT	25		/* max of filter order */
 #define	NUMLEN		256
 
-#include <errno.h>
+extern const int sys_nerr;
+extern const char *const sys_errlist[];
+extern int errno;
 
 char	Tbuf[512], *Progname, Logfile[512];
 short	Pos_table[CHMASK + 1];
@@ -449,7 +451,7 @@ get_ch_size(dp)
 	return 4 + g_size;
 }
 
-/* $Id: ecore2.c,v 1.2 2003/06/03 00:19:46 urabe Exp $ */
+/* $Id: ecore2.c,v 1.3 2003/06/09 16:40:14 urabe Exp $ */
 
 win2fix(ptr,abuf,sys_ch,sr) /* returns group size in bytes */
   unsigned char *ptr; /* input */
@@ -524,7 +526,7 @@ win2fix(ptr,abuf,sys_ch,sr) /* returns group size in bytes */
   return g_size;  /* normal return */
   }
 
-/* $Id: ecore2.c,v 1.2 2003/06/03 00:19:46 urabe Exp $ */
+/* $Id: ecore2.c,v 1.3 2003/06/09 16:40:14 urabe Exp $ */
 /* winform.c  4/30/91,99.4.19   urabe */
 /* winform converts fixed-sample-size-data into win's format */
 /* winform returns the length in bytes of output data */

@@ -1,4 +1,8 @@
-$Id: ChangeLog,v 1.37 2003/06/09 04:35:28 urabe Exp $
+$Id: ChangeLog,v 1.38 2003/06/09 16:40:14 urabe Exp $
+
+2003-06-10 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
+	* ecore2.c : deleted '#include <errno.h>' and recovored ext defs.
+	* Version 1.1.19 released.
 
 2003-06-09 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
 	* hypomh.f : bug fixed by Honda/Nagai for initialization of IYEAR 

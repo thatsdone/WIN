@@ -1,7 +1,8 @@
-$Id: ChangeLog,v 1.10 2002/07/22 15:12:32 uehira Exp $
+$Id: ChangeLog,v 1.11 2002/08/04 11:17:04 uehira Exp $
 	
 2002-07-23 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
-	* add win2raw
+        * Version 1.1.4 released.
+	* add win2raw.c
 
 2002-05-15 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* Version 1.1.1 released.

@@ -1,5 +1,5 @@
 dnl ------------------------------------------------------------------------- 
-dnl $Id: configure.in,v 1.2 2002/01/17 13:59:16 uehira Exp $
+dnl $Id: configure.in,v 1.3 2002/01/18 02:00:57 uehira Exp $
 dnl -------------------------------------------------------------------------
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT(src/win.c)
@@ -135,7 +135,7 @@ dnl check perl
 dnl ---------------------------------------
 AC_PATH_PROGS(PERL, perl, :)
 if test $PERL = ":"; then
-	AC_MSG_ERROR(Test for perl failed. Please install sort program.)
+	AC_MSG_WARN(Test for perl failed. Please install perl program.)
 fi
        
 dnl ---------------------------------------
@@ -143,7 +143,7 @@ dnl check wish
 dnl ---------------------------------------
 AC_PATH_PROGS(WISH, wish4.2jp wish, :)
 if test $WISH = ":"; then
-	AC_MSG_ERROR(Test for wish failed. Please install sort program.)
+	AC_MSG_WARN(Test for wish failed. Please install wish program.)
 fi
        
 dnl -------------------------------------------------------------------------

@@ -1,7 +1,12 @@
-$Id: ChangeLog,v 1.2 2002/01/17 13:59:16 uehira Exp $
+$Id: ChangeLog,v 1.3 2002/01/18 02:00:57 uehira Exp $
+	
+2002-01-18 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 1.0.0 released.
+	* configure.in
+	  perl と wish がインストールされてなくてもエラーで止めず
+	  警告だけ出す．
 
 2002-01-17 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
-	* Version 1.0.0 released.
 	* use sub directories.
 	* check 'perl' and 'wish' path and replace them.
 

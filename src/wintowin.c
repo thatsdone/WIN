@@ -2,6 +2,7 @@
    win text format to win format 
    2003.06.22- (C) Hiroshi TSURUOKA / All Rights Reserved.   
         06.30  bug fix & add fflush
+   2004.10.10  writing to share memory option
  */
 
 #ifdef HAVE_CONFIG_H
@@ -13,12 +14,26 @@
 #include <string.h>
 #include <stddef.h>
 
+#include <sys/ipc.h>
+#include <sys/shm.h>
+
+#if TIME_WITH_SYS_TIME
+#include <sys/time.h>
+#include <time.h>
+#else  /* !TIME_WITH_SYS_TIME */
+#if HAVE_SYS_TIME_H
+#include <sys/time.h>
+#else  /* !HAVE_SYS_TIME_H */ 
+#include <time.h>
+#endif  /* !HAVE_SYS_TIME_H */
+#endif  /* !TIME_WITH_SYS_TIME */
+
 #include "subst_func.h"
 
 /* #define SR 4096 */
 #define SR 200
 
-/* $Id: wintowin.c,v 1.2 2003/06/30 05:40:21 tsuru Exp $ */
+/* $Id: wintowin.c,v 1.3 2004/10/14 10:30:58 tsuru Exp $ */
 /* winform.c  4/30/91,99.4.19   urabe */
 /* winform converts fixed-sample-size-data into win's format */
 /* winform returns the length in bytes of output data */
@@ -140,21 +155,64 @@ char *argv[];
     char buf[4096];
     int sr, ch, size, chsize[MAXCH], t[6], i, j, ntoken, nch;
     int c;
+
+    key_t shmkey_out;
+    struct Shm {
+	unsigned long p;	/* write point */
+	unsigned long pl;	/* write limit */
+	unsigned long r;	/* Latest */
+	unsigned long c;	/* counter */
+	unsigned char d[1];	/* data buffer */
+    } *shm_out;
+    int shmid_out, shm_size = 0;
+    unsigned char *ptw;
+    unsigned long ltime;
+
     extern int optind;
     extern char *optarg;
 
-    while ((c = getopt(argc, argv, "h")) != EOF) {
+    while ((c = getopt(argc, argv, "hk:s:")) != EOF) {
 	switch (c) {
 	case 'h':
 	    fprintf(stderr, "usage: wintowin <[in_file] >[out_file]\n");
+	    fprintf(stderr, "          or\n");
+	    fprintf(stderr, "       wintowin [shm_key] [shm_size] \n");
 	    exit(1);
 	    break;
+/*
+	case 'k':
+	    shmkey_out = atoi(optarg);
+	    fprintf(stderr, "key=%d\n", shmkey_out);
+	    break;
+	case 's':
+	    shm_size = atoi(optarg);
+	    shm_size = shm_size * 1000;
+	    fprintf(stderr, "size=%d\n", shm_size);
+	    break;
+ */
 	default:
 	    fprintf(stderr, " option -%c unknown\n", c);
 	    exit(1);
 	}
     }
     optind--;
+    if ( argc > 1 ) {
+      shmkey_out = atoi(argv[1+optind]);
+      shm_size = atoi(argv[2+optind]);
+      shm_size = shm_size * 1000;
+    }
+
+    if (shm_size > 0) {
+	if ((shmid_out = shmget(shmkey_out, shm_size, IPC_CREAT | 0666)) < 0)
+	    fprintf(stderr, "error shmget_out\n");
+	if ((shm_out = (struct Shm *) shmat(shmid_out, (char *) 0, 0)) == (struct Shm *) -1)
+	    fprintf(stderr, "error shmget_out\n");
+	/* initialize output buffer */
+	shm_out->p = shm_out->c = 0;
+	shm_out->pl = (shm_size - sizeof(*shm_out)) / 10 * 9;
+	shm_out->r = -1;
+	ptw = shm_out->d;
+    }
 
     while (fgets(buf, 2048, stdin) != NULL) {
 	sscanf(buf, "%2x %2x %2x %2x %2x %2x %d", &t[0], &t[1], &t[2], &t[3], &t[4], &t[5], &nch);
@@ -173,17 +231,41 @@ char *argv[];
 	    size = size + chsize[j];
 	}
 	size = size + 10;
-	cbuf = size >> 24;
-	fwrite(&cbuf, 1, 1, stdout);
-	cbuf = size >> 16;
-	fwrite(&cbuf, 1, 1, stdout);
-	cbuf = size >> 8;
-	fwrite(&cbuf, 1, 1, stdout);
-	cbuf = size;
-	fwrite(&cbuf, 1, 1, stdout);
-	fwrite(tt, 6, 1, stdout);
-	for (j = 0; j < nch; j++)
-	    fwrite(outbuf[j], chsize[j], 1, stdout);
-        fflush(stdout);
+	if (shm_size == 0) {
+	    cbuf = size >> 24;
+	    fwrite(&cbuf, 1, 1, stdout);
+	    cbuf = size >> 16;
+	    fwrite(&cbuf, 1, 1, stdout);
+	    cbuf = size >> 8;
+	    fwrite(&cbuf, 1, 1, stdout);
+	    cbuf = size;
+	    fwrite(&cbuf, 1, 1, stdout);
+	    fwrite(tt, 6, 1, stdout);
+	    for (j = 0; j < nch; j++)
+		fwrite(outbuf[j], chsize[j], 1, stdout);
+	    fflush(stdout);
+	} else {
+/*
+            size=size+4;
+ */
+	    cbuf = size >> 24; memcpy(ptw, &cbuf, 1); ptw++;
+	    cbuf = size >> 16; memcpy(ptw, &cbuf, 1); ptw++;
+	    cbuf = size >> 8; memcpy(ptw, &cbuf, 1); ptw++;
+	    cbuf = size; memcpy(ptw, &cbuf, 1); ptw++;
+/*
+            time(&ltime);
+            memcpy(ptw,&ltime, 4); ptw +=4;
+ */
+	    memcpy(ptw, tt, 6); ptw += 6;
+	    for (j = 0; j < nch; j++) {
+		memcpy(ptw, outbuf[j], chsize[j]);
+		ptw += chsize[j];
+	    }
+	    if (ptw > (shm_out->d + shm_out->pl))
+		ptw = shm_out->d;
+	    shm_out->r = shm_out->p;
+	    shm_out->p = ptw - shm_out->d;
+	    shm_out->c++;
+	}
     }				/* read data loop end */
 }

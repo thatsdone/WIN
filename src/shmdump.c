@@ -20,6 +20,7 @@
 /*  2003.6.4 output filtering info to stderr (tsuru) */
 /*  2003.7.24 -x (hexadecimal dump) and -f (file output) */
 /*  2003.11.3 splitted sprintf(tb,...) / use time_t */
+/*  2004.10.14 XINETD compile option */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -51,6 +52,7 @@
 
 #define DEBUG       1
 #define MAXMESG     2000
+#define XINETD      0
 
 char *progname,outfile[256];
 int win;
@@ -126,7 +128,10 @@ time_dif(t1,t2) /* returns t1-t2(sec) */
 err_sys(ptr)
   char *ptr;
   {
+#if XINETD
+#else
   fprintf(stderr,"%s %s\n",ptr,strerror(errno));
+#endif
   exit(0);
   }
 
@@ -313,8 +318,11 @@ butlop(h,m,gn,n,fp,fs,ap,as)
    if(fabs(fp)>fabs(fs)) ws=fabs(fp)*PI;
    else ws=fabs(fs)*PI;
    if(wp==0.0 || wp==ws || ws>=HP){
+#if XINETD
+#else
       fprintf(stderr,"? (butlop) invalid input : fp=%14.6e fs=%14.6e ?\n",
 	      fp,fs);
+#endif
       return 1;
    }
    /****  DETERMINE N & C */
@@ -386,8 +394,11 @@ buthip(h,m,gn,n,fp,fs,ap,as)
    if(fabs(fp)<fabs(fs)) ws=fabs(fp)*PI;
    else ws=fabs(fs)*PI;
    if(wp==0.0 || wp==ws || wp>=HP){
+#if XINETD
+#else
       fprintf(stderr,"? (buthip) invalid input : fp=%14.6e fs=%14.6e ?\n",
 	      fp,fs);
+#endif
       return 1;
    }
    /****  DETERMINE N & C */
@@ -466,9 +477,12 @@ butpas(h,m,gn,n,fl,fh,fs,ap,as)
    else wh=fabs(fh)*PI;
    ws=fabs(fs)*PI;
    if(wl==0.0 || wl==wh || wh>=HP || ws==0.0 || ws>=HP ||(ws-wl)*(ws-wh)<=0.0){
+#if XINETD
+#else
       fprintf(stderr,
 	      "? (butpas) invalid input : fl=%14.6e fh=%14.6e fs=%14.6e ?\n",
 	      fl,fh,fs);
+#endif
       *m=0;
       *gn=1.0;
       return 1;
@@ -561,7 +575,10 @@ recfil(x,y,n,h,nml,uv)
    int i,j,jd;
    double a,aa,b,bb,u1,u2,u3,v1,v2,v3;
    if(n<=0){
+#if XINETD
+#else
       fprintf(stderr,"? (recfil) invalid input : n=%d ?\n",n);
+#endif
       return 1;
    }
    if(nml>=0){
@@ -621,7 +638,10 @@ tandem(x,y,n,h,m,nml,uv)
 {
    int i;
    if(n<=0 || m<=0){
+#if XINETD
+#else
       fprintf(stderr,"? (tandem) invalid input : n=%d m=%d ?\n",n,m);
+#endif
       return 1;
    }
    /****  1-ST CALL */
@@ -649,7 +669,10 @@ get_filter(sr,f)
 	    f->fl*dt,f->fh*dt,f->fs*dt,f->ap,f->as);
 
    if(f->m_filt>MAX_FILT){
+#if XINETD
+#else
       fputs("filter order exceeded limit\n", stderr);
+#endif
       exit(1);
    }
 }
@@ -759,33 +782,48 @@ main(argc,argv)
         filter_flag=1;
         flt_kind=0;
         sscanf(optarg,"%f:%f:%f:%f",&flt_fp,&flt_fs,&flt_ap,&flt_as);
+#if XINETD
+#else
         fprintf(stderr,"lpf fp=%g fs=%g ap=%g as=%g\n",flt_fp,flt_fs,flt_ap,flt_as);
+#endif
         break;
       case 'H':   /* HighPass */
         filter_flag=1;
         flt_kind=1;
         sscanf(optarg,"%f:%f:%f:%f",&flt_fp,&flt_fs,&flt_ap,&flt_as);
+#if XINETD
+#else
         fprintf(stderr,"bpf fp=%g fs=%g ap=%g as=%g\n",flt_fp,flt_fs,flt_ap,flt_as);
+#endif
         break;
       case 'B':   /* BandPass */
         filter_flag=1;
         flt_kind=2;
         sscanf(optarg,"%f:%f:%f:%f:%f",&flt_fl,&flt_fh,&flt_fs,&flt_ap,&flt_as);
+#if XINETD
+#else
         fprintf(stderr,"bpf fl=%g fh=%g fs=%g ap=%g as=%g\n",flt_fl,flt_fh,flt_fs,flt_ap,flt_as);
+#endif
         break;
       case 'R':   /* resampling freq */
         SR=atoi(optarg);
         break;
       default:
+#if XINETD
+#else
         fprintf(stderr," option -%c unknown\n",c);
         fprintf(stderr,"%s\n",tb);
+#endif
         exit(1);
       }
     }
   optind--;
   if(argc<2+optind)
     {
+#if XINETD
+#else
     fprintf(stderr,"%s\n",tb);
+#endif
     exit(1);
     }
 
@@ -805,7 +843,10 @@ main(argc,argv)
         chsel&=0xffff;
         setch(chsel);
         chindex[chsel]=nch;
+#if XINETD
+#else
         fprintf(stderr,"%d: %04X\n", chindex[chsel], chsel);
+#endif
         nch++;
         }
       fclose(fp);
@@ -840,7 +881,10 @@ main(argc,argv)
       chsel=strtol(argv[i],0,16);
       setch(chsel);
       chindex[chsel]=nch; /* filter */
+#if XINETD
+#else
       fprintf(stderr,"%d: %04X\n", chindex[chsel], chsel);  /* filter */
+#endif
       nch++;
       }
     if(nch) search=1;
@@ -915,7 +959,10 @@ reset:
           bufsize_in=sizeof(long)*4+size_in+MAXMESG*100;
           if((shm_in=(struct Shm *)realloc(shm_in,bufsize_in))==0)
             {
+#if XINETD
+#else
             fprintf(stderr,"inbuf realloc failed !\n");
+#endif
             exit(1);
             }
           }
@@ -1006,7 +1053,10 @@ reset:
               bufsize=ptw-buf+gs+MAXMESG*100;
               if((buf=(unsigned char *)realloc(buf,bufsize))==0)
                 {
+#if XINETD
+#else
                 fprintf(stderr,"buf realloc failed !\n");
+#endif
                 exit(1);
                 }
               }

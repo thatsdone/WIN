@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.18 2004/10/03 15:23:05 uehira Exp $
+# $Id: Makefile.am,v 1.19 2004/10/14 10:30:58 tsuru Exp $
 #
 
 if SUNOS4
@@ -112,6 +112,7 @@ finalb2seis_SOURCES = finalb2seis.c $(SUBFUNC_H)
 wform_SOURCES = wform.c $(SUBFUNC_H)
 
 wintowin_SOURCES = wintowin.c $(SUBFUNC_H)
+wintowin_LDADD = @LIBSHMGET@
 
 wtime_SOURCES = wtime.c $(SUBFUNC_H)
 wtime_LDADD = -lm

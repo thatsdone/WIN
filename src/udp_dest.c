@@ -1,4 +1,4 @@
-/* $Id: udp_dest.c,v 1.1 2004/11/11 10:50:30 uehira Exp $ */
+/* $Id: udp_dest.c,v 1.2 2004/11/11 11:36:52 uehira Exp $ */
 
 /*
  * Copyright (c) 2001-2004
@@ -32,7 +32,7 @@
 #include "win_log.h"
 
 #define  SOCKET_SND_BUFSIZ   65535
-#define  SOCKET_SND_BUFSIZ2  50000
+
 
 #ifdef INET6
 /*

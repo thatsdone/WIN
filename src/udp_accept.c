@@ -1,4 +1,4 @@
-/* $Id: udp_accept.c,v 1.1 2004/11/11 10:50:30 uehira Exp $ */
+/* $Id: udp_accept.c,v 1.2 2004/11/11 11:36:52 uehira Exp $ */
 
 /*
  * Copyright (c) 2001-2004
@@ -31,7 +31,6 @@
 #include "win_log.h"
 
 #define  SOCKET_RCV_BUFSIZ   65535
-#define  SOCKET_RCV_BUFSIZ2  50000
 
 #ifdef INET6
 /*
@@ -46,10 +45,8 @@ udp_accept(const char *port, int *maxsoc)
   struct conntable  *ct_top = NULL, *ct, **ctp = &ct_top, *ct_next;
   struct addrinfo  hints, *res, *ai;
   int    sock_bufsiz;
-
   char  hbuf[NI_MAXHOST], sbuf[NI_MAXSERV];
   char  buf[1024];
-
 
   *maxsoc = -1;
 

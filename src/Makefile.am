@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.24 2004/11/11 10:50:30 uehira Exp $
+# $Id: Makefile.am,v 1.25 2004/11/11 11:36:51 uehira Exp $
 #
 
 if SUNOS4
@@ -26,8 +26,14 @@ else
 OFFLINE_X=win
 endif
 
-ONLINE_SO=recvt send_raw recvstatus recvstatus2 send_raw_old relay relaym\
-	recvnmx $(ONL_SOL2)
+if IPV6
+IPV6_PGM = relaym
+else
+IPV6_PGM =
+endif
+
+ONLINE_SO=recvt send_raw recvstatus recvstatus2 send_raw_old relay\
+	recvnmx $(ONL_SOL2) $(IPV6_PGM)
 TAPE_USER_MATH=pmon elist events
 ONLINE_MATH=ecore ecore2
 OFFLINE_USER_MATH=wtime
@@ -78,6 +84,7 @@ install-exec-hook:
 	(rm -f @bindir@/orderd; cd @bindir@ && @LN_S@ order orderd)
 	(rm -f @bindir@/recvtd; cd @bindir@ && @LN_S@ recvt recvtd)
 	(rm -f @bindir@/relayd; cd @bindir@ && @LN_S@ relay relayd)
+	(rm -f @bindir@/relaymd; cd @bindir@ && @LN_S@ relaym relaymd)
 	(rm -f @bindir@/raw_mond; cd @bindir@ && @LN_S@ raw_mon raw_mond)
 
 win_SOURCES = win.c $(SUBFUNC_H)

@@ -1,4 +1,4 @@
-/* $Id: relaym.c,v 1.1 2004/11/11 10:50:30 uehira Exp $ */
+/* $Id: relaym.c,v 1.2 2004/11/11 11:36:51 uehira Exp $ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -18,8 +18,10 @@
 #include <syslog.h>
 
 #include "daemon_mode.h"
-#include "udpu.h"
 #include "subst_func.h"
+#include "udpu.h"
+#include "win_log.h"
+
 
 #define MAXMESG   2048
 #define N_PACKET  64     /* N of old packets to be requested */  
@@ -31,7 +33,7 @@
 #define MAXMSG       1025
 
 static char rcsid[] =
-  "$Id: relaym.c,v 1.1 2004/11/11 10:50:30 uehira Exp $";
+  "$Id: relaym.c,v 1.2 2004/11/11 11:36:51 uehira Exp $";
 
 char *progname, *logfile;
 int  daemon_mode, syslog_mode;

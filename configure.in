@@ -1,5 +1,5 @@
 dnl ------------------------------------------------------------------------- 
-dnl $Id: configure.in,v 1.59 2004/11/11 10:50:29 uehira Exp $
+dnl $Id: configure.in,v 1.60 2004/11/11 11:36:51 uehira Exp $
 dnl -------------------------------------------------------------------------
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT(src/win.c)
@@ -109,6 +109,7 @@ AC_CHECK_FUNCS(mktime timelocal select socket strerror strtol snprintf statfs)
 dnl -------------------------------------------------------------------------
 dnl check for ipv6 option (from http://www.itojun.org)
 dnl -------------------------------------------------------------------------
+AM_CONDITIONAL(IPV6, false)
 AC_MSG_CHECKING(if --disable-ipv6 option specified)
 AC_ARG_ENABLE(ipv6,
 	[  --disable-ipv6          Build WITHOUT ipv6 support.],
@@ -127,6 +128,7 @@ if test "$ts_cv_disableipv6" = no; then
 	AC_MSG_RESULT($ts_cv_ipv6)
 	if test "$ts_cv_ipv6" = yes; then
 		AC_DEFINE(INET6)
+		AM_CONDITIONAL(IPV6, true)
 	fi
 fi
 

@@ -1,16 +1,11 @@
-.TH send_raw 1W "2000.12.23" "WIN SYSTEM" "WIN SYSTEM"
+.TH send_raw 1W "2001.1.11" "WIN SYSTEM" "WIN SYSTEM"
 .SH 名称
 send_raw, send_mon, sendt_raw, sendt_mon - IPによる win 形式データの送信
 .SH 形式
 .IP
 .ti -7
-send_raw [
-.I \-armt
-] [
-.I \-h hours
-] [
-.I \-s sec
-]
+send_raw [\-\fBarmt\fR] [\-\fBb\fI\ mtu\fR] [\-\fBi\fI\ interface\fR]
+[\-\fBh\fI\ hours\fR] [\-\fBs\fI\ sec\fR]
 .I shmkey
 .I dest
 .I port
@@ -21,63 +16,16 @@ send_raw [
 ]]
 .br
 .ti -7
-send_mon
-[
-.I \-armt
-] [
-.I \-h hours
-] [
-.I \-s sec
-]
-.I shmkey
-.I dest
-.I port
-[
-.I chfile
-[
-.I logfile
-]]
-.br
+send_mon \%...
 .ti -7
-sendt_raw
-[
-.I \-armt
-] [
-.I \-h hours
-] [
-.I \-s sec
-]
-.I shmkey
-.I dest
-.I port
-[
-.I chfile
-[
-.I logfile
-]]
+sendt_raw \%...
 .ti -7
-sendt_mon
-[
-.I \-armt
-] [
-.I \-h hours
-] [
-.I \-s sec
-]
-.I shmkey
-.I dest
-.I port
-[
-.I chfile
-[
-.I logfile
-]]
-.br
+sendt_mon \%...
 .SH 解説
 send_raw, send_mon, sendt_raw, sendt_monは、キー
 .I \ shmkey
 で示される共有メモリ・セグメントに（巡回的に）書き込まれて
-いる win 形式のデータを、ホスト
+いる WIN形式のデータを、ホスト
 .I \ dest
 の UDP ポート番号
 .I \ port
@@ -109,6 +57,13 @@ send_raw, send_mon は、
 sendt_raw, sendt_mon は、時間順不同で
 「書き込み時刻」を含む形式 ( -> recvt(1W)) を扱います。
 .LP
+なおオプション
+.B \-r、
+.B \-m、
+.B \-t
+で上記と矛盾する動作モードを指定をした
+場合は、オプション指定が優先されます。
+.LP
 send_raw, send_mon, sendt_raw, sendt_mon は、
 引数なしで起動すると簡単な使用法を表示します。
 .LP
@@ -121,30 +76,38 @@ send_raw, send_mon, sendt_raw, sendt_mon プロセスは
 空白またはタブで区切られた以降の項目は無視されます。また先頭
 が '#' である行も無視されます。
 .SH ネットワーク上の形式と再送プロトコル
-recvt(1W)を参照してください。伝送効率を上げるため、
-１パケットのサイズは1472バイト以内（IPパケットサイズで1500バイト
-以内）でなるべく大きくなるように生成されます。
+recvt(1W)を参照してください。
 .SH オプション
-.IP \fB\-a\fP 5
+.IP \fB\-a 5
 共有メモリ上のデータ形式を，「パケット種別付き」（recvs(1W) 参照）
 とみなし，そのままの形式で送信します。この場合，チャネルファイルに
 よるチャネルの選択は行われず，共有メモリ上では「書き込み時刻付き」
 形式であると仮定されます。他のオプションはすべて無視されます。
 .br
 なお、現在このモードでは再送処理を行いません。
-.IP \fB\-r\fP 5
-send_raw または sendt_raw （オプション \fB\-t\fP と共に指定したとき）
-の動作をします。
-.IP \fB\-m\fP 5
-send_mon または sendt_mon （オプション \fB\-t\fP と共に指定したとき）
-の動作をします。
-.IP \fB\-t\fP 5
+.IP "\fB\-b \fImtu" 5
+送信するIPパケットの最大サイズ(MTU)を \fImtu\fP バイトにします。
+デフォールトは1500バイトです。送信IPパケットは伝送効率を上げるため
+\fImtu\fP バイト以内(UDPデータグラムでは \fImtu\fP\-28 バイト)で
+なるべく大きなサイズになるように生成されます。
+.IP "\fB\-i \fIinterface" 5
+宛先
+.I dest
+がIPマルチキャストアドレスであるとき、パケットを送信する
+ネットワークインターフェースを、そのインターフェースのIPアドレス
+.I interface
+で指定します。
+.IP \fB\-r 5
+send_raw (オプション \fB\-t\fP と共に指定したときはsendt_raw)の動作をします。
+.IP \fB\-m 5
+send_mon (オプション \fB\-t\fP と共に指定したときはsendt_mon)の動作をします。
+.IP \fB\-t 5
 オプション \fB\-r\fP または \fB\-m\fP と共に指定すると，
 それぞれ sendt_raw または sendt_mon の動作をします。
-.IP \fB\-h [hours]\fP 5
-送信の際にデータのタイムスタンプを hours 時間だけ進めます。
-.IP \fB\-s [sec]\fP 5
-送信の際にデータのタイムスタンプを sec 秒だけ進めます。
+.IP "\fB\-h \fIhours" 5
+送信の際にデータのタイムスタンプを \fIhours 時間だけ進めます。
+.IP "\fB\-s \fIsec" 5
+送信の際にデータのタイムスタンプを \fIsec 秒だけ進めます。
 .SH ソース 
 .TP
 `send_raw.c'

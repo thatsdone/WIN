@@ -1,4 +1,4 @@
-/* $Id: wchch.c,v 1.2 2000/04/30 10:05:23 urabe Exp $ */
+/* $Id: wchch.c,v 1.2.2.1 2001/11/02 11:43:39 uehira Exp $ */
 /*
 program "wchch.c"
 "wchch" changes channel no. in a win format data file
@@ -7,8 +7,14 @@ program "wchch.c"
 2000.4.17   wabort
 */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include  <stdio.h>
 #include  <signal.h>
+
+#include "subst_func.h"
 
 #define   DEBUG   0
 #define   DEBUG1  0

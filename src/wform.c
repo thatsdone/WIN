@@ -1,4 +1,4 @@
-/* $Id: wform.c,v 1.1 2001/02/07 09:31:42 urabe Exp $ */
+/* $Id: wform.c,v 1.1.2.1 2001/11/02 11:43:40 uehira Exp $ */
 /* wform.c - a program to make a win format file */
 /* wform [ch] [sr] */
 
@@ -6,8 +6,16 @@
 /* winform converts fixed-sample-size-data into win's format */
 /* winform returns the length in bytes of output data */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <stdio.h>
+
+#include "subst_func.h"
+
 #define SR 4096
+
 winform(inbuf,outbuf,sr,sys_ch)
   long *inbuf;      /* input data array for one sec*/
   unsigned char *outbuf;  /* output data array for one sec */

@@ -1,7 +1,11 @@
-/* $Id: recvnmx.c,v 1.6 2001/10/05 04:30:24 urabe Exp $ */
+/* $Id: recvnmx.c,v 1.6.2.1 2001/11/02 11:43:38 uehira Exp $ */
 /* "recvnmx.c"    2001.7.18-19 modified from recvt.c and nmx2raw.c  urabe */
 /*                2001.8.18 */
 /*                2001.10.5 workaround for hangup */
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include <stdio.h>
 #include <signal.h>
@@ -10,11 +14,24 @@
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
+
+#if TIME_WITH_SYS_TIME
 #include <sys/time.h>
+#include <time.h>
+#else  /* !TIME_WITH_SYS_TIME */
+#if HAVE_SYS_TIME_H
+#include <sys/time.h>
+#else  /* !HAVE_SYS_TIME_H */
+#include <time.h>
+#endif  /* !HAVE_SYS_TIME_H */
+#endif  /* !TIME_WITH_SYS_TIME */
+
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
 #include <errno.h>
+
+#include "subst_func.h"
 
 #define DEBUG     0
 #define DEBUG1    0
@@ -24,7 +41,7 @@
 #define MAXMESG   2048
 #define NB        60    /* max n of bundles */
 #define MAXSR     200
-#define BUFSIZ    ((16*NB+MAXSR+1)*4)
+#define BUFSIZE   ((16*NB+MAXSR+1)*4)
 #define MAXCH     1024
 
 char *progname,logfile[256];
@@ -541,7 +558,7 @@ ch2idx(int *rbuf[],struct Nmx_Packet *pk,int winch)
       fprintf(stderr,"n_idx=%d at limit.\n",n_idx);
       return -1;
       }
-    if((rbuf[i]=(int *)malloc(BUFSIZ))==NULL){
+    if((rbuf[i]=(int *)malloc(BUFSIZE))==NULL){
       fprintf(stderr,"malloc failed. n_idx=%d\n",n_idx);
       return -1;
       }

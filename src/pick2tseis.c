@@ -1,9 +1,17 @@
-/* $Id: pick2tseis.c,v 1.2 2000/04/30 10:05:22 urabe Exp $ */
+/* $Id: pick2tseis.c,v 1.2.2.1 2001/11/02 11:43:37 uehira Exp $ */
 /* pick2tseis.c */
 /* 98.02.20 tsuru */
 /* input (stdin)   : a list of pick file names (ls -l) */
 /* output (stdout) : first line of HYPOMH output + owner of pick file */
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include  <stdio.h>
+
+#include "subst_func.h"
+
 main(argc, argv)
 int argc;
 char ** argv;

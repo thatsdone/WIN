@@ -1,5 +1,5 @@
 /*
- * $Id: insert_raw.c,v 1.1 2000/05/26 10:52:14 uehira Exp $
+ * $Id: insert_raw.c,v 1.1.2.1 2001/11/02 11:43:36 uehira Exp $
  * Insert sorted timeout data to raw data.
  *
  *------------ sample of parameter file ------------
@@ -13,12 +13,18 @@
  *
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <stdio.h>
 #include <string.h>
 #include <signal.h>
 #include <sys/types.h>
 #include <unistd.h>
+
 #include "win_system.h"
+#include "subst_func.h"
 
 #define DEBUG  0
 
@@ -33,7 +39,7 @@
 #endif
 
 char *progname;
-static char rcsid[]="$Id: insert_raw.c,v 1.1 2000/05/26 10:52:14 uehira Exp $";
+static char rcsid[]="$Id: insert_raw.c,v 1.1.2.1 2001/11/02 11:43:36 uehira Exp $";
 
 struct Cnt_file {
   char  raw_dir[FILENAME_MAX];    /* raw data directory */
@@ -299,7 +305,7 @@ insert_end:
   fclose(fp);
 }
 
-void
+int
 main(int argc, char *argv[])
 {
   FILE  *fp;

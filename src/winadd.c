@@ -1,12 +1,11 @@
 /*
- * $Id: winadd.c,v 1.1 2001/08/20 07:39:36 uehira Exp $
+ * $Id: winadd.c,v 1.1.2.1 2001/11/02 11:43:41 uehira Exp $
  *
  * winadd.c  (Uehira Kenji)
  *  last modified  2000/2/29
  *
  *  How to compile : need 'win_system.h'
  *    cc -O winadd.c -o winadd
- *    cc -O -DSYSV winadd.c -o winadd  (System V)
  *
  *  98/12/23  malloc bug (indx[i][j].name)
  *  99/1/6    skip no data file
@@ -15,14 +14,31 @@
  */
 
 static const char rcsid[] =
-   "$Id: winadd.c,v 1.1 2001/08/20 07:39:36 uehira Exp $";
+   "$Id: winadd.c,v 1.1.2.1 2001/11/02 11:43:41 uehira Exp $";
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+
+#if TIME_WITH_SYS_TIME
+#include <sys/time.h>
 #include <time.h>
+#else  /* !TIME_WITH_SYS_TIME */
+#if HAVE_SYS_TIME_H
+#include <sys/time.h>
+#else  /* !HAVE_SYS_TIME_H */
+#include <time.h>
+#endif  /* !HAVE_SYS_TIME_H */
+#endif  /* !TIME_WITH_SYS_TIME */
+
 #include <memory.h>
+
 #include "win_system.h"
+#include "subst_func.h"
 
 #define   DEBUG  0
 
@@ -86,17 +102,11 @@ bcd2time(bcd)
    time_str.tm_min=t[4];
    time_str.tm_sec=t[5];
    time_str.tm_isdst=0;
-#ifdef SYSV
+
    if((time=mktime(&time_str))==(time_t)-1){
       fputs("mktime error.\n",stderr);
       exit(1);
    }
-#else
-   if((time=timelocal(&time_str))==(time_t)-1){
-      fputs("localtime error.\n",stderr);
-      exit(1);
-   }
-#endif
    return(time);
 }
 

@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.16 2001/08/22 10:05:06 urabe Exp $
+   $Id: win.c,v 1.16.2.1 2001/11/02 11:43:40 uehira Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -13,7 +13,7 @@
    98.7.2 yo2000
 */
 #define NAME_PRG      "win"
-#define VERSION       "2001.8.22"
+#define WIN_VERSION   "2001.8.22"
 #define DEBUG_AP      0   /* for debugging auto-pick */
 /* 5:sr, 4:ch, 3:sec, 2:find_pick, 1:all */
 /************ HOW TO COMPILE THE PROGRAM **************************
@@ -106,22 +106,34 @@ LOCAL
  (up to N_LABELS(=30))
 
 *******************************************************************/
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <stdio.h>
 #include <string.h>
 
-#if defined(SYSTEMV)
+#if TIME_WITH_SYS_TIME
+#include <sys/time.h>
 #include <time.h>
+#else  /* !TIME_WITH_SYS_TIME */
+#if HAVE_SYS_TIME_H
+#include <sys/time.h>
+#else  /* !HAVE_SYS_TIME_H */
+#include <time.h>
+#endif  /* !HAVE_SYS_TIME_H */
+#endif  /* !TIME_WITH_SYS_TIME */
+
+#if defined(SYSTEMV)
 #define atanh(x)  (0.5*log((1.0+x)/(1.0-x)))
 #else
 #include <stdlib.h>
-#include <sys/time.h>
 #endif
 #include <sys/types.h>
 #include <sys/uio.h>
 #include <sys/stat.h>
 #include <dirent.h>   /* opendir(), readdir() */
 #include <sys/file.h>
-#include <sys/time.h>
 #include <sys/ioctl.h>
 #include <fcntl.h>
 #include <math.h>
@@ -137,6 +149,9 @@ LOCAL
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/cursorfont.h>
+
+#include "subst_func.h"
+
   typedef XPoint lPoint;    /* short ! */
   XSizeHints sizehints;
 
@@ -408,10 +423,11 @@ LOCAL
   put_fill(bm,xzero+1,yzero+1,xsize-2,ysize-2,0)
 #define p2w(p)  ((p+15)/16)
 
+/*
 #if defined(SUNOS4)
 #define mktime timelocal
 #endif
-
+*/
   lBitmap dpy,*mon,info,cursor,cursor_mask,zoom,epi_s,epi_l,arrows_ud,
     arrows_lr,arrows_lr_zoom,arrows_leng,arrows_scale,bbuf,sym,sym_stn;
   lPoint *points;
@@ -4442,7 +4458,7 @@ main(argc,argv)
   signal(SIGINT,(void *)end_process);
   signal(SIGTERM,(void *)end_process);
   signal(SIGHUP,(void *)bye_entry);
-  fprintf(stderr,"***  %s  (%s)  ***\n",NAME_PRG,VERSION);
+  fprintf(stderr,"***  %s  (%s)  ***\n",NAME_PRG,WIN_VERSION);
 
   lat_cent=lon_cent=200.0;  /* unrealistic position */
   first_map=first_map_others=1;
@@ -4480,7 +4496,7 @@ main(argc,argv)
      exit(1);
   }
   writelog(NAME_PRG);
-  writelog(VERSION);
+  writelog(WIN_VERSION);
   writelog(ft.data_file);
   writelog(ft.param_file);
 /* physical display size */

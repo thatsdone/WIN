@@ -1,4 +1,4 @@
-/* $Id: rtape.c,v 1.3 2000/05/10 06:51:42 urabe Exp $ */
+/* $Id: rtape.c,v 1.3.2.1 2001/11/02 11:43:38 uehira Exp $ */
 /*
   program "rtape.c"
   9/16/89 - 11/06/90, 6/26/91, 10/30/91, 6/26/92  urabe
@@ -12,6 +12,10 @@
   2000.5.10 deleted size=<0x3c000 limit
 */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include  <stdio.h>
 #include  <stdlib.h>
 #include  <sys/types.h>
@@ -19,6 +23,8 @@
 #include  <sys/ioctl.h>
 #include  <sys/stat.h>
 #include  <sys/mtio.h>
+
+#include "subst_func.h"
 
 #define   DEBUG     0
 #define   TRY_LIMIT 10

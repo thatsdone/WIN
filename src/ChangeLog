@@ -1,0 +1,8 @@
+$Id: ChangeLog,v 1.1.2.1 2001/11/02 11:43:34 uehira Exp $
+
+2001-11-2 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* autmake-1.5 と autoconf-2.13 にとりあえず対応．
+	* 代替関数は subst_func.h で与える予定．現在，strerror(3) と 
+	mktime(3) がある．
+	* FreeBSD-2,3,4，Soralis2.5.1 for sparc (gccのみ)，SunOS-4.1.4
+	(gcc のみ)，Vine Linux 2.0CR ではコンパイル出来た．

@@ -1,4 +1,4 @@
-/* $Id: finalb2seis.c,v 1.2 2000/04/30 10:05:22 urabe Exp $ */
+/* $Id: finalb2seis.c,v 1.2.2.1 2001/11/02 11:43:36 uehira Exp $ */
 /******************************************************************/
 /*    finalb2seis.c                8/19/92-6/1/93 urabe           */
 /*    How to use (for example),                                   */
@@ -6,7 +6,14 @@
 /*    97.10.3 FreeBSD     99.4.19 byte-order-free                 */
 /******************************************************************/
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include  <stdio.h>
+
+#include "subst_func.h"
+
 #define SWAPF(a) *(long *)&(a)=(((*(long *)&(a))<<24)|\
   ((*(long *)&(a))<<8)&0xff0000|((*(long *)&(a))>>8)&0xff00|\
   ((*(long *)&(a))>>24)&0xff)

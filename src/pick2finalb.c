@@ -1,11 +1,18 @@
-/* $Id: pick2finalb.c,v 1.2 2000/04/30 10:05:22 urabe Exp $ */
+/* $Id: pick2finalb.c,v 1.2.2.1 2001/11/02 11:43:37 uehira Exp $ */
 /* pick2finalb.c */
 /* 8/22/91, 5/22/92, 7/9/92, 8/19/92, 5/25/93, 6/1/93 urabe */
 /* 97.10.3 FreeBSD */
 /* 99.4.19 byte-order-free */
 /* input (stdin)   : a list of pick file names (ls -l) */
 /* output (stdout) : binary format of hypo data */
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include  <stdio.h>
+
+#include "subst_func.h"
 
 #define SWAPF(a) *(long *)&(a)=(((*(long *)&(a))<<24)|\
   ((*(long *)&(a))<<8)&0xff0000|((*(long *)&(a))>>8)&0xff00|\

@@ -1,0 +1,136 @@
+dnl ------------------------------------------------------------------------- 
+dnl $Id: configure.in,v 1.1.2.1 2001/11/02 11:43:35 uehira Exp $
+dnl -------------------------------------------------------------------------
+dnl Process this file with autoconf to produce a configure script.
+AC_INIT(win.c)
+AM_INIT_AUTOMAKE(WIN_pkg, 1.0)
+AM_CONFIG_HEADER(config.h)
+AC_ARG_PROGRAM
+AC_CANONICAL_SYSTEM
+
+dnl automake cygnus mode
+dnl AM_MAINTAINER_MODE
+dnl AC_EXEEXT
+
+dnl Checks for programs.
+AC_PROG_CC
+AC_PROG_LN_S
+AC_PROG_F77
+
+dnl Checks for libraries.
+AC_CHECK_LIB(nsl, gethostbyname,
+	[ac_cv_lib_nsl_gethostbyname="yes"], 
+	[ac_cv_lib_nsl_gethostbyname="no"])
+if test "$ac_cv_lib_nsl_gethostbyname" = yes; then
+	LIBNSL="-lnsl"
+else
+	LIBNSL=""
+fi
+AC_SUBST(LIBNSL)
+
+AC_CHECK_LIB(socket, connect,
+	[ac_cv_lib_socket_connect="yes"],
+	[ac_cv_lib_socket_connect="no"])
+if test "$ac_cv_lib_socket_connect" = yes; then
+	LIBSOCKET="-lsocket"
+else
+	LIBSOCKET=""
+fi
+AC_SUBST(LIBSOCKET)
+dnl AC_CHECK_LIB(m, main)
+
+dnl Checks for header files.
+AC_PATH_X
+AC_PATH_XTRA
+AC_HEADER_DIRENT
+AC_HEADER_STDC
+AC_CHECK_HEADERS(fcntl.h sys/file.h sys/ioctl.h sys/time.h syslog.h unistd.h)
+
+dnl Checks for typedefs, structures, and compiler characteristics.
+AC_C_CONST
+AC_TYPE_OFF_T
+AC_TYPE_SIZE_T
+AC_STRUCT_ST_BLOCKS
+AC_HEADER_TIME
+AC_STRUCT_TM
+AC_TYPE_UID_T
+AC_C_BIGENDIAN
+
+dnl Checks for library functions.
+AC_PROG_GCC_TRADITIONAL
+AC_FUNC_MEMCMP
+AC_TYPE_SIGNAL
+AC_CHECK_FUNCS(mktime timelocal select socket strerror strtol)
+
+dnl -------------------------------------------------------------------------
+dnl check for ipv6 option (from http://www.itojun.org)
+dnl -------------------------------------------------------------------------
+AC_MSG_CHECKING(if --disable-ipv6 option specified)
+AC_ARG_ENABLE(ipv6,
+	[  --disable-ipv6          Build WITHOUT ipv6 support.],
+	[ts_cv_disableipv6="disable"], [ts_cv_disableipv6="no"])
+AC_MSG_RESULT($ts_cv_disableipv6)
+
+dnl automated checks for ipv6 support.
+if test "$ts_cv_disableipv6" = no; then
+	AC_MSG_CHECKING(for ipv6 support)
+	AC_CACHE_VAL(ts_cv_ipv6, [dnl
+	AC_TRY_COMPILE([#define INET6
+#include <sys/types.h>
+#include <netinet/in.h>],
+		[int x = IPPROTO_IPV6; struct in6_addr a;],
+		[ts_cv_ipv6="yes"], [ts_cv_ipv6="no"])])
+	AC_MSG_RESULT($ts_cv_ipv6)
+	if test "$ts_cv_ipv6" = yes; then
+		AC_DEFINE(INET6)
+	fi
+fi
+
+dnl -------------------------------------------------------------------------
+dnl debug option
+dnl -------------------------------------------------------------------------
+AC_MSG_CHECKING(if --enable-debug option specified)
+AC_ARG_ENABLE(debug,
+	[  --enable-debug          Build a debugging version.],
+	[ts_cv_debug="yes"], [ts_cv_debug="no"])
+if test "$ts_cv_debug" = yes; then
+	AC_DEFINE(DEBUG)
+	CFLAGS="-g"
+	FFLAGS="-g"
+else 
+	CFLAGS="-O -pipe"
+	FFLAGS="-O"
+fi
+AC_MSG_RESULT($ts_cv_debug)
+
+AM_CONDITIONAL(SUNOS4, false)
+AM_CONDITIONAL(SOL2, false)
+case "$host" in
+dnl ---------------------------------------
+dnl in case of SunOS4 
+dnl ---------------------------------------
+  *-*-sunos4*)
+   AC_DEFINE(SUNOS4)
+   AM_CONDITIONAL(SUNOS4, true)
+dnl   X_CFLAGS="-I/usr/openwin/include"
+dnl   X_LIBS="-L/usr/openwin/lib"
+dnl   FLDFLAGS="-Bstatic"
+dnl   if test -z "$GCC";then
+dnl     LDFLAGS="-Bstatic $LDFLAGS"
+dnl   else
+dnl     LDFLAGS="-static $LDFLAGS"
+dnl   fi
+   ;;
+dnl ---------------------------------------
+dnl in case of Solaris2
+dnl ---------------------------------------
+  *-*-solaris2*)
+   AM_CONDITIONAL(SOL2, true)
+   ;;
+esac
+dnl AC_SUBST(FLDFLAGS)
+
+dnl -------------------------------------------------------------------------
+dnl output Makefile
+dnl -------------------------------------------------------------------------
+AC_OUTPUT(Makefile)

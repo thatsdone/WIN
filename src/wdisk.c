@@ -1,4 +1,4 @@
-/* $Id: wdisk.c,v 1.2 2000/04/30 10:05:23 urabe Exp $ */
+/* $Id: wdisk.c,v 1.2.2.1 2001/11/02 11:43:39 uehira Exp $ */
 /*
   program "wdisk.c"   4/16/93-5/13/93,7/2/93,7/5/94  urabe
                       1/6/95 bug in adj_time fixed (tm[0]--)
@@ -13,6 +13,10 @@
                       2000.4.24 strerror()
 */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -20,11 +24,24 @@
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <sys/file.h>
+
+#if TIME_WITH_SYS_TIME
 #include <sys/time.h>
+#include <time.h>
+#else  /* !TIME_WITH_SYS_TIME */
+#if HAVE_SYS_TIME_H
+#include <sys/time.h>
+#else  /* !HAVE_SYS_TIME_H */
+#include <time.h>
+#endif  /* !HAVE_SYS_TIME_H */
+#endif  /* !TIME_WITH_SYS_TIME */
+
 #include <dirent.h>
 #include <signal.h>
 #include <ctype.h>
 #include <errno.h>
+
+#include "subst_func.h"
 
 #define   DEBUG   0
 #define   BELL    0

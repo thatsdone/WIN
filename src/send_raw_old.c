@@ -1,4 +1,4 @@
-/* $Id: send_raw_old.c,v 1.3 2000/09/07 15:23:08 urabe Exp $ */
+/* $Id: send_raw_old.c,v 1.3.2.1 2001/11/02 11:43:39 uehira Exp $ */
 /*
     program "send_raw_old/send_mon_old.c"   1/24/94 - 1/25/94,5/25/94 urabe
                                     6/15/94 - 6/16/94
@@ -13,6 +13,10 @@
                           2000.9.7 multiple resend-request by MEISEI < 1/30/97
 */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <stdio.h>
 #include <signal.h>
 #include <stdlib.h>
@@ -20,12 +24,25 @@
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
+
+#if TIME_WITH_SYS_TIME
 #include <sys/time.h>
+#include <time.h>
+#else  /* !TIME_WITH_SYS_TIME */
+#if HAVE_SYS_TIME_H
+#include <sys/time.h>
+#else  /* !HAVE_SYS_TIME_H */
+#include <time.h>
+#endif  /* !HAVE_SYS_TIME_H */
+#endif  /* !TIME_WITH_SYS_TIME */
+
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
 #include <unistd.h>
 #include <errno.h>
+
+#include "subst_func.h"
 
 #define DEBUG     0
 #define MAXMESG   1024

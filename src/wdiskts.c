@@ -1,4 +1,8 @@
-/* $Id: wdiskts.c,v 1.1 2000/05/26 08:43:16 uehira Exp $ */
+/* $Id: wdiskts.c,v 1.1.2.1 2001/11/02 11:43:40 uehira Exp $ */
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -7,12 +11,24 @@
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <sys/file.h>
+
+#if TIME_WITH_SYS_TIME
 #include <sys/time.h>
+#include <time.h>
+#else  /* !TIME_WITH_SYS_TIME */
+#if HAVE_SYS_TIME_H
+#include <sys/time.h>
+#else  /* !HAVE_SYS_TIME_H */
+#include <time.h>
+#endif  /* !HAVE_SYS_TIME_H */
+#endif  /* !TIME_WITH_SYS_TIME */
+
 #include <dirent.h>
 #include <signal.h>
 #include <ctype.h>
 #include <setjmp.h>
-#include <time.h>
+
+#include "subst_func.h"
 
 #define   DEBUG   0
 #define   DEBUG1  0

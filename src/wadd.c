@@ -1,4 +1,4 @@
-/* $Id: wadd.c,v 1.2 2000/04/30 10:05:23 urabe Exp $ */
+/* $Id: wadd.c,v 1.2.2.1 2001/11/02 11:43:39 uehira Exp $ */
 /* program "wadd.c"
   "wadd" puts two win data files together
   7/24/91 - 7/25/91, 4/20/94,6/27/94-6/28/94,7/12/94   urabe
@@ -10,8 +10,14 @@
   2000.4.24 permit blank lines in egrep pattern file (Uehira)
 */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include  <stdio.h>
 #include  <string.h>
+
+#include "subst_func.h"
 
 #define   DEBUG   0
 #define   MAXSIZE   300000

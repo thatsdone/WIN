@@ -1,4 +1,4 @@
-/* $Id: recvt.c,v 1.5 2001/03/09 06:34:56 urabe Exp $ */
+/* $Id: recvt.c,v 1.5.2.1 2001/11/02 11:43:38 uehira Exp $ */
 /* "recvt.c"      4/10/93 - 6/2/93,7/2/93,1/25/94    urabe */
 /*                2/3/93,5/25/94,6/16/94 */
 /*                1/6/95 bug in adj_time fixed (tm[0]--) */
@@ -27,6 +27,10 @@
 /*                2001.2.20 wincpy() improved */
 /*                2001.3.9 debugged for sh->r */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <stdio.h>
 #include <signal.h>
 #include <stdlib.h>
@@ -34,11 +38,24 @@
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
+
+#if TIME_WITH_SYS_TIME
 #include <sys/time.h>
+#include <time.h>
+#else  /* !TIME_WITH_SYS_TIME */
+#if HAVE_SYS_TIME_H
+#include <sys/time.h>
+#else  /* !HAVE_SYS_TIME_H */
+#include <time.h>
+#endif  /* !HAVE_SYS_TIME_H */
+#endif  /* !TIME_WITH_SYS_TIME */
+
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
 #include <errno.h>
+
+#include "subst_func.h"
 
 #define DEBUG     0
 #define DEBUG1    0

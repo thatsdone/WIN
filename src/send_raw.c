@@ -1,4 +1,4 @@
-/* $Id: send_raw.c,v 1.3 2001/08/22 09:39:25 urabe Exp $ */
+/* $Id: send_raw.c,v 1.3.2.1 2001/11/02 11:43:39 uehira Exp $ */
 /*
     program "send_raw/send_mon.c"   1/24/94 - 1/25/94,5/25/94 urabe
                                     6/15/94 - 6/16/94
@@ -28,6 +28,10 @@
                                   2001.8.19 send interval control
 */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <stdio.h>
 #include <signal.h>
 #include <stdlib.h>
@@ -35,13 +39,25 @@
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
-#include <time.h>
+
+#if TIME_WITH_SYS_TIME
 #include <sys/time.h>
+#include <time.h>
+#else  /* !TIME_WITH_SYS_TIME */
+#if HAVE_SYS_TIME_H
+#include <sys/time.h>
+#else  /* !HAVE_SYS_TIME_H */
+#include <time.h>
+#endif  /* !HAVE_SYS_TIME_H */
+#endif  /* !TIME_WITH_SYS_TIME */
+
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
 #include <unistd.h>
 #include <errno.h>
+
+#include "subst_func.h"
 
 #define DEBUG       0
 #define DEBUG1      0
@@ -52,9 +68,11 @@
 #define NWSTEP    4000  /* 4000 for Ultra1 */
 #define NWLIMIT 100000
 
+/*
 #if defined(SUNOS4)
 #define mktime timelocal
 #endif
+*/
 
 int sock,raw,mon,tow,all,psize[BUFNO],n_ch,negate_channel;
 unsigned char sbuf[BUFNO][MAXMESG+8],ch_table[65536],rbuf[MAXMESG];

@@ -1,5 +1,5 @@
 /*
-  $Id: hypomhc.c,v 1.1 2000/08/02 08:49:38 uehira Exp $
+  $Id: hypomhc.c,v 1.1.2.1 2001/11/02 11:43:36 uehira Exp $
    hypomhc.c    : main program for hypocenter location
      original version was made on March 13, 1984 and
      modified by N.H. on Feb. 8, 1985, May 8, 1985.
@@ -32,6 +32,10 @@
 
 #define    CHK_RSLT 0
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include   <stdio.h>
 #include   <stdlib.h>
 #include   <string.h>
@@ -40,6 +44,8 @@
 #ifdef __FreeBSD__
 #include <floatingpoint.h>
 #endif
+
+#include "subst_func.h"
 
 #define    VPVS2   3.0             /*  (Vp/Vs)^2 */
 #define    VPVS    (sqrt(VPVS2))   /*  Vp/Vs */

@@ -1,4 +1,4 @@
-/* $Id: elist.c,v 1.8 2001/08/22 09:39:25 urabe Exp $ */
+/* $Id: elist.c,v 1.8.2.1 2001/11/02 11:43:35 uehira Exp $ */
 /* program elist.c    2/5/91 - 2/25/91 ,  4/16/92, 4/22/92  urabe */
 /*                      6/10/92, 8/18/92, 10/25/92, 6/8/93, 1/5/94  */
 /*      4/21/94,12/5/94,6/2/95 bug in dat_dir fixed */
@@ -9,6 +9,10 @@
 /*      2001.2.20 increase size of line-buffer to avoid overflow */
 /*      2001.8.22 use pickers name read from #p line if exists */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -18,6 +22,9 @@
 #include <math.h>
 #include <ctype.h>
 #include <pwd.h>
+
+#include "subst_func.h"
+
 #define   NAMLEN    128
 #define   LINELEN   256
 #define   OUTLEN   4096

@@ -1,9 +1,15 @@
-/* $Id: win_system.c,v 1.2 2001/03/23 01:45:46 uehira Exp $ */
+/* $Id: win_system.c,v 1.2.2.1 2001/11/02 11:43:40 uehira Exp $ */
 /* win system utility functions */
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include <stdio.h>
 #include <unistd.h>
+
 #include "win_system.h"
+#include "subst_func.h"
 
 #ifndef BUFSIZ
 #define BUFSIZ 1024

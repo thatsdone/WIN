@@ -1,14 +1,21 @@
-/* $Id: ras2rpdl.c,v 1.2 2000/04/30 10:05:23 urabe Exp $ */
+/* $Id: ras2rpdl.c,v 1.2.2.1 2001/11/02 11:43:37 uehira Exp $ */
 /********************************************************/
 /*  ras2rpdl.c   97.10.31-97.11.27             urabe    */
 /*               98.3.4      LITTLE ENDIAN    uehira    */
 /*               99.4.19     byte-order-free            */
 /*               2000.4.17   wabort                     */
 /********************************************************/
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <stdio.h>
 #include <sys/file.h>
 #include <signal.h>
 #include <syslog.h>
+
+#include "subst_func.h"
 
 #define A4_FRAME_XB     392       /* framebuffer's width (byte) */
 #define A4_FRAME_YP     4516      /* framebuffer's height (pixel) */

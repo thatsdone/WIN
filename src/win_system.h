@@ -1,7 +1,11 @@
-/* $Id: win_system.h,v 1.1 2000/05/26 10:52:14 uehira Exp $ */
+/* $Id: win_system.h,v 1.1.2.1 2001/11/02 11:43:40 uehira Exp $ */
 
 #ifndef _WIN_SYSTEM_H_
 #define _WIN_SYSTEM_H_
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include <stdlib.h>
 

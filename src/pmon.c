@@ -1,4 +1,4 @@
-/* $Id: pmon.c,v 1.4 2001/01/22 08:36:11 urabe Exp $ */
+/* $Id: pmon.c,v 1.5 2001/01/24 08:46:20 urabe Exp $ */
 /************************************************************************
 *************************************************************************
 **  program "pmon.c" for NEWS/SPARC                             *********
@@ -11,8 +11,7 @@
 **  2/24/93 - 3/27/93 for SUN SPARC                             *********
 **  4/25/93 - 7/12/93 for new data format                       *********
 **  2/ 7/94 - 2/ 7/94 increased channels (#define MAXCH 1)      *********
-**  3/15/94 - 3/15/94 fixed bug of long trigger for absent      *********
-**  channel                                                     *********
+**  3/15/94 - 3/15/94 fixed bug of long trigger for absent channel ******
 **  5/16/94 - 5/16/94 fixed bug for illegal data file           *********
 **  5/19/94 - 5/19/94 report no-data stations to syslog         *********
 **  5/25/94 - 5/25/94 directory for just signal files           *********
@@ -37,6 +36,7 @@
 **            zone names in "off" line not to duplicate         *********
 **            not abort one-min file even when no ch found to use *******
 **  2001.1.22 check_path                                        *********
+**  2001.1.23 leave RAS files                                   *********
 **                                                              *********
 **  font files ("font16", "font24" and "font32") are            *********
 **  not necessary                                               *********
@@ -61,6 +61,7 @@
 
 #define LONGNAME      1
 #define DEBUG         0
+#define DEBUG1        0
 #define M_CH          1000   /* absolute max n of traces */
                              /* n of chs in data file is unlimited */
 #define MAX_ZONES     10     /* max n of zones for a station */
@@ -607,6 +608,37 @@ confirm_off(ch,sec,i)
     }
   }
 
+find_oldest(path,oldst,latst) /* returns N of files */
+  char *path,*oldst,*latst;
+  {     
+  int i;
+  struct dirent *dir_ent;
+  DIR *dir_ptr;
+  /* find the oldest file */
+  if((dir_ptr=opendir(path))==NULL)
+    {
+    fprintf(stderr,"directory '%s' not open\n",path);
+    owari();
+    }
+  i=0;
+  while((dir_ent=readdir(dir_ptr))!=NULL){
+    if(*dir_ent->d_name=='.') continue;
+    if(!isdigit(*dir_ent->d_name)) continue;
+    if(i++==0)
+      {
+      strcpy(oldst,dir_ent->d_name);
+      strcpy(latst,dir_ent->d_name);
+      }
+    else if(strcmp2(dir_ent->d_name,oldst)<0) strcpy(oldst,dir_ent->d_name);
+    else if(strcmp2(dir_ent->d_name,latst)>0) strcpy(latst,dir_ent->d_name);
+    }
+#if DEBUG1
+  printf("%d files in %s, oldest=%s, latest=%s\n",i,path,oldst,latst);
+#endif
+  closedir(dir_ptr);
+  return i;
+  }
+
 read_one_sec(sec)
   int *sec;
   {
@@ -969,8 +1001,20 @@ put_font(bitmap,width_byte,xbase,ybase,text,font,
     }
   }
 
-insatsu(tb1,tb2,tb3,path_spool,printer)
+wmemo(f,c,outdir)
+  char *f,*c;
+  {  
+  FILE *fp;
+  char tb[100];
+  sprintf(tb,"%s/%s",outdir,f);
+  fp=fopen(tb,"w+");
+  fprintf(fp,"%s\n",c);
+  fclose(fp);
+  }
+
+insatsu(tb1,tb2,tb3,path_spool,printer,count,count_max,gifout)
   unsigned char *tb1,*tb2,*tb3,*path_spool,*printer;
+  int count,count_max,gifout;
   {
   struct rasterfile {
     int ras_magic;    /* magic number */
@@ -987,9 +1031,10 @@ insatsu(tb1,tb2,tb3,path_spool,printer)
 #define RT_STANDARD 1 /* Raw pixrect image in 68000 byte order */
 #define RMT_NONE  0   /* ras_maplength is expected to be 0 */
   FILE *lbp;
-  int i,j;
-  static int serno;
-  char filename[100];
+  int i,j,ye,mo,da,ho1,ho2,mi1,mi2;
+  char filename[100],tb[100],timename[100],oldst[100],latst[100];
+
+  if(!isalpha(*printer) && count_max<0) return;
 
   put_font(frame,WIDTH_LBP,X_BASE-28*max_ch_flag,
     HEIGHT_LBP-HEIGHT_FONT32,tb1,font32,HEIGHT_FONT32,WIDTH_FONT32,0);
@@ -999,8 +1044,12 @@ insatsu(tb1,tb2,tb3,path_spool,printer)
     HEIGHT_LBP-HEIGHT_FONT32,tb3,font32,HEIGHT_FONT32,WIDTH_FONT32,1);
   put_font(frame,WIDTH_LBP,(WIDTH_LBP*8-3*WIDTH_FONT32)/2,
     0,"|",font32,HEIGHT_FONT32,WIDTH_FONT32,0);
-  sprintf(filename,"%s/pmon%02d.%d",path_spool,serno,getpid());
-  serno=(++serno)%100;
+
+  sscanf(tb2,"%02d/%02d/%02d %02d:%02d",&ye,&mo,&da,&ho1,&mi1);
+  sscanf(tb3," - %02d:%02d",&ho2,&mi2);
+/*printf("%02d %02d %02d %02d %02d %02d %02d\n",ye,mo,da,ho1,mi1,ho2,mi2);*/
+  sprintf(timename,"%02d%02d%02d.%02d%02d-%02d%02d",ye,mo,da,ho1,mi1,ho2,mi2);
+  sprintf(filename,"%s/%s.ras",path_spool,timename);
   lbp=fopen(filename,"w");
   ras.ras_magic=RAS_MAGIC;
   ras.ras_width=WIDTH_LBP*8;
@@ -1024,21 +1073,42 @@ insatsu(tb1,tb2,tb3,path_spool,printer)
   fwrite((char *)&ras,1,sizeof(ras),lbp);   /* output header */
   fwrite(frame,1,HEIGHT_LBP*WIDTH_LBP,lbp); /* output image */
   fclose(lbp);
+  if(isalpha(*printer))
+    {
 #if defined(__SVR4)
-  if(m_limit) printf("cat %s|lp -d %s -T raster\n",filename,printer);
-  sprintf(line,"cat %s|lp -d %s -T raster\n",filename,printer);
-  system(line);
-  unlink(filename);
+    if(m_limit) printf("cat %s|lp -d %s -T raster\n",filename,printer);
+    sprintf(line,"cat %s|lp -d %s -T raster\n",filename,printer);
 #else
-#if defined(__FreeBSD__)
-  if(m_limit) printf("lpr -P%s -r -v %s\n",printer,filename);
-  sprintf(line,"lpr -P%s -r -v %s",printer,filename);
-#else
-  if(m_limit) printf("lpr -P%s -s -r -v %s\n",printer,filename);
-  sprintf(line,"lpr -P%s -s -r -v %s",printer,filename);
+    if(m_limit) printf("lpr -P%s -v %s\n",printer,filename);
+    sprintf(line,"lpr -P%s -v %s",printer,filename);
 #endif
-  system(line);
+    system(line);
+    }
+  if(count_max<0 || req_print) unlink(filename);
+  else
+    {
+    if(gifout)
+      {
+      sprintf(tb,"convert %s %s/%s.gif",filename,path_spool,timename);
+      if(m_limit) printf("%s\n",tb);
+      system(tb);
+      unlink(filename);
+      }
+    while((count=find_oldest(path_spool,oldst,latst))>count_max && count_max)
+      {
+      sprintf(tb,"%s/%s",path_spool,oldst);
+      unlink(tb);
+#if DEBUG1
+      printf("%s deleted\n",tb);
 #endif
+      }
+    sprintf(tb,"%d",count);
+    wmemo("COUNT",tb,path_spool);
+    sprintf(tb,"%d",count_max);
+    wmemo("MAX",tb,path_spool);
+    wmemo("OLDEST",oldst,path_spool);
+    wmemo("LATEST",latst,path_spool);
+    }
   if(req_print==0)
     {
     for(i=0;i<HEIGHT_LBP;i++) for(j=0;j<WIDTH_LBP;j++) frame[i][j]=0;
@@ -1092,7 +1162,8 @@ main(argc,argv)
   char *argv[];
   {
   FILE *f_param,*fp;
-  int i,j,k,maxlen,ret,m_count,x_base,y_base,y,ch,tm[6],minutep,hourp;
+  int i,j,k,maxlen,ret,m_count,x_base,y_base,y,ch,tm[6],minutep,hourp,
+    count,count_max,gif;
   char *ptr,textbuf[500],textbuf1[500],fn1[200],fn2[100],
     fn3[100],path_font[80],path_temp[80],path_mon[80],area[20],
     timebuf1[80],timebuf2[80],printer[40],name[STNLEN],comp[CMPLEN],
@@ -1133,9 +1204,27 @@ main(argc,argv)
     sscanf(ptr+1,"%s",path_mon1);
     check_path(path_mon1,DIR_R);
     }
-  read_param(f_param,textbuf);  /* (3) temporary work directory */
-  sscanf(textbuf,"%s",path_temp);
-  check_path(path_temp,DIR_W);
+  read_param(f_param,textbuf1);  /* (3) temporary work directory : N of files */
+  sscanf(textbuf1,"%s",textbuf);
+  if((ptr=strchr(textbuf,':'))==0)
+    {
+    sscanf(textbuf,"%s",path_temp);
+    check_path(path_temp,DIR_W);
+    count_max=(-1);
+    }
+  else
+    {
+    *ptr=0;
+    sscanf(textbuf,"%s",path_temp);
+    check_path(path_temp,DIR_W);
+    if(ptr[strlen(ptr+1)]=='g'||ptr[strlen(ptr+1)]=='G')
+      {
+      gif=1;
+      ptr[strlen(ptr+1)]=0;
+      }
+    else gif=0;
+    sscanf(ptr+1,"%d",&count_max);
+    }
   read_param(f_param,textbuf);  /* (4) channel table file */
   sscanf(textbuf,"%s",ch_file);
   check_path(ch_file,FILE_R);
@@ -1488,7 +1577,7 @@ retry:
         fclose(fp);
         if(strlen(timebuf1)>=11 && strcmp2(timebuf1,timebuf2)>=0) break;
         }
-      if(isalpha(*printer) && req_print) insatsu(fn1,fn2,fn3,path_temp,printer);
+      if(req_print) insatsu(fn1,fn2,fn3,path_temp,printer,count,count_max,gif);
       sleep(15);
       }
     sprintf(textbuf,"%s/%s",path_mon,timebuf2);
@@ -1519,18 +1608,18 @@ retry:
     x_base+=SR_MON*60;
     if(++m_count==m_limit)
       {
-      if(isalpha(*printer)) insatsu(fn1,fn2,fn3,path_temp,printer);
+      insatsu(fn1,fn2,fn3,path_temp,printer,count,count_max,gif);
       owari();
       }
     else if(m_count%min_per_sheet==0)
       {
-      if(isalpha(*printer)) insatsu(fn1,fn2,fn3,path_temp,printer);
+      insatsu(fn1,fn2,fn3,path_temp,printer,count,count_max,gif);
       x_base=X_BASE-28*max_ch_flag;
       y_base=Y_BASE;
       }
     else
       {
-      if(isalpha(*printer) && req_print) insatsu(fn1,fn2,fn3,path_temp,printer);
+      if(req_print) insatsu(fn1,fn2,fn3,path_temp,printer,count,count_max,gif);
       if(m_count%MIN_PER_LINE==0)
         {
         x_base=X_BASE-28*max_ch_flag;

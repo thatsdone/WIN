@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.31 2003/11/06 00:38:36 urabe Exp $
+   $Id: win.c,v 1.32 2004/09/08 06:50:53 urabe Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -13,7 +13,7 @@
    98.7.2 yo2000
 */
 #define NAME_PRG      "win"
-#define WIN_VERSION   "2003.11.6"
+#define WIN_VERSION   "2004.9.8"
 #define DEBUG_AP      0   /* for debugging auto-pick */
 /* 5:sr, 4:ch, 3:sec, 2:find_pick, 1:all */
 /************ HOW TO COMPILE THE PROGRAM **************************
@@ -2543,7 +2543,7 @@ just_map:
     while(j-->0) fgets(text_buf,LINELEN,fp);
     sscanf(text_buf,"%f%f%f%f",&dm1,&init_late_init,&init_lone_init,&dm2);
     init_depe=init_depe_init=(int)dm2;
-    if(init_depe>init_dep) init_depe=init_depe_init=init_dep;
+/*    if(init_depe>init_dep) init_depe=init_depe_init=init_dep;*/
     fclose(fp);
     }   
 
@@ -3482,7 +3482,7 @@ auto_pick_hypo(tbuf,hint)
       }
     if(flag_hypo) /* no data has been deleted */
       {
-      if(ft.hypo.dep<-1.0)
+      if(ft.hypo.dep<-3.0)
         {
         raise_ttysw(1);
         fprintf(stderr,"AIR FOCUS - DEPTH FIXED ...\n");
@@ -5846,14 +5846,14 @@ proc_main()
             init_depe=init_depe_init;
             break;
           case MSE_BUTNR:
-            if(init_dep==0) ring_bell=1;
+            if(init_dep==(-3)) ring_bell=1;
             else if(init_dep<= 10) init_dep-=1;
             else if(init_dep<= 50) init_dep=(init_dep/5-1)*5;
             else if(init_dep<=100) init_dep=(init_dep/10-1)*10;
             else init_dep=(init_dep/50-1)*50;
             break;
           }
-        if(init_depe>init_dep) init_depe=init_dep;
+/*        if(init_depe>init_dep) init_depe=init_dep;*/
         if(ring_bell==0) put_init_depth();
         }
       else if(com_depe1<=x && x<=com_depe2)
@@ -5879,11 +5879,13 @@ proc_main()
             else init_depe=(init_depe/50-1)*50;
             break;
           }
+/*
         if(init_depe>init_dep)
           {
           init_depe=init_dep;
           ring_bell=1;
           }
+*/
         if(ring_bell==0) put_init_depth();
         }
       else switch(get_func(x))

@@ -1,5 +1,9 @@
-$Id: ChangeLog,v 1.67 2004/09/07 11:39:53 uehira Exp $
+$Id: ChangeLog,v 1.68 2004/09/08 06:50:53 urabe Exp $
 
+2004-09-08 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
+	* win : allow initial depth  down to -3 km
+	* Version 1.1.39 released.
+	
 2004-09-07 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* wdisk : added option -s : Freespace mode
 	* Version 1.1.38 released.

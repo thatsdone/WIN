@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.19 2002/06/11 00:21:28 urabe Exp $
+   $Id: win.c,v 1.20 2002/06/13 00:33:48 urabe Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -13,7 +13,7 @@
    98.7.2 yo2000
 */
 #define NAME_PRG      "win"
-#define WIN_VERSION   "2002.6.11"
+#define WIN_VERSION   "2002.6.13"
 #define DEBUG_AP      0   /* for debugging auto-pick */
 /* 5:sr, 4:ch, 3:sec, 2:find_pick, 1:all */
 /************ HOW TO COMPILE THE PROGRAM **************************
@@ -6435,11 +6435,8 @@ put_mon(xzero,yzero)
   put_bitblt(&info,0,yzero,width_win_info,height_win_mon,&dpy,
     x_win_info,y_win_info,BF_S);
   /* put mon */
-  for(;i<ft.n_mon;i++)
+  for(;i<ft.n_mon && xzero<xlim;i++)
     {
-/*printf("%d %d %d %d %d %d\n",xz,yzero,width_win_mon,height_win_mon,
-xwm,y_win_mon);
-*/
     put_bitblt(&mon[i],xz,yzero,width_win_mon,height_win_mon,&dpy,
       xwm,y_win_mon,BF_S);
     if(i==ft.n_mon-1 && width_win_mon>(j=ft.w_mon*PIXELS_PER_SEC_MON-xzero))

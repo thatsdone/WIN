@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.2 2002/01/13 06:57:49 uehira Exp $
+# $Id: Makefile.am,v 1.3 2002/01/25 04:01:23 uehira Exp $
 #
 
 if SUNOS4
@@ -14,7 +14,12 @@ else
 ONL_SOL2 = 
 endif
 
+if X86
 ONL_X86=recvts
+else
+ONL_X86=
+endif
+
 ONLINE_SO=recvt send_raw recvstatus send_raw_old relay recvnmx $(ONL_SOL2)
 TAPE_USER_MATH=pmon elist events
 ONLINE_MATH=ecore

@@ -1,5 +1,5 @@
 dnl ------------------------------------------------------------------------- 
-dnl $Id: configure.in,v 1.4 2002/01/23 06:06:13 uehira Exp $
+dnl $Id: configure.in,v 1.5 2002/01/25 04:01:23 uehira Exp $
 dnl -------------------------------------------------------------------------
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT(src/win.c)
@@ -110,6 +110,7 @@ AC_MSG_RESULT($ts_cv_debug)
 
 AM_CONDITIONAL(SUNOS4, false)
 AM_CONDITIONAL(SOL2, false)
+AM_CONDITIONAL(X86, false)
 case "$host" in
 dnl ---------------------------------------
 dnl in case of SunOS4 
@@ -132,8 +133,23 @@ dnl ---------------------------------------
   *-*-solaris2*)
    AM_CONDITIONAL(SOL2, true)
    ;;
+
+dnl ---------------------------------------
+dnl in case of X86
+dnl ---------------------------------------
+  i386*-*-*)
+   AM_CONDITIONAL(X86, true)
+   ;;
+  i486*-*-*)
+   AM_CONDITIONAL(X86, true)
+   ;;
+  i586*-*-*)
+   AM_CONDITIONAL(X86, true)
+   ;;
+  i686*-*-*)
+   AM_CONDITIONAL(X86, true)
+   ;;
 esac
-dnl AC_SUBST(FLDFLAGS)
 
 dnl ---------------------------------------
 dnl check perl

@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.19 2004/10/14 10:30:58 tsuru Exp $
+# $Id: Makefile.am,v 1.20 2004/10/21 11:30:15 uehira Exp $
 #
 
 if SUNOS4
@@ -67,7 +67,9 @@ install-exec-hook:
 			cd @bindir@ && @LN_S@ send_raw_old sendt_raw_old)
 	(rm -f @bindir@/sendt_mon_old;\
 			cd @bindir@ && @LN_S@ send_raw_old sendt_mon_old)
+	(rm -f @bindir@/wdiskd; cd @bindir@ && @LN_S@ wdisk wdiskd)
 	(rm -f @bindir@/wdisk60; cd @bindir@ && @LN_S@ wdisk wdisk60)
+	(rm -f @bindir@/wdisk60d; cd @bindir@ && @LN_S@ wdisk wdisk60d)
 
 win_SOURCES = win.c $(SUBFUNC_H)
 win_CFLAGS = @X_CFLAGS@ $(AM_CFLAGS)

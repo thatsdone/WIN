@@ -1,5 +1,10 @@
-$Id: ChangeLog,v 1.71 2004/10/03 15:23:04 uehira Exp $
+$Id: ChangeLog,v 1.72 2004/10/21 11:30:14 uehira Exp $
 
+2004-10-21 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* wdiskd   : Daemon mode of wdisk
+	* wdisk60d : Daemon mode of wdisk60
+	* Version 1.1.44 released.
+	
 2004-10-04 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* wdisk : added option -D : Daemon mode
 	* Version 1.1.42 released.

@@ -1,7 +1,7 @@
 '\" t
 .TH wdisk 1W "2002.5.31" "WIN SYSTEM" "WIN SYSTEM"
 .SH 名称
-wdisk, wdisk60 - win 形式データのディスクファイルへの書き込み
+wdisk, wdisk60, wdiskd, wdisk60d - win 形式データのディスクファイルへの書き込み
 .SH 形式
 wdisk [\-\fBDns\fR]
 .I shmkey
@@ -20,9 +20,27 @@ wdisk60 [\-\fBDns\fR]
 [
 .I logfile
 ]]
+.br
+wdiskd [\-\fBns\fR]
+.I shmkey
+.I outdir
+[
+.I nfiles/freespace(-s)
+[
+.I logfile
+]]
+.br
+wdisk60d [\-\fBns\fR]
+.I shmkey
+.I outdir
+[
+.I nfiles/freespace(-s)
+[
+.I logfile
+]]
 .LP
 .SH 解説
-wdisk と wdisk60 は、キー
+wdisk、wdisk60、wdiskd、wdisk60d は、キー
 .I \ shmkey
 の共有メモリ・セグメントに書き込まれている、時間順に整列され
 た win 形式のデータを、ディスクのディレクトリ
@@ -49,6 +67,11 @@ wdisk60 では、ファイルは
 を指定しないか、'0' を指定すると、ファイルを自動的に消すことは
 しません。
 .LP
+wdiskd, wdisk60d は daemon モードで起動します。wdisk, wdisk60 でオプショ
+ン
+\fB\-D\fR
+を指定した時と同じ動作です。
+.LP
 ログファイル名
 .I \ logfile
 を指定すると、ここに動作ログがとられます。
@@ -56,7 +79,8 @@ wdisk60 では、ファイルは
 送られます(ただし、daemon モードで動いている時は syslogd(8) に送られます)。
 ログファイルは書き込みのたび毎にオープン／クローズされます。
 .LP
-wdisk, wdisk60 は引数なしで起動すると簡単な使用法を表示します。
+wdisk, wdisk60, wdiskd, wdisk60d は引数なしで起動すると簡単な使用法を
+表示します。
 .SH 共有メモリ上の形式
 order(1W) を参照してください。
 .SH オプション
@@ -71,7 +95,7 @@ LATEST、OLDEST のファイルを作りません。このオプションを指定した時は、
 events(1W)、insert_raw(1W)、wtape(1W)といったこれらの動作状況を見るプ
 ログラムは動かせません。
 .SH ファイル
-wdisk, wdisk60 は出力ディレクトリ
+wdisk, wdisk60, wdiskd, wdisk60d は出力ディレクトリ
 .I \ outdir
 に次のようなテキストファイルを作り、
 それぞれの内容によって動作状況を示します。
@@ -88,9 +112,9 @@ OLDEST	最も古いファイル名
 .TE
 .RE
 .LP
-wdisk, wdisk60 の動作中でもファイル MAX を書き換えると、それ以降は
-「保存されるファイルの数/常に確保すべきスペース(MB)」が新しい値に変わ
-ります。
+wdisk, wdisk60, wdiskd, wdisk60d の動作中でもファイル MAX を書き換える
+と、それ以降は「保存されるファイルの数/常に確保すべきスペース(MB)」が
+新しい値に変わります。
 .SH ソース 
 .TP
 `wdisk.c'

@@ -1,4 +1,4 @@
-/* $Id: wdisk.c,v 1.13 2004/10/03 15:23:05 uehira Exp $ */
+/* $Id: wdisk.c,v 1.14 2004/10/21 11:30:15 uehira Exp $ */
 /*
   program "wdisk.c"   4/16/93-5/13/93,7/2/93,7/5/94  urabe
                       1/6/95 bug in adj_time fixed (tm[0]--)
@@ -378,10 +378,14 @@ main(argc,argv)
    
    if(progname=strrchr(argv[0],'/')) progname++;
    else progname=argv[0];
-   if(strcmp(progname,"wdisk60")==0) mode=60;
-   else mode=1;
 
    daemon_mode = syslog_mode = smode = nflag = 0;
+
+   if(strcmp(progname,"wdisk60")==0) mode=60;
+   else if(strcmp(progname,"wdisk60d")==0) {mode=60;daemon_mode=1;}
+   else if(strcmp(progname,"wdisk")==0) mode=1;
+   else if(strcmp(progname,"wdiskd")==0) {mode=1;daemon_mode=1;}
+
    while ((c = getopt(argc, argv, "Dns")) != -1) {
      switch (c) {
      case 'D':

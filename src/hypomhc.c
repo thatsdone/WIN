@@ -1,5 +1,5 @@
 /*
-  $Id: hypomhc.c,v 1.2 2002/01/13 06:57:50 uehira Exp $
+  $Id: hypomhc.c,v 1.3 2003/05/24 15:21:55 uehira Exp $
    hypomhc.c    : main program for hypocenter location
      original version was made on March 13, 1984 and
      modified by N.H. on Feb. 8, 1985, May 8, 1985.
@@ -14,6 +14,8 @@
        AMPLITUDE MAGNITUDE IS CALCULATED IN FINAL 6/30/92
        BUG IN SDATA (read station height) FIXED   7/28/93
        Translate to C language (by Uehira Kenji)  4/ 8/97
+       fixed format of 'year' in format#2200 in sub final()  11/19/2001
+       TRAVEL-TIME CALCULATION MODE               5/24/2003
 
      HYPOCENTER LOCATION USING A BAYESIAN APPROACH DEVELOPED BY
         MATSU'URA (1984): PROGRAMED BY MATSU'URA AND HIRATA ON
@@ -537,6 +539,8 @@ main(argc, argv)
 {
    FILE    *fp_11,*fp_init,*fp_13,*fp_21,*fp_22;
    double  alat00, alng00, dept00, elat00, elng00, edpt00;
+   int     iyear, imont, iday, ihour, iminu;
+   double  secc, amag00;
    double  alat0, alng0, dept0;
    double  va, vb, vlct;
    int     nn;
@@ -619,10 +623,17 @@ main(argc, argv)
       sscanf(txtbuf, "%lf%lf%lf", &alat00,&alng00,&dept00);
       fgets(txtbuf, LINELEN, fp_init);
       sscanf(txtbuf, "%lf%lf%lf", &elat00,&elng00,&edpt00);
+      /* If third line exists, enter 'travel-time calculation only' mode. */
+      fgets(txtbuf, LINELEN, fp_init);
+      if (sscanf(txtbuf, "%d%d%d%d%d%lf%lf%lf%lf%lf",
+		 &iyear, &imont, &iday, &ihour, &iminu, &secc,
+		 &alat00, &alng00, &dept00, &amag00) != 10)
+	iyear = -1;
       fclose(fp_init);
 #if DEBUG
       printf("alat00=%lf alng00=%lf dept00=%lf\n", alat00, alng00, dept00);
       printf("elat00=%lf elng00=%lf edpt00=%lf\n", elat00, elng00, edpt00);
+      printf("iyear=%d\n", iyear);
 #endif
    }
    fprintf(fp_21, " HYPOCENTER LOCATION USING A BAYESIAN APPROACH\n");
@@ -748,7 +759,8 @@ main(argc, argv)
    fprintf(fp_21, " ***** EARTHQUAKE %02d%02d%02d%02d%02d *****\n",
            iyr, mnt, idy, ihr, min);
    k=npd=nsd=0;
-   if(NULL == (calc=(FOR_CALC *)malloc(sizeof(FOR_CALC)*na)))
+   /*  if(NULL == (calc=(FOR_CALC *)malloc(sizeof(FOR_CALC)*na))) */
+   if(NULL == (calc=(FOR_CALC *)calloc(na, sizeof(FOR_CALC))))
      memory_error();
    for(i=0; i<na; ++i){
       fprintf(fp_21,
@@ -897,9 +909,11 @@ main(argc, argv)
       as += calc[i].vpt+calc[i].vst;
    }
    for(i=0; i<nd; ++i){
-     if(NULL == (calc[i].fp=(double *)malloc(sizeof(double)*nd)))
+     /*  if(NULL == (calc[i].fp=(double *)malloc(sizeof(double)*nd))) */
+     if(NULL == (calc[i].fp=(double *)calloc(nd, sizeof(double))))
 	memory_error();
-     if(NULL == (calc[i].fs=(double *)malloc(sizeof(double)*nd)))
+     /*  if(NULL == (calc[i].fs=(double *)malloc(sizeof(double)*nd))) */
+     if(NULL == (calc[i].fs=(double *)calloc(nd, sizeof(double))))
        memory_error();
    }
    for(i=0; i<nd; ++i)
@@ -969,6 +983,25 @@ main(argc, argv)
          calc[i].a[1] = sn*yy/rr/vre;
          calc[i].a[2] = -cn/vre;
       }
+      if (iyear >= 0) {
+	for (i = 0; i < nd; ++i) {
+	  /* PT(I) and ST(I) contains STCP(I) and STCS(I), respectively. */
+	  calc[i].pe = calc[i].pt;
+	  calc[i].se = calc[i].st;
+	  calc[i].pt = secc + calc[i].tpt - calc[i].pt;
+	  calc[i].st = secc + alp * calc[i].tpt - calc[i].st;
+	  calc[i].rpt = 0.0;
+	  calc[i].rst = 0.0;
+	}
+	iyr = iyear;
+	mnt = imont;
+	idy = iday;
+	ihr = ihour;
+	min = iminu;
+	cot = secc;
+	judg = 0;
+	goto end_NLINV;
+      }  /* if (iyear >= 0) */
       srb=src=0.0;
       for(i=0; i<nd; ++i){
          if(calc[i].pe <= 0.0)
@@ -1136,6 +1169,9 @@ main(argc, argv)
       acp = bcp;
       ll++;
    }  /* while(1) */
+ end_NLINV:
+   if (judg >= 10)
+     goto HYPEND;
 
 /***** FINAL *****/
 /*
@@ -1205,6 +1241,12 @@ main(argc, argv)
      amag /= nmag;
    else
      amag=9.9;
+   /* this is to avoid trivial error by PLTXY() */
+   if (iyear >= 0) {
+     alatf = alat00;
+     alngf = alng00;
+     amag = amag00;
+   }
    fprintf(fp_21, "***** FINAL RESULTS *****\n");
    fprintf(fp_21, "%3.2d%3.2d%3.2d   %3d%3d%8.3lf%11.5lf%11.5lf%8.3lf%6.1lf\n"
            ,iyr,mnt,idy,ihr,min,cot,alatf,alngf,xm1[2],amag);
@@ -1235,13 +1277,13 @@ main(argc, argv)
            alati,ex0[1],alngi,ex0[0],xm0[2],ex0[2]);
 
    fprintf(fp_21,
-           "  %2d %4s %2d (%5.1lf%% ) %2d (%5.1lf%% ) %2d (%5.1lf%% )\n",
+           "  %3d %4s %3d (%5.1lf%% ) %3d (%5.1lf%% ) %3d (%5.1lf%% )\n",
            nd,vst,npd,rsl[0],nsd,rsl[1],npr,rsl[2]);
    fprintf(fp_22,
-           "  %2d %4s %2d (%5.1lf%% ) %2d (%5.1lf%% ) %2d (%5.1lf%% )\n",
+           "  %3d %4s %3d (%5.1lf%% ) %3d (%5.1lf%% ) %3d (%5.1lf%% )\n",
            nd,vst,npd,rsl[0],nsd,rsl[1],npr,rsl[2]);
    fprintf(stdout,
-           "  %2d %4s %2d (%5.1lf%% ) %2d (%5.1lf%% ) %2d (%5.1lf%% )\n",
+           "  %3d %4s %3d (%5.1lf%% ) %3d (%5.1lf%% ) %3d (%5.1lf%% )\n",
            nd,vst,npd,rsl[0],nsd,rsl[1],npr,rsl[2]);
 
    for(i=0;i<nd;++i){
@@ -1306,7 +1348,6 @@ main(argc, argv)
 #endif
 
 /***** HYPEND *****/
- end_NLINV:
  HYPEND:
    printf("****** END OF HYPOMH ******\n");
    fclose(fp_21);

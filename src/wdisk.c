@@ -1,4 +1,4 @@
-/* $Id: wdisk.c,v 1.10 2004/08/30 05:04:29 uehira Exp $ */
+/* $Id: wdisk.c,v 1.11 2004/08/30 05:09:53 uehira Exp $ */
 /*
   program "wdisk.c"   4/16/93-5/13/93,7/2/93,7/5/94  urabe
                       1/6/95 bug in adj_time fixed (tm[0]--)
@@ -46,21 +46,6 @@
 #include <errno.h>
 #include <unistd.h>
 
-#ifdef HAVE_SYS_PARAM_H
-#include <sys/param.h>
-#endif
-#ifdef HAVE_SYS_MOUNT_H
-#include <sys/mount.h>
-#endif
-#ifdef HAVE_SYS_VFS_H
-#include <sys/vfs.h>
-#endif
-#ifdef HAVE_SYS_STATVFS_H
-#include <sys/statvfs.h>
-#define statfs statvfs
-#define f_bsize f_frsize
-#endif
-
 #include "subst_func.h"
 
 #define   DEBUG   0
@@ -71,7 +56,7 @@ char *progname,logfile[256];
 unsigned char *buf;
 int count,count_max,mode;
 FILE *fd;
-int  nflag, smode;
+int  nflag;
 
 mklong(ptr)
   unsigned char *ptr;
@@ -81,7 +66,7 @@ mklong(ptr)
     ((ptr[2]<<8)&0xff00)+(ptr[3]&0xff);
   return a;
   }   
-
+        
 write_log(logfil,ptr)
      char *logfil;
      char *ptr;
@@ -185,7 +170,7 @@ switch_file(tm)
    if(fp=fopen(tbuf,"r")){
       fscanf(fp,"%d",&count_max);
       fclose(fp);
-      if(count_max>0 && count_max<3 && smode == 0) count_max=3;
+      if(count_max>0 && count_max<3) count_max=3;
    }
    else count_max=0;
    
@@ -266,7 +251,7 @@ usage()
 {
 
   fprintf(stderr,
-	  " usage : '%s (-ns) [shm_key]/- [out dir] ([N of files]/[Freespace in MB(-s)] ([log file]))'\n",
+	  " usage : '%s (-n) [shm_key]/- [out dir] ([N of files] ([log file]))'\n",
 	  progname);
 }
 
@@ -295,14 +280,11 @@ main(argc,argv)
    if(strcmp(progname,"wdisk60")==0) mode=60;
    else mode=1;
 
-   smode = nflag = 0;
-   while ((c = getopt(argc, argv, "ns")) != -1) {
+   nflag = 0;
+   while ((c = getopt(argc, argv, "n")) != -1) {
      switch (c) {
      case 'n':
        nflag = 1;  /* don't make control files except 'MAX' */
-       break;
-     case 'r':
-       smode = 1;  /* space mode */
        break;
      default:
        usage();
@@ -328,10 +310,7 @@ main(argc,argv)
    else count_max=0;
    sprintf(tbuf,"%s/MAX",outdir);
    fp=fopen(tbuf,"w+");
-   if (smode)
-     fprintf(fp,"%d MB\n",count_max);
-   else
-     fprintf(fp,"%d\n",count_max);
+   fprintf(fp,"%d\n",count_max);
    fclose(fp);
    
    if(argc>3) strcpy(logfile,argv[3]);

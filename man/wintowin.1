@@ -17,8 +17,8 @@ shmdump -B0.02:0.05:0.07:0.5:5.0 -tq 12 0252 | wintowin | win2raw /dat/bpf
 チャネル0252に対してバンドパスフィルターをかけて，/dat/bpf に分ファイルとして
 保存
 
-shmdump -tq 12 0252 | wintowin 12 64
-チャネル0252を共有メモリ12に書き込む
+shmdump -tq 12 0252 | wintowin 13 64
+共有メモリ12からチャネル0252を共有メモリ13に書き込む
 .SH ソース 
 .TP
 `wintowin'

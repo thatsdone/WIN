@@ -1,4 +1,4 @@
-# $Id: makefile,v 1.6 2000/05/26 10:52:14 uehira Exp $
+# $Id: makefile,v 1.7 2000/08/02 08:49:38 uehira Exp $
 #########################
 #                       #
 # win system makefile   #
@@ -36,6 +36,7 @@ ONLINE_SO=recvt send_raw recvstatus send_raw_old relay $(ONLINE_SOL2)
 TAPE_USER_MATH=pmon elist events
 ONLINE_MATH=ecore
 OFFLINE_MATH=dewin select_stations
+#OFFLINE_MATH=dewin select_stations hypomhc
 OFFLINE_F77=hypomh
 
 OFFLINE_USER=win $(OFFLINE_F77) wed wck wadd $(OFFLINE_MATH) wchch pick2tseis \

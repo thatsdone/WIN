@@ -1,4 +1,4 @@
-/* $Id: pick2finalb.c,v 1.3 2002/01/13 06:57:51 uehira Exp $ */
+/* $Id: pick2finalb.c,v 1.4 2004/11/24 06:43:42 uehira Exp $ */
 /* pick2finalb.c */
 /* 8/22/91, 5/22/92, 7/9/92, 8/19/92, 5/25/93, 6/1/93 urabe */
 /* 97.10.3 FreeBSD */
@@ -6,11 +6,15 @@
 /* input (stdin)   : a list of pick file names (ls -l) */
 /* output (stdout) : binary format of hypo data */
 
+/* 2004/11/24  get owner information from pickfile (uehira) */
+
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
 
 #include  <stdio.h>
+#include  <string.h>
+#include  <ctype.h>
 
 #include "subst_func.h"
 
@@ -105,7 +109,9 @@ main()
   {
   FILE *fp;
   int flag;
-  char tbuf[256],fname[80],buf[256],owner[20],diag[20],item[50],tb[10][32];
+  char tbuf[1024],fname[256],buf[1024],owner[20],diag[256],diagsave[256],
+    item[256],tb[10][256];
+  char *ptr;
   unsigned int ye,mo,da,ho,mi;
   int i,tm[6],tmc[7];
   double se,sec,mag;
@@ -115,20 +121,23 @@ main()
     char diag[4],owner[4];
     } d;      /* 28 bytes / event */
 
-  while(fgets(tbuf,255,stdin))
+  while(fgets(tbuf,sizeof(tbuf),stdin))
     {
-    i=sscanf(tbuf,"%s%s%s%s%s%s%s%s%s%s",tb[0],tb[1],tb[2],tb[3],tb[4],tb[5],
-      tb[6],tb[7],tb[8],tb[9]);
-    strcpy(owner,tb[2]);
+      i=sscanf(tbuf,"%255s%255s%255s%255s%255s%255s%255s%255s%255s%255s",
+	       tb[0],tb[1],tb[2],tb[3],tb[4],tb[5],tb[6],tb[7],tb[8],tb[9]);
+    /*  strcpy(owner,tb[2]); */
     strcpy(fname,tb[i-1]);
     if((fp=fopen(fname,"r"))==NULL) continue;
     flag=1;
-    while(fgets(buf,255,fp))
+    while(fgets(buf,sizeof(buf),fp))
       {
       if(flag && strncmp(buf,"#p",2)==0)
         {
         *diag=0;
-        sscanf(buf+3,"%s%s",item,diag);
+	*owner=0;
+        sscanf(buf+3,"%255s%255s%19s",item,diag,owner);
+	strcpy(diagsave,diag);
+	for(ptr=diag;*ptr;ptr++) *ptr=toupper(*ptr);
         if(strcmp(diag,"NOISE")==0) break;
         flag=0;
         }
@@ -147,7 +156,7 @@ main()
         d.time[6]=(unsigned char)(((int)(sec*10.0))%10);
         d.time[7]=(int)(mag*10.0+0.5);
         *d.diag=(*d.owner)=0;
-        if(*diag) strncpy(d.diag,diag,4);
+        if(*diagsave) strncpy(d.diag,diagsave,4);
         if(*owner) strncpy(d.owner,owner,4);
         i=1;if(*(char *)&i)
           {

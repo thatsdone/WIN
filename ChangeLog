@@ -1,5 +1,9 @@
- $Id: ChangeLog,v 1.79 2004/11/17 09:36:45 urabe Exp $
+ $Id: ChangeLog,v 1.80 2004/11/24 06:43:41 uehira Exp $
 
+2004-11-24 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* pick2final, pick2finalb : get owner information from pickfile
+	* Version 1.1.47 released.
+	
 2004-11-17 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
 	* relay : check_pno() and read_chfile() brought from recvt.c 
 		with host contol but without channel control (option -f)

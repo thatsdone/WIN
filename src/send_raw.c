@@ -1,4 +1,4 @@
-/* $Id: send_raw.c,v 1.6 2002/01/13 06:57:51 uehira Exp $ */
+/* $Id: send_raw.c,v 1.7 2002/01/14 09:41:17 urabe Exp $ */
 /*
     program "send_raw/send_mon.c"   1/24/94 - 1/25/94,5/25/94 urabe
                                     6/15/94 - 6/16/94
@@ -26,9 +26,11 @@
                                   2000.4.17 deleted definition of usleep() 
                                   2000.4.24 strerror()
                                   2001.8.19 send interval control
-                                  2001.11.14 strerror(),ntohs()
                                   2002.1.7  option '-i' to specify multicast IF
                                   2002.1.8  option '-b' for max IP packet size
+                                  2002.1.11 bug fixed for '-r'/'-m'
+                                  2002.1.12 variable mon deleted
+                                  2002.1.12 function shift_hour() deleted
 */
 
 #ifdef HAVE_CONFIG_H
@@ -78,7 +80,7 @@
 #endif
 */
 
-int sock,raw,mon,tow,all,psize[NBUF],n_ch,negate_channel,mtu,nbuf;
+int sock,raw,tow,all,psize[NBUF],n_ch,negate_channel,mtu,nbuf;
 unsigned char *sbuf[NBUF],ch_table[65536],rbuf[RSIZE];
      /* sbuf[NBUF][mtu-28+8] ; +8 for overrun by "size" and "time" */
 char *progname,logfile[256],chfile[256];
@@ -120,98 +122,6 @@ mkshort(ptr)
   unsigned short a;
   a=((ptr[0]<<8)&0xff00)+(ptr[1]&0xff);
   return a;
-  }
-
-shift_hour(tm_bcd,hours)
-  unsigned char *tm_bcd;
-  int hours;
-  {
-  int tm[4];
-  tm[0]=b2d[tm_bcd[0]];
-  tm[1]=b2d[tm_bcd[1]];
-  tm[2]=b2d[tm_bcd[2]];
-  tm[3]=b2d[tm_bcd[3]]+hours;
-  if(tm[3]>=24)
-    {
-    tm[3]-=24;
-    tm[2]++;
-    switch(tm[1])
-      {
-      case 2:
-        if(tm[0]%4==0)
-          {
-          if(tm[2]==30)
-            {
-            tm[2]=1;
-            tm[1]++;
-            }
-          break;
-          }
-        else
-          {
-          if(tm[2]==29)
-            {
-            tm[2]=1;
-            tm[1]++;
-            }
-          break;
-          }
-      case 4:
-      case 6:
-      case 9:
-      case 11:
-        if(tm[2]==31)
-          {
-          tm[2]=1;
-          tm[1]++;
-          }
-        break;
-      default:
-        if(tm[2]==32)
-          {
-          tm[2]=1;
-          tm[1]++;
-          }
-        break;
-      }
-    if(tm[1]==13)
-      {
-      tm[1]=1;
-      if(++tm[0]==100) tm[0]=0;
-      }
-    }
-  else if(tm[3]<=-1)
-    {
-    tm[3]+=24;
-    if(--tm[2]==0)
-      {
-      switch(--tm[1])
-        {
-        case 2:
-          if(tm[0]%4==0)
-            tm[2]=29;else tm[2]=28;
-          break;
-        case 4:
-        case 6:
-        case 9:
-        case 11:
-          tm[2]=30;
-          break;
-        default:
-          tm[2]=31;
-          break;
-        }
-      if(tm[1]==0)
-        {
-        tm[1]=12;
-        if(--tm[0]==-1) tm[0]=99;
-        }
-      }
-    }
-  tm_bcd[0]=d2b[tm[0]];
-  tm_bcd[1]=d2b[tm[1]];
-  tm_bcd[2]=d2b[tm[2]];
-  tm_bcd[3]=d2b[tm[3]];
   }
 
 shift_sec(tm_bcd,sec)
@@ -402,16 +312,16 @@ main(argc,argv)
   if(progname=strrchr(argv[0],'/')) progname++;
   else progname=argv[0];
 
-  raw=mon=tow=all=hours_shift=sec_shift=0;
+  tow=all=hours_shift=sec_shift=0;
   timeout.tv_sec=timeout.tv_usec=0;
   if(strcmp(progname,"send_raw")==0) raw=1;
-  else if(strcmp(progname,"send_mon")==0) mon=1;
+  else if(strcmp(progname,"send_mon")==0) raw=0;
   else if(strcmp(progname,"sendt_raw")==0) {raw=1;tow=1;}
-  else if(strcmp(progname,"sendt_mon")==0) {mon=1;tow=1;}
+  else if(strcmp(progname,"sendt_mon")==0) {raw=0;tow=1;}
   else exit(1);
   sprintf(tbuf,
-" usage : '%s (-aimrt) (-b mtu) (-h [h])/(-s [s]) [shmkey] [dest] [port] \\\n\
-            ([chfile]/- ([logfile]))'\n",progname);
+" usage : '%s (-amrt) (-b mtu) (-h [h]) (-i [interface]) (-s [s]) \\\n\
+           [shmkey] [dest] [port] ([chfile]/- ([logfile]))'",progname);
 
   *interface=0;
   mtu=MTU;
@@ -432,7 +342,7 @@ main(argc,argv)
         strcpy(interface,optarg);
         break;
       case 'm':   /* "mon" mode */
-        mon=1;
+        raw=0;
         break;
       case 'r':   /* "raw" mode */
         raw=1;
@@ -598,7 +508,7 @@ reset:
     ptw_size=ptw;
     ptw+=2;                            /* size */
     for(i=0;i<6;i++) *ptw++=(*ptr++);  /* time */
-    if(hours_shift) shift_hour(ptw-6,hours_shift);
+    if(hours_shift) shift_sec(ptw-6,hours_shift*3600);
     if(sec_shift) shift_sec(ptw-6,sec_shift);
 #if DEBUG
     for(i=2;i<8;i++) fprintf(stderr,"%02X",ptw_size[i]);

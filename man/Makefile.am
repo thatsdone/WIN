@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.12 2004/01/29 04:55:45 urabe Exp $
+# $Id: Makefile.am,v 1.13 2004/03/07 13:13:07 uehira Exp $
 #
 #  Makefile.am in man subdirectory.
 #
@@ -13,10 +13,11 @@ WIN_MAN = _bj.1 _update.1 automan.1 autopick.1 cormeisei.1 dat.1 dewin.1 \
 	wck_wdisk.1 wdisk.1 raw_shift.1 insert_trg.1 order2.1 wdiskts.1 \
         insert_raw2.1 wadd2.1 recvstatus.1 recvstatus2.1 select_stations.1 \
 	wed.1 wex.1 win.1 win2fix.1 winform.1 winformat.1 wtape.1 wtime.1 \
-	win2raw.1 shmx.1 wintowin.1 wintosac.1 wchasn.1 clean_nmx.1 winadd.1
+	win2raw.1 shmx.1 wintowin.1 wintosac.1 wchasn.1 clean_nmx.1 winadd.1 \
+	pick2pick.1
 
 man_MANS = $(WIN_MAN)
-	
+
 # EXTRA_DIST = $(WIN_MAN) makefile.1 win.1.original winformat.org
 EXTRA_DIST = $(WIN_MAN)
 

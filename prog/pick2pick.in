@@ -1,0 +1,74 @@
+#! @PERL@ -w
+
+#
+# $Id: pick2pick.in,v 1.1 2004/03/07 13:13:07 uehira Exp $
+# pick2pick
+#  2004.3.7	Initial version  Uehira Kenji
+#
+#  usage: pick2pick trgname YY MM DD hh mm ss
+#
+
+use Time::Local;
+
+$CENTURY = 70;			# 1970 -- 2069
+
+die "usage: pick2pick trgname YY MM DD hh mm ss\n"
+    if $#ARGV<6;
+
+$YY = $YYtmp = $ARGV[1];
+$YY += 100 if $YY < $CENTURY;
+$MM = $ARGV[2];
+$DD = $ARGV[3];
+$hh = $ARGV[4];
+$mm = $ARGV[5];
+$ss = $ARGV[6];
+$to_time = timegm($ss, $mm, $hh, $DD, $MM - 1, $YY);
+die "make time error!\n" if $to_time < 0;
+
+$line = 0;
+
+while (<STDIN>) {
+    unless (/^#p/) {
+	    print;
+	    next;
+	}
+    
+    chop;
+    if ($line == 0) {
+	@fld = split(' ');
+	print "$fld[0] $ARGV[0] $fld[2] $fld[3]\n";
+    }
+    elsif ($line == 1) {
+	($h, $oYY, $oMM, $oDD, $ohh, $omm, $oss) = split(' ');
+	$oYY += 100 if $oYY < $CENTURY;
+	$o_time = timegm($oss, $omm, $ohh, $oDD, $oMM - 1, $oYY);
+	die "make time error!\n" if $o_time < 0;
+	$diff = $to_time - $o_time;
+	print STDERR "diff = $diff [sec]\n";
+
+	# output new value
+	printf "%s %02d %02d %02d %02d %02d %02d\n",
+	$h, $YYtmp, $MM, $DD, $hh, $mm, $ss;
+    }
+    else {
+	@fld = split(' ');
+
+	# check only beginning time
+	$fld[3] -= $diff;
+	die "time differences too big. exit\n" if $fld[3] < 0;
+
+	$fld[5] -= $diff;
+
+	if ($fld[2] == 3) {  # amplitude
+	    printf "#p %s %d %02d %s %02d %s %s %s\n",
+	    $fld[1], $fld[2], $fld[3], $fld[4], $fld[5], $fld[6], $fld[7],
+	    $fld[8];
+	}
+	else {  # P, S, F phase
+	    printf "#p %s %d %02d %s %02d %s %s\n",
+	    $fld[1], $fld[2], $fld[3], $fld[4], $fld[5], $fld[6], $fld[7];
+	}
+    }
+
+    $line++;
+}

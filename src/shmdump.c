@@ -16,7 +16,8 @@
 /*  2003.4.16 bug fix (last sec not outputted in stdin mode) */
 /*  2003.5.14 fflush(fpout) inserted for rawdump */
 /*  2003.5.31 filtering option -L -H -B -R (tsuru) */
-/*  2003.6.1  bug fix (-f) mode */
+/*  2003.6.1 bug fix (-f) mode */
+/*  2003.6.4 output filtering info to stderr (tsuru) */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -752,7 +753,7 @@ main(argc,argv)
           chsel&=0xffff;
           setch(chsel);
           chindex[chsel]=nch;
-          fprintf(stderr,"chsel=%d chindex=%d\n", chsel, chindex[chsel]); 
+          fprintf(stderr,"%d: %04X\n", chindex[chsel], chsel); 
           nch++;
           }
         fclose(fp);
@@ -762,16 +763,19 @@ main(argc,argv)
         filter_flag=1;
         flt_kind=0;
         sscanf(optarg,"%f:%f:%f:%f",&flt_fp,&flt_fs,&flt_ap,&flt_as);
+        fprintf(stderr,"lpf fp=%g fs=%g ap=%g as=%g\n",flt_fp,flt_fs,flt_ap,flt_as);
         break;
       case 'H':   /* HighPass */
         filter_flag=1;
         flt_kind=1;
         sscanf(optarg,"%f:%f:%f:%f",&flt_fp,&flt_fs,&flt_ap,&flt_as);
+        fprintf(stderr,"bpf fp=%g fs=%g ap=%g as=%g\n",flt_fp,flt_fs,flt_ap,flt_as);
         break;
       case 'B':   /* BandPass */
         filter_flag=1;
         flt_kind=2;
         sscanf(optarg,"%f:%f:%f:%f:%f",&flt_fl,&flt_fh,&flt_fs,&flt_ap,&flt_as);
+        fprintf(stderr,"bpf fl=%g fh=%g fs=%g ap=%g as=%g\n",flt_fl,flt_fh,flt_fs,flt_ap,flt_as);
         break;
       case 'R':   /* resampling freq */
         SR=atoi(optarg);
@@ -817,7 +821,7 @@ main(argc,argv)
       chsel=strtol(argv[i],0,16);
       setch(chsel);
       chindex[chsel]=nch; /* filter */
-      fprintf(stderr,"chsel=%d chindex=%d\n",chsel, chindex[chsel]); /* filter */
+      fprintf(stderr,"%d: %04X\n", chindex[chsel], chsel);  /* filter */
       nch++;
       }
     if(nch) search=1;

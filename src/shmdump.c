@@ -13,6 +13,7 @@
 /*  2002.6.24 -t for text output, 6.26 fixed */
 /*  2002.10.27 stdin input */
 /*  2003.3.26,4.4 rawdump (-r) mode */
+/*  2003.4.16 bug fix (last sec not outputted in stdin mode) */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -275,7 +276,7 @@ main(argc,argv)
     char c[4];
     } un;
   int i,j,k,c_save_in,shp_in,shmid_in,size_in,shp,c_save,wtow,c,out,all,mon,
-    ch,sr,gs,size,chsel,nch,search,seconds,tbufp,bufsize,zero,nsec,aa,bb,
+    ch,sr,gs,size,chsel,nch,search,seconds,tbufp,bufsize,zero,nsec,aa,bb,end,
     eobsize,eobsize_count,size2,tout,abuf[4096],bufsize_in,rawdump,quiet;
   unsigned long tow,wsize,time_end,time_now;
   unsigned int packet_id;
@@ -432,7 +433,7 @@ reset:
   if(mklong(shm_in->d+shp_in+size_in-4)==size_in) eobsize=1;
   else eobsize=0;
   eobsize_count=eobsize;
-  nch=0;
+  nch=end=0;
 
   while(1)
     {
@@ -453,19 +454,27 @@ reset:
       }
     else
       {
-      if(fread(shm_in->d,1,4,stdin)==0) exit(0);
-      size_in=mklong(shm_in->d);
-      if(sizeof(long)*4+size_in>bufsize_in)
+      if((i=fread(shm_in->d,1,4,stdin))==0) end=1;
+      else
         {
-        bufsize_in=sizeof(long)*4+size_in+MAXMESG*100;
-        if((shm_in=(struct Shm *)realloc(shm_in,bufsize_in))==0)
+        size_in=mklong(shm_in->d);
+        if(sizeof(long)*4+size_in>bufsize_in)
           {
-          fprintf(stderr,"inbuf realloc failed !\n");
-          exit(1);
+          bufsize_in=sizeof(long)*4+size_in+MAXMESG*100;
+          if((shm_in=(struct Shm *)realloc(shm_in,bufsize_in))==0)
+            {
+            fprintf(stderr,"inbuf realloc failed !\n");
+            exit(1);
+            }
           }
+        if(fread(shm_in->d+4,1,size_in-4,stdin)==0) end=1;
         }
-      if(fread(shm_in->d+4,1,size_in-4,stdin)==0) exit(0);
       shp_in=0;
+      }
+    if(end)
+      {
+      if(out && (all || search)) goto last_out;
+      else ctrlc();
       }
     if(eobsize) sprintf(tbuf,"%4d B ",size_in);
     else sprintf(tbuf,"%4d : ",size_in);
@@ -551,7 +560,7 @@ reset:
               }
             if(memcmp(buf+4,tms,6)) /* new time */
               {
-              if((wsize=ptw-buf)>10)
+last_out:     if((wsize=ptw-buf)>10)
                 {
                 buf[0]=wsize>>24;  /* size (H) */
                 buf[1]=wsize>>16;
@@ -578,6 +587,7 @@ reset:
                   }
                 nsec++;
                 }
+              if(end) ctrlc();
               ptw=buf+4;
               memcpy(ptw,tms,6); /* TS */
               ptw+=6;
@@ -599,6 +609,6 @@ reset:
       }
     if(rawdump) fwrite(ptr_save,1,ptr_lim-ptr_save,fpout);
     time(&time_now);
-    if(seconds && (time_now>time_end || nsec>=seconds)) ctrlc();
+    if(end || (seconds && (time_now>time_end || nsec>=seconds))) ctrlc();
     }
   }

@@ -1,4 +1,7 @@
-$Id: ChangeLog,v 1.25 2003/04/08 12:24:37 urabe Exp $
+$Id: ChangeLog,v 1.26 2003/04/16 06:36:18 urabe Exp $
+
+2003-04-16 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
+        * shmdump.c : bug fix (last sec not outputted in stdin mode)
 
 2003-04-8 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
         * send_raw.c : added option -1 for 1 packet/sec mode

@@ -3,7 +3,7 @@ WIN package NEWS
   17 Jan. 2002
 
 Version 1.1.29 (4 March, 2004)
-*win_m : options can be set in latest mode
+* win_m : options can be set in latest mode
 
 Version 1.1.28 (29 February, 2004)
 * win2raw : added option -m
@@ -31,4 +31,4 @@ Version 1.0.0   (17 January, 2002)
 
 (Changes before Versions 1.0.0 were never recorded.  Sorry.)
 
-$Id: NEWS,v 1.9 2004/03/04 09:44:30 uehira Exp $
+$Id: NEWS,v 1.10 2004/03/07 13:10:45 uehira Exp $

@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.28 2003/05/20 08:02:51 urabe Exp $
+   $Id: win.c,v 1.29 2003/07/24 02:14:14 urabe Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -13,7 +13,7 @@
    98.7.2 yo2000
 */
 #define NAME_PRG      "win"
-#define WIN_VERSION   "2003.5.20"
+#define WIN_VERSION   "2003.7.19"
 #define DEBUG_AP      0   /* for debugging auto-pick */
 /* 5:sr, 4:ch, 3:sec, 2:find_pick, 1:all */
 /************ HOW TO COMPILE THE PROGRAM **************************
@@ -5100,8 +5100,37 @@ plot_zoom(izoom,leng,pt,put)
             sprintf(filename+strlen(filename),".%s-%s",
             ft.stn[ft.ch2idx[zoom_win[izoom].sys_ch]].name,
             ft.stn[ft.ch2idx[zoom_win[izoom].sys_ch]].comp);
+          if(fmt[0]=='A') strcat(filename,".au");
           }
         if((fp=fopen(filename,"w+"))==NULL) goto write_error;
+        if(fmt[0]=='A') /* write an SUN audio file header */
+          {
+          fprintf(fp,".snd");
+          fputc(0,fp);                       /* Data offset */
+          fputc(0,fp);
+          fputc(0,fp);
+          fputc(24,fp);
+          fputc(0xff,fp);                    /* Length of data (unknown) */
+          fputc(0xff,fp);
+          fputc(0xff,fp);
+          fputc(0xff,fp);
+          fputc(0,fp);                       /* Encoding */
+          fputc(0,fp);
+          fputc(0,fp);
+          if(!strcmp(fmt,"A4")) fputc(5,fp); /* 32 bit linear PCM */
+          if(!strcmp(fmt,"A3")) fputc(4,fp); /* 24 bit linear PCM */
+          if(!strcmp(fmt,"A2")) fputc(3,fp); /* 16 bit linear PCM */
+          if(!strcmp(fmt,"A1")) fputc(2,fp); /*  8 bit linear PCM */
+          if(!strcmp(fmt,"A"))  fputc(1,fp); /* u-law */
+          fputc(((sr*80) & 0xff000000) >> 24,fp);  /* Sample frequency (Hz) */
+          fputc(((sr*80) & 0x00ff0000) >> 16,fp);
+          fputc(((sr*80) & 0x0000ff00) >> 8,fp);
+          fputc(((sr*80) & 0x000000ff),fp);
+          fputc(0,fp);                             /* Channels */
+          fputc(0,fp);
+          fputc(0,fp);
+          fputc(1,fp);
+          }
         }
       xzero+=zoom_win[izoom].shift*zoom_win[izoom].pixels/1000;
       /* time */
@@ -5272,6 +5301,25 @@ plot_zoom(izoom,leng,pt,put)
           {
           if(!fwrite(buf,4,sr,fp)) goto write_error;
           }
+        if(!strcmp(fmt,"A4"))    /* 4-byte big-endian (32 bit PCM audio) */
+          for(j=0;j<sr;j++)
+            {
+            ll=buf[j];
+            if(fputc(ll>>24,fp)==EOF) goto write_error;
+            if(fputc(ll>>16,fp)==EOF) goto write_error;
+            if(fputc(ll>>8,fp)==EOF) goto write_error;
+            if(fputc(ll,fp)==EOF) goto write_error;
+            }
+        else if(!strcmp(fmt,"A3")) /* 3-byte big-endian (24 bit PCM audio) */
+          for(j=0;j<sr;j++)
+            {
+            if(buf[j]>(2<<23)-1) ll=(2<<23)-1;
+            else if(buf[j]<(-(2<<23))) ll=(-(2<<23));
+            else ll=buf[j];
+            if(fputc(ll>>16,fp)==EOF) goto write_error;
+            if(fputc(ll>>8,fp)==EOF) goto write_error;
+            if(fputc(ll,fp)==EOF) goto write_error;
+            }
         else if(!strcmp(fmt,"B2")) /* 2-byte binary */
           for(j=0;j<sr;j++)
             {
@@ -5280,12 +5328,21 @@ plot_zoom(izoom,leng,pt,put)
             else ss=buf[j];
             if(!fwrite(&ss,2,1,fp)) goto write_error;
             }
+        else if(!strcmp(fmt,"A2")) /* 2-byte big-endian (16 bit PCM audio) */
+          for(j=0;j<sr;j++)
+            {
+            if(buf[j]>32767) ll=32767;
+            else if(buf[j]<(-32768)) ll=(-32768);
+            else ll=buf[j];
+            if(fputc(ll>>8,fp)==EOF) goto write_error;
+            if(fputc(ll,fp)==EOF) goto write_error;
+            }
         else if(!strcmp(fmt,"C"))  /* numerical characters */
           for(j=0;j<sr;j++)
             {
             if(fprintf(fp,"%d\n",buf[j])==EOF) goto write_error;
             }
-        else if(!strcmp(fmt,"A"))    /* audio */
+        else if(!strcmp(fmt,"A"))    /* u-law */
           {
           if(put==MSE_BUTNL+1) k=8;
           else if(put==MSE_BUTNM+1) k=4;
@@ -5296,7 +5353,8 @@ plot_zoom(izoom,leng,pt,put)
             if(!fwrite(&cc,1,1,fp)) goto write_error;
             }
           }
-        else if(!strncmp(fmt,"B1",2)) /* 1 byte binary scaled */
+        else if(!strcmp(fmt,"B1") || !strcmp(fmt,"A1"))
+                                      /* 1 byte binary scaled */
           {
           for(j=0;j<sr;j++)
             {
@@ -5452,7 +5510,8 @@ proc_main()
     put_text(&dpy,x_time_now,Y_TIME,textbuf,BF_SI);
     put_text(&dpy,x_time_file,Y_TIME,textbuf1,BF_SI);
     }
-  else if(event.mse_trig==MSE_BUTTON && event.mse_dir==MSE_DOWN)
+  else if(event.mse_trig==MSE_BUTTON && event.mse_dir==MSE_DOWN
+         && event.mse_code>=0)
     {
     ring_bell=1;
     if(y>=YBASE_MON+height_win_mon)  /* zoom area */
@@ -6121,7 +6180,8 @@ proc_main()
         }
       }
     }
-  else if(event.mse_trig==MSE_BUTTON && event.mse_dir==MSE_UP)
+  else if(event.mse_trig==MSE_BUTTON && event.mse_dir==MSE_UP
+         && event.mse_code>=0)
     {
     if(main_mode==MODE_PICK)
       {

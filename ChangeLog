@@ -1,4 +1,8 @@
-$Id: ChangeLog,v 1.43 2003/07/02 04:17:57 urabe Exp $
+$Id: ChangeLog,v 1.44 2003/07/24 02:14:14 urabe Exp $
+
+2003-07-24 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
+	* wadd2.c : "mv" -> "cp;rm" for cygwin
+	* win.c : SUN sound file output ("PUT")
 
 2003-07-02 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
 	* ecore2.c : introduced strerror() after patch by Nakagawa.

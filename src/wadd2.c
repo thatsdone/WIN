@@ -1,4 +1,4 @@
-/* $Id: wadd2.c,v 1.3 2002/05/11 05:29:21 urabe Exp $ */
+/* $Id: wadd2.c,v 1.4 2003/07/24 02:14:14 urabe Exp $ */
 /* program "wadd2.c"
   "wadd" puts two win data files together
   7/24/91 - 7/25/91, 4/20/94,6/27/94-6/28/94,7/12/94   urabe
@@ -12,6 +12,7 @@
   2002.4.30 MAXSIZE 300K->1M
   2002.5.7  wadd -> wadd2
   2002.5.11 debugged
+  2003.7.12 mv -> cp;rm  for cygwin
 */
 
 #ifdef HAVE_CONFIG_H
@@ -241,7 +242,8 @@ main(argc,argv)
     if(argc>3) sprintf(new_file,"%s/%s",argv[3],ptr);
     else strcpy(new_file,argv[1]);
     /* newfile holds path of outfile */
-    sprintf(textbuf,"mv %s %s",tmpfile1,new_file);
+/*    sprintf(textbuf,"mv %s %s",tmpfile1,new_file);*/
+    sprintf(textbuf,"cp %s %s;rm %s",tmpfile1,new_file,tmpfile1);
     system(textbuf);
     }
 

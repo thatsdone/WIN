@@ -1,4 +1,4 @@
-/* $Id: send_raw_old.c,v 1.6 2002/01/13 06:57:51 uehira Exp $ */
+/* $Id: send_raw_old.c,v 1.7 2002/01/13 08:34:33 uehira Exp $ */
 /*
     program "send_raw_old/send_mon_old.c"   1/24/94 - 1/25/94,5/25/94 urabe
                                     6/15/94 - 6/16/94
@@ -325,7 +325,7 @@ reset:
           if(ptw+gs-ptw_save>MAXMESG)
             {
             re=sendto(sock,ptw_save,psize[bufno]=ptw-ptw_save,
-              0,&to_addr,sizeof(to_addr));
+              0,(const struct sockaddr *)&to_addr,sizeof(to_addr));
 #if DEBUG
             fprintf(stderr,"%5d",re);
 #endif
@@ -349,7 +349,7 @@ reset:
       if(ptw>ptw_save+8 && re==0)
         {
         re=sendto(sock,ptw_save,psize[bufno]=ptw-ptw_save,
-          0,&to_addr,sizeof(to_addr));
+          0,(const struct sockaddr *)&to_addr,sizeof(to_addr));
 #if DEBUG
         fprintf(stderr,"%5d",re);
 #endif
@@ -381,7 +381,7 @@ reset:
           if(ptw+gs-ptw_save>MAXMESG)
             {
             re=sendto(sock,ptw_save,psize[bufno]=ptw-ptw_save,
-              0,&to_addr,sizeof(to_addr));
+              0,(const struct sockaddr *)&to_addr,sizeof(to_addr));
 #if DEBUG
             fprintf(stderr,"%5d",re);
 #endif
@@ -404,7 +404,7 @@ reset:
       if(ptw>ptw_save+8 && re==0)
         {
         re=sendto(sock,ptw_save,psize[bufno]=ptw-ptw_save,
-          0,&to_addr,sizeof(to_addr));
+          0,(const struct sockaddr *)&to_addr,sizeof(to_addr));
 #if DEBUG
         fprintf(stderr,"%5d",re);
 #endif
@@ -417,9 +417,9 @@ reset:
 #endif
       }
     i=1<<sock;
-    while(select(sock+1,&i,NULL,NULL,&timeout)>0)
+    while(select(sock+1,(fd_set *)&i,NULL,NULL,&timeout)>0)
       {
-      j=recvfrom(sock,rbuf,MAXMESG,0,&from_addr,&fromlen);
+      j=recvfrom(sock,rbuf,MAXMESG,0,(struct sockaddr *)&from_addr,&fromlen);
       if(j>0 && j<BUFNO) for(k=0;k<j;k++)
         {
         if((bufno_f=get_packet(bufno,no_f=(rbuf[k])))>=0)
@@ -427,7 +427,8 @@ reset:
           memcpy(sbuf[bufno],sbuf[bufno_f],psize[bufno]=psize[bufno_f]);
           sbuf[bufno][0]=no;    /* packet no. */
           sbuf[bufno][1]=no_f;  /* old packet no. */
-          re=sendto(sock,sbuf[bufno],psize[bufno],0,&to_addr,sizeof(to_addr));
+          re=sendto(sock,sbuf[bufno],psize[bufno],0,
+		    (const struct sockaddr *)&to_addr,sizeof(to_addr));
           sprintf(tbuf,"resend to %s:%d #%d as #%d, %d B",
             inet_ntoa(to_addr.sin_addr),ntohs(to_addr.sin_port),no_f,no,re);
           write_log(logfile,tbuf);

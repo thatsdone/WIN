@@ -1,4 +1,4 @@
-/* $Id: recvnmx.c,v 1.10 2002/01/13 06:57:51 uehira Exp $ */
+/* $Id: recvnmx.c,v 1.11 2002/01/13 08:38:15 uehira Exp $ */
 /* "recvnmx.c"    2001.7.18-19 modified from recvt.c and nmx2raw.c  urabe */
 /*                2001.8.18 */
 /*                2001.10.5 workaround for hangup */
@@ -702,7 +702,7 @@ main(argc,argv)
 
   while(1){
     fromlen=sizeof(from_addr);
-    n=recvfrom(sock,pbuf,MAXMESG,0,&from_addr,&fromlen);
+    n=recvfrom(sock,pbuf,MAXMESG,0,(struct sockaddr *)&from_addr,&fromlen);
     if(parse_one_packet(pbuf,n,&pk)<0) continue;
 #if DEBUG1
     p=pbuf;

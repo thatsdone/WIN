@@ -1,4 +1,4 @@
-/* $Id: recvstatus.c,v 1.5 2002/01/13 06:57:51 uehira Exp $ */
+/* $Id: recvstatus.c,v 1.6 2002/01/13 08:34:33 uehira Exp $ */
 /* "recvstatus.c"      5/24/95    urabe */
 /* 97.7.17 two lines of "if() continue;" in the main loop */
 /* 2000.4.24/2001.11.14 strerror() */
@@ -136,7 +136,7 @@ main(argc,argv)
   while(1)
     {
     fromlen=sizeof(from_addr);
-    n=recvfrom(sock,rbuf,MAXMESG,0,&from_addr,&fromlen);
+    n=recvfrom(sock,rbuf,MAXMESG,0,(struct sockaddr *)&from_addr,&fromlen);
     if(rbuf[0]!=rbuf[8]) continue;
     if(rbuf[9]==stt[(rbuf[7]<<8)+rbuf[8]]) continue;
     sprintf(tb,"%s:%d %02X %02X%02X%02X %02X%02X%02X %02X%02X ... %02X",

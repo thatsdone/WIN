@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.14 2001/08/07 06:56:38 urabe Exp $
+   $Id: win.c,v 1.15 2001/08/07 07:58:48 urabe Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -6643,7 +6643,10 @@ get_calc()  /* get calculated arrival times for all stations */
   fclose(fp);
   /* make init file */
   fp=fopen(ft.init_file2,"w+");
-  fprintf(fp,"\n\n%d %d %d %d %d %.3f %.5f %.5f %.3f %.1f\n",
+  fprintf(fp,"%10.4f%10.4f%8.2f\n",ft.hypo.alat,ft.hypo.along,ft.hypo.dep);
+  fprintf(fp,"  5.0       5.0       5.0\n");
+  /* above two lines are dummy */
+  fprintf(fp,"%d %d %d %d %d %.3f %.5f %.5f %.3f %.1f\n",
     ft.hypo.tm[0],ft.hypo.tm[1],ft.hypo.tm[2],ft.hypo.tm[3],ft.hypo.tm[4],
     ft.hypo.se,ft.hypo.alat,ft.hypo.along,ft.hypo.dep,ft.hypo.mag);
   fclose(fp);

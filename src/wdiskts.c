@@ -1,4 +1,4 @@
-/* $Id: wdiskts.c,v 1.2 2002/01/13 06:57:52 uehira Exp $ */
+/* $Id: wdiskts.c,v 1.3 2004/12/03 14:07:11 uehira Exp $ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -28,7 +28,9 @@
 #include <ctype.h>
 #include <errno.h>
 #include <setjmp.h>
+#include <syslog.h>
 
+#include "daemon_mode.h"
 #include "subst_func.h"
 
 #define   DEBUG   0
@@ -49,6 +51,7 @@ FILE *fd;
 static unsigned char  *datbuf,*sortbuf;
 unsigned long  dat_num,sort_num;
 jmp_buf  mx;
+int  daemon_mode, syslog_mode;
 
 mklong(ptr)
   unsigned char *ptr;
@@ -65,28 +68,46 @@ write_log(logfil,ptr)
 {
    FILE *fp;
    int tm[6];
-   if(*logfil) fp=fopen(logfil,"a");
-   else fp=stdout;
-   get_time(tm);
-   fprintf(fp,"%02d%02d%02d.%02d%02d%02d %s %s\n",
-	   tm[0],tm[1],tm[2],tm[3],tm[4],tm[5],progname,ptr);
-   if(*logfil) fclose(fp);
+
+   if (syslog_mode)
+     {
+       syslog(LOG_NOTICE, "%s", ptr);
+     }
+   else
+     {
+       if(*logfil) fp=fopen(logfil,"a");
+       else fp=stdout;
+       get_time(tm);
+       fprintf(fp,"%02d%02d%02d.%02d%02d%02d %s %s\n",
+	       tm[0],tm[1],tm[2],tm[3],tm[4],tm[5],progname,ptr);
+       if(*logfil) fclose(fp);
+     }
 }
 
 ctrlc()
 {
    if(fd!=NULL) fclose(fd);
    write_log(logfile,"end");
+   if (syslog_mode)
+     closelog();
    exit(0);
 }
 
 err_sys(ptr)
      char *ptr;
 {
-   perror(ptr);
-   write_log(logfile,ptr);
-   if(strerror(errno)) write_log(logfile,strerror(errno));
-   ctrlc();
+
+  if (syslog_mode)
+    {
+      syslog(LOG_NOTICE, "%s", ptr);
+    }
+  else
+    {
+      perror(ptr);
+      write_log(logfile,ptr);
+    }
+  if(strerror(errno)) write_log(logfile,strerror(errno));
+  ctrlc();
 }
 
 adj_time_m(tm)
@@ -615,8 +636,12 @@ main(argc,argv)
    
    if(progname=strrchr(argv[0],'/')) progname++;
    else progname=argv[0];
+
+   daemon_mode = syslog_mode = 0;
    if(strcmp(progname,"wdiskts60")==0) mode=60;
-   else mode=1;
+   else if(strcmp(progname,"wdiskts60d")==0) {mode=60;daemon_mode=1;}
+   else if(strcmp(progname,"wdiskts")==0) mode=1;
+   else if(strcmp(progname,"wdisktsd")==0) {mode=1;daemon_mode=1;}
    
    if(argc<3){
       fprintf(stderr,
@@ -635,7 +660,18 @@ main(argc,argv)
    fclose(fp);
    
    if(argc>4) strcpy(logfile,argv[4]);
-   else *logfile=0;
+   else
+     {
+       *logfile=0;
+       if (daemon_mode)
+	 syslog_mode = 1;
+     }
+
+   /* daemon mode */
+   if (daemon_mode) {
+     daemon_init(progname, LOG_USER, syslog_mode);
+     umask(022);
+   }
 
    *latest=(*oldest)=(*busy)=0;
    if((shmid=shmget(shmkey,0,0))<0) err_sys("shmget");

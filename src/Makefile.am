@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.25 2004/11/11 11:36:51 uehira Exp $
+# $Id: Makefile.am,v 1.26 2004/12/03 14:07:10 uehira Exp $
 #
 
 if SUNOS4
@@ -86,6 +86,7 @@ install-exec-hook:
 	(rm -f @bindir@/relayd; cd @bindir@ && @LN_S@ relay relayd)
 	(rm -f @bindir@/relaymd; cd @bindir@ && @LN_S@ relaym relaymd)
 	(rm -f @bindir@/raw_mond; cd @bindir@ && @LN_S@ raw_mon raw_mond)
+	(rm -f @bindir@/wdisktsd; cd @bindir@ && @LN_S@ wdiskts wdisktsd)
 
 win_SOURCES = win.c $(SUBFUNC_H)
 win_CFLAGS = @X_CFLAGS@ $(AM_CFLAGS)
@@ -146,7 +147,7 @@ fromtape_SOURCES = fromtape.c $(SUBFUNC_H)
 wdisk_SOURCES = wdisk.c $(SUBFUNC_H) $(DAEMON_MODE)
 wdisk_LDADD = @LIBSHMGET@
 
-wdiskts_SOURCES = wdiskts.c $(SUBFUNC_H)
+wdiskts_SOURCES = wdiskts.c $(SUBFUNC_H) $(DAEMON_MODE)
 wdiskts_LDADD = @LIBSHMGET@
 
 ras2rpdl_SOURCES = ras2rpdl.c $(SUBFUNC_H)

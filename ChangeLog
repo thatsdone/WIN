@@ -1,4 +1,10 @@
- $Id: ChangeLog,v 1.83 2004/11/30 14:16:30 uehira Exp $
+ $Id: ChangeLog,v 1.84 2004/12/03 14:07:10 uehira Exp $
+
+2004-12-03 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* README.Cygwin : updated
+	* README.MacOSX : added new tip
+	* wdiskts : added daemon mode (wdisktsd)
+	* Version 1.1.49 released.
 
 2004-11-30 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* relaym.c : end_program() moved to win_log.c

@@ -1,4 +1,4 @@
-/* $Id: rtape.c,v 1.5 2002/01/13 06:57:51 uehira Exp $ */
+/* $Id: rtape.c,v 1.6 2002/05/11 15:02:05 urabe Exp $ */
 /*
   program "rtape.c"
   9/16/89 - 11/06/90, 6/26/91, 10/30/91, 6/26/92  urabe
@@ -11,6 +11,7 @@
   99.4.19  byte-order-free
   2000.5.10 deleted size=<0x3c000 limit
   2001.10.15 output to current dir if not specified
+  2002.5.11 500K->1M
 */
 
 #ifdef HAVE_CONFIG_H
@@ -30,7 +31,7 @@
 #define   DEBUG     0
 #define   TRY_LIMIT 10
 #define   NAMLEN    80
-#define   MAXSIZE   500000
+#define   MAXSIZE   1000000
 
 #define   TIME1   "9005151102"  /* 10 m / fm before this time */
 #define   TIME2   "9005161000"  /* no fms before this time */

@@ -1,4 +1,4 @@
-/* $Id: order.c,v 1.7 2002/05/07 06:01:16 urabe Exp $ */
+/* $Id: order.c,v 1.8 2002/05/11 15:02:05 urabe Exp $ */
 /*  program "order.c" 1/26/94 - 2/7/94, 6/14/94 urabe */
 /*                              1/6/95 bug in adj_time(tm[0]--) fixed */
 /*                              3/17/95 write_log() */
@@ -15,6 +15,7 @@
 /*                              2002.3.1 eobsize_in(auto), eobsize_out(-B) */
 /*                              2002.5.2 i<1000 -> 1000000 */
 /*                              2002.5.7 mktime2() */
+/*                              2002.5.11 timezone for SVR4 */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -154,6 +155,9 @@ time_t mktime2(struct tm *mt) /* high-speed version of mktime() */
                    365,365,366,365,365,365,366,365,365,365,366,365, /* 2006-17 */
                    365,365,366,365,365,365,366,365,365,365,366,365, /* 2018-2029 */
                    365,365,366,365,365,365,366,365,365,365,366,365};/* 2030-2041 */
+#if defined(__SVR4)
+  extern time_t timezone;
+#endif
   if(m==NULL) m=localtime(&t);
   ye=mt->tm_year-70;
   j=0;
@@ -161,7 +165,11 @@ time_t mktime2(struct tm *mt) /* high-speed version of mktime() */
   for(i=0;i<mt->tm_mon;i++) j+=dm[i]; /* days till the previous month */
   if(!(mt->tm_year&0x3) && mt->tm_mon>1) j++;  /* in a leap year */
   j+=mt->tm_mday-1; /* days */
+#if defined(__SVR4)
+  return j*86400+mt->tm_hour*3600+mt->tm_min*60+mt->tm_sec+timezone;
+#else
   return j*86400+mt->tm_hour*3600+mt->tm_min*60+mt->tm_sec-m->tm_gmtoff;
+#endif
   }
 
 time_t bcd_t(ptr)

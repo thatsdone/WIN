@@ -1,4 +1,4 @@
-/* $Id: recvstatus2.c,v 1.5 2002/12/17 03:51:40 uehira Exp $ */
+/* $Id: recvstatus2.c,v 1.6 2002/12/17 07:37:18 uehira Exp $ */
 /* modified from "recvstatus.c" */
 /* 2002.6.19 recvstatus2 receive A8/A9 packets from Datamark LS-7000XT */
 /* 2002.7.3 fixed a bug - 'ok' deleted */
@@ -78,6 +78,7 @@ main(argc,argv)
     } *s[NSMAX];
   DIR *dir_ptr;
   FILE *fp;
+  int  chtmp;
 
   if(progname=strrchr(argv[0],'/')) progname++;
   else progname=argv[0];
@@ -136,9 +137,10 @@ printf("\n");
 #endif
     if(rbuf[2]==0xA8 || rbuf[2]==0xA9)
       {
+      chtmp = (rbuf[11]<<8)+rbuf[12];
       for(i=0;i<ns;i++)
-        if(s[i]->adrs==from_addr.sin_addr.s_addr &&
-          s[i]->port==from_addr.sin_port) break;
+        if(s[i]->ch==chtmp && s[i]->id==rbuf[2])
+	  break;
 #if DEBUG
 printf("ns=%d i=%d\n",ns,i);
 #endif

@@ -1,0 +1,39 @@
+.TH win2raw 1W "2002.7.23" "WIN SYSTEM" "WIN SYSTEM"
+.SH 名称
+win2raw - win 形式ファイルの1分ファイルへの分割
+.SH 形式
+win2raw [ \-huv ] 
+.I dirname
+[
+.I file
+]
+.LP
+.SH 解説
+win2raw は、win形式ファイル
+.I file
+を
+.I dirname
+へ1分ファイルに分割して出力します。ファイル名は wdisk(1W)で出力される
+ファイル名と同じ'YYMMDDhh.mm' の形式です。
+.LP
+.I file
+が与えられない場合は、win2raw は標準入力からデータを読みます。
+.LP
+win2raw は引数なしで起動すると簡単な使用法を表示します。
+.SH オプション
+.TP 
+\-u
+標準入力からのデータでない場合、出力後
+.I file
+を削除します。
+.TP 
+\-v
+コマンドの実行中、冗長です。
+.TP
+\-h
+簡単な使用法を表示します。
+.SH ソース 
+.TP
+`win2raw.c'
+.SH 関連事項
+wdisk(1W), wed(1W), winformat(1W)

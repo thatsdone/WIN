@@ -1,4 +1,4 @@
-/* $Id: win_system.h,v 1.3 2002/05/03 10:49:49 uehira Exp $ */
+/* $Id: win_system.h,v 1.4 2002/07/22 15:12:32 uehira Exp $ */
 
 #ifndef _WIN_SYSTEM_H_
 #define _WIN_SYSTEM_H_
@@ -114,5 +114,7 @@ WIN_blocksize get_select_data(unsigned char *selectbuf,
 int WIN_time_hani(char fname[], int start[], int end[]);
 int read_channel_file(FILE *, struct channel_tbl [], int);
 int **imatrix(int, int);
+WIN_blocksize read_onesec_win(FILE *, unsigned char **);
+
 
 #endif  /*_WIN_SYSTEM_H_ */

@@ -1,5 +1,8 @@
-$Id: ChangeLog,v 1.9 2002/05/15 04:02:00 uehira Exp $
+$Id: ChangeLog,v 1.10 2002/07/22 15:12:32 uehira Exp $
 	
+2002-07-23 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* add win2raw
+
 2002-05-15 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* Version 1.1.1 released.
 	* wform.c

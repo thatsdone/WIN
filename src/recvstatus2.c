@@ -1,8 +1,8 @@
-/* $Id: recvstatus2.c,v 1.3 2002/07/11 00:59:52 urabe Exp $ */
+/* $Id: recvstatus2.c,v 1.4 2002/07/11 05:52:58 urabe Exp $ */
 /* modified from "recvstatus.c" */
 /* 2002.6.19 recvstatus2 receive A8/A9 packets from Datamark LS-7000XT */
 /* 2002.7.3 fixed a bug - 'ok' deleted */
-/* 2002.7.11 DEBUG */
+/* 2002.7.11 DEBUG(2) */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -139,6 +139,9 @@ printf("\n");
       for(i=0;i<ns;i++)
         if(s[i]->adrs==from_addr.sin_addr.s_addr &&
           s[i]->port==from_addr.sin_port) break;
+#if DEBUG
+printf("ns=%d i=%d\n",ns,i);
+#endif
       if(i==ns)
         {
         if(ns==NSMAX)
@@ -153,6 +156,9 @@ printf("\n");
         s[i]->len=0;
         ns++;
         }
+#if DEBUG
+printf("ns=%d i=%d s[i]->seq=%d s[i]->len=%d\n",ns,i,s[i]->seq,s[i]->len);
+#endif
       if(rbuf[14]==1)
         {
         memcpy(s[i]->t,rbuf+5,6);
@@ -164,10 +170,16 @@ printf("\n");
 
       memcpy(s[i]->c+s[i]->len,rbuf+15,(rbuf[3]<<8)+rbuf[4]-12);
       s[i]->len+=(rbuf[3]<<8)+rbuf[4]-12;
+#if DEBUG
+printf("s[i]->seq=%d s[i]->len=%d\n",s[i]->seq,s[i]->len);
+#endif
       if(rbuf[13]==rbuf[14])
         {
         s[i]->seq=1;
         s[i]->c[s[i]->len]='\n';
+#if DEBUG
+printf("%s",s[i]->c);
+#endif
         if(*logdir)
           {
           if(rbuf[2]==0xA8) sprintf(logfile,"%s/S%04X.xml",logdir,s[i]->ch);

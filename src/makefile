@@ -1,4 +1,4 @@
-# $Id: makefile,v 1.4 2000/05/26 08:29:49 uehira Exp $
+# $Id: makefile,v 1.5 2000/05/26 08:43:16 uehira Exp $
 #########################
 #                       #
 # win system makefile   #
@@ -40,7 +40,7 @@ OFFLINE_F77=hypomh
 
 OFFLINE_USER=win $(OFFLINE_F77) wed wck wadd $(OFFLINE_MATH) wchch pick2tseis \
              wch pick2finalb pick2final finalb2final final2finalb finalb2seis
-TAPE_USER=rtape fromtape wdisk ras2rpdl ras2lips file_older raw2mon \
+TAPE_USER=rtape fromtape wdisk wdiskts ras2rpdl ras2lips file_older raw2mon \
           $(TAPE_USER_MATH)
 ONLINE=order raw_mon wtape setexb timeout raw_raw raw_100 cormeisei shmdump \
        raw_ch extraw order2 $(ONLINE_SO) $(ONLINE_MATH) $(ONL_X86)

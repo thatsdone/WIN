@@ -1,4 +1,4 @@
-/* $Id: raw_time.c,v 1.1 2005/03/17 06:59:08 uehira Exp $ */
+/* $Id: raw_time.c,v 1.2 2005/03/17 08:32:36 uehira Exp $ */
 
 /* raw_time.c -- online version of wtime(1W) */
 
@@ -49,7 +49,7 @@
 #define MAXMESG   2048
 
 static char rcsid[] =
-  "$Id: raw_time.c,v 1.1 2005/03/17 06:59:08 uehira Exp $";
+  "$Id: raw_time.c,v 1.2 2005/03/17 08:32:36 uehira Exp $";
 
 char *progname, *logfile;
 int  daemon_mode, syslog_mode;
@@ -257,7 +257,7 @@ main(int argc, char *argv[])
 	  
 	if (fixbuf_num < sr) {
 	  /*  printf("sr=%d\n",sr); */
-	  fixbuf1 = (long *)realloc(fixbuf1, (size_t)(sr * sizeof(long)));
+	  fixbuf1 = (long *)realloc(fixbuf1, (size_t)(sr * sizeof(long) + 1));
 	  fixbuf2 = (long *)realloc(fixbuf2, (size_t)(sr * sizeof(long)));
 	  if (fixbuf1 == NULL || fixbuf2 == NULL)
 	    err_sys("fixbuf realloc");

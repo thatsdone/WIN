@@ -1,6 +1,6 @@
 #! /bin/sh
 #
-#  _update2 2001.1.17  urabe
+#  _update2 2001.2.6  urabe
 #
 
 ED=$DD/etc
@@ -41,11 +41,7 @@ do
   if (file_older $PDM/$file $ED/evtemp.$file > /dev/null || \
     file_older $ED/pmon.out.$file $ED/evtemp.$file > /dev/null)
   then
-    elist $PDM/$file $ED/pmon.out.$file $td > $TD/evtemp.$file
-#   mv $TD/evtemp.$file $ED
-    grep -v '#' $TD/evtemp.$file > $ED/evtemp.$file
-    rm $TD/evtemp.$file
-#     this is to hide 'NOISE' events
+    elist -h -o $ED/evtemp.$$ -p $ED/pktemp.$file $PDM/$file $ED/pmon.out.$file $td
     echo 'evtemp(ee) database updated'
   fi
 done

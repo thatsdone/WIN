@@ -1,10 +1,10 @@
-/* $Id: elist.c,v 1.4 2001/02/06 07:33:40 urabe Exp $ */
+/* $Id: elist.c,v 1.5 2001/02/06 14:54:34 urabe Exp $ */
 /* program elist.c    2/5/91 - 2/25/91 ,  4/16/92, 4/22/92  urabe */
 /*                      6/10/92, 8/18/92, 10/25/92, 6/8/93, 1/5/94  */
 /*      4/21/94,12/5/94,6/2/95 bug in dat_dir fixed */
 /*      98.1.22 getpwuid()==NULL */
 /*      98.6.26 yo2000           */
-/*      2001.2.6 a lot of functions added (options -h/u/p/o/n) */
+/*      2001.2.6 a lot of functions added (options -h/u/p/o/n/s) */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -190,7 +190,8 @@ main(argc,argv)
   char pick_dir[NAMLEN],out_file[NAMLEN],dat_dir[NAMLEN],req_dir[3][NAMLEN],
     filename[NAMLEN],textbuf[LINELEN],group[20],mes1[20],mes2[20],mes3[20],
     tbuf[LINELEN],gbuf[LINELEN],name_dat[NAMLEN],name_ch[NAMLEN],
-    name_sv[NAMLEN],*ptr,ppfile[NAMLEN],eefile[NAMLEN],outbuf[LINELEN];
+    name_sv[NAMLEN],*ptr,ppfile[NAMLEN],eefile[NAMLEN],outbuf[LINELEN],
+    tmpfile[NAMLEN];
   int i,npick,t[6],ton[6],init,j,m,k,kk,no_file,noise,not_noise,re,search,
     npick_lim,c,reverse,hidenoise,kkk,pn,fn,sn,mn,nstn,delete;
   long dp;
@@ -387,45 +388,12 @@ fprintf(fpp,"-------------------------------------------------------------------
     exit(1);
     }
 
-  if(*eefile)
+  sprintf(tmpfile,"/tmp/elist.%d",getpid());
+  if((fee=fopen(tmpfile,"w"))==NULL)
     {
-    if(reverse)
-      {
-      sprintf(tbuf,"tail -r > %s",eefile);
-      if((fee=popen(tbuf,"w"))==NULL)
-        {
-        fprintf(stderr,"pipe '%s' not open.\n",tbuf);
-        exit(1);
-        }
-      } 
-    else if((fee=fopen(eefile,"w"))==NULL)
-      {
-      fprintf(stderr,"eefile '%s' not open.\n",eefile);
-      exit(1);
-      }
+    fprintf(stderr,"tempfile '%s' not open.\n",tmpfile);
+    exit(1);
     }
-  else
-    {
-    if(reverse)
-      {
-      sprintf(tbuf,"tail -r");
-      if((fee=popen(tbuf,"w"))==NULL)
-        {
-        fprintf(stderr,"pipe '%s' not open.\n",tbuf);
-        exit(1);
-        }
-      }
-    else fee=stdout;
-    }
-
-  if(!reverse)
-    {
-    fprintf(fee,"---------------------------------------------------\n");
-    fprintf(fee," date   time                       M      triggered\n");
-    fprintf(fee,"YYMMDD hhmmss  picker      PHMM 1.....7   region(s)\n");
-    fprintf(fee,"---------------------------------------------------\n");
-    }
-
   init=1;
 #define ON 1
 #define OFF 0
@@ -564,14 +532,35 @@ fprintf(fpp,"-------------------------------------------------------------------
       }
     }
   fclose(fp);
-  if(reverse)
+  fclose(fee);
+
+  if(*eefile)
     {
+    if((fee=fopen(eefile,"w"))==NULL)
+      {
+      fprintf(stderr,"eefile '%s' not open.\n",eefile);
+      exit(1);
+      }
     fprintf(fee,"---------------------------------------------------\n");
     fprintf(fee,"YYMMDD hhmmss  picker      PHMM 1.....7   region(s)\n");
     fprintf(fee," date   time                       M      triggered\n");
     fprintf(fee,"---------------------------------------------------\n");
-    pclose(fee);
+    fclose(fee);
+    if(reverse) sprintf(tbuf,"tail -r %s >> %s",tmpfile,eefile);
+    else sprintf(tbuf,"cat %s >> %s",tmpfile,eefile);
+    system(tbuf);
     }
-  else fclose(fee);
+  else
+    {
+    printf("---------------------------------------------------\n");
+    printf("YYMMDD hhmmss  picker      PHMM 1.....7   region(s)\n");
+    printf(" date   time                       M      triggered\n");
+    printf("---------------------------------------------------\n");
+    fflush(stdout);
+    if(reverse) sprintf(tbuf,"tail -r %s",tmpfile);
+    else sprintf(tbuf,"cat %s",tmpfile);
+    system(tbuf);
+    }
+  unlink(tmpfile);
   exit(0);
   }

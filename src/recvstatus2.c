@@ -1,7 +1,8 @@
-/* $Id: recvstatus2.c,v 1.2 2002/07/03 02:16:56 urabe Exp $ */
+/* $Id: recvstatus2.c,v 1.3 2002/07/11 00:59:52 urabe Exp $ */
 /* modified from "recvstatus.c" */
 /* 2002.6.19 recvstatus2 receive A8/A9 packets from Datamark LS-7000XT */
-/* 2002.7.3 fiedx a bug - 'ok' deleted */
+/* 2002.7.3 fixed a bug - 'ok' deleted */
+/* 2002.7.11 DEBUG */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -35,6 +36,7 @@
 #include "subst_func.h"
 
 #define MAXMESG   2048
+#define DEBUG   0
 
 int sock;     /* socket */
 
@@ -127,6 +129,11 @@ main(argc,argv)
     {
     fromlen=sizeof(from_addr);
     n=recvfrom(sock,rbuf,MAXMESG,0,(struct sockaddr *)&from_addr,&fromlen);
+#if DEBUG
+printf("n=%d from %s:%d\n",n,inet_ntoa(from_addr.sin_addr),ntohs(from_addr.sin_port));
+for(i=0;i<25;i++) printf(" %02X",rbuf[i]);
+printf("\n");
+#endif
     if(rbuf[2]==0xA8 || rbuf[2]==0xA9)
       {
       for(i=0;i<ns;i++)

@@ -1,4 +1,8 @@
- $Id: ChangeLog,v 1.84 2004/12/03 14:07:10 uehira Exp $
+ $Id: ChangeLog,v 1.85 2004/12/15 06:39:45 urabe Exp $
+
+2004-11-17 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
+	* wdisk : bug fixed. : use tm_min[i] instead of last_min
+	* Version 1.1.50 released.
 
 2004-12-03 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* README.Cygwin : updated

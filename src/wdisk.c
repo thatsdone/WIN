@@ -1,4 +1,4 @@
-/* $Id: wdisk.c,v 1.15 2004/10/26 14:42:01 uehira Exp $ */
+/* $Id: wdisk.c,v 1.16 2004/12/15 06:39:45 urabe Exp $ */
 /*
   program "wdisk.c"   4/16/93-5/13/93,7/2/93,7/5/94  urabe
                       1/6/95 bug in adj_time fixed (tm[0]--)
@@ -17,6 +17,7 @@
                       2004.8.1 added option -n (uehira)
                       2004.9.4 added option -s (uehira)
                       2004.10.4 daemon mode (-D) (uehira)
+                      2004.12.15 bug fixed. - use tm_min[i] instead of last_min
 */
 
 #ifdef HAVE_CONFIG_H
@@ -175,7 +176,7 @@ get_time(rt)
      int *rt;
 {
    struct tm *nt;
-   long ltime;
+   time_t ltime;
    time(&ltime);
    nt=localtime(&ltime);
    rt[0]=nt->tm_year%100;
@@ -368,7 +369,7 @@ main(argc,argv)
 #define BUFSZ 500000
 #define BUFLIM 1000000
    FILE *fp;
-   int i,j,last_min,shmid,shid,tm[6],eobsize,eobsize_count,bufsiz;
+   int i,j,shmid,shid,tm[6],tm_last[6],eobsize,eobsize_count,bufsiz;
    unsigned long shp,shp_save,size,c_save,size2;
    unsigned char *ptr,*ptr_save,ptw[4],*buf;
    key_t shmkey;
@@ -468,7 +469,7 @@ main(argc,argv)
    signal(SIGINT,(void *)ctrlc);
    
  reset:
-   last_min=(-1);
+   for(i=0;i<5;i++) tm_last[i]=(-1);
    fd=NULL;
 
    if(shmkey)
@@ -524,13 +525,21 @@ main(argc,argv)
  
       if(mode==60)
         {
-        if(tm[3]!=last_min) switch_file(tm);
-        last_min=tm[3];
+        for(i=0;i<4;i++) if(tm_last[i]!=tm[i]) break;
+        if(i<4)
+          {
+          switch_file(tm);
+          for(i=0;i<4;i++) tm_last[i]=tm[i];
+          }
         }
       else
         {
-        if(tm[4]!=last_min) switch_file(tm);
-        last_min=tm[4];
+        for(i=0;i<5;i++) if(tm_last[i]!=tm[i]) break;
+        if(i<5)
+          {
+          switch_file(tm);
+          for(i=0;i<5;i++) tm_last[i]=tm[i];
+          }
         }
 
 #if DEBUG

@@ -1,4 +1,3 @@
-/* $Id: recvt.c,v 1.11 2002/01/17 15:06:38 urabe Exp $ */
 /* "recvt.c"      4/10/93 - 6/2/93,7/2/93,1/25/94    urabe */
 /*                2/3/93,5/25/94,6/16/94 */
 /*                1/6/95 bug in adj_time fixed (tm[0]--) */
@@ -32,6 +31,9 @@
 /*                2002.1.8 MAXMESG increased to 32768 bytes */
 /*                2002.1.12 trivial fixes on 'usage' */
 /*                2002.1.15 option '-M' necessary for receiving mon data */
+/*                2002.3.2 wincpy2() discard duplicated data (TS+CH) */
+/*                2002.3.2 option -B ; write blksize at EOB */
+/*                2002.3.18 host control debugged */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -66,6 +68,7 @@
 #define DEBUG     0
 #define DEBUG0    0
 #define DEBUG1    0
+#define DEBUG2    0
 #define BELL      0
 #define MAXMESG   32768
 #define N_PACKET  64    /* N of old packets to be requested */  
@@ -115,111 +118,6 @@ get_time(rt)
   rt[5]=nt->tm_sec;
   }
 
-adj_time_m(tm)
-  int *tm;
-  {
-  if(tm[4]==60)
-    {
-    tm[4]=0;
-    if(++tm[3]==24)
-      {
-      tm[3]=0;
-      tm[2]++;
-      switch(tm[1])
-        {
-        case 2:
-          if(tm[0]%4==0)
-            {
-            if(tm[2]==30)
-              {
-              tm[2]=1;
-              tm[1]++;
-              }
-            break;
-            }
-          else
-            {
-            if(tm[2]==29)
-              {
-              tm[2]=1;
-              tm[1]++;
-              }
-            break;
-            }
-        case 4:
-        case 6:
-        case 9:
-        case 11:
-          if(tm[2]==31)
-            {
-            tm[2]=1;
-            tm[1]++;
-            }
-          break;
-        default:
-          if(tm[2]==32)
-            {
-            tm[2]=1;
-            tm[1]++;
-            }
-          break;
-        }
-      if(tm[1]==13)
-        {
-        tm[1]=1;
-        if(++tm[0]==100) tm[0]=0;
-        }
-      }
-    }
-  else if(tm[4]==-1)
-    {
-    tm[4]=59;
-    if(--tm[3]==-1)
-      {
-      tm[3]=23;
-      if(--tm[2]==0)
-        {
-        switch(--tm[1])
-          {
-          case 2:
-            if(tm[0]%4==0)
-              tm[2]=29;else tm[2]=28;
-            break;
-          case 4:
-          case 6:
-          case 9:
-          case 11:
-            tm[2]=30;
-            break;
-          default:
-            tm[2]=31;
-            break;
-          }
-        if(tm[1]==0)
-          {
-          tm[1]=12;
-          if(--tm[0]==-1) tm[0]=99;
-          }
-        }
-      }
-    }
-  }
-
-time_cmp(t1,t2,i)
-  int *t1,*t2,i;
-  {
-  int cntr;
-  cntr=0;
-  if(t1[cntr]<70 && t2[cntr]>70) return 1;
-  if(t1[cntr]>70 && t2[cntr]<70) return -1;
-  for(;cntr<i;cntr++)
-    {
-    if(t1[cntr]>t2[cntr]) return 1;
-    if(t1[cntr]<t2[cntr]) return -1;
-    }
-  return 0;
-  }
-
 bcd_dec(dest,sour)
   unsigned char *sour;
   int *dest;
@@ -257,52 +155,31 @@ bcd_dec(dest,sour)
   return 1;
   }
 
-check_time(ptr,pre,post)
+time_t check_ts(ptr,pre,post)
   char *ptr;
   int pre,post;
   {
-  static int tm_prev[6],flag;
-  int tm[6],rt1[6],rt2[6],i,j;
-
-  if(!bcd_dec(tm,ptr)) return 1; /* out of range */
-  if(flag && time_cmp(tm,tm_prev,5)==0) return 0;
-  else flag=0;
-
+  int diff,tm[6];
+  time_t ts,rt;
+  struct tm mt;
+  if(!bcd_dec(tm,ptr)) return 0; /* out of range */
+  memset((char *)&mt,0,sizeof(mt));
+  if((mt.tm_year=tm[0])<50) mt.tm_year+=100;
+  mt.tm_mon=tm[1]-1;
+  mt.tm_mday=tm[2];
+  mt.tm_hour=tm[3];
+  mt.tm_min=tm[4];
+  mt.tm_sec=tm[5];
+  mt.tm_isdst=0;
+  ts=mktime(&mt);
   /* compare time with real time */
-  get_time(rt1);
-  for(i=0;i<5;i++) rt2[i]=rt1[i];
-  for(i=0;i<pre;i++)  /* time before ? */                 
-    {
-    if(time_cmp(tm,rt2,5)==0)
-      {
-      for(j=0;j<5;j++) tm_prev[j]=tm[j];
-      flag=1;
+  time(&rt);
+  diff=ts-rt;
+  if((pre==0 || pre<diff) && (post==0 || diff<post)) return ts;
 #if DEBUG1
-      printf("diff=-%d m\n",i);
+  printf("diff %d s out of range (%ds - %ds)\n",diff,pre,post);
 #endif
-      return 0;
-      }
-    rt2[4]--;
-    adj_time_m(rt2);
-    }
-  for(i=0;i<post;i++)  /* time after ? */
-    {
-    if(time_cmp(tm,rt1,5)==0)
-      {
-      for(j=0;j<5;j++) tm_prev[j]=tm[j];
-      flag=1;
-#if DEBUG1
-      printf("diff=+%d m\n",i);
-#endif
-      return 0;
-      }
-    rt1[4]++;
-    adj_time_m(rt1);
-    }
-#if DEBUG1
-  printf("diff out of range (-%dm - +%dm)\n",pre,post);
-#endif
-  return 1; /* illegal time */
+  return 0;
   }
 
 write_log(logfil,ptr)
@@ -352,65 +229,62 @@ read_chfile()
 #endif
       if(negate_channel) for(i=0;i<65536;i++) ch_table[i]=1;
       else for(i=0;i<65536;i++) ch_table[i]=0;
-      i=j=ii=0;
+      ii=0;
       while(fgets(tbuf,1024,fp))
         {
-        if(*tbuf=='#') continue;
-        if(n_host==0 && (*tbuf=='+' || *tbuf=='-'))
+        *host_name=0;
+        if(sscanf(tbuf,"%s",host_name)==0) continue;
+        if(*host_name==0 || *host_name=='#') continue;
+        if(*tbuf=='*') /* match any channel */
+          {
+          if(negate_channel) for(i=0;i<65536;i++) ch_table[i]=0;
+          else for(i=0;i<65536;i++) ch_table[i]=1;
+          }
+        else if(n_host==0 && (*tbuf=='+' || *tbuf=='-'))
           {
           if(*tbuf=='+') hostlist[ii][0]=1;   /* allow */
           else hostlist[ii][0]=(-1);          /* deny */
-          if(sscanf(tbuf+1,"%s",host_name)>0) /* hostname */
+          if(tbuf[1]=='\r' || tbuf[1]=='\n' || tbuf[1]==' ' || tbuf[1]=='\t')
             {
-            if(!(h=gethostbyname(host_name)))
-              {
-              sprintf(tb,"host '%s' not resolved",host_name);
-              write_log(logfile,tb);
-              continue;
-              }
-            memcpy((char *)&hostlist[ii][1],h->h_addr,4);
-            if(*tbuf=='+') sprintf(tb,"allow");
-            else sprintf(tb,"deny");
-            sprintf(tb+strlen(tb)," from host %d.%d.%d.%d",
- ((unsigned char *)&hostlist[ii][1])[0],((unsigned char *)&hostlist[ii][1])[1],
- ((unsigned char *)&hostlist[ii][1])[2],((unsigned char *)&hostlist[ii][1])[3]);
-            write_log(logfile,tb);
-            if(++ii==N_HOST)
-              {
-              n_host=ii;
-              write_log(logfile,"host control table full"); 
-              }
+            hostlist[ii][1]=0;                  /* any host */
+            if(*tbuf=='+') write_log(logfile,"allow from the rest");
+            else write_log(logfile,"deny from the rest");
             }
           else
             {
-            if(*tbuf=='+') write_log(logfile,"allow from the rest");
-            else write_log(logfile,"deny from the rest");
-            n_host=++ii;
+            if(sscanf(tbuf+1,"%s",host_name)>0) /* hostname */
+              {
+              if(!(h=gethostbyname(host_name)))
+                {
+                sprintf(tb,"host '%s' not resolved",host_name);
+                write_log(logfile,tb);
+                continue;
+                }
+              memcpy((char *)&hostlist[ii][1],h->h_addr,4);
+              if(*tbuf=='+') sprintf(tb,"allow");
+              else sprintf(tb,"deny");
+              sprintf(tb+strlen(tb)," from host %d.%d.%d.%d",
+ ((unsigned char *)&hostlist[ii][1])[0],((unsigned char *)&hostlist[ii][1])[1],
+ ((unsigned char *)&hostlist[ii][1])[2],((unsigned char *)&hostlist[ii][1])[3]);
+              write_log(logfile,tb);
+              }
             }
-          continue;
-          }
-        sscanf(tbuf,"%x",&k);
-        k&=0xffff;
-#if DEBUG
-        fprintf(stderr," %04X",k);
-#endif
-        if(negate_channel)
-          {
-          if(ch_table[k]==1)
+          if(++ii==N_HOST)
             {
-            ch_table[k]=0;
-            j++;
+            n_host=ii;
+            write_log(logfile,"host control table full"); 
             }
           }
         else
           {
-          if(ch_table[k]==0)
-            {
-            ch_table[k]=1;
-            j++;
-            }
+          sscanf(tbuf,"%x",&k);
+          k&=0xffff;
+#if DEBUG
+          fprintf(stderr," %04X",k);
+#endif
+          if(negate_channel) ch_table[k]=0;
+          else ch_table[k]=1;
           }
-        i++;
         }
 #if DEBUG
       fprintf(stderr,"\n");
@@ -418,9 +292,19 @@ read_chfile()
       if(ii>0 && n_host==0) n_host=ii;
       sprintf(tb,"%d host rules",n_host);
       write_log(logfile,tb);
-      n_ch=j;
-      if(negate_channel) sprintf(tb,"-%d channels",n_ch);
-      else sprintf(tb,"%d channels",n_ch);
+      j=0;
+      if(negate_channel)
+        {
+        for(i=0;i<65536;i++) if(ch_table[i]==0) j++;
+        if((n_ch=j)==65536) sprintf(tb,"-all channels");
+        else sprintf(tb,"-%d channels",n_ch=j);
+        }
+      else
+        {
+        for(i=0;i<65536;i++) if(ch_table[i]==1) j++;
+        if((n_ch=j)==65536) sprintf(tb,"all channels");
+        else sprintf(tb,"%d channels",n_ch=j);
+        }
       write_log(logfile,tb);
       }
     else
@@ -485,8 +369,8 @@ check_pno(from_addr,pn,pn_f,sock,fromlen,n) /* returns -1 if duplicated */
   port_=from_addr->sin_port;
   for(i=0;i<n_host;i++)
     {
-    if(hostlist[i][0]==1 &&(n_host==i+1 || hostlist[i][1]==host_)) break;
-    if(hostlist[i][0]==(-1) &&(n_host==i+1 || hostlist[i][1]==host_))
+    if(hostlist[i][0]==1 && (hostlist[i][1]==0 || hostlist[i][1]==host_)) break;
+    if(hostlist[i][0]==(-1) && (hostlist[i][1]==0 || hostlist[i][1]==host_))
       {
       if(!no_pinfo)
         {
@@ -558,19 +442,22 @@ check_pno(from_addr,pn,pn_f,sock,fromlen,n) /* returns -1 if duplicated */
   return 0;
   }
 
-wincpy(ptw,ptr,size,mon)
+wincpy2(ptw,ts,ptr,size,mon)
   unsigned char *ptw,*ptr;
+  time_t ts;
   int size,mon;
   {
 #define MAX_SR 500
 #define MAX_SS 4
 #define SR_MON 5
+#define N_HIST 10
   int sr,n,ss;
   unsigned char *ptr_lim,*ptr1;
   unsigned short ch;
-  int gs,i,aa,bb,k;
+  int gs,i,j,aa,bb,k;
   unsigned long gh;
   char tb[256];
+  static struct { time_t ts[N_HIST]; int p; } hist[65536];
 
   ptr_lim=ptr+size;
   n=0;
@@ -624,12 +511,22 @@ wincpy(ptw,ptr,size,mon)
       }
     if(ch_table[ch] && ptr+gs<=ptr_lim)
       {
+      for(i=0;i<N_HIST;i++) if(hist[ch].ts[i]==ts) break;
+      if(i==N_HIST) /* TS not found in last N_HIST packets */
+        {
+        hist[ch].ts[hist[ch].p]=ts;
+        if(++hist[ch].p==N_HIST) hist[ch].p=0;
 #if DEBUG1
-      fprintf(stderr,"%5d",gs);
+        fprintf(stderr,"%5d",gs);
 #endif
-      memcpy(ptw,ptr,gs);
-      ptw+=gs;
-      n+=gs;
+        memcpy(ptw,ptr,gs);
+        ptw+=gs;
+        n+=gs;
+        }
+#if DEBUG1
+      else
+        fprintf(stderr,"%5d(!%04X)",gs,ch);
+#endif
       }
     ptr+=gs;
     } while(ptr<ptr_lim);
@@ -643,8 +540,8 @@ main(argc,argv)
   key_t shm_key;
   int shmid;
   unsigned long uni;
-  unsigned char *ptr,tm[6],*ptr_size;
-  int i,j,k,size,fromlen,n,re,nlen,sock,nn,all,pre,post,c,mon;
+  unsigned char *ptr,tm[6],*ptr_size,*ptr_size2;
+  int i,j,k,size,fromlen,n,re,nlen,sock,nn,all,pre,post,c,mon,pl,eobsize;
   struct sockaddr_in to_addr,from_addr;
   unsigned short to_port;
   extern int optind;
@@ -660,22 +557,27 @@ main(argc,argv)
   struct ip_mreq stMreq;
   char mcastgroup[256]; /* multicast address */
   char interface[256]; /* multicast interface */
+  time_t ts;
+
   if(progname=strrchr(argv[0],'/')) progname++;
   else progname=argv[0];
   sprintf(tb,
-" usage : '%s (-anM) (-m pre) (-p post) (-i interface) (-g mcast_group) \\\n\
-             [port] [shm_key] [shm_size(KB)] ([ctl file]/- ([log file]))'",
-          progname);
+" usage : '%s (-aBnM) (-m [pre(m)]) (-p [post(m)]) (-i [interface]) \\\n\
+              (-g [mcast_group]) [port] [shm_key] [shm_size(KB)] \\\n\
+              ([ctl file]/- ([log file]))'",progname);
 
-  all=no_pinfo=mon=0;
-  pre=post=30;
+  all=no_pinfo=mon=eobsize=0;
+  pre=post=0;
   *interface=(*mcastgroup)=0;
-  while((c=getopt(argc,argv,"ag:i:m:Mp:"))!=EOF)
+  while((c=getopt(argc,argv,"aBg:i:m:Mp:"))!=EOF)
     {
     switch(c)
       {
       case 'a':   /* accept >=A1 packets */
         all=1;
+        break;
+      case 'B':   /* write blksize at EOB for backward search */
+        eobsize=1;
         break;
       case 'i':   /* interface (ordinary IP address) which receive mcast */
         strcpy(interface,optarg);
@@ -685,6 +587,7 @@ main(argc,argv)
         break;
       case 'm':   /* time limit before RT in minutes */
         pre=atoi(optarg);
+        if(pre<0) pre=(-pre);
         break;
       case 'M':   /* 'mon' format data */
         mon=1;
@@ -707,7 +610,8 @@ main(argc,argv)
     fprintf(stderr,"%s\n",tb);
     exit(1);
     }
-
+  pre=(-pre*60);
+  post*=60;
   to_port=atoi(argv[1+optind]);
   shm_key=atoi(argv[2+optind]);
   size=atoi(argv[3+optind])*1000;
@@ -738,14 +642,14 @@ main(argc,argv)
 
   /* initialize buffer */
   sh->c=0;
-  sh->pl=(size-sizeof(*sh))/10*9;
+  sh->pl=pl=(size-sizeof(*sh))/10*9;
   sh->p=0;
   sh->r=(-1);
 
   sprintf(tb,"start shm_key=%d id=%d size=%d",shm_key,shmid,size);
   write_log(logfile,tb);
   if(all) write_log(logfile,"accept >=A1 packets");
-  sprintf(tb,"TS window -%dm - +%dm",pre,post);
+  sprintf(tb,"TS window %ds - +%ds",pre,post);
   write_log(logfile,tb);
 
   if((sock=socket(AF_INET,SOCK_DGRAM,0))<0) err_sys("socket");
@@ -797,7 +701,7 @@ main(argc,argv)
       for(i=0;i<6;i++) if(rbuf[i+2]!=tm[i]) break;
       if(i==6)  /* same time */
         {
-        nn=wincpy(ptr,rbuf+8,n-8,mon);
+        nn=wincpy2(ptr,ts,rbuf+8,n-8,mon);
         ptr+=nn;
         uni=time(0);
         ptr_size[4]=uni>>24;  /* tow (H) */
@@ -807,12 +711,26 @@ main(argc,argv)
         }
       else
         {
-        if((uni=ptr-ptr_size)>14)
+        if((ptr-ptr_size)>14)
           {
+          ptr_size2=ptr;
+          if(eobsize) ptr+=4; /* size(2) */
+          uni=ptr-ptr_size;
           ptr_size[0]=uni>>24;  /* size (H) */
           ptr_size[1]=uni>>16;
           ptr_size[2]=uni>>8;
           ptr_size[3]=uni;      /* size (L) */
+          if(eobsize)
+            {
+            ptr_size2[0]=ptr_size[0];  /* size (H) */
+            ptr_size2[1]=ptr_size[1];
+            ptr_size2[2]=ptr_size[2];
+            ptr_size2[3]=ptr_size[3];  /* size (L) */
+            }
+#if DEBUG2
+          printf("%d - %d (%d) %d / %d\n",ptr_size-sh->d,uni,ptr_size2-sh->d,
+            sh->pl,pl);
+#endif
 #if DEBUG1
           printf("(%d)",time(0));
           for(i=8;i<14;i++) printf("%02X",ptr_size[i]);
@@ -820,7 +738,7 @@ main(argc,argv)
 #endif
           }
         else ptr=ptr_size;
-        if(check_time(rbuf+2,pre,post))
+        if(!(ts=check_ts(rbuf+2,pre,post)))
           {
           if(!no_pinfo)
             {
@@ -836,7 +754,8 @@ main(argc,argv)
         else
           {
           sh->r=sh->p;      /* latest */
-          if(ptr>sh->d+sh->pl) ptr=sh->d;
+          if(eobsize && ptr>sh->d+pl) {sh->pl=ptr-sh->d-4;ptr=sh->d;}
+          if(!eobsize && ptr>sh->d+sh->pl) ptr=sh->d;
           sh->p=ptr-sh->d;
           sh->c++;
           ptr_size=ptr;
@@ -844,7 +763,7 @@ main(argc,argv)
           ptr+=4;   /* time of write */
           memcpy(ptr,rbuf+2,6);
           ptr+=6;
-          nn=wincpy(ptr,rbuf+8,n-8,mon);
+          nn=wincpy2(ptr,ts,rbuf+8,n-8,mon);
           ptr+=nn;
           memcpy(tm,rbuf+2,6);
           uni=time(0);
@@ -866,7 +785,7 @@ main(argc,argv)
         for(i=0;i<6;i++) if(rbuf[j+i]!=tm[i]) break;
         if(i==6)  /* same time */
           {
-          nn=wincpy(ptr,rbuf+j+6,n-8,mon);
+          nn=wincpy2(ptr,ts,rbuf+j+6,n-8,mon);
           ptr+=nn;
           uni=time(0);
           ptr_size[4]=uni>>24;  /* tow (H) */
@@ -876,26 +795,41 @@ main(argc,argv)
           }
         else
           {
-          if((uni=ptr-ptr_size)>14) /* data copied - close the sec block */
+          if((ptr-ptr_size)>14) /* data copied - close the sec block */
             {
+            ptr_size2=ptr;
+            if(eobsize) ptr+=4; /* size(2) */
+            uni=ptr-ptr_size;
             ptr_size[0]=uni>>24;  /* size (H) */
             ptr_size[1]=uni>>16;
             ptr_size[2]=uni>>8;
             ptr_size[3]=uni;      /* size (L) */
+            if(eobsize)
+              {
+              ptr_size2[0]=ptr_size[0];  /* size (H) */
+              ptr_size2[1]=ptr_size[1];
+              ptr_size2[2]=ptr_size[2];
+              ptr_size2[3]=ptr_size[3];  /* size (L) */
+              }
+#if DEBUG2
+          printf("%d - %d (%d) %d / %d\n",ptr_size-sh->d,uni,ptr_size2-sh->d,
+            sh->pl,pl);
+#endif
 #if DEBUG1
             printf("(%d)",time(0));
             for(i=8;i<14;i++) printf("%02X",ptr_size[i]);
             printf(" : %d > %d\n",uni,ptr_size-sh->d);
 #endif
             sh->r=sh->p;      /* latest */
-            if(ptr>sh->d+sh->pl) ptr=sh->d;
+            if(eobsize && ptr>sh->d+pl) {sh->pl=ptr-sh->d-4;ptr=sh->d;}
+            if(!eobsize && ptr>sh->d+sh->pl) ptr=sh->d;
             sh->p=ptr-sh->d;
             sh->c++;
             ptr_size=ptr;
             }
           else /* sec block empty - reuse the space */
             ptr=ptr_size;
-          if(check_time(rbuf+j,pre,post)) /* illegal time */
+          if(!(ts=check_ts(rbuf+j,pre,post))) /* illegal time */
             {
             if(!no_pinfo)
               {
@@ -914,7 +848,7 @@ main(argc,argv)
             ptr+=4;   /* time of write */
             memcpy(ptr,rbuf+j,6);
             ptr+=6;
-            nn=wincpy(ptr,rbuf+j+6,n-8,mon);
+            nn=wincpy2(ptr,ts,rbuf+j+6,n-8,mon);
             ptr+=nn;
             memcpy(tm,rbuf+j,6);
             uni=time(0);
@@ -930,7 +864,7 @@ main(argc,argv)
       }
     else if(all) /* rbuf[2]>=0xA1 with packet ID */
       {
-      if(check_time(rbuf+3,pre,post))
+      if(!(ts=check_ts(rbuf+3,pre,post)))
         {
         if(!no_pinfo)
           {
@@ -951,11 +885,20 @@ main(argc,argv)
         ptr+=4;   /* time of write */
         memcpy(ptr,rbuf+2,n-2);
         ptr+=n-2;
+        ptr_size2=ptr;
+        if(eobsize) ptr+=4; /* size(2) */
         uni=ptr-ptr_size;
         ptr_size[0]=uni>>24;  /* size (H) */
         ptr_size[1]=uni>>16;
         ptr_size[2]=uni>>8;
         ptr_size[3]=uni;      /* size (L) */
+        if(eobsize)
+          {
+          ptr_size2[0]=ptr_size[0];  /* size (H) */
+          ptr_size2[1]=ptr_size[1];
+          ptr_size2[2]=ptr_size[2];
+          ptr_size2[3]=ptr_size[3];  /* size (L) */
+          }
         memcpy(tm,rbuf+3,6);
         uni=time(0);
         ptr_size[4]=uni>>24;  /* tow (H) */
@@ -964,7 +907,8 @@ main(argc,argv)
         ptr_size[7]=uni;      /* tow (L) */
 
         sh->r=sh->p;      /* latest */
-        if(ptr>sh->d+sh->pl) ptr=sh->d;
+        if(eobsize && ptr>sh->d+pl) {sh->pl=ptr-sh->d-4;ptr=sh->d;}
+        if(!eobsize && ptr>sh->d+sh->pl) ptr=sh->d;
         sh->p=ptr-sh->d;
         sh->c++;
         }

@@ -1,4 +1,4 @@
-.TH recvt 1W "2002.1.28" "WIN SYSTEM" "WIN SYSTEM"
+.TH recvt 1W "2002.3.24" "WIN SYSTEM" "WIN SYSTEM"
 .UC 4
 .SH 名称
 recvnmx - Nanometrics UDP/IPパケットの受信
@@ -13,7 +13,7 @@ renvnmx
 ] [
 .I \-m group
 ] [
-.I \-v
+.I \-vB
 ]
 .I port
 .I shmkey
@@ -57,6 +57,9 @@ UDP ポート番号は16ビットの整数値、共有メモリ・キーは32ビットの
 .LP
 recvnmx は引数なしで起動すると簡単な使用法を表示します。
 .SH オプション
+.IP \fB\-B 5
+共有メモリの形式を後方サーチ可能な形式にします。この形式については
+recvt(1W) のオプション \fB\-B\fR を参照してください。
 .IP "\fB\-c \fImap" 5
 ファイル
 .I map
@@ -77,6 +80,10 @@ WIN形式の先頭チャネル番号から始まるチャネル数だけのチャネル番号が
    142 0386  # 6ch
    143 038C  # 6ch
 .fi
+recvnmx は HUPシグナルを受けると、
+ファイル
+.I map
+を読み直します。
 .IP "\fB\-i \fIinterface" 5
 IPマルチキャストアドレスに対して送信されるパケットを受信する場合に、
 パケットを受信するネットワークインターフェースを、そのインターフェースの

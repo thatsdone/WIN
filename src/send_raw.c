@@ -1,4 +1,4 @@
-/* $Id: send_raw.c,v 1.8 2002/01/14 11:32:59 uehira Exp $ */
+/* $Id: send_raw.c,v 1.9 2002/03/24 15:35:47 urabe Exp $ */
 /*
     program "send_raw/send_mon.c"   1/24/94 - 1/25/94,5/25/94 urabe
                                     6/15/94 - 6/16/94
@@ -32,6 +32,8 @@
                                   2002.1.11 bug fixed for '-r'/'-m'
                                   2002.1.12 variable mon deleted
                                   2002.1.12 function shift_hour() deleted
+                                  2002.2.28 NW* x10, print nwloop on HUP
+                                  2002.3.2  eobsize(auto)
 */
 
 #ifdef HAVE_CONFIG_H
@@ -72,8 +74,8 @@
 #define RSIZE   (MTU-28)
 #define SR_MON      5
 #define NBUF      128
-#define NWSTEP    4000  /* 4000 for Ultra1 */
-#define NWLIMIT 100000
+#define NWSTEP    40000  /* 4000 for Ultra1 */
+#define NWLIMIT 1000000
 
 /*
 #if defined(SUNOS4)
@@ -81,7 +83,7 @@
 #endif
 */
 
-int sock,raw,tow,all,psize[NBUF],n_ch,negate_channel,mtu,nbuf;
+int sock,raw,tow,all,psize[NBUF],n_ch,negate_channel,mtu,nbuf,nwloop;
 unsigned char *sbuf[NBUF],ch_table[65536],rbuf[RSIZE];
      /* sbuf[NBUF][mtu-28+8] ; +8 for overrun by "size" and "time" */
 char *progname,logfile[256],chfile[256];
@@ -277,6 +279,8 @@ read_chfile()
     n_ch=i;
     write_log(logfile,"all channels");
     }
+  sprintf(tbuf,"nwloop=%d (STEP=%d,LIMIT=%d)",nwloop,NWSTEP,NWLIMIT);
+  write_log(logfile,tbuf);
   signal(SIGHUP,(void *)read_chfile);
   }
 
@@ -288,11 +292,10 @@ main(argc,argv)
   key_t shm_key;
   unsigned long uni;
   int i,j,k,c_save,shp,aa,bb,ii,bufno,bufno_f,fromlen,hours_shift,sec_shift,c,
-    kk,nw,nwloop;
+    kk,nw,eobsize,eobsize_count,size2,size,gs,sr,re,shmid;
   struct sockaddr_in to_addr,from_addr;
   struct hostent *h;
   unsigned short host_port,ch;
-  int size,gs,sr,re,shmid;
   unsigned long gh;
   unsigned char *ptr,*ptr1,*ptr_save,*ptr_lim,*ptw,*ptw_save,*ptw_size,
     no,no_f,host_name[100],tbuf[256];
@@ -321,7 +324,7 @@ main(argc,argv)
   else if(strcmp(progname,"sendt_mon")==0) {raw=0;tow=1;}
   else exit(1);
   sprintf(tbuf,
-" usage : '%s (-amrt) (-b mtu) (-h [h]) (-i [interface]) (-s [s]) \\\n\
+" usage : '%s (-amrt) (-b [mtu]) (-h [h]) (-i [interface]) (-s [s]) \\\n\
            [shmkey] [dest] [port] ([chfile]/- ([logfile]))'",progname);
 
   *interface=0;
@@ -467,6 +470,12 @@ reset:
   if(!all) *ptw++=0xA0;
   nwloop=0;
 
+  if(mklong(ptr_save+size-4)==size) eobsize=1;
+  else eobsize=0;
+  eobsize_count=eobsize;
+  sprintf(tbuf,"eobsize=%d",eobsize);
+  write_log(logfile,tbuf);
+
   while(1)
     {
     if(shp+size>shm->pl) shp=0; /* advance pointer */
@@ -475,22 +484,30 @@ reset:
     while(shm->p==shp) {usleep(10000);nw++;}
     if(nw>1 && nwloop<NWLIMIT) nwloop+=NWSTEP;
     else if(nw==0 && nwloop>0) nwloop-=NWSTEP;
-    i=mklong(ptr_save);
-    if(shm->c<c_save || i!=size)
+    i=shm->c-c_save;
+    if(!(i<1000 && i>=0) || mklong(ptr_save)!=size)
       {   /* previous block has been destroyed */
       write_log(logfile,"reset");
       goto reset;
       }
     c_save=shm->c;
     size=mklong(ptr_save=ptr=shm->d+shp);
-    ptr_lim=ptr+size;
+
+    if(size==mklong(shm->d+shp+size-4)) eobsize_count++;
+    else eobsize_count=0;
+    if(eobsize && eobsize_count==0) goto reset;
+    if(!eobsize && eobsize_count>3) goto reset;
+    if(eobsize) size2=size-4;
+    else size2=size;
+
+    ptr_lim=ptr+size2;
     ptr+=4;
     if(tow) ptr+=4;
 
     if(all)
       {
-      memcpy(ptw,ptr,size-8);
-      ptw+=size-8;
+      memcpy(ptw,ptr,size2-8);
+      ptw+=size2-8;
       for(kk=0;kk<nwloop;kk++);
       re=sendto(sock,ptw_save,ptw-ptw_save,0,(struct sockaddr *)&to_addr,
         sizeof(to_addr));
@@ -513,7 +530,7 @@ reset:
     if(sec_shift) shift_sec(ptw-6,sec_shift);
 #if DEBUG
     for(i=2;i<8;i++) fprintf(stderr,"%02X",ptw_size[i]);
-    fprintf(stderr," : %d  ",size);
+    fprintf(stderr," : %d  ",size2);
 #endif
     /* send data packets */
     i=j=re=0;

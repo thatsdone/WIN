@@ -1,4 +1,4 @@
-/* $Id: order.c,v 1.4 2002/01/13 06:57:51 uehira Exp $ */
+/* $Id: order.c,v 1.5 2002/03/24 15:35:46 urabe Exp $ */
 /*  program "order.c" 1/26/94 - 2/7/94, 6/14/94 urabe */
 /*                              1/6/95 bug in adj_time(tm[0]--) fixed */
 /*                              3/17/95 write_log() */
@@ -10,6 +10,9 @@
 /*                              98.6.26 yo2000 */
 /*                              99.4.19 byte-order-free */
 /*                              2000.4.24/2001.11.14 strerror() */
+/*                              2002.2.19-28 use mktime(), -l option after order2.c */
+/*                              2002.3.1 option -a ; system clock mode */
+/*                              2002.3.1 eobsize_in(auto), eobsize_out(-B) */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -39,6 +42,7 @@
 #include "subst_func.h"
 
 #define SWAPL(a) a=(((a)<<24)|((a)<<8)&0xff0000|((a)>>8)&0xff00|((a)>>24)&0xff)
+#define DEBUG     0
 
 char *progname,logfile[256];
 struct Shm {
@@ -72,177 +76,6 @@ get_time(rt)
   rt[4]=nt->tm_min;
   rt[5]=nt->tm_sec;
 }
-
-adj_time(tm)
-  int *tm;
-{
-  if(tm[5]==60){
-    tm[5]=0;
-    if(++tm[4]==60){
-      tm[4]=0;
-      if(++tm[3]==24){
-        tm[3]=0;
-        tm[2]++;
-        switch(tm[1]){
-          case 2:
-            if(tm[0]%4==0){
-              if(tm[2]==30){
-                tm[2]=1;
-                tm[1]++;
-              }
-              break;
-            }
-            else{
-              if(tm[2]==29){
-                tm[2]=1;
-                tm[1]++;
-              }
-              break;
-            }
-          case 4:
-          case 6:
-          case 9:
-          case 11:
-            if(tm[2]==31){
-              tm[2]=1;
-              tm[1]++;
-            }
-            break;
-          default:
-            if(tm[2]==32){
-              tm[2]=1;
-              tm[1]++;
-            }
-            break;
-        }
-        if(tm[1]==13){
-          tm[1]=1;
-          if(++tm[0]==100) tm[0]=0;
-        }
-      }
-    }
-  }
-  else if(tm[5]==-1){
-    tm[5]=59;
-    if(--tm[4]==-1){
-      tm[4]=59;
-      if(--tm[3]==-1){
-        tm[3]=23;
-        if(--tm[2]==0){
-          switch(--tm[1]){
-            case 2:
-              if(tm[0]%4==0) tm[2]=29;
-              else tm[2]=28;
-              break;
-            case 4:
-            case 6:
-            case 9:
-            case 11:
-              tm[2]=30;
-              break;
-            default:
-              tm[2]=31;
-              break;
-          }
-          if(tm[1]==0){
-            tm[1]=12;
-            if(--tm[0]==-1) tm[0]=99;
-          }
-        }
-      }
-    }
-  }
-}
-
-adj_time_m(tm)
-  int *tm;
-{
-  if(tm[4]==60){
-    tm[4]=0;
-    if(++tm[3]==24){
-      tm[3]=0;
-      tm[2]++;
-      switch(tm[1]){
-        case 2:
-          if(tm[0]%4==0){
-            if(tm[2]==30){
-              tm[2]=1;
-              tm[1]++;
-            }
-            break;
-          }
-          else{
-            if(tm[2]==29){
-              tm[2]=1;
-              tm[1]++;
-            }
-            break;
-          }
-        case 4:
-        case 6:
-        case 9:
-        case 11:
-          if(tm[2]==31){
-            tm[2]=1;
-            tm[1]++;
-          }
-          break;
-        default:
-          if(tm[2]==32){
-            tm[2]=1;
-            tm[1]++;
-          }
-          break;
-      }
-      if(tm[1]==13){
-        tm[1]=1;
-        if(++tm[0]==100) tm[0]=0;
-      }
-    }
-  }
-  else if(tm[4]==-1){
-    tm[4]=59;
-    if(--tm[3]==-1){
-      tm[3]=23;
-      if(--tm[2]==0){
-        switch(--tm[1]){
-          case 2:
-            if(tm[0]%4==0) tm[2]=29;
-            else tm[2]=28;
-            break;
-          case 4:
-          case 6:
-          case 9:
-          case 11:
-            tm[2]=30;
-            break;
-          default:
-            tm[2]=31;
-            break;
-        }
-        if(tm[1]==0){
-          tm[1]=12;
-          if(--tm[0]==-1) tm[0]=99;
-        }
-      }
-    }
-  }
-}
-
-time_cmp(t1,t2,i)
-  int *t1,*t2,i;  
-  {
-  int cntr;
-  cntr=0;
-  if(t1[cntr]<70 && t2[cntr]>70) return 1;
-  if(t1[cntr]>70 && t2[cntr]<70) return -1;
-  for(;cntr<i;cntr++)
-    {
-    if(t1[cntr]>t2[cntr]) return 1;
-    if(t1[cntr]<t2[cntr]) return -1;
-    } 
-  return 0;  
-  }
 
 bcd_dec(dest,sour)
   unsigned char *sour;
@@ -281,33 +114,58 @@ bcd_dec(dest,sour)
   return 1;
   }
 
+t_bcd(t,ptr)
+     time_t t;
+     unsigned char *ptr;
+{
+static unsigned char d2b[]={
+    0x00,0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x09,
+    0x10,0x11,0x12,0x13,0x14,0x15,0x16,0x17,0x18,0x19,   
+    0x20,0x21,0x22,0x23,0x24,0x25,0x26,0x27,0x28,0x29,
+    0x30,0x31,0x32,0x33,0x34,0x35,0x36,0x37,0x38,0x39,
+    0x40,0x41,0x42,0x43,0x44,0x45,0x46,0x47,0x48,0x49,
+    0x50,0x51,0x52,0x53,0x54,0x55,0x56,0x57,0x58,0x59,
+    0x60,0x61,0x62,0x63,0x64,0x65,0x66,0x67,0x68,0x69,
+    0x70,0x71,0x72,0x73,0x74,0x75,0x76,0x77,0x78,0x79,
+    0x80,0x81,0x82,0x83,0x84,0x85,0x86,0x87,0x88,0x89,
+    0x90,0x91,0x92,0x93,0x94,0x95,0x96,0x97,0x98,0x99};
+  struct tm *nt;
+  nt=localtime(&t);
+  ptr[0]=d2b[nt->tm_year%100];
+  ptr[1]=d2b[nt->tm_mon+1];
+  ptr[2]=d2b[nt->tm_mday];
+  ptr[3]=d2b[nt->tm_hour];
+  ptr[4]=d2b[nt->tm_min];
+  ptr[5]=d2b[nt->tm_sec];
+}
+
+time_t bcd_t(ptr)
+  unsigned char *ptr;
+  {
+  int tm[6];
+  time_t ts;
+  struct tm mt;
+  if(!bcd_dec(tm,ptr)) return 0; /* out of range */
+  memset((char *)&mt,0,sizeof(mt));
+  if((mt.tm_year=tm[0])<50) mt.tm_year+=100;
+  mt.tm_mon=tm[1]-1;
+  mt.tm_mday=tm[2];
+  mt.tm_hour=tm[3];
+  mt.tm_min=tm[4];
+  mt.tm_sec=tm[5];
+  mt.tm_isdst=0;
+  ts=mktime(&mt);
+  return ts;
+  }
+
 check_time(ptr)
   char *ptr;
   {
-  static int tm_prev[6],flag;
-  int tm[6],rt1[6],rt2[6],i,j;
-
-  if(!bcd_dec(tm,ptr)) return 1; /* out of range */
-  if(flag && time_cmp(tm,tm_prev,5)==0) return 0;
-  else flag=0;
-
-  /* compare time with real time */
-  get_time(rt1);
-  for(i=0;i<5;i++) rt2[i]=rt1[i];
-  for(i=0;i<30;i++)  /* within 30 minutes ? */
-    {
-    if(time_cmp(tm,rt1,5)==0 || time_cmp(tm,rt2,5)==0)
-      {
-      for(j=0;j<5;j++) tm_prev[j]=tm[j];
-      flag=1;
-      return 0;
-      }
-    rt1[4]++;
-    adj_time_m(rt1);
-    rt2[4]--;
-    adj_time_m(rt2);
-    }
-  return 1; /* illegal time */
+  time_t ts,rt;
+  if(!(ts=bcd_t(ptr))) return 1;
+  rt=time(0);
+  if(abs(rt-ts)>60*30) return 1; /* within 30 minutes ? */
+  return 0;
   }
 
 write_log(logfil,ptr)
@@ -339,50 +197,95 @@ err_sys(ptr)
   ctrlc();
 }
 
-advance(shm,shp,c_save,size,tm)
+advance(shm,shp,c_save,size,t,shp_busy_save)
   struct Shm *shm;
-  unsigned int *shp,*size,*c_save;
-  int *tm;
+  unsigned int *shp,*size,*c_save,*shp_busy_save;
+  time_t *t;
 {
-  int shpp,tmp;
+  int shpp,i;
 
-  shpp=(*shp);
-  if(shm->c<*c_save || *size!=mklong(shm->d+(*shp))) return -2;
-  if(shpp+(*size)>shm->pl) shpp=0; /* advance pointer */
-  else shpp+=(*size);
-  if(shm->p==shpp) return 0;
+  shpp=(*shp); /* copy read pointer */
+  i=shm->c-(*c_save);
+  if(!(i<1000 && i>=0) || *size!=mklong(shm->d+(*shp))) return -2;
+  if((shpp+=(*size))>shm->pl) shpp=0; /* advance read pointer by one block */
+  if(shm->p==shpp) {  /* block is still busy */
+    if(shp_busy_save) *shp_busy_save=shpp;
+    return 0;
+  }
   *c_save=shm->c;
-  *size=mklong(shm->d+(*shp=shpp));
-  if(!bcd_dec(tm,shm->d+shpp+8)) return -1;
-  return mklong(shm->d+shpp+4);
+  *size=mklong(shm->d+(*shp=shpp)); /* size of next block */
+  if(!(*t=bcd_t(shm->d+shpp+8))) return -1;
+  return mklong(shm->d+shpp+4); /* return value = TOW */
 }
+
 
 main(argc,argv)
   int argc;
   char *argv[];
 {
-  key_t shm_key_in,shm_key_out;
+  key_t shm_key_in,shm_key_out,shm_key_late;
   unsigned long uni;
-  int tm[6],tm_out[6],tm_bottom[6],i,j,k,c_save_in,c_save_out,shp_in,shp_out,
-    sec,sec_1,size,shmid_in,shmid_out,size_in,size_out,shp,c_save,n_sec,no_data;
-  unsigned char *ptr,*ptr_save,*ptw,*ptw_save,tbuf[100];
-  struct Shm *shm_in,*shm_out;
+  time_t t,t_out,t_bottom,tow,ts,rt,rt_next;
+  int tm_out[6],c_save_in,shp_in,sec,sec_1,size,sizej,shmid_in,late,c,pl_out,
+    shmid_out,shmid_late,size_in,shp,c_save,n_sec,no_data,sysclk,sysclk_org,
+    timeout_flag,size_next,eobsize_in,eobsize_out,i,eobsize_in_count,size2;
+  unsigned char *ptr,*ptr_save,*ptw,*ptw_save,*ptw_late,tbuf[256],tb[256],
+    *ptr_prev;
+  struct Shm *shm_in,*shm_out,*shm_late;
+  unsigned int shp_busy_save;
+  extern int optind;
+  extern char *optarg;
 
   if(progname=strrchr(argv[0],'/')) progname++;
   else progname=argv[0];
+  sprintf(tb,
+" usage : '%s (-aB) (-l [shm_key_late]:[shm_size_late(KB)]) [shm_key_in] \\\n\
+           [shm_key_out] [shm_size(KB)] [limit_sec] ([log file])'", progname);
+
+  sysclk_org=late=eobsize_in=eobsize_out=0;
+  while((c=getopt(argc,argv,"aBl:"))!=EOF)
+    {
+    switch(c)
+      {
+      case 'a':   /* reference to absolute time (i.e. the system clock) */
+        sysclk_org=1;
+        break;
+      case 'B':   /* write blksiz at EOB in shm_out */
+        eobsize_out=1;
+        break;
+      case 'l':   /* output late packets (i.e. order2 mode) */
+        strcpy(tbuf,optarg);
+        if((ptr=strchr(tbuf,':'))==0)
+          {
+          fprintf(stderr,"-l option requires [shm_key_late]:[shm_size_late(KB)]\n");
+          exit(1);
+          }
+        else
+          {
+          *ptr=0;
+          shm_key_late=atoi(tbuf);
+          sizej=atoi(ptr+1)*1000;
+          late=1;
+          }
+        break;
+      default:
+        fprintf(stderr," option -%c unknown\n",c);
+        fprintf(stderr,"%s\n",tb);
+        exit(1);
+      }
+    }
+  optind--;
+  if(argc<5+optind)
+    {
+    fprintf(stderr,"%s\n",tb);
+    exit(1);
+    }
    
-  if(argc<5){
-    printf(
-" usage : '%s [shm_key_in] [shm_key_out] [shm_size(KB)] [limit_sec] ([log file])'\n",
-      progname);
-    exit(0);
-  }
-   
-  shm_key_in=atoi(argv[1]);
-  shm_key_out=atoi(argv[2]);
-  size=atoi(argv[3])*1000;
-  n_sec=atoi(argv[4]);
-  if(argc>5) strcpy(logfile,argv[5]);
+  shm_key_in=atoi(argv[1+optind]);
+  shm_key_out=atoi(argv[2+optind]);
+  size=atoi(argv[3+optind])*1000;
+  n_sec=atoi(argv[4+optind]);
+  if(argc>5+optind) strcpy(logfile,argv[5+optind]);
   else *logfile=0;
    
   /* shared memory */
@@ -397,16 +300,30 @@ main(argc,argv)
     err_sys("shmat");
   sprintf(tbuf,"out: shm_key_out=%d id=%d size=%d",shm_key_out,shmid_out,size);
   write_log(logfile,tbuf);
-   
+
   /* initialize buffer */
+
   shm_out->p=shm_out->c=0;
-  shm_out->pl=(size-sizeof(*shm_out))/10*9;
+  shm_out->pl=pl_out=(size-sizeof(*shm_out))/10*9;
   shm_out->r=(-1);
-   
+
+  if(late) {
+    if((shmid_late=shmget(shm_key_late,sizej,IPC_CREAT|0666))<0)
+      err_sys("shmget");
+    if((shm_late=(struct Shm *)shmat(shmid_late,(char *)0,0))==(struct Shm *)-1)
+      err_sys("shmat");
+    sprintf(tbuf,"late: shm_key_late=%d id=%d size=%d",
+          shm_key_late,shmid_late,sizej);
+    write_log(logfile,tbuf);
+    shm_late->p=shm_late->c=0;
+    shm_late->pl=(sizej-sizeof(*shm_late))/10*9;
+    shm_late->r=(-1);
+  }
+ 
   signal(SIGPIPE,(void *)ctrlc);
   signal(SIGINT,(void *)ctrlc);
   signal(SIGTERM,(void *)ctrlc);
-   
+
 reset:
   while(shm_in->r==(-1)) sleep(1);
   c_save_in=shm_in->c;
@@ -415,11 +332,163 @@ reset:
      sleep(1);
      goto reset;
   }
-  memcpy(&sec_1,ptr_save+4,4);
-  i=1;if(*(char *)&i) SWAPL(sec_1);
-  bcd_dec(tm_bottom,ptr_save+8);
-  for(i=0;i<6;i++) tm_out[i]=tm_bottom[i];
+  sec_1=mklong(ptr_save+4); /* TOW */
+  t_out=t_bottom=bcd_t(ptr_save+8); /* TS */
+  if(late) {
+    shp_busy_save=(-1);
+    timeout_flag=0;
+  }
+  sysclk=sysclk_org;
+  if(mklong(ptr_save+size_in-4)==size_in) eobsize_in=1;
+  else eobsize_in=sysclk=0;
+  eobsize_in_count=eobsize_in;
+  sprintf(tbuf,"eobsize_in=%d, eobsize_out=%d, sysclk=%d sysclk_org=%d",
+    eobsize_in,eobsize_out,sysclk,sysclk_org);
+  write_log(logfile,tbuf);
 
+  if(sysclk) /* system clock mode */
+    {
+    rt_next=time(0)-1;
+    ts=t_out;
+    if(late) ptw_late=shm_late->d+shm_late->p;
+    while(1)
+      {
+      tow=sec_1;
+#if DEBUG1
+      printf("tow=%d ts=%d shp=%d\n",sec_1,ts,shp_in);
+#endif
+      /* new TS */
+      if(tow>ts+n_sec) /* output as a late packet */
+        {
+#if DEBUG
+        printf("  late !\n");
+#endif
+        if(late)
+          {
+          /* output late data */
+          ptr=shm_in->d+shp_in;
+          size2=size_in-4;
+          memcpy(ptw_late,ptr,size2);
+          ptw_late[0]=size2>>24;
+          ptw_late[1]=size2>>16;
+          ptw_late[2]=size2>>8;
+          ptw_late[3]=size2;
+          uni=time(NULL);
+          ptw_late[4]=uni>>24;
+          ptw_late[5]=uni>>16;
+          ptw_late[6]=uni>>8;
+          ptw_late[7]=uni;
+          ptw_late+=size2;
+          shm_late->r=shm_late->p;
+          if(ptw_late>shm_late->d+shm_late->pl) ptw_late=shm_late->d;
+          shm_late->p=ptw_late-shm_late->d;
+          shm_late->c++;
+          }
+        }
+      while((sec_1=advance(shm_in,&shp_in,&c_save_in,&size_in,&ts,&shp_busy_save))<=0)
+        {
+#if DEBUG1
+        printf("sec_1=%d\n",sec_1);
+#endif
+        if(sec_1==(-2)) /* shm corrupted */
+          {
+          ptr=shm_in->d+shp+8;
+          sprintf(tbuf,"reset %02X%02X%02X.%02X%02X%02X:%02X%02X",
+            ptr[0],ptr[1],ptr[2],ptr[3],ptr[4],ptr[5],ptr[6],ptr[7]);
+          write_log(logfile,tbuf);
+          sleep(1);
+          goto reset;
+          }
+        else if(sec_1==0) /* waiting */
+          { /* sweep output data if RT advenced */
+          if((rt=time(0))<rt_next) continue;
+          ptr_save=shm_in->d+shp_in;
+          for(t_out=rt_next-n_sec;t_out<=rt-n_sec;t_out++)
+            {
+            ptr=ptr_save;
+            ptw_save=ptw=shm_out->d+shm_out->p;
+            ptw+=4; /* block size */
+            t_bcd(t_out,ptw); /* write TS */
+            ptw+=6; /* TS */
+            i=0;
+            while(1) /* sweep to output data at ts==rt-n_sec */
+              {
+              size=mklong(ptr);
+              tow=mklong(ptr+4);
+              ts=bcd_t(ptr+8);
+              if(tow<rt-n_sec-1) /* quit loop - TOW too old */
+                {
+#if DEBUG
+                printf("\nend>ptr=%d size=%d tow=%d ts=%d rt=%d\n",
+                  ptr-shm_in->d,size,tow,ts,rt);
+#endif
+                break;
+                }
+              if(ts==rt-n_sec)
+                {
+#if DEBUG
+                printf("out %d(%d)>%d ",ptr-shm_in->d,size-(4+4+6+4),
+                  ptw-shm_out->d);
+#endif
+                memcpy(ptw,ptr+(4+4+6),size-(4+4+6+4));
+                ptw+=size-(4+4+6+4);
+                }
+              ptr_prev=ptr;
+              if(ptr-shm_in->d>0) /* go back one packet */
+                {
+                size_next=mklong(ptr-4);
+                ptr-=size_next;
+                }
+              else if(ptr==shm_in->d) /* return to the tail of SHM */
+                {
+                size_next=mklong(shm_in->d+shm_in->pl);
+                ptr=shm_in->d+shm_in->pl+4-size_next;
+                }
+              else break;
+              if(ptr<shm_in->d) break;
+              if(size_next!=mklong(ptr))
+                {
+                if(i) break;
+                else goto reset;
+                }
+              i++;
+              }
+
+           if((uni=ptw-ptw_save)>10)
+             {
+             uni=ptw-ptw_save;
+             if(eobsize_out) uni+=4;
+             ptw_save[0]=uni>>24;
+             ptw_save[1]=uni>>16;
+             ptw_save[2]=uni>>8;
+             ptw_save[3]=uni;
+             if(eobsize_out)
+               {
+               ptw[0]=uni>>24;
+               ptw[1]=uni>>16;
+               ptw[2]=uni>>8;
+               ptw[3]=uni;
+               ptw+=4;
+               }
+             shm_out->r=shm_out->p;
+             if(eobsize_out && ptw>shm_out->d+pl_out)
+               {shm_out->pl=ptw-shm_out->d-4;ptw=shm_out->d;}
+             if(!eobsize_out && ptw>shm_out->d+shm_out->pl) ptw=shm_out->d;
+             shm_out->p=ptw-shm_out->d;
+             shm_out->c++;
+#if DEBUG
+             printf("eob %d B > %d next=%d\n",uni,shm_out->r,shm_out->p);
+#endif
+             }
+            }
+          rt_next=t_out+n_sec;
+          }
+        else if(sec_1==(-1)) usleep(100000);
+        }
+      }
+    }
+
+  else /* conventional mode */
   while(1){
     no_data=1;
     while(sec_1+n_sec>time(0)) sleep(1);
@@ -428,22 +497,55 @@ reset:
     size=size_in;
     ptw_save=ptw=shm_out->d+shm_out->p;
     ptw+=4;
-    for(i=0;i<6;i++) tm[i]=tm_bottom[i];
+    if(late) ptw_late=shm_late->d+shm_late->p;
+    t=t_bottom;
 
     do{
-      if(time_cmp(tm,tm_out,6)==0){
+      if(size==mklong(shm_in->d+shp+size-4)) eobsize_in_count++;
+      else eobsize_in_count=0;
+      if(eobsize_in && eobsize_in_count==0) goto reset;
+      if(!eobsize_in && eobsize_in_count>3) goto reset;
+
+      if(eobsize_in) size2=size-4;
+      else size2=size;
+
+      if(t==t_out){
         ptr=shm_in->d+shp+8; /* points to YY-ss */
         if(no_data){
-          memcpy(ptw,ptr,size-8);
-          ptw+=size-8;
+          memcpy(ptw,ptr,size2-8);
+          ptw+=size2-8;
           no_data=0;
         }
         else{
-          memcpy(ptw,ptr+6,size-14); /* skip YY-ss */
-          ptw+=size-14;
+          memcpy(ptw,ptr+6,size2-14); /* skip YY-ss */
+          ptw+=size2-14;
         }
       }
-      while((sec=advance(shm_in,&shp,&c_save,&size,tm))==(-1));
+
+      if(late && shp==shp_busy_save) timeout_flag=1;
+      if(late && timeout_flag){
+        if(t<t_out){
+          /* output late data */
+          ptr=shm_in->d+shp;
+          memcpy(ptw_late,ptr,size2);
+          ptw_late[0]=size2>>24;
+          ptw_late[1]=size2>>16;
+          ptw_late[2]=size2>>8;
+          ptw_late[3]=size2;
+          uni=time(NULL);
+          ptw_late[4]=uni>>24;
+          ptw_late[5]=uni>>16;
+          ptw_late[6]=uni>>8;
+          ptw_late[7]=uni;
+          ptw_late+=size2;
+          shm_late->r=shm_late->p;
+          if(ptw_late>shm_late->d+shm_late->pl) ptw_late=shm_late->d;
+          shm_late->p=ptw_late-shm_late->d;
+          shm_late->c++;
+        }
+      }
+
+      while((sec=advance(shm_in,&shp,&c_save,&size,&t,&shp_busy_save))==(-1));
       if(sec==(-2)){
         ptr=shm_in->d+shp+8;
         sprintf(tbuf,"reset %02X%02X%02X.%02X%02X%02X:%02X%02X",
@@ -453,30 +555,44 @@ reset:
       }
     } while(sec>0);
 
-    if((uni=ptw-ptw_save)>4){
+    if(late) timeout_flag=0;
+
+    if((uni=ptw-ptw_save)>10){
+      if(eobsize_out) uni+=4;
       ptw_save[0]=uni>>24;
       ptw_save[1]=uni>>16;
       ptw_save[2]=uni>>8;
       ptw_save[3]=uni;
+      if(eobsize_out)
+        {
+        ptw[0]=uni>>24;
+        ptw[1]=uni>>16;
+        ptw[2]=uni>>8;
+        ptw[3]=uni;
+        ptw+=4;
+        }
       shm_out->r=shm_out->p;
-      if(ptw>shm_out->d+shm_out->pl) ptw=shm_out->d;
+      if(eobsize_out && ptw>shm_out->d+pl_out)
+        {shm_out->pl=ptw-shm_out->d-4;ptw=shm_out->d;}
+      if(!eobsize_out && ptw>shm_out->d+shm_out->pl) ptw=shm_out->d;
       shm_out->p=ptw-shm_out->d;
       shm_out->c++;
     }
 
-    tm_out[5]++;
-    adj_time(tm_out); /* next time to output */
-    while(i=time_cmp(tm_bottom,tm_out,6)){
-      if(sec_1+n_sec+4>time(0) && i>0) break;
-      if(i>0){
+    t_out++;
+    while(t_bottom!=t_out){
+      if(sec_1+n_sec+4>time(0) && t_bottom>t_out) break;
+      if(t_bottom>t_out){
         ptr=shm_in->d+shp_in+8;
+        t_bcd(t_out,tm_out);
         sprintf(tbuf,
 "passing %02X%02X%02X.%02X%02X%02X:%02X%02X(out=%02d%02d%02d.%02d%02d%02d)",
           ptr[0],ptr[1],ptr[2],ptr[3],ptr[4],ptr[5],ptr[6],ptr[7],
           tm_out[0],tm_out[1],tm_out[2],tm_out[3],tm_out[4],tm_out[5]);
         write_log(logfile,tbuf);
       }
-      while((sec_1=advance(shm_in,&shp_in,&c_save_in,&size_in,tm_bottom))<=0){
+      while((sec_1=advance(shm_in,&shp_in,&c_save_in,&size_in,&t_bottom,NULL))<=0){
+        if(late && shp_in==shp_busy_save) shp_busy_save=(-1);
         if(sec_1==(-1)) continue;
         else if(sec_1==0){
           sleep(1);

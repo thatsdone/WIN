@@ -1,4 +1,4 @@
-/* $Id: raw_raw.c,v 1.4 2002/01/13 06:57:51 uehira Exp $ */
+/* $Id: raw_raw.c,v 1.5 2002/03/24 15:35:46 urabe Exp $ */
 /* "raw_raw.c"    97.8.5 urabe */
 /*                  modified from raw_100.c */
 /*                  98.4.17 FreeBSD */
@@ -7,6 +7,7 @@
 /*                  2000.3.21 c_save=shr->c; bug fixed */
 /* 2000.4.24 with -g, shift 1Hz SR data by 4 bits rightward for GTA-45 LP chs */
 /* 2000.4.24/2001.11.14 strerror() */
+/* 2002.3.5 eobsize_in(auto), eobsize_out(-B) */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -178,9 +179,10 @@ main(argc,argv)
   key_t rawkey,monkey;
   int shmid_raw,shmid_mon;
   unsigned long uni;
-  char tb[100];
+  char tb[256];
   unsigned char *ptr,*ptw,tm[6],*ptr_lim,*ptr_save;
-  int sr,i,j,k,size,n,size_shm,tow,c,shift45;
+  int sr,i,j,k,size,n,size_shm,tow,c,shift45,eobsize_in,eobsize_out,pl_out,
+    eobsize_in_count,size2;
   unsigned long c_save;
   unsigned short ch;
   int gs,gh;
@@ -190,30 +192,30 @@ main(argc,argv)
   shift45=0;
   if(progname=strrchr(argv[0],'/')) progname++;
   else progname=argv[0];
-  while((c=getopt(argc,argv,"g"))!=EOF)
+  sprintf(tb," usage : '%s (-gB) [in_key] [out_key] [shm_size(KB)] \\\n\
+                  (-/[ch_file]/-[ch_file] ([log file]))'",progname);
+
+  eobsize_out=eobsize_in=0;
+  while((c=getopt(argc,argv,"gB"))!=EOF)
     {
     switch(c)
       {
       case 'g':   /* shift45 mode */
         shift45=1;
         break;
+      case 'B':   /* eobsize */
+        eobsize_out=1;
+        break;
       default:
-        fprintf(stderr,
-          " usage : '%s (-g) [in_key] [out_key] [shm_size(KB)] \\\n",
-          progname);
-        fprintf(stderr,
-          "                       (-/[ch_file]/-[ch_file] ([log file]))'\n");
+        fprintf(stderr," option -%c unknown\n",c);
+        fprintf(stderr,"%s\n",tb);
         exit(1);
       }
     }
   optind--;
   if(argc<4+optind)
     {
-    fprintf(stderr, 
-      " usage : '%s (-g) [in_key] [out_key] [shm_size(KB)] \\\n",
-      progname);
-    fprintf(stderr,
-      "                       (-/[ch_file]/-[ch_file] ([log file]))'\n");
+    fprintf(stderr,"%s\n",tb);
     exit(1);
     }
 
@@ -253,6 +255,11 @@ main(argc,argv)
   if((shm=(struct Shm *)shmat(shmid_mon,(char *)0,0))==(struct Shm *)-1)
     err_sys("shmat out");
 
+  /* initialize buffer */
+  shm->p=shm->c=0;
+  shm->pl=pl_out=(size_shm-sizeof(*shm))/10*9;
+  shm->r=(-1);
+
   sprintf(tb,"start in_key=%d id=%d out_key=%d id=%d size=%d",
     rawkey,shmid_raw,monkey,shmid_mon,size_shm);
   write_log(logfile,tb);
@@ -267,18 +274,28 @@ main(argc,argv)
   signal(SIGINT,(void *)ctrlc);
 
 reset:
-  /* initialize buffer */
-  shm->p=shm->c=0;
-  shm->pl=(size_shm-sizeof(*shm))/10*9;
-  shm->r=(-1);
-  ptr=shr->d;
   while(shr->r==(-1)) sleep(1);
   ptr=shr->d+shr->r;
   tow=(-1);
 
+  size=mklong(ptr);
+  if(mklong(ptr+size-4)==size) eobsize_in=1;
+  else eobsize_in=0;
+  eobsize_in_count=eobsize_in;
+  sprintf(tb,"eobsize_in=%d, eobsize_out=%d",eobsize_in,eobsize_out);
+  write_log(logfile,tb);
+
   while(1)
     {
-    ptr_lim=ptr+(size=mklong(ptr_save=ptr));
+    size=mklong(ptr_save=ptr);
+    if(size==mklong(ptr+size-4)) eobsize_in_count++;
+    else eobsize_in_count=0;
+    if(eobsize_in && eobsize_in_count==0) goto reset;
+    if(!eobsize_in && eobsize_in_count>3) goto reset;
+    if(eobsize_in) size2=size-4;
+    else size2=size;
+
+    ptr_lim=ptr+size2;
     c_save=shr->c;
     ptr+=4;
 #if DEBUG
@@ -348,21 +365,30 @@ reset:
       } while(ptr<ptr_lim);
     if(tow) i=14;
     else i=10;
-    if((uni=ptw-(shm->d+shm->p))>i)
+    if((ptw-(shm->d+shm->p))>i)
       {
       uni=ptw-(shm->d+shm->p);
+      if(eobsize_out) uni+=4;
       shm->d[shm->p  ]=uni>>24; /* size (H) */
       shm->d[shm->p+1]=uni>>16;
       shm->d[shm->p+2]=uni>>8;
       shm->d[shm->p+3]=uni;     /* size (L) */
-
+      if(eobsize_out)
+        {
+        ptw[0]=uni>>24;
+        ptw[1]=uni>>16;
+        ptw[2]=uni>>8;
+        ptw[3]=uni;
+        ptw+=4;
+        }
 #if DEBUG
       for(i=0;i<6;i++) printf("%02X",shm->d[shm->p+4+i]);
       printf(" : %d M\n",uni);
 #endif
 
       shm->r=shm->p;
-      if(ptw>shm->d+shm->pl) ptw=shm->d;
+      if(eobsize_out && ptw>shm->d+pl_out) {shm->pl=ptw-shm->d-4;ptw=shm->d;}
+      if(!eobsize_out && ptw>shm->d+shm->pl) ptw=shm->d;
       shm->p=ptw-shm->d;
       shm->c++;
       }
@@ -370,9 +396,10 @@ reset:
     fprintf(stderr,"\007");
     fflush(stderr);
 #endif
-    if((ptr=ptr_lim)>shr->d+shr->pl) ptr=shr->d;
+    if((ptr=ptr_save+size)>shr->d+shr->pl) ptr=shr->d;
     while(ptr==shr->d+shr->p) sleep(1);
-    if(shr->c<c_save || mklong(ptr_save)!=size)
+    i=shr->c-c_save;
+    if(!(i<1000 && i>=0) || mklong(ptr_save)!=size)
       {
       write_log(logfile,"reset");
       goto reset;

@@ -1,4 +1,4 @@
-/* $Id: shmdump.c,v 1.6 2002/01/17 15:06:38 urabe Exp $ */
+/* $Id: shmdump.c,v 1.7 2002/03/24 15:35:47 urabe Exp $ */
 /*  program "shmdump.c" 6/14/94 urabe */
 /*  revised 5/29/96 */
 /*  Little Endian (uehira) 8/27/96 */
@@ -9,6 +9,7 @@
 /*  2000.4.24 strerror() */
 /*  2000.4.28 -aonwz -s [s] -f [chfile] options */
 /*  2002.1.15 -m for MON data */
+/*  2002.2.28 size at EOB in shm_in */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -38,7 +39,7 @@
 
 #include "subst_func.h"
 
-#define DEBUG       0
+#define DEBUG       1
 #define MAXMESG     2000
 
 char *progname,outfile[256];
@@ -123,9 +124,10 @@ advance_s(shm,shp,c_save,size)
   struct Shm *shm;
   unsigned int *shp,*c_save,*size;
   {
-  int shpp,tmp;
+  int shpp,tmp,i;
   shpp=(*shp);
-  if(shm->c<*c_save || *size!=mklong(shm->d+(*shp))) return -1;
+  i=shm->c-(*c_save);
+  if(!(i<1000 && i>=0) || *size!=mklong(shm->d+(*shp))) return -1;
   if(shpp+(*size)>shm->pl) shpp=0; /* advance pointer */
   else shpp+=(*size);
   if(shm->p==shpp) return 0;
@@ -197,7 +199,8 @@ main(argc,argv)
     char c[4];
     } un;
   int i,j,k,c_save_in,shp_in,shmid_in,size_in,shp,c_save,wtow,c,out,all,mon,
-    ch,sr,gs,size,chsel,nch,search,seconds,tbufp,bufsize,zero,nsec,aa,bb;
+    ch,sr,gs,size,chsel,nch,search,seconds,tbufp,bufsize,zero,nsec,aa,bb,
+    eobsize,eobsize_count,size2;
   unsigned long tow,wsize,time_end,time_now;
   unsigned int packet_id;
   unsigned char *ptr,tbuf[256],*ptr_lim,*buf,chlist[65536/8],*ptw,tms[6],
@@ -325,6 +328,11 @@ reset:
   else size_in=mklong(shm_in->d+(shp_in=shm_in->r));
   wtow=0;
   ptw=buf+4;
+
+  if(mklong(shm_in->d+shp_in+size_in-4)==size_in) eobsize=1;
+  else eobsize=0;
+  eobsize_count=eobsize;
+
   while(1)
     {
     i=advance_s(shm_in,&shp_in,&c_save_in,&size_in);
@@ -334,9 +342,17 @@ reset:
       continue;
       }
     else if(i<0) goto reset;
-    sprintf(tbuf,"%4d : ",size_in);
+
+    if(size_in==mklong(shm_in->d+shp_in+size_in-4)) eobsize_count++;
+    else eobsize_count=0;
+    if(eobsize && eobsize_count==0) goto reset;
+    if(!eobsize && eobsize_count>3) goto reset;
+
+    if(eobsize) sprintf(tbuf,"%4d B ",size_in);
+    else sprintf(tbuf,"%4d : ",size_in);
     ptr=shm_in->d+shp_in+4;
     ptr_lim=shm_in->d+shp_in+size_in;
+    if(eobsize) ptr_lim-=4;
     if(*ptr>0x20 && *ptr<0x90) /* with tow */
       {
       wtow=1;

@@ -1,4 +1,4 @@
-/* $Id: wdisk.c,v 1.4 2002/01/13 06:57:52 uehira Exp $ */
+/* $Id: wdisk.c,v 1.5 2002/03/24 15:35:47 urabe Exp $ */
 /*
   program "wdisk.c"   4/16/93-5/13/93,7/2/93,7/5/94  urabe
                       1/6/95 bug in adj_time fixed (tm[0]--)
@@ -11,6 +11,7 @@
 		      98.6.26 strcmp2() for year of 2000
                       99.4.19 byte-order-free
                       2000.4.24 strerror()
+                      2002.3.2 eobsize_in(auto)
 */
 
 #ifdef HAVE_CONFIG_H
@@ -335,9 +336,9 @@ main(argc,argv)
      char **argv;
 {
    FILE *fp;
-   int i,j,last_min,shmid,shid,tm[6];
-   unsigned long shp,shp_save,shp_prev,pl[3],size,c_save,tmp;
-   unsigned char *ptr,*ptr_save;
+   int i,j,last_min,shmid,shid,tm[6],eobsize,eobsize_count;
+   unsigned long shp,shp_save,size,c_save,size2;
+   unsigned char *ptr,*ptr_save,ptw[4];
    key_t shmkey;
    struct Shm {
       unsigned long p;    /* write point */
@@ -387,10 +388,18 @@ main(argc,argv)
    fd=NULL;
    while(shm->r==(-1)) sleep(1);
    shp=shp_save=shm->r;    /* read position */
-   for(i=0;i<3;i++) pl[i]=shm->pl*(i+1)/3;
-   
+
+   size=mklong(ptr_save=shm->d+shp);
+   if(mklong(shm->d+shp+size-4)==size) eobsize=1;
+   else eobsize=0;
+   eobsize_count=eobsize;
+   sprintf(tbuf,"eobsize=%d",eobsize);
+   write_log(logfile,tbuf);
+  
    while(1){
-      size=mklong(ptr_save=shm->d+shp);
+      if(eobsize) size2=size-4;
+      else size2=size;
+
       c_save=shm->c;
       bcd_dec(tm,shm->d+shp+4); /* YMDhms */
       if(check_time(tm)){
@@ -405,25 +414,18 @@ main(argc,argv)
          sleep(5);
 	 goto reset;
       }
-      
-      if(mode==60) i=(tm[3]!=last_min);
-      else i=(tm[4]!=last_min);
-      
-      if(i){
-	 if(shp-shp_save>0){
-	    if(fwrite(shm->d+shp_save,1,shp-shp_save,fd)<shp-shp_save)
-	      write_log(logfile,"fwrite");
-	    if(mode==60) fflush(fd);
-	    
-#if DEBUG
-	    printf("%d>(fd=%d) r=%d\n",shp-shp_save,fd,shp_save);
-#endif
-	    shp_save=shp;
-	 }
-	 switch_file(tm);
-      }
-      if(mode==60) last_min=tm[3];
-      else last_min=tm[4];
+ 
+      if(mode==60)
+        {
+        if(tm[3]!=last_min) switch_file(tm);
+        last_min=tm[3];
+        }
+      else
+        {
+        if(tm[4]!=last_min) switch_file(tm);
+        last_min=tm[4];
+        }
+
 #if DEBUG
       for(i=0;i<6;i++) printf("%02d",tm[i]);
       printf(" : %d r=%d\n",size,shp);
@@ -431,26 +433,29 @@ main(argc,argv)
 #if BELL
       printf("\007");fflush(stdout);
 #endif
-      shp_prev=shp;
-      shp+=size;
-      for(i=0;i<3;i++)
-	if(shp_prev<=pl[i] && shp>pl[i]){
-	   if(fwrite(shm->d+shp_save,1,shp-shp_save,fd)<shp-shp_save)
-	     write_log(logfile,"fwrite");
-	   if(mode==60) fflush(fd);
+      ptw[0]=size2>>24;
+      ptw[1]=size2>>16;
+      ptw[2]=size2>>8;
+      ptw[3]=size2;
+      if(fwrite(ptw,1,4,fd)<4) write_log(logfile,"fwrite");
+      if(fwrite(shm->d+shp+4,1,size2-4,fd)<size2-4) write_log(logfile,"fwrite");
+      if(mode==60) fflush(fd);
 	   
 #if DEBUG
-	   printf("%d>(fd=%d) r=%d\n",shp-shp_save,fd,shp_save);
+      printf("%d>(fd=%d) r=%d\n",size2,fd,shp);
 #endif
-	   shp_save=shp;
-	   break;
-	}
-      if(shp>shm->pl) shp=shp_save=0;
+      if((shp+=size)>shm->pl) shp=shp_save=0;
       while(shm->p==shp) sleep(1);
-      tmp=mklong(ptr_save);
-      if(shm->c<c_save || tmp!=size){
+      i=shm->c-c_save;
+      if(!(i<1000 && i>=0) || mklong(ptr_save)!=size){
 	 write_log(logfile,"reset");
 	 goto reset;
       }
+
+      size=mklong(ptr_save=shm->d+shp);
+      if(size==mklong(ptr_save+size-4)) eobsize_count++;
+      else eobsize_count=0;
+      if(eobsize && eobsize_count==0) goto reset;
+      if(!eobsize && eobsize_count>3) goto reset;
    }
 }

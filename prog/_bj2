@@ -1,0 +1,15 @@
+#! /bin/sh
+#
+# _bj2 2001.1.17
+#
+if [ -f "$1" ]
+then
+  . $1
+else
+  . win.conf
+fi
+while true
+do
+        _update2
+	sleep 60
+done

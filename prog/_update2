@@ -1,0 +1,51 @@
+#! /bin/sh
+#
+#  _update2 2001.1.17  urabe
+#
+
+ED=$DD/etc
+PDM=$DD/picks/man
+FDM=$DD/finals/man
+FM=$ED/final.man
+QD=$DD/trg
+
+umask 022
+ym=`cat $ED/YYMM`
+
+# make 'finalb' files for 'man'
+(cd $PDM;ls) |
+while read file
+do
+  if file_older $PDM/$file $FDM/$file > /dev/null
+  then
+    (cd $PDM/$file;ls -l| pick2finalb) > $TD/$file.$$
+    mv $TD/$file.$$ $FDM/$file
+#   echo $FDM/$file updated
+    touch $TD/man.$$
+  fi
+done
+
+# make 'final.man' file
+if [ -f $TD/man.$$ ]
+then
+  (cat $FDM/[7-9]*;cat $FDM/[0-6]*) > $FM 2>/dev/null
+  echo final database updated
+  rm $TD/man.$$
+fi
+
+# make 'evtemp.YYMM' files for 'man'
+(cd $PDM;ls) |
+while read file
+do
+  td="$QD"
+  if (file_older $PDM/$file $ED/evtemp.$file > /dev/null || \
+    file_older $ED/pmon.out.$file $ED/evtemp.$file > /dev/null)
+  then
+    elist $PDM/$file $ED/pmon.out.$file $td > $TD/evtemp.$file
+#   mv $TD/evtemp.$file $ED
+    grep -v '#' $TD/evtemp.$file > $ED/evtemp.$file
+    rm $TD/evtemp.$file
+#     this is to hide 'NOISE' events
+    echo 'evtemp(ee) database updated'
+  fi
+done

@@ -1,8 +1,9 @@
-/* $Id: sends.c,v 1.1 2000/04/30 10:05:23 urabe Exp $ */
+/* $Id: sends.c,v 1.2 2000/12/20 11:17:43 urabe Exp $ */
 /*   program "sends"   2000.3.20 urabe                   */
 /*   2000.3.21 */
 /*   2000.4.17 */
 /*   2000.4.24 strerror() */
+/*   2000.12.20 option -i fixed */
 
 #include <stdio.h>
 #include <signal.h>
@@ -327,7 +328,7 @@ main(argc,argv)
   sprintf(tbuf,
 " usage : '%s (-ad) (-p req_port) (-b rate) (-i my_ID) [shm_key] [device] ([log file]))'",
     progname);
-  while((c=getopt(argc,argv,"ap:b:ds:"))!=EOF)
+  while((c=getopt(argc,argv,"ap:b:di:"))!=EOF)
     {
     switch(c)
       {

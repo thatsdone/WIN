@@ -1,3 +1,4 @@
+/* $Id: pmon.c,v 1.4 2001/01/22 08:36:11 urabe Exp $ */
 /************************************************************************
 *************************************************************************
 **  program "pmon.c" for NEWS/SPARC                             *********
@@ -35,6 +36,7 @@
 **  2000.7.3  overflow bug in line[] fixed                      *********
 **            zone names in "off" line not to duplicate         *********
 **            not abort one-min file even when no ch found to use *******
+**  2001.1.22 check_path                                        *********
 **                                                              *********
 **  font files ("font16", "font24" and "font32") are            *********
 **  not necessary                                               *********
@@ -48,6 +50,8 @@
 #include  <string.h>
 #include  <math.h>
 #include  <signal.h>
+#include  <unistd.h>
+#include  <dirent.h>
 #include  <sys/types.h>
 #include  <sys/file.h>
 #include  <sys/time.h>
@@ -207,7 +211,7 @@ unsigned char frame[HEIGHT_LBP][WIDTH_LBP],zone[M_CH][20],
   file_trig_lock[80],idx2[65536];
 double dt=1.0/(double)SR_MON,time_on,time_off,time_lta,time_lta_off,
   time_sta,a_sta,b_sta,a_lta,b_lta,a_lta_off,b_lta_off;
-
+char *progname;
 struct
   {
   int ch;
@@ -880,6 +884,61 @@ owari()
   exit(0);
   }
 
+#define FILE_R 0
+#define FILE_W 1
+#define DIR_R  2
+#define DIR_W  3
+check_path(path,idx)
+  char *path;
+  int idx;
+  {
+  DIR *dir_ptr;
+  char tb[1024];
+  FILE *fp;
+  if(idx==DIR_R || idx==DIR_W)
+    {
+    if((dir_ptr=opendir(path))==NULL)
+      {
+      printf("%s(%d):directory not open '%s'\n",progname,getpid(),path);
+      owari();
+      }
+    else closedir(dir_ptr);
+    if(idx==DIR_W)
+      {
+      sprintf(tb,"%s/%s.test.%d",path,progname,getpid());
+      if((fp=fopen(tb,"w+"))==NULL)
+        {
+        printf("%s(%d):directory not R/W '%s'\n",progname,getpid(),path);
+        owari();
+        }
+      else
+        {
+        fclose(fp);
+        unlink(tb);
+        }
+      }
+    }
+  else if(idx==FILE_R)
+    {
+    if((fp=fopen(path,"r"))==NULL)
+      {
+      printf("%s(%d):file not readable '%s'\n",progname,getpid(),path);
+      owari();
+      }
+    else fclose(fp);
+    }
+  else if(idx==FILE_W)
+    {
+    if((fp=fopen(path,"r+"))==NULL)
+      {
+      printf("%s(%d):file not R/W '%s'\n",progname,getpid(),path);
+      owari();
+      }
+    else fclose(fp);
+    }
+  return 1;
+  }
+
 put_font(bitmap,width_byte,xbase,ybase,text,font,
     height_font,width_font,erase)
   unsigned char *bitmap,*text,*font;
@@ -1039,6 +1098,8 @@ main(argc,argv)
     timebuf1[80],timebuf2[80],printer[40],name[STNLEN],comp[CMPLEN],
     path_mon1[80];
 
+  if(progname=strrchr(argv[0],'/')) progname++;
+  else progname=argv[0];
   if(argc<2)
     {
     printf("usage of pmon :\n");
@@ -1062,17 +1123,22 @@ main(argc,argv)
     {
     sscanf(textbuf,"%s",path_mon);
     sscanf(textbuf,"%s",path_mon1);
+    check_path(path_mon,DIR_R);
     }
   else
     {
     *ptr=0;
     sscanf(textbuf,"%s",path_mon);
+    check_path(path_mon,DIR_R);
     sscanf(ptr+1,"%s",path_mon1);
+    check_path(path_mon1,DIR_R);
     }
   read_param(f_param,textbuf);  /* (3) temporary work directory */
   sscanf(textbuf,"%s",path_temp);
+  check_path(path_temp,DIR_W);
   read_param(f_param,textbuf);  /* (4) channel table file */
   sscanf(textbuf,"%s",ch_file);
+  check_path(ch_file,FILE_R);
   read_param(f_param,textbuf);  /* (5) printer name */
   sscanf(textbuf,"%s",printer);
   read_param(f_param,textbuf);  /* (6) rows/sheet */
@@ -1094,6 +1160,7 @@ main(argc,argv)
   strcat(file_trig_lock,".lock");
   read_param(f_param,textbuf);  /* (9) zone table file */
   sscanf(textbuf,"%s",file_zone);
+  check_path(file_zone,FILE_R);
   fclose(f_param);
   sprintf(temp_done,"%s/USED",path_mon1);
   sprintf(latest,"%s/LATEST",path_mon);

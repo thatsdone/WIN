@@ -1,4 +1,4 @@
-/* $Id: send_raw.c,v 1.13 2002/10/27 08:30:01 urabe Exp $ */
+/* $Id: send_raw.c,v 1.14 2002/12/08 04:55:37 urabe Exp $ */
 /*
     program "send_raw/send_mon.c"   1/24/94 - 1/25/94,5/25/94 urabe
                                     6/15/94 - 6/16/94
@@ -39,6 +39,7 @@
                2002.5.3  NBUF 128->250
                2002.5.15 standby mode (-w SHMKEY) / packet statistics on HUP
                2002.9.19 added option -T to set TTL (-T ttl)
+               2002.11.29 added option -p to set source port (-p src_port)
 */
 
 #ifdef HAVE_CONFIG_H
@@ -317,7 +318,7 @@ main(argc,argv)
     standby,ttl;
   struct sockaddr_in to_addr,from_addr;
   struct hostent *h;
-  unsigned short host_port,ch;
+  unsigned short host_port,ch,src_port;
   unsigned long gh;
   unsigned char *ptr,*ptr1,*ptr_save,*ptr_lim,*ptw,*ptw_save,*ptw_size,
     no,no_f,host_name[100],tbuf[256];
@@ -347,7 +348,7 @@ main(argc,argv)
   else exit(1);
   sprintf(tbuf,
 " usage : '%s (-amrt) (-b [mtu]) (-h [h]) (-i [interface]) (-s [s])\\\n\
-         (-w [key]) (-T [ttl]) [shmkey] [dest] [port] ([chfile]/- ([logfile]))'",
+   (-p [src_port]) (-w [key]) (-T [ttl]) [shmkey] [dest] [port] ([chfile]/- ([logfile]))'",
     progname);
 
   *interface=0;
@@ -355,7 +356,8 @@ main(argc,argv)
   ttl=1;
   shw_key=(-1);
   standby=0;
-  while((c=getopt(argc,argv,"ab:h:i:mrs:tw:T:"))!=EOF)
+  src_port=0;
+  while((c=getopt(argc,argv,"ab:h:i:mp:rs:tw:T:"))!=EOF)
     {
     switch(c)
       {
@@ -373,6 +375,9 @@ main(argc,argv)
         break;
       case 'm':   /* "mon" mode */
         raw=0;
+        break;
+      case 'p':   /* source port */
+        src_port=atoi(optarg);
         break;
       case 'r':   /* "raw" mode */
         raw=1;
@@ -487,7 +492,12 @@ main(argc,argv)
   memset((char *)&from_addr,0,sizeof(from_addr));
   from_addr.sin_family=AF_INET;
   from_addr.sin_addr.s_addr=htonl(INADDR_ANY);
-  from_addr.sin_port=htons(0);
+  from_addr.sin_port=htons(src_port);
+  if(src_port)
+    {
+    sprintf(tbuf,"src_port=%d",src_port);
+    write_log(logfile,tbuf);
+    }
   if(bind(sock,(struct sockaddr *)&from_addr,sizeof(from_addr))<0)
     err_sys("bind");
 

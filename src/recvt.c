@@ -39,6 +39,7 @@
 /*                2002.5.3,7 maximize RCVBUF size ( option '-s' )*/
 /*                2002.5.14 -n debugged / -d to set ddd length */
 /*                2002.5.23 stronger to destructed packet */
+/*                2002.11.29 corrected byte-order of port no. in log */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -363,8 +364,8 @@ check_pno(from_addr,pn,pn_f,sock,fromlen,n) /* returns -1 if duplicated */
   int n;                          /* size of packet */
   {
   int i,j;
-  int host_;  /* 32-bit-long host address */
-  int port_;  /* port No. */
+  int host_;  /* 32-bit-long host address in network byte-order */
+  int port_;  /* port No. in network byte-order */
   unsigned int pn_1;
   static unsigned int mask[8]={0x80,0x40,0x20,0x10,0x08,0x04,0x02,0x01};
   unsigned char pnc;
@@ -382,7 +383,7 @@ check_pno(from_addr,pn,pn_f,sock,fromlen,n) /* returns -1 if duplicated */
         {
         sprintf(tb,"deny packet from host %d.%d.%d.%d:%d",
           ((unsigned char *)&host_)[0],((unsigned char *)&host_)[1],
-          ((unsigned char *)&host_)[2],((unsigned char *)&host_)[3],port_);
+          ((unsigned char *)&host_)[2],((unsigned char *)&host_)[3],ntohs(port_));
         write_log(logfile,tb);
         }
       return -1;
@@ -415,7 +416,7 @@ check_pno(from_addr,pn,pn_f,sock,fromlen,n) /* returns -1 if duplicated */
     ht[i].nos[pn>>3]|=mask[pn&0x07]; /* set bit for the packet no */
     sprintf(tb,"registered host %d.%d.%d.%d:%d (%d)",
       ((unsigned char *)&host_)[0],((unsigned char *)&host_)[1],
-      ((unsigned char *)&host_)[2],((unsigned char *)&host_)[3],port_,i);
+      ((unsigned char *)&host_)[2],((unsigned char *)&host_)[3],ntohs(port_),i);
     write_log(logfile,tb);
     ht[i].n_bytes=n;
     ht[i].n_packets=1;

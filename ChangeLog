@@ -1,4 +1,8 @@
-$Id: ChangeLog,v 1.19 2002/10/27 08:36:10 urabe Exp $
+$Id: ChangeLog,v 1.20 2002/12/08 04:55:37 urabe Exp $
+
+2002-11-29 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
+	* recvt.c : corrected byte-order of port no. in log
+	* send_raw.c : added option -p to set source port (-p src_port)
 
 2002-10-27 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
 	* shmdump.c : input from 'stdin' by specifying Shm key as '-'

@@ -1,11 +1,11 @@
-.TH send_raw 1W "2002.5.31" "WIN SYSTEM" "WIN SYSTEM"
+.TH send_raw 1W "2002.12.21" "WIN SYSTEM" "WIN SYSTEM"
 .SH 名称
 send_raw, send_mon, sendt_raw, sendt_mon - IPによる win 形式データの送信
 .SH 形式
 .IP
 .ti -7
 send_raw [\-\fBarmt\fR] [\-\fBb\fI\ mtu\fR] [\-\fBi\fI\ interface\fR]
-[\-\fBh\fI\ hours\fR] [\-\fBs\fI\ sec\fR] [\-\fBw\fI\ key\fR]
+[\-\fBh\fI\ hours\fR] [\-\fBp\fI\ src_port\fR] [\-\fBs\fI\ sec\fR] [\-\fBT\fI\ ttl\fR] [\-\fBw\fI\ key\fR]
 .I shmkey
 .I dest
 .I port
@@ -106,8 +106,13 @@ send_mon (オプション \fB\-t\fP と共に指定したときはsendt_mon)の動作をします。
 それぞれ sendt_raw または sendt_mon の動作をします。
 .IP "\fB\-h \fIhours" 5
 送信の際にデータのタイムスタンプを \fIhours\fR 時間だけ進めます。
+.IP "\fB\-p \fIsrc_port" 5
+送信元UDPポート番号を \fIsrc_port\fR にします。通常指定する必要はありません。
 .IP "\fB\-s \fIsec" 5
 送信の際にデータのタイムスタンプを \fIsec\fR 秒だけ進めます。
+.IP "\fB\-T \fIttl" 5
+送信先がマルチキャストアドレスであるとき、送信パケットのTTLの
+値をデフォルトの 1 ではなくて \fIsec\fR にします。
 .IP "\fB\-w \fIkey" 5
 キー
 .I key

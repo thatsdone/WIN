@@ -1,11 +1,11 @@
-.TH recvt 1W "2002.5.31" "WIN SYSTEM" "WIN SYSTEM"
+.TH recvt 1W "2002.12.21" "WIN SYSTEM" "WIN SYSTEM"
 .UC 4
 .SH 名称
 recvt - IPによる win 形式データの受信
 .SH 形式
 .IP
 .ti -7
-recvt [\-\fBaBnM\fR] [\-\fBd\fI pkts\fR] [\-\fBg\fI group\fR]
+recvt [\-\fBaBnMr\fR] [\-\fBd\fI pkts\fR] [\-\fBg\fI group\fR]
 [\-\fBi\fI interface\fR] [\-\fBm\fI before\fR] [\-\fBp\fI after\fR]
 [\-\fBs\fI bufsiz\fR]
 .I port
@@ -263,7 +263,7 @@ IPマルチキャストアドレス
 .IP "\fB\-m \fIbefore" 5
 マシンの内部時計の時刻よりも before分以上前の(遅れた)タイムスタンプを
 もつパケットを、不正なパケットとして廃棄します。
-.IP \fB\-M 5
+.IP "\fB\-M" 5
 MON形式のデータを受信します。受信するデータがMON形式のときは
 これを指定しなければなりません。MON形式については raw_mon(1W)を
 参照してください。
@@ -274,6 +274,10 @@ MON形式のデータを受信します。受信するデータがMON形式のときは
 .IP "\fB\-p \fIafter" 5
 マシンの内部時計の時刻よりも after分以上後の(進んだ)タイムスタンプを
 もつパケットを、不正なパケットとして廃棄します。
+.IP "\fB\-r" 5
+再送要求パケットを送信しません。
+DVB衛星配信ボードによる受信のような一方通行の伝送路の場合には、
+これにより不要なパケット送信を抑制することができます。
 .IP "\fB\-s \fIbufsiz" 5
 受信ソケットバッファサイズを
 .I bufsiz

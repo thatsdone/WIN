@@ -1,5 +1,12 @@
-$Id: ChangeLog,v 1.1.2.5 2001/11/19 10:44:11 uehira Exp $
+$Id: ChangeLog,v 1.1.2.6 2002/01/07 10:55:11 uehira Exp $
 
+2002-1-7 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* bug fix in wadd.c
+	  egrep の -F オプションで与えるパターンファイルを作る時に ^ を付
+	  加しておかないとチャンネル番号以外にもマッチングすることがあり
+	  (例えば緯度の値など)，必要なチャンネルがマージしたチャンネルファ
+	  イルから抜けることがある．
+	
 2001-11-19 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* use strerror(3)
 	  order2.c wdiskts.c

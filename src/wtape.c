@@ -1,4 +1,4 @@
-/* $Id: wtape.c,v 1.2 2000/04/30 10:05:24 urabe Exp $ */
+/* $Id: wtape.c,v 1.3 2001/06/23 01:04:22 uehira Exp $ */
 /*
   program "wtape.c"
   8/23/89 - 8/8/90, 6/27/91, 12/24/91, 2/29/92  urabe
@@ -10,9 +10,11 @@
   99.2.4  put signal(HUP) in switch_sig()
   99.4.19 byte-order-free
   2000.4.17 deleted definition of usleep()
+  2001.6.21 add options '-p', '-d' and '?'   (uehira)
 */
 
 #include  <stdio.h>
+#include  <stdlib.h>
 #include  <string.h>
 #include  <fcntl.h>
 #include  <sys/types.h>
@@ -27,14 +29,23 @@
 #define   SIZE_MAX  1000000
 #define   NAMLEN    80
 #define   N_EXABYTE 8
+#define   DEFAULT_WAIT_MIN  0
+#define   DEFAULT_PARAM_FILE  "wtape.prm"
+#ifndef   FILENAME_MAX
+#define   FILENAME_MAX 1024
+#endif
 
   unsigned char buf[SIZE_MAX];
   int init_flag,wfm,new_tape,switch_req,fd_exb,exb_status[N_EXABYTE],
     exb_busy,n_exb;
-  char name_buf[NAMLEN],name_start[NAMLEN],exb_name[N_EXABYTE][20],
-    file_done[NAMLEN],raw_dir[50],raw_dir1[50],log_file[80],
-    raw_oldest[20],raw_latest[20];
+  char name_buf[FILENAME_MAX],name_start[NAMLEN],exb_name[N_EXABYTE][20],
+    file_done[FILENAME_MAX],raw_dir[FILENAME_MAX],raw_dir1[FILENAME_MAX],
+    log_file[FILENAME_MAX],raw_oldest[20],raw_latest[20];
   unsigned long exb_total;  /* in KB */
+  int  wait_min;
+  char param_name[FILENAME_MAX];
+  char *progname;
+  static char rcsid[]="$Id: wtape.c,v 1.3 2001/06/23 01:04:22 uehira Exp $";
 
 switch_sig()
   {
@@ -87,42 +98,46 @@ mt_doit(fd,ope,count)
   return ioctl(fd,MTIOCTOP,(char *)&exb_param);
   }
 
-mt_status(fd,type,ds,er,resid,flno)
-  int fd,*type,*ds,*er,*resid,*flno;
-  {
-  int re;
-  struct mtget exb_stat;
-  re=ioctl(fd,MTIOCGET,(char *)&exb_stat);
-/*printf("type=%d ds=%d er=%d resid=%d flno=%d\n",
-exb_stat.mt_type,exb_stat.mt_dsreg,exb_stat.mt_erreg,
-exb_stat.mt_resid,exb_stat.mt_fileno);
-*/  *type=exb_stat.mt_type;   /* drive id */
-  *ds=exb_stat.mt_dsreg;    /* 
-  *er=exb_stat.mt_erreg;    /* sense key error */
-  *resid=exb_stat.mt_resid; /* residual count (bytes not transferred) */
-  *flno=exb_stat.mt_fileno; /* file number */
-  return re;
-  }
+/* mt_status(fd,type,ds,er,resid,flno) */
+/*   int fd,*type,*ds,*er,*resid,*flno; */
+/*   { */
+/*   int re; */
+/*   struct mtget exb_stat; */
+/*   re=ioctl(fd,MTIOCGET,(char *)&exb_stat); */
+/* /*printf("type=%d ds=%d er=%d resid=%d flno=%d\n", */
+/* exb_stat.mt_type,exb_stat.mt_dsreg,exb_stat.mt_erreg, */
+/* exb_stat.mt_resid,exb_stat.mt_fileno); */
+/* */   
+/*   *type=exb_stat.mt_type;   /* drive id */ 
+/*   *ds=exb_stat.mt_dsreg;    /* */ 
+/*   *er=exb_stat.mt_erreg;    /* sense key error */ 
+/*   *resid=exb_stat.mt_resid; /* residual count (bytes not transferred) */ 
+/*   *flno=exb_stat.mt_fileno; /* file number */
+/*   return re; */
+/*   } */
 
 read_param(f_param,textbuf)
   FILE *f_param;
   unsigned char *textbuf;
   {
   do      {
-    if(fgets(textbuf,200,f_param)==NULL) return 1;
+    if(fgets(textbuf,(FILENAME_MAX<<1)+32,f_param)==NULL) return 1;
     } while(*textbuf=='#');
   return 0;
   }
 
 init_param()
   {
-  char tb[100],*ptr;
+  char tb[(FILENAME_MAX<<1)+32],*ptr;
   FILE *fp;
-  int i,j;
 
-  if((fp=fopen("wtape.prm","r"))==NULL)
+  if((fp=fopen(param_name,"r"))==NULL)
     {
-    fprintf(stderr,"parameter file 'wtape.prm' not found\007\n");
+    fprintf(stderr,"parameter file '%s' not found\007\n",param_name);
+#if DEBUGFLAG
+    printf("***** %s abort *****\n\n",progname);
+#endif
+    usage();
     exit(1);
     }
   read_param(fp,tb);
@@ -232,6 +247,38 @@ adj_time(tm)
         }
       }
     }
+  else if(tm[4]==-1)
+    {
+    tm[4]=59;
+    if(--tm[3]==-1)
+      {
+      tm[3]=23;
+      if(--tm[2]==0)
+        {
+        switch(--tm[1])
+          {
+          case 2:
+            if(tm[0]%4==0)
+              tm[2]=29;else tm[2]=28;
+            break;
+          case 4:
+          case 6:
+          case 9:
+          case 11:
+            tm[2]=30;
+            break;
+          default:
+            tm[2]=31;
+            break;
+          }
+        if(tm[1]==0)
+          {
+          tm[1]=12;
+          if(--tm[0]==-1) tm[0]=99;
+          }
+        }
+      }
+    }
   }
 
 ctrlc()
@@ -244,7 +291,7 @@ close_exb(tb)
   char *tb;
   {
   FILE *fp;
-  int i,re,tm[5];
+  int re,tm[5];
   /* write exabyte logging file */
   fp=fopen(log_file,"a+");
   if(exb_total)
@@ -268,7 +315,7 @@ rmemo(f,c)
     char *f,*c;
     {
     FILE *fp;
-  char tbuf[80];
+    char tbuf[FILENAME_MAX];
     sprintf(tbuf,"%s/%s",raw_dir,f);
     while((fp=fopen(tbuf,"r"))==NULL)
     {
@@ -283,7 +330,7 @@ wmemo(f,c)
     char *f,*c;
     {
     FILE *fp;
-  char tbuf[80];
+    char tbuf[FILENAME_MAX];
     sprintf(tbuf,"%s/%s",raw_dir1,f);
     fp=fopen(tbuf,"w+");
     fprintf(fp,"%s\n",c);
@@ -292,7 +339,7 @@ wmemo(f,c)
 
 wmemon(f,c)
     char *f;
-  int c;
+    int c;
     {
     char tbuf[10];
     sprintf(tbuf,"%d",c);
@@ -302,10 +349,9 @@ wmemon(f,c)
 end_process(code)
   int code;
   {
-  FILE *fp;
-  char tb[80];
+
 #if DEBUGFLAG
-  printf("***** wtape stop *****\n");
+  printf("***** %s stop *****\n",progname);
 #endif
   exb_status[exb_busy]=0;
   write_units("_UNITS");
@@ -317,13 +363,13 @@ read_units(file)
   char *file;
   {
   FILE *fp;
-  char tb[50],tb1[50];
+  char tb[FILENAME_MAX],tb1[FILENAME_MAX];
   int i;
   for(i=0;i<n_exb;i++) exb_status[i]=0;
   sprintf(tb,"%s/%s",raw_dir1,file);
-    if((fp=fopen(tb,"r"))==NULL)
+  if((fp=fopen(tb,"r"))==NULL)
     {
-    sprintf(tb1,"wtape: %s",tb);
+    sprintf(tb1,"%s: %s",progname,tb);
     perror(tb1);
     for(i=0;i<n_exb;i++) exb_status[i]=1;
     }
@@ -334,12 +380,12 @@ read_units(file)
     }
   fclose(fp);
   }
-  
+
 write_units(file)
   char *file;
   {
   FILE *fp;
-  char tb[50];
+  char tb[FILENAME_MAX];
   int i;
   sprintf(tb,"%s/%s",raw_dir1,file);
   fp=fopen(tb,"w+");
@@ -350,7 +396,6 @@ write_units(file)
 switch_unit(unit)
   int unit;
   {
-  FILE *fp;
   char tb[100];
   int re,i;
   read_units("_UNITS");
@@ -382,7 +427,7 @@ switch_unit(unit)
     {
     if((fd_exb=open(exb_name[exb_busy],O_WRONLY))==-1)
       {
-      sprintf(tb,"wtape: %s",exb_name[exb_busy]);
+      sprintf(tb,"%s: %s",progname,exb_name[exb_busy]);
       perror(tb);
       switch_unit(-1);
       }
@@ -398,16 +443,60 @@ mklong(ptr)
   return a;       
   }
 
+usage()
+{
+
+  fprintf(stderr,"%s\n",rcsid);
+  fprintf(stderr,
+	  "Usage: %s (options) ([unit])\n",
+	  progname);
+  fprintf(stderr, "List of options:\n");
+  fprintf(stderr,
+	  " -p [param file]   set parameter file(default:wtape.prm)\n");
+  fprintf(stderr,
+	  " -d [delay]        set delay in minute(default:0)\n");
+  fprintf(stderr,
+	  " -?                print this message\n");
+  exit(1);
+}
+
 main(argc,argv)
   int argc;
   char *argv[];
   {
   FILE *fp;
   char tb[100];
-  int i,j,re,cnt,key,io_error,unit,f_get,last_min,tm[5];
+  int i,j,re,cnt,io_error,unit,f_get,last_min,tm[5];
+  int ch,max_num,tm1[5],k;
+  char max_c[100];
+
+  if((progname=strrchr(argv[0],'/'))) progname++;
+  else progname=argv[0];
+    
 #if DEBUGFLAG
-  printf("***** wtape start *****\n");
+  printf("***** %s start *****\n",progname);
 #endif
+
+  wait_min=0;
+  sprintf(param_name,"%s",DEFAULT_PARAM_FILE);
+  while((ch=getopt(argc,argv,"p:d:?"))!=-1)
+    {
+      switch (ch)
+	{
+	case 'p':   /* parameter file */
+	  strcpy(param_name,optarg);
+	  break;
+	case 'd':   /* delay minute */
+	  wait_min=atoi(optarg);
+	  break;
+	case '?':
+	default:
+	  usage();
+	}
+    }
+  argc-=optind;
+  argv+=optind;
+
 /* initialize parameters */
   init_param();
 
@@ -415,11 +504,19 @@ main(argc,argv)
   signal(SIGINT,ctrlc);     /* set up ctrlc routine */
   signal(SIGHUP,switch_sig);
 
-/* get exabyte unit */
-  
-  if(argc>1)
+  rmemo("COUNT",max_c);
+  max_num=atoi(max_c);
+  if(wait_min<0 || wait_min>max_num-70)
     {
-    sscanf(argv[1],"%d",&unit);
+      fprintf(stderr,"Invalid delay minute (0<=[delay]<=%d).\n",
+	      max_num-70,DEFAULT_WAIT_MIN);
+      end_process(1);
+    } 
+
+/* get exabyte unit */
+  if(argc>0)
+    {
+    sscanf(argv[0],"%d",&unit);
     if(unit<0 || unit>=n_exb) unit=0;
     }
   else unit=0;
@@ -433,9 +530,21 @@ main(argc,argv)
     adj_time(tm);
     sprintf(name_start,"%02d%02d%02d%02d.%02d",
         tm[0],tm[1],tm[2],tm[3],tm[4]);
-/* compare with the oldest */
     rmemo("OLDEST",raw_oldest);
     rmemo("LATEST",raw_latest);
+    if(wait_min)
+      {
+	sscanf(raw_latest,"%02d%02d%02d%02d.%02d",
+	       &tm1[0],&tm1[1],&tm1[2],&tm1[3],&tm1[4]);
+	for(k=0;k<wait_min;++k)
+	  {
+	    tm1[4]--;
+	    adj_time(tm1);
+	  }
+	sprintf(raw_latest,"%02d%02d%02d%02d.%02d",
+		tm1[0],tm1[1],tm1[2],tm1[3],tm1[4]);
+      }
+/* compare with the oldest */
     if(strcmp2(name_start,raw_oldest)<=0)
       {
       strcpy(name_start,raw_oldest);
@@ -465,6 +574,18 @@ main(argc,argv)
             }
           else sleep(60);
           rmemo("LATEST",raw_latest);
+	  if(wait_min)
+	    {
+	      sscanf(raw_latest,"%02d%02d%02d%02d.%02d",
+		     &tm1[0],&tm1[1],&tm1[2],&tm1[3],&tm1[4]);
+	      for(k=0;k<wait_min;++k)
+		{
+		  tm1[4]--;
+		  adj_time(tm1);
+		}
+	      sprintf(raw_latest,"%02d%02d%02d%02d.%02d",
+		      tm1[0],tm1[1],tm1[2],tm1[3],tm1[4]);
+	    }
           }
       }
     if(switch_req)
@@ -478,7 +599,7 @@ main(argc,argv)
     if((f_get=open(name_buf,O_RDONLY))==-1)
       {
 #if DEBUGFLAG
-      sprintf(tb,"wtape: %s",name_buf);
+      sprintf(tb,"%s: %s",progname,name_buf);
       perror(tb);
 #endif
       continue;
@@ -516,7 +637,7 @@ main(argc,argv)
         if((re=write(fd_exb,buf,j))<j)
           {
 #if DEBUGFLAG
-          sprintf(tb,"wtape: write %d->%d",j,re);
+          sprintf(tb,"%s: write %d->%d",progname,j,re);
           perror(tb);
 #endif
           io_error=1;

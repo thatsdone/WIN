@@ -1,5 +1,5 @@
 /*
- * $Id: win2raw.c,v 1.1 2002/07/22 15:12:32 uehira Exp $
+ * $Id: win2raw.c,v 1.2 2002/07/22 15:34:10 uehira Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -16,7 +16,7 @@
 #include "subst_func.h"
 
 static const char  rcsid[] =
-   "$Id: win2raw.c,v 1.1 2002/07/22 15:12:32 uehira Exp $";
+   "$Id: win2raw.c,v 1.2 2002/07/22 15:34:10 uehira Exp $";
 static char  *progname;
 
 static void usage(void);
@@ -157,7 +157,7 @@ usage(void)
   (void)fprintf(stderr, "%s\n", rcsid);
   (void)fprintf(stderr, "Usage : %s [options] rawdir [data]\n", progname);
   (void)fprintf(stderr, "   options: -u    : unlink input data file\n");
-  (void)fprintf(stderr, "   options: -v    : verbose mode\n");
+  (void)fprintf(stderr, "            -v    : verbose mode\n");
   (void)fprintf(stderr, "            -h    : print this message\n");
   exit(1);
 }

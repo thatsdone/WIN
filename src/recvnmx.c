@@ -1,7 +1,8 @@
-/* $Id: recvnmx.c,v 1.6 2001/10/05 04:30:24 urabe Exp $ */
+/* $Id: recvnmx.c,v 1.7 2001/11/14 09:49:20 urabe Exp $ */
 /* "recvnmx.c"    2001.7.18-19 modified from recvt.c and nmx2raw.c  urabe */
 /*                2001.8.18 */
 /*                2001.10.5 workaround for hangup */
+/*                2001.11.2 workaround for bundle types 32,33,34,13 */
 
 #include <stdio.h>
 #include <signal.h>
@@ -507,7 +508,11 @@ proc_soh(struct Nmx_Packet *pk)
         for(j=1;j<4;j++){
           u.c[0]=pk->b[i].u.uc[j][3]; u.c[1]=pk->b[i].u.uc[j][2];
           u.c[2]=pk->b[i].u.uc[j][1]; u.c[3]=pk->b[i].u.uc[j][0];
-          sprintf(tb+strlen(tb),"%10.5f ",u.f);
+/*        sprintf(tb+strlen(tb),"%10.5f ",u.f);*/
+          sprintf(tb+strlen(tb),"%02X",u.c[0]);
+          sprintf(tb+strlen(tb),"%02X",u.c[1]);
+          sprintf(tb+strlen(tb),"%02X",u.c[2]);
+          sprintf(tb+strlen(tb),"%02X ",u.c[3]);
         }
         break;
       case 15:

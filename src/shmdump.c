@@ -16,6 +16,7 @@
 /*  2003.4.16 bug fix (last sec not outputted in stdin mode) */
 /*  2003.5.14 fflush(fpout) inserted for rawdump */
 /*  2003.5.31 filtering option -L -H -B -R (tsuru) */
+/*  2003.6.1  bug fix (-f) mode */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -741,7 +742,7 @@ main(argc,argv)
         seconds=atoi(optarg);
         break;
       case 'f':   /* channel file */
-        if(*optarg='-') fp=stdin;
+        if(*optarg=='-') fp=stdin;
         else if((fp=fopen(optarg,"r"))==0) err_sys(outfile);
         nch=0;
         for(i=0;i<65536/8;i++) chlist[i]=0;
@@ -750,8 +751,11 @@ main(argc,argv)
           if(*tbuf=='#' || sscanf(tbuf,"%x",&chsel)<0) continue;
           chsel&=0xffff;
           setch(chsel);
+          chindex[chsel]=nch;
+          fprintf(stderr,"chsel=%d chindex=%d\n", chsel, chindex[chsel]); 
           nch++;
           }
+        fclose(fp);
         if(nch) search=1;
         break;
       case 'L':   /* LowPass */
@@ -999,11 +1003,8 @@ last_out:     if((wsize=ptw-buf)>10)
                   while(ptw<buf+wsize)
                     {
                     ptw+=win2fix(ptw,abuf,&ch,&sr);
-                    if ( SR > 0 ) {
-                      fprintf(fpout,"%04X %d",ch,SR);
-                    } else {
-                      fprintf(fpout,"%04X %d",ch,sr);
-                    }
+                    if ( SR > 0 ) fprintf(fpout,"%04X %d",ch,SR);
+                    else          fprintf(fpout,"%04X %d",ch,sr);
                     if ( filter_flag ) {   /* filtering start */
                       chid=chindex[ch];
                       if ( flt_kind == 0 ) {
@@ -1023,11 +1024,8 @@ last_out:     if((wsize=ptw-buf)>10)
                       for(i=0;i<sr;i++)
                         abuf[i]=(int)(dbuf[i]*flt[chid].gn_filt);
 		    }                     /* filtering end */
-                    if ( SR > 0 ) {
-                      for(i=0;i<SR;i++) fprintf(fpout," %d",abuf[i*sr/SR]);
-                    } else {
-                      for(i=0;i<sr;i++) fprintf(fpout," %d",abuf[i]);
-                    }
+                    if ( SR > 0 ) for(i=0;i<SR;i++) fprintf(fpout," %d",abuf[i*sr/SR]);
+                    else          for(i=0;i<sr;i++) fprintf(fpout," %d",abuf[i]);
                     fprintf(fpout,"\n");
                     fflush(fpout);
                     }

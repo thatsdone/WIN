@@ -1,0 +1,92 @@
+#!/usr/local/bin/perl
+  eval "exec /usr/local/bin/perl -S $0 $*"
+  if $running_under_some_shell;
+
+#
+# $Id: wincd,v 1.1 2000/04/30 10:10:39 urabe Exp $
+# wincd
+#     1995.12.18     Uehira Kenji
+#     1998.2.27      version up
+#
+#  usage: wincd ([-options]) [data file name]
+# 
+
+$WIN = 'win';
+$PRE_DIR = '/cdroms/trg';
+$TMP_PRM = "/tmp/win.prm.cdrom.$$";
+$PRM = 'win.prm';
+$CH = 'channels.tbl';
+$OPTIONS = '';
+$DATA = '';
+$p_option = 1;
+
+die "usage: wincd ([-options]) [data file name]\n"
+    if $#ARGV < 0;
+for($i=0; $i<$#ARGV; ++$i){
+    $p_option = 0
+	if $ARGV[$i]=~/-p/;
+    $OPTIONS .= "$ARGV[$i] ";
+}
+#print "$OPTIONS\t$p_option\n";
+
+$DATA = $ARGV[$#ARGV];
+($YYMMDD,$dum) = split(/\x2e/, $DATA, 999);
+#print "$DATA\n$YYMMDD\n";
+
+# scan in $PRE_DIR
+opendir(PRE, "$PRE_DIR");
+@alldir = grep(!/^\.\.?$/, readdir(PRE));
+closedir(PRE);
+# print "@alldir\n";
+
+for($i=0; $i<=$#alldir; ++$i){
+    if($alldir[$i]=~/-/){
+	($f_yymmdd,$t_yymmdd) = split('-', $alldir[$i], 999);
+	#print "$f_yymmdd\t$t_yymmdd\n";
+    }
+    elsif($alldir[$i]=~/_/){
+	($f_yymmdd,$dum) = split('_', $alldir[$i], 999);
+	$t_yymmdd = $f_yymmdd;
+	#print "$f_yymmdd\t$t_yymmdd\n";
+    }
+    next if $YYMMDD > $t_yymmdd;
+    next if $YYMMDD < $f_yymmdd;
+
+    opendir(SUB, "$PRE_DIR/$alldir[$i]");
+    @subdir = grep(!/^\.\.?$/, readdir(SUB));
+    closedir(SUB);
+#    print "@subdir $#subdir\n";
+#    print "$#subdir\n";
+
+    if(-d "$PRE_DIR/$alldir[$i]/$subdir[0]" && $#subdir==0){
+	$datadir=sprintf("%s/%s/%s", $PRE_DIR,$alldir[$i],$subdir[0]);
+    }
+    else{
+	$datadir=sprintf("%s/%s", $PRE_DIR,$alldir[$i]);
+    }
+#    print "datadir=$datadir\n";
+
+    if(-f "$datadir/$CH" && $p_option){
+#    if(-f "$PRE_DIR/$alldir[$i]/$CH" && $p_option){
+	# print "ok\n";
+	open(TMP_PRM, ">$TMP_PRM") || die "Cannot open file tmp file\n";
+	open(PRM, "$PRM") || die "Cannot open file $PRM\n";
+	$j=1;
+	while(<PRM>){
+	    print TMP_PRM $_
+		unless $j==2;
+	    #print TMP_PRM "$PRE_DIR/$alldir[$i]/$CH\n"
+	    print TMP_PRM "$datadir/$CH\n"
+		if $j==2;
+	    ++$j;
+	}
+	close(TMP_PRM);
+	close(PRM);
+	$OPTIONS .= "-p $TMP_PRM";
+    }
+    $cmd = sprintf("%s %s %s/%s", $WIN,$OPTIONS,$datadir,$DATA);
+    print STDERR "$cmd\n";
+    system($cmd);
+    unlink $TMP_PRM
+	if -f $TMP_PRM;
+}

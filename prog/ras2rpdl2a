@@ -1,0 +1,14 @@
+#!/bin/sh
+#
+# $Id: ras2rpdl2a,v 1.1 2000/04/30 10:10:39 urabe Exp $
+#
+sf1=/var/spool/ricoh/ras2rpdl2.1
+sf2=/var/spool/ricoh/ras2rpdl2.2
+if [ -f "$sf1" ]
+then
+  cat > $sf2
+  /home/auto/ras2rpdl $sf1 $sf2 | /usr/ucb/lpr -Pricoh-ps >/dev/null 2>&1
+  rm $sf1 $sf2
+else
+  cat > $sf1
+fi

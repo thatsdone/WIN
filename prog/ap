@@ -1,0 +1,1 @@
+nice xterm -fn 7x14 -geometry 80x11+0-0 -T AUTOPICK -e autopick

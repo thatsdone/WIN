@@ -1,4 +1,7 @@
 #! /bin/sh
+#
+# $Id: trgstat,v 1.2 2000/04/30 10:10:39 urabe Exp $
+#
 if [ $# -eq 0 ]
 then
 	(cd /dat/trg;ls -1s)>trgstat1.$$

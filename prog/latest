@@ -1,5 +1,8 @@
 #!/bin/sh
+#
+# $Id: latest,v 1.2 2000/04/30 10:10:38 urabe Exp $
 # "latest"   98.4.20 Urabe
+
 if [ "$WINDIR" ]
 then
   dat=$WINDIR

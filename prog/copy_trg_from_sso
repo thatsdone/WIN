@@ -1,0 +1,16 @@
+#!/bin/sh
+#
+# $Id: copy_trg_from_sso,v 1.1 2000/04/30 10:10:37 urabe Exp $
+#
+
+echo cd /dat/trg
+cd /dat/trg
+while read file
+do
+  echo rcp sso-jc5:/dat/trg/$file .
+  rcp sso-jc5:/dat/trg/$file .
+  echo rcp sso-jc5:/dat/trg/$file.ch .
+  rcp sso-jc5:/dat/trg/$file.ch .
+  echo rm $file.sv
+  rm $file.sv
+done

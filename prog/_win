@@ -1,0 +1,29 @@
+#!/bin/csh
+#
+# $Id: _win,v 1.1 2000/04/30 10:10:37 urabe Exp $
+#
+
+cd
+source .cshrc
+#
+#recvt 7004 11 5000 channels.rcv /dat/log/recvt_7004.log &
+#  sleep 2
+#order 11 13 5000 5 /dat/log/order.log &
+#  sleep 2
+#raw_mon 13 14 1000 - /dat/log/raw_mon.log &
+#raw_raw 13 15 1000 channels.BB /dat/log/raw_raw.log &
+#
+#wdisk 13 /dat1/raw 360 /dat/log/wdisk_raw.log &
+#wdisk 14 /dat1/mon 720 /dat/log/wdisk_mon.log &
+#  sleep 2
+#wdisk 15 /dat1/BB 1440 /dat/log/wdisk_BB.log &
+#
+rm /dat/etc/pmon.out.lock
+pmon pmon.prm &
+events events.prm &
+/dat/bin/SPARC/seisvd &
+automan &
+_bj &
+_bj1 &
+autopick &
+#_bj1a &

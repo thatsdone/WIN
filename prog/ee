@@ -1,4 +1,8 @@
 #! /bin/sh
+#
+# $Id: ee,v 1.2 2000/04/30 10:10:37 urabe Exp $
+#
+
 if [ -z "$WINDIR" ]
 then
 	WINDIR=/dat

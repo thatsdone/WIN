@@ -1,11 +1,14 @@
 #!/bin/sh
+#
+# $Id: monitor_procs1,v 1.2 2000/04/30 10:10:38 urabe Exp $
+#
 . win.conf
 tmp=/tmp/monitor_procs.$$
-ps agxww > $tmp
-cat _win | grep -v '^#' | grep -v '^nice' | sed -n 's/ *&//p' |
+ps agxww|sed 's/ (.*)$//'> $tmp
+cat _win|grep -v '^#'|grep -v '^nice'|sed -n 's/ *&//p'|expand|tr -s " "|
 while read procs
 do
-  pid=`grep "$procs" $tmp|awk '{print $1}'`
+  pid=`grep "$procs\$" $tmp|awk '{print $1}'`
   if [ -n "$pid" ]
   then
     if [ "$1" = kill ]
@@ -15,7 +18,7 @@ do
       kill $pid
     fi
   else
-    echo Not found : $procs
+    echo Not found : \'$procs\'
   fi
 done
 rm $tmp

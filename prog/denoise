@@ -1,4 +1,8 @@
 #!/bin/sh
+#
+# $Id: denoise,v 1.2 2000/04/30 10:10:37 urabe Exp $
+#
+
 if [ ! "$1" ]
 then
   echo usage: denoise YYMM (trg_dir)

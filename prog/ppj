@@ -1,0 +1,33 @@
+#!/bin/sh
+#
+# $Id: ppj,v 1.1 2000/04/30 10:10:38 urabe Exp $
+#
+if [ -z "$WINDIR" ]
+then
+	WINDIR=/dat
+fi
+case $0 in
+	*ppj)	EVTEMP=pktempj;;
+esac
+if [ $# -ge 1 -a -d $WINDIR/etc/$1 ]
+then
+	WINDIR=$WINDIR/etc/$1
+	shift
+fi
+if [ $# -eq 0 ]
+then
+	more -c $WINDIR/etc/$EVTEMP.`date +%y%m`
+else
+	if [ -f $WINDIR/etc/$EVTEMP.$1 ]
+	then
+		if [ $# -eq 1 ]
+		then
+			more -c $WINDIR/etc/$EVTEMP.$1
+		else
+			grep -i '  '$2 $WINDIR/etc/$EVTEMP.$1|MORE= more -d
+		fi
+	else
+		grep -i '  '$1 $WINDIR/etc/$EVTEMP.`cat $WINDIR/etc/YYMM`|
+			MORE= more
+	fi
+fi

@@ -1,0 +1,34 @@
+#!/bin/sh
+#
+# $Id: tape,v 1.1 2000/04/30 10:10:39 urabe Exp $
+#
+DEV=/dev/ttya
+if [ "$1" = on ]; then
+  robot on
+elif [ "$1" = off ]; then
+  robot off
+elif [ "$1" = open ]; then
+  robot open
+elif [ "$1" = close ]; then
+  robot close
+elif [ "$1" = in ]; then
+  robot close; robot seek D $2; robot eject D; robot open
+elif [ "$1" = out ]; then
+  robot load D $2; robot open
+elif [ "$1" = load ]; then
+  robot load B $2
+  until mt -f /dev/nrst21 status >/dev/null 2>&1
+  do
+    sleep 1
+  done
+  mt -f /dev/nrst21 status
+elif [ "$1" = unload ]; then
+  mt -f /dev/nrst21 offline
+  robot unload B
+elif [ "$1" = map ]; then
+  robot map
+elif [ "$1" = slot ]; then
+  robot slot $2
+else
+  echo 'usage: tape [on|off|open|close|in|out|load|unload|map|slot] (slot#)'
+fi

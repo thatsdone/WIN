@@ -1,4 +1,7 @@
 #!/bin/sh
+#
+# $Id: make_day_LP,v 1.2 2000/04/30 10:10:38 urabe Exp $
+#
 ymd=`echo $1|cut -c1-6`
 cd /dat/LP
 cat $ymd* >tmp.$$

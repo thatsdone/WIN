@@ -1,0 +1,1 @@
+xterm -fn 7x14 -geometry 80x15+0-180 -T MONITOR -e _mon

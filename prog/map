@@ -1,0 +1,10 @@
+#!/bin/sh
+#
+# $Id: map,v 1.1 2000/04/30 10:10:38 urabe Exp $
+#
+if [ $# -eq 1 ]
+then
+	exec win -m -p /dat/etc/$1/etc/win.prm
+else
+	exec win -m
+fi

@@ -1,4 +1,6 @@
 #!/bin/sh
+#
+# $Id: setRT,v 1.2 2000/04/30 10:10:39 urabe Exp $
 # set process class into RT
 # must be the root
 tmp=/tmp/setRT.$$
@@ -7,7 +9,7 @@ cat /var/home/auto/_win|grep -v '^#'|grep -v '^nice'|sed -n 's/ *&//p'|
 /usr/bin/ps -ef -o pid,class,args|fgrep -f $tmp|
 while read pid class proc rest
 do
-  if (echo $proc|grep 'recvt'>/dev/null)||(echo $proc|grep 'relay'>/dev/null)
+  if (echo $proc|grep 'recvt'>/dev/null)||(echo $proc|grep 'relay'>/dev/null)||(echo $proc|grep 'recvs'>/dev/null)
   then
     if [ $class = TS ]
     then

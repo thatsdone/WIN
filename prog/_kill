@@ -1,0 +1,69 @@
+#! /bin/sh
+#
+# $Id: _kill,v 1.1 2000/04/30 10:10:37 urabe Exp $
+#  kill a family of processes 3/18/93 urabe
+#
+#     _kill [program name]
+#
+# get PID from program name
+#
+ps agxw | cut -c-6,18- | awk '{print $1,$3,$4}' |
+while read pid ps1 ps2
+do
+	out=`echo $ps1 | awk '/(^|\/)'$1'$/{print $1}'`
+	if [ -n "$out" ]
+	then
+		echo $pid >> list2$$ 
+	else
+		out=`echo $ps1 | awk '/(^|\/)sh$/{print $1}'`
+		if [ -n "$out" ]
+		then
+			out=`echo $ps2 | awk '/(^|\/)'$1'$/{print $1}'`
+			if [ -n "$out" ]
+			then
+				echo $pid >> list2$$ 
+			fi
+		fi
+	fi
+done
+if [ ! -f list2$$ ]
+then
+	echo $1 not found
+	exit 1
+fi
+#
+# kill processes
+#
+ps glxw > list0$$
+touch list$$							# skelton of old list
+until diff list$$ list2$$ > /dev/null	# new list = old list ?
+do
+	cp list2$$ list$$	# update list
+	cp list$$ list1$$	# save list to add
+	cat list0$$ | awk '{print $3,$4}' | fgrep -f list$$ |
+		awk '{print $1}' >> list1$$
+	sort -u list1$$ > list2$$	# new list
+done
+cat list$$ |
+while read pid
+do
+	if kill $pid
+	then
+		echo -n kill $pid
+		sleep 1
+		if ps $pid > /dev/null
+		then
+			echo -n ': would not die'
+			if [ "$2" = KILL ]
+			then
+				echo '- send KILL'
+				kill -9 $pid
+			else
+				echo
+			fi
+		else
+			echo ': killed'
+		fi
+	fi
+done
+rm list$$ list0$$ list1$$ list2$$

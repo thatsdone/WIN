@@ -1,11 +1,14 @@
 #!/bin/sh
+#
+# $Id: monitor_procs,v 1.2 2000/04/30 10:10:38 urabe Exp $
+#
 . win.conf
 tmp=/tmp/monitor_procs.$$
-ps agxww > $tmp
-cat _win | grep -v '^#' | grep -v '^nice' | sed -n 's/ *&//p' |
+ps agxww|sed 's/ (.*)$//'> $tmp
+cat _win|grep -v '^#'|grep -v '^nice'|sed -n 's/ *&//p'|expand|tr -s " "|
 while read procs
 do
-  if grep "$procs" $tmp >/dev/null
+  if grep "$procs\$" $tmp >/dev/null
   then
     :
   else

@@ -1,0 +1,142 @@
+#! /bin/sh
+#
+# $Id: _mon,v 1.1 2000/04/30 10:10:37 urabe Exp $
+# _mon	10/11/94
+#
+
+. win.conf
+
+LOG=$DD/log/mon.log
+PID=$TD/pid.mon
+
+
+killall(){
+/bin/kill `cat $PID`; exit
+}
+
+if [ $DO_MON = "Y" ]
+then
+  (rm $PID;touch $PID)2>/dev/null
+  trap killall 2 15
+  umask 022
+
+  echo -n Cleaning up orphan processes...
+  _kill recvt >/dev/null 2>&1
+  _kill order >/dev/null 2>&1
+  _kill wdisk >/dev/null 2>&1
+  _kill raw_mon >/dev/null 2>&1
+  _kill send_mon >/dev/null 2>&1
+  echo Done.
+
+  cat $LOG >> $LOG.save
+  rm $LOG
+
+C_RECV_RAW='recvt $RAW_PORT $SHM_RAW_IN $SIZE_RAW_IN >> $LOG & RECV_RAW=$!;echo $!>>$PID'
+
+C_ORDER_RAW='order $SHM_RAW_IN $SHM_RAW $SIZE_RAW $S_ORDER_RAW >> $LOG & ORDER_RAW=$!;echo $!>>$PID'
+
+C_WDISK_RAW='wdisk $SHM_RAW $DD/raw $N_RAW >> $LOG & WDISK_RAW=$!;echo $!>>$PID'
+
+C_RAW_MON='raw_mon $SHM_RAW $SHM_MON $SIZE_MON >> $LOG & RAW_MON=$!;echo $!>>$PID'
+
+C_SEND_MON='send_mon $SHM_MON localhost $MON_PORT >> $LOG & SEND_MON=$!;echo $!>>$PID'
+
+C_RECV_MON='recvt $MON_PORT $SHM_MON_IN $SIZE_MON_IN >> $LOG & RECV_MON=$!;echo $!>>$PID'
+
+C_ORDER_MON='order $SHM_MON_IN $SHM_MON1 $SIZE_MON $S_ORDER_MON >> $LOG & ORDER_MON=$!;echo $!>>$PID'
+
+C_WDISK_MON='wdisk $SHM_MON1 $DD/mon $N_MON >> $LOG & WDISK_MON=$!;echo $!>>$PID'
+
+           eval $C_RECV_RAW
+  sleep 2; eval $C_ORDER_RAW
+  sleep 2; eval $C_WDISK_RAW
+           eval $C_RAW_MON
+  sleep 2; eval $C_SEND_MON
+  sleep 2; eval $C_RECV_MON
+  sleep 2; eval $C_ORDER_MON
+  sleep 2; eval $C_WDISK_MON
+  if [ -n "$C_OPT1" ]
+  then
+           eval $C_OPT1
+  fi
+  if [ -n "$C_OPT2" ]
+  then
+           eval $C_OPT2
+  fi
+  if [ -n "$C_OPT3" ]
+  then
+           eval $C_OPT3
+  fi
+fi
+
+while true
+do
+  clear; _monit; sleep 10
+
+  if [ $DO_MON = "Y" ]
+  then
+
+    [ $RECV_RAW ] && /bin/kill -0 $RECV_RAW 2>/dev/null
+    if [ $? -ne 0 ]; then
+      kill $RECV_RAW; eval $C_RECV_RAW
+    fi
+
+    [ $ORDER_RAW ] && /bin/kill -0 $ORDER_RAW 2>/dev/null
+    if [ $? -ne 0 ]; then
+      kill $ORDER_RAW; eval $C_ORDER_RAW
+    fi
+
+    [ $RAW_MON ] && /bin/kill -0 $RAW_MON 2>/dev/null
+    if [ $? -ne 0 ]; then
+      kill $RAW_MON; eval $C_RAW_MON
+    fi
+
+    [ $SEND_MON ] && /bin/kill -0 $SEND_MON 2>/dev/null
+    if [ $? -ne 0 ]; then
+      kill $SEND_MON; eval $C_SEND_MON
+    fi
+
+    [ $RECV_MON ] && /bin/kill -0 $RECV_MON 2>/dev/null
+    if [ $? -ne 0 ]; then
+      kill $RECV_MON; eval $C_RECV_MON
+    fi
+
+    [ $ORDER_MON ] && /bin/kill -0 $ORDER_MON 2>/dev/null
+    if [ $? -ne 0 ]; then
+      kill $ORDER_MON; eval $C_ORDER_MON
+    fi
+
+    [ $WDISK_RAW ] && /bin/kill -0 $WDISK_RAW 2>/dev/null
+    if [ $? -ne 0 ]; then
+      kill $WDISK_RAW; eval $C_WDISK_RAW
+    fi
+
+    [ $WDISK_MON ] && /bin/kill -0 $WDISK_MON 2>/dev/null
+    if [ $? -ne 0 ]; then
+      kill $WDISK_MON; eval $C_WDISK_MON
+    fi
+
+    if [ -n "$C_OPT1" ]; then
+      [ $OPT1 ] && /bin/kill -0 $OPT1 2>/dev/null
+      if [ $? -ne 0 ]; then
+        kill $OPT1; eval $C_OPT1
+      fi
+    fi
+
+    if [ -n "$C_OPT2" ]; then
+      [ $OPT2 ] && /bin/kill -0 $OPT2 2>/dev/null
+      if [ $? -ne 0 ]; then
+        kill $OPT2; eval $C_OPT2
+      fi
+    fi
+
+    if [ -n "$C_OPT3" ]; then
+      [ $OPT3 ] && /bin/kill -0 $OPT3 2>/dev/null
+      if [ $? -ne 0 ]; then
+        kill $OPT3; eval $C_OPT3
+      fi
+    fi
+
+  fi
+
+done

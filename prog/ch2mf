@@ -1,0 +1,55 @@
+#! /usr/local/bin/perl
+#
+# $Id: ch2mf,v 1.1 2000/04/30 10:10:37 urabe Exp $
+#
+
+#初期条件:
+$whole = 0;                                 #通し番号(チャンネル数の合計になる)
+print "stncode\tbits\tv/unit\tunit\tperiod\th\tdB\tv/LSB\tIdo\tKeido\tTakasa\tSyozoku\n";
+
+#channels.tblの読み込み
+while ($line = <STDIN>) {                   #1行読む
+    chop ($line);                           #最後の改行文字を取り除く
+
+    if ($line =~ /^[^ \s,#]/) {             #その行は空白文字や#から始まっていないか？
+
+        ($channel,$record,$delay,$stn,$cmp,$scale,$bits,$v,$unit,$period,
+         $h,$ampl,$adc,$ido,$keido,$takasa,$stsp,$stss, $syozoku)
+	    = split(/[ ,\t]+/,$line);       #行を成分に分解する
+	
+		    $whole++;               #通し番号に1加える  
+      
+		    if ($whole == 1) {      #通し番号は1か？
+			&initialize;        
+		    } elsif ($stnold ne $stn) {
+			&writechannel; 
+			&initialize;
+		    }
+     }
+}
+    &writechannel;                          #最後を書く
+
+
+#各パラメタのリセットと更新:
+sub initialize {
+    $channelold = $channel;   #チャンネルの更新
+    $stnold = $stn;           #ステーションコードの更新
+    $bitsold = $bits;	      #ビット数の更新
+    $vold = $v;		      #v/unitの更新
+    $unitold = $unit;         #unitの更新
+    $periodold = $period;     #periodの更新
+    $hold = $h;               #hの更新
+    $amplold = $ampl;         #ampl(dB)の更新
+    $adcold = $adc;           #ADC(v/LSB)の更新
+    $idoold = $ido;           #緯度の更新
+    $keidoold = $keido;       #経度の更新
+    $takasaold = $takasa;     #高さの更新
+    $syozokuold = $syozoku;   #所属の更新
+}
+
+#ステーションコード、緯度、経度(およびmapfan用の変換値)の書き込み
+sub writechannel {  
+    $idomap = $idoold*36000;
+    $keidomap = $keidoold*36000;
+    printf "$stnold\t$bitsold\t$vold\t$unitold\t$periodold\t$hold\t$amplold\t$adcold\t%6d\t%6d\t$takasaold\t$syozokuold\n", $idomap, $keidomap;
+}

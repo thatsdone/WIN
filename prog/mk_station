@@ -1,0 +1,17 @@
+#!/bin/sh
+#
+# $Id: mk_station,v 1.1 2000/04/30 10:10:38 urabe Exp $
+#
+set -x
+cd
+cat /dat/etc/channels.tbl|grep -v '^#'|awk '{print $4,$1}'|
+grep '^[A-Z]'|sort|awk '{print $2,$1}'|uniq -1>tmp.$$
+# for SSO
+cat tmp.$$|grep -v '^04'|grep -v '^08'|grep -v '^C0'|
+awk '{print $2}'>tky.station
+# for FUJIGAWA
+cat tmp.$$|grep -v '^010'|grep -v '^029E'|
+awk '{print $2}'>kanto.station
+#
+cp tky.station kanto.station /dat/etc
+rm tmp.$$

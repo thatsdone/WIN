@@ -1,0 +1,32 @@
+#!/bin/sh
+#
+# $Id: keepcount,v 1.1 2000/04/30 10:10:38 urabe Exp $
+# keepcount
+#
+dir=$1
+if [ -z $dir ]
+then
+  echo usage : keepcount [directory]
+  exit
+fi
+cd $dir
+while true
+do
+  max=`cat MAX`
+  if [ -n "$max" ]
+  then
+    ls|grep '^[0-9]'|sort -r |cat -n |
+    while read no file
+    do
+      if [ $no -gt $max ]
+      then
+        rm $file
+      fi
+      if [ $no -eq $max ]
+      then
+        echo $file > OLDEST
+      fi
+    done
+  fi
+  sleep 300
+done

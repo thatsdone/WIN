@@ -1,4 +1,7 @@
 #!/bin/sh
+#
+# $Id: dist_tbl,v 1.2 2000/04/30 10:10:37 urabe Exp $
+#
 # run this script when /dat/etc/*.tbl was changed on tkyryu
 cd /dat/etc
 #files="kanto.station tky.station channels.tbl zones.tbl nxtzones.tbl pick_zones.tbl"

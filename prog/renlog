@@ -1,4 +1,6 @@
 #!/bin/sh
+#
+# $Id: renlog,v 1.2 2000/04/30 10:10:39 urabe Exp $
 # renlog
 #
 cd /dat/log

@@ -1,0 +1,141 @@
+#!/usr/local/bin/perl
+  eval "exec /usr/local/bin/perl -S $0 $*"
+  if $running_under_some_shell;
+#
+# $Id: ee_manager,v 1.1 2000/04/30 10:10:38 urabe Exp $
+#   Uehira Kenji (1996.5.28)
+# 
+$WINDIR = $ENV{'WINDIR'};
+$WINDIR = '/dat'
+    if $WINDIR eq '';
+$ED = "$WINDIR/etc";
+#print "$WINDIR $ED\n";
+$YYMM = "$ED/YYMM";
+$SYS = "$ED/SYS";
+$TBL = "$ED/pick_zones.tbl";
+$EVTEMP = "$ED/evtemp.";
+$YM = '';			# Ex. 9502, 9501
+$CODE = '';			# Ex. tky, sso
+
+############################################################################
+# Begin MAIN
+############################################################################
+# ------ ee ------
+if($#ARGV<0){
+    &read_default_YM;
+    $cmd = sprintf("cat %s%s | tail +5", $EVTEMP, $YM);
+#    print "$cmd\n";
+    system($cmd);
+}
+elsif($#ARGV==0){
+    # ------ ee 960303 ------
+    if($ARGV[0] =~ /[0-9]/){
+	$YM = substr($ARGV[0], 0, 4);
+	$cmd = sprintf("grep %s %s%s", $ARGV[0], $EVTEMP, $YM);
+#	print "$cmd\n";
+	system($cmd);
+    }
+    else{
+	&read_default_YM;
+	&read_my_CODE;
+	# ------ ee tky ------
+	if($ARGV[0] eq $CODE){
+	    $dum = &my_region;
+#	    print "$dum\n";
+	    $cmd = sprintf("egrep '%s' %s%s", $dum, $EVTEMP, $YM);
+#	    print "$cmd\n";
+	    system($cmd);
+	}
+	# ------ ee ASHIO ------
+	else{
+	    $cmd = sprintf("grep -i '  '%s %s%s", $ARGV[0], $EVTEMP, $YM);
+#	    print "$cmd\n";
+	    system($cmd);
+	}
+    }
+}
+elsif($#ARGV==1){
+    if($ARGV[0] =~ /[0-9]/){
+	$YM = substr($ARGV[0], 0, 4);
+	&read_my_CODE;
+	# ------ ee 950201 tky ------
+	if($ARGV[1] eq $CODE){
+	    $dum = &my_region;
+	    $cmd = sprintf("grep %s %s%s | egrep '%s'",
+			   $ARGV[0], $EVTEMP, $YM, $dum);
+#	    print "$cmd\n";
+	    system($cmd);
+	}
+	# ------ ee 950303 IZU-PEN ------
+	else{
+	    $cmd = sprintf("grep %s %s%s | grep -i '  %s'",
+			   $ARGV[0], $EVTEMP, $YM, $ARGV[1]);
+#	    print "$cmd\n";
+	    system($cmd);
+	}
+    }
+    # ------ ee IZU-PEN ASHIO ------
+    else{
+	&read_default_YM;
+	$cmd = sprintf("grep -i '  '%s %s%s | grep -i %s",
+		       $ARGV[0], $EVTEMP, $YM, $ARGV[1]);
+#	print "$cmd\n";
+	system($cmd);
+    }
+}
+elsif($#ARGV==2){
+# ------ ee 960303 IZU-PEN ASHIO ------
+    if($ARGV[0] =~ /[0-9]/){
+	$YM = substr($ARGV[0], 0, 4);
+	$cmd = sprintf("grep %s %s%s | grep -i '  %s' | grep -i %s",
+		       $ARGV[0], $EVTEMP, $YM, $ARGV[1], $ARGV[2]);
+#	print "$cmd\n";
+	system($cmd);
+    }
+}
+############################################################################
+# end MAIN
+############################################################################
+
+sub read_default_YM
+{
+    open(YYMM, "$YYMM") || exit;
+    while(<YYMM>){
+	next if /^#/;
+	chop;
+	$YM = $_;
+    }
+    close(YYMM);
+}
+
+sub read_my_CODE
+{
+    open(SYS, "$SYS") || return;
+    while(<SYS>){
+	next if /^#/;
+	chop;
+	$CODE = $_;
+    }
+    close(SYS);
+}
+
+sub my_region
+{
+    local ($dum) = '';
+    local ($dum1, @fld);
+
+    open(TBL, "$TBL") || return;
+    while(<TBL>){
+	next if /^#/;
+	chop;
+	@fld = split(' ', $_, 999)
+	    if /^$CODE/;
+    }
+    for($i=1; $i<$#fld; ++$i){
+	$dum1 = substr($fld[$i], 0, 7);
+	$dum .= "  $dum1|";
+    }
+    $dum1 = substr($fld[$#fld], 0, 7);
+    $dum .= "  $dum1";
+    return($dum);
+}

@@ -1,0 +1,33 @@
+#!/bin/sh
+# $Id: _joint,v 1.1 2000/04/30 10:10:37 urabe Exp $
+#  _joint
+#  execute this script by root
+#  $1 : remote host name (ex. sso-sun3)
+#  $2 : sys of remote host (ex. sso)
+#
+XD=/home/auto
+PDM=/dat/picks/man
+ED=/dat/etc
+JP=/home/auto/joint
+RD=/dat/joint
+if [ ! -d $RD ]
+then
+  /bin/mkdir $RD
+fi
+/etc/mount $1:/dat $RD
+(cd $PDM;/bin/ls -1)|
+while read ym
+do
+# if [ "$ym" -ge 9412 ]
+  if [ "$ym" -ge 9608 ]
+  then
+    if [ ! -f $ED/joint.$ym ] || $XD/file_older $RD/etc/trg-zone.$ym $ED/joint.$ym >/dev/null 2>&1
+    then
+      cd $PDM/$ym
+      $JP $ED/trg-pick.$ym $RD/etc/trg-pick.$ym $ED/pick_zones.tbl $2 \
+        $RD/picks/man/$ym < $ED/trg-zone.$ym  
+      /bin/touch $ED/joint.$ym
+    fi
+  fi
+done
+/etc/umount $RD

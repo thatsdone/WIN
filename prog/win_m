@@ -1,0 +1,1002 @@
+#!/usr/local/bin/wish -f
+
+#
+# $Id: win_m,v 1.1 2000/04/30 10:10:39 urabe Exp $
+#  win_m : ＷＩＮのピックマネージャー
+#
+#    Uehira Kenji (Original 96.2.29)
+#      Special thank to Fujie Gou
+#
+
+set VERSION      "97.4.1"
+
+set INIT_PRM        "./win_m.prm"
+set WM_GEO          "-10+0"
+set WIN_COMMAND     "win"
+set win_prm         "./win.prm"
+set default_win_prm "./win.prm"
+set TERM            "xterm"
+set TERM_FN         "8x16"
+set TERM_GEO        "+250+250"
+set EE_COMMAND      "ee_manager"
+set EE_OPT_T        ""    ; # 時間のオプション
+set EE_OPT_P        ""    ; # 場所のオプション
+set TRG_DIR         ""    ; # WINの起動の時に渡される変数
+set trg_dir         ""    ; # 表示用
+set loadpath_select ""    ; # win.prm-->1, AMASS-->2, CD-ROM-->3
+set SYS_FILE        "/dat/etc/SYS"
+set MY_ZONE_FILE    "/dat/etc/pick_zones.tbl"
+set SYS             ""    ; # 自分のサイトのコード
+set my_region       0    ; # on-->1, off-->0
+set reverse         0     ; # 0--> ee と同じ 1--> 逆
+
+# WINのオプション群
+set O_f          ""
+set O_o          ""
+set O_t          ""
+set O_w          ""
+set O_B          ""
+set O_S          ""
+set O_p          ""
+
+set FONT         "8x16"
+set WIDTH        12
+
+############################################################################
+########           プロシジャ群
+############################################################################
+# --------------------------------------------------------------------------
+# 初期設定ファイル(win_m.prm)を読み込む
+# --------------------------------------------------------------------------
+proc read_init_prm {} {
+    global INIT_PRM
+    global TERM
+    global TERM_FN
+    global TERM_GEO
+    global WM_GEO
+
+    set init_file [open $INIT_PRM r]
+    set i 0
+    while {![eof $init_file]} {
+	set prm($i) [gets $init_file]
+	incr i
+    }
+    set TERM [lindex [split $prm(0)] 0]
+    set TERM_FN [lindex [split $prm(1)] 0]
+    set TERM_GEO [lindex [split $prm(2)] 0]
+    set WM_GEO [lindex [split $prm(3)] 0]
+#    puts "$TERM $TERM_FN $TERM_GEO\n"
+}
+
+# --------------------------------------------------------------------------
+# イベントリスト(ee)を読み込む
+# --------------------------------------------------------------------------
+proc read_ee {} {
+    global  EE_COMMAND
+    global  EE_OPT_T
+    global  EE_OPT_P
+    global  f2
+    global  my_pid
+    global  my_region
+    global  SYS
+    global  reverse
+
+    $f2.list delete 0 end
+    set tmp_file /tmp/eelist.$my_pid
+    if {$my_region == 1} {
+	eval exec $EE_COMMAND $EE_OPT_T $SYS > $tmp_file
+    } else {
+	eval exec $EE_COMMAND $EE_OPT_T $EE_OPT_P > $tmp_file
+    }
+    set ee_file [open $tmp_file r]
+    set line [gets $ee_file]
+    if {$reverse == 1} {
+	set i 0
+	while {![eof $ee_file]} {
+	    incr i
+	    $f2.list insert 0 $line
+	    set line [gets $ee_file]
+	}
+	$f2.list yview [expr $i-20]
+    } else {
+	while {![eof $ee_file]} {
+	    $f2.list insert end $line
+	    set line [gets $ee_file]
+	}
+    }
+    close $ee_file
+    exec rm $tmp_file
+}
+# --------------------------------------------------------------------------
+# マルチモードの場合、そのプロセスを殺す
+# --------------------------------------------------------------------------
+proc kill_multi {} {
+    global  my_pid
+    global  scrpt_file
+    global  multi_pid
+
+    if [file isfile $scrpt_file] {
+	catch {exec kill $multi_pid}
+	exec rm $scrpt_file
+	message_display 2000\
+		"マルチファイルセレクトモード終了しました。"
+   } else {
+       error_display "マルチファイルセレクトモードで起動したWINはありません。"
+   }
+}
+# --------------------------------------------------------------------------
+# ＷＩＮマネージャーの終了
+# --------------------------------------------------------------------------
+proc quit_winm {} {
+    global  my_pid
+    global  scrpt_file
+    global  multi_pid
+
+    if [file isfile $scrpt_file] {
+	catch {exec kill $multi_pid}
+	exec rm $scrpt_file
+    }
+    destroy .
+}
+# --------------------------------------------------------------------------
+# ＷＩＮにファイルを渡す
+# --------------------------------------------------------------------------
+proc open_win {} {
+    global f2
+
+    # セレクトラインのゲット
+    set current_line [$f2.list curselection]
+    set line_no [llength $current_line]
+
+    if {$line_no > 1} {
+	# マルチセレクトモード
+	win_multi
+    } else {
+	# シングルセレクトモード
+	win_single
+    }
+}
+# --------------------------------------------------------------------------
+# ＷＩＮの起動(マルチファイルセレクトモード)
+# --------------------------------------------------------------------------
+proc win_multi {} {
+    global WIN_COMMAND
+    global win_prm
+    global default_win_prm
+    global TERM
+    global TERM_FN
+    global TERM_GEO
+    global TRG_DIR
+    global  O_f
+    global  O_o
+    global  O_t
+    global  O_w
+    global  O_B
+    global  O_S
+    global  O_p
+    global  my_pid
+    global  scrpt_file
+    global  multi_pid
+
+    if [file isfile $win_prm] {
+	if [file isfile $scrpt_file] {
+	    error_display "既にマルチファイルセレクトモードで WIN\
+		    が起動されています。\
+		    マルチファイルセレクトモードを終わらせてからもう一度起動して下さい。"
+	} else {
+	    if [string compare $win_prm $default_win_prm] {
+		set O_p "-p"
+		set O_pf [glob $win_prm]
+	    } else {
+		set O_p ""
+		set O_pf ""
+	    }
+	    set win_option "$O_f $O_o $O_t $O_w $O_B $O_S $O_p $O_pf"
+	    
+	    set script [open $scrpt_file w]
+	    foreach i [selection get] {
+		set file [lindex $i 0]
+		set len [string length $file]
+		if {$len != 13} {
+		    set file [string range $file 0 12]
+		}
+		puts $script "$TERM -fn $TERM_FN -sb\
+			-title \"$file \(Multi file select mode\)\"\
+			-geometry $TERM_GEO -e\
+			$WIN_COMMAND $win_option $TRG_DIR$file"
+	    }
+	    puts $script "rm $scrpt_file"
+	    close $script
+	    set multi_pid [exec /bin/sh $scrpt_file &]
+	    #puts $multi_pid
+	}
+    } else {
+	error_display "パラメータファイル $win_prm が開けませんでした。\
+		WIN のオプション選択で正しいファイル名を指定して下さい。"
+    }
+}    
+
+# --------------------------------------------------------------------------
+# ＷＩＮの起動(シングルファイルセレクトモード) 
+# --------------------------------------------------------------------------
+proc win_single {} {
+    global WIN_COMMAND
+    global win_prm
+    global default_win_prm
+    global TERM
+    global TERM_FN
+    global TERM_GEO
+    global TRG_DIR
+    global  O_f
+    global  O_o
+    global  O_t
+    global  O_w
+    global  O_B
+    global  O_S
+    global  O_p
+
+    if [file isfile $win_prm] {
+	#puts $WIN_COMMAND
+	#puts $TRG_DIR
+	if [string compare $win_prm $default_win_prm] {
+	    set O_p "-p"
+	    set O_pf [glob $win_prm]
+	} else {
+	    set O_p ""
+	    set O_pf ""
+	}
+	#puts $O_p
+	#puts $O_pf
+	set win_option "$O_f $O_o $O_t $O_w $O_B $O_S $O_p $O_pf"
+	#puts $win_option
+
+	set i [selection get]
+	set file [lindex $i 0]
+	set len [string length $file]
+	if {$len != 13} {
+	    set file [string range $file 0 12]
+	}
+	eval exec $TERM -fn $TERM_FN -sb -title $file\
+		-geometry $TERM_GEO -e\
+		$WIN_COMMAND $win_option $TRG_DIR$file &
+    } else {
+	error_display "パラメータファイル $win_prm が開けませんでした。\
+		WIN のオプション選択で正しいファイル名を指定して下さい。"
+    }
+}
+# --------------------------------------------------------------------------
+# latest
+# --------------------------------------------------------------------------
+proc latest {} {
+    global win_prm
+    global default_win_prm
+    global TERM
+    global TERM_FN
+    global TERM_GEO
+
+    if [file isfile $default_win_prm] {
+	eval exec $TERM -fn $TERM_FN -sb -title "latest" -geometry $TERM_GEO\
+		-e latest &
+    } else {
+	error_display "./win.prm が開けませんでした。\
+		win_m を win.prm のあるディレクトリに移って\
+		起動しなおして下さい。"
+    }
+}
+# --------------------------------------------------------------------------
+# マップ
+# --------------------------------------------------------------------------
+proc map {code} {
+    global TERM
+    global TERM_FN
+    global TERM_GEO
+
+    eval exec $TERM -fn $TERM_FN -sb -title "map" -geometry $TERM_GEO\
+	    -e map $code &
+}
+# --------------------------------------------------------------------------
+# マップだけ
+# --------------------------------------------------------------------------
+proc map_only {} {
+    global TERM
+    global TERM_FN
+    global TERM_GEO
+
+    eval exec $TERM -fn $TERM_FN -sb -title "map" -geometry $TERM_GEO\
+	    -e map &
+}
+# ---------------------------------------------------------------------------
+# WIN ファイルをオープンする。
+# 現在セレクトされているファイルから $direction 個目のファイルをオープンする。
+# ---------------------------------------------------------------------------
+proc move {direction} {
+    global f2
+    
+    set current_line [$f2.list curselection] ;# 現在のセレクト行
+    if {[string compare $current_line ""] != 0} {
+	$f2.list select clear            
+	set select_length [llength $current_line] ;# セレクトされ
+	set select_length [expr $select_length-1] ;# ていた行数
+	set current_line [lindex $current_line $select_length]
+	set current_line [expr $current_line+$direction]
+	$f2.list select adjust $current_line      ;# 新しくセレクト
+	open_win
+    }
+}
+# ---------------------------------------------------------------------------
+# WIN ファイルは win.prm のディレクトリから読み込む
+# ---------------------------------------------------------------------------
+proc select_default {} {
+    global WIN_COMMAND
+    global TRG_DIR
+    global trg_dir
+    global f2
+    global win_prm
+
+    set WIN_COMMAND "win"
+    set TRG_DIR     ""
+    set trg_dir [read_win_prm_trg $win_prm]
+    $f2.label configure -text "Event data file directory = $trg_dir"
+}
+# ---------------------------------------------------------------------------
+# WIN ファイルは AMASS から読み込む
+# ---------------------------------------------------------------------------
+proc select_AMASS {} {
+    global WIN_COMMAND
+    global TRG_DIR
+    global trg_dir
+    global f2
+    global win_prm
+
+    set WIN_COMMAND "win"
+    set TRG_DIR     "/AMASS/trg/"
+    set trg_dir [read_win_prm_trg $win_prm]; # 単にエラーメッセージを返す
+    set trg_dir  "/AMASS/trg"
+    $f2.label configure -text "Event data file directory = $trg_dir"
+}
+# ---------------------------------------------------------------------------
+# WIN ファイルは CD-ROM ジュークボックスから読み込む
+# ---------------------------------------------------------------------------
+proc select_CDROM {} {
+    global WIN_COMMAND
+    global TRG_DIR
+    global trg_dir
+    global f2
+    global win_prm
+
+    set WIN_COMMAND "wincd"
+    set TRG_DIR     ""
+    set trg_dir [read_win_prm_trg $win_prm]; # 単にエラーメッセージを返す
+    set trg_dir  "/cdroms/trg"
+    $f2.label configure -text "Event data file directory = $trg_dir"
+}
+# ---------------------------------------------------------------------------
+# 自分の担当地域をセレクト
+# ---------------------------------------------------------------------------
+proc region_on {} {
+    global f1
+
+    $f1.ee_opt.p.entry configure -state disabled
+    $f1.ee_opt.p.clear configure -state disabled
+}
+# ---------------------------------------------------------------------------
+# 自分の担当地域のセレクトを解除する
+# ---------------------------------------------------------------------------
+proc region_off {} {
+    global f1
+
+    $f1.ee_opt.p.entry configure -state normal
+    $f1.ee_opt.p.clear configure -state normal
+}
+# ---------------------------------------------------------------------------
+# 自分の担当地域のコードを読む
+# ---------------------------------------------------------------------------
+proc read_SYS {} {
+    global  SYS_FILE
+    global  SYS
+
+    set sys_file [open $SYS_FILE r]
+    set SYS [gets $sys_file]
+}
+# error_display message
+# ---------------------------------------------------------------------------
+# 新しいウィンドウを作りそこに $message を表示する。
+# 機能としてはＯＫボタンのみ(エラー用)。
+# ---------------------------------------------------------------------------
+proc error_display {message} {
+    set w ".error_window"
+
+    catch {destroy $w}  ;# 他にエラーウィンドウがあったら消す
+    toplevel $w
+    wm title $w "Error Message"
+    
+    label $w.image -bitmap error
+
+    # メッセージの表示
+    message $w.message -text $message -padx 20 -pady 20\
+	    -aspect 500
+    
+    # ＯＫボタン
+    button $w.ok -text "OK" -command "destroy $w"\
+	    -width 10
+    
+    # パッキング
+    pack $w.image $w.message $w.ok -side top
+}
+# message_display message
+# ---------------------------------------------------------------------------
+# 新しいウィンドウを作りそこに$messageを$msecミリ秒表示する(メッセージ用)。
+# ---------------------------------------------------------------------------
+proc message_display {msec message} {
+    set w ".message_window"
+
+    catch {destroy $w}  ;# 他にエラーウィンドウがあったら消す
+    toplevel $w
+    wm geometry $w -10+10
+    wm title $w "Message"
+    
+    label $w.image -bitmap info
+
+    # メッセージの表示
+    message $w.message -text $message -padx 20 -pady 20\
+	    -aspect 500
+    
+    # パッキング
+    pack $w.image $w.message -side top
+    after $msec destroy $w
+}
+# ---------------------------------------------------------------------------
+# win.prm より一行目(データ読み込み先パラメータ)を読み、その値を返す。
+# ---------------------------------------------------------------------------
+proc read_win_prm_trg {prm_file} {
+    if [file isfile $prm_file] {
+	set fp [open $prm_file r]
+	gets $fp ichigyome
+	set trg_dir [lindex $ichigyome 0]
+	return $trg_dir
+    } else {
+	error_display "パラメータファイル $prm_file がありません。\
+		WIN のオプション選択で正しいファイル名を指定して下さい。"
+	return ""
+    }
+}
+# ---------------------------------------------------------------------------
+# WIN の起動オプションの設定
+# ---------------------------------------------------------------------------
+proc disp_win_option {} {
+    global  O_f
+    global  O_o
+    global  O_t
+    global  O_w
+    global  O_B
+    global  O_S
+    global  O_p
+    global  win_prm
+
+    set FONT "8x16"
+
+    set w ".option_win"
+    catch {destroy $w}
+    toplevel $w
+    wm title $w "WIN option"
+    
+    labelentry $w.entry "win.prm のファイル名" 36 win_prm
+
+    # セレクトボタン
+    frame $w.select
+
+    checkbutton $w.select.f -text "f    - fit window to screen (X only)"\
+	    -onvalue "-f" -offvalue "" -variable O_f -font $FONT
+    checkbutton $w.select.o -text "o    - remove offset from MON traces"\
+	    -onvalue "-o" -offvalue "" -variable O_o -font $FONT
+    checkbutton $w.select.t -text "t    - copy data-file to local"\
+	    -onvalue "-t" -offvalue "" -variable O_t -font $FONT
+    checkbutton $w.select.w -text "w    - write bitmap (.sv) file"\
+	    -onvalue "-w" -offvalue "" -variable O_w -font $FONT
+    checkbutton $w.select.b -text "B    - don't use bitmap (.sv) file"\
+	    -onvalue "-B" -offvalue "" -variable O_B -font $FONT
+    checkbutton $w.select.s -text "S    - stack picture in memory"\
+	    -onvalue "-S" -offvalue "" -variable O_S -font $FONT
+
+    # ＯＫボタン・デフォルトボタン
+    frame $w.det
+
+    button $w.det.ok -text "OK" -width 15 -command "win_op_ok $w"
+    button $w.det.default -text "DEFAULT" -width 15\
+	    -command "win_op_default $w"
+    
+    pack $w.select.f $w.select.o $w.select.t $w.select.w\
+	    $w.select.b $w.select.s -side top -anchor w
+    pack $w.det.ok $w.det.default -side left -padx 5
+    pack $w.entry $w.select $w.det -side top -pady 5
+}
+
+proc win_op_ok {window} {
+    global f2
+    global win_prm
+    global trg_dir
+    global loadpath_select
+    
+    if [file isfile $win_prm] {
+	if {$loadpath_select==1} {
+	    set trg_dir [read_win_prm_trg $win_prm]
+	    $f2.label configure -text "Event data file directory = $trg_dir"
+	}
+	destroy $window
+    } else {
+	error_display "パラメータファイル $win_prm がありません。\
+		正しく設定して下さい。"
+    }
+}
+
+proc win_op_default {w} {
+    global default_win_prm
+    global win_prm
+
+    set win_prm $default_win_prm
+    $w.entry.entry configure -textvariable $win_prm
+    $w.entry.entry delete 0 end
+    $w.entry.entry insert 0 $win_prm
+    
+    $w.select.f deselect
+    $w.select.o deselect
+    $w.select.t deselect
+    $w.select.w deselect
+    $w.select.b deselect
+    $w.select.s deselect
+}
+# disp_help 
+# ---------------------------------------------------------------------------
+# 簡単なヘルプを表示する。
+# ---------------------------------------------------------------------------
+proc disp_help {} {
+    #	global KANJI_BOLD
+    #	global BOLD_FONT
+    set KANJI_BOLD "kanji16"
+    set BOLD_FONT  "8x16"
+
+    set w ".help_win"
+    catch {destroy $w}
+    toplevel $w
+    wm title $w "Help for WIN manager"
+    # wm minsize $w 10 10
+    # ＯＫボタン
+    button $w.ok -text "OK" -width 15 -command "destroy $w"
+    
+    # Help text
+    text $w.help -padx 25 -pady 25 -yscrollcommand "$w.scroll set"\
+	    -relief raised -bd 2
+    scrollbar $w.scroll -command "$w.help yview" -relief sunken
+    # Set up Display Style
+    $w.help tag configure kbold -kanjifont $KANJI_BOLD
+    $w.help tag configure bold -font $BOLD_FONT
+    $w.help tag configure aka -foreground red
+    $w.help tag configure ao -foreground blue
+    $w.help tag configure underline -underline on
+    
+    # 内容 ----- WINの起動
+    insertWithTags $w.help "WIN" bold
+    insertWithTags $w.help "の起動\n" kbold
+    insertWithTags $w.help "まずWIN起動時のオプションを適切な値にセットして下さい。\n"
+    insertWithTags $w.help "シングルファイルセレクトモード" underline
+    insertWithTags $w.help "  マウスの"
+    insertWithTags $w.help "左ボタン(ボタン１)" aka
+    insertWithTags $w.help "を１回クリックするとWINファイルを選択できます。選択したファイルは色が変わります。選択したファイルをWINで見るには、一番下の"
+    insertWithTags $w.help "Open" ao
+    insertWithTags $w.help "ボタンを押します。また、ファイル名の上で"
+    insertWithTags $w.help "ダブルクリック" aka
+    insertWithTags $w.help "によってWINを起動することもできます。\n\n"
+    insertWithTags $w.help "Next" ao
+    insertWithTags $w.help "ボタンを押すと現在選択されている次のファイルを開きます。同じように"
+    insertWithTags $w.help "Previous" ao
+    insertWithTags $w.help "ボタンを押すと前のファイルを開きます。\n\n"
+    insertWithTags $w.help "マルチファイルセレクトモード" underline
+    insertWithTags $w.help "  一度に複数のファイルを選択するには"
+    insertWithTags $w.help "左ボタン(ボタン１)" aka
+    insertWithTags $w.help "を押したままファイルリストの上を動かして下さい。複数のファイル名の色が変わります。選択したら"
+    insertWithTags $w.help "Open" ao
+    insertWithTags $w.help "ボタンを押すか、あるいはマウスの"
+    insertWithTags $w.help "中ボタン(ボタン２)" aka
+    insertWithTags $w.help "をクリックします。選択されたファイルを一つずつ順番に開きます。"
+    insertWithTags $w.help "たくさんのファイルを一度に選択するには、選択したい領域の端のファイルを"
+    insertWithTags $w.help "左ボタン" aka
+    insertWithTags $w.help "でクリックし、領域の反対側の端で"
+    insertWithTags $w.help "Shift-Key ＋ 左ボタン" aka
+    insertWithTags $w.help "をクリックすればその領域全部が選択されます。"
+    insertWithTags $w.help "マルチファイルセレクトモードを途中で止めたい時は"
+    insertWithTags $w.help "Stop Multi" ao
+    insertWithTags $w.help "ボタンを押して下さい。\n\n"
+    insertWithTags $w.help "右ボタン(ボタン３)" aka
+    insertWithTags $w.help "をクリックすると、選択領域がクリアされます。\n\n"
+    # 内容 ----- 修了
+    insertWithTags $w.help "WINマネージャーを修了するには右下の"
+    insertWithTags $w.help "Quit" ao
+    insertWithTags $w.help "ボタンをクリックして下さい。\n\n"
+    
+    # 内容 ----- キーバインディング
+    insertWithTags $w.help "キーバインディング\n" kbold
+    insertWithTags $w.help "操作をより簡単にするために以下のようにキーが割り当てられています。\n"
+    insertWithTags $w.help "Contorl-key ＋ 左ボタン" aka
+    insertWithTags $w.help "・・・メニューの "
+    insertWithTags $w.help "Next" ao
+    insertWithTags $w.help " ボタンと同じです。\n"
+    insertWithTags $w.help "Contorl-key ＋ 中ボタン" aka
+    insertWithTags $w.help "・・・メニューの "
+    insertWithTags $w.help "Open" ao
+    insertWithTags $w.help " ボタンと同じです。\n"
+    insertWithTags $w.help "Contorl-key ＋ 右ボタン" aka
+    insertWithTags $w.help "・・・メニューの "
+    insertWithTags $w.help "Previous" ao
+    insertWithTags $w.help " ボタンと同じです。\n\n"
+    # 内容 ----- 注意事項
+    insertWithTags $w.help "注意事項\n" kbold
+    insertWithTags $w.help "シングルファイルセレクトモードによってWINを起動した場合、複数のWINを同時に開くことが可能ですが、"
+    insertWithTags $w.help "マルチファイルセレクトモードでは、順番に一つずつしかWINは起動しません。\n"
+    insertWithTags $w.help "My Region(s)" ao
+    insertWithTags $w.help "をオンにしている時は、上段の"
+    insertWithTags $w.help "場所エントリ" ao
+    insertWithTags $w.help "は無効になります。トリガ地域でイベントリストを表示させたい場合は、これをオフしてから行って下さい。"
+    
+    # パッキング
+    pack $w.ok -side bottom
+    pack $w.scroll -side right -fill y
+    pack $w.help
+}	
+# insertWithTags w text args
+# ---------------------------------------------------------------------------
+# The procedure below inserts text into a given text widget and
+# applies one or more tags to that text.  The arguments are:
+#
+# w		Window in which to insert
+# text		Text to insert (it's inserted at the "insert" mark)
+# args		One or more tags to apply to text.  If this is empty
+#		then all tags are removed from the text.
+# ---------------------------------------------------------------------------
+proc insertWithTags {w text args} {
+    set start [$w index insert]
+    $w insert insert $text
+    foreach tag [$w tag names $start] {
+	$w tag remove $tag $start insert
+    }
+    foreach i $args {
+	$w tag add $i $start insert
+    }
+}
+# Librarys for win_m from Fujie Gou
+#
+# ---------------------------------------------------------------------------
+# ユーティリティ ------------------------------------------------------------
+# ---------------------------------------------------------------------------
+#   95-09-18 Version V2.1 (6 utilities) 
+#
+
+# labelentry path text length var
+# ---------------------------------------------------------------------------
+# label を左端に、entry を右端に表示する ------------------------------------
+#	path  : ウィジェットのパス
+#	text  : ラベル
+#	length: entry の width
+#	var   : entry の内容を保持する変数名
+# ---------------------------------------------------------------------------
+
+proc labelentry {path text length var} {
+    set FONT "8x16"
+
+    frame $path
+    label $path.label -text $text -font $FONT
+    entry $path.entry -width $length -relief sunken -font $FONT
+    button $path.clear -text "CLR" -command "$path.entry delete 0 end"\
+	    -font $FONT
+    $path.entry config -textvariable $var
+    pack $path.label -side left -expand y
+    pack $path.entry -side left -expand y
+    pack $path.clear -side left -expand y
+}
+
+# Labelentry path text length var
+# ---------------------------------------------------------------------------
+# labelentry をridge で囲んだもの ------------------------------------------
+#	path  : ウィジェットのパス
+#	text  : ラベル
+#	length: entry の width
+#	var   : entry の内容を保持する変数名
+# ---------------------------------------------------------------------------
+
+proc Labelentry {path text length var} {
+    	frame $path -borderwidth 2 -relief ridge
+    	label $path.label -text $text
+    	entry $path.entry -width $length -relief sunken
+	$path.entry config -textvariable $var
+    	pack $path.label -side left 
+    	pack $path.entry -side right
+}
+
+# unitentry path text unit length var
+# ---------------------------------------------------------------------------
+# Labelentry で単位も表示するもの -------------------------------------------
+#	path  : ウィジェットのパス
+#	text  : ラベル
+#	unit  : エントリーの単位
+#	length: entry の width
+#	var   : entry の内容を保持する変数名
+# ---------------------------------------------------------------------------
+
+proc unitentry {path text unit length var} {
+    	frame $path -borderwidth 2 -relief ridge
+    	label $path.label -text $text
+	label $path.unit -text $unit
+    	entry $path.entry -width $length -relief sunken
+	$path.entry config -textvariable $var
+    	pack $path.label -side left 
+    	pack $path.unit $path.entry -side right
+}
+
+# time_entry path text nen tsuki nichi ji fun
+# ---------------------------------------------------------------------------
+# 年、月日、時分を入力するウィジェットの生成 --------------------------------
+#	path : ウィジェットのパス
+#	text : ラベル
+#	nen  : 年変数
+#	tsuki: 月変数
+#	nichi: 日変数
+#	ji   : 時変数
+#	fun  : 分変数
+# ---------------------------------------------------------------------------
+
+proc time_entry {path text nen tsuki nichi ji fun} {
+	frame $path -borderwidth 2 -relief ridge
+	label $path.text -text $text
+	label $path.year -text "年"
+	label $path.month -text "月"
+	label $path.day -text "日"
+	label $path.hour -text "時"
+	label $path.min -text "分"
+	entry $path.nen -width 5 -relief sunken
+	$path.nen config -textvariable $nen
+	entry $path.tsuki -width 3 -relief sunken
+	$path.tsuki config -textvariable $tsuki
+	entry $path.hi -width 3 -relief sunken
+	$path.hi config -textvariable $nichi
+	entry $path.jikan -width 3 -relief sunken
+	$path.jikan config -textvariable $ji
+	entry $path.fun -width 3 -relief sunken
+	$path.fun config -textvariable $fun
+	pack 	$path.text -side left
+	pack 	$path.min $path.fun\
+		$path.hour $path.jikan \
+		$path.day $path.hi \
+		$path.month $path.tsuki \
+		$path.year $path.nen \
+		-side right
+}
+
+# ---------------------------------------------------------------------------
+# 二者択一のラジオボタンウィジェットの生成 ----------------------------------
+#	path : ウィジェットのパス
+#	text : ラベル
+#	item1: 一つ目のアイテムのラベル
+#	item2: 二つ目のアイテムのラベル
+#	var  : 選択結果を格納する変数。値は、item1 or item2
+# ---------------------------------------------------------------------------
+
+proc alternate {path text item1 item2 var} {
+	frame $path
+	label $path.text -text $text
+	radiobutton $path.but1 -text $item1 \
+		-variable $var -value $item1 -relief flat
+	radiobutton $path.but2 -text $item2 \
+		-variable $var -value $item2 -relief flat
+	pack $path.but2 $path.but1 -side right
+	pack $path.text -side left
+}
+
+# doublelabel path text text1 width1 var1 text2 width2 var2
+# ---------------------------------------------------------------------------
+# Labelentry を二つくっつけたもの -------------------------------------------
+# 	path   : ウィジェットのパス
+#	text   : ラベル
+#	text1  : 一つ目のエントリーのラベル
+#	width1 : 一つ目のエントリーの幅
+#	var1   : 一つ目のエントリーの変数名
+#	text2  : 二つ目のエントリーのラベル
+#	width2 : 二つ目のエントリーの幅
+#	var2   : 二つ目のエントリーの変数名
+# ---------------------------------------------------------------------------
+
+proc doublelabel {path text text1 width1 var1 text2 width2 var2} {
+	frame $path
+	label $path.text -text $text
+	Labelentry $path.1 $text1 $width1 $var1
+	Labelentry $path.2 $text2 $width2 $var2
+	pack $path.text -side left -fill x
+	pack $path.2 $path.1 -side right -fill x
+}
+
+##############################################################################
+##############################################################################
+#
+#  MAIN
+#
+##############################################################################
+##############################################################################
+# 初期化
+set my_pid [pid]
+set scrpt_file /tmp/multi.$my_pid
+set multi_pid    ""
+if [file isfile $scrpt_file] {
+    exec rm -rf $scrpt_file
+}
+
+# 初期設定ファイルの読み込み(あれば)
+if [file isfile $INIT_PRM] {
+    read_init_prm
+}
+
+set host [exec hostname]
+wm title . "WIN pick manager @ $host (Ver. $VERSION)"
+wm geometry . $WM_GEO
+
+set f1 .option
+set f2 .select
+set f3 .menu
+set f4 .map
+
+###########  フレーム１(オプション選択画面) ##############################
+frame $f1
+frame $f1.win
+frame $f1.ee_opt
+frame $f1.ee_opt1
+frame $f1.ee_opt1.region
+
+## WIN のオプションの選択
+button $f1.win_option -text "WIN のオプション選択" -command disp_win_option
+
+## データの読み込み先の選択
+label $f1.win.label -text "データの読み込み先の選択"
+radiobutton $f1.win.1 -text "win.prm" -command "select_default"\
+	-value 1 -variable loadpath_select
+radiobutton $f1.win.2 -text "AMASS" -command "select_AMASS"\
+	-value 2 -variable loadpath_select
+radiobutton $f1.win.3 -text "CD-ROM" -command "select_CDROM"\
+	-value 3 -variable loadpath_select
+pack $f1.win.label $f1.win.1 $f1.win.2 $f1.win.3 -side left
+# デフォルトは win.prm のものにする
+$f1.win.1 select
+
+## ee のオプションの入力画面(１段目)
+labelentry $f1.ee_opt.t "イベントリスト 年月日" 6 EE_OPT_T
+labelentry $f1.ee_opt.p " 地域" 15  EE_OPT_P
+pack $f1.ee_opt.t $f1.ee_opt.p -side left
+
+## ee のオプションの入力画面(２段目)
+label $f1.ee_opt1.region.label -text "My Region(s)" -font $FONT
+radiobutton $f1.ee_opt1.region.on -text "on" -command "region_on"\
+	-value 1 -variable my_region -font $FONT
+radiobutton $f1.ee_opt1.region.off -text "off" -command "region_off"\
+	-value 0 -variable my_region -font $FONT
+pack $f1.ee_opt1.region.label $f1.ee_opt1.region.on $f1.ee_opt1.region.off\
+	-side left
+button $f1.ee_opt1.load -text "Reload event list" -command "read_ee"\
+	-width 20 -height 2 -font $FONT
+checkbutton $f1.ee_opt1.reverse -text "REVERSE" -onvalue 1 -offvalue 0\
+	-variable reverse -font $FONT
+pack $f1.ee_opt1.region $f1.ee_opt1.load $f1.ee_opt1.reverse -side left -padx 15
+# デフォルトはオフ
+$f1.ee_opt1.region.off select
+
+## パッキング
+pack $f1.win_option $f1.win $f1.ee_opt $f1.ee_opt1\
+	-side top -expand yes -pady 6
+
+## コマンド実行 
+# ディレクトリの確認
+if {![file isdirectory /AMASS/trg]} {
+    $f1.win.2 configure -state disabled
+}
+if {![file isdirectory /cdroms/trg]} {
+    $f1.win.3 configure -state disabled
+}
+# $SYS_FILE と $MY_ZONE_FILE が無かったら $f1.ee_opt1.region.on は無効
+if {![file isfile $SYS_FILE]} {
+    $f1.ee_opt1.region.on configure -state disabled
+} else {
+    read_SYS
+}
+if {![file isfile $MY_ZONE_FILE]} {
+    $f1.ee_opt1.region.on configure -state disabled
+}
+
+###########  フレーム２(イベントセレクト画面) ############################
+frame $f2 -borderwidth 4 -relief groove
+frame $f2.head -relief raise
+frame $f2.head.left
+
+set trg_dir [read_win_prm_trg $win_prm]
+label $f2.label -relief sunken -text "Event data file directory = $trg_dir"
+label $f2.head.left.1\
+	-text "---------------------------------------------------"\
+	-font $FONT
+label $f2.head.left.2\
+	-text " date   time                       M      triggered"\
+	-font $FONT
+label $f2.head.left.3\
+	-text "YYMMDD hhmmss  picker      PHMM 1.....7   region(s)"\
+	-font $FONT
+label $f2.head.left.4\
+	-text "---------------------------------------------------"\
+	-font $FONT
+
+##
+button $f2.head.right -text "Stop Multi" -command "kill_multi"\
+	-width 10 -height 2 -font $FONT
+
+scrollbar $f2.scroll_x -command "$f2.list xview" -orient h -relief sunken
+scrollbar $f2.scroll_y -command "$f2.list yview" -relief sunken
+listbox $f2.list -xscroll "$f2.scroll_x set" -yscroll "$f2.scroll_y set"\
+	-geometry 70x20 -setgrid yes -font $FONT
+# パッキング
+pack $f2.head.left.1 $f2.head.left.2 $f2.head.left.3 $f2.head.left.4
+pack $f2.head.left -side left -in $f2.head
+pack $f2.head.right -side right -padx 35 -in $f2.head
+pack $f2.label -side top -anchor center -fill both
+pack $f2.head  -anchor w
+pack $f2.scroll_x -side bottom  -fill x
+pack $f2.scroll_y -side right -fill y
+pack $f2.list -side top -fill both -expand yes
+
+# イベントリストの読み込み
+read_ee
+
+###########  フレーム３(メニュー画面) ####################################
+frame $f3
+
+button $f3.next -text "Next" -command "move 1" -width $WIDTH
+button $f3.open -text "Open" -command "open_win" -width $WIDTH
+button $f3.prev -text "Previous" -command "move -1" -width $WIDTH
+button $f3.help -text "お助け" -command "disp_help" -width $WIDTH
+button $f3.latest -text "latest" -command "latest" -width $WIDTH
+button $f3.quit -text "Quit" -command "quit_winm" -width $WIDTH
+
+# パッキング
+pack $f3.next $f3.open $f3.prev $f3.help $f3.latest $f3.quit\
+	-side left -expand yes
+
+###########  フレーム４(マップ画面) ######################################
+frame $f4
+
+set MAP_OPTION  ""
+
+button $f4.eri -text "map" -command "map_only" -width $WIDTH
+button $f4.wso -text "map wso" -command "map wso" -width $WIDTH
+button $f4.hso -text "map hso" -command "map hso" -width $WIDTH
+button $f4.kvo -text "map kvo" -command "map kvo" -width $WIDTH
+
+pack $f4.eri $f4.wso $f4.hso $f4.kvo\
+	-side left -expand yes
+#################
+# 全体のパッキング
+#################
+pack $f1
+pack $f2
+pack $f3 -anchor w
+pack $f4 -anchor w
+#focus $f1.ee_opt
+
+#################################
+#  キーバインディング
+#################################
+bind $f1.ee_opt.t.entry <Return> {read_ee}
+bind $f1.ee_opt.p.entry <Return> {read_ee}
+bind $f2.list <Double-Button-1> {open_win}
+bind $f2.list <Button-2> {open_win}
+bind $f2.list <Button-3> {$f2.list select clear}
+bind $f2.list <Control-Button-1> {move 1}
+bind $f2.list <Control-Button-2> {open_win}
+bind $f2.list <Control-Button-3> {move -1}
+##############################################################################
+##############################################################################
+#
+#  END
+#
+##############################################################################
+##############################################################################

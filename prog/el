@@ -1,4 +1,8 @@
 #! /bin/sh
+#
+# $Id: el,v 1.2 2000/04/30 10:10:38 urabe Exp $
+#
+
 if [ -z "$TMP" ]
 then
 	TMP=.

@@ -1,0 +1,26 @@
+#! /usr/local/bin/perl
+#
+# $Id: final2mf,v 1.1 2000/04/30 10:10:38 urabe Exp $
+#
+
+#final形式の読み込み
+print "time\t\tIdo\tKeido\tFukasa\tMag\tDare\tDoko\n";
+
+while ($line = <STDIN>) {                   #1行読む
+    chop ($line);                           #最後の改行文字を取り除く
+
+    if ($line =~ /^[^ \s,#]/) {             #その行は空白文字や#から始まっていないか？
+
+        ($year,$month,$day,$hour,$min,$second,$ido,$keido,$fukasa,$mag,$dare,$doko) = split(/[ ,\t]+/,$line);
+                                            #行を成分に分解する
+		    &writedata;             #データ出力
+     }
+}
+
+#mapfan用出力
+sub writedata {  
+    $idomap = $ido*36000;                   #緯度のmapfanへの入力値
+    $keidomap = $keido*36000;               #経度のmapfanへの入力値
+
+    printf "$year$month$day.$hour$min$second\t%6d\t%6d\t$fukasa\t$mag\t$dare\t$doko\n", $idomap, $keidomap;
+}

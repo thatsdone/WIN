@@ -1,4 +1,4 @@
-/* $Id: recvt.c,v 1.2 2000/12/26 10:10:01 urabe Exp $ */
+/* $Id: recvt.c,v 1.3 2000/12/27 10:23:28 urabe Exp $ */
 /* "recvt.c"      4/10/93 - 6/2/93,7/2/93,1/25/94    urabe */
 /*                2/3/93,5/25/94,6/16/94 */
 /*                1/6/95 bug in adj_time fixed (tm[0]--) */
@@ -43,7 +43,6 @@
 #define DEBUG1    0
 #define DEBUG2    1
 #define DEBUG3    0
-#define BELL      0
 #define MAXMESG   2048
 #define N_PACKET  64    /* N of old packets to be requested */  
 #define N_HOST    100   /* max N of hosts */  
@@ -583,7 +582,7 @@ main(argc,argv)
   key_t shm_key,shm_key2;
   int shmid,shmid2;
   unsigned long uni;
-  unsigned char *ptr,tm[6],*ptr_size;
+  unsigned char *ptr,tm[6],*ptr_size,*p;
   int i,j,k,size,size2,fromlen,n,re,nlen,sock,nn,all,pre,post,c,downgo;
   struct sockaddr_in to_addr,from_addr;
   unsigned short to_port;
@@ -618,14 +617,14 @@ main(argc,argv)
         break;
       default:
         fprintf(stderr," option -%c unknown\n",c);
-        fprintf(stderr," usage : '%s %s'\n",progname);
+        fprintf(stderr," usage : '%s %s'\n",progname,USAGE);
         exit(1);
       }
     }
   optind--;
   if(argc<4+optind)
     {
-    fprintf(stderr," usage : '%s %s'\n",progname);
+    fprintf(stderr," usage : '%s %s'\n",progname,USAGE);
     exit(1);
     }
 
@@ -681,7 +680,7 @@ main(argc,argv)
     err_sys("shmat");
   if(downgo) /* recvt creates shm for reading too */
     {
-    if((shmid2=shmget(shm_key2,size2,IPC_CREAT|EXCL|0666))<0)
+    if((shmid2=shmget(shm_key2,size2,IPC_CREAT|IPC_EXCL|0666))<0) /* existed */
       {
       if((shmid2=shmget(shm_key2,size2,IPC_CREAT|0666))<0) err_sys("shmget(2)");
       }
@@ -745,68 +744,159 @@ main(argc,argv)
 
     if(check_pno(&from_addr,rbuf[0],rbuf[1],sock,fromlen,n)<0) continue;
 
-  /* check packet ID */
-    if(rbuf[2]<0xA0)
+    if(all)
       {
-      for(i=0;i<6;i++) if(rbuf[i+2]!=tm[i]) break;
-      if(i==6)  /* same time */
+      if(rbuf[2]<0xA0) /* check packet ID */
         {
-        ptr+=wincpy(ptr,rbuf+8,n-8);
-        set_long(ptr_size+4,time(0)); /* tow */
-        }
-      else
-        {
-        if((uni=ptr-ptr_size)>14)
+        if(check_time(rbuf+2,pre,post)==0)
           {
-          set_long(ptr_size,uni); /* size */
-#if DEBUG1
-          printf("(%d)",time(0));
-          for(i=8;i<14;i++) printf("%02X",ptr_size[i]);
-          printf(" : %d > %d\n",uni,ptr_size-sh->d);
-#endif
-          }
-        else ptr=ptr_size;
-        if(check_time(rbuf+2,pre,post))
-          {
-#if DEBUG2
-          sprintf(tb,"ill time %02X:%02X %02X%02X%02X.%02X%02X%02X:%02X%02X%02X%02X%02X%02X%02X%02X from %s:%d",
-            rbuf[0],rbuf[1],rbuf[2],rbuf[3],rbuf[4],rbuf[5],rbuf[6],rbuf[7],
-            rbuf[8],rbuf[9],rbuf[10],rbuf[11],rbuf[12],rbuf[13],rbuf[14],
-            rbuf[15],inet_ntoa(from_addr.sin_addr),from_addr.sin_port);
-          write_log(logfile,tb);
-#endif
-          for(i=0;i<6;i++) tm[i]=(-1);
-          continue;
-          }
-        else
-          {
-          sh->r=sh->p;      /* latest */
-          if(ptr>sh->d+sh->pl) ptr=sh->d;
-          sh->p=ptr-sh->d;
-          sh->c++;
           ptr_size=ptr;
           ptr+=4;   /* size */
-          ptr+=4;   /* time of write */
-          memcpy(ptr,rbuf+2,6);
+          set_long(ptr,time(0)); /* tow */
+          ptr+=4;
+          *ptr++=0xA1; /* packet ID */
+          memcpy(ptr,rbuf+2,6); /* TS */
           ptr+=6;
-          ptr+=wincpy(ptr,rbuf+8,n-8);
-          memcpy(tm,rbuf+2,6);
-          set_long(ptr_size+4,time(0)); /* tow */
+          ptr+=wincpy(ptr,rbuf+8,n-8); /* data */
+          if((uni=ptr-ptr_size)>15)
+            {
+            set_long(ptr_size,ptr-ptr_size); /* size */
+#if DEBUG
+            printf("(%d)",time(0));
+            for(i=8;i<14;i++) printf("%02X",ptr_size[i]);
+            printf(" : %d > %d\n",uni,ptr_size-sh->d);
+#endif
+            sh->r=sh->p;      /* latest */
+            if(ptr>sh->d+sh->pl) ptr=sh->d;
+            sh->p=ptr-sh->d;
+            sh->c++;
+            }
+          else ptr=ptr_size; /* reset write pointer */
+          }
+#if DEBUG2
+        else /* time stamp check failed */
+          {
+          p=rbuf;
+          sprintf(tb,"ill time %02X:%02X %02X%02X%02X.%02X%02X%02X:%02X%02X%02X%02X%02X%02X%02X%02X from %s:%d",
+            p[0],p[1],p[2],p[3],p[4],p[5],p[6],p[7],p[8],p[9],p[10],p[11],
+            p[12],p[13],p[14],p[15],
+            inet_ntoa(from_addr.sin_addr),from_addr.sin_port);
+          write_log(logfile,tb);
+          }
+#endif
+        }
+      else if(rbuf[2]==0xA0) /* merged packet */
+        {
+        nlen=n-3;
+        j=3;
+        while(nlen>0)
+          {
+          n=(rbuf[j]<<8)+rbuf[j+1]; /* size of one-sec data */
+          j+=2;
+          if(check_time(rbuf+j,pre,post)==0)
+            {
+            ptr_size=ptr;
+            ptr+=4;   /* size */
+            set_long(ptr,time(0)); /* tow */
+            ptr+=4;
+            *ptr++=0xA1; /* packet ID */
+            memcpy(ptr,rbuf+j,6); /* TS */
+            ptr+=6;
+            ptr+=wincpy(ptr,rbuf+j+6,n-8); /* data */
+            if((uni=ptr-ptr_size)>15)
+              {
+              set_long(ptr_size,ptr-ptr_size); /* size */
+#if DEBUG
+              printf("(%d)",time(0));
+              for(i=8;i<14;i++) printf("%02X",ptr_size[i]);
+              printf(" : %d > %d\n",uni,ptr_size-sh->d);
+#endif
+              sh->r=sh->p;      /* latest */
+              if(ptr>sh->d+sh->pl) ptr=sh->d;
+              sh->p=ptr-sh->d;
+              sh->c++;
+              }
+            else ptr=ptr_size; /* reset write pointer */
+            }
+          else /* time stamp check failed */
+            {
+#if DEBUG2
+            p=rbuf+j;
+            sprintf(tb,"ill time %02X%02X%02X.%02X%02X%02X:%02X%02X%02X%02X%02X%02X%02X%02X from %s:%d",
+              p[0],p[1],p[2],p[3],p[4],p[5],p[6],p[7],p[8],p[9],p[10],p[11],
+              p[12],p[13],inet_ntoa(from_addr.sin_addr),from_addr.sin_port);
+            write_log(logfile,tb);
+#endif
+            }
+          nlen-=n;
+          j+=n-2;
           }
         }
-      }
-    else if(rbuf[2]==0xA0) /* merged packet */
-      {
-      nlen=n-3;
-      j=3;
-      while(nlen>0)
+      else if(rbuf[2]<=0xA3) /* A1,A2,A3 packet */
         {
-        n=(rbuf[j]<<8)+rbuf[j+1];
-        j+=2;
-        for(i=0;i<6;i++) if(rbuf[j+i]!=tm[i]) break;
+
+        if(check_time(rbuf+3,pre,post)==0)
+          {
+          ptr_size=ptr;
+          ptr+=4;   /* size */
+          set_long(ptr,time(0)); /* tow */
+          ptr+=4;
+          *ptr++=0xA1; /* packet ID */
+          memcpy(ptr,rbuf+3,6); /* TS */
+          ptr+=6;
+          ptr+=wincpy(ptr,rbuf+9,n-9-1); /* data; the last byte is left */
+          *ptr++=rbuf[n-1]; /* the last byte is station status */
+          if((uni=ptr-ptr_size)>16)
+            {
+            set_long(ptr_size,ptr-ptr_size); /* size */
+#if DEBUG
+            printf("(%d)",time(0));
+            for(i=8;i<14;i++) printf("%02X",ptr_size[i]);
+            printf(" : %d > %d\n",uni,ptr_size-sh->d);
+#endif
+            sh->r=sh->p;      /* latest */
+            if(ptr>sh->d+sh->pl) ptr=sh->d;
+            sh->p=ptr-sh->d;
+            sh->c++;
+            }
+          else ptr=ptr_size; /* reset write pointer */
+          }
+#if DEBUG2
+        else
+          {
+          p=rbuf;
+          sprintf(tb,"ill time %02X:%02X %02X %02X%02X%02X.%02X%02X%02X:%02X%02X%02X%02X%02X%02X%02X%02X from %s:%d",
+            p[0],p[1],p[2],p[3],p[4],p[5],p[6],p[7],p[8],p[9],p[10],p[11],
+            p[12],p[13],p[14],p[15],p[16],
+            inet_ntoa(from_addr.sin_addr),from_addr.sin_port);
+          write_log(logfile,tb);
+          }
+#endif
+        }
+      else /* rbuf[2]>0xA3 */
+        {
+        ptr_size=ptr;
+        ptr+=4;   /* size */
+        set_long(ptr,time(0)); /* tow */
+        ptr+=4;
+        memcpy(ptr,rbuf+2,n-2);
+        ptr+=n-2;
+        set_long(ptr_size,ptr-ptr_size); /* size */
+        sh->r=sh->p;      /* latest */
+        if(ptr>sh->d+sh->pl) ptr=sh->d;
+        sh->p=ptr-sh->d;
+        sh->c++;
+        }
+      } /* end of if(all) */
+
+    else /* if(!all) */
+      {
+      if(rbuf[2]<0xA0) /* old style (without packet ID) */
+        {
+        for(i=0;i<6;i++) if(rbuf[i+2]!=tm[i]) break;
         if(i==6)  /* same time */
           {
-          ptr+=wincpy(ptr,rbuf+j+6,n-8);
+          ptr+=wincpy(ptr,rbuf+8,n-8);
           set_long(ptr_size+4,time(0)); /* tow */
           }
         else
@@ -821,18 +911,18 @@ main(argc,argv)
 #endif
             }
           else ptr=ptr_size;
-          if(check_time(rbuf+j,pre,post))
+          if(check_time(rbuf+2,pre,post))
             {
 #if DEBUG2
-            sprintf(tb,"ill time %02X%02X%02X.%02X%02X%02X:%02X%02X%02X%02X%02X%02X%02X%02X from %s:%d",
-              rbuf[j],rbuf[j+1],rbuf[j+2],rbuf[j+3],rbuf[j+4],rbuf[j+5],
-              rbuf[j+6],rbuf[j+7],rbuf[j+8],rbuf[j+9],rbuf[j+10],rbuf[j+11],
-              rbuf[j+12],rbuf[j+13],
+            p=rbuf;
+            sprintf(tb,"ill time %02X:%02X %02X%02X%02X.%02X%02X%02X:%02X%02X%02X%02X%02X%02X%02X%02X from %s:%d",
+              p[0],p[1],p[2],p[3],p[4],p[5],p[6],p[7],p[8],p[9],p[10],p[11],
+              p[12],p[13],p[14],p[15],
               inet_ntoa(from_addr.sin_addr),from_addr.sin_port);
             write_log(logfile,tb);
 #endif
             for(i=0;i<6;i++) tm[i]=(-1);
-            goto next;
+            continue;
             }
           else
             {
@@ -843,50 +933,73 @@ main(argc,argv)
             ptr_size=ptr;
             ptr+=4;   /* size */
             ptr+=4;   /* time of write */
-            memcpy(ptr,rbuf+j,6);
+            memcpy(ptr,rbuf+2,6);
             ptr+=6;
-            ptr+=wincpy(ptr,rbuf+j+6,n-8);
-            memcpy(tm,rbuf+j,6);
+            ptr+=wincpy(ptr,rbuf+8,n-8);
+            memcpy(tm,rbuf+2,6);
             set_long(ptr_size+4,time(0)); /* tow */
             }
           }
-next:   nlen-=n;
-        j+=n-2;
         }
-      }
-    else if(all) /* rbuf[2]>=0xA1 with packet ID */
-      {
-      if(check_time(rbuf+3,pre,post))
+      else if(rbuf[2]==0xA0) /* merged packet */
         {
+        nlen=n-3;
+        j=3;
+        while(nlen>0)
+          {
+          n=(rbuf[j]<<8)+rbuf[j+1];
+          j+=2;
+          for(i=0;i<6;i++) if(rbuf[j+i]!=tm[i]) break;
+          if(i==6)  /* same time */
+            {
+            ptr+=wincpy(ptr,rbuf+j+6,n-8);
+            set_long(ptr_size+4,time(0)); /* tow */
+            }
+          else
+            {
+            if((uni=ptr-ptr_size)>14)
+              {
+              set_long(ptr_size,uni); /* size */
+#if DEBUG1
+              printf("(%d)",time(0));
+              for(i=8;i<14;i++) printf("%02X",ptr_size[i]);
+              printf(" : %d > %d\n",uni,ptr_size-sh->d);
+#endif
+              }
+            else ptr=ptr_size;
+            if(check_time(rbuf+j,pre,post))
+              {
 #if DEBUG2
-        sprintf(tb,"ill time %02X:%02X %02X %02X%02X%02X.%02X%02X%02X:%02X%02X%02X%02X%02X%02X%02X%02X from %s:%d",
-          rbuf[0],rbuf[1],rbuf[2],rbuf[3],rbuf[4],rbuf[5],rbuf[6],rbuf[7],
-          rbuf[8],rbuf[9],rbuf[10],rbuf[11],rbuf[12],rbuf[13],rbuf[14],
-          rbuf[15],rbuf[16],inet_ntoa(from_addr.sin_addr),from_addr.sin_port);
-        write_log(logfile,tb);
+              p=rbuf+j;
+              sprintf(tb,
+"ill time %02X%02X%02X.%02X%02X%02X:%02X%02X%02X%02X%02X%02X%02X%02X from %s:%d",
+                p[0],p[1],p[2],p[3],p[4],p[5],p[6],p[7],p[8],p[9],p[10],p[11],
+                p[12],p[13],inet_ntoa(from_addr.sin_addr),from_addr.sin_port);
+              write_log(logfile,tb);
 #endif
-        for(i=0;i<6;i++) tm[i]=(-1);
-        continue;
+              for(i=0;i<6;i++) tm[i]=(-1);
+              goto next;
+              }
+            else
+              {
+              sh->r=sh->p;      /* latest */
+              if(ptr>sh->d+sh->pl) ptr=sh->d;
+              sh->p=ptr-sh->d;
+              sh->c++;
+              ptr_size=ptr;
+              ptr+=4;   /* size */
+              ptr+=4;   /* time of write */
+              memcpy(ptr,rbuf+j,6);
+              ptr+=6;
+              ptr+=wincpy(ptr,rbuf+j+6,n-8);
+              memcpy(tm,rbuf+j,6);
+              set_long(ptr_size+4,time(0)); /* tow */
+              }
+            }
+next:     nlen-=n;
+          j+=n-2;
+          }
         }
-      else
-        {
-        ptr_size=ptr;
-        ptr+=4;   /* size */
-        ptr+=4;   /* time of write */
-        memcpy(ptr,rbuf+2,n-2);
-        ptr+=n-2;
-        set_long(ptr_size,ptr-ptr_size); /* size */
-        memcpy(tm,rbuf+3,6);
-        set_long(ptr_size+4,time(0)); /* tow */
-        sh->r=sh->p;      /* latest */
-        if(ptr>sh->d+sh->pl) ptr=sh->d;
-        sh->p=ptr-sh->d;
-        sh->c++;
-        }
-      }
-#if BELL
-    fprintf(stderr,"\007");
-    fflush(stderr);
-#endif
+      } /* end of if(!all) */
     }
   }

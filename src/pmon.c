@@ -1,4 +1,4 @@
-/* $Id: pmon.c,v 1.8 2001/11/14 10:22:29 urabe Exp $ */
+/* $Id: pmon.c,v 1.9 2002/01/13 06:57:51 uehira Exp $ */
 /************************************************************************
 *************************************************************************
 **  program "pmon.c" for NEWS/SPARC                             *********
@@ -49,6 +49,10 @@
 **              2: groups,    3: channels                       *********
 *************************************************************************/
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include  <stdio.h>
 #include  <string.h>
 #include  <math.h>
@@ -57,11 +61,23 @@
 #include  <dirent.h>
 #include  <sys/types.h>
 #include  <sys/file.h>
-#include  <sys/time.h>
-#include  <time.h>
+
+#if TIME_WITH_SYS_TIME
+#include <sys/time.h>
+#include <time.h>
+#else  /* !TIME_WITH_SYS_TIME */
+#if HAVE_SYS_TIME_H
+#include <sys/time.h>
+#else  /* !HAVE_SYS_TIME_H */
+#include <time.h>
+#endif  /* !HAVE_SYS_TIME_H */
+#endif  /* !TIME_WITH_SYS_TIME */
+
 #include  <fcntl.h>
 #include  <sys/ioctl.h>
 #include  <ctype.h>
+
+#include "subst_func.h"
 
 #define LONGNAME      1
 #define DEBUG         0
@@ -101,6 +117,10 @@
 
 #define SWAPS(a) a=(((a)<<8)&0xff00|((a)>>8)&0xff)
 #define SWAPL(a) a=(((a)<<24)|((a)<<8)&0xff0000|((a)>>8)&0xff00|((a)>>24)&0xff)
+
+#ifndef FILENAME_MAX
+#define FILENAME_MAX 1024
+#endif
 
 /* (8 x 16) x (128-32) */
 /* start = 32, end = 126, n of codes = 126-32+1 = 95 */

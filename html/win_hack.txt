@@ -1,0 +1,121 @@
+win パッケージの autoconf，automake 対応化
+
+●開発に必要なソフト
+・autoconf-2.13
+・automake-1.5  (1.4では make への対応が必要)
+・gmake  (私が使っているのは，gmake-3.79.1)
+  gmake は必須では無いが，開発の時はgmakeを使う方が非常に楽である．
+
+  FreeBSD の場合，cvsup 等で ports を最新状態にしてこれらのソフトをイ
+ンストールするのが一番楽．
+
+●automake で必要になるファイル達
+・シェルスクリプト
+  missing とか mkinstalldirs など．これらは，
+
+% automake -a   (symlink)
+or
+% automake -ac  (copy)
+
+とかしてautomake が自動的に用意してくれる．これらはすでに用意されてお
+り，cvs repository には登録してある．
+
+・ドキュメント
+  AUTHORS，COPYING，ChangeLog，INSTALL，NEWS，README
+これらのファイルが存在しないといけない．COPYING，INSTALL は automake 
+で自動生成されたものが入っている．その他は私が用意している．適当に編集
+して下さい．cvs repository には登録してある．
+
+・*****プログラム開発者が作成するもの******
+  configure.in，Makefile.am，acconfig.h，acinclude.m4
+
+  主に前二つのファイルを編集する．後ろ二つは，デフォルトに無い新しいター
+ゲットを作る時に編集の必要がある．
+
+  これらのファイルの書き方は，下の参考URLにも挙げた
+
+	http://www.ainet.or.jp/~inoue/gnu/autoconf.html
+
+を一通り見たほうが分かり易いと思います．
+
+●コンパイルするまでに必要な作業
+  cvs で checkout した直後はコンパイルできない．automake，autoconf の
+ツールを使っていくつかのファイルを自動生成させなければいけない．自動生
+成されるファイルは cvs repository には入れていない．ただし，ユーザーに
+配布する時には必要である．
+
+必要なファイルの作るコマンド及び生成されるファイルは以下の通りである．
+[]内が生成されるファイルである．
+
+% aclocal [aclocal.m4] (macrosディレクトリを使う時は、aclocal -I macros)
+% autoconf [configure]
+% autoheader [config.h.in]
+% automake [Makefile.in]
+(ここまでが初期段階。この時点でconfigureスクリプトができているはず)
+
+% ./configure [Makefile, config.h]
+% make [win 等の実行ファイル]
+
+(ここから開発のルーティンワークのシミュレーション)
+% touch win.c (ソースを編集したと仮定)
+% gmake [win] (説明不要)
+% touch configure.in (configure.inを編集したと仮定)
+% gmake (aclocal, automake, autoconf, ./configure, autoheaderが走る)
+% touch Makefile.am (Makefile.amを編集したと仮定) 
+% gmake (automakeが走る)
+% touch acconfig.h (普通はconfigure.inの変更と同期して変更する)
+% gmake (autoheaderが走る)
+% touch green.c green.h (ソースファイルを追加したと仮定)
+% vi Makefile.am (ソースを加える．どう加えるかは類推できるでしょうから
+省略します．)
+% gmake (automakeが走る)
+(ここまで開発のルーティンワークのシミュレーション)
+
+configure.in とか Makefile.am とか通常のソース以外を編集した時は，
+gmake の場合 autoconf 等の必要なコマンドが自動実行されるので開発の時は
+楽である．make だとこれらのコマンドを自分で走らせなければなない．
+
+(配布パッケージを作る)
+% gmake dist [WIN_pkg-1.0.tar.gz]
+
+パッケージ名及びバージョンは，configure.in の中の，
+
+AM_INIT_AUTOMAKE(WIN_pkg, 1.0)
+
+で指定する．この名前とバージョンは私がテスト用に勝手に付けたので，卜部
+さんの方で適当に設定して下さい．
+
+●プログラムの autoconf 及び automake への対応
+
+  configure を実行して調べられた事は，config.h の中のマクロに設定され
+る．プログラムでは config.h をインクルードし，マクロを使ってコントロー
+ルする．ある関数が無い時の代替関数は，subst_func.h で設定する．
+
+━━━━━ここから━━━━━
+/* $Id: win_hack.txt,v 1.2 2002/01/13 06:57:48 uehira Exp $ */
+
+....
+
+#ifdef HAVE_CONFIG_H   <--- config.h の読み込み
+#include "config.h"
+#endif
+
+..... 他のインクルードファイル
+
+#include "subst_func.h"  <--- 代替関数の挿入
+
+....
+(この後は普通にプログラミング)
+
+━━━━━ここまで━━━━━
+
+●参考 URL
+・http://www.ainet.or.jp/~inoue/gnu/autoconf.html
+・http://www.itojun.org/hack/
+・http://shimaki.hoops.ne.jp/autoconf/book1.html
+・http://www.omoikane.co.jp/i/info/html/automake/automake-ja_toc.html
+・http://larse-gtk.hoops.ne.jp/automake.html
+・http://www.archi.is.tohoku.ac.jp/~yamauchi/projects/tips/autoconf-j.shtml
+
+など．
+

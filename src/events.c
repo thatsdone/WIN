@@ -1,4 +1,4 @@
-/* $Id: events.c,v 1.5 2001/11/14 10:22:29 urabe Exp $ */
+/* $Id: events.c,v 1.6 2002/01/13 06:57:50 uehira Exp $ */
 /****************************************************************************
 *****************************************************************************
 **     program "events.c" for NEWS                                  *********
@@ -58,6 +58,10 @@ sso     /dat/etc/sso.station    cut-jc3
 *****************************************************************************
 *****************************************************************************/
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include  <stdio.h>
 #include  <stdlib.h>
 #include  <signal.h>
@@ -69,8 +73,18 @@ sso     /dat/etc/sso.station    cut-jc3
 #include  <sys/stat.h>
 #include  <dirent.h>
 #include  <sys/file.h>
-#include  <sys/time.h>
-#include  <time.h>
+
+#if TIME_WITH_SYS_TIME
+#include <sys/time.h>
+#include <time.h>
+#else  /* !TIME_WITH_SYS_TIME */
+#if HAVE_SYS_TIME_H
+#include <sys/time.h>
+#else  /* !HAVE_SYS_TIME_H */
+#include <time.h>
+#endif  /* !HAVE_SYS_TIME_H */
+#endif  /* !TIME_WITH_SYS_TIME */
+
 #include  <sys/param.h>
 #include  <sys/mount.h>
 
@@ -86,6 +100,8 @@ sso     /dat/etc/sso.station    cut-jc3
 
 #include  <fcntl.h>
 #include  <sys/ioctl.h>
+
+#include "subst_func.h"
 
 #define DEBUG     0
 #define CLEAN     1

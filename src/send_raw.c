@@ -1,4 +1,4 @@
-/* $Id: send_raw.c,v 1.5 2001/11/14 10:58:56 urabe Exp $ */
+/* $Id: send_raw.c,v 1.6 2002/01/13 06:57:51 uehira Exp $ */
 /*
     program "send_raw/send_mon.c"   1/24/94 - 1/25/94,5/25/94 urabe
                                     6/15/94 - 6/16/94
@@ -27,7 +27,13 @@
                                   2000.4.24 strerror()
                                   2001.8.19 send interval control
                                   2001.11.14 strerror(),ntohs()
+                                  2002.1.7  option '-i' to specify multicast IF
+                                  2002.1.8  option '-b' for max IP packet size
 */
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include <stdio.h>
 #include <signal.h>
@@ -36,30 +42,45 @@
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
-#include <time.h>
+
+#if TIME_WITH_SYS_TIME
 #include <sys/time.h>
+#include <time.h>
+#else  /* !TIME_WITH_SYS_TIME */
+#if HAVE_SYS_TIME_H
+#include <sys/time.h>
+#else  /* !HAVE_SYS_TIME_H */
+#include <time.h>
+#endif  /* !HAVE_SYS_TIME_H */
+#endif  /* !TIME_WITH_SYS_TIME */
+
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
 #include <unistd.h>
 #include <errno.h>
 
+#include "subst_func.h"
+
 #define DEBUG       0
 #define DEBUG1      0
 #define TEST_RESEND 0
-#define MAXMESG   (1500-28)  /* max of UDP data size, +28 <= IP MTU  */
+#define MTU       1500 /* (max of UDP data size) = IP_MTU - 28 */
+#define RSIZE   (MTU-28)
 #define SR_MON      5
-#define BUFNO     128
+#define NBUF      128
 #define NWSTEP    4000  /* 4000 for Ultra1 */
 #define NWLIMIT 100000
 
+/*
 #if defined(SUNOS4)
 #define mktime timelocal
 #endif
+*/
 
-int sock,raw,mon,tow,all,psize[BUFNO],n_ch,negate_channel;
-unsigned char sbuf[BUFNO][MAXMESG+8],ch_table[65536],rbuf[MAXMESG];
-     /* sbuf[BUFNO][MAXMESG+8] ; +8 for overrun by "size" and "time" */
+int sock,raw,mon,tow,all,psize[NBUF],n_ch,negate_channel,mtu,nbuf;
+unsigned char *sbuf[NBUF],ch_table[65536],rbuf[RSIZE];
+     /* sbuf[NBUF][mtu-28+8] ; +8 for overrun by "size" and "time" */
 char *progname,logfile[256],chfile[256];
 static int b2d[]={
      0, 1, 2, 3, 4, 5, 6, 7, 8, 9,0,0,0,0,0,0,  /* 0x00 - 0x0F */
@@ -270,11 +291,11 @@ get_packet(bufno,no)
   unsigned char no; /* packet no. to find */
   {
   int i;
-  if((i=bufno-1)<0) i=BUFNO-1;
+  if((i=bufno-1)<0) i=nbuf-1;
   while(i!=bufno && psize[i]>0)
     {
     if(sbuf[i][0]==no) return i;
-    if(--i<0) i=BUFNO-1;
+    if(--i<0) i=nbuf-1;
     }
   return -1;  /* not found */
   }
@@ -363,7 +384,7 @@ main(argc,argv)
   int size,gs,sr,re,shmid;
   unsigned long gh;
   unsigned char *ptr,*ptr1,*ptr_save,*ptr_lim,*ptw,*ptw_save,*ptw_size,
-    no,no_f,host_name[100],tbuf[100];
+    no,no_f,host_name[100],tbuf[256];
   struct Shm {
     unsigned long p;    /* write point */
     unsigned long pl;   /* write limit */
@@ -375,6 +396,9 @@ main(argc,argv)
   extern char *optarg;
   struct timeval timeout,tp;
   struct timezone tzp;
+  char interface[256]; /* multicast interface */
+  unsigned long mif; /* multicast interface address */
+
   if(progname=strrchr(argv[0],'/')) progname++;
   else progname=argv[0];
 
@@ -385,16 +409,27 @@ main(argc,argv)
   else if(strcmp(progname,"sendt_raw")==0) {raw=1;tow=1;}
   else if(strcmp(progname,"sendt_mon")==0) {mon=1;tow=1;}
   else exit(1);
+  sprintf(tbuf,
+" usage : '%s (-aimrt) (-b mtu) (-h [h])/(-s [s]) [shmkey] [dest] [port] \\\n\
+            ([chfile]/- ([logfile]))'\n",progname);
 
-  while((c=getopt(argc,argv,"ah:mrs:t"))!=EOF)
+  *interface=0;
+  mtu=MTU;
+  while((c=getopt(argc,argv,"ab:h:i:mrs:t"))!=EOF)
     {
     switch(c)
       {
       case 'a':   /* "all" mode */
         all=tow=1;
         break;
+      case 'b':   /* maximum size of IP packet in bytes (or MTU) */
+        mtu=atoi(optarg);
+        break;
       case 'h':   /* time to shift, in hours */
         hours_shift=atoi(optarg);
+        break;
+      case 'i':   /* interface (ordinary IP address) which sends mcast */
+        strcpy(interface,optarg);
         break;
       case 'm':   /* "mon" mode */
         mon=1;
@@ -410,19 +445,15 @@ main(argc,argv)
         break;
       default:
         fprintf(stderr," option -%c unknown\n",c);
-        fprintf(stderr,
-  " usage : '%s (-amrt) (-h [h])/(-s [s]) [shmkey] [dest] [port] ([chfile]/- ([logfile]))'\n",
-          progname);
+        fprintf(stderr,"%s\n",tbuf);
         exit(1);
       }
     }
   optind--;
   if(argc<4+optind)
     {
-    fprintf(stderr,
-  " usage : '%s (-amrt) (-h [h])/(-s [s]) [shmkey] [dest] [port] ([chfile]/- ([logfile]))'\n",
-      progname);
-    exit(0);
+    fprintf(stderr,"%s\n",tbuf);
+    exit(1);
     }
 
   shm_key=atoi(argv[1+optind]);
@@ -487,6 +518,12 @@ main(argc,argv)
     }
   if(setsockopt(sock,SOL_SOCKET,SO_BROADCAST,(char *)&i,sizeof(i))<0)
     err_sys("SO_BROADCAST setsockopt error\n");
+  if(*interface)
+    {
+    mif=inet_addr(interface);
+    if(setsockopt(sock,IPPROTO_IP,IP_MULTICAST_IF,(char *)&mif,sizeof(mif))<0)
+      err_sys("IP_MULTICAST_IF setsockopt error\n");
+    }
   /* bind my socket to a local port */
   memset((char *)&from_addr,0,sizeof(from_addr));
   from_addr.sin_family=AF_INET;
@@ -498,7 +535,15 @@ main(argc,argv)
   signal(SIGPIPE,(void *)ctrlc);
   signal(SIGINT,(void *)ctrlc);
   signal(SIGTERM,(void *)ctrlc);
-  for(i=0;i<BUFNO;i++) psize[i]=(-1);
+  for(i=0;i<NBUF;i++)
+    { /* allocate buffers */
+    psize[i]=(-1);
+    if((sbuf[i]=(unsigned char *)malloc(mtu-28+8))==NULL){
+      fprintf(stderr,"malloc failed. nbuf=%d\n",i);
+      break;
+      }
+    }
+  nbuf=i;
   no=bufno=0;
 
 reset:
@@ -536,7 +581,8 @@ reset:
       memcpy(ptw,ptr,size-8);
       ptw+=size-8;
       for(kk=0;kk<nwloop;kk++);
-      re=sendto(sock,ptw_save,ptw-ptw_save,0,&to_addr,sizeof(to_addr));
+      re=sendto(sock,ptw_save,ptw-ptw_save,0,(struct sockaddr *)&to_addr,
+        sizeof(to_addr));
 #if DEBUG1
       fprintf(stderr,"%5d>  ",re);
       for(k=0;k<20;k++) fprintf(stderr,"%02X",ptw_save[k]);
@@ -586,9 +632,9 @@ reset:
         gs=ptr-ptr1;
         }
     /* add gs of data to buffer (after sending packet if it is full) */
-      if(ch_table[ch] && gs+11<=MAXMESG)
+      if(ch_table[ch] && gs+11<=mtu-28)
         {
-        if(ptw+gs-ptw_save>MAXMESG)
+        if(ptw+gs-ptw_save>mtu-28)
           {
           if(j==0) ptw-=8;
 #if TEST_RESEND
@@ -596,7 +642,7 @@ reset:
 #endif
           for(kk=0;kk<nwloop;kk++);
           re=sendto(sock,ptw_save,psize[bufno]=ptw-ptw_save,0,
-            &to_addr,sizeof(to_addr));
+            (struct sockaddr *)&to_addr,sizeof(to_addr));
 #if DEBUG1
           fprintf(stderr,"%5d>  ",re);
           for(k=0;k<20;k++) fprintf(stderr,"%02X",ptw_save[k]);
@@ -608,23 +654,23 @@ reset:
 #if DEBUG
           fprintf(stderr,"%5d>  ",re);
 #endif
-          if(++bufno==BUFNO) bufno=0;
+          if(++bufno==nbuf) bufno=0;
           no++;
 /* resend if requested */
           while(1)
             {
             k=1<<sock;
-            if(select(sock+1,&k,NULL,NULL,&timeout)>0)
+            if(select(sock+1,(fd_set *)&k,NULL,NULL,&timeout)>0)
               {
               fromlen=sizeof(from_addr);
-              if(recvfrom(sock,rbuf,MAXMESG,0,&from_addr,&fromlen)==1 &&
-                  (bufno_f=get_packet(bufno,no_f=(*rbuf)))>=0)
+              if(recvfrom(sock,rbuf,RSIZE,0,(struct sockaddr *)&from_addr,
+                  &fromlen)==1 && (bufno_f=get_packet(bufno,no_f=(*rbuf)))>=0)
                 {
                 memcpy(sbuf[bufno],sbuf[bufno_f],psize[bufno]=psize[bufno_f]);
                 sbuf[bufno][0]=no;    /* packet no. */
                 sbuf[bufno][1]=no_f;  /* old packet no. */
-                re=sendto(sock,sbuf[bufno],psize[bufno],0,&to_addr,
-                  sizeof(to_addr));
+                re=sendto(sock,sbuf[bufno],psize[bufno],0,
+                  (struct sockaddr *)&to_addr,sizeof(to_addr));
 #if DEBUG1
                 fprintf(stderr,"%5d>  ",re);
                 for(k=0;k<20;k++) fprintf(stderr,"%02X",sbuf[bufno][k]);
@@ -634,7 +680,7 @@ reset:
                   inet_ntoa(from_addr.sin_addr),ntohs(from_addr.sin_port),
                   no_f,no,re);
                 write_log(logfile,tbuf);
-                if(++bufno==BUFNO) bufno=0;
+                if(++bufno==nbuf) bufno=0;
                 no++;
                 }
               }

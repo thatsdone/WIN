@@ -1,9 +1,13 @@
-/* $Id: recvs.c,v 1.3 2001/11/14 10:58:56 urabe Exp $ */
+/* $Id: recvs.c,v 1.4 2002/01/13 06:57:51 uehira Exp $ */
 /* "recvs.c"    receive sync frames      2000.3.14       urabe */
 /* 2000.3.21 */
 /* 2000.4.17 */
 /* 2000.4.24/2001.11.14 strerror() */
 /* 2001.11.14 ntohs() */
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include <stdio.h>
 #include <signal.h>
@@ -12,8 +16,18 @@
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
+
+#if TIME_WITH_SYS_TIME
 #include <sys/time.h>
 #include <time.h>
+#else  /* !TIME_WITH_SYS_TIME */
+#if HAVE_SYS_TIME_H
+#include <sys/time.h>
+#else  /* !HAVE_SYS_TIME_H */
+#include <time.h>
+#endif  /* !HAVE_SYS_TIME_H */
+#endif  /* !TIME_WITH_SYS_TIME */
+
 #include <unistd.h>
 #include <stropts.h>
 #include <fcntl.h>
@@ -26,6 +40,8 @@
 #if AURORA
 #include "/opt/AURAacs/syncuser.h"
 #endif
+
+#include "subst_func.h"
 
 #define DEBUG     0
 #define DEBUG1    0

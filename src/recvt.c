@@ -1,4 +1,4 @@
-/* $Id: recvt.c,v 1.7 2001/11/14 10:58:56 urabe Exp $ */
+/* $Id: recvt.c,v 1.8 2002/01/13 06:57:51 uehira Exp $ */
 /* "recvt.c"      4/10/93 - 6/2/93,7/2/93,1/25/94    urabe */
 /*                2/3/93,5/25/94,6/16/94 */
 /*                1/6/95 bug in adj_time fixed (tm[0]--) */
@@ -27,6 +27,13 @@
 /*                2001.2.20 wincpy() improved */
 /*                2001.3.9 debugged for sh->r */
 /*                2001.11.14 strerror(),ntohs() */
+/*                2002.1.7 implemented multicasting (options -g, -i) */
+/*                2002.1.7 option -n to suppress info on abnormal packets */
+/*                2002.1.8 MAXMESG increased to 32768 bytes */
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include <stdio.h>
 #include <signal.h>
@@ -35,25 +42,36 @@
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
+
+#if TIME_WITH_SYS_TIME
 #include <sys/time.h>
 #include <time.h>
+#else  /* !TIME_WITH_SYS_TIME */
+#if HAVE_SYS_TIME_H
+#include <sys/time.h>
+#else  /* !HAVE_SYS_TIME_H */
+#include <time.h>
+#endif  /* !HAVE_SYS_TIME_H */
+#endif  /* !TIME_WITH_SYS_TIME */
+
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
 #include <errno.h>
 
+#include "subst_func.h"
+
 #define DEBUG     0
+#define DEBUG0    0
 #define DEBUG1    0
-#define DEBUG2    1
-#define DEBUG3    0
 #define BELL      0
-#define MAXMESG   2048
+#define MAXMESG   32768
 #define N_PACKET  64    /* N of old packets to be requested */  
 #define N_HOST    100   /* max N of hosts */  
 
 unsigned char rbuf[MAXMESG],ch_table[65536];
-char tb[100],*progname,logfile[256],chfile[256];
-int n_ch,negate_channel,hostlist[N_HOST][2],n_host;
+char *progname,logfile[256],chfile[256];
+int n_ch,negate_channel,hostlist[N_HOST][2],n_host,no_pinfo;
 struct {
     int host;
     int port;
@@ -310,7 +328,7 @@ read_chfile()
   {
   FILE *fp;
   int i,j,k,ii;
-  char tbuf[1024],host_name[80];
+  char tbuf[1024],host_name[80],tb[256];
   struct hostent *h;
   static unsigned long ltime,ltime_p;
 
@@ -450,6 +468,7 @@ check_pno(from_addr,pn,pn_f,sock,fromlen,n) /* returns -1 if duplicated */
   unsigned int pn_1;
   static unsigned int mask[8]={0x80,0x40,0x20,0x10,0x08,0x04,0x02,0x01};
   unsigned char pnc;
+  char tb[256];
 
   j=(-1);
   host_=from_addr->sin_addr.s_addr;
@@ -459,12 +478,13 @@ check_pno(from_addr,pn,pn_f,sock,fromlen,n) /* returns -1 if duplicated */
     if(hostlist[i][0]==1 &&(n_host==i+1 || hostlist[i][1]==host_)) break;
     if(hostlist[i][0]==(-1) &&(n_host==i+1 || hostlist[i][1]==host_))
       {
-#if DEBUG3
-      sprintf(tb,"deny packet from host %d.%d.%d.%d:%d",
-        ((unsigned char *)&host_)[0],((unsigned char *)&host_)[1],
-        ((unsigned char *)&host_)[2],((unsigned char *)&host_)[3],port_);
-      write_log(logfile,tb);
-#endif
+      if(!no_pinfo)
+        {
+        sprintf(tb,"deny packet from host %d.%d.%d.%d:%d",
+          ((unsigned char *)&host_)[0],((unsigned char *)&host_)[1],
+          ((unsigned char *)&host_)[2],((unsigned char *)&host_)[3],port_);
+        write_log(logfile,tb);
+        }
       return -1;
       }
     }
@@ -506,7 +526,7 @@ check_pno(from_addr,pn,pn_f,sock,fromlen,n) /* returns -1 if duplicated */
     if(pn!=pn_1 && ((pn-pn_1)&0xff)<N_PACKET) do
       { /* send request-resend packet(s) */
       pnc=pn_1;
-      sendto(sock,&pnc,1,0,from_addr,fromlen);
+      sendto(sock,&pnc,1,0,(struct sockaddr *)from_addr,fromlen);
       sprintf(tb,"request resend %s:%d #%d",
         inet_ntoa(from_addr->sin_addr),ntohs(from_addr->sin_port),pn_1);
       write_log(logfile,tb);
@@ -518,10 +538,11 @@ check_pno(from_addr,pn,pn_f,sock,fromlen,n) /* returns -1 if duplicated */
     }
   if(pn!=pn_f && ht[i].nos[pn_f>>3]&mask[pn_f&0x07])
     {   /* if the resent packet is duplicated, return with -1 */
-#if DEBUG2
-    sprintf(tb,"discard duplicated resent packet #%d for #%d",pn,pn_f);
-    write_log(logfile,tb);
-#endif
+    if(!no_pinfo)
+      {
+      sprintf(tb,"discard duplicated resent packet #%d for #%d",pn,pn_f);
+      write_log(logfile,tb);
+      }
     return -1;
     }
   return 0;
@@ -538,6 +559,8 @@ wincpy(ptw,ptr,size)
   unsigned short ch;
   int gs;
   unsigned long gh;
+  char tb[256];
+
   ptr_lim=ptr+size;
   n=0;
   do    /* loop for ch's */
@@ -550,13 +573,14 @@ wincpy(ptw,ptr,size)
     else gs=(sr>>1)+8;
     if(sr>MAX_SR || ss>MAX_SS || ptr+gs>ptr_lim)
       {
-#if DEBUG2
-      sprintf(tb,
+      if(!no_pinfo)
+        {
+        sprintf(tb,
 "ill ch hdr %02X%02X%02X%02X %02X%02X%02X%02X psiz=%d sr=%d ss=%d gs=%d rest=%d",
-        ptr[0],ptr[1],ptr[2],ptr[3],ptr[4],ptr[5],ptr[6],ptr[7],
-        size,sr,ss,gs,ptr_lim-ptr);
-      write_log(logfile,tb);
-#endif
+          ptr[0],ptr[1],ptr[2],ptr[3],ptr[4],ptr[5],ptr[6],ptr[7],
+          size,sr,ss,gs,ptr_lim-ptr);
+        write_log(logfile,tb);
+        }
       return n;
       }
     if(ch_table[ch] && ptr+gs<=ptr_lim)
@@ -593,38 +617,52 @@ main(argc,argv)
     unsigned long c;    /* counter */
     unsigned char d[1];   /* data buffer */
     } *sh;
+  char tb[256];
+  struct ip_mreq stMreq;
+  char mcastgroup[256]; /* multicast address */
+  char interface[256]; /* multicast interface */
   if(progname=strrchr(argv[0],'/')) progname++;
   else progname=argv[0];
+  sprintf(tb,
+" usage : '%s (-an) (-m pre) (-p post) (-i interface) (-g mcast_group) \\\n\
+             [port] [shm_key] [shm_size(KB)] ([ctl file]/- ([log file]))'\n",
+          progname);
 
-  all=0;
+  all=no_pinfo=0;
   pre=post=30;
-  while((c=getopt(argc,argv,"am:p:"))!=EOF)
+  *interface=(*mcastgroup)=0;
+  while((c=getopt(argc,argv,"ag:i:m:p:"))!=EOF)
     {
     switch(c)
       {
       case 'a':   /* accept >=A1 packets */
         all=1;
         break;
+      case 'i':   /* interface (ordinary IP address) which receive mcast */
+        strcpy(interface,optarg);
+        break;
+      case 'g':   /* multicast group (multicast IP address) */
+        strcpy(mcastgroup,optarg);
+        break;
       case 'm':   /* time limit before RT in minutes */
         pre=atoi(optarg);
+        break;
+      case 'n':   /* supress info on abnormal packets */
+        no_pinfo=1;
         break;
       case 'p':   /* time limit after RT in minutes */
         post=atoi(optarg);
         break;
       default:
         fprintf(stderr," option -%c unknown\n",c);
-        fprintf(stderr,
-" usage : '%s (-a) (-m pre) (-p post) [port] [shm_key] [shm_size(KB)] ([ctl file]/- ([log file]))'\n",
-          progname);
+        fprintf(stderr,"%s\n",tb);
         exit(1);
       }
     }
   optind--;
   if(argc<4+optind)
     {
-    fprintf(stderr,
-" usage : '%s (-a) (-m pre) (-p post) [port] [shm_key] [shm_size(KB)] ([ctl file]/- ([log file]))'\n",
-     progname);
+    fprintf(stderr,"%s\n",tb);
     exit(1);
     }
 
@@ -680,9 +718,15 @@ main(argc,argv)
   to_addr.sin_family=AF_INET;
   to_addr.sin_addr.s_addr=htonl(INADDR_ANY);
   to_addr.sin_port=htons(to_port);
+  if(bind(sock,(struct sockaddr *)&to_addr,sizeof(to_addr))<0) err_sys("bind");
 
-  if(bind(sock,(struct sockaddr *)&to_addr,sizeof(to_addr))<0)
-    err_sys("bind");
+  if(*mcastgroup){
+    stMreq.imr_multiaddr.s_addr=inet_addr(mcastgroup);
+    if(*interface) stMreq.imr_interface.s_addr=inet_addr(interface);
+    else stMreq.imr_interface.s_addr=INADDR_ANY;
+    if(setsockopt(sock,IPPROTO_IP,IP_ADD_MEMBERSHIP,(char *)&stMreq,
+      sizeof(stMreq))<0) err_sys("IP_ADD_MEMBERSHIP setsockopt error\n");
+  }
 
   signal(SIGTERM,(void *)ctrlc);
   signal(SIGINT,(void *)ctrlc);
@@ -695,12 +739,12 @@ main(argc,argv)
   while(1)
     {
     fromlen=sizeof(from_addr);
-    n=recvfrom(sock,rbuf,MAXMESG,0,&from_addr,&fromlen);
-#if DEBUG1
+    n=recvfrom(sock,rbuf,MAXMESG,0,(struct sockaddr *)&from_addr,&fromlen);
+#if DEBUG0
     if(rbuf[0]==rbuf[1]) printf("%d ",rbuf[0]);
     else printf("%d(%d) ",rbuf[0],rbuf[1]);
     for(i=0;i<16;i++) printf("%02X",rbuf[i]);
-    printf("\n");
+    printf(" (%d)\n",n);
 #endif
 
     if(check_pno(&from_addr,rbuf[0],rbuf[1],sock,fromlen,n)<0) continue;
@@ -736,13 +780,14 @@ main(argc,argv)
         else ptr=ptr_size;
         if(check_time(rbuf+2,pre,post))
           {
-#if DEBUG2
-          sprintf(tb,"ill time %02X:%02X %02X%02X%02X.%02X%02X%02X:%02X%02X%02X%02X%02X%02X%02X%02X from %s:%d",
-            rbuf[0],rbuf[1],rbuf[2],rbuf[3],rbuf[4],rbuf[5],rbuf[6],rbuf[7],
-            rbuf[8],rbuf[9],rbuf[10],rbuf[11],rbuf[12],rbuf[13],rbuf[14],
-            rbuf[15],inet_ntoa(from_addr.sin_addr),ntohs(from_addr.sin_port));
-          write_log(logfile,tb);
-#endif
+          if(!no_pinfo)
+            {
+            sprintf(tb,"ill time %02X:%02X %02X%02X%02X.%02X%02X%02X:%02X%02X%02X%02X%02X%02X%02X%02X from %s:%d",
+              rbuf[0],rbuf[1],rbuf[2],rbuf[3],rbuf[4],rbuf[5],rbuf[6],rbuf[7],
+              rbuf[8],rbuf[9],rbuf[10],rbuf[11],rbuf[12],rbuf[13],rbuf[14],
+              rbuf[15],inet_ntoa(from_addr.sin_addr),ntohs(from_addr.sin_port));
+            write_log(logfile,tb);
+            }
           for(i=0;i<6;i++) tm[i]=(-1);
           continue;
           }
@@ -810,14 +855,15 @@ main(argc,argv)
             ptr=ptr_size;
           if(check_time(rbuf+j,pre,post)) /* illegal time */
             {
-#if DEBUG2
-            sprintf(tb,"ill time %02X%02X%02X.%02X%02X%02X:%02X%02X%02X%02X%02X%02X%02X%02X from %s:%d",
-              rbuf[j],rbuf[j+1],rbuf[j+2],rbuf[j+3],rbuf[j+4],rbuf[j+5],
-              rbuf[j+6],rbuf[j+7],rbuf[j+8],rbuf[j+9],rbuf[j+10],rbuf[j+11],
-              rbuf[j+12],rbuf[j+13],
-              inet_ntoa(from_addr.sin_addr),ntohs(from_addr.sin_port));
-            write_log(logfile,tb);
-#endif
+            if(!no_pinfo)
+              {
+              sprintf(tb,"ill time %02X%02X%02X.%02X%02X%02X:%02X%02X%02X%02X%02X%02X%02X%02X from %s:%d",
+                rbuf[j],rbuf[j+1],rbuf[j+2],rbuf[j+3],rbuf[j+4],rbuf[j+5],
+                rbuf[j+6],rbuf[j+7],rbuf[j+8],rbuf[j+9],rbuf[j+10],rbuf[j+11],
+                rbuf[j+12],rbuf[j+13],
+                inet_ntoa(from_addr.sin_addr),ntohs(from_addr.sin_port));
+              write_log(logfile,tb);
+              }
             for(i=0;i<6;i++) tm[i]=(-1);
             }
           else /* valid time stamp */
@@ -844,14 +890,15 @@ main(argc,argv)
       {
       if(check_time(rbuf+3,pre,post))
         {
-#if DEBUG2
-        sprintf(tb,"ill time %02X:%02X %02X %02X%02X%02X.%02X%02X%02X:%02X%02X%02X%02X%02X%02X%02X%02X from %s:%d",
-          rbuf[0],rbuf[1],rbuf[2],rbuf[3],rbuf[4],rbuf[5],rbuf[6],rbuf[7],
-          rbuf[8],rbuf[9],rbuf[10],rbuf[11],rbuf[12],rbuf[13],rbuf[14],
-          rbuf[15],rbuf[16],inet_ntoa(from_addr.sin_addr),
-          ntohs(from_addr.sin_port));
-        write_log(logfile,tb);
-#endif
+        if(!no_pinfo)
+          {
+          sprintf(tb,"ill time %02X:%02X %02X %02X%02X%02X.%02X%02X%02X:%02X%02X%02X%02X%02X%02X%02X%02X from %s:%d",
+            rbuf[0],rbuf[1],rbuf[2],rbuf[3],rbuf[4],rbuf[5],rbuf[6],rbuf[7],
+            rbuf[8],rbuf[9],rbuf[10],rbuf[11],rbuf[12],rbuf[13],rbuf[14],
+            rbuf[15],rbuf[16],inet_ntoa(from_addr.sin_addr),
+            ntohs(from_addr.sin_port));
+          write_log(logfile,tb);
+          }
         for(i=0;i<6;i++) tm[i]=(-1);
         continue;
         }

@@ -1,4 +1,10 @@
 /* $Log: find_picks.c,v $
+/* Revision 1.2  2002/01/13 06:57:50  uehira
+/* join 'autoconf branch' to 'main branch'
+/*
+/* Revision 1.1.2.1  2001/11/02 11:43:36  uehira
+/* change and add files for automake-1.5 & autoconf-2.13.
+/*
 /* Revision 1.1  2000/08/10 07:40:57  urabe
 /* find_picks : pick file searching server for win
 /* wtime      : time shift tool for WIN format file
@@ -6,9 +12,17 @@
 /* find_picks */
 /* search for pick files in pick dir */
 /* from win.c            2000.7.31 urabe */
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <stdio.h>
 #include <sys/types.h>
 #include <dirent.h>
+
+#include "subst_func.h"
+
 #define LINELEN 256
 #define NAMLEN 256
 

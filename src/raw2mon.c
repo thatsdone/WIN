@@ -1,4 +1,4 @@
-/* $Id: raw2mon.c,v 1.2 2000/04/30 10:05:23 urabe Exp $ */
+/* $Id: raw2mon.c,v 1.3 2002/01/13 06:57:51 uehira Exp $ */
 /*
   program "raw2mon.c"
   6/3/93,6/17/94,8/17/95 urabe
@@ -7,6 +7,10 @@
   2000.4.24 skip ch with >MAX_SR
 */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include  <stdio.h>
 #include  <string.h>
 #include  <stdlib.h>
@@ -14,6 +18,8 @@
 #include  <sys/fcntl.h>
 #include  <sys/ioctl.h>
 #include  <sys/stat.h>
+
+#include "subst_func.h"
 
 #define   MAXSIZE   500000
 #define   SIZE_WBUF 50000

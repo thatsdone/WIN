@@ -1,9 +1,16 @@
-/* $Id: final2finalb.c,v 1.2 2000/04/30 10:05:22 urabe Exp $ */
+/* $Id: final2finalb.c,v 1.3 2002/01/13 06:57:50 uehira Exp $ */
 /******************************************************************/
 /*    final2finalb.c              9/21/94 urabe                   */
 /*    97.10.3 FreeBSD  99.4.19 byte-order-free                    */
 /******************************************************************/
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include  <stdio.h>
+
+#include "subst_func.h"
 
 #define SWAPF(a) *(long *)&(a)=(((*(long *)&(a))<<24)|\
   ((*(long *)&(a))<<8)&0xff0000|((*(long *)&(a))>>8)&0xff00|\

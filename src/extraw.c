@@ -1,6 +1,10 @@
-/* $Id: extraw.c,v 1.2 2001/11/14 10:22:29 urabe Exp $ */
+/* $Id: extraw.c,v 1.3 2002/01/13 06:57:50 uehira Exp $ */
 /* "extraw.c"    2000.3.17 urabe */
 /* 2000.4.24/2001.11.14 strerror() */
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include <stdio.h>
 #include <signal.h>
@@ -9,10 +13,22 @@
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
+
+#if TIME_WITH_SYS_TIME
 #include <sys/time.h>
 #include <time.h>
+#else  /* !TIME_WITH_SYS_TIME */
+#if HAVE_SYS_TIME_H
+#include <sys/time.h>
+#else  /* !HAVE_SYS_TIME_H */
+#include <time.h>
+#endif  /* !HAVE_SYS_TIME_H */
+#endif  /* !TIME_WITH_SYS_TIME */
+
 #include <sys/types.h>
 #include <errno.h>
+
+#include "subst_func.h"
 
 #define DEBUG       0
 #define BELL        0

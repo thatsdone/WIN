@@ -1,13 +1,19 @@
-/* $Id: setexb.c,v 1.3 2001/06/23 01:05:13 uehira Exp $ */
+/* $Id: setexb.c,v 1.4 2002/01/13 06:57:51 uehira Exp $ */
 /* program "setexb.c"
 	2/27/90, 3/8/93,1/17/94,5/27/94  urabe
         2001.6.22  add options '-p' and '-?'  uehira */
+
+#ifdef HAVE_CONFIG_H
+#include        "config.h"
+#endif
 
 #include	<stdio.h>
 #include	<stdlib.h>
 #include	<string.h>
 #include	<sys/types.h>
 #include        <unistd.h>
+
+#include        "subst_func.h"
 
 #define         N_EXABYTE	8
 #define         DEFAULT_PARAM_FILE  "wtape.prm"
@@ -112,6 +118,8 @@ main(argc,argv)
      char *argv[];
 	{
 	int i,ch;
+	extern int optind;
+	extern char *optarg;
 
 	sprintf(param_name,"%s",DEFAULT_PARAM_FILE);
 	while((ch=getopt(argc,argv,"p:?"))!=-1)

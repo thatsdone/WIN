@@ -1,0 +1,9 @@
+$Id: AUTHORS,v 1.2 2002/01/13 06:57:49 uehira Exp $
+
+●卜部  卓(Urabe Taku)  <urabe@eri.u-tokyo.ac.jp>
+  ほとんどすべてのコードの作成．
+
+●植平賢司(Uehira Kenji)  <uehira@sevo.kyushu-u.ac.jp>
+  winadd.c insert_raw.c insert_trg.c の作成．
+  一部プログラムへのコードの追加．
+  automake と autoconf への初期対応．

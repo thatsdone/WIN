@@ -1,10 +1,14 @@
-/* $Id: sends.c,v 1.4 2001/11/14 10:58:56 urabe Exp $ */
+/* $Id: sends.c,v 1.5 2002/01/13 06:57:51 uehira Exp $ */
 /*   program "sends"   2000.3.20 urabe                   */
 /*   2000.3.21 */
 /*   2000.4.17 */
 /*   2000.4.24 strerror() */
 /*   2000.12.20 option -i fixed */
 /*   2001.11.14 strerror(),ntohs() */
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include <stdio.h>
 #include <signal.h>
@@ -13,8 +17,18 @@
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
-#include <time.h>
+
+#if TIME_WITH_SYS_TIME
 #include <sys/time.h>
+#include <time.h>
+#else  /* !TIME_WITH_SYS_TIME */
+#if HAVE_SYS_TIME_H
+#include <sys/time.h>
+#else  /* !HAVE_SYS_TIME_H */
+#include <time.h>
+#endif  /* !HAVE_SYS_TIME_H */
+#endif  /* !TIME_WITH_SYS_TIME */
+
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
@@ -28,6 +42,8 @@
 #if AURORA
 #include "/opt/AURAacs/syncuser.h"
 #endif
+
+#include "subst_func.h"
 
 #define DEBUG       0
 #define DEBUG1      0

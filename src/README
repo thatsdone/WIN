@@ -1,11 +1,14 @@
-# $Id: README,v 1.1 2000/04/30 10:05:22 urabe Exp $
-WIN system package                           19991109
+# $Id: README,v 1.2 2002/01/13 06:57:49 uehira Exp $
+WIN system package                           20011102
 
 To compile, 
 
-(1)customize 'makefile' for your OS,
+(1)run configure. For example
+     ./configure --bindir=/dat/bin/X86
 (2)compile by
      make
+   and install by
+     make install
 (3)add 'bin' directory to your search path,
 (4)run the program 'win' for test by
      cd ../etc

@@ -6,6 +6,10 @@
 /*                99.4.19  byte-order-free */
 /*                2001.2.20 wincpy() */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <stdio.h>
 #include <signal.h>
 #include <stdlib.h>
@@ -13,8 +17,19 @@
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
+
+#if TIME_WITH_SYS_TIME
 #include <sys/time.h>
 #include <time.h>
+#else  /* !TIME_WITH_SYS_TIME */
+#if HAVE_SYS_TIME_H
+#include <sys/time.h>
+#else  /* !HAVE_SYS_TIME_H */
+#include <time.h>
+#endif  /* !HAVE_SYS_TIME_H */
+#endif  /* !TIME_WITH_SYS_TIME */
+
+#include "subst_func.h"
 
 #define DEBUG     0
 #define DEBUG1    0

@@ -1,4 +1,4 @@
-/* $Id: wtape.c,v 1.4 2001/11/14 10:22:30 urabe Exp $ */
+/* $Id: wtape.c,v 1.5 2002/01/13 06:57:52 uehira Exp $ */
 /*
   program "wtape.c"
   8/23/89 - 8/8/90, 6/27/91, 12/24/91, 2/29/92  urabe
@@ -13,6 +13,10 @@
   2001.6.21 add options '-p', '-d' and '?'   (uehira)
 */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include  <stdio.h>
 #include  <stdlib.h>
 #include  <string.h>
@@ -21,10 +25,22 @@
 #include  <signal.h>
 #include  <sys/ioctl.h>
 #include  <sys/stat.h>
-#include  <sys/time.h>
-#include  <time.h>
+
+#if TIME_WITH_SYS_TIME
+#include <sys/time.h>
+#include <time.h>
+#else  /* !TIME_WITH_SYS_TIME */
+#if HAVE_SYS_TIME_H
+#include <sys/time.h>
+#else  /* !HAVE_SYS_TIME_H */
+#include <time.h>
+#endif  /* !HAVE_SYS_TIME_H */
+#endif  /* !TIME_WITH_SYS_TIME */
+
 #include  <sys/mtio.h>
 #include  <unistd.h>
+
+#include "subst_func.h"
 
 #define   DEBUGFLAG 1
 #define   SIZE_MAX  1000000
@@ -46,12 +62,12 @@
   int  wait_min;
   char param_name[FILENAME_MAX];
   char *progname;
-  static char rcsid[]="$Id: wtape.c,v 1.4 2001/11/14 10:22:30 urabe Exp $";
+  static char rcsid[]="$Id: wtape.c,v 1.5 2002/01/13 06:57:52 uehira Exp $";
 
 switch_sig()
   {
   switch_req=1;
-  signal(SIGHUP,switch_sig);
+  signal(SIGHUP,(void *)switch_sig);
   }
 
 strncmp2(s1,s2,i)
@@ -470,6 +486,8 @@ main(argc,argv)
   int i,j,re,cnt,io_error,unit,f_get,last_min,tm[5];
   int ch,max_num,tm1[5],k;
   char max_c[100];
+  extern int optind;
+  extern char *optarg;
 
   if((progname=strrchr(argv[0],'/'))) progname++;
   else progname=argv[0];
@@ -501,9 +519,9 @@ main(argc,argv)
 /* initialize parameters */
   init_param();
 
-  signal(SIGTERM,ctrlc);      /* set up ctrlc routine */
-  signal(SIGINT,ctrlc);     /* set up ctrlc routine */
-  signal(SIGHUP,switch_sig);
+  signal(SIGTERM,(void *)ctrlc);      /* set up ctrlc routine */
+  signal(SIGINT,(void *)ctrlc);     /* set up ctrlc routine */
+  signal(SIGHUP,(void *)switch_sig);
 
   rmemo("COUNT",max_c);
   max_num=atoi(max_c);

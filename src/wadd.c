@@ -1,4 +1,4 @@
-/* $Id: wadd.c,v 1.3 2002/01/07 10:55:54 uehira Exp $ */
+/* $Id: wadd.c,v 1.4 2002/01/13 06:57:52 uehira Exp $ */
 /* program "wadd.c"
   "wadd" puts two win data files together
   7/24/91 - 7/25/91, 4/20/94,6/27/94-6/28/94,7/12/94   urabe
@@ -11,8 +11,14 @@
   2002.1.7  fix bug in pattern file (Uehira)
 */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include  <stdio.h>
 #include  <string.h>
+
+#include "subst_func.h"
 
 #define   DEBUG   0
 #define   MAXSIZE   300000

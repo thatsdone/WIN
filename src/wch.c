@@ -1,4 +1,4 @@
-/* $Id: wch.c,v 1.2 2000/04/30 10:05:23 urabe Exp $ */
+/* $Id: wch.c,v 1.3 2002/01/13 06:57:52 uehira Exp $ */
 /*
 program "wch.c"
 "wch" edits a win format data file by channles
@@ -9,8 +9,14 @@ program "wch.c"
 2000.4.17   wabort
 */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include  <stdio.h>
 #include  <signal.h>
+
+#include "subst_func.h"
 
 #define   DEBUG   0
 #define SWAPL(a) a=(((a)<<24)|((a)<<8)&0xff0000|((a)>>8)&0xff00|((a)>>24)&0xff)

@@ -1,4 +1,4 @@
-/* $Id: ecore.c,v 1.2 2000/04/30 10:05:22 urabe Exp $ */
+/* $Id: ecore.c,v 1.3 2002/01/13 06:57:50 uehira Exp $ */
 /* ddr news program "ecore.c"
   "ecore.c" works with "fromtape.c"
   "ecore.c" makes continuously filtered and decimated data
@@ -6,6 +6,18 @@
   3/13/91-7/31/91, 9/19/91-9/26/91,6/19/92,3/24/93,6/17/94 urabe
   98.6.26 yo2000
 */
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
+#include  <stdio.h>
+#include  <sys/file.h>
+#include  <sys/types.h>
+#include  <sys/stat.h>
+#include  <fcntl.h>
+
+#include "subst_func.h"
 
 /* filter parameters: see SAITO (1978) */
 #define   FILTER    1
@@ -22,12 +34,6 @@
 #define   CHMASK    0xffff    /* max of name channels */
 #define   MAX_FILT  25      /* max of filter order */
 #define   NAMLEN    80
-
-#include  <stdio.h>
-#include  <sys/file.h>
-#include  <sys/types.h>
-#include  <sys/stat.h>
-#include  <fcntl.h>
 
 short out_data[SR*NCH];
 unsigned char in_data[100*1000];

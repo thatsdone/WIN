@@ -1,4 +1,8 @@
-/* $Id: wdiskts.c,v 1.1 2000/05/26 08:43:16 uehira Exp $ */
+/* $Id: wdiskts.c,v 1.2 2002/01/13 06:57:52 uehira Exp $ */
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -7,12 +11,25 @@
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <sys/file.h>
+
+#if TIME_WITH_SYS_TIME
 #include <sys/time.h>
+#include <time.h>
+#else  /* !TIME_WITH_SYS_TIME */
+#if HAVE_SYS_TIME_H
+#include <sys/time.h>
+#else  /* !HAVE_SYS_TIME_H */
+#include <time.h>
+#endif  /* !HAVE_SYS_TIME_H */
+#endif  /* !TIME_WITH_SYS_TIME */
+
 #include <dirent.h>
 #include <signal.h>
 #include <ctype.h>
+#include <errno.h>
 #include <setjmp.h>
-#include <time.h>
+
+#include "subst_func.h"
 
 #define   DEBUG   0
 #define   DEBUG1  0
@@ -24,10 +41,6 @@
 #define REALLOC(type, ptr, n) \
 (type*)realloc((void *)ptr, (size_t)(sizeof(type)*(n)))
 #define FREE(a)         (void)free((void *)(a))
-
-extern const int sys_nerr;
-extern const char *const sys_errlist[];
-extern int errno;
 
 char tbuf[256],latest[20],oldest[20],busy[20],outdir[80];
 char *progname,logfile[256];
@@ -72,7 +85,7 @@ err_sys(ptr)
 {
    perror(ptr);
    write_log(logfile,ptr);
-   if(errno<sys_nerr) write_log(logfile,sys_errlist[errno]);
+   if(strerror(errno)) write_log(logfile,strerror(errno));
    ctrlc();
 }
 

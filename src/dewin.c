@@ -1,4 +1,4 @@
-/* $Id: dewin.c,v 1.2 2000/04/30 10:05:22 urabe Exp $ */
+/* $Id: dewin.c,v 1.3 2002/01/13 06:57:50 uehira Exp $ */
 /* program dewin  1994.4.11-4.20  urabe */
 /*                1996.2.23 added -n option */
 /*                1996.9.12 added -8 option */
@@ -9,9 +9,15 @@
 /*                2000.3.10 abort->wabort */
 /*                2000.3.10 added -m option */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include  <stdio.h>
 #include  <signal.h>
 #include  <math.h>
+
+#include "subst_func.h"
 
 #define   DEBUG   0
 

@@ -1,9 +1,13 @@
-/* $Id: raw_ch.c,v 1.2 2001/11/14 10:22:29 urabe Exp $ */
+/* $Id: raw_ch.c,v 1.3 2002/01/13 06:57:51 uehira Exp $ */
 /* "raw_ch.c"    99.12.8 urabe */
 /*                  modified from raw_raw.c */
 /*                  byte-order-free */
 /*                  2000.3.21 c_save=shr->c; bug fixed */
 /*                  2000.4.24/2001.11.14 strerror() */
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include <stdio.h>
 #include <signal.h>
@@ -12,10 +16,22 @@
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
+
+#if TIME_WITH_SYS_TIME
 #include <sys/time.h>
 #include <time.h>
+#else  /* !TIME_WITH_SYS_TIME */
+#if HAVE_SYS_TIME_H
+#include <sys/time.h>
+#else  /* !HAVE_SYS_TIME_H */
+#include <time.h>
+#endif  /* !HAVE_SYS_TIME_H */
+#endif  /* !TIME_WITH_SYS_TIME */
+
 #include <sys/types.h>
 #include <errno.h>
+
+#include "subst_func.h"
 
 #define DEBUG       0
 #define BELL        0

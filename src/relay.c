@@ -1,4 +1,4 @@
-/* $Id: relay.c,v 1.4 2001/11/14 10:58:56 urabe Exp $ */
+/* $Id: relay.c,v 1.5 2002/01/13 06:57:51 uehira Exp $ */
 /* "relay.c"      5/23/94-5/25/94,6/15/94-6/16/94,6/23/94,3/16/95 urabe */
 /*                3/26/95 check_packet_no; port# */
 /*                5/24/96 added processing of "host table full" */
@@ -11,6 +11,10 @@
 /*                2000.4.24/2001.11.14 strerror() */
 /*                2001.11.14 ntohs() */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <stdio.h>
 #include <signal.h>
 #include <stdlib.h>
@@ -18,12 +22,24 @@
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
+
+#if TIME_WITH_SYS_TIME
 #include <sys/time.h>
 #include <time.h>
+#else  /* !TIME_WITH_SYS_TIME */
+#if HAVE_SYS_TIME_H
+#include <sys/time.h>
+#else  /* !HAVE_SYS_TIME_H */
+#include <time.h>
+#endif  /* !HAVE_SYS_TIME_H */
+#endif  /* !TIME_WITH_SYS_TIME */
+
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
 #include <errno.h>
+
+#include "subst_func.h"
 
 #define DEBUG     0
 #define DEBUG1    0

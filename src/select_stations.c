@@ -1,9 +1,17 @@
-/* $Id: select_stations.c,v 1.1 2000/04/30 10:05:23 urabe Exp $ */
+/* $Id: select_stations.c,v 1.2 2002/01/13 06:57:51 uehira Exp $ */
 /* select_stations  1999.11.9  urabe */
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include <stdio.h>
 #include <math.h>
+
+#include "subst_func.h"
+
 #define NAME_PRG "select_stations"
+
 /*  this program was translated from HYPOMH(HIRATA and MATSU'URA) */
 /*  PLTXY TRANSFORMS (X,Y) TO (ALAT,ALONG) IF IND.EQ.1  */
 /*  PLTXY TRANSFORMS (ALAT,ALONG) TO (X,Y) IF IND.EQ.0  */

@@ -1,4 +1,4 @@
-/* $Id: wed.c,v 1.2 2000/04/30 10:05:23 urabe Exp $ */
+/* $Id: wed.c,v 1.3 2002/01/13 06:57:52 uehira Exp $ */
 /* program "wed.c"
 	"wed" edits a win format data file by time range and channles
 	6/26/91,7/13/92,3/11/93,4/20/94,8/5/94,12/8/94   urabe
@@ -9,8 +9,14 @@
         2000.4.17   wabort
 */
 
+#ifdef HAVE_CONFIG_H
+#include        "config.h"
+#endif
+
 #include	<stdio.h>
 #include	<signal.h>
+
+#include        "subst_func.h"
 
 #define		DEBUG		0
 #define		DEBUG1		0

@@ -1,5 +1,5 @@
 /*
- * $Id: insert_trg.c,v 1.1 2000/05/26 10:52:14 uehira Exp $
+ * $Id: insert_trg.c,v 1.2 2002/01/13 06:57:50 uehira Exp $
  * Insert sorted timeout data to event data.
  *
  *------------ sample of parameter file ------------
@@ -13,6 +13,10 @@
  *
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <stdio.h>
 #include <string.h>
 #include <signal.h>
@@ -20,7 +24,9 @@
 #include <unistd.h>
 #include <dirent.h>
 #include <ctype.h>
+
 #include "win_system.h"
+#include "subst_func.h"
 
 #define DEBUG   0
 #define DEBUG1  0
@@ -39,7 +45,7 @@
 #endif
 
 char *progname;
-static char rcsid[]="$Id: insert_trg.c,v 1.1 2000/05/26 10:52:14 uehira Exp $";
+static char rcsid[]="$Id: insert_trg.c,v 1.2 2002/01/13 06:57:50 uehira Exp $";
 
 struct Cnt_file {
   char  trg_dir[FILENAME_MAX];    /* trg data directory */
@@ -425,7 +431,7 @@ insert_end:
   fclose(fp);
 }
 
-void
+int
 main(int argc, char *argv[])
 {
   FILE  *fp;

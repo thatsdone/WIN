@@ -1,4 +1,10 @@
 /* $Log: wtime.c,v $
+/* Revision 1.2  2002/01/13 06:57:52  uehira
+/* join 'autoconf branch' to 'main branch'
+/*
+/* Revision 1.1.2.1  2001/11/02 11:43:41  uehira
+/* change and add files for automake-1.5 & autoconf-2.13.
+/*
 /* Revision 1.1  2000/08/10 07:40:57  urabe
 /* find_picks : pick file searching server for win
 /* wtime      : time shift tool for WIN format file
@@ -8,11 +14,28 @@ program "wtime.c"
 2000.7.30   urabe
 */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include  <stdio.h>
 #include  <stdlib.h>
 #include  <signal.h>
-#include  <time.h>
+
+#if TIME_WITH_SYS_TIME
+#include <sys/time.h>
+#include <time.h>
+#else  /* !TIME_WITH_SYS_TIME */
+#if HAVE_SYS_TIME_H
+#include <sys/time.h>
+#else  /* !HAVE_SYS_TIME_H */
+#include <time.h>
+#endif  /* !HAVE_SYS_TIME_H */
+#endif  /* !TIME_WITH_SYS_TIME */
+
 #include  <math.h>
+
+#include "subst_func.h"
 
 #define   DEBUG   0
 #define   DEBUG1  0

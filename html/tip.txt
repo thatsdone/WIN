@@ -1,0 +1,25 @@
+●tip集
+
+・time.h と sys/time.h について
+  (http://www.itojun.org/hack/autoconf/autoconf-j.htmlより)
+
+  `time.h'と`sys/time.h'の両方をincludeしていいなら、 
+TIME_WITH_SYS_TIMEを定義します。 古いシステムでは、`sys/time.h'が
+`time.h'をincludeしていて、 しかも`time.h'に複数回includeされた場合に
+対する対処がないことがあります。 この場合、両方のヘッダファイルを明示
+的にincludeしてはいけません。 このマクロは、例えば、struct timevalや
+struct timezoneと、 struct tmを同時に使うプログラムに有効です。 
+HAVE_SYS_TIME_Hとあわせて使うのがよいでしょう。 HAVE_SYS_TIME_Hは 
+AC_CHECK_HEADERS(sys/time.h)マクロを使うと定義されます。
+
+#if TIME_WITH_SYS_TIME
+#include <sys/time.h>
+#include <time.h>
+#else
+#if HAVE_SYS_TIME_H
+#include <sys/time.h>
+#else
+#include <time.h>
+#endif
+#endif
+

@@ -1,9 +1,17 @@
-/* $Id: pick2final.c,v 1.2 2000/04/30 10:05:22 urabe Exp $ */
+/* $Id: pick2final.c,v 1.3 2002/01/13 06:57:51 uehira Exp $ */
 /* pick2final.c */
 /* 8/22/91, 5/22/92, 7/9/92, 97.10.3 urabe */
 /* input (stdin)   : a list of pick file names (ls -l) */
 /* output (stdout) : first line of HYPOMH output + owner of pick file */
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include  <stdio.h>
+
+#include "subst_func.h"
+
 main()
   {
   FILE *fp;

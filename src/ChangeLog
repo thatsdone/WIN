@@ -1,0 +1,42 @@
+$Id: ChangeLog,v 1.2 2002/01/13 06:57:49 uehira Exp $
+
+2002-01-13 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* join 'autoconf branch' to 'main branch'
+	
+2002-01-08 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
+	* send_raw.c : added option '-b' for set max IP packet size or mtu
+	* recvt.c : max packet size increased to 32KB
+
+2002-01-07 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
+	* send_raw.c/recvt.c : now IP-multicast complient
+	* recvt.c : added '-n' option to suppress reports on abnormal packets.
+            (instead of #defining DEBUG2/DEBUG3 as 1)
+
+2002-1-7 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* bug fix in wadd.c
+	  egrep の -F オプションで与えるパターンファイルを作る時に ^ を付
+	  加しておかないとチャンネル番号以外にもマッチングすることがあり
+	  (例えば緯度の値など)，必要なチャンネルがマージしたチャンネルファ
+	  イルから抜けることがある．
+	
+2001-11-19 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* use strerror(3)
+	  order2.c wdiskts.c
+	* MFC: fixed format of 'year' in format#2200 in sub final()
+	  hypomh.f hypomhc.c
+	* MFC: output to current dir if not specified
+	  rtape.c
+	* MFC: fixed bug in port no. with ntohs()
+	  recvnmx.c recvs.c recvstatus.c recvt.c relay.c send_raw.c 
+	  send_raw_old.c sends.c 
+	* MFC: fixed write_log(strerror()) bug
+	  cormeisei.c extraw.c order.c raw_100.c raw_ch.c raw_mon.c 
+	  raw_raw.c recvnmx.c recvs.c recvstatus.c recvt.c relay.c 
+	  send_raw.c send_raw_old.c sends.c
+	
+2001-11-2 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* autmake-1.5 と autoconf-2.13 にとりあえず対応．
+	* 代替関数は subst_func.h で与える予定．現在，strerror(3) と 
+	mktime(3) がある．
+	* FreeBSD-2,3,4，Soralis2.5.1 for sparc (gccのみ)，SunOS-4.1.4
+	(gcc のみ)，Vine Linux 2.0CR ではコンパイル出来た．

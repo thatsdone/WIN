@@ -1,4 +1,4 @@
-/* $Id: wck.c,v 1.4 2000/08/14 05:50:07 urabe Exp $ */
+/* $Id: wck.c,v 1.5 2002/01/13 06:57:52 uehira Exp $ */
 /* 
    program "wck.c"
 	"wck" checks a win format data file
@@ -14,10 +14,16 @@
         2000.8.14 Count and Table modes made independent
 */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
 #include <string.h>
+
+#include "subst_func.h"
 
 #define	DEBUG   0
 #define DEBUG1  0

@@ -1,10 +1,16 @@
-/* $Id: timeout.c,v 1.2 2000/04/30 10:05:23 urabe Exp $ */
+/* $Id: timeout.c,v 1.3 2002/01/13 06:57:52 uehira Exp $ */
 /* program timeout.c     11/21/90,8/27/91,11/18/92  urabe */
 /* "timeout" executes a program with timeout */
 /* usage : timeout [time(sec)] [command line] */
 
+#ifdef HAVE_CONFIG_H
+#include        "config.h"
+#endif
+
 #include	<stdio.h>
 #include	<signal.h>
+
+#include        "subst_func.h"
 
 main(argc,argv)
 	int argc;

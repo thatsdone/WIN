@@ -1,4 +1,4 @@
-/* $Id: rtape.c,v 1.4 2001/11/14 09:49:20 urabe Exp $ */
+/* $Id: rtape.c,v 1.5 2002/01/13 06:57:51 uehira Exp $ */
 /*
   program "rtape.c"
   9/16/89 - 11/06/90, 6/26/91, 10/30/91, 6/26/92  urabe
@@ -13,6 +13,10 @@
   2001.10.15 output to current dir if not specified
 */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include  <stdio.h>
 #include  <stdlib.h>
 #include  <sys/types.h>
@@ -20,6 +24,8 @@
 #include  <sys/ioctl.h>
 #include  <sys/stat.h>
 #include  <sys/mtio.h>
+
+#include "subst_func.h"
 
 #define   DEBUG     0
 #define   TRY_LIMIT 10

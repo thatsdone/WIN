@@ -1,7 +1,15 @@
-/* $Id: file_older.c,v 1.2 2000/04/30 10:05:22 urabe Exp $ */
+/* $Id: file_older.c,v 1.3 2002/01/13 06:57:50 uehira Exp $ */
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+
+#include "subst_func.h"
+
 /*
 	echo [file2] | file_older [file1]
 	echo [file2] [file1] | file_older

@@ -1,5 +1,5 @@
 /*
-  $Id: hypomhc.c,v 1.1 2000/08/02 08:49:38 uehira Exp $
+  $Id: hypomhc.c,v 1.2 2002/01/13 06:57:50 uehira Exp $
    hypomhc.c    : main program for hypocenter location
      original version was made on March 13, 1984 and
      modified by N.H. on Feb. 8, 1985, May 8, 1985.
@@ -32,6 +32,10 @@
 
 #define    CHK_RSLT 0
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include   <stdio.h>
 #include   <stdlib.h>
 #include   <string.h>
@@ -40,6 +44,8 @@
 #ifdef __FreeBSD__
 #include <floatingpoint.h>
 #endif
+
+#include "subst_func.h"
 
 #define    VPVS2   3.0             /*  (Vp/Vs)^2 */
 #define    VPVS    (sqrt(VPVS2))   /*  Vp/Vs */
@@ -1200,11 +1206,11 @@ main(argc, argv)
    else
      amag=9.9;
    fprintf(fp_21, "***** FINAL RESULTS *****\n");
-   fprintf(fp_21, "%3d%3d%3d   %3d%3d%8.3lf%11.5lf%11.5lf%8.3lf%6.1lf\n"
+   fprintf(fp_21, "%3.2d%3.2d%3.2d   %3d%3d%8.3lf%11.5lf%11.5lf%8.3lf%6.1lf\n"
            ,iyr,mnt,idy,ihr,min,cot,alatf,alngf,xm1[2],amag);
-   fprintf(fp_22, "%3d%3d%3d   %3d%3d%8.3lf%11.5lf%11.5lf%8.3lf%6.1lf\n"
+   fprintf(fp_22, "%3.2d%3.2d%3.2d   %3d%3d%8.3lf%11.5lf%11.5lf%8.3lf%6.1lf\n"
            ,iyr,mnt,idy,ihr,min,cot,alatf,alngf,xm1[2],amag);
-   fprintf(stdout, "%3d%3d%3d   %3d%3d%8.3lf%11.5lf%11.5lf%8.3lf%6.1lf\n"
+   fprintf(stdout, "%3.2d%3.2d%3.2d   %3d%3d%8.3lf%11.5lf%11.5lf%8.3lf%6.1lf\n"
            ,iyr,mnt,idy,ihr,min,cot,alatf,alngf,xm1[2],amag);
 
    fprintf(fp_21, "   %s           %8.3lf%9.3lf  %9.3lf  %8.3lf\n",

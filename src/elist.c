@@ -1,4 +1,4 @@
-/* $Id: elist.c,v 1.6 2001/02/13 01:31:07 urabe Exp $ */
+/* $Id: elist.c,v 1.7 2001/02/20 08:26:01 urabe Exp $ */
 /* program elist.c    2/5/91 - 2/25/91 ,  4/16/92, 4/22/92  urabe */
 /*                      6/10/92, 8/18/92, 10/25/92, 6/8/93, 1/5/94  */
 /*      4/21/94,12/5/94,6/2/95 bug in dat_dir fixed */
@@ -6,6 +6,7 @@
 /*      98.6.26 yo2000           */
 /*      2001.2.6 a lot of functions added (options -h/u/p/o/n/s) */
 /*      2001.2.9 use "tac", instead of "tail -r", for Linux */
+/*      2001.2.20 increase size of line-buffer to avoid overflow */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -17,7 +18,8 @@
 #include <ctype.h>
 #include <pwd.h>
 #define   NAMLEN    128
-#define   LINELEN   512
+#define   LINELEN   256
+#define   OUTLEN   4096
 #define   NPICK   10000  /* this is NOT the limit */
 #if defined(__linux__)
 #define   TAIL    "tac"
@@ -194,9 +196,9 @@ main(argc,argv)
     float lat,lon,dep,mag;
     } *pk;
   char pick_dir[NAMLEN],out_file[NAMLEN],dat_dir[NAMLEN],req_dir[3][NAMLEN],
-    filename[NAMLEN],textbuf[LINELEN],group[20],mes1[20],mes2[20],mes3[20],
-    tbuf[LINELEN],gbuf[LINELEN],name_dat[NAMLEN],name_ch[NAMLEN],
-    name_sv[NAMLEN],*ptr,ppfile[NAMLEN],eefile[NAMLEN],outbuf[LINELEN],
+    filename[NAMLEN],textbuf[OUTLEN],group[20],mes1[20],mes2[20],mes3[20],
+    tbuf[OUTLEN],gbuf[OUTLEN],name_dat[NAMLEN],name_ch[NAMLEN],
+    name_sv[NAMLEN],*ptr,ppfile[NAMLEN],eefile[NAMLEN],outbuf[OUTLEN],
     tmpfile[NAMLEN];
   int i,npick,t[6],ton[6],init,j,m,k,kk,no_file,noise,not_noise,re,search,
     npick_lim,c,reverse,hidenoise,kkk,pn,fn,sn,mn,nstn,delete;

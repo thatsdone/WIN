@@ -1,9 +1,7 @@
-/* $Id: recvstatus2.c,v 1.1 2002/06/19 02:31:58 urabe Exp $ */
-/* "recvstatus.c"      5/24/95    urabe */
-/* 97.7.17 two lines of "if() continue;" in the main loop */
-/* 2000.4.24/2001.11.14 strerror() */
-/* 2001.11.14 ntohs() */
-/* 2002.6.19 receive A8/A9 packets from Datamark LS-7000XT */
+/* $Id: recvstatus2.c,v 1.2 2002/07/03 02:16:56 urabe Exp $ */
+/* modified from "recvstatus.c" */
+/* 2002.6.19 recvstatus2 receive A8/A9 packets from Datamark LS-7000XT */
+/* 2002.7.3 fiedx a bug - 'ok' deleted */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -61,7 +59,7 @@ main(argc,argv)
 #define NSMAX 100
   unsigned char rbuf[MAXMESG];
   char tb[100],*progname,logdir[256],logfile[256];
-  int i,j,k,fromlen,n,re,ns,ok,c,rcs;
+  int i,j,k,fromlen,n,re,ns,c,rcs;
   extern int optind;
   extern char *optarg;
   struct sockaddr_in to_addr,from_addr;
@@ -154,13 +152,9 @@ main(argc,argv)
         s[i]->id=rbuf[2];
         s[i]->ch=(rbuf[11]<<8)+rbuf[12];
         s[i]->len=0;
-        ok=1;
         }
-      else if(s[i]->id==rbuf[2] && s[i]->seq==rbuf[14])
-        {
-        ok=1;
-        }
-      if(!ok) continue;
+      else if(!(s[i]->id==rbuf[2] && s[i]->seq==rbuf[14])) continue;
+
       memcpy(s[i]->c+s[i]->len,rbuf+15,(rbuf[3]<<8)+rbuf[4]-12);
       s[i]->len+=(rbuf[3]<<8)+rbuf[4]-12;
       if(rbuf[13]==rbuf[14])

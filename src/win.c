@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.22 2002/06/19 02:31:58 urabe Exp $
+   $Id: win.c,v 1.23 2002/07/03 02:16:56 urabe Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -13,7 +13,7 @@
    98.7.2 yo2000
 */
 #define NAME_PRG      "win"
-#define WIN_VERSION   "2002.6.19"
+#define WIN_VERSION   "2002.7.2"
 #define DEBUG_AP      0   /* for debugging auto-pick */
 /* 5:sr, 4:ch, 3:sec, 2:find_pick, 1:all */
 /************ HOW TO COMPILE THE PROGRAM **************************
@@ -764,7 +764,8 @@ LOCAL
     char unit[9];       /* "m", "m/s", "m/s/s" or "*****" */
     char invert;
     short scale;
-    unsigned short rflag,order;
+    unsigned short rflag;
+    int order;
     long offset;        /* offset */
     float north,east;   /* lat & long in deg */
     float x,y;          /* in km */
@@ -927,7 +928,7 @@ LOCAL
     first_map_others,map_update,com_diag1,map_all,map_period_save,
     com_diag2,mecha_mode,hypo_use_ratio,map_f1x,map_f1y,map_f2x,map_f2y,
     map_n_find,map_line,fit_height,read_hypo,map_interval,mon_offset,
-    just_hypo,just_hypo_offset,list_on_map,sec_block;
+    just_hypo,just_hypo_offset,list_on_map,phypo_format,sec_block;
   float init_lat_init,init_lon_init,init_late_init,init_lone_init;
   char mec_hemi[10],diagnos[50],apbuf[20],monbuf[20],mapbuf[20],
     map_period_unit,dot;
@@ -1934,7 +1935,7 @@ init_process(argc,argv,args)
   double alat,along,x,y;
   struct {float x,y;} md;
   char text_buf[LINELEN],fname[NAMLEN],fname1[NAMLEN],name[STNLEN],unit[7],
-    dpath[NAMLEN],comp[CMPLEN],*ptr,fname2[NAMLEN],sname[STNLEN],c,
+    dpath[NAMLEN],comp[CMPLEN],*ptr,fname2[NAMLEN],sname[STNLEN],c,*cp,
     fname00[NAMLEN],fname01[NAMLEN],fname02[NAMLEN],(*stations)[STNLEN];
   union Swp {
     float f;
@@ -2368,6 +2369,7 @@ just_map:
       if(*text_buf=='#') continue;
       height=0;
       north=east=stcp=stcs=0.0;
+      bzero(comp,CMPLEN);
       sscanf(text_buf,"%s",name);
       if(strlen(name)<3)  /* old channel table format */
         {
@@ -2385,7 +2387,7 @@ just_map:
         ft.idx2ch[ft.n_ch]=sys_ch;
         ft.n_ch_ex=ft.n_ch=kk+1;
         }
-     if(ft.ch2idx[sys_ch]>=0) /* i.e. contained in data file */
+      if(ft.ch2idx[sys_ch]>=0) /* i.e. contained in data file */
         {
         ft.stn[ft.ch2idx[sys_ch]].scale=
           ft.stn[ft.ch2idx[sys_ch]].psup_scale=k;
@@ -2396,19 +2398,25 @@ just_map:
           {
           if(strcmp(stations[jj],name)==0)
             {
-            ft.stn[ft.ch2idx[sys_ch]].order=(n_stations-jj)*10;
-            if(*comp=='V' || *comp=='U' || *comp=='D')
-              {
-              ft.stn[ft.ch2idx[sys_ch]].order+=7;
-              if(strchr(comp+1,'2')!=0)
-                ft.stn[ft.ch2idx[sys_ch]].order+=2;
-              }
-            else if(*comp=='N' || *comp=='S')
+            cp=comp;
+            ft.stn[ft.ch2idx[sys_ch]].order=(n_stations-jj)*300+200;
+            if(*cp=='w') {ft.stn[ft.ch2idx[sys_ch]].order-=40;cp++;}
+            else if(*cp=='s') {ft.stn[ft.ch2idx[sys_ch]].order-=80;cp++;}
+            if(*cp=='V' || *cp=='U' || *cp=='D')
+              ft.stn[ft.ch2idx[sys_ch]].order+=35;
+            else if(*cp=='N' || *cp=='S') ft.stn[ft.ch2idx[sys_ch]].order+=30;
+            else if(*cp=='E' || *cp=='W') ft.stn[ft.ch2idx[sys_ch]].order+=25;
+            else if(*cp=='H') ft.stn[ft.ch2idx[sys_ch]].order+=20;
+            else if(*cp=='X') ft.stn[ft.ch2idx[sys_ch]].order+=15;
+            else if(*cp=='Y') ft.stn[ft.ch2idx[sys_ch]].order+=10;
+            else if(*cp=='Z') ft.stn[ft.ch2idx[sys_ch]].order+=5;
+            else ft.stn[ft.ch2idx[sys_ch]].order-=120;
+            if(strchr(cp+1,'1')!=0 || strchr(cp+1,'L')!=0)
               ft.stn[ft.ch2idx[sys_ch]].order+=4;
-            else if(*comp=='E' || *comp=='W')
-              ft.stn[ft.ch2idx[sys_ch]].order+=1;
-            if(strchr(comp+1,'L')!=0) ft.stn[ft.ch2idx[sys_ch]].order+=2;
-            if(strchr(comp+1,'M')!=0) ft.stn[ft.ch2idx[sys_ch]].order+=1;
+            if(strchr(cp+1,'2')!=0 || strchr(cp+1,'M')!=0)
+              ft.stn[ft.ch2idx[sys_ch]].order+=3;
+            if(strchr(cp+1,'3')!=0 || strchr(cp+1,'H')!=0)
+              ft.stn[ft.ch2idx[sys_ch]].order+=2;
             break;
             }
           jj++;
@@ -7134,16 +7142,21 @@ phypo(x,y,h)
   char textbuf[LINELEN],ulat,ulon;
   if(map_f1x<x && x<map_f2x && map_f1y<y && y<map_f2y)
     {
-    long2time((struct YMDhms *)tm,&h->t);
+    long2time((struct YMDhms *)tmc,&h->t);
+    sec=(double)(h->s)+(double)(h->ss)*0.1;
+/*  long2time((struct YMDhms *)tm,&h->t);
     se=(double)(h->s)+(double)(h->ss)*0.1;
-    adj_sec(tm,&se,tmc,&sec);
+    adj_sec(tm,&se,tmc,&sec);*/
     mag=(double)(h->m)*0.1;
     map_n_find++;
     if(h->lat<0.0) {lat=(-h->lat);ulat='S';}
     else {lat=h->lat;ulat='N';}
     if(h->lon<0.0) {lon=(-h->lon);ulon='W';}
     else {lon=h->lon;ulon='E';}
-    sprintf(textbuf,
+    if(phypo_format==1) sprintf(textbuf,
+      "%02d %02d %02d %02d %02d %04.1f %.4f %.4f %5.1f %.1f %.4s",
+      tmc[0],tmc[1],tmc[2],tmc[3],tmc[4],sec,h->lat,h->lon,h->d,mag,h->o);
+    else sprintf(textbuf,
       "%3d %02d/%02d/%02d %02d:%02d:%04.1f %.4f%1c %.4f%1c %5.1fkm M%.1f %.4s",
       map_n_find,tmc[0],tmc[1],tmc[2],tmc[3],tmc[4],sec,
       lat,ulat,lon,ulon,h->d,mag,h->o);
@@ -7771,9 +7784,9 @@ only:
                   if(mag>=0.0) hypo.m=(int)(mag*10.0+0.5);
                   else hypo.m=(int)(mag*10.0-0.5);
                   hypo.t=time2long(ye,mo,da,ho,mi);
-                  if((hypo.s=(int)se)>=0)
-                    hypo.ss=(int)(se*10.0+0.5)%10;
-                  else hypo.ss=(int)(se*10.0-0.5)%10;
+                  while(se<0.0) {hypo.t--;se+=60.0;}
+                  hypo.s=(int)se;
+                  hypo.ss=(int)(se*10.0+0.5)%10;
                   if(hypo.t<t1) put_time1(1440,hypo.t,
                     &t1,&t1a,ye,mo,da,ho,mi,textbuf);
                   if(hypo.t>t2) put_time2(1440,hypo.t,
@@ -7823,9 +7836,9 @@ is_a_file:  fread(textbuf,1,20,fp);
               if(mag>=0.0) hypo.m=(int)(mag*10.0+0.5);
               else hypo.m=(int)(mag*10.0-0.5);
               hypo.t=time2long(ye,mo,da,ho,mi);
-              if((hypo.s=(int)se)>=0)
-                hypo.ss=(int)(se*10.0+0.5)%10;
-              else hypo.ss=(int)(se*10.0-0.5)%10;
+              while(se<0.0) {hypo.t--;se+=60.0;}
+              hypo.s=(int)se;
+              hypo.ss=(int)(se*10.0+0.5)%10;
               if(hypo.t<t1) put_time1(7200,hypo.t,
                 &t1,&t1a,ye,mo,da,ho,mi,textbuf);
               if(hypo.t>t2) put_time2(7200,hypo.t,
@@ -7853,8 +7866,10 @@ is_a_file:  fread(textbuf,1,20,fp);
               hypo.m=hypob.time[7];
               hypo.t=time2long(hypob.time[0],hypob.time[1],
                 hypob.time[2],hypob.time[3],hypob.time[4]);
-              hypo.s=hypob.time[5];
-              hypo.ss=hypob.time[6];
+              se=(double)hypob.time[5]+0.1*(double)hypob.time[6];
+              while(se<0.0) {hypo.t--;se+=60.0;}
+              hypo.s=(int)se;
+              hypo.ss=(int)(se*10.0+0.5)%10;
               if(hypo.t<t1) put_time1(7200,hypo.t,&t1,&t1a,
                 hypob.time[0],hypob.time[1],hypob.time[2],
                 hypob.time[3],hypob.time[4],textbuf);
@@ -8356,8 +8371,8 @@ proc_map()
   {
   double alat,along,xd,yd,x_cent,y_cent,cs,sn,arg,ala,alo;
   int i,j,x,y,xzero,yzero,plot,ring_bell;
-  char textbuf[LINELEN],textbuf1[LINELEN],textbuf2[LINELEN],
-    ulat,ulon;
+  static char textbuf[LINELEN],textbuf1[LINELEN],textbuf2[LINELEN];
+  char ulat,ulon;
   struct YMDhms tm;
 
   if(map_dir)
@@ -8388,8 +8403,7 @@ proc_map()
       if(map_mode==MODE_TS3 && x>=map_f2x+MARGIN*3/2 &&
           ((y>map_f1y && y<map_f2y) || y>MARGIN*2+height_horiz))
         {
-        i=sel.t1+(int)((double)(x-(map_f2x+MARGIN*3/2))*
-          (double)(sel.t2-sel.t1)
+        i=sel.t1+(int)((double)(x-(map_f2x+MARGIN*3/2))*(double)(sel.t2-sel.t1)
           /(double)(width_dpy-map_f2x-MARGIN*3/2));
         long2time(&tm,(long *)&i);
         sprintf(textbuf,"  %02d/%02d/%02d %02d:%02d  ",
@@ -8477,8 +8491,7 @@ proc_map()
       if(map_mode==MODE_NORMAL) put_text(&dpy,WIDTH_TEXT*75,
         height_dpy-MARGIN+Y_LINE1,textbuf1,BF_SI);
       else if(map_mode==MODE_FIND1 || map_mode==MODE_FIND2)
-        put_text(&dpy,WIDTH_TEXT*75,
-        height_dpy-MARGIN+Y_LINE1,textbuf1,BF_S);
+        put_text(&dpy,WIDTH_TEXT*75,height_dpy-MARGIN+Y_LINE1,textbuf1,BF_S);
     }
   else if(event.mse_trig==MSE_BUTTON && event.mse_dir==MSE_DOWN)
     {
@@ -8489,9 +8502,8 @@ proc_map()
       map_f1y=map_f2y=y;
       if(map_mode==MODE_FIND1 && y>MARGIN && y<height_dpy-MARGIN)
         map_mode=MODE_FIND2;
-      else if(map_mode==MODE_TS1 && y>MARGIN &&
-          x<width_horiz && y<MARGIN+height_horiz)
-        map_mode=MODE_TS2;
+      else if(map_mode==MODE_TS1 && y>MARGIN && x<width_horiz &&
+             y<MARGIN+height_horiz) map_mode=MODE_TS2;
       else
         {
         if(map_mode==MODE_TS1) put_func(func_map[TMSP],TMSP,0,0,0);
@@ -8691,8 +8703,7 @@ change_dep:
           if(sel.dep2_idx!=i)
             {
             sel.dep2=depsteps[sel.dep2_idx=i];
-            if(sel.dep1>sel.dep2)
-              sel.dep1=depsteps[sel.dep1_idx=sel.dep2_idx];
+            if(sel.dep1>sel.dep2) sel.dep1=depsteps[sel.dep1_idx=sel.dep2_idx];
             ring_bell=0;
             }
           }
@@ -8973,6 +8984,8 @@ change_dep:
       draw_rect(map_f1x,map_f1y,map_f2x,map_f2y,LPTN_FF,BF_S,&dpy);
       draw_rect(map_f1x-1,map_f1y-1,map_f2x+1,map_f2y+1,LPTN_FF,BF_S,&dpy);
       map_n_find=0;
+      if(event.mse_code==MSE_BUTNR) phypo_format=1;
+      else phypo_format=0;
       refresh(1);
       map_mode=MODE_NORMAL;
       }

@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.5 2000/08/02 05:34:36 urabe Exp $
+   $Id: win.c,v 1.6 2000/08/09 09:45:23 urabe Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -13,7 +13,7 @@
    98.7.2 yo2000
 */
 #define NAME_PRG      "win"
-#define VERSION       "2000.7.31"
+#define VERSION       "2000.8.9"
 #define DEBUG_AP      0   /* for debugging auto-pick */
 /* 5:sr, 4:ch, 3:sec, 2:find_pick, 1:all */
 /************ HOW TO COMPILE THE PROGRAM **************************
@@ -4184,6 +4184,15 @@ main(argc,argv)
   extern int optind;
   extern char *optarg;
   lPoint pts[10];
+
+#ifdef __FreeBSD__
+#include <floatingpoint.h>
+#endif
+
+#ifdef __FreeBSD__
+  /* allow divide by zero -- Inf */
+  fpsetmask(fpgetmask() & ~(FP_X_DZ|FP_X_INV));
+#endif
 
   if(ptr=getenv("WIN_PICK_SERVER")) strcpy(ft.pick_server,ptr);
   else *ft.pick_server=0;

@@ -10,7 +10,7 @@
 /* Define debugging mode or not */
 #undef DEBUG
 
-/* Define debugging mode or not */
+/* Define SunOS4 or not */
 #undef SUNOS4
 
 /* Define to `int' if <sys/types.h> doesn't define.  */

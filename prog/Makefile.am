@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.11 2004/09/20 12:43:14 tsuru Exp $
+# $Id: Makefile.am,v 1.12 2004/09/21 10:56:32 tsuru Exp $
 #
 #  Makefile.am in prog subdirectory.
 #
@@ -21,7 +21,7 @@ WIN_SHELL_BIN = w2m
 
 # Tcl/Tk script
 WIN_WISH_PROG = win_m.in shmx.in shmz.in
-WIN_WISH_BIN = win_m shmx
+WIN_WISH_BIN = win_m shmx shmz
 
 # perl script
 WIN_PERL_PROG = ch2mf.in ee_manager.in final2mf.in wincd.in pick2pick.in

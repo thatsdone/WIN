@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.29 2005/03/17 06:59:08 uehira Exp $
+# $Id: Makefile.am,v 1.30 2005/03/17 19:03:54 uehira Exp $
 #
 
 if SUNOS4
@@ -30,6 +30,14 @@ if IPV6
 IPV6_PGM = relaym
 else
 IPV6_PGM =
+endif
+
+if GC_MEMORY_LEAK_TEST
+GC_CHECK_INCLUDE = gc_leak_detector.h
+GC_CHECK_LIB = -lgc
+else
+GC_CHECK_INCLUDE =
+GC_CHECK_LIB =
 endif
 
 ONLINE_SO=recvt send_raw recvstatus recvstatus2 send_raw_old relay\
@@ -119,7 +127,8 @@ select_stations_LDADD = -lm
 
 wchch_SOURCES = wchch.c $(SUBFUNC_H)
 
-wchasn_SOURCES = wchasn.c $(WIN_UTIL) $(SUBFUNC_H)
+wchasn_SOURCES = wchasn.c $(WIN_UTIL) $(SUBFUNC_H) $(GC_CHECK_INCLUDE)
+wchasn_LDADD = $(GC_CHECK_LIB)
 
 pick2tseis_SOURCES = pick2tseis.c $(SUBFUNC_H)
 
@@ -143,9 +152,11 @@ wintowin_LDADD = @LIBSHMGET@
 wtime_SOURCES = wtime.c $(SUBFUNC_H)
 wtime_LDADD = -lm
 
-winadd_SOURCES = winadd.c $(WIN_UTIL) $(SUBFUNC_H)
+winadd_SOURCES = winadd.c $(WIN_UTIL) $(SUBFUNC_H) $(GC_CHECK_INCLUDE)
+winadd_LDADD = $(GC_CHECK_LIB)
 
-wck_wdisk_SOURCES = wck_wdisk.c $(WIN_UTIL) $(SUBFUNC_H)
+wck_wdisk_SOURCES = wck_wdisk.c $(WIN_UTIL) $(SUBFUNC_H) $(GC_CHECK_INCLUDE)
+wck_wdisk_LDADD = $(GC_CHECK_LIB)
 
 rtape_SOURCES = rtape.c $(SUBFUNC_H)
 
@@ -165,7 +176,8 @@ file_older_SOURCES = file_older.c $(SUBFUNC_H)
 
 raw2mon_SOURCES = raw2mon.c $(SUBFUNC_H)
 
-win2raw_SOURCES = win2raw.c $(WIN_UTIL) $(SUBFUNC_H)
+win2raw_SOURCES = win2raw.c $(WIN_UTIL) $(SUBFUNC_H) $(GC_CHECK_INCLUDE)
+win2raw_LDADD = $(GC_CHECK_LIB)
 
 pmon_SOURCES = pmon.c $(SUBFUNC_H)
 pmon_LDADD = -lm
@@ -209,9 +221,11 @@ raw_ch_LDADD = @LIBSHMGET@
 extraw_SOURCES = extraw.c $(SUBFUNC_H)
 extraw_LDADD = @LIBSHMGET@
 
-insert_raw_SOURCES = insert_raw.c $(WIN_UTIL) $(SUBFUNC_H)
+insert_raw_SOURCES = insert_raw.c $(WIN_UTIL) $(SUBFUNC_H) $(GC_CHECK_INCLUDE)
+insert_raw_LDADD = $(GC_CHECK_LIB)
 
-insert_trg_SOURCES = insert_trg.c $(WIN_UTIL) $(SUBFUNC_H)
+insert_trg_SOURCES = insert_trg.c $(WIN_UTIL) $(SUBFUNC_H) $(GC_CHECK_INCLUDE)
+insert_trg_LDADD = $(GC_CHECK_LIB)
 
 find_picks_SOURCES = find_picks.c $(SUBFUNC_H)
 
@@ -258,5 +272,5 @@ sends_LDADD = @LIBNSL@ @LIBSOCKET@
 recvs_SOURCES = recvs.c $(SUBFUNC_H)
 recvs_LDADD = @LIBNSL@ @LIBSOCKET@
 
-raw_time_SOURCES = raw_time.c $(SUBFUNC_H) $(DAEMON_MODE) $(WIN_LOG) $(WIN_UTIL)
-raw_time_LDADD = -lm @LIBSHMGET@
+raw_time_SOURCES = raw_time.c $(SUBFUNC_H) $(DAEMON_MODE) $(WIN_LOG) $(WIN_UTIL) $(GC_CHECK_INCLUDE)
+raw_time_LDADD = -lm @LIBSHMGET@ $(GC_CHECK_LIB)

@@ -1,4 +1,4 @@
-/* $Id: raw_time.c,v 1.2 2005/03/17 08:32:36 uehira Exp $ */
+/* $Id: raw_time.c,v 1.3 2005/03/17 19:03:54 uehira Exp $ */
 
 /* raw_time.c -- online version of wtime(1W) */
 
@@ -40,6 +40,10 @@
 #include <syslog.h>
 #include <math.h>
 
+#ifdef GC_MEMORY_LEAK_TEST
+#include "gc_leak_detector.h"
+#endif
+
 #include "daemon_mode.h"
 #include "subst_func.h"
 #include "win_log.h"
@@ -49,7 +53,7 @@
 #define MAXMESG   2048
 
 static char rcsid[] =
-  "$Id: raw_time.c,v 1.2 2005/03/17 08:32:36 uehira Exp $";
+  "$Id: raw_time.c,v 1.3 2005/03/17 19:03:54 uehira Exp $";
 
 char *progname, *logfile;
 int  daemon_mode, syslog_mode;
@@ -257,7 +261,7 @@ main(int argc, char *argv[])
 	  
 	if (fixbuf_num < sr) {
 	  /*  printf("sr=%d\n",sr); */
-	  fixbuf1 = (long *)realloc(fixbuf1, (size_t)(sr * sizeof(long) + 1));
+	  fixbuf1 = (long *)realloc(fixbuf1, (size_t)(sr * sizeof(long)));
 	  fixbuf2 = (long *)realloc(fixbuf2, (size_t)(sr * sizeof(long)));
 	  if (fixbuf1 == NULL || fixbuf2 == NULL)
 	    err_sys("fixbuf realloc");
@@ -341,6 +345,9 @@ main(int argc, char *argv[])
       write_log("reset");
       goto reset;
     }
+#ifdef GC_MEMORY_LEAK_TEST
+    CHECK_LEAKS();
+#endif
   }  /* for (;;) */
 }
 

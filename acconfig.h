@@ -21,3 +21,6 @@
 
 /* tm_gmtoff is a member of struct tm or not */
 #undef HAVE_STRUCT_TM_GMTOFF
+
+/* Define boehm-gc memory leak checking or not */
+#undef GC_MEMORY_LEAK_TEST

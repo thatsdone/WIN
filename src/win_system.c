@@ -1,4 +1,4 @@
-/* $Id: win_system.c,v 1.9 2005/03/17 06:59:09 uehira Exp $ */
+/* $Id: win_system.c,v 1.10 2005/03/17 19:03:54 uehira Exp $ */
 /* win system utility functions */
 
 #ifdef HAVE_CONFIG_H
@@ -9,6 +9,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+
+#ifdef GC_MEMORY_LEAK_TEST
+#include "gc_leak_detector.h"
+#endif
 
 #include "win_system.h"
 #include "subst_func.h"
@@ -623,6 +627,8 @@ win2fix(unsigned char *ptr, long *abuf, long *sys_ch, long *sr)
   case 0:
     for (i = 1; i < s_rate; i += 2) {
       abuf[i] = abuf[i - 1] + ((*(char *)dp) >> 4);
+      if (i == s_rate - 1)
+	break;
       abuf[i + 1] = abuf[i] + (((char)(*(dp++) << 4)) >> 4);
     }
     break;

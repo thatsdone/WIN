@@ -6,6 +6,7 @@
 /*                99.4.19  byte-order-free */
 /*                2001.2.20 wincpy() */
 /*                2002.5.11 pre/post */
+/*                2002.8.4 fixed bug in advancing SHM pointers */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -422,19 +423,22 @@ main(argc,argv)
     if(rbuf[0]==0xA1)
       {
       for(i=0;i<6;i++) if(rbuf[i+1]!=tm[i]) break;
-      if(i==6)  /* same time */
+      if(i==6)  /* same time -> just extend the sec block */
         {
-        nn=wincpy(ptr,rbuf+7,n-7);
+        if((nn=wincpy(ptr,rbuf+7,n-7))>0) sh->c++;
         ptr+=nn;
         uni=time(0);
         ptr_size[4]=uni>>24;  /* tow (H) */
         ptr_size[5]=uni>>16;
         ptr_size[6]=uni>>8;
         ptr_size[7]=uni;      /* tow (L) */
+#if DEBUG
+        if(nn>0) printf("same:nn=%d ptr=%d sh->p=%d\n",nn,ptr,sh->p);
+#endif
         }
-      else
+      else /* new time -> close the previous sec block */
         {
-        if((uni=ptr-ptr_size)>14)
+        if((uni=ptr-ptr_size)>14) /* data exist in the previous sec block */
           {
           ptr_size[0]=uni>>24;  /* size (H) */
           ptr_size[1]=uni>>16;
@@ -445,8 +449,15 @@ main(argc,argv)
           for(i=8;i<14;i++) printf("%02X",ptr_size[i]);
           printf(" : %d > %d\n",uni,ptr_size-sh->d);
 #endif
+          sh->r=sh->p;      /* latest */
+#if DEBUG
+          printf("sh->r=%d size=%d\n",sh->r,mklong(sh->d+sh->r));
+          if(mklong(sh->d+sh->r)<0 || mklong(sh->d+sh->r)>10000) getchar();
+#endif
+          if(ptr>sh->d+sh->pl) ptr=sh->d;
+          sh->p=ptr-sh->d;
           }
-        else ptr=ptr_size;
+        else ptr=ptr_size; /* no data in the previous sec block */
         if(!(ts=check_ts(rbuf+1,pre,post)))
           {
 #if DEBUG2
@@ -459,16 +470,12 @@ main(argc,argv)
           }
         else
           {
-          sh->r=sh->p;      /* latest */
-          if(ptr>sh->d+sh->pl) ptr=sh->d;
-          sh->p=ptr-sh->d;
-          sh->c++;
           ptr_size=ptr;
           ptr+=4;   /* size */
           ptr+=4;   /* time of write */
           memcpy(ptr,rbuf+1,6);
           ptr+=6;
-          nn=wincpy(ptr,rbuf+7,n-7);
+          if((nn=wincpy(ptr,rbuf+7,n-7))>0) sh->c++;
           ptr+=nn;
           memcpy(tm,rbuf+1,6);
           uni=time(0);
@@ -476,6 +483,9 @@ main(argc,argv)
           ptr_size[5]=uni>>16;
           ptr_size[6]=uni>>8;
           ptr_size[7]=uni;      /* tow (L) */
+#if DEBUG
+          if(nn>0) printf("new:nn=%d ptr=%d sh->p=%d\n",nn,ptr,sh->p);
+#endif
           }
         }
       }

@@ -1,4 +1,4 @@
-# $Id: makefile,v 1.8 2000/08/14 10:51:00 urabe Exp $
+# $Id: makefile,v 1.9 2000/12/22 01:01:59 urabe Exp $
 #########################
 #                       #
 # win system makefile   #
@@ -35,17 +35,18 @@ ONL_X86=recvts
 ONLINE_SO=recvt send_raw recvstatus send_raw_old relay $(ONLINE_SOL2)
 TAPE_USER_MATH=pmon elist events
 ONLINE_MATH=ecore
+OFFLINE_USER_MATH=wtime
 OFFLINE_MATH=dewin select_stations
 #OFFLINE_MATH=dewin select_stations hypomhc
 OFFLINE_F77=hypomh
 
 OFFLINE_USER=win $(OFFLINE_F77) wed wck wadd $(OFFLINE_MATH) wchch pick2tseis \
              wch pick2finalb pick2final finalb2final final2finalb finalb2seis \
-             wtime
+             $(OFFLINE_USER_MATH)
 TAPE_USER=rtape fromtape wdisk wdiskts ras2rpdl ras2lips file_older raw2mon \
           $(TAPE_USER_MATH)
 ONLINE=order raw_mon wtape setexb timeout raw_raw raw_100 cormeisei shmdump \
-       raw_ch extraw order2 insert_raw insert_trg \
+       raw_ch extraw order2 insert_raw insert_trg find_picks \
        $(ONLINE_SO) $(ONLINE_MATH) $(ONL_X86)
 
 ONL_OPT_=robot
@@ -83,7 +84,7 @@ cleanbin :
 $(ONLINE_SO) :
 	cc $@.c $(CFLAGS) $(SF) -o $@
 
-$(TAPE_USER_MATH) $(ONLINE_MATH) $(OFFLINE_MATH) :
+$(TAPE_USER_MATH) $(ONLINE_MATH) $(OFFLINE_MATH) $(OFFLINE_USER_MATH):
 	cc $@.c $(CFLAGS) -lm -o $@
 
 win :

@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.18 2002/01/13 06:57:52 uehira Exp $
+   $Id: win.c,v 1.19 2002/06/11 00:21:28 urabe Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -13,7 +13,7 @@
    98.7.2 yo2000
 */
 #define NAME_PRG      "win"
-#define WIN_VERSION   "2002.1.9"
+#define WIN_VERSION   "2002.6.11"
 #define DEBUG_AP      0   /* for debugging auto-pick */
 /* 5:sr, 4:ch, 3:sec, 2:find_pick, 1:all */
 /************ HOW TO COMPILE THE PROGRAM **************************
@@ -2157,7 +2157,7 @@ init_process(argc,argv,args)
   if(flag_save) open_save();
   make_sec_table();
   /* ft.n_ch is fixed */
-  if(ft.n_ch*HEIGHT_TEXT>32767) pixels_per_trace=32767/ft.n_ch;
+  if(ft.n_ch*(HEIGHT_TEXT+1)>32767) pixels_per_trace=32767/ft.n_ch;
   else pixels_per_trace=HEIGHT_TEXT+1;
   ppt_half=pixels_per_trace/2;
   if((ft.pos2idx=(short *)malloc(sizeof(*ft.pos2idx)*ft.n_ch))==0)

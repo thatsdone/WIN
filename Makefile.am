@@ -2,3 +2,6 @@
 SUBDIRS = src prog man etc pick
 
 EXTRA_DIST = README.Cygwin
+
+md5: dist
+	md5 $(distdir).tar.gz > $(distdir).tar.gz.md5

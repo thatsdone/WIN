@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.37 2005/01/07 06:25:03 urabe Exp $
+   $Id: win.c,v 1.38 2005/01/12 08:47:37 uehira Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -6020,15 +6020,14 @@ proc_main()
         case RFSH:
           raise_ttysw(0);
 #if HINET_EXTENTION_3
-	  if (event.mse_code==MSE_BUTNR&&flag_hypo==1) {
+	  if (event.mse_code==MSE_BUTNR&&ft.hypo.valid==1) {
 	    put_reverse(&dpy,x_func(RFSH),0,WB,MARGIN);
 	    replot_mon(1);
 	    put_reverse(&dpy,x_func(RFSH),0,WB,MARGIN);
 	  }
-	  if (event.mse_code==MSE_BUTNM&&flag_hypo==1){
+	  if (event.mse_code==MSE_BUTNM&&ft.hypo.valid==1){
 	    put_reverse(&dpy,x_func(RFSH),0,WB,MARGIN);
 	    replot_mon(-1);
-	    flag_hypo=1;
 	    put_reverse(&dpy,x_func(RFSH),0,WB,MARGIN);
 	  }
 #endif
@@ -7287,6 +7286,9 @@ replot_mon(int replot_locate)
   char textbuf[LINELEN],tbuf[20];
   unsigned char *buf_mon,*ptr;
   short i2p;
+  int save_flag_change;
+
+  save_flag_change=flag_change;
 /* define bitmap info */
   /* define_bm(&info,BM_MEM,width_info,height_info,0); */
   put_white(&info,0,0,width_info,height_info);
@@ -7389,6 +7391,7 @@ replot_mon(int replot_locate)
   }
   if(replot_locate==1) locate(0,0);
   if(replot_locate>=0) get_calc();
+  flag_change=save_flag_change;
   return 0;
 }
 reorder(){

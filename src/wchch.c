@@ -1,10 +1,11 @@
-/* $Id: wchch.c,v 1.3 2002/01/13 06:57:52 uehira Exp $ */
+/* $Id: wchch.c,v 1.4 2003/10/29 14:44:12 urabe Exp $ */
 /*
 program "wchch.c"
 "wchch" changes channel no. in a win format data file
 1997.11.22   urabe
 1999.4.20    byte-order free
 2000.4.17   wabort
+2003.10.29 exit()->exit(0)
 */
 
 #ifdef HAVE_CONFIG_H
@@ -23,7 +24,7 @@ program "wchch.c"
 unsigned char *buf,*outbuf;
 unsigned short ch_table[65536];
 
-wabort() {exit();}
+wabort() {exit(0);}
 
 read_chfile(chfile)
   char *chfile;

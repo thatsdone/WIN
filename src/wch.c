@@ -1,4 +1,4 @@
-/* $Id: wch.c,v 1.6 2002/05/07 08:57:14 urabe Exp $ */
+/* $Id: wch.c,v 1.7 2003/10/29 14:44:12 urabe Exp $ */
 /*
 program "wch.c"
 "wch" edits a win format data file by channles
@@ -8,6 +8,7 @@ program "wch.c"
 1999.4.20 byte-order free
 2000.4.17 wabort
 2002.2.18 delete duplicated data & negate_channel
+2003.10.29 exit()->exit(0)
 */
 
 #ifdef HAVE_CONFIG_H
@@ -26,7 +27,7 @@ unsigned char *buf,*outbuf;
 unsigned char ch_table[65536];
 int negate_channel;
 
-wabort() {exit();}
+wabort() {exit(0);}
 
 read_chfile(chfile)
   char *chfile;

@@ -1,4 +1,4 @@
-/* $Id: dewin.c,v 1.3 2002/01/13 06:57:50 uehira Exp $ */
+/* $Id: dewin.c,v 1.4 2003/10/29 14:44:12 urabe Exp $ */
 /* program dewin  1994.4.11-4.20  urabe */
 /*                1996.2.23 added -n option */
 /*                1996.9.12 added -8 option */
@@ -8,6 +8,7 @@
 /*                1999.7.19 endian-free */
 /*                2000.3.10 abort->wabort */
 /*                2000.3.10 added -m option */
+/*                2003.10.29 exit()->exit(0) */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -43,7 +44,7 @@ struct Filter
    double gn_filt;     /* gain factor of filter */ 
 };
 
-wabort() {exit();}
+wabort() {exit(0);}
 
 adj_time(tm)
   int *tm;

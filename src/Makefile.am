@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.26 2004/12/03 14:07:10 uehira Exp $
+# $Id: Makefile.am,v 1.27 2004/12/28 07:10:27 uehira Exp $
 #
 
 if SUNOS4
@@ -23,7 +23,7 @@ endif
 if NO_X_SRC
 OFFLINE_X=
 else
-OFFLINE_X=win
+OFFLINE_X=win win32
 endif
 
 if IPV6
@@ -92,6 +92,11 @@ win_SOURCES = win.c $(SUBFUNC_H)
 win_CFLAGS = @X_CFLAGS@ $(AM_CFLAGS)
 win_LDFLAGS = @X_LIBS@
 win_LDADD = @LIBNSL@ @LIBSOCKET@ -lm -lX11
+
+win32_SOURCES = win.c $(SUBFUNC_H)
+win32_CFLAGS = @X_CFLAGS@ $(AM_CFLAGS) -DHINET_WIN32=1
+win32_LDFLAGS = @X_LIBS@
+win32_LDADD = @LIBNSL@ @LIBSOCKET@ -lm -lX11
 
 wed_SOURCES = wed.c $(SUBFUNC_H)
 

@@ -1,5 +1,5 @@
 /*
-  $Id: hypomhc.c,v 1.3 2003/05/24 15:21:55 uehira Exp $
+  $Id: hypomhc.c,v 1.4 2003/05/25 12:40:01 uehira Exp $
    hypomhc.c    : main program for hypocenter location
      original version was made on March 13, 1984 and
      modified by N.H. on Feb. 8, 1985, May 8, 1985.
@@ -769,7 +769,8 @@ main(argc, argv)
               sta[i].st1,sta[i].se1,sta[i].fmp,sta[i].amp,
               sta[i].alat,sta[i].alng,sta[i].ahgt,
               sta[i].stcp,sta[i].stcs);
-      if(sta[i].alat==9999.0||sta[i].alng==9999.0||sta[i].ahgt==9.999){
+      /*  if(sta[i].alat==9999.0||sta[i].alng==9999.0||sta[i].ahgt==9.999){ */
+      if ((sta[i].alat == 0.0) && (sta[i].alng == 0.0)) {
          fprintf(fp_21, "*** %s IS NOT CATALOGUED ***\n", sta[i].sa1);
          continue;
       }

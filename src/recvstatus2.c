@@ -1,4 +1,4 @@
-/* $Id: recvstatus2.c,v 1.4 2002/07/11 05:52:58 urabe Exp $ */
+/* $Id: recvstatus2.c,v 1.5 2002/12/17 03:51:40 uehira Exp $ */
 /* modified from "recvstatus.c" */
 /* 2002.6.19 recvstatus2 receive A8/A9 packets from Datamark LS-7000XT */
 /* 2002.7.3 fixed a bug - 'ok' deleted */
@@ -66,7 +66,7 @@ main(argc,argv)
   extern char *optarg;
   struct sockaddr_in to_addr,from_addr;
   unsigned short to_port;
-  struct {
+  struct infoarray {
     int adrs;
     int port;
     int id;
@@ -75,7 +75,7 @@ main(argc,argv)
     int seq;
     char c[4000];
     int len;
-    } **s;
+    } *s[NSMAX];
   DIR *dir_ptr;
   FILE *fp;
 
@@ -149,7 +149,7 @@ printf("ns=%d i=%d\n",ns,i);
           for(i=0;i<ns;i++) free(s[i]);
           i=ns=0;
           } 
-        s[i]=malloc(sizeof(*s));
+        s[i]=malloc(sizeof(struct infoarray));
         s[i]->adrs=from_addr.sin_addr.s_addr; 
         s[i]->port=from_addr.sin_port; 
         s[i]->seq=1;

@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.28 2005/03/07 09:40:35 uehira Exp $
+# $Id: Makefile.am,v 1.29 2005/03/17 06:59:08 uehira Exp $
 #
 
 if SUNOS4
@@ -35,7 +35,7 @@ endif
 ONLINE_SO=recvt send_raw recvstatus recvstatus2 send_raw_old relay\
 	recvnmx $(ONL_SOL2) $(IPV6_PGM)
 TAPE_USER_MATH=pmon elist events
-ONLINE_MATH=ecore ecore2
+ONLINE_MATH=ecore ecore2 raw_time
 OFFLINE_USER_MATH=wtime
 #OFFLINE_MATH=dewin select_stations
 OFFLINE_MATH=dewin select_stations hypomhc wintosac
@@ -86,6 +86,7 @@ install-exec-hook:
 	(rm -f @bindir@/relayd; cd @bindir@ && @LN_S@ relay relayd)
 	(rm -f @bindir@/relaymd; cd @bindir@ && @LN_S@ relaym relaymd)
 	(rm -f @bindir@/raw_mond; cd @bindir@ && @LN_S@ raw_mon raw_mond)
+	(rm -f @bindir@/raw_timed; cd @bindir@ && @LN_S@ raw_time raw_timed)
 	(rm -f @bindir@/raw_rawd; cd @bindir@ && @LN_S@ raw_raw raw_rawd)
 	(rm -f @bindir@/wdisktsd; cd @bindir@ && @LN_S@ wdiskts wdisktsd)
 
@@ -256,3 +257,6 @@ sends_LDADD = @LIBNSL@ @LIBSOCKET@
 
 recvs_SOURCES = recvs.c $(SUBFUNC_H)
 recvs_LDADD = @LIBNSL@ @LIBSOCKET@
+
+raw_time_SOURCES = raw_time.c $(SUBFUNC_H) $(DAEMON_MODE) $(WIN_LOG) $(WIN_UTIL)
+raw_time_LDADD = -lm @LIBSHMGET@

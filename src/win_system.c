@@ -1,4 +1,4 @@
-/* $Id: win_system.c,v 1.8 2003/11/03 10:08:02 uehira Exp $ */
+/* $Id: win_system.c,v 1.9 2005/03/17 06:59:09 uehira Exp $ */
 /* win system utility functions */
 
 #ifdef HAVE_CONFIG_H
@@ -571,4 +571,199 @@ win_get_chhdr(unsigned char *ptr, WIN_ch *chnum, WIN_sr *sr)
     gsize++;
 
   return (gsize);
+}
+
+/* returns group size in bytes */
+/* High sampling rate version */
+int
+win2fix(unsigned char *ptr, long *abuf, long *sys_ch, long *sr)
+     /*       unsigned char *ptr; /* input */
+     /*       long *abuf;         /* output */
+     /*       long *sys_ch;       /* sys_ch */
+     /*       long *sr;           /* sr */
+{
+  int            b_size, g_size;
+  int            i;
+  long           s_rate;
+  unsigned char  *dp;
+  unsigned long  gh;
+  short          shreg;
+  int            inreg;
+
+  /* channel number */
+  *sys_ch = (long)((((WIN_ch)ptr[0]) << 8) + (WIN_ch)ptr[1]);
+
+  /* sampling rate */
+  if ((ptr[2] & 0x80) == 0x0) {  /* channel header = 4 byte */
+    *sr = s_rate = (long)((WIN_sr)ptr[3] + (((WIN_sr)(ptr[2] & 0x0f)) << 8));
+    dp = ptr + 4;
+  } else {                       /* channel header = 5 byte */
+    *sr = s_rate = (long)((WIN_sr)ptr[4] + (((WIN_sr)ptr[3]) << 8)
+			  + (((WIN_sr)(ptr[2] & 0x0f)) << 16));
+    dp = ptr + 5;
+  }
+
+  /* size */
+  b_size = (ptr[2] >> 4) & 0x7;
+  if (b_size)
+    g_size = b_size * (s_rate - 1) + 8;
+  else
+    g_size = (s_rate >> 1) + 8;
+  if (ptr[2] & 0x80)
+    g_size++;
+
+  /* read group */
+  abuf[0] = ((dp[0] << 24) & 0xff000000) + ((dp[1] << 16) & 0xff0000)
+    + ((dp[2] << 8) & 0xff00) + (dp[3] & 0xff);
+  if (s_rate == 1)
+    return (g_size);  /* normal return */
+
+  dp += 4;
+  switch (b_size) {
+  case 0:
+    for (i = 1; i < s_rate; i += 2) {
+      abuf[i] = abuf[i - 1] + ((*(char *)dp) >> 4);
+      abuf[i + 1] = abuf[i] + (((char)(*(dp++) << 4)) >> 4);
+    }
+    break;
+  case 1:
+    for (i = 1; i < s_rate; i++)
+      abuf[i] = abuf[i - 1] + (*(char *)(dp++));
+    break;
+  case 2:
+    for (i = 1; i < s_rate; i++) {
+      shreg = ((dp[0] << 8) & 0xff00) + (dp[1] & 0xff);
+      dp += 2;
+      abuf[i] = abuf[i - 1] + shreg;
+    }
+    break;
+  case 3:
+    for(i = 1; i < s_rate; i++) {
+      inreg = ((dp[0] << 24) & 0xff000000) + ((dp[1] << 16) & 0xff0000)
+	+ ((dp[2] << 8) & 0xff00);
+      dp += 3;
+      abuf[i] = abuf[i - 1] + (inreg >> 8);
+    }
+    break;
+  case 4:
+    for (i = 1; i < s_rate; i++) {
+      inreg = ((dp[0] << 24) & 0xff000000) + ((dp[1] << 16) & 0xff0000)
+	+ ((dp[2] << 8) & 0xff00) + (dp[3] & 0xff);
+      dp += 4;
+      abuf[i] = abuf[i - 1] + inreg;
+    }
+    break;
+  default:
+    return (0); /* bad header */
+  }
+
+  return (g_size);  /* normal return */
+}
+
+/* winform.c  4/30/91, 99.4.19   urabe */
+/*            2005.3.9 high sampling rate uehira */
+/* winform converts fixed-sample-size-data into win's format */
+/* winform returns the length in bytes of output data */
+int
+winform(long *inbuf, unsigned char *outbuf, int sr, unsigned short sys_ch)
+     /* long *inbuf;      /* input data array for one sec */
+     /* unsigned char *outbuf;  /* output data array for one sec */
+     /* int sr;         /* n of data (i.e. sampling rate) */
+     /* unsigned short sys_ch;  /* 16 bit long channel ID number */
+{
+  int             dmin, dmax, aa, bb, br, i, byte_leng;
+  long           *ptr;
+  unsigned char  *buf;
+
+  if (sr >= HEADER_5B)
+    return (-1);   /* sampling rate is out of range */
+
+  /* differentiate and obtain min and max */
+  ptr = inbuf;
+  bb = (*ptr++);
+  dmax = dmin = 0;
+  for (i = 1; i < sr; i++) {
+    aa = (*ptr);
+    *ptr++ = br = aa - bb;
+    bb = aa;
+    if (br > dmax)
+      dmax = br;
+    else if (br < dmin)
+      dmin = br;
+  }
+
+  /* determine sample size */
+  if (((dmin & 0xfffffff8) == 0xfffffff8 || (dmin & 0xfffffff8) == 0) &&
+      ((dmax & 0xfffffff8) == 0xfffffff8 || (dmax & 0xfffffff8)==0))
+    byte_leng = 0;
+  else if (((dmin & 0xffffff80) == 0xffffff80 || (dmin & 0xffffff80) == 0) &&
+	   ((dmax & 0xffffff80) == 0xffffff80 || (dmax & 0xffffff80)==0))
+    byte_leng = 1;
+  else if (((dmin & 0xffff8000) == 0xffff8000 || (dmin & 0xffff8000) == 0) &&
+	   ((dmax & 0xffff8000) == 0xffff8000 || (dmax & 0xffff8000)== 0))
+    byte_leng = 2;
+  else if (((dmin & 0xff800000) == 0xff800000 || (dmin & 0xff800000) == 0) &&
+	   ((dmax & 0xff800000) == 0xff800000 || (dmax & 0xff800000) == 0))
+    byte_leng = 3;
+  else
+    byte_leng = 4;
+
+  if (HEADER_4B <= sr)
+    byte_leng += 8;
+
+   /* make a 4 or 5 byte long header */
+  buf = outbuf;
+  *buf++ = (sys_ch >> 8) & 0xff;
+  *buf++ = sys_ch & 0xff;
+  if (sr < HEADER_4B) {       /* 4 byte header */
+    *buf++ = (byte_leng << 4) | (sr >> 8);
+    *buf++ = sr & 0xff;
+  } else {                    /* 5 byte header */
+    *buf++ = (byte_leng << 4) | (sr >> 16);
+    *buf++ = (sr >> 8) & 0xff;
+    *buf++ = sr & 0xff;
+  }
+
+  /* first sample is always 4 byte long */
+  *buf++ = inbuf[0] >> 24;
+  *buf++ = inbuf[0] >> 16;
+  *buf++ = inbuf[0] >> 8;
+  *buf++ = inbuf[0];
+  /* second and after */
+  byte_leng %= 8;
+  switch (byte_leng) {
+  case 0:
+    for (i = 1; i < sr - 1; i += 2)
+      *buf++ = (inbuf[i] << 4) | (inbuf[i + 1] & 0xf);
+    if (i == sr - 1)
+      *buf++ = (inbuf[i] << 4);
+    break;
+  case 1:
+    for (i = 1; i < sr; i++)
+      *buf++ = inbuf[i];
+    break;
+  case 2:
+    for (i = 1; i < sr; i++) {
+      *buf++ = inbuf[i] >> 8;
+      *buf++ = inbuf[i];
+    }
+    break;
+  case 3:
+    for (i = 1; i < sr; i++) {
+      *buf++ = inbuf[i] >> 16;
+      *buf++ = inbuf[i] >> 8;
+      *buf++ = inbuf[i];
+    }
+    break;
+  case 4:
+    for (i = 1; i < sr; i++) {
+      *buf++ = inbuf[i] >> 24;
+      *buf++ = inbuf[i] >> 16;
+      *buf++ = inbuf[i] >> 8;
+      *buf++ = inbuf[i];
+    }
+    break;
+  }
+
+  return ((int)(buf - outbuf));
 }

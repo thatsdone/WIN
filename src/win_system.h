@@ -1,4 +1,4 @@
-/* $Id: win_system.h,v 1.5 2003/08/09 02:11:51 uehira Exp $ */
+/* $Id: win_system.h,v 1.6 2005/03/17 06:59:09 uehira Exp $ */
 
 #ifndef _WIN_SYSTEM_H_
 #define _WIN_SYSTEM_H_
@@ -22,6 +22,10 @@ typedef unsigned long  WIN_sr;
 #define WIN_CH_MAX_NUM  65536   /* 2^16 */
 #define WIN_STANAME_LEN    11   /* (length of station code)+1 */
 #define WIN_STACOMP_LEN     7   /* (length of component code)+1 */
+
+/* High sampling rate format */
+#define  HEADER_4B    4096     /* SR<2^12  (   1 Hz --    4095 Hz) */
+#define  HEADER_5B    1048576  /* SR<2^20  (4096 Hz -- 1048575 Hz) */
 
 /* 'events' process makes the following files */
 #define EVENTS_OLDEST  "OLDEST"
@@ -94,6 +98,16 @@ struct channel_tbl {
   double  stcs;                   /* station correction of P phase */
 };
 
+/* structure of shared memory */
+struct Shm {
+  unsigned long  p;    /* write point */
+  unsigned long  pl;   /* write limit */
+  unsigned long  r;    /* latest */
+  unsigned long  c;    /* counter */
+  unsigned char  d[1]; /* data buffer */
+};
+
+
 unsigned long  mklong(unsigned char *ptr);
 void  adj_time(int tm[]);
 void  adj_time_m(int tm[]);
@@ -116,5 +130,8 @@ int read_channel_file(FILE *, struct channel_tbl [], int);
 int **imatrix(int, int);
 WIN_blocksize read_onesec_win(FILE *, unsigned char **);
 WIN_blocksize win_get_chhdr(unsigned char *, WIN_ch *, WIN_sr *);
+
+int win2fix(unsigned char *, long *, long *, long *);
+int winform(long *, unsigned char *, int, unsigned short);
 
 #endif  /*_WIN_SYSTEM_H_ */

@@ -1,4 +1,4 @@
-/* $Id: relaym.c,v 1.6 2005/02/08 07:53:21 uehira Exp $ */
+/* $Id: relaym.c,v 1.7 2005/03/17 06:59:09 uehira Exp $ */
 
 /* 2004/11/26 MF relay.c: 
  *   - check_pno() and read_chfile() brought from relay.c
@@ -54,7 +54,7 @@
 #define MAXMSG       1025
 
 static char rcsid[] =
-  "$Id: relaym.c,v 1.6 2005/02/08 07:53:21 uehira Exp $";
+  "$Id: relaym.c,v 1.7 2005/03/17 06:59:09 uehira Exp $";
 
 /* destination host info. */
 struct hostinfo {
@@ -127,14 +127,14 @@ main(int argc, char *argv[])
   FILE  *fp;
   int   i, j;
 
-  if (progname = strrchr(argv[0],'/'))
+  if (progname = strrchr(argv[0], '/'))
     progname++;
   else
     progname = argv[0];
 
   exit_status = EXIT_SUCCESS;
   daemon_mode = syslog_mode = 0;
-  if (strcmp(progname,"relaymd") == 0)
+  if (strcmp(progname, "relaymd") == 0)
     daemon_mode = 1;
 
   chfile[0] = '\0';

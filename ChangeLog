@@ -1,4 +1,8 @@
- $Id: ChangeLog,v 1.102 2005/03/16 05:52:17 uehira Exp $
+ $Id: ChangeLog,v 1.103 2005/03/17 06:59:08 uehira Exp $
+
+2005-03-17 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* raw_time : time shift filter (raw format version of wtime)
+	* Version 1.1.60 released.
 
 2005-03-15 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* wdiskts : improved memory management.

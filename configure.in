@@ -1,9 +1,9 @@
 dnl ------------------------------------------------------------------------- 
-dnl $Id: configure.in,v 1.24 2003/04/25 13:47:27 uehira Exp $
+dnl $Id: configure.in,v 1.25 2003/04/29 02:26:14 uehira Exp $
 dnl -------------------------------------------------------------------------
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT(src/win.c)
-AM_INIT_AUTOMAKE(WIN_pkg, 1.1.14)
+AM_INIT_AUTOMAKE(WIN_pkg, 1.1.15)
 AM_CONFIG_HEADER(config.h)
 AC_ARG_PROGRAM
 AC_CANONICAL_TARGET
@@ -47,16 +47,21 @@ else
 fi
 AC_SUBST(LIBSOCKET)
 
-AC_CHECK_LIB(cygipc, shmget,
-	[ac_cv_lib_cygipc_shmget="yes"],
-	[ac_cv_lib_cygipc_shmget="no"])
-if test "$ac_cv_lib_cygipc_shmget" = yes; then
-	LIBSHMGET="-lcygipc"
-else
-	LIBSHMGET=""
-fi
+dnl check libcygipc.a in case of Cygwin
+LIBSHMGET=""
+case $host_os in
+cygwin*)
+	AC_CHECK_LIB(cygipc, shmget,
+		[ac_cv_lib_cygipc_shmget="yes"],
+		[ac_cv_lib_cygipc_shmget="no"])
+	if test "$ac_cv_lib_cygipc_shmget" = yes; then
+		LIBSHMGET="-lcygipc"
+	else
+		AC_MSG_WARN(Test for libcygipc.a failed. Please install cygipc package and set LDFLAGS (if you needed).)
+	fi
+	;;
+esac
 AC_SUBST(LIBSHMGET)
-
 
 dnl AC_CHECK_LIB(m, main)
 

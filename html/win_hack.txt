@@ -92,7 +92,7 @@ AM_INIT_AUTOMAKE(WIN_pkg, 1.0)
 ルする．ある関数が無い時の代替関数は，subst_func.h で設定する．
 
 ━━━━━ここから━━━━━
-/* $Id: win_hack.txt,v 1.2 2002/01/13 06:57:48 uehira Exp $ */
+/* $Id: win_hack.txt,v 1.3 2003/04/29 02:26:14 uehira Exp $ */
 
 ....
 
@@ -119,3 +119,47 @@ AM_INIT_AUTOMAKE(WIN_pkg, 1.0)
 
 など．
 
+●バージョン番号の付け方
+
+━━━━━ここから━━━━━
+Subject: about win cvs
+From: uehira@sevo.kyushu-u.ac.jp (植平賢司)
+To: tsuru@eri.u-tokyo.ac.jp
+Cc: urabe@eri.u-tokyo.ac.jp, uehira@sevo.kyushu-u.ac.jp
+Date: Sat, 10 Aug 2002 16:49:52 +0900
+X-Mailer: Mew version 1.94.2 on Emacs 19.34 / Mule 2.3 (SUETSUMUHANA)
+Organization: Institute of Seismology and Volcanology, Kyushu University
+
+  鶴岡様
+
+  win のパッケージのトップディレクトリ(AUTHORS とかあるディレクトリ)で
+make dist とやると，WIN_pkg-1.1.7.tar.gz みたいなパッケージファイルが
+出来ます．ここのバージョン番号は，WIN_pkg-X.Y.Z.tar.gz のように3桁になっ
+ているのですが，一応以下のように番号を付けようということにしています．
+
+X はメジャーバージョンを表し，非常に大きな仕様の変更があった時変える
+Yはちょっとした仕様の変更
+Zはバグフィックスの時に上げる
+
+ちょっとした変更でも Z の方は気軽に上げていますので，宜しくお願いしま
+す．変えるファイルは，configure.in の中の
+AM_INIT_AUTOMAKE(WIN_pkg,1.1.7) 
+の所です．
+
+また，ドキュメントファイルですが，
+
+NEWS
+  ユーザーにとって目に見える変化のある時は書く．ソフトの追加，オプショ
+ンの追加，変化．重要なバグフィックスのときなど．
+
+ChangeLog
+  とりあえず，メモがわりに何でも書く．基本的にはcommit の度に書いていく．
+
+な感じでやったらいいのではないかと思っています．見たら分かりますが，私
+なんかはcommitログをそのまま書いたりしています．
+
+-------------------------------------------------------------------------------
+ 植平 賢司(Uehira Kenji) 九州大学大学院理学研究院附属  地震火山観測研究センター
+   〒855-0843 長崎県島原市新山2-5643-29, TEL:0957-62-6621, FAX:0957-63-0225
+      		      Mailto:uehira@sevo.kyushu-u.ac.jp
+━━━━━ここまで━━━━━

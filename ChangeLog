@@ -1,4 +1,10 @@
-$Id: ChangeLog,v 1.27 2003/04/25 13:47:26 uehira Exp $
+$Id: ChangeLog,v 1.28 2003/04/29 02:26:14 uehira Exp $
+
+2003-04-29 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* if cygwin environment, check libcygipc.a
+	* add one tip in win_hack.txt
+	* delete shmx2 in AUTHORS
+	* Version 1.1.15 released.
 
 2003-04-25 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* Version 1.1.14 released.

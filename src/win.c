@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.36 2004/12/28 07:10:27 uehira Exp $
+   $Id: win.c,v 1.37 2005/01/07 06:25:03 urabe Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -14,14 +14,14 @@
 */
 #define HINET_EXTENTION_1 1  /* roll over the monitor window */
 #define HINET_EXTENTION_2 1  /* search */
-#define HINET_EXTENTION_3 0  /* paste-up in the monitor window */
+#define HINET_EXTENTION_3 1  /* paste-up in the monitor window */
 /*  #define HINET_WIN32   0  */     /* Hi-net WIN32 format */
 #if ! HINET_WIN32
 #define NAME_PRG      "win"
 #else
 #define NAME_PRG      "win32"
 #endif
-#define WIN_VERSION   "2004.10.22(+Hi-net)"
+#define WIN_VERSION   "2005.1.4(+Hi-net)"
 #define DEBUG_AP      0   /* for debugging auto-pick */
 /* 5:sr, 4:ch, 3:sec, 2:find_pick, 1:all */
 /************ HOW TO COMPILE THE PROGRAM **************************
@@ -786,6 +786,7 @@ LOCAL
     short scale;
     unsigned short rflag;
     int order;
+    int ch_order;
     long offset;        /* offset */
     float north,east;   /* lat & long in deg */
     float x,y;          /* in km */
@@ -2614,6 +2615,8 @@ just_map:
 
   if(rflag) free((char *)rflag);
   if(stations) free((char *)stations);
+
+  for(i=0;i<ft.n_ch;i++) ft.stn[i].ch_order=ft.stn[i].order;
 
   k=0;
   if(!just_hypo) while(1)  /* arrange channls in descending order of 'order' */
@@ -4910,7 +4913,7 @@ bg: if(map_only) goto skip_mon;
     ft.n_mon=i_mon;
     ft.len=ft.n_mon*ft.len_mon;
     }
-#if HINET_EXTENTION_3
+#if HINET_EXTENTION_3>=2
   if(load_data_prep(MSE_BUTNL)) replot_mon(0);
 #endif
 bg1:if(flag_save) close(ft.fd_save);
@@ -6022,6 +6025,12 @@ proc_main()
 	    replot_mon(1);
 	    put_reverse(&dpy,x_func(RFSH),0,WB,MARGIN);
 	  }
+	  if (event.mse_code==MSE_BUTNM&&flag_hypo==1){
+	    put_reverse(&dpy,x_func(RFSH),0,WB,MARGIN);
+	    replot_mon(-1);
+	    flag_hypo=1;
+	    put_reverse(&dpy,x_func(RFSH),0,WB,MARGIN);
+	  }
 #endif
           refresh(1);
           ring_bell=0;
@@ -6078,7 +6087,7 @@ proc_main()
             plot_flag=1;
             ring_bell=0;
             }
-#if HINET_EXTENTION_3
+#if HINET_EXTENTION_3>=2
           replot_mon(1);
 #endif
           put_reverse(&dpy,x_func(LOAD),0,WB,MARGIN);
@@ -7309,7 +7318,8 @@ replot_mon(int replot_locate)
   put_text(&zoom,X_Z_PUT+(W_Z_PUT-WIDTH_TEXT*3)/2,Y_Z_PUT+Y_Z_OFS,"PUT",BF_SDO);
   put_text(&zoom,X_Z_CLS+(W_Z_CLS-WIDTH_TEXT*3)/2,Y_Z_CLS+Y_Z_OFS,"CLS",BF_SDO);
 #endif
-  get_delta();
+  if(replot_locate==-1) reorder();
+  else get_delta();
   /*flag_hypo=1;*/
   /* print info lines */
   yy=k=0;
@@ -7377,8 +7387,35 @@ replot_mon(int replot_locate)
         }
     }
   }
-  if(replot_locate) locate(0,0);
-  get_calc();
+  if(replot_locate==1) locate(0,0);
+  if(replot_locate>=0) get_calc();
+  return 0;
+}
+reorder(){
+  int i,j,k,kk;
+  k=0;
+  for(j=0;j<ft.n_ch;j++) {
+    ft.idx2pos[j]=-1;
+  }
+  while(1){  /* arrange channls in descending order of 'order' */
+    j=kk=0;
+    for(i=0;i<ft.n_ch;i++){
+      if(ft.idx2pos[i]>=0) continue;
+      if(j==0 || ft.stn[i].ch_order>ft.stn[kk].ch_order) kk=i;
+      j=1;
+    }
+    if(j==0) break;
+    ft.idx2pos[kk]=k;
+    ft.pos2idx[k++]=kk;
+  }
+  for(j=0;j<ft.n_ch;j++) {
+    if(ft.idx2pos[j]<0) {
+      ft.idx2pos[j]=k;
+      ft.pos2idx[k]=j;
+      k++;
+    }
+  }
+  fprintf(stderr,"re-order by channel tbl.\n");
   return 0;
 }
 get_delta()  /* get calculated delta  for all stations */

@@ -1,4 +1,22 @@
- $Id: ChangeLog,v 1.87 2004/12/28 07:10:27 uehira Exp $
+ $Id: ChangeLog,v 1.88 2005/01/07 06:25:03 urabe Exp $
+
+2005-1-7 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
+	* win.c : contribution from Hi-net (Nakagawa)
+
+	　前回，震央距離順に並べるパッチをお送りしておりましたが，
+	RFSHを真ん中ボタンで押すとzones.tbl順に並ぶというパッチです．
+	右ボタンでは震央距離順に並ぶのは従来どおりです．
+	#define HINET_EXTENTION_3 2
+	にするとデフォルトが震央距離順プロットに，
+	#define HINET_EXTENTION_3 1
+	にするとデフォルトがzones.tbl順に，
+	#define HINET_EXTENTION_3 0
+	にすると震央距離順プロット機能が無効に
+	なります．
+	　このため，HINET_EXTENTION_3のデフォルト値を1にしました．
+	なお，channels.tblやzones.tblを読み直すのはダサいので，
+	zones.tbl順の並び順をStn構造体にch_orderという変数を増やして
+	メモリ上で保持する実装にしております．
 
 2004-12-28 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
 	* win.c : contribution from Hi-net

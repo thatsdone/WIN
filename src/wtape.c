@@ -1,4 +1,4 @@
-/* $Id: wtape.c,v 1.6 2002/01/23 06:06:14 uehira Exp $ */
+/* $Id: wtape.c,v 1.7 2002/05/23 07:28:53 urabe Exp $ */
 /*
   program "wtape.c"
   8/23/89 - 8/8/90, 6/27/91, 12/24/91, 2/29/92  urabe
@@ -61,7 +61,7 @@
   int  wait_min;
   char param_name[WIN_FILENAME_MAX];
   char *progname;
-  static char rcsid[]="$Id: wtape.c,v 1.6 2002/01/23 06:06:14 uehira Exp $";
+  static char rcsid[]="$Id: wtape.c,v 1.7 2002/05/23 07:28:53 urabe Exp $";
 
 switch_sig()
   {
@@ -480,10 +480,11 @@ main(argc,argv)
   int argc;
   char *argv[];
   {
+#define TAPE_BLKSIZE 61440
   FILE *fp;
   char tb[100];
-  int i,j,re,cnt,io_error,unit,f_get,last_min,tm[5];
-  int ch,max_num,tm1[5],k;
+  int i,j,k,re,cnt,io_error,unit,f_get,last_min,tm[5],tape_blksize;
+  int ch,max_num,tm1[5];
   char max_c[100];
   extern int optind;
   extern char *optarg;
@@ -661,6 +662,8 @@ main(argc,argv)
           io_error=1;
           break;
           }
+
+
         init_flag=0;
         wfm=0;
 #if DEBUGFLAG

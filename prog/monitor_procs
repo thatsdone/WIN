@@ -1,6 +1,11 @@
 #!/bin/sh
 #
-# $Id: monitor_procs,v 1.3 2001/05/31 04:05:30 urabe Exp $
+# $Id: monitor_procs,v 1.4 2002/05/23 07:28:53 urabe Exp $
+#
+# monitor_procs list : list ps output in _win
+# monitor_procs kill : kill all procs in _win
+# monitor_procs test : list not-running procs in _win
+# monitor_procs      : run not-running procs in _win
 #
 . win.conf
 if [ -z "$TD" ]
@@ -16,14 +21,32 @@ ps agxww|sed 's/ (.*)$//'> $tmp
 cat _win|grep -v '^#'|grep -v '^nice'|sed -n 's/ *&//p'|expand|tr -s " "|
 while read procs
 do
-  if grep "$procs\$" $tmp >/dev/null
+  if [ "$1" = list ]
   then
-    :
+    grep "$procs\$" $tmp
   else
-    $procs &
-    time=`date +%y%m%d.%H%M%S`
-    echo -n $time >> $DD/log/monitor_procs.log
-    echo " "$procs >> $DD/log/monitor_procs.log
+    pid=`grep "$procs\$" $tmp|awk '{print $1}'`
+    if [ -n "$pid" ]
+    then
+      if [ "$1" = kill ]
+      then
+        kill $pid
+        echo $procs : killed \(pid=$pid\)
+      fi
+    else
+      if [ "$1" = kill ]
+      then
+        :
+      elif [ -z "$1" ]
+      then
+        $procs &
+        time=`date +%y%m%d.%H%M%S`
+        echo -n $time >> $DD/log/monitor_procs.log
+        echo " "$procs >> $DD/log/monitor_procs.log
+      else
+        echo Not found : \'$procs\'
+      fi
+    fi
   fi
 done
 rm $tmp

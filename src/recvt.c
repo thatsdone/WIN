@@ -38,6 +38,7 @@
 /*                2002.5.3 maximize RCVBUF size */
 /*                2002.5.3,7 maximize RCVBUF size ( option '-s' )*/
 /*                2002.5.14 -n debugged / -d to set ddd length */
+/*                2002.5.23 stronger to destructed packet */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -456,11 +457,12 @@ check_pno(from_addr,pn,pn_f,sock,fromlen,n) /* returns -1 if duplicated */
   return 0;
   }
 
-wincpy2(ptw,ts,ptr,size,mon,chhist)
+wincpy2(ptw,ts,ptr,size,mon,chhist,from_addr)
   unsigned char *ptw,*ptr;
   time_t ts;
   int size,mon;
   struct { int n; time_t (*ts)[65536]; int p[65536];} *chhist;
+  struct sockaddr_in *from_addr;
   {
 #define MAX_SR 500
 #define MAX_SS 4
@@ -489,9 +491,10 @@ wincpy2(ptw,ts,ptr,size,mon,chhist)
         if(!no_pinfo)
           {
           sprintf(tb,
-"ill ch hdr %02X%02X%02X%02X %02X%02X%02X%02X psiz=%d sr=%d ss=%d gs=%d rest=%d",
+"ill ch hdr %02X%02X%02X%02X %02X%02X%02X%02X psiz=%d sr=%d ss=%d gs=%d rest=%d from %s:%d",
             ptr[0],ptr[1],ptr[2],ptr[3],ptr[4],ptr[5],ptr[6],ptr[7],
-            size,sr,ss,gs,ptr_lim-ptr);
+            size,sr,ss,gs,ptr_lim-ptr,
+            inet_ntoa(from_addr->sin_addr),ntohs(from_addr->sin_port));
           write_log(logfile,tb);
           }
         return n;
@@ -514,9 +517,10 @@ wincpy2(ptw,ts,ptr,size,mon,chhist)
         if(!no_pinfo)
           {
           sprintf(tb,
-"ill ch blk %02X%02X%02X%02X %02X%02X%02X%02X psiz=%d sr=%d gs=%d rest=%d",
+"ill ch blk %02X%02X%02X%02X %02X%02X%02X%02X psiz=%d sr=%d gs=%d rest=%d from %s:%d",
             ptr[0],ptr[1],ptr[2],ptr[3],ptr[4],ptr[5],ptr[6],ptr[7],
-            size,sr,gs,ptr_lim-ptr);
+            size,sr,gs,ptr_lim-ptr,
+            inet_ntoa(from_addr->sin_addr),ntohs(from_addr->sin_port));
           write_log(logfile,tb);
           }
         return n;
@@ -742,7 +746,7 @@ main(argc,argv)
       for(i=0;i<6;i++) if(rbuf[i+2]!=tm[i]) break;
       if(i==6)  /* same time */
         {
-        nn=wincpy2(ptr,ts,rbuf+8,n-8,mon,&chhist);
+        nn=wincpy2(ptr,ts,rbuf+8,n-8,mon,&chhist,&from_addr);
         ptr+=nn;
         uni=time(0);
         ptr_size[4]=uni>>24;  /* tow (H) */
@@ -804,7 +808,7 @@ main(argc,argv)
           ptr+=4;   /* time of write */
           memcpy(ptr,rbuf+2,6);
           ptr+=6;
-          nn=wincpy2(ptr,ts,rbuf+8,n-8,mon,&chhist);
+          nn=wincpy2(ptr,ts,rbuf+8,n-8,mon,&chhist,&from_addr);
           ptr+=nn;
           memcpy(tm,rbuf+2,6);
           uni=time(0);
@@ -822,11 +826,25 @@ main(argc,argv)
       while(nlen>0)
         {
         n=(rbuf[j]<<8)+rbuf[j+1];
+        if(n<8 || n>nlen)
+          {
+          if(!no_pinfo)
+            {
+sprintf(tb,"ill blk n=%d(%02X%02X) %02X%02X%02X.%02X%02X%02X:%02X%02X%02X%02X%02X%02X%02X%02X from %s:%d",
+              n,rbuf[j],rbuf[j+1],rbuf[j+2],rbuf[j+3],rbuf[j+4],rbuf[j+5],
+              rbuf[j+6],rbuf[j+7],rbuf[j+8],rbuf[j+9],rbuf[j+10],rbuf[j+11],
+              rbuf[j+12],rbuf[j+13],rbuf[j+14],rbuf[j+15],
+              inet_ntoa(from_addr.sin_addr),ntohs(from_addr.sin_port));
+            write_log(logfile,tb);
+            }
+          for(i=0;i<6;i++) tm[i]=(-1);
+          break;
+          }
         j+=2;
         for(i=0;i<6;i++) if(rbuf[j+i]!=tm[i]) break;
         if(i==6)  /* same time */
           {
-          nn=wincpy2(ptr,ts,rbuf+j+6,n-8,mon,&chhist);
+          nn=wincpy2(ptr,ts,rbuf+j+6,n-8,mon,&chhist,&from_addr);
           ptr+=nn;
           uni=time(0);
           ptr_size[4]=uni>>24;  /* tow (H) */
@@ -882,6 +900,7 @@ main(argc,argv)
               write_log(logfile,tb);
               }
             for(i=0;i<6;i++) tm[i]=(-1);
+            break;
             }
           else /* valid time stamp */
             {
@@ -889,7 +908,7 @@ main(argc,argv)
             ptr+=4;   /* time of write */
             memcpy(ptr,rbuf+j,6);
             ptr+=6;
-            nn=wincpy2(ptr,ts,rbuf+j+6,n-8,mon,&chhist);
+            nn=wincpy2(ptr,ts,rbuf+j+6,n-8,mon,&chhist,&from_addr);
             ptr+=nn;
             memcpy(tm,rbuf+j,6);
             uni=time(0);

@@ -1,4 +1,4 @@
-/* $Id: wdisk.c,v 1.12 2004/09/07 11:39:54 uehira Exp $ */
+/* $Id: wdisk.c,v 1.13 2004/10/03 15:23:05 uehira Exp $ */
 /*
   program "wdisk.c"   4/16/93-5/13/93,7/2/93,7/5/94  urabe
                       1/6/95 bug in adj_time fixed (tm[0]--)
@@ -16,6 +16,7 @@
                       2002.5.28 read from stdin
                       2004.8.1 added option -n (uehira)
                       2004.9.4 added option -s (uehira)
+                      2004.10.4 daemon mode (-D) (uehira)
 */
 
 #ifdef HAVE_CONFIG_H
@@ -46,6 +47,7 @@
 #include <ctype.h>
 #include <errno.h>
 #include <unistd.h>
+#include <syslog.h>
 
 #ifdef HAVE_SYS_PARAM_H
 #include <sys/param.h>
@@ -62,6 +64,7 @@
 #define f_bsize f_frsize
 #endif
 
+#include "daemon_mode.h"
 #include "subst_func.h"
 
 #define   DEBUG   0
@@ -75,7 +78,7 @@ char *progname,logfile[NAMELEN];
 unsigned char *buf;
 int count,count_max,mode;
 FILE *fd;
-int  nflag, smode;
+int  nflag, smode, daemon_mode, syslog_mode;
 
 mklong(ptr)
   unsigned char *ptr;
@@ -92,28 +95,43 @@ write_log(logfil,ptr)
 {
    FILE *fp;
    int tm[6];
-   if(*logfil) fp=fopen(logfil,"a");
-   else fp=stdout;
-   get_time(tm);
-   fprintf(fp,"%02d%02d%02d.%02d%02d%02d %s %s\n",
-	   tm[0],tm[1],tm[2],tm[3],tm[4],tm[5],progname,ptr);
-   if(*logfil) fclose(fp);
+
+   if (syslog_mode)
+     {
+       syslog(LOG_NOTICE, "%s", ptr);
+     }
+   else
+     {
+       if(*logfil) fp=fopen(logfil,"a");
+       else fp=stdout;
+       get_time(tm);
+       fprintf(fp,"%02d%02d%02d.%02d%02d%02d %s %s\n",
+	       tm[0],tm[1],tm[2],tm[3],tm[4],tm[5],progname,ptr);
+       if(*logfil) fclose(fp);
+     }
 }
 
 ctrlc()
 {
    if(fd!=NULL) fclose(fd);
    write_log(logfile,"end");
+   if (syslog_mode)
+     closelog();
    exit(0);
 }
 
 err_sys(ptr)
      char *ptr;
 {
-   perror(ptr);
-   write_log(logfile,ptr);
-   if(strerror(errno)) write_log(logfile,strerror(errno));
-   ctrlc();
+  if (syslog_mode)
+    syslog(LOG_NOTICE, "%s", ptr);
+  else
+    {
+      perror(ptr);
+      write_log(logfile,ptr);
+    }
+  if(strerror(errno)) write_log(logfile,strerror(errno));
+  ctrlc();
 }
 
 bcd_dec(dest,sour)
@@ -334,7 +352,7 @@ usage()
 {
 
   fprintf(stderr,
-	  " usage : '%s (-ns) [shm_key]/- [out dir] ([N of files]/[freespace in MB(-s)] ([log file]))'\n",
+	  " usage : '%s (-Dns) [shm_key]/- [out dir] ([N of files]/[freespace in MB(-s)] ([log file]))'\n",
 	  progname);
 }
 
@@ -363,9 +381,12 @@ main(argc,argv)
    if(strcmp(progname,"wdisk60")==0) mode=60;
    else mode=1;
 
-   smode = nflag = 0;
-   while ((c = getopt(argc, argv, "ns")) != -1) {
+   daemon_mode = syslog_mode = smode = nflag = 0;
+   while ((c = getopt(argc, argv, "Dns")) != -1) {
      switch (c) {
+     case 'D':
+       daemon_mode = 1;  /* daemon mode */
+       break;
      case 'n':
        nflag = 1;  /* don't make control files except 'MAX' */
        break;
@@ -382,12 +403,18 @@ main(argc,argv)
 
    if(argc<2){
      usage();
-     exit(0);
+     exit(1);
    }
    
    if(strcmp(argv[0],"-")) shmkey=atoi(argv[0]);
    else
      {
+     if (daemon_mode)
+       {
+	 fprintf(stderr,
+		 "daemon mode cannot active in case of data from STDIN\n");
+	 exit(1);
+       }
      shmkey=0;
      buf=(unsigned char *)malloc(bufsiz=BUFSZ);
      }
@@ -403,7 +430,18 @@ main(argc,argv)
    fclose(fp);
    
    if(argc>3) strcpy(logfile,argv[3]);
-   else *logfile=0;
+   else 
+     {
+       *logfile=0;
+       if (daemon_mode)
+	 syslog_mode = 1;
+     }
+
+   /* daemon mode */
+   if (daemon_mode) {
+     daemon_init(progname, LOG_USER, syslog_mode);
+     umask(022);
+   }
 
    *latest=(*oldest)=(*busy)=0;
    if(shmkey)

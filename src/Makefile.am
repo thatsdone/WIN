@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.17 2004/08/30 05:04:28 uehira Exp $
+# $Id: Makefile.am,v 1.18 2004/10/03 15:23:05 uehira Exp $
 #
 
 if SUNOS4
@@ -53,6 +53,7 @@ SUB=winform win2fix
 WIN_UTIL_H = win_system.h
 WIN_UTIL_C = win_system.c
 SUBFUNC_H = subst_func.h
+DAEMON_MODE = daemon_mode.h daemon_mode.c
 
 bin_PROGRAMS = $(OFFLINE_USER) $(TAPE_USER) $(ONLINE)
 
@@ -123,7 +124,7 @@ rtape_SOURCES = rtape.c $(SUBFUNC_H)
 
 fromtape_SOURCES = fromtape.c $(SUBFUNC_H)
 
-wdisk_SOURCES = wdisk.c $(SUBFUNC_H)
+wdisk_SOURCES = wdisk.c $(SUBFUNC_H) $(DAEMON_MODE)
 wdisk_LDADD = @LIBSHMGET@
 
 wdiskts_SOURCES = wdiskts.c $(SUBFUNC_H)

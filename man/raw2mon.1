@@ -1,0 +1,21 @@
+.TH raw2mon 1W "1998.6.18" "WIN SYSTEM" "WIN SYSTEM"
+.SH 名称
+raw2mon - RAW 形式データから MON 形式データを作るフィルタ
+.SH 形式
+raw2mon
+.LP
+.SH 解説
+raw2mon は、標準入力から RAW 形式データを読み込み、MON 形式に
+変換して結果を標準出力に書き出します。入力データの全チャネルが
+出力されます。
+.SH オプション
+.TP 
+なし
+.SH 使用例
+.TP 
+raw2mon < /dat/raw/95081711.30 > /dat/mon/95081711.30
+.SH ソース
+.TP
+`raw2mon.c'
+.SH 関連事項
+raw_mon(1W), wed(1W), wck(1W), winformat(1W)

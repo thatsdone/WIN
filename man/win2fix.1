@@ -1,0 +1,34 @@
+.TH win2fix 1W "1998.6.18" "WIN SYSTEM" "WIN SYSTEM"
+.SH 名称
+win2fix - win 形式データを４バイト整数配列へ変換
+.SH 形式
+.nf
+win2fix(ptr,abuf,ch,sr) /* returns group size in bytes */
+  unsigned char *ptr;   /* input data */
+  long *abuf;           /* output data */
+  long *ch;             /* ch : output */
+  long *sr;             /* sr : output */
+.fi
+.SH 解説
+.I win2fix
+は、バッファ
+.I \ ptr
+に入れられた win フォーマットの
+１秒分 x １チャネル分のデータ（先頭は４バイトのチャネルヘッダーです）
+を、４バイト整数配列に変換して
+.I \ abuf
+に入れます。
+.I \ ch
+と
+.I \ sr
+の指すアドレスには、それぞれ16ビットのチャネル番号と、
+データの個数、すなわちサンプリングレートが格納されてきます。
+.LP
+.I win2fix
+は、入力データの、チャネルヘッダー部分を含むチャネルブロックの大きさ
+（バイト）を返します。
+.SH ソース 
+.TP
+`win2fix.c'
+.SH 関連事項
+winformat(1W), winform(1W)

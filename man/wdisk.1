@@ -1,0 +1,78 @@
+'\" t
+.TH wdisk 1W "1996.5.24" "WIN SYSTEM" "WIN SYSTEM"
+.SH 名称
+wdisk, wdisk60 - win 形式データのディスクファイルへの書き込み
+.SH 形式
+wdisk
+.I shmkey
+.I outdir
+[
+.I nfiles
+[
+.I logfile
+]]
+.br
+wdisk60
+.I shmkey
+.I outdir
+[
+.I nfiles
+[
+.I logfile
+]]
+.LP
+.SH 解説
+wdisk と wdisk60 は、キー
+.I \ shmkey
+の共有メモリ・セグメントに書き込まれている、時間順に整列され
+た win 形式のデータを、ディスクのディレクトリ
+.I \ outdir
+の中に、win 形式のファイルとして書き込みます。
+wdisk では、ファイルは
+１分間分ずつ、'YYMMDDhh.mm' の形式の名前をもつファイルに
+まとめられます。
+wdisk60 では、ファイルは
+１時間分ずつ、'YYMMDDhh' の形式の名前をもつファイルに
+まとめられます。
+.I \ nfiles
+は保存するべき最大のファイル数で、常時最新の
+.I \ nfiles
+個のファイルが保存され、それより古いファイルは消されていきます。
+.I nfiles
+を指定しないか、'0' を指定すると、ファイルを自動的に消すことは
+しません。
+.LP
+ログファイル名
+.I \ logfile
+を指定すると、ここに動作ログがとられ、
+指定しないとログ情報は標準出力に
+送られます。ログファイルは書き込みのたび毎に
+オープン／クローズされます。
+.LP
+wdisk, wdisk60 は引数なしで起動すると簡単な使用法を表示します。
+.SH 共有メモリ上の形式
+order(1W) を参照してください。
+.SH ファイル
+wdisk, wdisk60 は出力ディレクトリ
+.I \ outdir
+に次のようなテキストファイルを作り、
+それぞれの内容によって動作状況を示します。
+
+.RS
+.TS
+l l.
+BUSY	現在書き込み中のファイル名
+COUNT	現在のファイル数
+LATEST	最も新しく書き込みの完了したファイル
+MAX	保存すべきファイルの数
+OLDEST	最も古いファイル名
+.TE
+.RE
+.LP
+wdisk, wdisk60 の動作中でもファイル MAX を書き換えると、それ以降は
+「保存されるファイルの数」が新しい値に変わります。
+.SH ソース 
+.TP
+`wdisk.c'
+.SH 関連事項
+winformat(1W), order(1W), wtape(1W)

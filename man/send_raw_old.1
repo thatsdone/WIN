@@ -1,0 +1,108 @@
+.TH send_raw_old 1W "1999.3.29" "WIN SYSTEM" "WIN SYSTEM"
+.SH 名称
+send_raw_old, send_mon_old, sendt_raw_old, sendt_mon_old - IPによる win 形式データの送信（旧パケット形式）
+.SH 形式
+send_raw_old
+.I shmkey
+.I dest
+.I port
+[
+.I chfile
+[
+.I logfile
+]]
+.br
+send_mon_old
+.I shmkey
+.I dest
+.I port
+[
+.I chfile
+[
+.I logfile
+]]
+.br
+sendt_raw_old
+.I shmkey
+.I dest
+.I port
+[
+.I chfile
+[
+.I logfile
+]]
+.br
+sendt_mon_old
+.I shmkey
+.I dest
+.I port
+[
+.I chfile
+[
+.I logfile
+]]
+.SH 解説
+send_raw_old, send_mon_old, sendt_raw_old, sendt_mon_oldは、キー
+.I \ shmkey
+で示される共有メモリ・セグメントに（巡回的に）書き込まれて
+いる win 形式のデータを、ホスト
+.I \ dest
+の UDP ポート番号
+.I \ port
+へ送信します。チャネルファイル
+.I \ chfile
+が与えられた場合は、その中にリストされたチャネルのデータだけが
+送信されます。ただしチャネルファイル名の先頭に '\-' を付けたときは、
+そのファイルにリストされた以外の全チャネルのデータが送信されます。
+.I chfile
+が与えられないか、または '\-' である場合は、全チャネルが送信されます。
+.LP
+ログファイル名
+.I \ logfile
+を指定すると、ここに動作ログがとられ、
+指定しないとログ情報は標準出力に
+送られます。ログファイルは書き込みのたび毎に
+オープン／クローズされます。
+.LP
+send_raw_old, sendt_raw_old は RAW 形式のデータを、
+send_mon_old, sendt_mon_old は MON 形式の
+データを扱うプログラムです。RAW 形式については winformat(1W) を、
+MON 形式については raw_mon(1W) を参照してください。
+.LP
+send_raw_old, send_mon_old と sendt_raw_old, sendt_mon_old では、
+共有メモリ上で扱うデータ形式が異なります。
+send_raw_old, send_mon_old は、
+すでに時間順に整列されていて「書き込み時刻」を含まない
+形式 ( -> order(1W)) を扱うのに対し、
+sendt_raw_old, sendt_mon_old は、時間順不同で
+「書き込み時刻」を含む形式 ( -> recvt(1W)) を扱います。
+.LP
+send_raw_old, send_mon_old, sendt_raw_old, sendt_mon_old は、
+引数なしで起動すると簡単な使用法を表示します。
+.LP
+send_raw_old, send_mon_old, sendt_raw_old, sendt_mon_old プロセスは
+ハングアップシグナルを受け取ると、
+チャネルファイルを読み直します。
+.SH チャネルファイルの形式
+チャネルファイルは、１行に１つずつ、16進数でチャネル番号を
+書き並べたテキストファイルです。各行の先頭の項目だけが読まれ、
+空白またはタブで区切られた以降の項目は無視されます。また先頭
+が '#' である行も無視されます。
+.SH ネットワーク上の形式と再送プロトコル
+recvt(1W)を参照してください。ここで「１パケットに１秒分しか収容しない
+旧型 の パケット形式」として紹介されているのが、
+send_raw_old, send_mon_old, sendt_raw_old, sendt_mon_old の
+パケット形式です。この点が、send_raw, send_mon, sendt_raw, sendt_mon
+との違いです。
+伝送効率を上げるため、
+１パケットのサイズは1472バイト以内（IPパケットサイズで1500バイト
+以内）でなるべく大きくなるように生成されます。
+.SH オプション
+.TP 
+なし
+.SH ソース 
+.TP
+`send_raw_old.c'
+.SH 関連事項
+winformat(1W), recvt(1W), relay(1W), order(1W), raw_raw(1W), send_raw(1W),
+raw_mon(1W)

@@ -1,0 +1,100 @@
+.TH fromtape 1W "1995.8.17" "WIN SYSTEM" "WIN SYSTEM"
+.SH 名称
+fromtape - テープ上の win 形式データからディスク上に分ファイルを作る
+.SH 形式
+fromtape [ \-f
+.I device
+] [ \-n
+.I count
+[ \-s ]]
+.I start
+.I end
+.I rawdir [
+.I mondir
+]
+.LP
+.SH 解説
+fromtape は、wtape(1W) によって書き込まれた win 形式データを読み、
+時刻
+.I \ start
+から
+.I \ end
+までの期間について、
+ディレクトリ
+.I \ rawdir
+に、 wdisk(1W) によって作られるのと同じ形式の、１分毎の RAW 形式
+ファイルを作ります。ディレクトリ
+.I \ mondir
+も指定すると、ここに同様に MON 形式ファイルも作ります。
+.LP
+.I start
+と
+.I \ end
+は、年月日時分それぞれ２桁で、'YYMMDD.hhmm' の
+形式です。
+.I end
+に指定された「分」の終わりまでが出力されます。
+.LP
+実行中、
+.I rawdir
+（および
+.I \ mondir
+）のファイル LATEST には、書き込みが終了した最新のファイル名
+（'YYMMDDhh.mm' 形式）が書かれています。
+.SH オプション
+.TP
+.RI \-f " device"
+テープデバイス名を指定します。デフォールトは /dev/nrst0 です。
+クローズ時に巻戻さないモード（/dev/nrst*）である必要があります。
+.TP
+.RI \-n " count"
+.I rawdir
+（および
+.I \ mondir
+）に保存するファイルの数を（それぞれ）
+.I \ count
+個に保ちます。これはファイル数が
+.I \ count
+になったとき、次に書くファイルの
+.I \ count
+分前のファイルを消すことによって行なわれます。したがって、それ以前の
+ファイルが同じディレクトリに残っていたとしても、消されることは
+ありません。
+.TP
+\-s
+\-n とともに指定し、fromtape に、その出力ファイルを読みだす
+プログラム（pmon(1W) や ecore(1W) など）と同期をとって実行する
+ことを要求します。この場合、fromtape は
+.I \ rawdir
+のファイル USED を検査して、まだ使用されていないファイルを
+消してしまわないように実行を待つことがあります。
+.I mondir
+も指定したときは、かわりに
+.I \ mondir
+のファイル USED が使われます。
+普通はファイルを fromtape よりもファイルを読みだす
+プログラムの方が速いので、このオプションを指定する必要は
+ありません。
+.SH 使用例
+.nf
+
+fromtape -f /dev/nrst21 -n 30 950817.1100 950817.1359 /dat/raw1 /dat/mon1
+.LP
+この例では、毎分ファイルを常に30分間分保存しながら、３時間分の
+RAW/MON データを再生します。同時に、
+.IP
+.nf
+pmon pmon1.prm 950817 1100 180
+events events1.prm 950817.1100 950817.1359
+.LP
+などを実行することにより、トリガー検出、モニター記録の印刷、
+イベントファイルの切り出しを行なうことができます。
+.LP
+なお、すでにトリガーリストができているときは、eventsrtape(1W) で
+テープから直接イベントファイルを切りだすことができます。
+.SH ソース
+.TP
+`fromtape.c'
+.SH 関連事項
+ecore(1W), pmon(1W), events(1W), eventsrtape(1W),
+wtape(1W), rtape(1W), winformat(1W)

@@ -1,0 +1,59 @@
+.nf
+win format
+
+(1) structure of an entire file (e.g. one event)
+---------------------------   -------------
+| first sec | second sec | ... | last sec |
+|  block    |  block     |     |  block   |
+| variable  | variable   |     | variable |
+---------------------------   -------------
+<============= second blocks =============>
+
+(2) structure of each second block
+--------------------------------------------   --------------
+| block |  time   | first ch  | second ch |     | last ch   |
+|  size | (year   |    data   |   data    | ... |   data    |
+|  (B)  |  -  sec | (one sec) | (one sec) |     | (one sec) |
+|  4 B  | 6 B(BCD)|  variable | variable  |     | variable  |
+--------------------------------------------   --------------
+<= second header =><=========== channel blocks  ============>
+     10 bytes                   variable length
+
+(3) structure of each channel block ; "winform.c" makes this format
+-----------------------------------------------------
+|  channel header  |           data samples         |
+|                  |                                |
+|        4 B       |             variable           |
+-----------------------------------------------------
+<================   channel block  =================>
+                   variable length
+
+(3a) structure of a channel header
+----------------------------------------
+| system | channel | sample | sampling | 
+|   ID   |   ID    | size(B)| rate(Hz) |
+|   1 B  |   1 B   |  0.5 B |   1.5 B  |
+----------------------------------------
+<==========   channel header  =========>
+                 4 bytes
+
+(3b) structure of data samples
+------------------------   ---------------
+| first  |   first    |     |    last    |
+| sample | difference | ... | difference |
+|   4 B  |    (*)     |     |    (*)     |
+------------------------   ---------------
+<============  data samples  ===========>
+             variable length
+ (sample size(*) is specified in channel header)
+
+caution:
+- All lengths of integers are in big-endian.
+- '0' in 'sample size' stands for 0.5 byte (4 bits).
+- 'first difference' is the differnce between the second and
+   the first samples, i.e. (second sample) - (first sample),
+   and so on.
+-  'sample size' changes dynamically subject to data, i.e. it
+   may change from second to second for each channel.
+- 'system ID' + 'channel ID' can be considered as a 16-bit-long
+   channel ID (0x0000 - 0xffff).

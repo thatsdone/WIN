@@ -1,0 +1,82 @@
+'\" t
+.TH dat 1W "1998.6.19" "WIN SYSTEM" "WIN SYSTEM"
+.SH 名称
+dat - win システムの共有ディレクトリ形式
+.SH 解説
+/dat は、win システムの共有ディレクトリです。通常、このパス名で
+どのホストからでもアクセスできるようにしておきます。
+/datの次の構成は次のようになっています。
+
+.TS
+l l.
+auto/	自動検測割当ディレクトリ
+
+autos/
+  autos/ORDER	自動検測割当ホストのリスト
+  autos/ホスト名/	ホスト毎の自動検測割当ディレクトリ
+  
+bin/
+  bin/prog/	シェルスクリプトのディレクトリ
+  bin/src/	ＣやFORTRANのソースコードのディレクトリ
+  bin/SPARC/	Sun-OS4.X(SPARC)用バイナリのディレクトリ
+  bin/SOL2/	Solaris2.X(SPARC)用バイナリのディレクトリ
+  bin/X86/	FreeBSD(X86)用バイナリのディレクトリ
+  bin/RISCNEWS/	News-OS4.X(RISCNEWS)用バイナリのディレクトリ
+  bin/CISCNEWS/	News-OS4.X(CISCNEWS)用バイナリのディレクトリ
+
+etc/
+  etc/YYMM	「当月」の年月を示す
+  etc/pmon.out	当月分の pmon.out へのシンボリックリンク
+  etc/pmon.out.[YYMM]	月別トリガーリスト
+  etc/evtemp.[YYMM]	月別検測状況（再検測）
+  etc/evtempa.[YYMM]	月別検測状況（自動）
+  etc/channels.tbl	チャネル表台帳
+  etc/zones.tbl	地域分け台帳
+  etc/nxtzones.tbl	「隣接地域」定義
+  etc/map.dat	地図データ（テキスト形式）
+  etc/map.japan.km	地図データ（バイナリ）
+  etc/final.man	震源データベース（再検測）
+  etc/final.auto	震源データベース（自動）
+  etc/labels.tbl	検測ラベル表
+  etc/struct.tbl	速度構造ファイル
+  etc/seis/	SeisView用ファイルのディレクトリ
+
+trg/	イベント波形ファイルのディレクトリ
+
+mon/	MON 形式毎分連続ファイルのディレクトリ
+
+raw/	RAW 形式毎分連続ファイルのディレクトリ
+
+picks/
+  picks/man/[YYMM]/	検測結果のディレクトリ（再検測）
+  picks/auto/[YYMM]/	検測結果のディレクトリ（自動）
+
+seis/	SeisView用データのディレクトリ
+
+finals/
+  finals/man/[YYMM]	月別震源データベース（再検測）
+  finals/auto/[YYMM]	月別震源データベース（自動）
+
+man/	オンラインマニュアルのディレクトリ
+
+log/	動作ログのディレクトリ
+
+tmp/	一時作業ディレクトリ
+.TE
+
+.SH ユーザー auto
+ユーザー auto はオンライン収録処理をおこなうユーザー名です。
+auto のホームディレクトリ /home/auto にある重要なファイルは
+次の通りです。
+
+.TS
+l l.
+pmon.prm	モニター印刷・トリガープログラム pmon の設定ファイル
+events.prm	イベント収録プログラム events の設定ファイル
+win.prm	検測支援プログラム win の設定ファイル
+win.prm.auto	検測支援プログラム win の設定ファイル（自動検測用）
+winap.prm	win の自動検測パラメタ
+_win	ブート時にオンライン収録を起動するスクリプト
+win.conf	サイト依存のパラメタ
+makefile	コンパイル用
+.TE

@@ -1,0 +1,43 @@
+.TH autopick 1W "1997.12.3" "WIN SYSTEM" "WIN SYSTEM"
+.SH 名称
+autopick - 自動検測処理の実行
+.SH 形式
+autopick [
+.I directory
+]
+.LP
+.SH 解説
+autopick は常時実行されており、automan(1W) から割り当てられた
+イベント波形の自動検測処理を行ないます。automan(1W) からの処理の
+割り当ては、ディレクトリ /dat/autos/自ホスト名 に波形ファイルと同名の、
+大きさゼロのファイルが作られることによって行われます。autopick は
+まずディレクトリ /dat/autos/自ホスト名 を
+検査します。そこにファイルがある場合はその中からもっとも
+早い時間の名前をもつファイルを選んで自動検測処理し、もしなければ
+20秒間休みます。その後ループは最初に戻ります。自動検測処理
+は、実際には win(1W) を起動時オプション "-abwt" をつけて、
+自動処理モードで起動することによって行います。
+また、このとき win(1W) が使う設定ファイルはデフォールトの
+win.prm ではなくて、win.prm.auto です。
+呼びだされた win(1W) が終了すると、
+autopick は /dat/autos/自ホスト名 の該当するファイルを削除し、
+ /dat/log/autopick.log に１行のログを追加書きし、
+処理した波形ファイル名を /dat/trg/USED に書き込みます。
+.LP
+引数として
+.I directory
+が与えられた場合は、ディレクトリ /dat の代わりにそのディレクトリが
+使われます（上の説明の "/dat"の部分をすべて \fIdirectory\fR と
+読み替えてください）。
+ただし、win(1W) が使用する設定ファイルは win.prm.auto の代わりに 
+\fIdirectory\fR/etc/win.prm.auto となります。
+.LP
+autopick は通常 _win(1W) からバックグラウンドで起動されます。
+.SH オプション
+.TP 
+なし
+.SH ソース 
+.TP
+`autopick'
+.SH 関連事項
+_win(1W), automan(1W), win(1W)

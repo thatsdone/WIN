@@ -1,0 +1,34 @@
+.TH latest 1W "1997.6.20" "WIN SYSTEM" "WIN SYSTEM"
+.SH 名称
+latest - /dat/raw にある最新の１分ファイルを win で見る
+.SH 形式
+latest
+[
+.I zone ... ]
+.LP
+.SH 解説
+latest は、/dat/raw にある win 形式の１分毎のファイルのうち、
+/dat/raw/LATEST ファイルの内容で指し示される最新のものを、
+win(1W) で開きます。引数として地域名(
+.I zone ... )
+を与えると、その地域に含まれる観測点のチャネルだけが
+対象になります。地域名の代わりに観測点名を与えてもいいですが、
+その場合はその観測点を含む地域の観測点のチャネルがすべて含まれます。
+.LP
+地域名や観測点名からチャネル番号を得るために、latest はカレント
+ディレクトリにある win.prm に指定されたチャネル表ファイルおよび
+ゾーン表ファイルを利用します。また、必要なチャネルだけ切り出した
+波形ファイルを一時保存するために、latest は win.prm に指定された
+作業ディレクトリを利用します。win.prm が見つからないときは、
+それぞれ /dat/etc/channels.tbl、/dat/etc/zones.tbl および /tmp が
+利用されます。
+.LP
+latest は wch(1W) を利用したシェルスクリプトです。
+.SH オプション
+.TP 
+なし
+.SH ソース
+.TP
+`latest'
+.SH 関連事項
+wch(1W), wed(1W), win(1W), wck(1W), winformat(1W), wdisk(1W)

@@ -1,0 +1,55 @@
+.TH _bj 1W "1998.6.18" "WIN SYSTEM" "WIN SYSTEM"
+.SH 名称
+_bj, _bj1 - イベント収録サーバーのデータベース処理
+.SH 形式
+_bj [
+.I conf_file
+]
+.LP
+_bj1 [
+.I conf_file
+]
+.SH 解説
+_bj はイベント収録サーバーにおいて、pmon(1W) が生成するトリガーリスト、
+events(1W) が生成するイベント波形ファイル、automan(1W), autopick(1W)
+による自動検測処理や対話検測処理処理で生成される検測情報ファイルを
+管理し、これらをもとに震源データベースや収録・検測状況一覧
+（ ee(1W) リスト）を生成します。
+_bj は _win(1W) から起動され、常時バックグラウンドで実行されている
+のが普通です。実際に _bj がやっていることは、もっぱら月変わり処理を
+行なう newym(1W) と、それ以外の処理を行なう _update(1W) を交互に
+実行するだけです。ただし当月分の収録・検測状況一覧だけは別に
+_bj1 が _update1(1W) を使って行ないます。
+.LP
+_bj/_bj1 はカレントディレクトリの win.conf ファイルからサイトに
+依存する設定を読み込みますが、
+.I conf_file
+を指定すると代わりにここから読み込みます。win.conf の例は次のような
+ものです。
+.LP
+.nf
+#
+# win.conf : configuration file for win system
+#
+PATH=/usr/ucb:/usr/sbin:/usr/bin:/dat/bin/prog:/dat/bin/SOL2:/dat/bin/SPARC
+export PATH
+#
+TD=/tmp             # working directory for small temporary files
+SEIS=eri            # system (observatory) name
+PUSH="hosta hostb"  # host names to which final data and evtemp are sent
+TIMO=180            # timeout period for PUSH (s)
+DD=/dat             # directory for win system
+export TD SEIS PUSH TIMO DD
+#
+.fi
+.SH オプション
+.TP 
+なし
+.SH ソース
+.TP
+`_bj'
+.TP
+`_bj1'
+.SH 関連事項
+_win(1W), pmon(1W), events(1W), automan(1W), autopick(1W),
+newym(1W), _update(1W),_update1(1W)

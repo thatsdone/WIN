@@ -1,0 +1,23 @@
+.TH makefile 1W "1998.6.12" "WIN SYSTEM" "WIN SYSTEM"
+.SH 名称
+makefile - win システムのプログラム群コンパイル用 makefile
+.SH 形式
+make
+[
+.I file ...
+]
+.LP
+make clean
+.LP
+make copy
+.SH 解説
+makefile は Solaris 2.X、Sun-OS 4.X、News-OS 4.X、FreeBSDのそれぞれで、
+win システムのプログラムをコンパイルするときに使用しているものです。
+ソースはこれらのOSで共通です。
+通常ソースはカレントディレクトリにあり、コンパイルされた実行
+ファイルは /dat/bin/XXX （XXX は SOL2, SPARC, X86 等）に置きます。
+コンパイル後ソースは /dat/bin/src へコピーします。
+'make copy' はシェルスクリプト類を /dat/bin/prog へコピーします。
+.SH ソース
+.TP
+`makefile'

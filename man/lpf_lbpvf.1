@@ -1,0 +1,22 @@
+.TH lpf_lbpvf 1W "1998.6.18" "WIN SYSTEM" "WIN SYSTEM"
+.SH 名称
+lpf_lbpvf - Sun Raster形式イメージのSONY NEWS LBPへの印刷
+.SH 形式
+lpf_lbpvf
+.LP
+.SH 解説
+lpf_lbpvf は、pmon(1W) の印刷出力などの、Sun Raster 形式の
+イメージを、ソニーNEWSの周辺機器である400dpiのレーザービーム
+プリンター
+NWP-533等へ出力します。lpf_lbpvf は標準入力からデータを読み込み、
+/dev/lbp デバイスへ出力します。/dev/lbp デバイスに問題があるときは、
+エラーまたは警告のメッセージを標準エラー出力に書き出します。
+印刷できるイメージの大きさは最大4516ドット x 3136ドットです。
+.SH オプション
+.TP 
+なし
+.SH ソース 
+.TP
+`lpf_lbpvf.c'
+.SH 関連事項
+pmon(1W), ras2lips(1W), ras2rpdl(1W)

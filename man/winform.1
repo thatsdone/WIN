@@ -1,0 +1,32 @@
+.TH winform 1W "1998.6.18" "WIN SYSTEM" "WIN SYSTEM"
+.SH 名称
+winform - win 形式データへの変換
+.SH 形式
+.nf
+int winform(inbuf,outbuf,sr,ch)
+long *inbuf;
+unsigned char *outbuf;
+int sr;
+unsigned short ch
+.fi
+.SH 解説
+.I winform
+は、４バイト整数配列
+.I \ inbuf
+に入れられた１秒分のデータを、win フォーマットの
+チャネルブロックに変換して
+.I \ outbuf
+に入れられます。
+.I \ sr
+は渡されるデータの個数、すなわちサンプリングレートです。
+.I \ ch
+には16ビットのチャネル番号を指定します。
+.LP
+.I winform
+は、チャネルヘッダー部分を含む、チャネルブロックの大きさ
+（バイト）を返します。
+.SH ソース 
+.TP
+`winform.c'
+.SH 関連事項
+winformat(1W), win2fix(1W)

@@ -1,0 +1,205 @@
+'\" t
+.TH events 1W "1998.1.28" "WIN SYSTEM" "WIN SYSTEM"
+.SH 名称
+events, eventsrtape - リストに従ったイベント波形の切り出し
+.SH 形式
+events
+[ -x
+.I area
+]
+.I paramfile
+[
+.I start
+.I end
+]
+.br
+eventsrtape [ \-f
+.I device
+] [ \-x 
+.I area
+]
+.I paramfile
+.I start
+.I end
+.SH 解説
+events はディスク上の win 形式連続データから、
+eventsrtape はテープ上の win 形式連続データから、
+いずれも設定ファイル
+.I \ paramfile
+の内容にしたがって、
+.I start
+と
+.I end
+で指定された時間範囲のイベントファイルを切り出します。
+.br
+events が使う切り出し元は、wdisk(1W) が生成する形式の１分毎の
+ファイルです。
+eventsrtape が使う切り出し元は、wtape(1W) が生成する形式の
+連続記録テープです。
+.LP
+時間範囲は
+.I start
+で始めを、
+.I end
+で終わりを指定します。それぞれの形式は、年月日時分を
+yymmdd.HHMM
+で表したものです。トリガーリスト中の "on時刻" がこの範囲に
+含まれる（"yymmdd.HHMM" の部分が一致するものまでを含む）
+イベントが切り出されます。"on時刻" との比較は "yymmdd.HHMM" の
+部分についてだけ行なわれますので、かわりに "yymmdd.HHMMSS" まで
+書いても、"SS" の部分が無視されるだけでかまいません。
+.I start
+と
+.I end
+を省略すると、events は無期限モードで動作し、シグナルによって
+止められるまで動きつづけます。ただしこのとき、切り出しを始めるのは
+トリガーリストに次に追加書きされるイベントからになります。
+通常 events は自動処理システムにおいて、_bj(1W) から無期限モードで
+バックグラウンド実行されます。
+.LP
+events/eventsrtape の動作のしかたは設定ファイル
+.I paramfile
+に記述されている必要があります。
+.I paramfile
+では１行に１項目が設定されており、その意味は先頭から何行目にあるか
+で決まります。１行目以外は、スペース・タブまたは改行で区切られた
+最初の項目だけが読まれ、その行の以降の部分はコメントとして
+扱われます。"#"で始まる行は
+コメント行として無視されます。各行の内容は次のとおりです。
+.IP
+.ti -5n
+１行目：トリガーリストのファイル名。これは pmon(1W) の出力の形式です。
+ファイル中で先頭が空白の行は無視されます。
+.IP
+.ti -5n
+２行目：events がデータを切り出し元として使う、win形式１分毎ファイル
+のディレクトリ名。eventsrtape の場合は使われませんが、この行は必要です。
+.IP
+.ti -5n
+３行目：切り出したイベントファイルを書き込むディレクトリ名。
+このディレクトリに、"yymmdd.HHMMSS" 形式の名前を持つ波形ファイルと、
+それに付属するチャネル表ファイル（名前は波形ファイル名に ".ch" を
+つけたもの）が作られます。
+.IP
+.ti -5n
+４行目：切り出したイベントファイルを書き込むディレクトリで常に確保
+しておくべき空きスペース(MB)。新たに切り出した１つのイベントファイルを
+書き込む前に、ここに指定した大きさの空きスペースができるまで、
+同じディレクトリの中で（"yymmdd.HHMMSS" で表される名前が）最も古い
+ファイルから順に削除していきます。
+.IP
+.ti -5n
+５行目：作業用の一時ファイルを作るためのディレクトリ名。
+波形そのものを書き込むことはないので、通常は 1MB 程度あれば十分です。
+.IP
+.ti -5n
+６行目：トリガーリストの "on時刻" より何秒前から切り出しを始めるか
+を指定します。
+.IP
+.ti -5n
+７行目：トリガーファイルの "off時刻" よりどれだけ後ろまでを
+切り出すかを指定する係数です。"off時刻"\-"on時刻" にここで指定する
+値の平方根を乗じた長さの時間だけ、"off時刻" よりも後ろへ切り出し
+終了時刻を延ばします。
+.IP
+.ti -5n
+８行目：チャネル表ファイル名。データ切り出しに必要なチャネル番号を
+観測点名から得るためと、波形ファイルに付属するチャネル表ファイル
+を作るために使われます。
+.IP
+.ti -5n
+９行目：地域分け定義ファイル名。このファイルは１行に１地域を
+定義したテキストファイルで、行の先頭にトリガーリストに出てくる
+１つの地域名を、その右にその地域に属する１つまたは複数の観測点名を、
+それぞれ空白またはタブで区切って列挙します。
+１つの観測点が複数の地域に属していてもかまいません。
+ただし、現バージョンでは pmon(1W) 用の地域分け定義ファイルでは
+許される区切り文字 "+\-/" は使えませんので、共用する際には
+注意が必要です。行の先頭の "#" は無視されます。
+.IP
+.ti -5n
+10行目：各地域の「隣接地域」を定義するファイル名。
+events/eventsrtape はイベントファイルを切り出す際に、
+トリガーリスト中でそのイベントについてリストアップされた
+地域だけでなく、それらの地域に「隣接する」地域に属する
+観測点のデータまでを切り出します。ある地域の隣接地域が
+どこであるかを定義するのがこのファイルで、実際には
+隣接していない地域を「隣接する」と定義してもかまいません。
+１行に１地域の隣接地域を定義したテキストファイルで、
+行の先頭にトリガーリストや地域分け定義ファイルに
+出てくる１つの地域名を、
+その右にその地域に隣接する１つまたは複数の地域名を、
+それぞれ空白またはタブで区切って列挙します。
+ある地域の隣接地域を１つも定義したくない場合は、
+隣接地域の位置に、その地域名自身を１つだけ隣接地域として
+書いてください。
+.IP
+.ti -5n
+11行目：events/eventsrtape は１つのイベントファイルの切り出しを完了する
+たびに、そのイベント波形ファイルと同名で大きさ０のファイルを、ここに指定した
+ディレクトリに作ります。これは自動検測プログラム autopick(1W) または自動検測
+割り当てプログラム automan(1W) に、イベントファイルができたことを知らせるための
+機構です。
+.LP
+以降は、events が２行目に指定された連続データディレクトリにないチャネルの
+データを、ネットワークでつながった他の連続データサーバーに要求するシステムの
+ために必要な設定です。
+.IP
+.ti -5n
+12行目：
+.IP
+.ti -5n
+13行目：
+.IP
+.ti -5n
+14行目：
+.IP
+.ti -5n
+15行目以降：
+.LP
+以下に設定ファイルの例を示します。
+.LP
+.nf
+/dat/etc/pmon.out      # trigger file 
+/dat/raw               # input raw file directory 
+/dat/trg               # output trg file directory 
+100                    # free space (MB) to keep in the output directory 
+/dat/tmp               # working directory for temporary file 
+20                     # pre event time in sec (<60) 
+3.0                    # post event time factor; LEN=PRE+TRG+POST*sqrt(TRG) 
+/dat/etc/channels.tbl  # master channel table file
+/dat/etc/zones.tbl     # zone table file
+/dat/etc/nxtzones.tbl  # list of neighboring zones
+/dat/auto              # touch directory for auto-pick
+/dat/request           # request touch directory
+eri                    # my system code
+/dat/log/request-lpr   # log file
+#
+# list of remote data servers follows.
+# local (my) server may be included, but it will not be used.
+#<sys>  <station list>          <printcap entry of data server>
+tky     /dat/etc/tky.station    request-saemon
+sso     /dat/etc/sso.station    request-sso-jc3
+.fi
+.LP
+データの切り出しのために events は wed(1W) を、eventsrtape は rtape(1W) を、
+それぞれ使います。eventsrtape は events へのリンクです。
+.SH オプション
+.TP
+\-f
+.I tape_device
+で指定されるテープ装置の連続記録データからイベントの切り出しを
+行ないます。省略すると /dev/nrst0 が仮定されます。
+.TP
+\-x
+トリガーリスト中で、地域名
+.I area
+で最初にトリガーのかかったイベントについては切り出しを行ないません。
+このオプションは複数指定することができます。
+.SH ソース
+.TP
+`events.c'
+.SH 関連事項
+winformat(1W), pmon(1W), wtape(1W), rtape(1W), wed(1W), autopick(1W),
+automan(1W)
+

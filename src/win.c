@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.16.2.1 2001/11/02 11:43:40 uehira Exp $
+   $Id: win.c,v 1.16.2.2 2001/11/06 02:26:21 uehira Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -5669,7 +5669,7 @@ proc_main()
           if(x<WIDTH_INFO_ZOOM+zoom_win[i].w_scale &&
               ((i+1)*HEIGHT_ZOOM-(height_dpy-1-y))/PIXELS_PER_LINE==4)
             { /* use raw amplitude */
-            if(ft.stn[ft.ch2idx[zoom_win[i].sys_ch]].unit!='*')
+            if(ft.stn[ft.ch2idx[zoom_win[i].sys_ch]].unit[0]!='*')
               {
               zoom_win[i].nounit=(++zoom_win[i].nounit)&1;
               plot_zoom(i,0,0,0);

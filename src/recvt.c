@@ -1,4 +1,4 @@
-/* $Id: recvt.c,v 1.23 2004/10/26 14:42:01 uehira Exp $ */
+/* $Id: recvt.c,v 1.24 2004/11/17 09:36:45 urabe Exp $ */
 /* "recvt.c"      4/10/93 - 6/2/93,7/2/93,1/25/94    urabe */
 /*                2/3/93,5/25/94,6/16/94 */
 /*                1/6/95 bug in adj_time fixed (tm[0]--) */
@@ -45,6 +45,7 @@
 /*                2003.3.24-25 -N (no pno) and -A (no TS) options */
 /*                2004.8.9 fixed bug introduced in 2002.5.23 */
 /*                2004.10.26 daemon mode (Uehira) */
+/*                2004.11.15 corrected byte-order of port no. in log */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -370,7 +371,7 @@ read_chfile()
     sprintf(tb,"  src %d.%d.%d.%d:%d   %d %d %d %d",
       ((unsigned char *)&ht[i].host)[0],((unsigned char *)&ht[i].host)[1],
       ((unsigned char *)&ht[i].host)[2],((unsigned char *)&ht[i].host)[3],
-      ht[i].port,ht[i].n_packets,ht[i].n_bytes,(ht[i].n_packets+k)/j,
+      ntohs(ht[i].port),ht[i].n_packets,ht[i].n_bytes,(ht[i].n_packets+k)/j,
       (ht[i].n_bytes+k)/j);
     write_log(logfile,tb);
     ht[i].n_packets=ht[i].n_bytes=0;

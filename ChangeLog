@@ -1,4 +1,13 @@
- $Id: ChangeLog,v 1.78 2004/11/13 05:49:37 uehira Exp $
+ $Id: ChangeLog,v 1.79 2004/11/17 09:36:45 urabe Exp $
+
+2004-11-17 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
+	* relay : check_pno() and read_chfile() brought from recvt.c 
+		with host contol but without channel control (option -f)
+		write host statistics on HUP signal
+		no packet info option -n
+		corrected byte-order of port no. in log
+		maximize size of receive socket buffer (option -b)
+	* recvt : corrected byte-order of port no. in log
 
 2004-11-13 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* relaym : MacOSX need #include <sys/time.h>

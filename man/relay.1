@@ -1,8 +1,9 @@
-.TH relay 1W "2003.10.26" "WIN SYSTEM" "WIN SYSTEM"
+.TH relay 1W "2004.11.16" "WIN SYSTEM" "WIN SYSTEM"
 .SH 名称
 relay, relayd - win 形式データのIP上の中継
 .SH 形式
-relay [\-\fBrD\fR] [\-\fBd\fI\ delay\fR] [\-\fBg\fI\ group\fR] 
+relay [\-\fBnrD\fR] [\-\fBb\fI bufsiz\fR] [\-\fBd\fI\ delay\fR] 
+[\-\fBf\fI ctlfile\fR] [\-\fBg\fI\ group\fR]
 [\-\fBi\fI\ interface\fR] [\-\fBp\fI\ src_port\fR] [\-\fBs\fI\ sinterface\fR] 
 [\-\fBt\fI\ ttl\fR]
 .I inport
@@ -12,7 +13,8 @@ relay [\-\fBrD\fR] [\-\fBd\fI\ delay\fR] [\-\fBg\fI\ group\fR]
 .I logfile
 ]
 .LP
-relayd [\-\fBr\fR] [\-\fBd\fI\ delay\fR] [\-\fBg\fI\ group\fR] 
+relayd [\-\fBnr\fR] [\-\fBb\fI bufsiz\fR] [\-\fBd\fI\ delay\fR] 
+[\-\fBf\fI ctlfile\fR] [\-\fBg\fI\ group\fR] 
 [\-\fBi\fI\ interface\fR] [\-\fBp\fI\ src_port\fR] [\-\fBs\fI\ sinterface\fR] 
 [\-\fBt\fI\ ttl\fR]
 .I inport
@@ -54,6 +56,18 @@ relayd は daemon モードで起動します。relay でオプション
 送られます(ただし、daemon モードで動いている時は syslogd(8) に送られま
 す)。ログファイルは書き込みのたび毎にオープン／クローズされます。
 .LP
+relay は、HUPシグナルを受けると(もし指定されていれば後述の)制御ファイル
+.I \ ctlfile
+を読み直し、ログファイル
+.I \ logfile
+に送り元ホストごとの流量情報を書き出します。これには起動時、または
+前回HUPシグナルを受けたときからの、
+.br
+.nf
+  パケット数、バイト数、毎秒パケット数、毎秒バイト数
+.fi
+が含まれます。
+.LP
 relay は引数なしで起動すると簡単な使用法を表示します。
 .SH ネットワーク上の形式と再送プロトコル
 recvt(1W)を参照してください。
@@ -63,6 +77,11 @@ relay はパケット番号の連続性を監視して
 できます。100ヶ所を超えると、recvt は送信元テーブルを一旦白紙に戻し、
 改めて登録を始めます。
 .SH オプション
+.IP "\fB\-b \fIbufsiz" 5
+受信ソケットバッファサイズを
+.I bufsiz
+KBにします。ただしこれはシステムで許される値の範囲でなければ
+なりません。デフォルトは256KBです。
 .IP \fB\-D 5
 daemon モードで起動します。
 .IP "\fB\-d \fIdelay" 5
@@ -70,6 +89,30 @@ daemon モードで起動します。
 パケットが届いたとき、そのパケットを送信する前に
 .I delay
 ミリ秒の遅延を挿入します。
+.IP "\fB\-f \fIctlfile" 5
+制御ファイル
+.I \ ctlfile
+で指定される、送信元ホストによる受信制御を可能にします。
+.I \ ctlfile
+には、"+"か"\-"で始まるホスト制御行を書くことができます。
+各行では空白またはタブで区切られた左端の項目だけが読まれ、
+その行の以降の部分は読み飛ばされます。'#'で始まる行はコメントと
+見なされます。
+.br
+ホスト制御行は、
+.nf
+
+       -host   パケットがhostからであれば捨てる
+       +host   パケットがhostからであれば受け入れる
+       +       パケットを受け入れる
+       -       パケットを捨てる
+
+.fi
+の形式で書かれたルールです。
+ホスト制御については、パケットごとにルールを上から当てはめていき、
+当てはまるルールがあったらそれが適用されます。最後まで当てはまるルールが
+なかったらそのパケットを受け入れます(つまり最後にはかならず "+" の行が
+あるのと同じ)。
 .IP "\fB\-g \fIgroup" 5
 IPマルチキャストアドレス
 .I group
@@ -79,6 +122,9 @@ IPマルチキャストアドレス宛のパケットを受信する
 ネットワークインターフェースを、そのインターフェースのIPアドレス
 .I interface
 で指定します。
+.IP "\fB\-n" 5
+拒否すべき送り元アドレスからのパケットや重複して受信した再送パケット
+についての情報をログに報告しません。
 .IP "\fB\-p \fIsrc_port" 5
 送信元UDPポート番号を \fIsrc_port\fR にします。通常指定する必要はありません。
 .IP "\fB\-r" 5

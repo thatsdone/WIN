@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.20 2002/06/13 00:33:48 urabe Exp $
+   $Id: win.c,v 1.21 2002/06/13 04:23:59 urabe Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -6063,10 +6063,12 @@ proc_main()
           }
         if(pt.sec1*1000+pt.msec1<=pt.sec2*1000+pt.msec2)
           {
-          pt.msec1-=500/zoom_win[i].pixels;
-          pt.msec2+=500/zoom_win[i].pixels;
-          if(pt.msec1<0) {pt.msec1+=1000;pt.sec1-=1;}
-          if(pt.msec2>=1000) {pt.msec2-=1000;pt.sec2+=1;}
+          if((pt.msec1-=500/zoom_win[i].pixels)<0)
+            {pt.msec1+=1000;pt.sec1-=1;}
+          if(pt.sec1<=0) pt.msec1=pt.sec1=0;
+          if((pt.msec2+=500/zoom_win[i].pixels)>=1000)
+            {pt.msec2-=1000;pt.sec2+=1;}
+          if(pt.sec2>ft.len-1) {pt.msec2=999;pt.sec2=ft.len-1;}
           pt.valid=1;
           pt.polarity=0;
           cancel_picks(ft.stn[ft.pos2idx[k]].name,j);

@@ -1,4 +1,4 @@
-/* $Id: wadd2.c,v 1.1 2002/05/07 09:50:22 urabe Exp $ */
+/* $Id: wadd2.c,v 1.2 2002/05/07 14:00:31 urabe Exp $ */
 /* program "wadd2.c"
   "wadd" puts two win data files together
   7/24/91 - 7/25/91, 4/20/94,6/27/94-6/28/94,7/12/94   urabe
@@ -222,16 +222,20 @@ main(argc,argv)
     } /* END OF MAIN LOOP */
 
   fclose(f_out);
-  if((ptr=strrchr(argv[1],'/'))==NULL) ptr=argv[1];
-  else ptr++;
-  if(argc>3) sprintf(new_file,"%s/%s",argv[3],ptr);
-  else strcpy(new_file,ptr);
-  if(strcmp(argv[1],new_file)) rename(tmpfile1,new_file);
-  else
+
+  if(f_out!=stdout)
     {
-    sprintf(textbuf,"cp %s %s",tmpfile1,argv[1]);
-    system(textbuf);
-    unlink(tmpfile1);
+    if((ptr=strrchr(argv[1],'/'))==NULL) ptr=argv[1];
+    else ptr++;
+    if(argc>3) sprintf(new_file,"%s/%s",argv[3],ptr);
+    else strcpy(new_file,ptr);
+    if(strcmp(argv[1],new_file)) rename(tmpfile1,new_file);
+    else
+      {
+      sprintf(textbuf,"cp %s %s",tmpfile1,argv[1]);
+      system(textbuf);
+      unlink(tmpfile1);
+      }
     }
 
   exit(0);

@@ -1,7 +1,8 @@
- $Id: ChangeLog,v 1.98 2005/03/12 03:05:59 uehira Exp $
+ $Id: ChangeLog,v 1.99 2005/03/12 10:49:22 uehira Exp $
 
 2005-03-12 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* send_raw : bug fixed.
+	* insert_raw : memory leak bug fixed.
 	* Version 1.1.58 released.
 
 2005-03-07 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>

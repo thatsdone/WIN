@@ -1,5 +1,5 @@
 /*
- * $Id: insert_raw.c,v 1.3 2002/01/23 06:06:13 uehira Exp $
+ * $Id: insert_raw.c,v 1.4 2005/03/12 10:49:23 uehira Exp $
  * Insert sorted timeout data to raw data.
  *
  *------------ sample of parameter file ------------
@@ -35,7 +35,7 @@
 #define BUF_SIZE 1024
 
 char *progname;
-static char rcsid[]="$Id: insert_raw.c,v 1.3 2002/01/23 06:06:13 uehira Exp $";
+static char rcsid[]="$Id: insert_raw.c,v 1.4 2005/03/12 10:49:23 uehira Exp $";
 
 struct Cnt_file {
   char  raw_dir[WIN_FILENAME_MAX];    /* raw data directory */
@@ -128,6 +128,7 @@ do_insert(int tim[], struct Cnt_file *cnt)
   WIN_blocksize  sizer;
   WIN_blocksize  sizem,sizew;
   WIN_blocksize  data_num,data_num_save;
+  WIN_blocksize  array_size_of_data;
   unsigned char  *data,*datam,*datar,*tmpbuf;
   unsigned char  size_arr[WIN_BLOCKSIZE_LEN];
   unsigned char  *ptrd;
@@ -147,7 +148,8 @@ do_insert(int tim[], struct Cnt_file *cnt)
   while(fread(&a,1,WIN_BLOCKSIZE_LEN,fp)==WIN_BLOCKSIZE_LEN){  /*(1)*/
     /*** copy same minute data to data[] ***/
     data_num_save=data_num=size=(WIN_blocksize)mklong((unsigned char *)&a);
-    if((data=MALLOC(unsigned char,data_num))==NULL) memory_error();
+    array_size_of_data = data_num << 2;
+    if((data=MALLOC(unsigned char,array_size_of_data))==NULL) memory_error();
     memcpy(data,&a,WIN_BLOCKSIZE_LEN);
     size-=WIN_BLOCKSIZE_LEN;
     if(fread(data+WIN_BLOCKSIZE_LEN,1,size,fp)!=size){
@@ -179,10 +181,15 @@ do_insert(int tim[], struct Cnt_file *cnt)
 	break;
       }
       data_num+=size_save;
-      if((data=REALLOC(unsigned char,data,data_num))==NULL) memory_error();
+      if (array_size_of_data < data_num) {
+	array_size_of_data = data_num << 1;
+	if((data=REALLOC(unsigned char,data,array_size_of_data))==NULL)
+	  memory_error();
+      }
       memcpy(data+data_num_save,tmpbuf,size_save);
       data_num_save=data_num;
       fpt=ftell(fp);
+      FREE(tmpbuf);
     } /* while(fread(&a,1,WIN_BLOCKSIZE_LEN,fp)==WIN_BLOCKSIZE_LEN) (2) */
 
     /* compare with oldest raw data */

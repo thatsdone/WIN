@@ -3,9 +3,15 @@
    wintosac: win text format to sac/sac2000 format
    (C) TSURUOKA Hiroshi / All Rights Reserved.    
  ------------------------------------------------
+ 
+   HISTORY
+   2005/01/17 -d DIR option
+              time stamp in SAC HEADER
+              by NAKAGAWA Shigeki
+ 
  */
-#define VERSION "1.0.0"
-#define YMD "2003.06.23"
+#define VERSION "1.0.1"
+#define YMD "2005.01.17"
 #include <stdlib.h>
 #include <string.h>
 #include <stddef.h>
@@ -89,6 +95,7 @@ char *argv[];
     char chtable[256];
     c_info ch_info[128];
     char sacfile[256];
+    char outdir[768], outfile[1024];
     int idum[40], itmp;
     float fdum[70], ftmp;
     char cbuf[4096];
@@ -97,15 +104,16 @@ char *argv[];
     float data[1440000];
     float begin = 0.0;
     int out = 0;
+    int outd = 0;
     char stime[16];
     int little = 0;
 
     if (argc < 2) {
-	fprintf(stderr, "usage: wintosac (-l) (-b[BEGIN]) (-t[TABLE]) (-o[OUTPUT]) CHID\n");
+	fprintf(stderr, "usage: wintosac (-l) (-b[BEGIN]) (-t[TABLE]) (-o[OUTPUT]) (-d[OUTDIR]) CHID\n");
 	exit(1);
     }
 
-    while ((c = getopt(argc, argv, "lt:b:o:")) != EOF) {
+    while ((c = getopt(argc, argv, "lt:b:o:d:")) != EOF) {
 	switch (c) {
 	case 'b':
 	    begin = atof(optarg);
@@ -113,6 +121,10 @@ char *argv[];
 	case 'o':
 	    out = 1;
 	    sprintf(sacfile, "%s", optarg);
+	    break;
+	case 'd':
+	    outd = 1;
+	    sprintf(outdir, "%s", optarg);
 	    break;
 	case 'l':
 	    little = 1;
@@ -176,6 +188,11 @@ char *argv[];
         fclose(fp);
     }
 
+    for (i = 0; i < 40; i++)
+	idum[i] = -12345;
+    for (i = 0; i < 70; i++)
+	fdum[i] = -12345.0;
+
     n = 0;
     ndata = 0;
     while (fgets(cbuf, 2048, stdin) != NULL) {
@@ -207,6 +224,13 @@ char *argv[];
 		    sprintf(sacfile, "%02d%02d%02d%02d%02d_%04X.s", yr % 100, mo, dy, hr, mi, id[0]);
 		}
 	    }
+
+	    idum[0]=yr;
+	    idum[1]=jul;
+	    idum[2]=hr;
+	    idum[3]=mi;
+	    idum[4]=sc;
+	    idum[5]=0;
 	} else {
 	    idt = 86400 * (jul - jul0) + (nsec - nsec0);
 	}
@@ -233,8 +257,6 @@ char *argv[];
 
 /* write sac data */
 
-    for (i = 0; i < 70; i++)
-	fdum[i] = -12345.0;
     fdum[0] = 1.0 / (float) nfreq;	/* DELTA */
     fdum[5] = begin;		/* B */
     fdum[6] = fdum[5] + fdum[0] * (float) (ndata - 1);	/* E */
@@ -246,8 +268,6 @@ char *argv[];
     }
  */
 
-    for (i = 0; i < 40; i++)
-	idum[i] = -12345;
     idum[6] = 6;		/* NVHDR */
 
     idum[9] = ndata;		/* NPTS */
@@ -265,8 +285,17 @@ char *argv[];
     for (i = 0; i < 21; i++)
 	strcpy(kdum[i], "-12345  ");
 
-    if ((fp = fopen(sacfile, "w")) == NULL) {
-	fprintf(stdout, "Error in opening output file: %s\n", sacfile);
+    if(outd){
+        sprintf(outfile,"%s/%s",outdir,sacfile);
+        if ((fp = fopen(outfile, "w")) == NULL) {
+ 	   fprintf(stdout, "Error in opening output file: %s\n", outfile);
+           exit(1);
+        }
+    }else{
+        if ((fp = fopen(sacfile, "w")) == NULL) {
+    	   fprintf(stdout, "Error in opening output file: %s\n", sacfile);
+           exit(1);
+        }
     }
 
 /* little/big endian */

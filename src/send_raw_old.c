@@ -1,4 +1,4 @@
-/* $Id: send_raw_old.c,v 1.2 2000/04/30 10:05:23 urabe Exp $ */
+/* $Id: send_raw_old.c,v 1.3 2000/09/07 15:23:08 urabe Exp $ */
 /*
     program "send_raw_old/send_mon_old.c"   1/24/94 - 1/25/94,5/25/94 urabe
                                     6/15/94 - 6/16/94
@@ -10,6 +10,7 @@
                                     99.9.10 byte-order-free
                                   2000.4.17 deleted definition of usleep()
                                   2000.4.24 strerror()
+                          2000.9.7 multiple resend-request by MEISEI < 1/30/97
 */
 
 #include <stdio.h>
@@ -398,19 +399,24 @@ reset:
 #endif
       }
     i=1<<sock;
-    while(select(sock+1,&i,NULL,NULL,&timeout)>0 &&
-        recvfrom(sock,rbuf,MAXMESG,0,&from_addr,&fromlen)==1 &&
-        (bufno_f=get_packet(bufno,no_f=(*rbuf)))>=0)
+    while(select(sock+1,&i,NULL,NULL,&timeout)>0)
       {
-      memcpy(sbuf[bufno],sbuf[bufno_f],psize[bufno]=psize[bufno_f]);
-      sbuf[bufno][0]=no;    /* packet no. */
-      sbuf[bufno][1]=no_f;  /* old packet no. */
-      re=sendto(sock,sbuf[bufno],psize[bufno],0,&to_addr,sizeof(to_addr));
-      sprintf(tbuf,"resend to %s:%d #%d as #%d, %d B",
-        inet_ntoa(to_addr.sin_addr),to_addr.sin_port,no_f,no,re);
-      write_log(logfile,tbuf);
-      if(++bufno==BUFNO) bufno=0;
-      no++;
+      j=recvfrom(sock,rbuf,MAXMESG,0,&from_addr,&fromlen);
+      if(j>0 && j<BUFNO) for(k=0;k<j;k++)
+        {
+        if((bufno_f=get_packet(bufno,no_f=(rbuf[k])))>=0)
+          {
+          memcpy(sbuf[bufno],sbuf[bufno_f],psize[bufno]=psize[bufno_f]);
+          sbuf[bufno][0]=no;    /* packet no. */
+          sbuf[bufno][1]=no_f;  /* old packet no. */
+          re=sendto(sock,sbuf[bufno],psize[bufno],0,&to_addr,sizeof(to_addr));
+          sprintf(tbuf,"resend to %s:%d #%d as #%d, %d B",
+            inet_ntoa(to_addr.sin_addr),to_addr.sin_port,no_f,no,re);
+          write_log(logfile,tbuf);
+          if(++bufno==BUFNO) bufno=0;
+          no++;
+          }
+        }
       }
     }
   }

@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.9 2000/08/23 09:52:37 urabe Exp $
+   $Id: win.c,v 1.10 2001/06/07 10:20:47 urabe Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -13,7 +13,7 @@
    98.7.2 yo2000
 */
 #define NAME_PRG      "win"
-#define VERSION       "2000.8.23"
+#define VERSION       "2001.6.7"
 #define DEBUG_AP      0   /* for debugging auto-pick */
 /* 5:sr, 4:ch, 3:sec, 2:find_pick, 1:all */
 /************ HOW TO COMPILE THE PROGRAM **************************
@@ -211,7 +211,8 @@ LOCAL
   Colormap colormap;
   XSetWindowAttributes att;
 
-#define OLD_FORMAT      0 /* 1 for data before May, 1990 ;
+/*#define OLD_FORMAT      0 */
+               /* 1 for data before May, 1990 ;
                 (1) compressed epo data, 
                 (2) no 0.5 byte data, 
                 (3) not differential data, 
@@ -8917,6 +8918,12 @@ load_data(btn)
         }
       }
     sscanf(text_buf+3,"%x%d%d%d%d%d%d%e",&i,&j,&k1,&k2,&k3,&k4,&k5,&k6);
+    /* 2001.6.7. if data file exists, don't accept out-of-range picks */
+    if(!just_hypo && (k1<0 || k1>=ft.len || k3<0 || k3>=ft.len))
+      {
+      fprintf(stderr,"out-of-range pick ignored - %s",text_buf);
+      continue;
+      }
     ft.pick[ft.ch2idx[i]][j].valid=1;
     ft.pick[ft.ch2idx[i]][j].sec1 =k1;
     ft.pick[ft.ch2idx[i]][j].msec1=k2;
@@ -9952,8 +9959,13 @@ save_data(private)
     fgets(textbuf,LINELEN,fp);
     sscanf(textbuf,"%*s%*s%f",&sec);
     fclose(fp);
-    sprintf(ft.save_file,"%02d%02d%02d%1c%02d%02d%02d.%03d",
-      year,month,day,dot,hour,minute,(int)sec,(int)(sec*1000.0)%1000);
+    if(sec==0.0) /* 2001.6.7 for picks only with max ampl. */
+      sprintf(ft.save_file,"%02X%02x%02x%1c%02X%02x%02x.000",
+        ft.ptr[0].time[0],ft.ptr[0].time[1],ft.ptr[0].time[2],dot,
+        ft.ptr[0].time[3],ft.ptr[0].time[4],ft.ptr[0].time[5]);
+    else
+      sprintf(ft.save_file,"%02d%02d%02d%1c%02d%02d%02d.%03d",
+        year,month,day,dot,hour,minute,(int)sec,(int)(sec*1000.0)%1000);
     }
   else
     {

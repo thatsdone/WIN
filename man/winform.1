@@ -1,4 +1,4 @@
-.TH winform 1W "1998.6.18" "WIN SYSTEM" "WIN SYSTEM"
+.TH winform 1W "2001.6.7" "WIN SYSTEM" "WIN SYSTEM"
 .SH 名称
 winform - win 形式データへの変換
 .SH 形式
@@ -25,6 +25,9 @@ unsigned short ch
 .I winform
 は、チャネルヘッダー部分を含む、チャネルブロックの大きさ
 （バイト）を返します。
+.LP
+.I \ inbuf
+は作業領域として使われるため、内容が書き換えらることに注意してください。
 .SH ソース 
 .TP
 `winform.c'

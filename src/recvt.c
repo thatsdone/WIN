@@ -1,4 +1,4 @@
-/* $Id: recvt.c,v 1.21 2004/08/09 01:42:04 urabe Exp $ */
+/* $Id: recvt.c,v 1.22 2004/08/09 01:47:42 urabe Exp $ */
 /* "recvt.c"      4/10/93 - 6/2/93,7/2/93,1/25/94    urabe */
 /*                2/3/93,5/25/94,6/16/94 */
 /*                1/6/95 bug in adj_time fixed (tm[0]--) */
@@ -967,7 +967,6 @@ sprintf(tb,"ill blk n=%d(%02X%02X) %02X%02X%02X.%02X%02X%02X:%02X%02X%02X%02X%02
               write_log(logfile,tb);
               }
             for(i=0;i<6;i++) tm[i]=(-1);
-            break;
             }
           else /* valid time stamp */
             {

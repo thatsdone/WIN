@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.13 2001/08/06 16:18:55 urabe Exp $
+   $Id: win.c,v 1.14 2001/08/07 06:56:38 urabe Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -13,7 +13,7 @@
    98.7.2 yo2000
 */
 #define NAME_PRG      "win"
-#define VERSION       "2001.8.6"
+#define VERSION       "2001.8.7"
 #define DEBUG_AP      0   /* for debugging auto-pick */
 /* 5:sr, 4:ch, 3:sec, 2:find_pick, 1:all */
 /************ HOW TO COMPILE THE PROGRAM **************************
@@ -55,15 +55,12 @@ upper                        -12- upper or lower hemisphere projection
 #   done by 'mapconv' mode ('win -c').
 #
 #- 9- for data format,
-# B4 : 4-byte big-endian, L2 : 2-byte little-endian, etc.
+# B4 : binary 4-byte etc.
 # C : numerical characters
 #
 #-11- for printer name (printcap entry)
+#   "xwd|xpr -device ps|lpr"
 #   adding an '*' to the printer name specifies "xwd|lpr -x"
-#       (default for NEWS workstations)
-#   adding an '&' to the printer name specifies "xwd|xpr -device ps|lpr"
-#       (default for other workstations)
-#
 #   specifying just '&' makes PostScript file "win.ps"
 #   specifying just '*' makes XWD file "win.xwd"
 #
@@ -963,14 +960,6 @@ char *get_time(rt,addsec)
   sprintf(c,"%02d/%02d/%02d %02d:%02d:%02d",nt->tm_year%100,nt->tm_mon+1,
     nt->tm_mday,nt->tm_hour,nt->tm_min,nt->tm_sec);
   return c;
-  }
-
-findfile(name)
-  char *name;
-  {
-  char tb[100];
-  sprintf(tb,"test -f %s",name);
-  return system(tb);  /* 0: found, 256: not found */
   }
 
 invert_dpy(sbmtype,dbmtype,func)
@@ -4901,7 +4890,7 @@ plot_zoom(izoom,leng,pt,put)
   struct Pick_Time *pt;
   {
   FILE *fp;
-  unsigned char *ptr,path[NAMLEN],filename[NAMLEN],text_buf[LINELEN],endian[5];
+  unsigned char *ptr,path[NAMLEN],filename[NAMLEN],text_buf[LINELEN],fmt[5];
   char cc;
   short ss;
   long ll;
@@ -4913,8 +4902,8 @@ plot_zoom(izoom,leng,pt,put)
     {
     read_parameter(PARAM_WAVE,path);
     read_parameter(PARAM_FMT,text_buf);
-    sscanf(text_buf,"%4s",endian);
-    endian[0]=toupper(endian[0]);
+    sscanf(text_buf,"%4s",fmt);
+    fmt[0]=toupper(fmt[0]);
     }
   /* reverse mon */
   if(zoom_win[izoom].valid)
@@ -4987,7 +4976,7 @@ plot_zoom(izoom,leng,pt,put)
           sprintf(filename,"%s/%02x%02x%02x.%02x%02x%02x.%d.%04X.%s",
             path,ft.ptr[j].time[0],ft.ptr[j].time[1],ft.ptr[j].time[2],
             ft.ptr[j].time[3],ft.ptr[j].time[4],ft.ptr[j].time[5],
-            sr,zoom_win[izoom].sys_ch,endian);
+            sr,zoom_win[izoom].sys_ch,fmt);
           if(zoom_win[izoom].filt)
             sprintf(filename+strlen(filename),".F%d",zoom_win[izoom].filt);
           if(ft.stn[ft.ch2idx[zoom_win[izoom].sys_ch]].name[0]!='*')
@@ -5162,11 +5151,11 @@ plot_zoom(izoom,leng,pt,put)
       np_last=np;
       if(put)
         {
-        if(!strcmp(endian,"B4"))    /* 4-byte big-endian */
+        if(!strcmp(fmt,"B4"))    /* 4-byte binary */
           {
           if(!fwrite(buf,4,sr,fp)) goto write_error;
           }
-        else if(!strcmp(endian,"B2")) /* 2-byte big-endian */
+        else if(!strcmp(fmt,"B2")) /* 2-byte binary */
           for(j=0;j<sr;j++)
             {
             if(buf[j]>32767) ss=32767;
@@ -5174,12 +5163,12 @@ plot_zoom(izoom,leng,pt,put)
             else ss=buf[j];
             if(!fwrite(&ss,2,1,fp)) goto write_error;
             }
-        else if(!strcmp(endian,"C"))  /* numerical characters */
+        else if(!strcmp(fmt,"C"))  /* numerical characters */
           for(j=0;j<sr;j++)
             {
             if(fprintf(fp,"%d\n",buf[j])==EOF) goto write_error;
             }
-        else if(!strcmp(endian,"A"))    /* audio */
+        else if(!strcmp(fmt,"A"))    /* audio */
           {
           if(put==MSE_BUTNL+1) k=8;
           else if(put==MSE_BUTNM+1) k=4;
@@ -5190,8 +5179,7 @@ plot_zoom(izoom,leng,pt,put)
             if(!fwrite(&cc,1,1,fp)) goto write_error;
             }
           }
-        else if(!strncmp(endian,"B1",2) || !strncmp(endian,"L1",2) )
-                              /* 1 byte scaled */
+        else if(!strncmp(fmt,"B1",2)) /* 1 byte binary scaled */
           {
           for(j=0;j<sr;j++)
             {
@@ -5230,7 +5218,7 @@ plot_zoom(izoom,leng,pt,put)
     put_mark_zoom(j,izoom,&ft.pick[ft.ch2idx[zoom_win[izoom].sys_ch]][j],0);
   for(j=0;j<2;j++) if(ft.pick_calc[ft.ch2idx[zoom_win[izoom].sys_ch]][j].valid)
     put_mark_zoom(j,izoom,&ft.pick_calc[ft.ch2idx[zoom_win[izoom].sys_ch]][j],1);
-  if(put && strcmp(endian,"A")) sleep(1);
+  if(put && strcmp(fmt,"A")) sleep(1);
   return;
 
 write_error:
@@ -6998,8 +6986,6 @@ hard_copy(ratio)
     *ptr=0;
     format=FMT_PS;    /* '&' -> PostScript */
     }
-  else if(findfile("/usr/sony/bin/machine")==0)
-    format=FMT_XWD;
   else format=FMT_PS;
 
   if(format==FMT_PS)  /* PostScript */
@@ -9376,14 +9362,16 @@ read_final(char *final_file,struct Hypo *hypo)
   char textbuf[LINELEN],*ptr,tb[20],ulat,ulon;
   double lat,lon;
 
-  if((fp=fopen(final_file,"r"))==NULL) return(hypo->valid=0);
-  fgets(textbuf,LINELEN,fp);
-  sscanf(textbuf,"%d%d%d%d%d%lf%lf%lf%lf%lf",
-    &hypo->tm[0],&hypo->tm[1],&hypo->tm[2],&hypo->tm[3],&hypo->tm[4],
-    &hypo->se,&hypo->alat,&hypo->along,&hypo->dep,&hypo->mag);
-  fgets(textbuf,LINELEN,fp);
+  hypo->valid=0;
+  if((fp=fopen(final_file,"r"))==NULL) return 0;
+  if(fgets(textbuf,LINELEN,fp)==NULL) return 0;
+  if(sscanf(textbuf,"%d%d%d%d%d%lf%lf%lf%lf%lf",&hypo->tm[0],&hypo->tm[1],
+    &hypo->tm[2],&hypo->tm[3],&hypo->tm[4],&hypo->se,&hypo->alat,
+    &hypo->along,&hypo->dep,&hypo->mag)<9) return 0;
+  hypo->valid=1;
+  if(fgets(textbuf,LINELEN,fp)==NULL) return 1;
   sscanf(textbuf,"%s%*lf%lf%lf%lf",hypo->diag,&hypo->ye,&hypo->xe,&hypo->ze);
-  fgets(textbuf,LINELEN,fp);
+  if(fgets(textbuf,LINELEN,fp)==NULL) return 1;
   if(strchr(textbuf,'*')==0)
     {
     sscanf(textbuf,"%lf%lf%lf%lf%lf%lf",&hypo->c[0][0],&hypo->c[0][1],
@@ -9394,10 +9382,10 @@ read_final(char *final_file,struct Hypo *hypo)
     hypo->ellipse=1;
     }
   else hypo->ellipse=0;
-  fgets(textbuf,LINELEN,fp);
+  if(fgets(textbuf,LINELEN,fp)==NULL) return 1;
   sscanf(textbuf,"%lf%lf%lf%lf%lf%lf",&hypo->alat0,&hypo->ye0,
     &hypo->along0,&hypo->xe0,&hypo->dep0,&hypo->ze0);
-  fgets(textbuf,LINELEN,fp);
+  if(fgets(textbuf,LINELEN,fp)==NULL) return 1;
   sscanf(textbuf,"%d",&hypo->ndata);
   if(hypo->fnl==0)
     hypo->fnl=(struct Fnl *)malloc(sizeof(*hypo->fnl)*hypo->ndata);
@@ -9424,7 +9412,7 @@ read_final(char *final_file,struct Hypo *hypo)
     hypo->fnl[i].emerg*=PI/180.0;
     hypo->fnl[i].incid*=PI/180.0;
     }
-  fgets(textbuf,LINELEN,fp);
+  if(fgets(textbuf,LINELEN,fp)==NULL) return 1;
   sscanf(textbuf,"%lf%lf",&hypo->pomc_rms,&hypo->somc_rms);
   fclose(fp);
   adj_sec(hypo->tm,&hypo->se,hypo->tm_c,&hypo->se_c);
@@ -9437,7 +9425,7 @@ read_final(char *final_file,struct Hypo *hypo)
     hypo->tm_c[0],hypo->tm_c[1],hypo->tm_c[2],hypo->tm_c[3],
     hypo->tm_c[4],hypo->tm_c[5],hypo->tm_c[6]/100,
     lat,ulat,lon,ulon,hypo->dep,hypo->mag);
-  return(hypo->valid=1);
+  return 1;
   }
 
 str2double(t,n,m,d)

@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.23 2002/07/03 02:16:56 urabe Exp $
+   $Id: win.c,v 1.24 2002/08/01 02:58:05 urabe Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -13,7 +13,7 @@
    98.7.2 yo2000
 */
 #define NAME_PRG      "win"
-#define WIN_VERSION   "2002.7.2"
+#define WIN_VERSION   "2002.8.1"
 #define DEBUG_AP      0   /* for debugging auto-pick */
 /* 5:sr, 4:ch, 3:sec, 2:find_pick, 1:all */
 /************ HOW TO COMPILE THE PROGRAM **************************
@@ -3287,7 +3287,7 @@ auto_pick_pick(sec_now,hint)
         { /* if P is picked, then pick S and measure max ampl. */
         idx_s=pick_s(idx,sec_now,hint); /* pick S phase for the station */
         j=1;
-        if(!hint || (hint && ft.pick[idx_s][S].valid))
+        if(!hint || (hint && idx_s>=0 && ft.pick[idx_s][S].valid))
           { /* measure max in the range from P to 10 sec after S, or 'pt' */
           pt.sec1=ft.pick[idx][P].sec1;
           pt.msec1=ft.pick[idx][P].msec1;
@@ -3296,7 +3296,8 @@ auto_pick_pick(sec_now,hint)
             pt.sec2=ft.pick[idx][S].sec2;
             pt.msec2=ft.pick[idx][S].msec2;
             }
-          else if(ft.pick[idx_s][S].valid && ft.pick[idx_s][S].sec2+10<=sec_now)
+          else if(idx_s>=0 && ft.pick[idx_s][S].valid &&
+                 ft.pick[idx_s][S].sec2+10<=sec_now)
             {
             pt.sec2=ft.pick[idx_s][S].sec2+10;
             pt.msec2=ft.pick[idx_s][S].msec2;

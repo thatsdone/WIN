@@ -1,3 +1,4 @@
+/* $Id: fromtape.c,v 1.2 2000/04/30 10:05:22 urabe Exp $ */
 /*
   program "fromtape.c"
   12/10/90 - 12/13/90, 9/19/91, 10/30/91, 6/19/92  urabe
@@ -6,6 +7,7 @@
   98.6.26  yo2000
   98.6.30  FreeBSD  urabe
   98.9.8   Multi-block sec
+  99.4.19  byte-order-free
 */
 
 #include  <stdio.h>
@@ -29,29 +31,6 @@
 #define   TIME2   "9005161000"  /* no fms before this time */
                     /* 60 m / fm after this time */
 #define   TIME3   "9008031718"  /* 10 m / fm after this time */
-
-/*****************************/
-/* 8/21/96 for little-endian (uehira) */
-#ifndef         LITTLE_ENDIAN
-#define LITTLE_ENDIAN   1234    /* LSB first: i386, vax */
-#endif
-#ifndef         BIG_ENDIAN
-#define BIG_ENDIAN      4321    /* MSB first: 68000, ibm, net */
-#endif
-#ifndef  BYTE_ORDER
-#define  BYTE_ORDER      BIG_ENDIAN
-#endif
-
-#define SWAPU  union { long l; float f; short s; char c[4];} swap
-#define SWAPL(a) swap.l=(a); ((char *)&(a))[0]=swap.c[3];\
-    ((char *)&(a))[1]=swap.c[2]; ((char *)&(a))[2]=swap.c[1];\
-    ((char *)&(a))[3]=swap.c[0]
-#define SWAPF(a) swap.f=(a); ((char *)&(a))[0]=swap.c[3];\
-    ((char *)&(a))[1]=swap.c[2]; ((char *)&(a))[2]=swap.c[1];\
-    ((char *)&(a))[3]=swap.c[0]
-#define SWAPS(a) swap.s=(a); ((char *)&(a))[0]=swap.c[1];\
-    ((char *)&(a))[1]=swap.c[0]
-/*****************************/
 
   unsigned char wbuf[SIZE_WBUF],buf[MAXSIZE];
   int fd_exb,dec_start[6],dec_end[6],min_reserve,dp,
@@ -106,19 +85,9 @@ char *s1,*s2;
 mklong(ptr)
   unsigned char *ptr;
   {
-#if BYTE_ORDER ==  LITTLE_ENDIAN
-  SWAPU;
-#endif
-  unsigned char *ptr1;
-  unsigned long a;
-  ptr1=(unsigned char *)&a;
-  *ptr1++=(*ptr++);
-  *ptr1++=(*ptr++);
-  *ptr1++=(*ptr++);
-  *ptr1  =(*ptr);
-#if BYTE_ORDER ==  LITTLE_ENDIAN
-  SWAPL(a);
-#endif
+  unsigned long a;  
+  a=((ptr[0]<<24)&0xff000000)+((ptr[1]<<16)&0xff0000)+
+    ((ptr[2]<<8)&0xff00)+(ptr[3]&0xff);
   return a;
   }
 
@@ -519,38 +488,25 @@ win2fix(ptr,abuf,sys_ch,sr) /* returns group size in bytes */
   {
   int b_size,g_size;
   register int i,s_rate;
-  register unsigned char *dp,*pts;
+  register unsigned char *dp;
   unsigned int gh;
   short shreg;
   int inreg;
-#if BYTE_ORDER ==  LITTLE_ENDIAN
-  SWAPU;
-#endif
 
   dp=ptr;
-  pts=(unsigned char *)&gh;
-  *pts++=(*dp++);
-  *pts++=(*dp++);
-  *pts++=(*dp++);
-  *pts  =(*dp++);
-#if BYTE_ORDER ==  LITTLE_ENDIAN
-  SWAPL(gh);
-#endif
+  gh=((dp[0]<<24)&0xff000000)+((dp[1]<<16)&0xff0000)+
+    ((dp[2]<<8)&0xff00)+(dp[3]&0xff);
+  dp+=4;
   *sr=s_rate=gh&0xfff;
-  if(s_rate>MAX_SR) return 0;
+/*  if(s_rate>MAX_SR) return 0;*/
   if(b_size=(gh>>12)&0xf) g_size=b_size*(s_rate-1)+8;
   else g_size=(s_rate>>1)+8;
-  *sys_ch=(gh>>16);
+  *sys_ch=(gh>>16)&0xffff;
 
   /* read group */
-  pts=(unsigned char *)&abuf[0];
-  *pts++=(*dp++);
-  *pts++=(*dp++);
-  *pts++=(*dp++);
-  *pts  =(*dp++);
-#if BYTE_ORDER ==  LITTLE_ENDIAN
-  SWAPL(abuf[0]);
-#endif
+  abuf[0]=((dp[0]<<24)&0xff000000)+((dp[1]<<16)&0xff0000)+
+    ((dp[2]<<8)&0xff00)+(dp[3]&0xff);
+  dp+=4;
   if(s_rate==1) return g_size;  /* normal return */
   switch(b_size)
     {
@@ -568,39 +524,26 @@ win2fix(ptr,abuf,sys_ch,sr) /* returns group size in bytes */
     case 2:
       for(i=1;i<s_rate;i++)
         {
-        pts=(unsigned char *)&shreg;
-        *pts++=(*dp++);
-        *pts  =(*dp++);
-#if BYTE_ORDER ==  LITTLE_ENDIAN
-        SWAPS(shreg);
-#endif
+        shreg=((dp[0]<<8)&0xff00)+(dp[1]&0xff);
+        dp+=2;
         abuf[i]=abuf[i-1]+shreg;
         }
       break;
     case 3:
       for(i=1;i<s_rate;i++)
         {
-        pts=(unsigned char *)&inreg;
-        *pts++=(*dp++);
-        *pts++=(*dp++);
-        *pts  =(*dp++);
-#if BYTE_ORDER ==  LITTLE_ENDIAN
-        SWAPL(inreg);
-#endif
+        inreg=((dp[0]<<24)&0xff000000)+((dp[1]<<16)&0xff0000)+
+          ((dp[2]<<8)&0xff00);
+        dp+=3;
         abuf[i]=abuf[i-1]+(inreg>>8);
         }
       break;
     case 4:
       for(i=1;i<s_rate;i++)
         {
-        pts=(unsigned char *)&inreg;
-        *pts++=(*dp++);
-        *pts++=(*dp++);
-        *pts++=(*dp++);
-        *pts  =(*dp++);
-#if BYTE_ORDER ==  LITTLE_ENDIAN
-        SWAPL(inreg);
-#endif
+        inreg=((dp[0]<<24)&0xff000000)+((dp[1]<<16)&0xff0000)+
+          ((dp[2]<<8)&0xff00)+(dp[3]&0xff);
+        dp+=4;
         abuf[i]=abuf[i-1]+inreg;
         }
       break;
@@ -610,85 +553,12 @@ win2fix(ptr,abuf,sys_ch,sr) /* returns group size in bytes */
   return g_size;  /* normal return */
   }
 
-
-
-
-
-unsigned char *get_raw(ptr,sys,ch,sr,buf)
-  unsigned char *ptr;
-  int *sys,*ch,*sr,*buf;
-  {
-  unsigned char *pts;
-  int gh,i;
-  short shreg;
-  int inreg;
-  gh=mklong(ptr);
-  *sys=gh>>24;
-  *ch=(gh>>16)&0xff;
-  *sr=gh&0xfff;
-  ptr+=4;
-  buf[0]=mklong(ptr);
-  ptr+=4;
-
-  switch((gh>>12)&0xf)
-    {
-    case 0:
-      for(i=1;i<(*sr);i+=2)
-        {
-        buf[i]=buf[i-1]+((*(char *)ptr)>>4);
-        buf[i+1]=buf[i]+(((char)(*(ptr++)<<4))>>4);
-        }
-      break;
-    case 1:
-      for(i=1;i<(*sr);i++)
-        buf[i]=buf[i-1]+(*(char *)(ptr++));
-      break;
-    case 2:
-      for(i=1;i<(*sr);i++)
-        {
-        pts=(unsigned char *)&shreg;
-        *pts++=(*ptr++);
-        *pts  =(*ptr++);
-        buf[i]=buf[i-1]+shreg;
-        }
-      break;
-    case 3:
-      for(i=1;i<(*sr);i++)
-        {
-        pts=(unsigned char *)&inreg;
-        *pts++=(*ptr++);
-        *pts++=(*ptr++);
-        *pts  =(*ptr++);
-        buf[i]=buf[i-1]+(inreg>>8);
-        }
-      break;
-    case 4:
-      for(i=1;i<(*sr);i++)
-        {
-        pts=(unsigned char *)&inreg;
-        *pts++=(*ptr++);
-        *pts++=(*ptr++);
-        *pts++=(*ptr++);
-        *pts  =(*ptr++);
-        buf[i]=buf[i-1]+inreg;
-        }
-      break;
-    default:
-      return 0; /* bad header */
-    }
-  return ptr;
-  }
-
 make_mon(ptr,ptw) /* for one minute */
   unsigned char *ptr,*ptw;
   {
   unsigned char *ptr_lim,*ptw_start;
   int i,j,k,ch,sr;
-  union {
-    unsigned long i;
-    unsigned short s;
-    char c[4];
-    } un;
+  unsigned long uni;
 
   /* make mon data */
   ptr_lim=ptr+mklong(ptr);
@@ -705,19 +575,11 @@ make_mon(ptr,ptw) /* for one minute */
     get_mon(sr,buf_raw,buf_mon);  /* get mon data from raw */
     for(i=0;i<SR_MON;i++) ptw=compress_mon(buf_mon[i],ptw);
     } while(ptr<ptr_lim);
-  un.i=ptw-ptw_start;
-#if BYTE_ORDER ==  BIG_ENDIAN
-  ptw_start[0]=un.c[0]; /* size (H) */
-  ptw_start[1]=un.c[1];
-  ptw_start[2]=un.c[2];
-  ptw_start[3]=un.c[3]; /* size (L) */
-#endif
-#if BYTE_ORDER ==  LITTLE_ENDIAN
-  ptw_start[0]=un.c[3]; /* size (H) */
-  ptw_start[1]=un.c[2];
-  ptw_start[2]=un.c[1];
-  ptw_start[3]=un.c[0]; /* size (L) */
-#endif
+  uni=ptw-ptw_start;
+  ptw_start[0]=uni>>24; /* size (H) */
+  ptw_start[1]=uni>>16;
+  ptw_start[2]=uni>>8;
+  ptw_start[3]=uni;     /* size (L) */
   }
 
 mt_pos(fmc,blc)

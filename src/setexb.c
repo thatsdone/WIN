@@ -1,3 +1,4 @@
+/* $Id: setexb.c,v 1.2 2000/04/30 10:05:23 urabe Exp $ */
 /* program "setexb.c"
 	2/27/90, 3/8/93,1/17/94,5/27/94  urabe	*/
 

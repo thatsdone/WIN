@@ -1,5 +1,7 @@
+/* $Id: recvstatus.c,v 1.2 2000/04/30 10:05:23 urabe Exp $ */
 /* "recvstatus.c"      5/24/95    urabe */
 /* 97.7.17 two lines of "if() continue;" in the main loop */
+/* 2000.4.24 strerror() */
 
 #include <stdio.h>
 #include <signal.h>
@@ -12,12 +14,9 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
+#include <errno.h>
 
 #define MAXMESG   2048
-
-extern const int sys_nerr;
-extern const char *const sys_errlist[];
-extern int errno;
 
 int sock;     /* socket */
 unsigned char rbuf[MAXMESG],stt[65536];
@@ -64,7 +63,7 @@ err_sys(ptr)
   {
   perror(ptr);
   write_log(logfile,ptr);
-  if(errno<sys_nerr) write_log(logfile,sys_errlist[errno]);
+  if(strerror(errno)) write_log(strerror(errno));
   close(sock);
   ctrlc();
   }

@@ -1,3 +1,4 @@
+/* $Id: recvt.c,v 1.2 2000/04/30 10:05:23 urabe Exp $ */
 /* "recvt.c"      4/10/93 - 6/2/93,7/2/93,1/25/94    urabe */
 /*                2/3/93,5/25/94,6/16/94 */
 /*                1/6/95 bug in adj_time fixed (tm[0]--) */
@@ -17,6 +18,10 @@
 /*                98.4.23 b2d[] etc. */
 /*                98.6.26 yo2000 */
 /*                99.2.4  moved signal(HUP) to read_chfile() by urabe */
+/*                99.4.19 byte-order-free */
+/*                2000.3.13 >=A1 format */
+/*                2000.4.24 added SS & SR check, check_time +/-60m */
+/*                2000.4.24 strerror() */
 
 #include <stdio.h>
 #include <signal.h>
@@ -29,6 +34,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
+#include <errno.h>
 
 #define DEBUG     0
 #define DEBUG1    0
@@ -37,33 +43,6 @@
 #define MAXMESG   2048
 #define N_PACKET  64    /* N of old packets to be requested */  
 
-/*****************************/
-/* 8/21/96 for little-endian (uehira) */
-#ifndef         LITTLE_ENDIAN
-#define LITTLE_ENDIAN   1234    /* LSB first: i386, vax */
-#endif
-#ifndef         BIG_ENDIAN
-#define BIG_ENDIAN      4321    /* MSB first: 68000, ibm, net */
-#endif
-#ifndef  BYTE_ORDER
-#define  BYTE_ORDER      BIG_ENDIAN
-#endif
-
-#define SWAPU  union { long l; float f; short s; char c[4];} swap
-#define SWAPL(a) swap.l=(a); ((char *)&(a))[0]=swap.c[3];\
-    ((char *)&(a))[1]=swap.c[2]; ((char *)&(a))[2]=swap.c[1];\
-    ((char *)&(a))[3]=swap.c[0]
-#define SWAPF(a) swap.f=(a); ((char *)&(a))[0]=swap.c[3];\
-    ((char *)&(a))[1]=swap.c[2]; ((char *)&(a))[2]=swap.c[1];\
-    ((char *)&(a))[3]=swap.c[0]
-#define SWAPS(a) swap.s=(a); ((char *)&(a))[0]=swap.c[1];\
-    ((char *)&(a))[1]=swap.c[0]
-/*****************************/
-
-extern const int sys_nerr;
-extern const char *const sys_errlist[];
-extern int errno;
-
 unsigned char rbuf[MAXMESG],ch_table[65536];
 char tb[100],*progname,logfile[256],chfile[256];
 int n_ch,negate_channel;
@@ -71,19 +50,9 @@ int n_ch,negate_channel;
 mklong(ptr)
   unsigned char *ptr;
   {
-  unsigned char *ptr1;
   unsigned long a;
-#if BYTE_ORDER ==  LITTLE_ENDIAN
-  SWAPU;
-#endif
-  ptr1=(unsigned char *)&a;
-  *ptr1++=(*ptr++);
-  *ptr1++=(*ptr++);
-  *ptr1++=(*ptr++);
-  *ptr1  =(*ptr);
-#if BYTE_ORDER ==  LITTLE_ENDIAN
-  SWAPL(a);
-#endif
+  a=((ptr[0]<<24)&0xff000000)+((ptr[1]<<16)&0xff0000)+
+    ((ptr[2]<<8)&0xff00)+(ptr[3]&0xff);
   return a;
   }
 
@@ -257,7 +226,7 @@ check_time(ptr)
   /* compare time with real time */
   get_time(rt1);
   for(i=0;i<5;i++) rt2[i]=rt1[i];
-  for(i=0;i<30;i++)  /* within 30 minutes ? */
+  for(i=0;i<60;i++)  /* within 30 minutes ? */
     {
     if(time_cmp(tm,rt1,5)==0 || time_cmp(tm,rt2,5)==0)
       {
@@ -304,7 +273,7 @@ err_sys(ptr)
   {
   perror(ptr);
   write_log(logfile,ptr);
-  if(errno<sys_nerr) write_log(logfile,sys_errlist[errno]);
+  if(strerror(errno)) write_log(strerror(errno));
   ctrlc();
   }
 
@@ -453,7 +422,9 @@ wincpy(ptw,ptr,size)
   unsigned char *ptw,*ptr;
   int size;
   {
-  int sr,n;
+#define MAX_SR 500
+#define MAX_SS 4
+  int sr,n,ss;
   unsigned char *ptr_lim;
   unsigned short ch;
   int gs;
@@ -465,7 +436,15 @@ wincpy(ptw,ptr,size)
     gh=mklong(ptr);
     ch=(gh>>16)&0xffff;
     sr=gh&0xfff;
-    if((gh>>12)&0xf) gs=((gh>>12)&0xf)*(sr-1)+8;
+    ss=(gh>>12)&0xf;
+    if(sr>MAX_SR || ss>MAX_SS)
+      {
+      sprintf(tb,"illegal ch hdr %02X%02X%02X%02X %02X%02X%02X%02X",
+            ptr[0],ptr[1],ptr[2],ptr[3],ptr[4],ptr[5],ptr[6],ptr[7]);
+      write_log(logfile,tb);
+      return n;
+      }
+    if(ss) gs=ss*(sr-1)+8;
     else gs=(sr>>1)+8;
     if(ch_table[ch])
       {
@@ -487,11 +466,7 @@ main(argc,argv)
   {
   key_t shm_key;
   int shmid;
-  union {
-    unsigned long i;
-    unsigned short s;
-    char c[4];
-    } un;
+  unsigned long uni;
   unsigned char *ptr,tm[6],*ptr_size;
   int i,j,k,size,fromlen,n,re,nlen,sock,nn;
   struct sockaddr_in to_addr,from_addr;
@@ -601,40 +576,24 @@ main(argc,argv)
         {
         nn=wincpy(ptr,rbuf+8,n-8);
         ptr+=nn;
-        un.i=time(0);
-#if BYTE_ORDER ==  BIG_ENDIAN
-        ptr_size[4]=un.c[0];  /* tow (H) */
-        ptr_size[5]=un.c[1];
-        ptr_size[6]=un.c[2];
-        ptr_size[7]=un.c[3];  /* tow (L) */
-#endif
-#if BYTE_ORDER ==  LITTLE_ENDIAN
-        ptr_size[4]=un.c[3];  /* tow (H) */
-        ptr_size[5]=un.c[2];
-        ptr_size[6]=un.c[1];
-        ptr_size[7]=un.c[0];  /* tow (L) */
-#endif
+        uni=time(0);
+        ptr_size[4]=uni>>24;  /* tow (H) */
+        ptr_size[5]=uni>>16;
+        ptr_size[6]=uni>>8;
+        ptr_size[7]=uni;      /* tow (L) */
         }
       else
         {
-        if((un.i=ptr-ptr_size)>14)
+        if((uni=ptr-ptr_size)>14)
           {
-#if BYTE_ORDER ==  BIG_ENDIAN
-          ptr_size[0]=un.c[0];  /* size (H) */
-          ptr_size[1]=un.c[1];
-          ptr_size[2]=un.c[2];
-          ptr_size[3]=un.c[3];  /* size (L) */
-#endif
-#if BYTE_ORDER ==  LITTLE_ENDIAN
-          ptr_size[0]=un.c[3];  /* size (H) */
-          ptr_size[1]=un.c[2];
-          ptr_size[2]=un.c[1];
-          ptr_size[3]=un.c[0];  /* size (L) */
-#endif
+          ptr_size[0]=uni>>24;  /* size (H) */
+          ptr_size[1]=uni>>16;
+          ptr_size[2]=uni>>8;
+          ptr_size[3]=uni;      /* size (L) */
 #if DEBUG
           printf("(%d)",time(0));
           for(i=8;i<14;i++) printf("%02X",ptr_size[i]);
-          printf(" : %d > %d\n",un.i,ptr_size-sh->d);
+          printf(" : %d > %d\n",uni,ptr_size-sh->d);
 #endif
           }
         else ptr=ptr_size;
@@ -663,19 +622,11 @@ main(argc,argv)
           nn=wincpy(ptr,rbuf+8,n-8);
           ptr+=nn;
           memcpy(tm,rbuf+2,6);
-          un.i=time(0);
-#if BYTE_ORDER ==  BIG_ENDIAN
-          ptr_size[4]=un.c[0];  /* tow (H) */
-          ptr_size[5]=un.c[1];
-          ptr_size[6]=un.c[2];
-          ptr_size[7]=un.c[3];  /* tow (L) */
-#endif
-#if BYTE_ORDER ==  LITTLE_ENDIAN
-          ptr_size[4]=un.c[3];  /* tow (H) */
-          ptr_size[5]=un.c[2];
-          ptr_size[6]=un.c[1];
-          ptr_size[7]=un.c[0];  /* tow (L) */
-#endif
+          uni=time(0);
+          ptr_size[4]=uni>>24;  /* tow (H) */
+          ptr_size[5]=uni>>16;
+          ptr_size[6]=uni>>8;
+          ptr_size[7]=uni;      /* tow (L) */
           }
         }
       }
@@ -685,56 +636,30 @@ main(argc,argv)
       j=3;
       while(nlen>0)
         {
-        un.i=0;
-#if BYTE_ORDER ==  BIG_ENDIAN
-        un.c[2]=rbuf[j++];
-        un.c[3]=rbuf[j++];
-#endif
-#if BYTE_ORDER ==  LITTLE_ENDIAN
-        un.c[1]=rbuf[j++];
-        un.c[0]=rbuf[j++];
-#endif
-        n=un.i;
-
+        n=(rbuf[j]<<8)+rbuf[j+1];
+        j+=2;
         for(i=0;i<6;i++) if(rbuf[j+i]!=tm[i]) break;
         if(i==6)  /* same time */
           {
           nn=wincpy(ptr,rbuf+j+6,n-8);
           ptr+=nn;
-          un.i=time(0);
-#if BYTE_ORDER ==  BIG_ENDIAN
-          ptr_size[4]=un.c[0];  /* tow (H) */
-          ptr_size[5]=un.c[1];
-          ptr_size[6]=un.c[2];
-          ptr_size[7]=un.c[3];  /* tow (L) */
-#endif
-#if BYTE_ORDER ==  LITTLE_ENDIAN
-          ptr_size[4]=un.c[3];  /* tow (H) */
-          ptr_size[5]=un.c[2];
-          ptr_size[6]=un.c[1];
-          ptr_size[7]=un.c[0];  /* tow (L) */
-#endif
+          ptr_size[4]=uni>>24;  /* tow (H) */
+          ptr_size[5]=uni>>16;
+          ptr_size[6]=uni>>8;
+          ptr_size[7]=uni;      /* tow (L) */
           }
         else
           {
-          if((un.i=ptr-ptr_size)>14)
+          if((uni=ptr-ptr_size)>14)
             {
-#if BYTE_ORDER ==  BIG_ENDIAN
-          ptr_size[0]=un.c[0];  /* size (H) */
-          ptr_size[1]=un.c[1];
-          ptr_size[2]=un.c[2];
-          ptr_size[3]=un.c[3];  /* size (L) */
-#endif
-#if BYTE_ORDER ==  LITTLE_ENDIAN
-          ptr_size[0]=un.c[3];  /* size (H) */
-          ptr_size[1]=un.c[2];
-          ptr_size[2]=un.c[1];
-          ptr_size[3]=un.c[0];  /* size (L) */
-#endif
+            ptr_size[0]=uni>>24;  /* size (H) */
+            ptr_size[1]=uni>>16;
+            ptr_size[2]=uni>>8;
+            ptr_size[3]=uni;      /* size (L) */
 #if DEBUG
             printf("(%d)",time(0));
             for(i=8;i<14;i++) printf("%02X",ptr_size[i]);
-            printf(" : %d > %d\n",un.i,ptr_size-sh->d);
+            printf(" : %d > %d\n",uni,ptr_size-sh->d);
 #endif
             }
           else ptr=ptr_size;
@@ -764,24 +689,39 @@ main(argc,argv)
             nn=wincpy(ptr,rbuf+j+6,n-8);
             ptr+=nn;
             memcpy(tm,rbuf+j,6);
-            un.i=time(0);
-#if BYTE_ORDER ==  BIG_ENDIAN
-            ptr_size[4]=un.c[0];  /* tow (H) */
-            ptr_size[5]=un.c[1];
-            ptr_size[6]=un.c[2];
-            ptr_size[7]=un.c[3];  /* tow (L) */
-#endif
-#if BYTE_ORDER ==  LITTLE_ENDIAN
-            ptr_size[4]=un.c[3];  /* tow (H) */
-            ptr_size[5]=un.c[2];
-            ptr_size[6]=un.c[1];
-            ptr_size[7]=un.c[0];  /* tow (L) */
-#endif
+            uni=time(0);
+            ptr_size[4]=uni>>24;  /* tow (H) */
+            ptr_size[5]=uni>>16;
+            ptr_size[6]=uni>>8;
+            ptr_size[7]=uni;      /* tow (L) */
             }
           }
 next:   nlen-=n;
         j+=n-2;
         }
+      }
+    else /* rbuf[2]>=0xA1 with packet ID */
+      {
+      ptr_size=ptr;
+      ptr+=4;   /* size */
+      ptr+=4;   /* time of write */
+      memcpy(ptr,rbuf+2,n-2);
+      ptr+=n-2;
+      uni=ptr-ptr_size;
+      ptr_size[0]=uni>>24;  /* size (H) */
+      ptr_size[1]=uni>>16;
+      ptr_size[2]=uni>>8;
+      ptr_size[3]=uni;      /* size (L) */
+      uni=time(0);
+      ptr_size[4]=uni>>24;  /* tow (H) */
+      ptr_size[5]=uni>>16;
+      ptr_size[6]=uni>>8;
+      ptr_size[7]=uni;      /* tow (L) */
+
+      sh->r=sh->p;      /* latest */
+      if(ptr>sh->d+sh->pl) ptr=sh->d;
+      sh->p=ptr-sh->d;
+      sh->c++;
       }
 #if BELL
     fprintf(stderr,"\007");

@@ -1,3 +1,4 @@
+/* $Id: events.c,v 1.2 2000/04/30 10:05:22 urabe Exp $ */
 /****************************************************************************
 *****************************************************************************
 **     program "events.c" for NEWS                                  *********
@@ -27,6 +28,7 @@
 **     98.9.7         time_start/time_end                           *********
 **     99.5.29        quit if pmon.out won't open at first          *********
 **     99.6.12        not make zero-size waveform file              *********
+**     99.11.9        SGI IRIX                                      *********
 **                                                                  *********
 **   Example of parameter file (events.prm)                         *********
 =============================================================================
@@ -74,6 +76,7 @@ sso     /dat/etc/sso.station    cut-jc3
 #endif
 
 #if defined(__SVR4)
+#include  <sys/statvfs.h>
 #define statfs statvfs
 #define f_bsize f_frsize
 #endif

@@ -1,3 +1,4 @@
+/* $Id: wdisk.c,v 1.2 2000/04/30 10:05:23 urabe Exp $ */
 /*
   program "wdisk.c"   4/16/93-5/13/93,7/2/93,7/5/94  urabe
                       1/6/95 bug in adj_time fixed (tm[0]--)
@@ -8,6 +9,8 @@
 		      8/27/96 LITTLE ENDIAN (uehira)
 		      98.5.19 sleep() in illegal time
 		      98.6.26 strcmp2() for year of 2000
+                      99.4.19 byte-order-free
+                      2000.4.24 strerror()
 */
 
 #include <stdio.h>
@@ -21,36 +24,10 @@
 #include <dirent.h>
 #include <signal.h>
 #include <ctype.h>
+#include <errno.h>
 
 #define   DEBUG   0
 #define   BELL    0
-
-/*****************************/
-/* 8/27/96 for little-endian (Uehira) */
-#ifndef         LITTLE_ENDIAN
-#define LITTLE_ENDIAN   1234    /* LSB first: i386, vax */
-#endif
-#ifndef         BIG_ENDIAN
-#define BIG_ENDIAN      4321    /* MSB first: 68000, ibm, net */
-#endif
-#ifndef  BYTE_ORDER
-#define  BYTE_ORDER      BIG_ENDIAN
-#endif
-
-#define SWAPU  union { long l; float f; short s; char c[4];} swap
-#define SWAPL(a) swap.l=(a); ((char *)&(a))[0]=swap.c[3];\
-    ((char *)&(a))[1]=swap.c[2]; ((char *)&(a))[2]=swap.c[1];\
-    ((char *)&(a))[3]=swap.c[0]
-#define SWAPF(a) swap.f=(a); ((char *)&(a))[0]=swap.c[3];\
-    ((char *)&(a))[1]=swap.c[2]; ((char *)&(a))[2]=swap.c[1];\
-    ((char *)&(a))[3]=swap.c[0]
-#define SWAPS(a) swap.s=(a); ((char *)&(a))[0]=swap.c[1];\
-    ((char *)&(a))[1]=swap.c[0]
-/*****************************/
-
-extern const int sys_nerr;
-extern const char *const sys_errlist[];
-extern int errno;
 
 char tbuf[256],latest[20],oldest[20],busy[20],outdir[80];
 char *progname,logfile[256];
@@ -59,18 +36,14 @@ int count,count_max,mode;
 FILE *fd;
 
 mklong(ptr)
-     unsigned char *ptr;
-{
-   unsigned char *ptr1;
-   unsigned long a;
-   ptr1=(unsigned char *)&a;
-   *ptr1++=(*ptr++);
-   *ptr1++=(*ptr++);
-   *ptr1++=(*ptr++);
-   *ptr1  =(*ptr);
-   return a;
-}
-
+  unsigned char *ptr;
+  {   
+  unsigned long a;
+  a=((ptr[0]<<24)&0xff000000)+((ptr[1]<<16)&0xff0000)+
+    ((ptr[2]<<8)&0xff00)+(ptr[3]&0xff);
+  return a;
+  }   
+        
 write_log(logfil,ptr)
      char *logfil;
      char *ptr;
@@ -97,7 +70,7 @@ err_sys(ptr)
 {
    perror(ptr);
    write_log(logfile,ptr);
-   if(errno<sys_nerr) write_log(logfile,sys_errlist[errno]);
+   if(strerror(errno)) write_log(logfile,strerror(errno));
    ctrlc();
 }
 
@@ -356,9 +329,6 @@ main(argc,argv)
       unsigned long c;    /* counter */
       unsigned char d[1];   /* data buffer */
    } *shm;
-#if BYTE_ORDER == LITTLE_ENDIAN
-   SWAPU;
-#endif
    
    if(progname=strrchr(argv[0],'/')) progname++;
    else progname=argv[0];
@@ -404,18 +374,15 @@ main(argc,argv)
    
    while(1){
       size=mklong(ptr_save=shm->d+shp);
-#if BYTE_ORDER == LITTLE_ENDIAN
-      SWAPL(size);
-#endif
       c_save=shm->c;
       bcd_dec(tm,shm->d+shp+4); /* YMDhms */
       if(check_time(tm)){
 	 sprintf(tbuf,
-		 "illegal time %02X%02X%02X.%02X%02X%02X:%02X%02X%02X.%02X%02X%02X (%d)",
-		 shm->d[shp+4],shm->d[shp+5],shm->d[shp+6],
-		 shm->d[shp+7],shm->d[shp+8],shm->d[shp+9],
-		 shm->d[shp+10],shm->d[shp+11],shm->d[shp+12],
-		 shm->d[shp+13],shm->d[shp+14],shm->d[shp+15],size);
+	 "illegal time %02X%02X%02X.%02X%02X%02X:%02X%02X%02X.%02X%02X%02X (%d)",
+	 shm->d[shp+4],shm->d[shp+5],shm->d[shp+6],
+	 shm->d[shp+7],shm->d[shp+8],shm->d[shp+9],
+	 shm->d[shp+10],shm->d[shp+11],shm->d[shp+12],
+	 shm->d[shp+13],shm->d[shp+14],shm->d[shp+15],size);
 	 write_log(logfile,tbuf);
 	 if(fd!=NULL) fclose(fd);
          sleep(5);
@@ -464,9 +431,6 @@ main(argc,argv)
       if(shp>shm->pl) shp=shp_save=0;
       while(shm->p==shp) sleep(1);
       tmp=mklong(ptr_save);
-#if BYTE_ORDER == LITTLE_ENDIAN
-      SWAPL(tmp);
-#endif
       if(shm->c<c_save || tmp!=size){
 	 write_log(logfile,"reset");
 	 goto reset;

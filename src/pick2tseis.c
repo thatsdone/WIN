@@ -1,3 +1,4 @@
+/* $Id: pick2tseis.c,v 1.2 2000/04/30 10:05:22 urabe Exp $ */
 /* pick2tseis.c */
 /* 98.02.20 tsuru */
 /* input (stdin)   : a list of pick file names (ls -l) */

@@ -1,3 +1,4 @@
+/* $Id: relay.c,v 1.2 2000/04/30 10:05:23 urabe Exp $ */
 /* "relay.c"      5/23/94-5/25/94,6/15/94-6/16/94,6/23/94,3/16/95 urabe */
 /*                3/26/95 check_packet_no; port# */
 /*                5/24/96 added processing of "host table full" */
@@ -7,6 +8,7 @@
 /*                6/23/97 SNDBUF/RCVBUF=65535 */ 
 /*                97.9.3               &50000 */ 
 /*                98.6.30 FreeBSD */ 
+/*                2000.4.24 strerror() */
 
 #include <stdio.h>
 #include <signal.h>
@@ -19,6 +21,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
+#include <errno.h>
 
 #define DEBUG     0
 #define DEBUG1    0
@@ -27,10 +30,6 @@
 #define MAXMESG   2048
 #define N_PACKET  64    /* N of old packets to be requested */  
 #define BUFNO     128
-
-extern const int sys_nerr;
-extern const char *const sys_errlist[];
-extern int errno;
 
 int sock_in,sock_out;   /* socket */
 unsigned char sbuf[BUFNO][MAXMESG],sbuf_in[MAXMESG];
@@ -92,7 +91,7 @@ err_sys(ptr)
   {
   perror(ptr);
   write_log(logfile,ptr);
-  if(errno<sys_nerr) write_log(logfile,sys_errlist[errno]);
+  if(strerror(errno)) write_log(strerror(errno));
   close(sock_in);
   close(sock_out);
   ctrlc();

@@ -1,8 +1,12 @@
+/* $Id: raw_100.c,v 1.2 2000/04/30 10:05:23 urabe Exp $ */
 /* "raw_100.c"    97.6.23 - 6.30 urabe */
 /*                  modified from raw_raw.c */
 /*                  97.8.4 bug fixed (output empty block) */
 /*                  97.8.5 fgets/sscanf */
 /*                  99.2.4 moved signal(HUP) to read_chfile() by urabe */
+/*                  99.12.10 byte-order-free */
+/*                  2000.3.21 c_save=shr->c; bug fixed */
+/*                  2000.4.24 strerror() */
 
 #include <stdio.h>
 #include <signal.h>
@@ -13,16 +17,13 @@
 #include <sys/shm.h>
 #include <sys/time.h>
 #include <sys/types.h>
+#include <errno.h>
 
 #define DEBUG       0
 #define BELL        0
 #define MAX_SR   4095
 #define SR_LOWER   50
 #define SR        100
-
-extern const int sys_nerr;
-extern const char *const sys_errlist[];
-extern int errno;
 
 long buf_raw[MAX_SR];
 unsigned char ch_table[65536];
@@ -32,13 +33,9 @@ int n_ch,negate_channel;
 mklong(ptr)
   unsigned char *ptr;
   {
-  unsigned char *ptr1;
   unsigned long a;
-  ptr1=(unsigned char *)&a;
-  *ptr1++=(*ptr++);
-  *ptr1++=(*ptr++);
-  *ptr1++=(*ptr++);
-  *ptr1  =(*ptr);
+  a=((ptr[0]<<24)&0xff000000)+((ptr[1]<<16)&0xff0000)+
+    ((ptr[2]<<8)&0xff00)+(ptr[3]&0xff);
   return a;
   }
 
@@ -82,7 +79,7 @@ err_sys(ptr)
   {
   perror(ptr);
   write_log(logfile,ptr);
-  if(errno<sys_nerr) write_log(logfile,sys_errlist[errno]);
+  if(strerror(errno)) write_log(strerror(errno));
   ctrlc();
   }
 
@@ -151,7 +148,7 @@ read_chfile()
     n_ch=i;
     write_log(logfile,"all channels");
     }
-  signal(SIGHUP,read_chfile);
+  signal(SIGHUP,(void *)read_chfile);
   }
 
 win2fix(ptr,abuf,sys_ch,sr) /* returns group size in bytes */
@@ -162,28 +159,25 @@ win2fix(ptr,abuf,sys_ch,sr) /* returns group size in bytes */
   {
   int b_size,g_size;
   register int i,s_rate;
-  register unsigned char *dp,*pts;
+  register unsigned char *dp;
   unsigned int gh;
   short shreg;
   int inreg;
 
   dp=ptr;
-  pts=(unsigned char *)&gh;
-  *pts++=(*dp++);
-  *pts++=(*dp++);
-  *pts++=(*dp++);
-  *pts  =(*dp++);
+  gh=((dp[0]<<24)&0xff000000)+((dp[1]<<16)&0xff0000)+
+    ((dp[2]<<8)&0xff00)+(dp[3]&0xff);
+  dp+=4;
   *sr=s_rate=gh&0xfff;
-  if(b_size=(gh>>12)&0xf) g_size=b_size*(s_rate-1)+4;
-  else g_size=(s_rate>>1)+4;
-  *sys_ch=(gh>>16);
+/*  if(s_rate>MAX_SR) return 0;*/
+  if(b_size=(gh>>12)&0xf) g_size=b_size*(s_rate-1)+8;
+  else g_size=(s_rate>>1)+8;
+  *sys_ch=(gh>>16)&0xffff;
 
   /* read group */
-  pts=(unsigned char *)&abuf[0];
-  *pts++=(*dp++);
-  *pts++=(*dp++);
-  *pts++=(*dp++);
-  *pts  =(*dp++);
+  abuf[0]=((dp[0]<<24)&0xff000000)+((dp[1]<<16)&0xff0000)+
+    ((dp[2]<<8)&0xff00)+(dp[3]&0xff);
+  dp+=4;
   if(s_rate==1) return g_size;  /* normal return */
   switch(b_size)
     {
@@ -201,35 +195,31 @@ win2fix(ptr,abuf,sys_ch,sr) /* returns group size in bytes */
     case 2:
       for(i=1;i<s_rate;i++)
         {
-        pts=(unsigned char *)&shreg;
-        *pts++=(*dp++);
-        *pts  =(*dp++);
+        shreg=((dp[0]<<8)&0xff00)+(dp[1]&0xff);
+        dp+=2;
         abuf[i]=abuf[i-1]+shreg;
         }
       break;
     case 3:
       for(i=1;i<s_rate;i++)
         {
-        pts=(unsigned char *)&inreg;
-        *pts++=(*dp++);
-        *pts++=(*dp++);
-        *pts  =(*dp++);
+        inreg=((dp[0]<<24)&0xff000000)+((dp[1]<<16)&0xff0000)+
+          ((dp[2]<<8)&0xff00);
+        dp+=3;
         abuf[i]=abuf[i-1]+(inreg>>8);
         }
       break;
     case 4:
       for(i=1;i<s_rate;i++)
         {
-        pts=(unsigned char *)&inreg;
-        *pts++=(*dp++);
-        *pts++=(*dp++);
-        *pts++=(*dp++);
-        *pts  =(*dp++);
+        inreg=((dp[0]<<24)&0xff000000)+((dp[1]<<16)&0xff0000)+
+          ((dp[2]<<8)&0xff00)+(dp[3]&0xff);
+        dp+=4;
         abuf[i]=abuf[i-1]+inreg;
         }
       break;
     default:
-      return g_size; /* bad header */
+      return 0; /* bad header */
     }
   return g_size;  /* normal return */
   }
@@ -237,6 +227,7 @@ win2fix(ptr,abuf,sys_ch,sr) /* returns group size in bytes */
 /* winform.c  4/30/91   urabe */
 /* winform converts fixed-sample-size-data into win's format */
 /* winform returns the length in bytes of output data */
+
 winform(inbuf,outbuf,sr,sys_ch)
   long *inbuf;      /* input data array for one sec*/
   unsigned char *outbuf;  /* output data array for one sec */
@@ -245,7 +236,7 @@ winform(inbuf,outbuf,sr,sys_ch)
   {
   int dmin,dmax,aa,bb,br,i,byte_leng;
   long *ptr;
-  unsigned char *buf,*bf;
+  unsigned char *buf;
 
   /* differentiate and obtain min and max */
   ptr=inbuf;
@@ -262,22 +253,14 @@ winform(inbuf,outbuf,sr,sys_ch)
 
   /* determine sample size */
   if(((dmin&0xfffffff8)==0xfffffff8 || (dmin&0xfffffff8)==0) &&
-    ((dmax&0xfffffff8)==0xfffffff8 || (dmax&0xfffffff8)==0))
-    byte_leng=0;
-  else
-  if(((dmin&0xffffff80)==0xffffff80 || (dmin&0xffffff80)==0) &&
-    ((dmax&0xffffff80)==0xffffff80 || (dmax&0xffffff80)==0))
-    byte_leng=1;
-  else
-  if(((dmin&0xffff8000)==0xffff8000 || (dmin&0xffff8000)==0) &&
-    ((dmax&0xffff8000)==0xffff8000 || (dmax&0xffff8000)==0))
-    byte_leng=2;
-  else
-  if(((dmin&0xff800000)==0xff800000 || (dmin&0xff800000)==0) &&
-    ((dmax&0xff800000)==0xff800000 || (dmax&0xff800000)==0))
-    byte_leng=3;
+    ((dmax&0xfffffff8)==0xfffffff8 || (dmax&0xfffffff8)==0)) byte_leng=0;
+  else if(((dmin&0xffffff80)==0xffffff80 || (dmin&0xffffff80)==0) &&
+    ((dmax&0xffffff80)==0xffffff80 || (dmax&0xffffff80)==0)) byte_leng=1;
+  else if(((dmin&0xffff8000)==0xffff8000 || (dmin&0xffff8000)==0) &&
+    ((dmax&0xffff8000)==0xffff8000 || (dmax&0xffff8000)==0)) byte_leng=2;
+  else if(((dmin&0xff800000)==0xff800000 || (dmin&0xff800000)==0) &&
+    ((dmax&0xff800000)==0xff800000 || (dmax&0xff800000)==0)) byte_leng=3;
   else byte_leng=4;
-
   /* make a 4 byte long header */
   buf=outbuf;
   *buf++=(sys_ch>>8)&0xff;
@@ -286,12 +269,10 @@ winform(inbuf,outbuf,sr,sys_ch)
   *buf++=sr&0xff;
 
   /* first sample is always 4 byte long */
-  bf=(unsigned char *)inbuf;
-  *buf++=(*bf++);
-  *buf++=(*bf++);
-  *buf++=(*bf++);
-  *buf++=(*bf++);
-
+  *buf++=inbuf[0]>>24;
+  *buf++=inbuf[0]>>16;
+  *buf++=inbuf[0]>>8;
+  *buf++=inbuf[0];
   /* second and after */
   switch(byte_leng)
     {
@@ -307,28 +288,25 @@ winform(inbuf,outbuf,sr,sys_ch)
     case 2:
       for(i=1;i<sr;i++)
         {
-        bf=(unsigned char *)&inbuf[i]+2;
-        *buf++=(*bf++);
-        *buf++=(*bf++);
+        *buf++=inbuf[i]>>8;
+        *buf++=inbuf[i];
         }
       break;
     case 3:
       for(i=1;i<sr;i++)
         {
-        bf=(unsigned char *)&inbuf[i]+1;
-        *buf++=(*bf++);
-        *buf++=(*bf++);
-        *buf++=(*bf++);
+        *buf++=inbuf[i]>>16;
+        *buf++=inbuf[i]>>8;
+        *buf++=inbuf[i];
         }
       break;
     case 4:
       for(i=1;i<sr;i++)
         {
-        bf=(unsigned char *)&inbuf[i];
-        *buf++=(*bf++);
-        *buf++=(*bf++);
-        *buf++=(*bf++);
-        *buf++=(*bf++);
+        *buf++=inbuf[i]>>24;
+        *buf++=inbuf[i]>>16;
+        *buf++=inbuf[i]>>8;
+        *buf++=inbuf[i];
         }
       break;
     }
@@ -348,11 +326,7 @@ main(argc,argv)
     } *shr,*shm;
   key_t rawkey,monkey;
   int shmid_raw,shmid_mon;
-  union {
-    unsigned long i;
-    unsigned short s;
-    char c[4];
-    } un;
+  unsigned long uni;
   char tb[100];
   unsigned char *ptr,*ptw,tm[6],*ptr_lim,*ptr_save;
   int sr,i,j,k,size,n,size_shm,ch1,sr1,tow,rest;
@@ -419,8 +393,8 @@ main(argc,argv)
     rawkey,shmid_raw,monkey,shmid_mon,size_shm);
   write_log(logfile,tb);
 
-  signal(SIGTERM,ctrlc);
-  signal(SIGINT,ctrlc);
+  signal(SIGTERM,(void *)ctrlc);
+  signal(SIGINT,(void *)ctrlc);
 
 reset:
   /* initialize buffer */
@@ -435,7 +409,7 @@ reset:
   while(1)
     {
     ptr_lim=ptr+(size=mklong(ptr_save=ptr));
-    c_save=shm->c;
+    c_save=shr->c;
     ptr+=4;
 #if DEBUG
     for(i=0;i<6;i++) printf("%02X",ptr[i]);
@@ -444,8 +418,8 @@ reset:
   /* make output data */
     ptw=shm->d+shm->p;
     ptw+=4;               /* size (4) */
-    un.i=time(0);
-    i=un.i-mklong(ptr);
+    uni=time(0);
+    i=uni-mklong(ptr);
     if(i>=0 && i<1440)   /* with tow */
       {
       if(tow!=1)
@@ -460,10 +434,10 @@ reset:
         tow=1;
         }
       ptr+=4;
-      *ptw++=un.c[0];  /* tow (H) */
-      *ptw++=un.c[1];
-      *ptw++=un.c[2];
-      *ptw++=un.c[3];  /* tow (L) */
+      *ptw++=uni>>24;  /* tow (H) */
+      *ptw++=uni>>16;
+      *ptw++=uni>>8;
+      *ptw++=uni;      /* tow (L) */
       }
     else if(tow!=0)
       {
@@ -480,7 +454,7 @@ reset:
     do    /* loop for ch's */
       {
       gh=mklong(ptr);
-      ch=(*(unsigned short *)&gh);
+      ch=(gh>>16)&0xffff;
       sr=gh&0xfff;
       if((gh>>12)&0xf) gs=((gh>>12)&0xf)*(sr-1)+8;
       else gs=(sr>>1)+8;
@@ -519,17 +493,17 @@ reset:
       } while(ptr<ptr_lim);
     if(tow) i=14;
     else i=10;
-    if((un.i=ptw-(shm->d+shm->p))>i)
+    if((uni=ptw-(shm->d+shm->p))>i)
       {
-      un.i=ptw-(shm->d+shm->p);
-      shm->d[shm->p  ]=un.c[0]; /* size (H) */
-      shm->d[shm->p+1]=un.c[1];
-      shm->d[shm->p+2]=un.c[2];
-      shm->d[shm->p+3]=un.c[3]; /* size (L) */
+      uni=ptw-(shm->d+shm->p);
+      shm->d[shm->p  ]=uni>>24; /* size (H) */
+      shm->d[shm->p+1]=uni>>16;
+      shm->d[shm->p+2]=uni>>8;
+      shm->d[shm->p+3]=uni;     /* size (L) */
 
 #if DEBUG
       for(i=0;i<6;i++) printf("%02X",shm->d[shm->p+4+i]);
-      printf(" : %d M\n",un.i);
+      printf(" : %d M\n",uni);
 #endif
 
       shm->r=shm->p;

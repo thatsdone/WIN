@@ -1,0 +1,17 @@
+# $Id: README,v 1.1 2000/04/30 10:05:22 urabe Exp $
+WIN system package                           19991109
+
+To compile, 
+
+(1)customize 'makefile' for your OS,
+(2)compile by
+     make
+(3)add 'bin' directory to your search path,
+(4)run the program 'win' for test by
+     cd ../etc
+     win 991109.064607
+
+Manual pages in Japanese are available at
+   http://eoc.eri.u-tokyo.ac.jp/MANUALS/index.html.
+
+URABE Taku, urabe@eri.u-tokyo.ac.jp

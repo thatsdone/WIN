@@ -1,7 +1,13 @@
+/* $Id: shmdump.c,v 1.2 2000/04/30 10:05:23 urabe Exp $ */
 /*  program "shmdump.c" 6/14/94 urabe */
 /*  revised 5/29/96 */
 /*  Little Endian (uehira) 8/27/96 */
 /*  98.5.21 RT-TS */
+/*  99.4.20 byte-order-free */
+/*  2000.3.13 packet_id format */
+/*  2000.4.17 deleted definition of usleep() */
+/*  2000.4.24 strerror() */
+
 
 #include <stdio.h>
 #include <signal.h>
@@ -11,37 +17,12 @@
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <sys/time.h>
+#include <unistd.h>
+#include <errno.h>
 
 #define DEBUG       0
 #define MAXMESG     2000
 
-/*****************************/
-/* 8/20/96 for little-endian (uehira) */
-#ifndef         LITTLE_ENDIAN
-#define LITTLE_ENDIAN   1234    /* LSB first: i386, vax */
-#endif
-#ifndef         BIG_ENDIAN
-#define BIG_ENDIAN      4321    /* MSB first: 68000, ibm, net */
-#endif
-#ifndef  BYTE_ORDER
-#define  BYTE_ORDER      BIG_ENDIAN
-#endif
-
-#define SWAPU  union { long l; float f; short s; char c[4];} swap
-#define SWAPL(a) swap.l=(a); ((char *)&(a))[0]=swap.c[3];\
-    ((char *)&(a))[1]=swap.c[2]; ((char *)&(a))[2]=swap.c[1];\
-    ((char *)&(a))[3]=swap.c[0]
-#define SWAPF(a) swap.f=(a); ((char *)&(a))[0]=swap.c[3];\
-    ((char *)&(a))[1]=swap.c[2]; ((char *)&(a))[2]=swap.c[1];\
-    ((char *)&(a))[3]=swap.c[0]
-#define SWAPS(a) swap.s=(a); ((char *)&(a))[0]=swap.c[1];\
-    ((char *)&(a))[1]=swap.c[0]
-/*****************************/
-
-extern const int sys_nerr;
-extern const char *const sys_errlist[];
-extern int errno;
- 
 char *progname;
 struct Shm
   {
@@ -52,32 +33,13 @@ struct Shm
   unsigned char d[1];   /* data buffer */
   };
 
-usleep(ms)  /* after T.I. UNIX MAGAZINE 1994.10 P.176 */
-  unsigned int ms;
-  {
-  struct timeval tv;
-  tv.tv_sec=ms/1000000;
-  tv.tv_usec=ms%1000000;
-  select(0,NULL,NULL,NULL,&tv);
-  }
-
-mklong(ptr)
+mklong(ptr)       
   unsigned char *ptr;
   {
-  unsigned char *ptr1;
   unsigned long a;
-#if BYTE_ORDER ==  LITTLE_ENDIAN
-  SWAPU;
-#endif
-  ptr1=(unsigned char *)&a;
-  *ptr1++=(*ptr++);
-  *ptr1++=(*ptr++);
-  *ptr1++=(*ptr++);
-  *ptr1  =(*ptr);
-#if BYTE_ORDER ==  LITTLE_ENDIAN
-  SWAPL(a);
-#endif
-  return a;
+  a=((ptr[0]<<24)&0xff000000)+((ptr[1]<<16)&0xff0000)+
+    ((ptr[2]<<8)&0xff00)+(ptr[3]&0xff);
+  return a;       
   }
 
 get_time(rt)
@@ -150,7 +112,7 @@ err_sys(ptr)
   {
   perror(ptr);
   write_log(ptr);
-  if(errno<sys_nerr) write_log(sys_errlist[errno]);
+  if(strerror(errno)) write_log(strerror(errno));
   ctrlc();
   }
 
@@ -217,7 +179,7 @@ main(argc,argv)
     unsigned short s;
     char c[4];
     } un;
-  int i,j,k,c_save_in,shp_in,size,shmid_in,size_in,shp,c_save,wtow;
+  int i,j,k,c_save_in,shp_in,size,shmid_in,size_in,shp,c_save,wtow,packet_id;
   unsigned long tow;
   unsigned char *ptr,tbuf[100];
   struct Shm *shm_in;
@@ -250,6 +212,7 @@ reset:
   while(shm_in->r==(-1)) usleep(200000);
   c_save_in=shm_in->c;
   size_in=mklong(shm_in->d+(shp_in=shm_in->r));
+  wtow=0;
   while(1)
     {
     i=advance_s(shm_in,&shp_in,&c_save_in,&size_in);
@@ -274,13 +237,16 @@ reset:
       rt[3]=nt->tm_hour;
       rt[4]=nt->tm_min;
       rt[5]=nt->tm_sec;
-      printf("RT ",j);
-      for(j=0;j<6;j++) printf("%02d",rt[j]);
+      printf("RT ");
+      printf("%02d",rt[0]%100);
+      for(j=1;j<6;j++) printf("%02d",rt[j]);
+      if(*ptr>=0xA0) packet_id=(*ptr++);
       bcd_dec(ts,ptr);
       j=time_dif(rt,ts); /* returns t1-t2(sec) */
       printf(" %2d TS ",j);
       }
     else wtow=0;
+    if(wtow && packet_id>=0xA0) printf("%02X:",packet_id);
     for(j=0;j<6;j++) printf("%02X",*ptr++);
     printf(" ");
     for(j=0;j<8;j++) printf("%02X",*ptr++);

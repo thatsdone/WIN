@@ -1,8 +1,11 @@
+/* $Id: recvts.c,v 1.2 2000/04/30 10:05:23 urabe Exp $ */
 /* "recvts.c"     97.9.19 modified from recvt.c      urabe */
 /*                97.9.21  ch_table */
 /*                98.4.23  b2d[] etc. */
 /*                98.6.26  yo2000 */
 /*                99.2.4   moved signal(HUP) to read_chfile() by urabe */
+/*                99.4.19  byte-order-free */
+/*                2000.4.24 strerror() */
 
 #include <stdio.h>
 #include <signal.h>
@@ -12,6 +15,7 @@
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <sys/time.h>
+#include <errno.h>
 
 #define DEBUG     0
 #define DEBUG1    0
@@ -19,20 +23,6 @@
 #define DEBUG3    0
 #define BELL      0
 #define MAXMESG   2048
-/* 8/20/96 for little-endian (uehira) */
-#ifndef         LITTLE_ENDIAN
-#define LITTLE_ENDIAN   1234    /* LSB first: i386, vax */
-#endif
-#ifndef         BIG_ENDIAN
-#define BIG_ENDIAN      4321    /* MSB first: 68000, ibm, net */
-#endif
-#ifndef  BYTE_ORDER
-#define  BYTE_ORDER      BIG_ENDIAN
-#endif
-
-extern const int sys_nerr;
-extern const char *const sys_errlist[];
-extern int errno;
 
 unsigned char rbuf[MAXMESG],ch_table[65536];
 char tb[100],*progname,logfile[256],chfile[256];
@@ -255,7 +245,7 @@ err_sys(ptr)
   {
   perror(ptr);
   write_log(logfile,ptr);
-  if(errno<sys_nerr) write_log(logfile,sys_errlist[errno]);
+  if(strerror(errno)) write_log(strerror(errno));
   ctrlc();
   }
 
@@ -332,7 +322,6 @@ get_packet(fd,pbuf)
   int fd;
   unsigned char *pbuf;
   {
-  union {unsigned char c[2]; unsigned short s;} u;
   static int p,len;
   int i,psize,plim;
   static unsigned char buf[4000];
@@ -344,17 +333,10 @@ get_packet(fd,pbuf)
 #endif
     p=18;
     }
-#if BYTE_ORDER == BIG_ENDIAN
-  u.c[0]=buf[p++];
-  u.c[1]=buf[p++];
-#endif
-#if BYTE_ORDER == LITTLE_ENDIAN
-  u.c[1]=buf[p++];
-  u.c[0]=buf[p++];
-#endif
-  psize=u.s;
+  psize=(buf[p]<<8)+buf[p+1];
+  p+=2;
 #if DEBUG3
-  printf("  %3d ",u.s);
+  printf("  %3d ",psize);
 #endif
   plim=p+psize;
   p+=4;
@@ -376,11 +358,7 @@ main(argc,argv)
   {
   key_t shm_key;
   int shmid;
-  union {
-    unsigned long i;
-    unsigned short s;
-    char c[4];
-    } un;
+  unsigned long uni;
   unsigned char *ptr,tm[6],*ptr_size;
   int i,j,k,size,n,re,fd;
   struct Shm {
@@ -454,54 +432,30 @@ main(argc,argv)
 #endif
 
   /* check packet ID */
-#if BYTE_ORDER == BIG_ENDIAN
-    un.c[0]=rbuf[7];
-    un.c[1]=rbuf[8];
-#endif
-#if BYTE_ORDER ==  LITTLE_ENDIAN
-    un.c[0]=rbuf[8];
-    un.c[1]=rbuf[7];
-#endif
-    if(rbuf[0]==0xA1 && ch_table[un.s]==1)
+    if(rbuf[0]==0xA1 && ch_table[(rbuf[7]<<8)+rbuf[8]]==1)
       {
       for(i=0;i<6;i++) if(rbuf[i+1]!=tm[i]) break;
       if(i==6)  /* same time */
         {
         memcpy(ptr,rbuf+7,n-7);
         ptr+=n-7;
-        un.i=time(0);
-#if BYTE_ORDER ==  BIG_ENDIAN
-        ptr_size[4]=un.c[0];  /* tow (H) */
-        ptr_size[5]=un.c[1];
-        ptr_size[6]=un.c[2];
-        ptr_size[7]=un.c[3];  /* tow (L) */
-#endif
-#if BYTE_ORDER ==  LITTLE_ENDIAN
-        ptr_size[4]=un.c[3];  /* tow (H) */
-        ptr_size[5]=un.c[2];
-        ptr_size[6]=un.c[1];
-        ptr_size[7]=un.c[0];  /* tow (L) */
-#endif
+        uni=time(0);
+        ptr_size[4]=uni>>24;  /* tow (H) */
+        ptr_size[5]=uni>>16;
+        ptr_size[6]=uni>>8;
+        ptr_size[7]=uni;      /* tow (L) */
         }
       else
         {
-        un.i=ptr-ptr_size;
-#if BYTE_ORDER ==  BIG_ENDIAN
-        ptr_size[0]=un.c[0];  /* size (H) */
-        ptr_size[1]=un.c[1];
-        ptr_size[2]=un.c[2];
-        ptr_size[3]=un.c[3];  /* size (L) */
-#endif
-#if BYTE_ORDER ==  LITTLE_ENDIAN
-        ptr_size[0]=un.c[3];  /* size (H) */
-        ptr_size[1]=un.c[2];
-        ptr_size[2]=un.c[1];
-        ptr_size[3]=un.c[0];  /* size (L) */
-#endif
+        uni=ptr-ptr_size;
+        ptr_size[0]=uni>>24;  /* size (H) */
+        ptr_size[1]=uni>>16;
+        ptr_size[2]=uni>>8;
+        ptr_size[3]=uni;      /* size (L) */
 #if DEBUG
         printf("(%d)",time(0));
         for(i=8;i<14;i++) printf("%02X",ptr_size[i]);
-        printf(" : %d > %d\n",un.i,ptr_size-sh->d);
+        printf(" : %d > %d\n",uni,ptr_size-sh->d);
 #endif
         if(check_time(rbuf+1))
           {
@@ -525,19 +479,11 @@ main(argc,argv)
           memcpy(ptr,rbuf+1,n-1);
           ptr+=n-1;
           memcpy(tm,rbuf+1,6);
-          un.i=time(0);
-#if BYTE_ORDER ==  BIG_ENDIAN
-          ptr_size[4]=un.c[0];  /* tow (H) */
-          ptr_size[5]=un.c[1];
-          ptr_size[6]=un.c[2];
-          ptr_size[7]=un.c[3];  /* tow (L) */
-#endif
-#if BYTE_ORDER ==  LITTLE_ENDIAN
-          ptr_size[4]=un.c[3];  /* tow (H) */
-          ptr_size[5]=un.c[2];
-          ptr_size[6]=un.c[1];
-          ptr_size[7]=un.c[0];  /* tow (L) */
-#endif
+          uni=time(0);
+          ptr_size[4]=uni>>24;  /* tow (H) */
+          ptr_size[5]=uni>>16;
+          ptr_size[6]=uni>>8;
+          ptr_size[7]=uni;      /* tow (L) */
           }
         }
       }

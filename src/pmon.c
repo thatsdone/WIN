@@ -1,3 +1,4 @@
+/* $Id: pmon.c,v 1.2 2000/04/30 10:05:22 urabe Exp $ */
 /************************************************************************
 *************************************************************************
 **  program "pmon.c" for NEWS/SPARC                             *********
@@ -30,6 +31,8 @@
 **  98.6.29   eliminate get_time()                              *********
 **  99.2.3    confirm_off() fixed (cnt_zone=0 in if rep_level)  *********
 **  99.2.4    put signal(HUP) in hangup()                       *********
+**  99.4.20   byte-order-free / LONGNAME - 8(stn)+2(cmp)        *********
+**  99.9.13   bugs in "LONGNAME block" fixed                    *********
 **                                                              *********
 **  font files ("font16", "font24" and "font32") are            *********
 **  not necessary                                               *********
@@ -50,6 +53,7 @@
 #include  <sys/ioctl.h>
 #include  <ctype.h>
 
+#define LONGNAME      1
 #define DEBUG         0
 #define M_CH          1000   /* absolute max n of traces */
                              /* n of chs in data file is unlimited */
@@ -61,6 +65,8 @@
 #define SR_MON        5
 #define TOO_LOW       0.0
 #define TIME_TOO_LOW  10.0
+#define STNLEN        11   /* (length of station code)+1 */
+#define CMPLEN        7    /* (length of component code)+1 */
 
 #define X_BASE        136
 #define Y_BASE        216
@@ -81,28 +87,8 @@
 #define SIZE_FONT32   ((WIDTH_FONT32*N_CODE+15)/16*2*HEIGHT_FONT32)
 #define PLOTHEIGHT    (HEIGHT_LBP-Y_BASE-HEIGHT_FONT32)
 
-/*****************************/
-/* 8/21/96 for little-endian (uehira) */
-#ifndef         LITTLE_ENDIAN
-#define LITTLE_ENDIAN   1234    /* LSB first: i386, vax */
-#endif
-#ifndef         BIG_ENDIAN
-#define BIG_ENDIAN      4321    /* MSB first: 68000, ibm, net */
-#endif
-#ifndef  BYTE_ORDER
-#define  BYTE_ORDER      BIG_ENDIAN
-#endif
-
-#define SWAPU  union { long l; float f; short s; char c[4];} swap
-#define SWAPL(a) swap.l=(a); ((char *)&(a))[0]=swap.c[3];\
-    ((char *)&(a))[1]=swap.c[2]; ((char *)&(a))[2]=swap.c[1];\
-    ((char *)&(a))[3]=swap.c[0]
-#define SWAPF(a) swap.f=(a); ((char *)&(a))[0]=swap.c[3];\
-    ((char *)&(a))[1]=swap.c[2]; ((char *)&(a))[2]=swap.c[1];\
-    ((char *)&(a))[3]=swap.c[0]
-#define SWAPS(a) swap.s=(a); ((char *)&(a))[0]=swap.c[1];\
-    ((char *)&(a))[1]=swap.c[0]
-/*****************************/
+#define SWAPS(a) a=(((a)<<8)&0xff00|((a)>>8)&0xff)
+#define SWAPL(a) a=(((a)<<24)|((a)<<8)&0xff0000|((a)>>8)&0xff00|((a)>>24)&0xff)
 
 /* (8 x 16) x (128-32) */
 /* start = 32, end = 126, n of codes = 126-32+1 = 95 */
@@ -223,8 +209,8 @@ struct
   {
   int ch;
   int gain;
-  unsigned char name[6];
-  unsigned char comp[4];
+  unsigned char name[STNLEN];
+  unsigned char comp[CMPLEN];
   int zone[MAX_ZONES];
   int n_zone;
   int alive;       /* 0:alive 1:dead */
@@ -262,22 +248,12 @@ char *s1,*s2;
 
 mklong(ptr)
   unsigned char *ptr;
-  {
-#if BYTE_ORDER ==  LITTLE_ENDIAN
-  SWAPU;
-#endif
-  unsigned char *ptr1;
+  {   
   unsigned long a;
-  ptr1=(unsigned char *)&a;
-  *ptr1++=(*ptr++);
-  *ptr1++=(*ptr++);
-  *ptr1++=(*ptr++);
-  *ptr1  =(*ptr);
-#if BYTE_ORDER ==  LITTLE_ENDIAN
-  SWAPL(a);
-#endif
+  a=((ptr[0]<<24)&0xff000000)+((ptr[1]<<16)&0xff0000)+
+    ((ptr[2]<<8)&0xff00)+(ptr[3]&0xff);
   return a;
-  }
+  }   
 
 mkfont(y,ii,buf_font,width,jj,k,buf_font16,width16)
   int y,ii,k,width,jj,width16;
@@ -297,39 +273,39 @@ mkfont(y,ii,buf_font,width,jj,k,buf_font16,width16)
           0x000000c0,0x00000030,0x0000000c,0x00000003};
   static unsigned short bit_mask[16]={0x8000,0x4000,0x2000,0x1000,
           0x800,0x400,0x200,0x100,0x80,0x40,0x20,0x10,0x8,0x4,0x2,0x1};
-#if BYTE_ORDER == LITTLE_ENDIAN
   unsigned short s;
-  SWAPU;
-#endif
 
   for(j=0;j<width*2;j++) buf_font[ii*width*2+j]=0;
   j=0;
   for(x=0;x<width16;x++)
     {
-#if BYTE_ORDER == BIG_ENDIAN
-    u.c[0]=buf_font[ii*width*2+j];
-    u.c[1]=buf_font[ii*width*2+j+1];
-    u.c[2]=buf_font[ii*width*2+j+2];
-    u.c[3]=buf_font[ii*width*2+j+3];
-    for(i=0;i<16;i++) if(buf_font16[y*width16+x]&bit_mask[i]) u.l|=bits[k][i];
-    buf_font[ii*width*2+j]  =u.c[0];
-    buf_font[ii*width*2+j+1]=u.c[1];
-    buf_font[ii*width*2+j+2]=u.c[2];
-    buf_font[ii*width*2+j+3]=u.c[3];
-#endif
-#if BYTE_ORDER == LITTLE_ENDIAN
-    u.c[3]=buf_font[ii*width*2+j];
-    u.c[2]=buf_font[ii*width*2+j+1];
-    u.c[1]=buf_font[ii*width*2+j+2];
-    u.c[0]=buf_font[ii*width*2+j+3];
-    s=buf_font16[y*width16+x];
-    SWAPS(s);
-    for(i=0;i<16;i++) if(s&bit_mask[i]) u.l|=bits[k][i];
-    buf_font[ii*width*2+j]  =u.c[3];
-    buf_font[ii*width*2+j+1]=u.c[2];
-    buf_font[ii*width*2+j+2]=u.c[1];
-    buf_font[ii*width*2+j+3]=u.c[0];
-#endif
+    i=1;
+    if(*(char *)&i)
+      {
+      u.c[3]=buf_font[ii*width*2+j];
+      u.c[2]=buf_font[ii*width*2+j+1];
+      u.c[1]=buf_font[ii*width*2+j+2];
+      u.c[0]=buf_font[ii*width*2+j+3];
+      s=buf_font16[y*width16+x];
+      SWAPS(s);
+      for(i=0;i<16;i++) if(s&bit_mask[i]) u.l|=bits[k][i];
+      buf_font[ii*width*2+j]  =u.c[3];
+      buf_font[ii*width*2+j+1]=u.c[2];
+      buf_font[ii*width*2+j+2]=u.c[1];
+      buf_font[ii*width*2+j+3]=u.c[0];
+      }
+    else
+      {
+      u.c[0]=buf_font[ii*width*2+j];
+      u.c[1]=buf_font[ii*width*2+j+1];
+      u.c[2]=buf_font[ii*width*2+j+2];
+      u.c[3]=buf_font[ii*width*2+j+3];
+      for(i=0;i<16;i++) if(buf_font16[y*width16+x]&bit_mask[i]) u.l|=bits[k][i];
+      buf_font[ii*width*2+j]  =u.c[0];
+      buf_font[ii*width*2+j+1]=u.c[1];
+      buf_font[ii*width*2+j+2]=u.c[2];
+      buf_font[ii*width*2+j+3]=u.c[3];
+      }
     j+=jj;
     }
   }
@@ -948,9 +924,6 @@ insatsu(tb1,tb2,tb3,path_spool,printer)
   int i,j;
   static int serno;
   char filename[100];
-#if BYTE_ORDER ==  LITTLE_ENDIAN
-  SWAPU;
-#endif
 
   put_font(frame,WIDTH_LBP,X_BASE-28*max_ch_flag,
     HEIGHT_LBP-HEIGHT_FONT32,tb1,font32,HEIGHT_FONT32,WIDTH_FONT32,0);
@@ -971,16 +944,17 @@ insatsu(tb1,tb2,tb3,path_spool,printer)
   ras.ras_type=RT_STANDARD;
   ras.ras_maptype=RMT_NONE;
   ras.ras_maplength=0;
-#if BYTE_ORDER ==  LITTLE_ENDIAN
-  SWAPL(ras.ras_magic);
-  SWAPL(ras.ras_width);
-  SWAPL(ras.ras_height);
-  SWAPL(ras.ras_depth);
-  SWAPL(ras.ras_length);
-  SWAPL(ras.ras_type);
-  SWAPL(ras.ras_maptype);
-  SWAPL(ras.ras_maplength);
-#endif
+  i=1;if(*(char *)&i)
+    {
+    SWAPL(ras.ras_magic);
+    SWAPL(ras.ras_width);
+    SWAPL(ras.ras_height);
+    SWAPL(ras.ras_depth);
+    SWAPL(ras.ras_length);
+    SWAPL(ras.ras_type);
+    SWAPL(ras.ras_maptype);
+    SWAPL(ras.ras_maplength);
+    }
   fwrite((char *)&ras,1,sizeof(ras),lbp);   /* output header */
   fwrite(frame,1,HEIGHT_LBP*WIDTH_LBP,lbp); /* output image */
   fclose(lbp);
@@ -1052,10 +1026,11 @@ main(argc,argv)
   char *argv[];
   {
   FILE *f_param,*fp;
-  int i,j,k,ret,m_count,x_base,y_base,y,ch,tm[6],minutep,hourp;
+  int i,j,k,maxlen,ret,m_count,x_base,y_base,y,ch,tm[6],minutep,hourp;
   char *ptr,textbuf[500],textbuf1[500],fn1[200],fn2[100],
     fn3[100],path_font[80],path_temp[80],path_mon[80],area[20],
-    timebuf1[80],timebuf2[80],printer[40],name[6],comp[4],path_mon1[80];
+    timebuf1[80],timebuf2[80],printer[40],name[STNLEN],comp[CMPLEN],
+    path_mon1[80];
 
   if(argc<2)
     {
@@ -1182,6 +1157,9 @@ retry:
   pixels_per_trace=(((PLOTHEIGHT-(n_rows-1)*Y_SPACE)/n_rows)-Y_SCALE*2)/max_ch;
   if(pixels_per_trace<20) max_ch_flag=1;  /* not use 24dot font */
   else max_ch_flag=0;
+#if LONGNAME
+  max_ch_flag=0;
+#endif
   ppt_half=pixels_per_trace/2;
   m_count=0;
   fd=(-1);
@@ -1239,6 +1217,7 @@ retry:
         {
         n_zone=0;
         for(i=0;i<65536;i++) idx2[i]=0;
+        maxlen=0;
         for(i=0;i<max_ch;i++)
           {
           if(read_param(f_param,textbuf)) break;
@@ -1327,6 +1306,8 @@ retry:
           else tbl[i].use=0;
           tbl[i].ch=ch;
           idx2[ch]=1;
+          if(maxlen<strlen(tbl[i].name)+strlen(tbl[i].comp))
+            maxlen=strlen(tbl[i].name)+strlen(tbl[i].comp);
           }
         m_ch=i;
         if(m_limit)
@@ -1354,6 +1335,38 @@ retry:
         if(tbl[i].name[0]!='*')
           {
           sprintf(textbuf,"%04X ",tbl[i].ch);
+#if LONGNAME
+          put_font(frame,WIDTH_LBP,0,
+            y+(pixels_per_trace-HEIGHT_FONT16)/2+HEIGHT_FONT16/4,
+            textbuf,font16,HEIGHT_FONT16,WIDTH_FONT16,0);
+          if(i==0) sprintf(textbuf,"%s",tbl[i].name);
+          else
+            {
+            if(strcmp(tbl[i].name,tbl[i-1].name)==0)
+              {
+              *textbuf=0;
+              for(j=0;j<strlen(tbl[i].name);j++) strcat(textbuf," ");
+              }
+            else sprintf(textbuf,"%s",tbl[i].name);
+            }
+          strcat(textbuf,"-");
+          sprintf(textbuf+strlen(textbuf),"%s",tbl[i].comp);
+          if((X_BASE-WIDTH_FONT16*(4+1))/(maxlen+1)>=WIDTH_FONT24 &&
+              pixels_per_trace+4>=HEIGHT_FONT24)
+            put_font(frame,WIDTH_LBP,WIDTH_FONT16*4+
+              (X_BASE-WIDTH_FONT16*(4+1)-(maxlen+1)*WIDTH_FONT24)/2,
+              y+(pixels_per_trace-HEIGHT_FONT24)/2,textbuf,font24,
+              HEIGHT_FONT24,WIDTH_FONT24,0);
+          else
+            put_font(frame,WIDTH_LBP,WIDTH_FONT16*4+
+              (X_BASE-WIDTH_FONT16*(4+1)-(maxlen+1)*WIDTH_FONT16)/2,
+              y+(pixels_per_trace-HEIGHT_FONT16)/2,textbuf,font16,
+              HEIGHT_FONT16,WIDTH_FONT16,0);
+          sprintf(textbuf,"%2d",tbl[i].gain);
+          put_font(frame,WIDTH_LBP,WIDTH_FONT16*15,
+            y+(pixels_per_trace-HEIGHT_FONT16)/2+HEIGHT_FONT16/4,textbuf,font16,
+            HEIGHT_FONT16,WIDTH_FONT16,0);
+#else
           put_font(frame,WIDTH_LBP,0,y+8-8*max_ch_flag,textbuf,font16,
             HEIGHT_FONT16,WIDTH_FONT16,0);
           if(i==0) sprintf(textbuf,"%-4s",tbl[i].name);
@@ -1378,6 +1391,7 @@ retry:
           else
             put_font(frame,WIDTH_LBP,WIDTH_FONT16*4+WIDTH_FONT24*7,y+8,
               textbuf,font16,HEIGHT_FONT16,WIDTH_FONT16,0);
+#endif
           }
         y+=pixels_per_trace;
         }

@@ -1,3 +1,4 @@
+/* $Id: send_raw.c,v 1.2 2000/04/30 10:05:23 urabe Exp $ */
 /*
     program "send_raw/send_mon.c"   1/24/94 - 1/25/94,5/25/94 urabe
                                     6/15/94 - 6/16/94
@@ -18,7 +19,12 @@
                                     98.5.11  bugs in resend fixed
                                     98.6.23  shift_sec (only for -DSUNOS4)
                                     99.2.4   moved signal(HUP) to read_chfile()
+                                    99.4.20  byte-order-free
                                     99.6.11  setsockopt(SO_BROADCAST)
+                                    99.12.3  mktime()<-timelocal()
+                                  2000.3.13  "all" mode / options -amrt
+                                  2000.4.17 deleted definition of usleep() 
+                                  2000.4.24 strerror()
 */
 
 #include <stdio.h>
@@ -28,10 +34,13 @@
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
+#include <time.h>
 #include <sys/time.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
+#include <unistd.h>
+#include <errno.h>
 
 #define DEBUG       0
 #define DEBUG1      0
@@ -40,34 +49,11 @@
 #define SR_MON      5
 #define BUFNO     128
 
-/*****************************/
-/* 8/21/96 for little-endian (uehira) */
-#ifndef         LITTLE_ENDIAN
-#define LITTLE_ENDIAN   1234    /* LSB first: i386, vax */
-#endif
-#ifndef         BIG_ENDIAN
-#define BIG_ENDIAN      4321    /* MSB first: 68000, ibm, net */
-#endif
-#ifndef  BYTE_ORDER
-#define  BYTE_ORDER      BIG_ENDIAN
+#if defined(SUNOS4)
+#define mktime timelocal
 #endif
 
-#define SWAPU  union { long l; float f; short s; char c[4];} swap
-#define SWAPL(a) swap.l=(a); ((char *)&(a))[0]=swap.c[3];\
-    ((char *)&(a))[1]=swap.c[2]; ((char *)&(a))[2]=swap.c[1];\
-    ((char *)&(a))[3]=swap.c[0]
-#define SWAPF(a) swap.f=(a); ((char *)&(a))[0]=swap.c[3];\
-    ((char *)&(a))[1]=swap.c[2]; ((char *)&(a))[2]=swap.c[1];\
-    ((char *)&(a))[3]=swap.c[0]
-#define SWAPS(a) swap.s=(a); ((char *)&(a))[0]=swap.c[1];\
-    ((char *)&(a))[1]=swap.c[0]
-/*****************************/
-
-extern const int sys_nerr;
-extern const char *const sys_errlist[];
-extern int errno;
-
-int sock,raw,mon,tow,psize[BUFNO],n_ch,negate_channel;
+int sock,raw,mon,tow,all,psize[BUFNO],n_ch,negate_channel;
 unsigned char sbuf[BUFNO][MAXMESG+8],ch_table[65536],rbuf[MAXMESG];
      /* sbuf[BUFNO][MAXMESG+8] ; +8 for overrun by "size" and "time" */
 char *progname,logfile[256],chfile[256];
@@ -94,36 +80,20 @@ static unsigned char d2b[]={
     0x80,0x81,0x82,0x83,0x84,0x85,0x86,0x87,0x88,0x89,
     0x90,0x91,0x92,0x93,0x94,0x95,0x96,0x97,0x98,0x99};
 
-usleep(ms)  /* after T.I. UNIX MAGAZINE 1994.10 P.176 */
-  unsigned int ms;
-  {
-  struct timeval tv;
-  tv.tv_sec=ms/1000000;
-  tv.tv_usec=ms%1000000;
-  select(0,NULL,NULL,NULL,&tv);
-  }
-
-mklong(ptr)
+mklong(ptr)       
   unsigned char *ptr;
   {
-  unsigned char *ptr1;
   unsigned long a;
-  ptr1=(unsigned char *)&a;
-  *ptr1++=(*ptr++);
-  *ptr1++=(*ptr++);
-  *ptr1++=(*ptr++);
-  *ptr1  =(*ptr);
-  return a;
+  a=((ptr[0]<<24)&0xff000000)+((ptr[1]<<16)&0xff0000)+
+    ((ptr[2]<<8)&0xff00)+(ptr[3]&0xff);
+  return a;       
   }
 
 mkshort(ptr)
   unsigned char *ptr;
   {
-  unsigned char *ptr1;
   unsigned short a;
-  ptr1=(unsigned char *)&a;
-  *ptr1++=(*ptr++);
-  *ptr1  =(*ptr);
+  a=((ptr[0]<<8)&0xff00)+(ptr[1]&0xff);
   return a;
   }
 
@@ -226,15 +196,15 @@ shift_sec(tm_bcd,sec)
   int tm[6];
   struct tm *nt,mt;
   unsigned long ltime;
-#ifdef SUNOS4
+  memset((char *)&mt,0,sizeof(mt));
   if((mt.tm_year=b2d[tm_bcd[0]])<50) mt.tm_year+=100;
   mt.tm_mon=b2d[tm_bcd[1]]-1;
   mt.tm_mday=b2d[tm_bcd[2]];
   mt.tm_hour=b2d[tm_bcd[3]];
   mt.tm_min=b2d[tm_bcd[4]];
   mt.tm_sec=b2d[tm_bcd[5]];
-  mt.tm_gmtoff=3600*9;
-  ltime=timelocal(&mt)+sec;
+  mt.tm_isdst=0;
+  ltime=mktime(&mt)+sec;
   nt=localtime(&ltime);
   tm_bcd[0]=d2b[nt->tm_year%100];
   tm_bcd[1]=d2b[nt->tm_mon+1];
@@ -242,7 +212,6 @@ shift_sec(tm_bcd,sec)
   tm_bcd[3]=d2b[nt->tm_hour];
   tm_bcd[4]=d2b[nt->tm_min];
   tm_bcd[5]=d2b[nt->tm_sec];
-#endif
   }
 
 get_time(rt)
@@ -286,7 +255,7 @@ err_sys(ptr)
   {
   perror(ptr);
   write_log(logfile,ptr);
-  if(errno<sys_nerr) write_log(logfile,sys_errlist[errno]);
+  if(strerror(errno)) write_log(strerror(errno));
   write_log(logfile,"end");
   close(sock);
   exit(1);
@@ -381,11 +350,7 @@ main(argc,argv)
   {
   FILE *fp;
   key_t shm_key;
-  union {
-    unsigned long i;
-    unsigned short s;
-    char c[4];
-    } un;
+  unsigned long uni;
   int i,j,k,c_save,shp,aa,bb,ii,bufno,bufno_f,fromlen,hours_shift,sec_shift,c;
   struct sockaddr_in to_addr,from_addr;
   struct hostent *h;
@@ -403,15 +368,12 @@ main(argc,argv)
     } *shm;
   extern int optind;
   extern char *optarg;
-#if BYTE_ORDER ==  LITTLE_ENDIAN
-  SWAPU;
-#endif
   struct timeval timeout,tp;
   struct timezone tzp;
   if(progname=strrchr(argv[0],'/')) progname++;
   else progname=argv[0];
 
-  raw=mon=tow=hours_shift=sec_shift=0;
+  raw=mon=tow=all=hours_shift=sec_shift=0;
   timeout.tv_sec=timeout.tv_usec=0;
   if(strcmp(progname,"send_raw")==0) raw=1;
   else if(strcmp(progname,"send_mon")==0) mon=1;
@@ -419,20 +381,32 @@ main(argc,argv)
   else if(strcmp(progname,"sendt_mon")==0) {mon=1;tow=1;}
   else exit(1);
 
-  while((c=getopt(argc,argv,"h:s:"))!=EOF)
+  while((c=getopt(argc,argv,"ah:mrs:t"))!=EOF)
     {
     switch(c)
       {
+      case 'a':   /* "all" mode */
+        all=tow=1;
+        break;
       case 'h':   /* time to shift, in hours */
         hours_shift=atoi(optarg);
+        break;
+      case 'm':   /* "mon" mode */
+        mon=1;
+        break;
+      case 'r':   /* "raw" mode */
+        raw=1;
         break;
       case 's':   /* time to shift, in seconds */
         sec_shift=atoi(optarg);
         break;
+      case 't':   /* "tow" mode */
+        tow=1;
+        break;
       default:
         fprintf(stderr," option -%c unknown\n",c);
         fprintf(stderr,
-  " usage : '%s (-h [h])/(-s [s]) [shmkey] [dest] [port] ([chfile]/- ([logfile]))'\n",
+  " usage : '%s (-amrt) (-h [h])/(-s [s]) [shmkey] [dest] [port] ([chfile]/- ([logfile]))'\n",
           progname);
         exit(1);
       }
@@ -441,7 +415,7 @@ main(argc,argv)
   if(argc<4+optind)
     {
     fprintf(stderr,
-  " usage : '%s (-h [h])/(-s [s]) [shmkey] [dest] [port] ([chfile]/- ([logfile]))'\n",
+  " usage : '%s (-amrt) (-h [h])/(-s [s]) [shmkey] [dest] [port] ([chfile]/- ([logfile]))'\n",
       progname);
     exit(0);
     }
@@ -493,8 +467,8 @@ main(argc,argv)
   if(!(h=gethostbyname(host_name))) err_sys("can't find host");
   memset((char *)&to_addr,0,sizeof(to_addr));
   to_addr.sin_family=AF_INET;
-/*  to_addr.sin_addr.s_addr=inet_addr(inet_ntoa(h->h_addr));*/
-  to_addr.sin_addr.s_addr=mklong(h->h_addr);
+  memcpy((caddr_t)&to_addr.sin_addr,h->h_addr,h->h_length);
+/*  to_addr.sin_addr.s_addr=mklong(h->h_addr);*/
   to_addr.sin_port=htons(host_port);
 
   /* my socket */
@@ -526,13 +500,10 @@ reset:
   while(shm->r==(-1)) sleep(1);
   c_save=shm->c;
   size=mklong(ptr_save=shm->d+(shp=shm->r));
-#if BYTE_ORDER ==  LITTLE_ENDIAN
-  SWAPL(size);
-#endif
   ptw=ptw_save=sbuf[bufno];
   *ptw++=no;  /* packet no. */
   *ptw++=no;  /* packet no.(2) */
-  *ptw++=0xA0;
+  if(!all) *ptw++=0xA0;
 
   while(1)
     {
@@ -540,9 +511,6 @@ reset:
     else shp+=size;
     while(shm->p==shp) usleep(10000);
     i=mklong(ptr_save);
-#if BYTE_ORDER ==  LITTLE_ENDIAN
-    SWAPL(i);
-#endif
     if(shm->c<c_save || i!=size)
       {   /* previous block has been destroyed */
       write_log(logfile,"reset");
@@ -550,13 +518,26 @@ reset:
       }
     c_save=shm->c;
     size=mklong(ptr_save=ptr=shm->d+shp);
-#if BYTE_ORDER ==  LITTLE_ENDIAN
-    SWAPL(size);
-#endif
-
     ptr_lim=ptr+size;
     ptr+=4;
     if(tow) ptr+=4;
+
+    if(all)
+      {
+      memcpy(ptw,ptr,size-8);
+      ptw+=size-8;
+      re=sendto(sock,ptw_save,ptw-ptw_save,0,&to_addr,sizeof(to_addr));
+#if DEBUG1
+      fprintf(stderr,"%5d>  ",re);
+      for(k=0;k<20;k++) fprintf(stderr,"%02X",ptw_save[k]);
+      fprintf(stderr,"\n");
+#endif
+      ptw=ptw_save=sbuf[bufno];
+      no++;
+      *ptw++=no;  /* packet no. */
+      *ptw++=no;  /* packet no.(2) */
+      continue;
+      }
 
     ptw_size=ptw;
     ptw+=2;                            /* size */
@@ -575,9 +556,6 @@ reset:
       if(raw)
         {
         gh=mklong(ptr1=ptr);
-#if BYTE_ORDER ==  LITTLE_ENDIAN
-        SWAPL(gh);
-#endif
         ch=(gh>>16);
         sr=gh&0xfff;
         if((gh>>12)&0xf) gs=((gh>>12)&0xf)*(sr-1)+8;
@@ -587,9 +565,6 @@ reset:
       else /* mon */
         {
         ch=mkshort(ptr1=ptr);
-#if BYTE_ORDER ==  LITTLE_ENDIAN
-        SWAPS(ch);
-#endif
         ptr+=2;
         for(ii=0;ii<SR_MON;ii++)
           {
@@ -664,15 +639,9 @@ reset:
           }
         memcpy(ptw,ptr1,gs);
         ptw+=gs;
-        un.i=ptw-ptw_size;
-#if BYTE_ORDER ==  BIG_ENDIAN
-        ptw_size[0]=un.c[2];
-        ptw_size[1]=un.c[3];
-#endif
-#if BYTE_ORDER ==  LITTLE_ENDIAN
-        ptw_size[0]=un.c[1];
-        ptw_size[1]=un.c[0];
-#endif
+        uni=ptw-ptw_size;
+        ptw_size[0]=uni>>8;
+        ptw_size[1]=uni;
         j++;
         }
       i++;
@@ -681,16 +650,10 @@ reset:
     fprintf(stderr,"\007");
     fprintf(stderr," %d/%d\n",j,i); /* nch_sent/nch */
 #endif
-    if((un.i=ptw-ptw_size)>8)
+    if((uni=ptw-ptw_size)>8)
       {
-#if BYTE_ORDER ==  BIG_ENDIAN
-      ptw_size[0]=un.c[2];
-      ptw_size[1]=un.c[3];
-#endif
-#if BYTE_ORDER ==  LITTLE_ENDIAN
-      ptw_size[0]=un.c[1];
-      ptw_size[1]=un.c[0];
-#endif
+      ptw_size[0]=uni>>8;
+      ptw_size[1]=uni;
       }
     else ptw=ptw_size;
     }

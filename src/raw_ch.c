@@ -1,12 +1,9 @@
-/* $Id: raw_raw.c,v 1.2 2000/04/30 10:05:23 urabe Exp $ */
-/* "raw_raw.c"    97.8.5 urabe */
-/*                  modified from raw_100.c */
-/*                  98.4.17 FreeBSD */
-/*                  99.2.4  moved signal(HUP) to read_chfile() by urabe */
-/*                  99.4.19 byte-order-free */
+/* $Id: raw_ch.c,v 1.1 2000/04/30 10:05:23 urabe Exp $ */
+/* "raw_ch.c"    99.12.8 urabe */
+/*                  modified from raw_raw.c */
+/*                  byte-order-free */
 /*                  2000.3.21 c_save=shr->c; bug fixed */
-/* 2000.4.24 with -g, shift 1Hz SR data by 4 bits rightward for GTA-45 LP chs */
-/* 2000.4.24 strerror() */
+/*                  2000.4.24 strerror() */
 
 #include <stdio.h>
 #include <signal.h>
@@ -22,7 +19,7 @@
 #define DEBUG       0
 #define BELL        0
 
-unsigned char ch_table[65536];
+int ch_table[65536];
 char *progname,logfile[256],chfile[256];
 int n_ch,negate_channel;
 
@@ -82,7 +79,7 @@ err_sys(ptr)
 read_chfile()
   {
   FILE *fp;
-  int i,j,k;
+  int i,j,k,kk;
   char tbuf[1024];
   if(*chfile)
     {
@@ -91,40 +88,27 @@ read_chfile()
 #if DEBUG
       fprintf(stderr,"ch_file=%s\n",chfile);
 #endif
-      if(negate_channel) for(i=0;i<65536;i++) ch_table[i]=1;
-      else for(i=0;i<65536;i++) ch_table[i]=0;
-      i=j=0;
+      if(negate_channel) for(i=0;i<65536;i++) ch_table[i]=(-1);
+      else for(i=0;i<65536;i++) ch_table[i]=i;
+      j=0;
       while(fgets(tbuf,1024,fp))
         {
-        if(*tbuf=='#' || sscanf(tbuf,"%x",&k)<0) continue;
+        if(*tbuf=='#' || sscanf(tbuf,"%x%x",&k,&kk)<0) continue;
         k&=0xffff;
+        kk&=0xffff;
 #if DEBUG
-        fprintf(stderr," %04X",k);
+        fprintf(stderr," %04X->%04X",k,kk);
 #endif
-        if(negate_channel)
-          {
-          if(ch_table[k]==1)
-            {
-            ch_table[k]=0;
-            j++;
-            }
-          }
-        else
-          {
-          if(ch_table[k]==0)
-            {
-            ch_table[k]=1;
-            j++;
-            }
-          }
+        ch_table[k]=kk;
+        j++;
         i++;
         }
 #if DEBUG
-      fprintf(stderr,"\n",k);
+      fprintf(stderr,"\n");
 #endif
       n_ch=j;
-      if(negate_channel) sprintf(tbuf,"-%d channels",n_ch);
-      else sprintf(tbuf,"%d channels",n_ch);
+      if(negate_channel) sprintf(tbuf,"%d channels exclusively",n_ch);
+      else sprintf(tbuf,"%d channels set",n_ch);
       write_log(logfile,tbuf);
       }
     else
@@ -140,7 +124,7 @@ read_chfile()
     }
   else
     {
-    for(i=0;i<65536;i++) ch_table[i]=1;
+    for(i=0;i<65536;i++) ch_table[i]=i;
     n_ch=i;
     write_log(logfile,"all channels");
     }
@@ -163,65 +147,45 @@ main(argc,argv)
   unsigned long uni;
   char tb[100];
   unsigned char *ptr,*ptw,tm[6],*ptr_lim,*ptr_save;
-  int sr,i,j,k,size,n,size_shm,tow,c,shift45;
+  int sr,i,j,k,size,n,size_shm,tow;
   unsigned long c_save;
   unsigned short ch;
   int gs,gh;
-  extern int optind;
-  extern char *optarg;
 
-  shift45=0;
   if(progname=strrchr(argv[0],'/')) progname++;
   else progname=argv[0];
-  while((c=getopt(argc,argv,"g"))!=EOF)
+  if(argc<4)
     {
-    switch(c)
-      {
-      case 'g':   /* shift45 mode */
-        shift45=1;
-        break;
-      default:
-        fprintf(stderr,
-          " usage : '%s (-g) [in_key] [out_key] [shm_size(KB)] \\\n",
-          progname);
-        fprintf(stderr,
-          "                       (-/[ch_file]/-[ch_file] ([log file]))'\n");
-        exit(1);
-      }
-    }
-  optind--;
-  if(argc<4+optind)
-    {
-    fprintf(stderr, 
-      " usage : '%s (-g) [in_key] [out_key] [shm_size(KB)] \\\n",
+    fprintf(stderr,
+      " usage : '%s [in_key] [out_key] [shm_size(KB)] \\\n",
       progname);
     fprintf(stderr,
-      "                       (-/[ch_file]/-[ch_file] ([log file]))'\n");
+      "                       (-/[ch_file]/-[ch_file] ([log file]))'\n",
+      progname);
     exit(1);
     }
-
-  rawkey=atoi(argv[1+optind]);
-  monkey=atoi(argv[2+optind]);
-  size_shm=atoi(argv[3+optind])*1000;
+  rawkey=atoi(argv[1]);
+  monkey=atoi(argv[2]);
+  size_shm=atoi(argv[3])*1000;
   *chfile=(*logfile)=0;
-  if(argc>4+optind)
+  if(argc>4)
     {
-    if(strcmp("-",argv[4+optind])==0) *chfile=0;
+    if(strcmp("-",argv[4])==0) *chfile=0;
     else
       {
-      if(argv[4+optind][0]=='-')
+      if(argv[4][0]=='-')
         {
-        strcpy(chfile,argv[4+optind]+1);
+        strcpy(chfile,argv[4]+1);
         negate_channel=1;
         }
       else
         {
-        strcpy(chfile,argv[4+optind]);
+        strcpy(chfile,argv[4]);
         negate_channel=0;
         }
       }
     }    
-  if(argc>5+optind) strcpy(logfile,argv[5+optind]);
+  if(argc>5) strcpy(logfile,argv[5]);
     
   read_chfile();
 
@@ -239,12 +203,6 @@ main(argc,argv)
   sprintf(tb,"start in_key=%d id=%d out_key=%d id=%d size=%d",
     rawkey,shmid_raw,monkey,shmid_mon,size_shm);
   write_log(logfile,tb);
-
-  if(shift45)
-    {
-    sprintf(tb,"shift 1Hz data by 4 bits right for GTA-45");
-    write_log(logfile,tb);
-    }
 
   signal(SIGTERM,(void *)ctrlc);
   signal(SIGINT,(void *)ctrlc);
@@ -311,18 +269,15 @@ reset:
       sr=gh&0xfff;
       if((gh>>12)&0xf) gs=((gh>>12)&0xf)*(sr-1)+8;
       else gs=(sr>>1)+8;
-      if(ch_table[ch])
+      if(ch_table[ch]>=0)
         {
 #if DEBUG
-        fprintf(stderr,"%5d",gs);
+        fprintf(stderr,"%04X->%04X(%5d)",ch,ch_table[ch],gs);
 #endif
-        if(shift45 && (gh&0xffff)==0x2001)
+        if(ch_table[ch]!=ch)
           {
-          i=mklong(ptr+4)>>4;
-          ptr[4]=i>>24;
-          ptr[5]=i>>16;
-          ptr[6]=i>>8;
-          ptr[7]=i;
+          ptr[0]=(ch_table[ch]>>8);        
+          ptr[1]=(ch_table[ch]);        
           }
         memcpy(ptw,ptr,gs);
         ptw+=gs;

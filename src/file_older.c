@@ -1,3 +1,4 @@
+/* $Id: file_older.c,v 1.2 2000/04/30 10:05:22 urabe Exp $ */
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>

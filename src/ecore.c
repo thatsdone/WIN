@@ -1,3 +1,4 @@
+/* $Id: ecore.c,v 1.2 2000/04/30 10:05:22 urabe Exp $ */
 /* ddr news program "ecore.c"
   "ecore.c" works with "fromtape.c"
   "ecore.c" makes continuously filtered and decimated data

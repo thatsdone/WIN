@@ -1,3 +1,4 @@
+/* $Id: wadd.c,v 1.2 2000/04/30 10:05:23 urabe Exp $ */
 /* program "wadd.c"
   "wadd" puts two win data files together
   7/24/91 - 7/25/91, 4/20/94,6/27/94-6/28/94,7/12/94   urabe
@@ -5,6 +6,8 @@
         97.8.14 remove duplicated channels from joined ch file 
   98.6.26 yo2000
   98.7.1 FreeBSD
+  99.4.20 byte-order-free
+  2000.4.24 permit blank lines in egrep pattern file (Uehira)
 */
 
 #include  <stdio.h>
@@ -14,30 +17,7 @@
 #define   MAXSIZE   300000
 #define   NAMLEN    256
 #define   TEMPNAME  "wadd.tmp"
-
-/*****************************/
-/* 8/5/96 for little-endian (uehira) */
-#ifndef         LITTLE_ENDIAN
-#define LITTLE_ENDIAN   1234    /* LSB first: i386, vax */
-#endif
-#ifndef         BIG_ENDIAN
-#define BIG_ENDIAN      4321    /* MSB first: 68000, ibm, net */
-#endif
-#ifndef  BYTE_ORDER
-#define  BYTE_ORDER      BIG_ENDIAN
-#endif
-
-#define SWAPU  union { long l; float f; short s; char c[4];} swap
-#define SWAPL(a) swap.l=(a); ((char *)&(a))[0]=swap.c[3];\
-    ((char *)&(a))[1]=swap.c[2]; ((char *)&(a))[2]=swap.c[1];\
-    ((char *)&(a))[3]=swap.c[0]
-#define SWAPF(a) swap.f=(a); ((char *)&(a))[0]=swap.c[3];\
-    ((char *)&(a))[1]=swap.c[2]; ((char *)&(a))[2]=swap.c[1];\
-    ((char *)&(a))[3]=swap.c[0]
-#define SWAPS(a) swap.s=(a); ((char *)&(a))[0]=swap.c[1];\
-    ((char *)&(a))[1]=swap.c[0]
-/*****************************/
-
+#define SWAPL(a) a=(((a)<<24)|((a)<<8)&0xff0000|((a)>>8)&0xff00|((a)>>24)&0xff)
 
 bcd_dec(dest,sour)
   char *sour;
@@ -89,23 +69,13 @@ get_sysch(buf,sys_ch)
   return i;
   }
 
-mklong(ptr)
+mklong(ptr)       
   unsigned char *ptr;
   {
-  unsigned char *ptr1;
   unsigned long a;
-#if    BYTE_ORDER == LITTLE_ENDIAN
-  SWAPU;
-#endif
-  ptr1=(unsigned char *)&a;
-  *ptr1++=(*ptr++);
-  *ptr1++=(*ptr++);
-  *ptr1++=(*ptr++);
-  *ptr1  =(*ptr);
-#if    BYTE_ORDER == LITTLE_ENDIAN
-  SWAPL(a);
-#endif
-  return a;
+  a=((ptr[0]<<24)&0xff000000)+((ptr[1]<<16)&0xff0000)+
+    ((ptr[2]<<8)&0xff00)+(ptr[3]&0xff);
+  return a;       
   }
 
 read_data(ptr,fp)
@@ -151,29 +121,17 @@ make_skel(old_buf,new_buf)
 #if DEBUG
     printf("gh=%08x sr=%d gs=%d\n",gh,sr,gsize); 
 #endif
-    ptr1=(unsigned char *)&gh;
-#if    BYTE_ORDER == BIG_ENDIAN
-    for(i=0;i<4;i++) *new_ptr++=(*ptr1++);
-#endif
-#if    BYTE_ORDER == LITTLE_ENDIAN
-    for(i=0;i<4;i++) *new_ptr++=ptr1[3-i];
-#endif
+    *new_ptr++=gh>>24;
+    *new_ptr++=gh>>16;
+    *new_ptr++=gh>>8;
+    *new_ptr++=gh;
     for(i=0;i<gsize-4;i++) *new_ptr++=0;
     new_size+=gsize;
     } while(ptr<ptr_lim);
-  ptr=(unsigned char *)&new_size;
-#if    BYTE_ORDER == BIG_ENDIAN
-  new_buf[0]=(*ptr++);
-  new_buf[1]=(*ptr++);
-  new_buf[2]=(*ptr++);
-  new_buf[3]=(*ptr++);
-#endif
-#if    BYTE_ORDER == LITTLE_ENDIAN
-  new_buf[0]=ptr[3];
-  new_buf[1]=ptr[2];
-  new_buf[2]=ptr[1];
-  new_buf[3]=ptr[0];
-#endif
+  new_buf[0]=new_size>>24;
+  new_buf[1]=new_size>>16;
+  new_buf[2]=new_size>>8;
+  new_buf[3]=new_size;
   }
 
 elim_ch(sys_ch,n_ch,old_buf,new_buf)
@@ -204,19 +162,10 @@ elim_ch(sys_ch,n_ch,old_buf,new_buf)
       }
     else ptr+=gsize;
     } while(ptr<ptr_lim);
-  ptr=(unsigned char *)&new_size;
-#if    BYTE_ORDER == BIG_ENDIAN
-  new_buf[0]=(*ptr++);
-  new_buf[1]=(*ptr++);
-  new_buf[2]=(*ptr++);
-  new_buf[3]=(*ptr++);
-#endif
-#if    BYTE_ORDER == LITTLE_ENDIAN
-  new_buf[0]=ptr[3];
-  new_buf[1]=ptr[2];
-  new_buf[2]=ptr[1];
-  new_buf[3]=ptr[0];
-#endif
+  new_buf[0]=new_size>>24;
+  new_buf[1]=new_size>>16;
+  new_buf[2]=new_size>>8;
+  new_buf[3]=new_size;
 #if DEBUG
   printf("new size=%d\n",new_size); 
 #endif
@@ -241,10 +190,6 @@ main(argc,argv)
     textbuf[NAMLEN],new_file[NAMLEN],selbuf[MAXSIZE],tmpfile3[NAMLEN],
     chfile1[NAMLEN],chfile2[NAMLEN],tmpfile2[NAMLEN];
   static int sysch[65536];
-
-#if    BYTE_ORDER == LITTLE_ENDIAN
-  SWAPU;
-#endif
 
   if(argc<3)
     {
@@ -337,9 +282,7 @@ main(argc,argv)
           {
           make_skel(subbuf,selbuf);
           size=mainsize+mklong(selbuf)-10;
-#if    BYTE_ORDER == LITTLE_ENDIAN
-          SWAPL(size);
-#endif
+          i=1;if(*(char *)&i) SWAPL(size);
           if((re=fwrite(&size,4,1,f_out))==0) werror();
           if((re=fwrite(mainbuf+4,1,mainsize-4,f_out))==0) werror();
           if((re=fwrite(selbuf+10,1,mklong(selbuf)-10,f_out))==0) werror();
@@ -367,9 +310,7 @@ main(argc,argv)
     else             /* start together */
       {
       size=mainsize+subsize-10;
-#if    BYTE_ORDER == LITTLE_ENDIAN
-      SWAPL(size);
-#endif    
+      i=1;if(*(char *)&i) SWAPL(size);
       if((re=fwrite(&size,4,1,f_out))==0) werror();
       if((re=fwrite(mainbuf+4,1,mainsize-4,f_out))==0) werror();
       if((re=fwrite(subbuf+10,1,subsize-10,f_out))==0) werror();
@@ -413,7 +354,8 @@ main(argc,argv)
     system(textbuf);
     if(*chfile2)
       {
-      sprintf(textbuf,"grep -v '^#' %s|awk '{print $1}'>%s",tmpfile2,tmpfile3);
+      sprintf(textbuf,"grep -v '^#' %s|awk '{print $1}'|grep -v '^$'>%s",
+        tmpfile2,tmpfile3);
       system(textbuf);
       sprintf(textbuf,"egrep -f %s -v %s >> %s",tmpfile3,chfile2,tmpfile2);
       system(textbuf);

@@ -1,7 +1,10 @@
+/* $Id: wchch.c,v 1.2 2000/04/30 10:05:23 urabe Exp $ */
 /*
 program "wchch.c"
 "wchch" changes channel no. in a win format data file
 1997.11.22   urabe
+1999.4.20    byte-order free
+2000.4.17   wabort
 */
 
 #include  <stdio.h>
@@ -9,35 +12,12 @@ program "wchch.c"
 
 #define   DEBUG   0
 #define   DEBUG1  0
+#define SWAPL(a) a=(((a)<<24)|((a)<<8)&0xff0000|((a)>>8)&0xff00|((a)>>24)&0xff)
 
 unsigned char *buf,*outbuf;
 unsigned short ch_table[65536];
 
-/*****************************/
-/* 8/5/96 for little-endian (uehira) */
-#ifndef         LITTLE_ENDIAN
-#define LITTLE_ENDIAN   1234    /* LSB first: i386, vax */
-#endif
-#ifndef         BIG_ENDIAN
-#define BIG_ENDIAN      4321    /* MSB first: 68000, ibm, net */
-#endif
-#ifndef  BYTE_ORDER
-#define  BYTE_ORDER      BIG_ENDIAN
-#endif
-
-#define SWAPU  union { long l; float f; short s; char c[4];} swap
-#define SWAPL(a) swap.l=(a); ((char *)&(a))[0]=swap.c[3];\
-    ((char *)&(a))[1]=swap.c[2]; ((char *)&(a))[2]=swap.c[1];\
-    ((char *)&(a))[3]=swap.c[0]
-#define SWAPF(a) swap.f=(a); ((char *)&(a))[0]=swap.c[3];\
-    ((char *)&(a))[1]=swap.c[2]; ((char *)&(a))[2]=swap.c[1];\
-    ((char *)&(a))[3]=swap.c[0]
-#define SWAPS(a) swap.s=(a); ((char *)&(a))[0]=swap.c[1];\
-    ((char *)&(a))[1]=swap.c[0]
-/*****************************/
-
-
-abort() {exit();}
+wabort() {exit();}
 
 read_chfile(chfile)
   char *chfile;
@@ -99,34 +79,18 @@ get_one_record()
 mklong(ptr)
   unsigned char *ptr;
   {
-  unsigned char *ptr1;
   unsigned long a;
-#if    BYTE_ORDER == LITTLE_ENDIAN
-  SWAPU;
-#endif
-  ptr1=(unsigned char *)&a;
-  *ptr1++=(*ptr++);
-  *ptr1++=(*ptr++);
-  *ptr1++=(*ptr++);
-  *ptr1  =(*ptr);
-#if    BYTE_ORDER == LITTLE_ENDIAN
-  SWAPL(a);
-#endif
+  a=((ptr[0]<<24)&0xff000000)+((ptr[1]<<16)&0xff0000)+
+    ((ptr[2]<<8)&0xff00)+(ptr[3]&0xff);
   return a;
   }
 
 read_data()
   {
   static unsigned int size;
-  int re;
-#if BYTE_ORDER == LITTLE_ENDIAN
-  int re1;
-  SWAPU;
-#endif
+  int re,i;
   if(fread(&re,1,4,stdin)==0) return 0;
-#if BYTE_ORDER == LITTLE_ENDIAN
-  SWAPL(re);
-#endif
+  i=1;if(*(char *)&i) SWAPL(re);
   if(buf==0)
     {
     buf=(unsigned char *)malloc(size=re*2);
@@ -137,14 +101,10 @@ read_data()
     buf=(unsigned char *)realloc(buf,size=re*2);
     outbuf=(unsigned char *)realloc(outbuf,size=re*2);
     }
-#if BYTE_ORDER == LITTLE_ENDIAN
-  re1=re;
-  SWAPL(re1);
-  *(int *)buf=re1;
-#endif
-#if BYTE_ORDER == BIG_ENDIAN
-  *(int *)buf=re;
-#endif
+  buf[0]=re>>24;
+  buf[1]=re>>16;
+  buf[2]=re>>8;
+  buf[3]=re;
   re=fread(buf+4,1,re-4,stdin);
   return re;
   }
@@ -177,19 +137,10 @@ select_ch(table,old_buf,new_buf)
     gsize-=2;
     while(gsize-->0) *new_ptr++=(*ptr++);
     } while(ptr<ptr_lim);
-  ptr=(unsigned char *)&new_size;
-#if BYTE_ORDER == BIG_ENDIAN
-  new_buf[0]=(*ptr++);
-  new_buf[1]=(*ptr++);
-  new_buf[2]=(*ptr++);
-  new_buf[3]=(*ptr++);
-#endif
-#if BYTE_ORDER == LITTLE_ENDIAN
-  new_buf[3]=(*ptr++);
-  new_buf[2]=(*ptr++);
-  new_buf[1]=(*ptr++);
-  new_buf[0]=(*ptr++);
-#endif
+  new_buf[0]=new_size>>24;
+  new_buf[1]=new_size>>16;
+  new_buf[2]=new_size>>8;
+  new_buf[3]=new_size;
   return new_size;
   }
 
@@ -197,8 +148,8 @@ main(argc,argv)
   int argc;
   char *argv[];
   {
-  signal(SIGINT,(void *)abort);
-  signal(SIGTERM,(void *)abort);
+  signal(SIGINT,(void *)wabort);
+  signal(SIGTERM,(void *)wabort);
 
   if(argc<2)
     {

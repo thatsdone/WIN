@@ -1,3 +1,4 @@
+/* $Id: order.c,v 1.2 2000/04/30 10:05:22 urabe Exp $ */
 /*  program "order.c" 1/26/94 - 2/7/94, 6/14/94 urabe */
 /*                              1/6/95 bug in adj_time(tm[0]--) fixed */
 /*                              3/17/95 write_log() */
@@ -7,6 +8,8 @@
 /*                              98.4.23 b2d[] etc. */
 /*                              98.5.21 added passing etc. */
 /*                              98.6.26 yo2000 */
+/*                              99.4.19 byte-order-free */
+/*                              2000.4.24 strerror() */
 
 #include <stdio.h>
 #include <signal.h>
@@ -16,33 +19,9 @@
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <sys/time.h>
+#include <errno.h>
 
-/*****************************/
-/* 8/21/96 for little-endian (uehira) */
-#ifndef LITTLE_ENDIAN
-#define LITTLE_ENDIAN   1234    /* LSB first: i386, vax */
-#endif
-#ifndef BIG_ENDIAN
-#define BIG_ENDIAN      4321    /* MSB first: 68000, ibm, net */
-#endif
-#ifndef BYTE_ORDER
-#define BYTE_ORDER      BIG_ENDIAN
-#endif
-
-#define SWAPU  union { long l; float f; short s; char c[4];} swap
-#define SWAPL(a) swap.l=(a); ((char *)&(a))[0]=swap.c[3];\
-  ((char *)&(a))[1]=swap.c[2]; ((char *)&(a))[2]=swap.c[1];\
-  ((char *)&(a))[3]=swap.c[0]
-#define SWAPF(a) swap.f=(a); ((char *)&(a))[0]=swap.c[3];\
-  ((char *)&(a))[1]=swap.c[2]; ((char *)&(a))[2]=swap.c[1];\
-  ((char *)&(a))[3]=swap.c[0]
-#define SWAPS(a) swap.s=(a); ((char *)&(a))[0]=swap.c[1];\
-  ((char *)&(a))[1]=swap.c[0]
-/*****************************/
-
-extern const int sys_nerr;
-extern const char *const sys_errlist[];
-extern int errno;
+#define SWAPL(a) a=(((a)<<24)|((a)<<8)&0xff0000|((a)>>8)&0xff00|((a)>>24)&0xff)
 
 char *progname,logfile[256];
 struct Shm {
@@ -55,22 +34,12 @@ struct Shm {
 
 mklong(ptr)
   unsigned char *ptr;
-  {
-  unsigned char *ptr1;
+  {   
   unsigned long a;
-#if BYTE_ORDER ==  LITTLE_ENDIAN
-  SWAPU;
-#endif
-  ptr1=(unsigned char *)&a;
-  *ptr1++=(*ptr++);
-  *ptr1++=(*ptr++);
-  *ptr1++=(*ptr++);
-  *ptr1  =(*ptr);
-#if BYTE_ORDER ==  LITTLE_ENDIAN
-  SWAPL(a);
-#endif
+  a=((ptr[0]<<24)&0xff000000)+((ptr[1]<<16)&0xff0000)+
+    ((ptr[2]<<8)&0xff00)+(ptr[3]&0xff);
   return a;
-  }
+  }   
 
 get_time(rt)
      int *rt;
@@ -349,7 +318,7 @@ err_sys(ptr)
 {
   perror(ptr);
   write_log(logfile,ptr);
-  if(errno<sys_nerr) write_log(logfile,sys_errlist[errno]);
+  if(strerror(errno)) write_log(strerror(errno));
   ctrlc();
 }
 
@@ -376,18 +345,11 @@ main(argc,argv)
   char *argv[];
 {
   key_t shm_key_in,shm_key_out;
-  union {
-    unsigned long i;
-    unsigned short s;
-    char c[4];
-  } un;
+  unsigned long uni;
   int tm[6],tm_out[6],tm_bottom[6],i,j,k,c_save_in,c_save_out,shp_in,shp_out,
     sec,sec_1,size,shmid_in,shmid_out,size_in,size_out,shp,c_save,n_sec,no_data;
   unsigned char *ptr,*ptr_save,*ptw,*ptw_save,tbuf[100];
   struct Shm *shm_in,*shm_out;
-#if BYTE_ORDER == LITTLE_ENDIAN
-  SWAPU;
-#endif
 
   if(progname=strrchr(argv[0],'/')) progname++;
   else progname=argv[0];
@@ -437,9 +399,7 @@ reset:
      goto reset;
   }
   memcpy(&sec_1,ptr_save+4,4);
-#if BYTE_ORDER == LITTLE_ENDIAN
-  SWAPL(sec_1);
-#endif
+  i=1;if(*(char *)&i) SWAPL(sec_1);
   bcd_dec(tm_bottom,ptr_save+8);
   for(i=0;i<6;i++) tm_out[i]=tm_bottom[i];
 
@@ -476,18 +436,11 @@ reset:
       }
     } while(sec>0);
 
-    if((un.i=ptw-ptw_save)>4){
-#if BYTE_ORDER == BIG_ENDIAN
-      ptw_save[0]=un.c[0];
-      ptw_save[1]=un.c[1];
-      ptw_save[2]=un.c[2];
-      ptw_save[3]=un.c[3];
-#elif BYTE_ORDER == LITTLE_ENDIAN
-      ptw_save[0]=un.c[3];
-      ptw_save[1]=un.c[2];
-      ptw_save[2]=un.c[1];
-      ptw_save[3]=un.c[0];
-#endif
+    if((uni=ptw-ptw_save)>4){
+      ptw_save[0]=uni>>24;
+      ptw_save[1]=uni>>16;
+      ptw_save[2]=uni>>8;
+      ptw_save[3]=uni;
       shm_out->r=shm_out->p;
       if(ptw>shm_out->d+shm_out->pl) ptw=shm_out->d;
       shm_out->p=ptw-shm_out->d;

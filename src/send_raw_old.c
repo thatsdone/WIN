@@ -1,3 +1,4 @@
+/* $Id: send_raw_old.c,v 1.2 2000/04/30 10:05:23 urabe Exp $ */
 /*
     program "send_raw_old/send_mon_old.c"   1/24/94 - 1/25/94,5/25/94 urabe
                                     6/15/94 - 6/16/94
@@ -6,6 +7,9 @@
                                     2/29/96  exit if chfile does not open
                                     97.8.5 fgets/sscanf
                                     99.2.4 moved signal(HUP) to read_chfile()
+                                    99.9.10 byte-order-free
+                                  2000.4.17 deleted definition of usleep()
+                                  2000.4.24 strerror()
 */
 
 #include <stdio.h>
@@ -19,50 +23,32 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
+#include <unistd.h>
+#include <errno.h>
 
 #define DEBUG     0
 #define MAXMESG   1024
 #define SR_MON    5
 #define BUFNO     128
 
-extern const int sys_nerr;
-extern const char *const sys_errlist[];
-extern int errno;
-
 int sock,raw,mon,tow,psize[BUFNO],n_ch;
 unsigned char sbuf[BUFNO][MAXMESG],ch_table[65536],rbuf[MAXMESG];
 char *progname,logfile[256],chfile[256];
 
-usleep(ms)  /* after T.I. UNIX MAGAZINE 1994.10 P.176 */
-  unsigned int ms;
-  {
-  struct timeval tv;
-  tv.tv_sec=ms/1000000;
-  tv.tv_usec=ms%1000000;
-  select(0,NULL,NULL,NULL,&tv);
-  }
-
 mklong(ptr)
   unsigned char *ptr;
   {
-  unsigned char *ptr1;
   unsigned long a;
-  ptr1=(unsigned char *)&a;
-  *ptr1++=(*ptr++);
-  *ptr1++=(*ptr++);
-  *ptr1++=(*ptr++);
-  *ptr1  =(*ptr);
+  a=((ptr[0]<<24)&0xff000000)+((ptr[1]<<16)&0xff0000)+
+    ((ptr[2]<<8)&0xff00)+(ptr[3]&0xff);
   return a;
   }
 
 mkshort(ptr)
   unsigned char *ptr;
   {
-  unsigned char *ptr1;
   unsigned short a;
-  ptr1=(unsigned char *)&a;
-  *ptr1++=(*ptr++);
-  *ptr1  =(*ptr);
+  a=((ptr[0]<<8)&0xff00)+(ptr[1]&0xff);
   return a;
   }
 
@@ -107,7 +93,7 @@ err_sys(ptr)
   {
   perror(ptr);
   write_log(logfile,ptr);
-  if(errno<sys_nerr) write_log(logfile,sys_errlist[errno]);
+  if(strerror(errno)) write_log(strerror(errno));
   write_log(logfile,"end");
   close(sock);
   exit(1);
@@ -251,8 +237,7 @@ main(argc,argv)
   if(!(h=gethostbyname(host_name))) err_sys("can't find host");
   memset((char *)&to_addr,0,sizeof(to_addr));
   to_addr.sin_family=AF_INET;
-/*  to_addr.sin_addr.s_addr=inet_addr(inet_ntoa(h->h_addr));*/
-  to_addr.sin_addr.s_addr=mklong(h->h_addr);
+  memcpy((caddr_t)&to_addr.sin_addr,h->h_addr,h->h_length);
   to_addr.sin_port=htons(host_port);
 
   /* my socket */
@@ -312,7 +297,7 @@ reset:
       while(ptr<ptr_lim)
         {
         gh=mklong(ptr);
-        ch=(*(unsigned short *)&gh);
+        ch=(gh>>16);
         sr=gh&0xfff;
         if((gh>>12)&0xf) gs=((gh>>12)&0xf)*(sr-1)+8;
         else gs=(sr>>1)+8;

@@ -1,3 +1,4 @@
+/* $Id: rtape.c,v 1.2 2000/04/30 10:05:23 urabe Exp $ */
 /*
   program "rtape.c"
   9/16/89 - 11/06/90, 6/26/91, 10/30/91, 6/26/92  urabe
@@ -7,6 +8,7 @@
   98.6.26  yo2000
   98.6.30  FreeBSD
   98.9.8   Multi-block sec
+  99.4.19  byte-order-free
 */
 
 #include  <stdio.h>
@@ -26,24 +28,6 @@
 #define   TIME2   "9005161000"  /* no fms before this time */
                     /* 60 m / fm after this time */
 #define   TIME3   "9008031718"  /* 10 m / fm after this time */
-
-/*****************************/
-/* 2/5/97 for little-endian (uehira) */
-#ifndef         LITTLE_ENDIAN
-#define LITTLE_ENDIAN   1234    /* LSB first: i386, vax */
-#endif
-#ifndef         BIG_ENDIAN
-#define BIG_ENDIAN      4321    /* MSB first: 68000, ibm, net */
-#endif
-#ifndef  BYTE_ORDER
-#define  BYTE_ORDER      BIG_ENDIAN
-#endif
-
-#define SWAPU  union { long l; float f; short s; char c[4];} swap
-#define SWAPL(a) swap.l=(a); ((char *)&(a))[0]=swap.c[3];\
-    ((char *)&(a))[1]=swap.c[2]; ((char *)&(a))[2]=swap.c[1];\
-    ((char *)&(a))[3]=swap.c[0]
-/*****************************/
 
   unsigned char buf[MAXSIZE],outbuf[MAXSIZE];
   int fd_exb,f_get,leng,dec_start[6],dec_end[6],dec_begin[6],
@@ -470,23 +454,13 @@ read_exb()
   return blocking;
   }
 
-mklong(ptr)
+mklong(ptr)       
   unsigned char *ptr;
   {
-#if  BYTE_ORDER == LITTLE_ENDIAN
-  SWAPU;
-#endif
-  unsigned char *ptr1;
   unsigned long a;
-  ptr1=(unsigned char *)&a;
-  *ptr1++=(*ptr++);
-  *ptr1++=(*ptr++);
-  *ptr1++=(*ptr++);
-  *ptr1  =(*ptr);
-#if  BYTE_ORDER == LITTLE_ENDIAN
-  SWAPL(a);
-#endif
-  return a;
+  a=((ptr[0]<<24)&0xff000000)+((ptr[1]<<16)&0xff0000)+
+    ((ptr[2]<<8)&0xff00)+(ptr[3]&0xff);
+  return a;       
   }
 
 select_ch(sys_ch,n_ch,old_buf,new_buf,old_form)
@@ -526,19 +500,10 @@ select_ch(sys_ch,n_ch,old_buf,new_buf,old_form)
       }
     else ptr+=gsize;
     } while(ptr<ptr_lim);
-#if BYTE_ORDER == BIG_ENDIAN
-  ptr=(unsigned char *)&new_size;
-  new_buf[0]=(*ptr++);
-  new_buf[1]=(*ptr++);
-  new_buf[2]=(*ptr++);
-  new_buf[3]=(*ptr);
-#elif BYTE_ORDER == LITTLE_ENDIAN
-  ptr=(unsigned char *)&new_size+3;
-  new_buf[0]=(*ptr--);
-  new_buf[1]=(*ptr--);
-  new_buf[2]=(*ptr--);
-  new_buf[3]=(*ptr);
-#endif
+  new_buf[0]=new_size>>24;
+  new_buf[1]=new_size>>16;
+  new_buf[2]=new_size>>8;
+  new_buf[3]=new_size;
   }
 
 main(argc,argv)

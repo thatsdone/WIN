@@ -3,6 +3,8 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
+   $Id: win.c,v 1.2 2000/04/30 10:05:23 urabe Exp $
+
    High Samping rate
      9/12/96 read_one_sec 
      9/13/96 read_one_sec_mon
@@ -11,18 +13,19 @@
    98.7.2 yo2000
 */
 #define NAME_PRG      "win"
-#define VERSION       "99.3.9"
+#define VERSION       "2000.4.19"
 #define DEBUG_AP      0   /* for debugging auto-pick */
-#define DEBUG_EN      0   /* for debugging little endian */
-#define DEBUG_ENM     1
 /* 5:sr, 4:ch, 3:sec, 2:find_pick, 1:all */
-/******************************************************************
-        HOW TO COMPILE THE PROGRAM
-X11          : 'cc win.c -lm -lX11 -o win'
-SUN(OW)      : 'cc win.c -I/usr/openwin/include -lm \
-                        -L/usr/openwin/lib -lX11 -o win'
-HP9000(X11)  : 'cc win.c -DSYSTEMV -I/usr/include/X11R4 -lm \
-                        -lX11 -o win'   (contrib. T.Matsuzawa)
+/************ HOW TO COMPILE THE PROGRAM **************************
+NEWS-OS 4.x    : cc win.c -O -lm -lX11 -o win
+Sun-OS 4.x     : cc win.c -O -lm -lX11 -o win
+Solaris 2.x    : cc win.c -w -O -I/usr/openwin/include -L/usr/openwin/lib \
+                          -lm -lX11 -o win
+IRIX 6.5       : cc win.c -n32 -signed -w -O -D__SVR4 -lm -lX11 -o win
+FreeBSD 2/3    : cc win.c -w -I/usr/X11R6/include -L/usr/X11R6/lib -lm \
+                          -lX11 -o win
+HP-UX          : cc win.c -DSYSTEMV -I/usr/include/X11R4 -lm -lX11 -o win'
+                           (contrib. T.Matsuzawa)
 *******************************************************************
 ----------<EXAMPLE OF PARAMETER FILE 'win.prm'>----------------------
 /dat/trg                     - 1- default directory for data file
@@ -129,25 +132,24 @@ LOCAL
 #include <signal.h>
 #include <ctype.h>
 #include <pwd.h>
+#include <unistd.h>
 
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/cursorfont.h>
   typedef XPoint lPoint;    /* short ! */
   XSizeHints sizehints;
-#define SYSTEM    "X11"
 
   typedef struct {
     lPoint  origin;
     lPoint  extent;
     } lRectangle;
   typedef struct {
-    char      type; /* BM_FB or BM_MEM */
-    char      depth;  /* bitmap depth */
-    unsigned short  width;  /* width in Words */
-    lRectangle    rect; /* defined area */
-    char      *base;  /* for BM_MEM */
-    XID       drw;  /* Window or Pixmap */
+    char type;   /* BM_FB or BM_MEM */
+    char depth;  /* bitmap depth */
+    lRectangle rect; /* defined area */
+    char *base;  /* for BM_MEM */
+    XID drw;     /* Window or Pixmap */
     } lBitmap;
 
 #define W_X     150
@@ -156,52 +158,52 @@ LOCAL
 #define BM_MEM  1 /* bitmap in memory (XY format) */
 
   struct ms_data {
-    int  md_sw;  /* mouse button */
+    int  md_sw; /* mouse button */
 #define  MS_BUTNL 0x04
 #define  MS_BUTNM 0x02
 #define  MS_BUTNR 0x01
-    int  md_x;   /* x coordinate */
-    int  md_y;   /* y coordinate */
+    int  md_x;  /* x coordinate */
+    int  md_y;  /* y coordinate */
     };
   struct ms_event {
-    struct ms_data  mse_data; /* mouse X, Y and button status */
-    char      mse_trig;   /* trigger that caused this event */
-#define MSE_MOTION  0       /* mouse movement */
-#define MSE_BUTTON  1       /* mouse buttons */
-#define MSE_EXP   2       /* exposure */
-    char      mse_dir;  /* key or button direction */
-#define MSE_DOWN  0       /* down */
-#define MSE_UP    1       /* up */
-#define MSE_UNKOWN  2       /* unkown */
-    char      mse_code; /* key or button code */
-#define MSE_BUTNR 0       /* right button */
-#define MSE_BUTNM 1       /* middle button */
-#define MSE_BUTNL 2       /* left button */
-    struct timeval  mse_time; /* time when this event occurred */
+    struct ms_data mse_data; /* mouse X, Y and button status */
+    char mse_trig;      /* trigger that caused this event */
+#define MSE_MOTION  0   /* mouse movement */
+#define MSE_BUTTON  1   /* mouse buttons */
+#define MSE_EXP   2     /* exposure */
+    char mse_dir;       /* key or button direction */
+#define MSE_DOWN  0     /* down */
+#define MSE_UP    1     /* up */
+#define MSE_UNKOWN  2   /* unkown */
+    char mse_code;      /* key or button code */
+#define MSE_BUTNR 0     /* right button */
+#define MSE_BUTNM 1     /* middle button */
+#define MSE_BUTNL 2     /* left button */
+    struct timeval mse_time; /* time when this event occurred */
     };
 
 #define W_WIDTH   (780-16)
 #define W_HEIGHT  816
 
-#define BF_0      GXclear       /* 0 */
-#define BF_1      GXset       /* 1 */
-#define BF_S      GXcopy        /* src */
-#define BF_SI     GXcopyInverted    /* ~src */
-#define BF_D      GXnoop        /* dst */
-#define BF_DI     GXinvert      /* ~dst */
-#define BF_SIDA     GXandInverted   /* ~src & dst */
-#define BF_SDIO     GXorReverse     /* src | ~dst */
-#define BF_SDX      GXxor       /* src ^ dst */
-#define BF_SDXI     GXequiv       /* ~src ^ dst */
-#define BF_SDO      GXor        /* src | dst */
-#define BF_SDOI     GXnor       /* ~(src | dst) */
-#define BF_SIDO     GXorInverted    /* ~src | dst */
-#define BF_SDIA     GXandReverse    /* src & ~dst */
-#define BF_SDA      GXand       /* src & dst */
-#define BF_SDAI     GXnand        /* ~(src & dst) */
+#define BF_0      GXclear        /* 0 */
+#define BF_1      GXset          /* 1 */
+#define BF_S      GXcopy         /* src */
+#define BF_SI     GXcopyInverted /* ~src */
+#define BF_D      GXnoop         /* dst */
+#define BF_DI     GXinvert       /* ~dst */
+#define BF_SIDA   GXandInverted  /* ~src & dst */
+#define BF_SDIO   GXorReverse    /* src | ~dst */
+#define BF_SDX    GXxor          /* src ^ dst */
+#define BF_SDXI   GXequiv        /* ~src ^ dst */
+#define BF_SDO    GXor           /* src | dst */
+#define BF_SDOI   GXnor          /* ~(src | dst) */
+#define BF_SIDO   GXorInverted   /* ~src | dst */
+#define BF_SDIA   GXandReverse   /* src & ~dst */
+#define BF_SDA    GXand          /* src & dst */
+#define BF_SDAI   GXnand         /* ~(src & dst) */
   Display *disp;
   Cursor x11_cursor;
-  XColor c_black,c_white;
+  XColor c_black,c_white,c_cursor,c_c;
   Colormap colormap;
   XSetWindowAttributes att;
 
@@ -223,28 +225,30 @@ LOCAL
 #define N_BM        100   /* size of text buffer (chars) */
 #define WB          (WIDTH_TEXT*5)    /* width of a box */
 #define HW          (WIDTH_TEXT/2)    /* half of font width */
-#define MARGIN        (HEIGHT_TEXT+4)
+#define MARGIN      (HEIGHT_TEXT+4)
 #define TICKL       (WIDTH_TEXT*3/2)
-#define PIXELS_PER_TRACE  (HEIGHT_TEXT+1)
-#define PPT_HALF      (PIXELS_PER_TRACE/2)
 #define PIXELS_PER_SEC_MON  10
 #define SR_LOW        1   /* lower limit of sampling rate */
 #define N_CH_NAME     0x10000 /* maximum n of name channels */
                   /* 16 bit channel field */
 #define NAMLEN        80
-#define WIDTH_INFO      (WIDTH_TEXT*14)
-#define PSUP_LMARGIN    (WIDTH_TEXT*11)
+#define STNLEN        11   /* (length of station code)+1 */
+#define CMPLEN        7    /* (length of component code)+1 */
+#define WIDTH_INFO_C    18
+#define WIDTH_INFO      (WIDTH_TEXT*WIDTH_INFO_C)
+#define WIDTH_INFO_ZOOM (WIDTH_TEXT*WIDTH_INFO_C)
+#define PSUP_LMARGIN    (WIDTH_TEXT*16)
 #define PSUP_RMARGIN    (WIDTH_TEXT*11)
 #define PSUP_TMARGIN    (MARGIN+HEIGHT_TEXT)
 #define PSUP_BMARGIN    HEIGHT_TEXT
 
-#define SIZE_CURSOR     23
+#define SIZE_CURSOR     (23*2+1)
 
-#define LINES_PER_ZOOM    5
-#define PIXELS_PER_LINE   (HEIGHT_TEXT+9)
-#define HEIGHT_ZOOM     (PIXELS_PER_LINE*LINES_PER_ZOOM)
-#define N_ZOOM_MAX      (2000/HEIGHT_ZOOM)
-#define CENTER_ZOOM     (HEIGHT_ZOOM/2)
+#define LINES_PER_ZOOM  5
+#define PIXELS_PER_LINE (HEIGHT_TEXT+9)
+#define HEIGHT_ZOOM   (PIXELS_PER_LINE*LINES_PER_ZOOM)
+#define N_ZOOM_MAX    (2000/HEIGHT_ZOOM)
+#define CENTER_ZOOM   (HEIGHT_ZOOM/2)
 #define BORDER        2
 #define MIN_ZOOM      BORDER
 #define MAX_ZOOM      (HEIGHT_ZOOM-1)
@@ -294,60 +298,60 @@ LOCAL
 
 #define X_Z_CHN       0
 #define Y_Z_CHN       (PIXELS_PER_LINE*0)
-#define W_Z_CHN       WIDTH_INFO
+#define W_Z_CHN       WIDTH_INFO_ZOOM
 
 #define X_Z_POL       0
 #define Y_Z_POL       (PIXELS_PER_LINE*1)
-#define W_Z_POL       (WIDTH_INFO/3)
+#define W_Z_POL       (WIDTH_INFO_ZOOM/3)
 #define X_Z_SCL       W_Z_POL
 #define Y_Z_SCL       Y_Z_POL
-#define W_Z_SCL       (WIDTH_INFO-W_Z_POL)
+#define W_Z_SCL       (WIDTH_INFO_ZOOM-W_Z_POL)
 
 #define X_Z_TSC       0
 #define Y_Z_TSC       (PIXELS_PER_LINE*2)
-#define W_Z_TSC       (WIDTH_INFO/2)
+#define W_Z_TSC       (WIDTH_INFO_ZOOM/2)
 #define X_Z_SFT       W_Z_TSC
 #define Y_Z_SFT       Y_Z_TSC
-#define W_Z_SFT       (WIDTH_INFO-W_Z_TSC)
+#define W_Z_SFT       (WIDTH_INFO_ZOOM-W_Z_TSC)
 
 #define X_Z_FLT       0
 #define Y_Z_FLT       (PIXELS_PER_LINE*3)
-#define W_Z_FLT       WIDTH_INFO
+#define W_Z_FLT       WIDTH_INFO_ZOOM
 
 #define X_Z_GET       0
 #define Y_Z_GET       (PIXELS_PER_LINE*4)
-#define W_Z_GET       (WIDTH_INFO/3)
+#define W_Z_GET       (WIDTH_INFO_ZOOM/3)
 #define X_Z_PUT       W_Z_GET
 #define Y_Z_PUT       Y_Z_GET
 #define W_Z_PUT       W_Z_GET
 #define X_Z_CLS       (X_Z_PUT+W_Z_PUT)
 #define Y_Z_CLS       Y_Z_GET
-#define W_Z_CLS       (WIDTH_INFO-X_Z_CLS)
+#define W_Z_CLS       (WIDTH_INFO_ZOOM-X_Z_CLS)
 #define Y_Z_OFS       ((PIXELS_PER_LINE-HEIGHT_TEXT)/2)
 #define X_Z_ARR       ((W_Z_TSC-32)/2)
 #define Y_Z_ARR       ((PIXELS_PER_LINE-16)/2)
 
-#define MODE_NORMAL     0 /* for main_mode & map_mode */
+#define MODE_NORMAL   0 /* for main_mode & map_mode */
 #define MODE_GET      1 /* for main_mode */
 #define MODE_PICK     2 /* for main_mode */
-#define MODE_GETPICK    3 /* for main_mode */
-#define MODE_FIND1      1 /* for map_mode (looking for a corner) */
-#define MODE_FIND2      2 /* for map_mode (dragging) */
-#define MODE_TS1      3 /* for map_mode (looking for a corner) */
-#define MODE_TS2      4 /* for map_mode (dragging) */
-#define MODE_TS3      5 /* for map_mode (plot) */
-#define MODE_DOWN     0 /* for mecha_mode */
-#define MODE_UP       1 /* for mecha_mode */
-#define LOOP_NO       (-1)
-#define LOOP_MAIN     0
-#define LOOP_LIST     1
-#define LOOP_MAP      2
-#define LOOP_MECHA      3
-#define LOOP_PSUP     4
+#define MODE_GETPICK  3 /* for main_mode */
+#define MODE_FIND1  1 /* for map_mode (looking for a corner) */
+#define MODE_FIND2  2 /* for map_mode (dragging) */
+#define MODE_TS1    3 /* for map_mode (looking for a corner) */
+#define MODE_TS2    4 /* for map_mode (dragging) */
+#define MODE_TS3    5 /* for map_mode (plot) */
+#define MODE_DOWN   0 /* for mecha_mode */
+#define MODE_UP     1 /* for mecha_mode */
+#define LOOP_NO   (-1)
+#define LOOP_MAIN   0
+#define LOOP_LIST   1
+#define LOOP_MAP    2
+#define LOOP_MECHA  3
+#define LOOP_PSUP   4
 
-#define N_SYM       11    /* n of hypo symbols */
-#define N_SYM_USE     5   /* not N_SYM */
-#define N_SYM_STN     4   /* n of stn symbols */
+#define N_SYM      11   /* n of hypo symbols */
+#define N_SYM_USE   5   /* not N_SYM */
+#define N_SYM_STN   4   /* n of stn symbols */
 /* main screen */
 #define RFSH        1
 #define QUIT        2
@@ -369,14 +373,14 @@ LOCAL
 #define HYPO        7
 #define LOAD        8
 #define CANL        9
-#define MECH        10
-#define FINL        11
-#define PSTUP       12
+#define MECH       10
+#define FINL       11
+#define PSTUP      12
 /* psup screen */
 /* mech screen */
 #define UPPER       7
 
-  static char
+  char cursor_color[20]={"blue"},
     *func_main[]={"OPEN" ,"RFSH" ,"QUIT" ,"COPY" ,"MAP"  ,"LIST" ,
             " "    ," "    ,"$"},
     *func_map[] ={""     ,"RFSH" ,"RETN" ,"COPY" ,"VERT" ,"STNS" ,"T-S"  ,"$"},
@@ -407,31 +411,6 @@ LOCAL
   char patterns[N_LPTN][2]={1,0, 1,1, 2,2, 4,4, 1,7, 1,15};
   GC gc_line[N_LPTN],gc_line_mem[N_LPTN],gc_fb,gc_mem,gc_fbi,gc_memi;
   XID ttysw;
-
-/*****************************/
-/* 3/22/95 for little-endian */
-/* 8/6/96 Uehira */
-#ifndef         LITTLE_ENDIAN
-#define LITTLE_ENDIAN   1234    /* LSB first: i386, vax */
-#endif
-#ifndef         BIG_ENDIAN
-#define BIG_ENDIAN      4321    /* MSB first: 68000, ibm, net */
-#endif
-#ifndef  BYTE_ORDER
-#define  BYTE_ORDER      BIG_ENDIAN
-#endif
-
-#define SWAPU  union { long l; float f; short s; char c[4];} swap
-#define SWAPL(a) swap.l=(a); ((char *)&(a))[0]=swap.c[3];\
-    ((char *)&(a))[1]=swap.c[2]; ((char *)&(a))[2]=swap.c[1];\
-    ((char *)&(a))[3]=swap.c[0]
-#define SWAPF(a) swap.f=(a); ((char *)&(a))[0]=swap.c[3];\
-    ((char *)&(a))[1]=swap.c[2]; ((char *)&(a))[2]=swap.c[1];\
-    ((char *)&(a))[3]=swap.c[0]
-#define SWAPS(a) swap.s=(a); ((char *)&(a))[0]=swap.c[1];\
-    ((char *)&(a))[1]=swap.c[0]
-/*****************************/
-
   char *marks[]={"P","S","F","!"};
   unsigned char bbm[16][N_BM];  /* text bitmap buffer */
   float depsteps[]=
@@ -559,61 +538,7 @@ LOCAL
        0xf8,0x81, 0x01,0x0f, 0xf8,0x81, 0x01,0x06, 0xf8,0x81, 0x01,0x06,
        0xf8,0x81, 0x01,0x0f, 0xff,0x0f, 0x83,0x1f, 0xfe,0x07, 0xc3,0x3f,
        0xfc,0x03, 0xe3,0x7f, 0xf8,0x01, 0xf3,0xff, 0xf0,0x80, 0x81,0x1f,
-       0x60,0xe0, 0x80,0x1f},
-/*    buf_cursor[SIZE_CURSOR*2+1][p2w(SIZE_CURSOR*2+1)]=*/
-    buf_cursor[]=
-      {0x00,0x00, 0x00,0x00, 0x00,0x00, 0x00,0x00, 0xf8,0x0f, 0x00,0x00,
-       0x00,0x80, 0xff,0xff, 0x00,0x00, 0x00,0xe0, 0xff,0xff, 0x03,0x00,
-       0x00,0xf8, 0xff,0xff, 0x0f,0x00, 0x00,0xfc, 0x87,0xf0, 0x1f,0x00,
-       0x00,0xfe, 0x80,0x80, 0x3f,0x00, 0x00,0x3f, 0x80,0x00, 0x7e,0x00,
-       0x80,0x0f, 0x80,0x00, 0xf8,0x00, 0xc0,0x07, 0x80,0x00, 0xf0,0x01,
-       0xe0,0x03, 0x80,0x00, 0xe0,0x03, 0xf0,0x01, 0x80,0x00, 0xc0,0x07,
-       0xf0,0x00, 0x80,0x00, 0x80,0x07, 0xf8,0x00, 0x80,0x00, 0x80,0x0f,
-       0x78,0x00, 0x80,0x00, 0x00,0x0f, 0x7c,0x00, 0x80,0x00, 0x00,0x1f,
-       0x3c,0x00, 0x80,0x00, 0x00,0x1e, 0x3c,0x00, 0x80,0x00, 0x00,0x1e,
-       0x3c,0x00, 0x80,0x00, 0x00,0x1e, 0x1e,0x00, 0x80,0x00, 0x00,0x3c,
-       0x1e,0x00, 0x80,0x00, 0x00,0x3c, 0x1e,0x00, 0x80,0x00, 0x00,0x3c,
-       0x1e,0x00, 0x80,0x00, 0x00,0x3c, 0xfe,0xff, 0xff,0xff, 0xff,0x3f,
-       0x1e,0x00, 0x80,0x00, 0x00,0x3c, 0x1e,0x00, 0x80,0x00, 0x00,0x3c,
-       0x1e,0x00, 0x80,0x00, 0x00,0x3c, 0x1e,0x00, 0x80,0x00, 0x00,0x3c,
-       0x3c,0x00, 0x80,0x00, 0x00,0x1e, 0x3c,0x00, 0x80,0x00, 0x00,0x1e,
-       0x3c,0x00, 0x80,0x00, 0x00,0x1e, 0x7c,0x00, 0x80,0x00, 0x00,0x1f,
-       0x78,0x00, 0x80,0x00, 0x00,0x0f, 0xf8,0x00, 0x80,0x00, 0x80,0x0f,
-       0xf0,0x00, 0x80,0x00, 0x80,0x07, 0xf0,0x01, 0x80,0x00, 0xc0,0x07,
-       0xe0,0x03, 0x80,0x00, 0xe0,0x03, 0xc0,0x07, 0x80,0x00, 0xf0,0x01,
-       0x80,0x0f, 0x80,0x00, 0xf8,0x00, 0x00,0x3f, 0x80,0x00, 0x7e,0x00,
-       0x00,0xfe, 0x80,0x80, 0x3f,0x00, 0x00,0xfc, 0x87,0xf0, 0x1f,0x00,
-       0x00,0xf8, 0xff,0xff, 0x0f,0x00, 0x00,0xe0, 0xff,0xff, 0x03,0x00,
-       0x00,0x80, 0xff,0xff, 0x00,0x00, 0x00,0x00, 0xf8,0x0f, 0x00,0x00,
-       0x00,0x00, 0x00,0x00, 0x00,0x00};
-
-  unsigned char
-/*    buf_cursor_mask[SIZE_CURSOR*2+1][p2w(SIZE_CURSOR*2+1)]=*/
-    buf_cursor_mask[]=
-      {0x00,0x00, 0xf8,0x0f, 0x00,0x00, 0x00,0x80, 0xff,0xff, 0x00,0x00,
-       0x00,0xe0, 0xff,0xff, 0x03,0x00, 0x00,0xf8, 0xff,0xff, 0x0f,0x00,
-       0x00,0xfc, 0xff,0xff, 0x1f,0x00, 0x00,0xff, 0xff,0xff, 0x7f,0x00,
-       0x80,0xff, 0xc7,0xf1, 0xff,0x00, 0xc0,0xff, 0xc0,0x81, 0xff,0x01,
-       0xe0,0x3f, 0xc0,0x01, 0xfe,0x03, 0xe0,0x1f, 0xc0,0x01, 0xfc,0x03,
-       0xf0,0x07, 0xc0,0x01, 0xf0,0x07, 0xf8,0x03, 0xc0,0x01, 0xe0,0x0f,
-       0xf8,0x03, 0xc0,0x01, 0xe0,0x0f, 0xfc,0x01, 0xc0,0x01, 0xc0,0x1f,
-       0xfc,0x00, 0xc0,0x01, 0x80,0x1f, 0xfe,0x00, 0xc0,0x01, 0x80,0x3f,
-       0x7e,0x00, 0xc0,0x01, 0x00,0x3f, 0x7e,0x00, 0xc0,0x01, 0x00,0x3f,
-       0x7e,0x00, 0xc0,0x01, 0x00,0x3f, 0x3f,0x00, 0xc0,0x01, 0x00,0x7e,
-       0x3f,0x00, 0xc0,0x01, 0x00,0x7e, 0x3f,0x00, 0xc0,0x01, 0x00,0x7e,
-       0xff,0xff, 0xff,0xff, 0xff,0x7f, 0xff,0xff, 0xff,0xff, 0xff,0x7f,
-       0xff,0xff, 0xff,0xff, 0xff,0x7f, 0x3f,0x00, 0xc0,0x01, 0x00,0x7e,
-       0x3f,0x00, 0xc0,0x01, 0x00,0x7e, 0x3f,0x00, 0xc0,0x01, 0x00,0x7e,
-       0x7e,0x00, 0xc0,0x01, 0x00,0x3f, 0x7e,0x00, 0xc0,0x01, 0x00,0x3f,
-       0x7e,0x00, 0xc0,0x01, 0x00,0x3f, 0xfe,0x00, 0xc0,0x01, 0x80,0x3f,
-       0xfc,0x00, 0xc0,0x01, 0x80,0x1f, 0xfc,0x01, 0xc0,0x01, 0xc0,0x1f,
-       0xf8,0x03, 0xc0,0x01, 0xe0,0x0f, 0xf8,0x03, 0xc0,0x01, 0xe0,0x0f,
-       0xf0,0x07, 0xc0,0x01, 0xf0,0x07, 0xe0,0x1f, 0xc0,0x01, 0xfc,0x03,
-       0xe0,0x3f, 0xc0,0x01, 0xfe,0x03, 0xc0,0xff, 0xc0,0x81, 0xff,0x01,
-       0x80,0xff, 0xc7,0xf1, 0xff,0x00, 0x00,0xff, 0xff,0xff, 0x7f,0x00,
-       0x00,0xfc, 0xff,0xff, 0x1f,0x00, 0x00,0xf8, 0xff,0xff, 0x0f,0x00,
-       0x00,0xe0, 0xff,0xff, 0x03,0x00, 0x00,0x80, 0xff,0xff, 0x00,0x00,
-       0x00,0x00, 0xf8,0x0f, 0x00,0x00};
+       0x60,0xe0, 0x80,0x1f};
 
 /* (8 x 16) x (128-32) */
 /* start = 32, end = 126, n of codes = 126-32+1 = 95 */
@@ -808,7 +733,7 @@ LOCAL
     };
   struct Stn
     {
-    char name[7],comp[7];
+    char name[STNLEN],comp[CMPLEN];
     char unit[9];       /* "m", "m/s", "m/s/s" or "*****" */
     char invert;
     short scale;
@@ -827,7 +752,7 @@ LOCAL
     float ratio;        /* maximum STA/LTA */
     };
   struct Fnl {
-    char stn[10],pol[5];
+    char stn[STNLEN],pol[5];
     double delta,azim,emerg,incid,pt,pe,pomc,st,se,somc,amp,mag;
     };
   struct File_Table     /* Data File Information */
@@ -941,7 +866,6 @@ LOCAL
     struct Filt f;   /* filter structure */
     } zoom_win[N_ZOOM_MAX];
   struct ms_event event;
-  lBitmap bm_stack[5];
   typedef struct {
     float lat,lon,x,y,d;
     long t;
@@ -957,14 +881,14 @@ LOCAL
     x_win_info,y_win_info,x_zero,y_zero,expose_list,width_win_info,
     map_vert,width_horiz,height_horiz,map_dir,copy_file,ratio_vert,
     map_name,ppk_idx,map_true,map_vstn,map_ellipse,bye,got_hup,
-    width_cursor,height_cursor,flag_hypo,flag_mech,nplane,black,
+    s_cursor,flag_hypo,flag_mech,nplane,black,pixels_per_trace,ppt_half,
     width_frame,height_frame,width_zoom,height_zoom,mech_name,
     map_mode,x_time_file,x_time_now,x_cursor,y_cursor,init_dep,
     init_depe,init_dep_init,init_depe_init,com_dep1,com_dep2,
     com_depe1,com_depe2,mec_xzero,mec_yzero,map_period,first_map,
     first_map_others,map_update,com_diag1,map_all,map_period_save,
-    com_diag2,mecha_mode,hypo_use_ratio,map_f1x,map_f1y,use_font_cursor,
-    map_f2x,map_f2y,map_n_find,map_line,fit_height,not_save_dpy,
+    com_diag2,mecha_mode,hypo_use_ratio,map_f1x,map_f1y,
+    map_f2x,map_f2y,map_n_find,map_line,fit_height,
     rapid_report,read_hypo,map_interval,mon_offset,just_hypo,
     just_hypo_offset,list_on_map;
   float init_lat_init,init_lon_init,init_late_init,init_lone_init;
@@ -1017,7 +941,7 @@ char *get_time(rt,addsec)
     rt->mo=nt->tm_mon+1;
     rt->ye=nt->tm_year%100;
     }
-  sprintf(c,"%02d/%02d/%02d %02d:%02d:%02d",nt->tm_year,nt->tm_mon+1,
+  sprintf(c,"%02d/%02d/%02d %02d:%02d:%02d",nt->tm_year%100,nt->tm_mon+1,
     nt->tm_mday,nt->tm_hour,nt->tm_min,nt->tm_sec);
   return c;
   }
@@ -1160,13 +1084,11 @@ put_fill(bm,xzero,yzero,xsize,ysize,blk)
 make_sec_table()
   {
   int i,ii,j,size,ptr,size_max,sr;
+  unsigned char c[4];
 #if OLD_FORMAT
    unsigned int gh;
 #else
    unsigned char gh[5];
-#endif
-#if BYTE_ORDER == LITTLE_ENDIAN
-   SWAPU;
 #endif
 
   if(flag_save==1)  /* LOAD */
@@ -1192,11 +1114,9 @@ make_sec_table()
   /* make sec pointers */
     lseek(ft.fd,(off_t)0,0);  /* BOF */
     ft.len=ptr=size_max=0;
-    while(read(ft.fd,(char *)&size,4))
+    while(read(ft.fd,c,4))
       {
-#if BYTE_ORDER == LITTLE_ENDIAN
-      SWAPL(size);
-#endif
+      size=(c[0]<<24)+(c[1]<<16)+(c[2]<<8)+c[3];
       if(size==0) break;
       else if(size>size_max) size_max=size;
       read(ft.fd,(char *)ft.ptr[ft.len].time,6);
@@ -1224,10 +1144,8 @@ make_sec_table()
           {
           lseek(ft.fd,(off_t)ptr,0);
 #if OLD_FORMAT
-          read(ft.fd,(char *)&gh,4);
-#if BYTE_ORDER == LITTLE_ENDIAN
-          SWAPL(gh);
-#endif
+          read(ft.fd,c,4);
+          gh=(c[0]<<24)+(c[1]<<16)+(c[2]<<8)+c[3];
           i=gh>>16;
           if((i&0xff00)==0) i=e_ch[i%241];
           if((sr=gh&0xfff)>ft.sr_max) ft.sr_max=sr;
@@ -1315,9 +1233,6 @@ read_one_sec(ptr,sys_ch,abuf,spike)
     short sr;
     } *sbuf_index;
   static int n_sbuf,i_sbuf;
-#if BYTE_ORDER == LITTLE_ENDIAN
-  SWAPU;
-#endif
 #if OLD_FORMAT
   int sys_channel;
 #endif
@@ -1371,14 +1286,8 @@ read_one_sec(ptr,sys_ch,abuf,spike)
 #if OLD_FORMAT
   while(1)
     {
-    pts=(unsigned char *)&gh;
-    *pts++=(*dp++);
-    *pts++=(*dp++);
-    *pts++=(*dp++);
-    *pts  =(*dp++);
-#if BYTE_ORDER == LITTLE_ENDIAN
-    SWAPL(gh);
-#endif
+    gh=(dp[0]<<24)+(dp[1]<<16)+(dp[2]<<8)+dp[3];
+    dp+=4;
     s_rate=gh&0xfff;
     g_size=(b_size=(gh>>12)&0xf)*s_rate;
     sys_channel=gh>>16;
@@ -1399,39 +1308,24 @@ read_one_sec(ptr,sys_ch,abuf,spike)
     case 2:
       for(i=0;i<s_rate;i++)
         {
-        pts=(unsigned char *)&shreg;
-        *pts++=(*dp++);
-        *pts  =(*dp++);
-#if BYTE_ORDER == LITTLE_ENDIAN
-        SWAPS(shreg);
-#endif
+        shreg=(dp[0]<<8)+dp[1];
+        dp+=2;
         abuf[i]=shreg;
         }
       break;
     case 3:
       for(i=0;i<s_rate;i++)
         {
-        pts=(unsigned char *)&inreg;
-        *pts++=(*dp++);
-        *pts++=(*dp++);
-        *pts  =(*dp++);
-#if BYTE_ORDER == LITTLE_ENDIAN
-        SWAPL(inreg);
-#endif
+        inreg=(dp[0]<<24)+(dp[1]<<16)+(dp[2]<<8);
+        dp+=3;
         abuf[i]=inreg>>8;
         }
       break;
     case 4:
       for(i=0;i<s_rate;i++)
         {
-        pts=(unsigned char *)&abuf[i];
-        *pts++=(*dp++);
-        *pts++=(*dp++);
-        *pts++=(*dp++);
-        *pts  =(*dp++);
-#if BYTE_ORDER == LITTLE_ENDIAN
-        SWAPL(abuf[i]);
-#endif
+        abuf[i]=(dp[0]<<24)+(dp[1]<<16)+(dp[2]<<8)+dp[3];
+        dp+=4;
         }
       break;
     default:
@@ -1479,14 +1373,8 @@ read_one_sec(ptr,sys_ch,abuf,spike)
     }
 /*  if(s_rate!=ft.sr[ft.ch2idx[sys_ch]]) return 0;*/
   /* read group */
-  pts=(unsigned char *)&abuf[0];
-  *pts++=(*dp++);
-  *pts++=(*dp++);
-  *pts++=(*dp++);
-  *pts  =(*dp++);
-#if BYTE_ORDER == LITTLE_ENDIAN
-  SWAPL(abuf[0]);
-#endif
+  abuf[0]=(dp[0]<<24)+(dp[1]<<16)+(dp[2]<<8)+dp[3];
+  dp+=4;
   if(s_rate>1) switch(b_size)
     {
     case 0:
@@ -1497,45 +1385,29 @@ read_one_sec(ptr,sys_ch,abuf,spike)
         }
       break;
     case 1:
-      for(i=1;i<s_rate;i++)
-        abuf[i]=abuf[i-1]+(*(char *)(dp++));
+      for(i=1;i<s_rate;i++) abuf[i]=abuf[i-1]+(*(char *)(dp++));
       break;
     case 2:
       for(i=1;i<s_rate;i++)
         {
-        pts=(unsigned char *)&shreg;
-        *pts++=(*dp++);
-        *pts  =(*dp++);
-#if BYTE_ORDER == LITTLE_ENDIAN
-        SWAPS(shreg);
-#endif
+        shreg=(dp[0]<<8)+dp[1];
+        dp+=2;
         abuf[i]=abuf[i-1]+shreg;
         }
       break;
     case 3:
       for(i=1;i<s_rate;i++)
         {
-        pts=(unsigned char *)&inreg;
-        *pts++=(*dp++);
-        *pts++=(*dp++);
-        *pts  =(*dp++);
-#if BYTE_ORDER == LITTLE_ENDIAN
-        SWAPL(inreg);
-#endif
+        inreg=(dp[0]<<24)+(dp[1]<<16)+(dp[2]<<8);
+        dp+=3;
         abuf[i]=abuf[i-1]+(inreg>>8);
         }
       break;
     case 4:
       for(i=1;i<s_rate;i++)
         {
-        pts=(unsigned char *)&inreg;
-        *pts++=(*dp++);
-        *pts++=(*dp++);
-        *pts++=(*dp++);
-        *pts  =(*dp++);
-#if BYTE_ORDER == LITTLE_ENDIAN
-        SWAPL(inreg);
-#endif
+        inreg=(dp[0]<<24)+(dp[1]<<16)+(dp[2]<<8)+dp[3];
+        dp+=4;
         abuf[i]=abuf[i-1]+inreg;
         }
       break;
@@ -1582,7 +1454,7 @@ read_one_sec_mon(ptr,sys_ch,abuf,ppsm)
 #if OLD_FORMAT
   int sys_channel;
 #endif
-  int b_size,g_size,won;
+  int b_size,g_size;
 #if OLD_FORMAT
   unsigned int gh;
 #else
@@ -1591,9 +1463,6 @@ read_one_sec_mon(ptr,sys_ch,abuf,ppsm)
   unsigned char *ddp,*pts;
   short shreg;
   int inreg;
-#if BYTE_ORDER ==LITTLE_ENDIAN
-  SWAPU;
-#endif
 
   abuf_save=abuf;
   if(ft.ptr_secbuf!=ptr)
@@ -1606,16 +1475,9 @@ read_one_sec_mon(ptr,sys_ch,abuf,ppsm)
   ddp=ft.secbuf+ft.ptr[ptr].size;
 
 #if OLD_FORMAT
-  pts=(unsigned char *)&gh;
-  *pts++=(*dp++);
-  *pts++=(*dp++);
-  *pts++=(*dp++);
-  *pts  =(*dp++);
-#if BYTE_ORDER == LITTLE_ENDIAN
-  SWAPL(gh);
-#endif
+  gh=(dp[0]<<24)+(dp[1]<<16)+(dp[2]<<8)+dp[3];
+  dp+=4;
   s_rate=gh&0xfff;
-
   g_size=(b_size=(gh>>12)&0xf)*s_rate;
   sys_channel=gh>>16;
   if((sys_channel&0xff00)==0) sys_channel=e_ch[sys_channel%241];
@@ -1624,14 +1486,8 @@ read_one_sec_mon(ptr,sys_ch,abuf,ppsm)
     dp=ft.secbuf+10;
     while(1)
       {
-      pts=(unsigned char *)&gh;
-      *pts++=(*dp++);
-      *pts++=(*dp++);
-      *pts++=(*dp++);
-      *pts  =(*dp++);
-#if BYTE_ORDER == LITTLE_ENDIAN
-      SWAPL(gh);
-#endif
+      gh=(dp[0]<<24)+(dp[1]<<16)+(dp[2]<<8)+dp[3];
+      dp+=4;
       s_rate=gh&0xfff;
       g_size=(b_size=(gh>>12)&0xf)*s_rate;
       sys_channel=gh>>16;
@@ -1689,12 +1545,8 @@ read_one_sec_mon(ptr,sys_ch,abuf,ppsm)
     case 2:
       for(i=0;i<s_rate;i++)
         {
-        pts=(unsigned char *)&shreg;
-        *pts++=(*dp++);
-        *pts  =(*dp++);
-#if BYTE_ORDER == LITTLE_ENDIAN
-        SWAPS(shreg);
-#endif
+        shreg=(dp[0]<<8)+dp[1];
+        dp+=2;
         now=shreg;
         if(k++==0) y_max=y_min=now;
         else
@@ -1713,13 +1565,8 @@ read_one_sec_mon(ptr,sys_ch,abuf,ppsm)
     case 3:
       for(i=0;i<s_rate;i++)
         {
-        pts=(unsigned char *)&inreg;
-        *pts++=(*dp++);
-        *pts++=(*dp++);
-        *pts  =(*dp++);
-#if BYTE_ORDER == LITTLE_ENDIAN
-        SWAPL(inreg);
-#endif
+        inreg=(dp[0]<<24)+(dp[1]<<16)+(dp[2]<<8);
+        dp+=3;
         now=inreg>>8;
         if(k++==0) y_max=y_min=now;
         else
@@ -1738,15 +1585,8 @@ read_one_sec_mon(ptr,sys_ch,abuf,ppsm)
     case 4:
       for(i=0;i<s_rate;i++)
         {
-        pts=(unsigned char *)&won;
-        *pts++=(*dp++);
-        *pts++=(*dp++);
-        *pts++=(*dp++);
-        *pts  =(*dp++);
-#if BYTE_ORDER == LITTLE_ENDIAN
-        SWAPL(won);
-#endif
-        now=won;
+        now=(dp[0]<<24)+(dp[1]<<16)+(dp[2]<<8)+dp[3];
+        dp+=4;
         if(k==0) y_max=y_min=now;
         else
           {
@@ -1834,15 +1674,8 @@ read_one_sec_mon(ptr,sys_ch,abuf,ppsm)
   /* read group */
   sub_rate=s_rate/ppsm;
 
-  pts=(unsigned char *)&won;
-  *pts++=(*dp++);
-  *pts++=(*dp++);
-  *pts++=(*dp++);
-  *pts  =(*dp++);
-#if BYTE_ORDER == LITTLE_ENDIAN
-  SWAPL(won);
-#endif
-  y_min=y_max=now=won;
+  y_min=y_max=now=(dp[0]<<24)+(dp[1]<<16)+(dp[2]<<8)+dp[3];
+  dp+=4;
   k=1;
   if(sub_rate==0) for(i=0;i<ppsm;i++) {*abuf++=now;*abuf++=now;}
   else switch(b_size)
@@ -1899,12 +1732,8 @@ read_one_sec_mon(ptr,sys_ch,abuf,ppsm)
     case 2:
       for(i=1;i<s_rate;i++)
         {
-        pts=(unsigned char *)&shreg;
-        *pts++=(*dp++);
-        *pts  =(*dp++);
-#if BYTE_ORDER == LITTLE_ENDIAN
-        SWAPS(shreg);
-#endif
+        shreg=(dp[0]<<8)+dp[1];
+        dp+=2;
         now+=shreg;
         if(k++==0) y_max=y_min=now;
         else
@@ -1923,13 +1752,8 @@ read_one_sec_mon(ptr,sys_ch,abuf,ppsm)
     case 3:
       for(i=1;i<s_rate;i++)
         {
-        pts=(unsigned char *)&inreg;
-        *pts++=(*dp++);
-        *pts++=(*dp++);
-        *pts  =(*dp++);
-#if BYTE_ORDER == LITTLE_ENDIAN
-        SWAPL(inreg);
-#endif
+        inreg=(dp[0]<<24)+(dp[1]<<16)+(dp[2]<<8);
+        dp+=3;
         now+=(inreg>>8);
         if(k++==0) y_max=y_min=now;
         else
@@ -1948,14 +1772,8 @@ read_one_sec_mon(ptr,sys_ch,abuf,ppsm)
     case 4:
       for(i=1;i<s_rate;i++)
         {
-        pts=(unsigned char *)&inreg;
-        *pts++=(*dp++);
-        *pts++=(*dp++);
-        *pts++=(*dp++);
-        *pts  =(*dp++);
-#if BYTE_ORDER == LITTLE_ENDIAN
-        SWAPL(inreg);
-#endif
+        inreg=(dp[0]<<24)+(dp[1]<<16)+(dp[2]<<8)+dp[3];
+        dp+=4;
         now+=inreg;
         if(k==0) y_max=y_min=now;
         else
@@ -1986,15 +1804,6 @@ read_one_sec_mon(ptr,sys_ch,abuf,ppsm)
 
 print_usage()
   {
-#if DEBUG_EN
-#if BYTE_ORDER == LITTLE_ENDIAN
-   fprintf(stderr, "LITTLE ENDIAN\n");
-#elif BYTE_ORDER == BIG_ENDIAN
-   fprintf(stderr, "BIG ENDIAN\n");
-#else
-   fprintf(stderr, "??? ENDIAN\n");
-#endif
-#endif
   fprintf(stderr,"usage of '%s' :\n",NAME_PRG);
   fprintf(stderr,"   %s ([-options]) ([data file name])\n",NAME_PRG);
   fprintf(stderr,"       options:   a    - do 'auto-pick'\n");
@@ -2009,15 +1818,10 @@ print_usage()
   fprintf(stderr,"                  q    - 'quit' mode\n");
   fprintf(stderr,"                  r    - 'rapid report' in auto-pick\n");
   fprintf(stderr,"                  t    - copy data-file to local\n");
-#if BYTE_ORDER == BIG_ENDIAN
   fprintf(stderr,"                  w    - write bitmap (.sv) file\n");
-#endif
   fprintf(stderr,"                  x [pick file] - just calculate hypocenter\n");
-#if BYTE_ORDER == BIG_ENDIAN
   fprintf(stderr,"                  B    - don't use bitmap (.sv) file\n");
-#endif
-  fprintf(stderr,"                  C    - use cross-hair cursor\n");
-  fprintf(stderr,"                  S    - stack picture in memory\n");
+  fprintf(stderr,"                  C [color] - set color of cursor\n");
   fprintf(stderr,"                  _    - use '_' in pick file names\n");
   fprintf(stderr,"\n");
   fprintf(stderr,"`ee` command may show you a list of event files, but it depends on installation\n");
@@ -2036,12 +1840,14 @@ init_process(argc,argv,args)
   float north,east,stcp,stcs,dm1,dm2,sens,to,h,g,adc;
   double alat,along,x,y;
   struct {float x,y;} md;
-  char text_buf[LINELEN],fname[NAMLEN],fname1[NAMLEN],name[10],unit[7],
-    dpath[NAMLEN],comp[10],*ptr,fname2[NAMLEN],sname[10],c,
-    fname00[NAMLEN],fname01[NAMLEN],fname02[NAMLEN],(*stations)[7];
-#if BYTE_ORDER == LITTLE_ENDIAN
-  SWAPU;
-#endif
+  char text_buf[LINELEN],fname[NAMLEN],fname1[NAMLEN],name[STNLEN],unit[7],
+    dpath[NAMLEN],comp[CMPLEN],*ptr,fname2[NAMLEN],sname[STNLEN],c,
+    fname00[NAMLEN],fname01[NAMLEN],fname02[NAMLEN],(*stations)[STNLEN];
+  union Swp {
+    float f;
+    unsigned long i;
+    unsigned char c[4];
+    } *swp;
 
   /* open parameter file */
   if(fp=open_file(ft.param_file,"parameter")) fclose(fp);
@@ -2255,11 +2061,12 @@ init_process(argc,argv,args)
   i=lseek(ft.fd,(off_t)0,2);      /* file size */
   fprintf(stderr,"data file='%s'   %d bytes\n",ft.data_file,i);
   /* make second table */
-#if BYTE_ORDER == LITTLE_ENDIAN
-  flag_save=0;  /* always no load/save of bitmap file */
-#endif
   if(flag_save) open_save();
   make_sec_table();
+  /* ft.n_ch is fixed */
+  if(ft.n_ch*HEIGHT_TEXT>32767) pixels_per_trace=32767/ft.n_ch;
+  else pixels_per_trace=HEIGHT_TEXT+1;
+  ppt_half=pixels_per_trace/2;
   if((ft.pos2idx=(short *)malloc(sizeof(*ft.pos2idx)*ft.n_ch))==0)
     emalloc("ft.pos2idx");
   if((ft.idx2pos=(short *)malloc(sizeof(*ft.idx2pos)*ft.n_ch))==0)
@@ -2334,7 +2141,7 @@ init_process(argc,argv,args)
 
   if((rflag=(unsigned short *)malloc(sizeof(*rflag)*i))==0)
     emalloc("rflag");
-  if((stations=(char (*)[7])malloc(sizeof(char)*7*i))==0)
+  if((stations=(char (*)[STNLEN])malloc(sizeof(char)*STNLEN*i))==0)
     emalloc("stations");
 
   if((fp=open_file(fname1,"zone table"))==NULL) stations[0][0]=0;
@@ -2368,11 +2175,11 @@ just_map:
   if(fp=open_file(ft.map_file,"map"))
     {
     fread(&md,sizeof(md),1,fp);
-    fclose(fp); 
-#if BYTE_ORDER == LITTLE_ENDIAN
-    SWAPF(md.x);
-    SWAPF(md.y);
-#endif
+    fclose(fp);
+    swp=(union Swp *)&md.x;
+    swp->i=(swp->c[0]<<24)+(swp->c[1]<<16)+(swp->c[2]<<8)+swp->c[3];
+    swp=(union Swp *)&md.y;
+    swp->i=(swp->c[0]<<24)+(swp->c[1]<<16)+(swp->c[2]<<8)+swp->c[3];
     alat0=(double)md.x;
     along0=(double)md.y;
     }
@@ -2485,8 +2292,8 @@ just_map:
         {
         ft.stn[ft.ch2idx[sys_ch]].scale=
           ft.stn[ft.ch2idx[sys_ch]].psup_scale=k;
-        sprintf(ft.stn[ft.ch2idx[sys_ch]].name,"%.4s",name);
-        sprintf(ft.stn[ft.ch2idx[sys_ch]].comp,"%.2s",comp);
+        strcpy(ft.stn[ft.ch2idx[sys_ch]].name,name);
+        strcpy(ft.stn[ft.ch2idx[sys_ch]].comp,comp);
         jj=0;
         if(stations) while(stations[jj][0])
           {
@@ -2539,11 +2346,11 @@ just_map:
         {
         if(north!=0.0 && east!=0.0)  /* dum1 is record flag */
           {
-          sprintf(ft.stn[ft.n_ch_ex].name,"%.4s",name);
+          strcpy(ft.stn[ft.n_ch_ex].name,name);
           for(i=0;i<ft.n_ch_ex;i++)
             if(strcmp(ft.stn[i].name,ft.stn[ft.n_ch_ex].name)==0) break;
           if(i<ft.n_ch_ex) continue;
-          sprintf(ft.stn[ft.n_ch_ex].comp,"%.2s",comp);
+          strcpy(ft.stn[ft.n_ch_ex].comp,comp);
           ft.stn[ft.n_ch_ex].north=north;
           ft.stn[ft.n_ch_ex].east=east;
           ft.stn[ft.n_ch_ex].z=height;
@@ -2648,32 +2455,17 @@ just_map:
 bg: return 1;
   }
 
-save_dpy(idx)
-  int idx;
-  {
-  if(background) return;
-  if(not_save_dpy) return;
-  define_bm(&bm_stack[idx],BM_MEM,p2w(width_dpy),width_dpy,height_dpy,0);
-/*  define_bm(&bm_stack[idx],BM_FB,p2w(width_dpy),width_dpy,height_dpy,1);*/
-  put_bitblt(&dpy,0,0,width_dpy,height_dpy,&bm_stack[idx],0,0,BF_S);
-  }
-
-restore_dpy(idx)
-  int idx;
-  {
-  if(background) return;
-  if(not_save_dpy)
-    {
-    refresh(0);
-    return;
-    }
-  put_bitblt(&bm_stack[idx],0,0,width_dpy,height_dpy,&dpy,0,0,BF_S);
-  XFreePixmap(disp,bm_stack[idx].drw);
-  }
-
 refresh(idx)
   int idx;
   {
+  Window root;
+  int x,y;
+  unsigned int bw,d;
+  if(!background)
+    {
+    XGetGeometry(disp,dpy.drw,&root,&x,&y,&width_dpy,&height_dpy,&bw,&d);
+    set_geometry();
+    }
   switch(loop)
     {
     case LOOP_MAIN:   return put_main();
@@ -2683,7 +2475,6 @@ refresh(idx)
     case LOOP_PSUP:   return put_psup();
     }
   }
-
 
 set_period(idx,pt)
   struct Pick_Time *pt;
@@ -2702,8 +2493,7 @@ set_period(idx,pt)
   dj=0.0;
   for(i=0;i<n;i++) if((db[i]>=0.0 && db[i-1]<0.0) ||
     (db[i]<=0.0 && db[i-1]>0.0)) dj+=0.5;
-  if((pt->period=1000.0*(double)n/(dj*(double)ft.sr[idx]))>500)
-    pt->period=500;
+  if((pt->period=1000.0*(double)n/(dj*(double)ft.sr[idx]))>500) pt->period=500;
   free(db);
   }
 
@@ -2725,8 +2515,7 @@ set_pick(pt,sec,msec,ms_width1,ms_width2)
 get_width(pt)
   struct Pick_Time *pt;
   {
-  return ((pt->sec2-pt->sec1)*1000+
-    pt->msec2-pt->msec1)/2;
+  return ((pt->sec2-pt->sec1)*1000+pt->msec2-pt->msec1)/2;
   }
 
 set_width(pt,ms_width1,ms_width2)
@@ -2734,8 +2523,7 @@ set_width(pt,ms_width1,ms_width2)
   int ms_width1,ms_width2;
   {
   int msec;
-  msec=((pt->sec1+pt->sec2)*1000+
-    pt->msec1+pt->msec2)/2;
+  msec=((pt->sec1+pt->sec2)*1000+pt->msec1+pt->msec2)/2;
   set_pick(pt,msec/1000,msec%1000,ms_width1,ms_width2);
   }
 
@@ -2802,15 +2590,6 @@ typedef struct
 #define   LEVEL_1   0.010   /* error width */
 #define   LEVEL_2   0.030   /* good sharpness */
 #define   LEVEL_3   0.100   /* lower limit of (aic_all-aic) */
-
-usleep(ms)  /* after T.I. UNIX MAGAZINE 1994.10 P.176 */
-  unsigned int ms;
-  {
-  struct timeval tv;
-  tv.tv_sec=ms/1000000;
-  tv.tv_usec=ms%1000000;
-  select(0,NULL,NULL,NULL,&tv);
-  }
 
 char *alloc_mem(size)
   long size;
@@ -2892,8 +2671,7 @@ getdata(idx,pt,dbp,ip)
     if(db[i+2]>dmax) dmax=db[i+2];
     else if(db[i+2]<dmin) dmin=db[i+2];
     drange=(dmax-dmin+1.0)*4.0;
-    if(db[i]>dmax+drange || db[i]<dmin-drange)
-      db[i]=(db[i-1]+db[i+1])/2.0;
+    if(db[i]>dmax+drange || db[i]<dmin-drange) db[i]=(db[i-1]+db[i+1])/2.0;
     }
   return n;
   }
@@ -2999,7 +2777,7 @@ pick_phase(idx,iph)   /* pick an onset in a range of time */
 
   if(doing_auto_pick && background==0)
     {
-    sprintf(apbuf," '%s' in %-4s-%-2s  ",marks[iph],
+    sprintf(apbuf," '%s' in %-.4s-%-.2s  ",marks[iph],
       ft.stn[idx].name,ft.stn[idx].comp);
     put_text(&dpy,x_time_file,Y_TIME,apbuf,BF_S);
     }
@@ -3335,7 +3113,7 @@ auto_pick_single(ev,tbl,sec_now,sec_on) /* automatic pick & locate (single) */
       sleep(1);
       /* return to LIST */
       loop=loop_stack[--loop_stack_ptr];
-      restore_dpy(loop_stack_ptr);
+      if(!background) refresh(0);
       raise_ttysw(1);
       }
     /* save pick file */
@@ -3345,7 +3123,7 @@ auto_pick_single(ev,tbl,sec_now,sec_on) /* automatic pick & locate (single) */
     /* return to MAIN */
     raise_ttysw(0);
     loop=loop_stack[--loop_stack_ptr];
-    restore_dpy(loop_stack_ptr);
+    if(!background) refresh(0);
     for(i=0;i<ft.n_trigch;i++)  /* restore pick data */
       {
       if(ft.pick_save[ft.trigch[i]][P].valid) for(j=0;j<4;j++)
@@ -3640,7 +3418,7 @@ writelog(tb);
       sleep(1);
       /* return to LIST */
       loop=loop_stack[--loop_stack_ptr];
-      restore_dpy(loop_stack_ptr);
+      if(!background) refresh(0);
       raise_ttysw(1);
       break;
       }
@@ -3664,7 +3442,7 @@ writelog(tb);
   /* return to MAIN */
   raise_ttysw(0);
   loop=loop_stack[--loop_stack_ptr];
-  restore_dpy(loop_stack_ptr);
+  if(!background) refresh(0);
   main_mode=MODE_NORMAL;
   refresh(0);
   rfsh_req=0;
@@ -4208,7 +3986,7 @@ plot_mon(base_sec,mon_len,wmb,buf_mon)
     for(j=0;j<ft.n_ch;j++)
       {
       x=xx;
-      yy=PPT_HALF+ft.idx2pos[j]*PIXELS_PER_TRACE;
+      yy=ppt_half+ft.idx2pos[j]*pixels_per_trace;
       if(read_one_sec_mon(i+base_sec,ft.idx2ch[j],buf,PIXELS_PER_SEC_MON)>0)
         {
         if(mon_offset && base_sec==0 && i==0)
@@ -4222,7 +4000,7 @@ plot_mon(base_sec,mon_len,wmb,buf_mon)
         ptr=buf;
         for(kk=0;kk<PIXELS_PER_SEC_MON;kk++)
           {
-          y=PPT_HALF;
+          y=ppt_half;
           y_min=(-(((*ptr++)-ofs)>>ft.stn[j].scale));
           if(y_min>y)     y_min=yy+y;
           else if(y_min<(-y)) y_min=yy-y;
@@ -4257,9 +4035,12 @@ mapconv(argc,argv,args)
   int flag;
   double alat,along,x,y;
   char tb[80];
-#if BYTE_ORDER == LITTLE_ENDIAN
-  SWAPU;
-#endif
+  unsigned char c[4];
+  union Swp {
+    float f;
+    unsigned long i;
+    unsigned char c[4];
+    } swp;
 
   if(args+1<argc)
     {
@@ -4273,13 +4054,18 @@ mapconv(argc,argv,args)
     return;
     }
   fprintf(stderr,"***** mapconv ***** (origin=%8.4fN %8.4fE)\n",alat0,along0);
-  a.x=(float)alat0;
-  a.y=(float)along0;
-#if BYTE_ORDER == LITTLE_ENDIAN
-  SWAPF(a.x);
-  SWAPF(a.y);
-#endif
-  fwrite(&a,sizeof(a),1,stdout);
+  swp.f=(float)alat0;
+  c[0]=swp.i>>24;
+  c[1]=swp.i>>16;
+  c[2]=swp.i>>8;
+  c[3]=swp.i;
+  fwrite(c,1,4,stdout);
+  swp.f=(float)along0;
+  c[0]=swp.i>>24;
+  c[1]=swp.i>>16;
+  c[2]=swp.i>>8;
+  c[3]=swp.i;
+  fwrite(c,1,4,stdout);
 
   flag=0;
   while(fgets(tb,80,stdin)!=NULL && flag==0)
@@ -4313,11 +4099,18 @@ mapconv(argc,argv,args)
       a.x=10000.0;
       a.y=0.0;
       }
-#if BYTE_ORDER == LITTLE_ENDIAN
-    SWAPF(a.x);
-    SWAPF(a.y);
-#endif
-    fwrite(&a,sizeof(a),1,stdout);
+    swp.f=a.x;
+    c[0]=swp.i>>24;
+    c[1]=swp.i>>16;
+    c[2]=swp.i>>8;
+    c[3]=swp.i;
+    fwrite(c,1,4,stdout);
+    swp.f=a.y;
+    c[0]=swp.i>>24;
+    c[1]=swp.i>>16;
+    c[2]=swp.i>>8;
+    c[3]=swp.i;
+    fwrite(c,1,4,stdout);
     }
   }
 
@@ -4339,6 +4132,37 @@ end_process(ret)
   exit(ret);
   }
 
+set_geometry()
+  {
+  /* geometry for MECHA */
+  mec_xzero=width_dpy/2;
+  mec_yzero=HEIGHT_TEXT*3+(height_dpy-HEIGHT_TEXT*3)/2;
+  if(mec_xzero<mec_yzero) mec_rc=0.8*(double)mec_xzero;
+  else mec_rc=0.8*(double)(height_dpy-mec_yzero);
+
+  com_dep1=0;
+  com_dep2=com_dep1+WIDTH_TEXT*12;
+  com_depe1=com_dep2;
+  com_depe2=com_depe1+WIDTH_TEXT*6;
+  x_time_file=x_func(OPEN)+WB+HW;
+  com_diag2=x_func(UD)-HW;
+  com_diag1=x_time_now=com_diag2-WIDTH_TEXT*strlen(diagnos);
+
+/* window position & size */
+  x_win_mon=WIDTH_INFO;
+  y_win_mon=MARGIN;
+  if((n_zoom_max=(height_dpy-1-MARGIN)/HEIGHT_ZOOM)>N_ZOOM_MAX)
+    n_zoom_max=N_ZOOM_MAX;
+  while(n_zoom>n_zoom_max) close_zoom(n_zoom-1);
+  height_win_mon=height_dpy-1-MARGIN-n_zoom*HEIGHT_ZOOM;
+  width_win_mon =width_dpy-WIDTH_INFO;
+  x_win_info=0;
+  y_win_info=MARGIN;
+  width_win_info =WIDTH_INFO;
+  width_zoom=width_dpy+1;
+  height_zoom=HEIGHT_ZOOM+1;
+  }
+
 main(argc,argv)
   int argc;
   char *argv[];
@@ -4353,13 +4177,14 @@ main(argc,argv)
   Window root,parent;
   extern int optind;
   extern char *optarg;
+  lPoint pts[10];
 
   sprintf(ft.param_file,"%s.prm",NAME_PRG);
   background=map_only=mc=bye=auto_flag=not_save=copy_file=got_hup=0;
-  rapid_report=mon_offset=just_hypo=just_hypo_offset=use_font_cursor=0;
-  flag_save=not_save_dpy=1;
+  rapid_report=mon_offset=just_hypo=just_hypo_offset=0;
+  flag_save=1;
   dot='.';
-  while((c=getopt(argc,argv,"abcfhmnop:qrtwx:BCNSX:_"))!=EOF)
+  while((c=getopt(argc,argv,"abcfhmnop:qrtwx:BC:_"))!=EOF)
     {
     switch(c)
       {
@@ -4407,12 +4232,8 @@ main(argc,argv)
       case 'B':   /* don't use MON bitmap */
         flag_save=0;
         break;
-      case 'C':   /* use cross-hair cursor */
-        use_font_cursor=1;
-        break;
-      case 'N':break; /* not save display in memory */
-      case 'S':   /* save display in memory */
-        not_save_dpy=0;
+      case 'C':   /* cursor color */
+        strcpy(cursor_color,optarg);
         break;
       case '_':   /* use '_' instead '.' for pick file */
         dot='_';
@@ -4432,7 +4253,7 @@ main(argc,argv)
   signal(SIGINT,(void *)end_process);
   signal(SIGTERM,(void *)end_process);
   signal(SIGHUP,(void *)bye_entry);
-  fprintf(stderr,"***  %s   %s version (%s)  ***\n",NAME_PRG,SYSTEM,VERSION);
+  fprintf(stderr,"***  %s   X11 version (%s)  ***\n",NAME_PRG,VERSION);
 
   lat_cent=lon_cent=200.0;  /* unrealistic position */
   first_map=first_map_others=1;
@@ -4470,38 +4291,14 @@ main(argc,argv)
      exit(1);
   }
   writelog(NAME_PRG);
-  writelog(SYSTEM);
   writelog(VERSION);
   writelog(ft.data_file);
   writelog(ft.param_file);
 /* physical display size */
   get_screen_type(&nplane,&width_dpy,&height_dpy,&width_frame,&height_frame);
   set_diagnos("","");
-  /* geometry for MECHA */
-  mec_xzero=width_dpy/2;
-  mec_yzero=HEIGHT_TEXT*3+(height_dpy-HEIGHT_TEXT*3)/2;
-  if(mec_xzero<mec_yzero) mec_rc=0.8*(double)mec_xzero;
-  else mec_rc=0.8*(double)(height_dpy-mec_yzero);
-
-  com_dep1=0;
-  com_dep2=com_dep1+WIDTH_TEXT*12;
-  com_depe1=com_dep2;
-  com_depe2=com_depe1+WIDTH_TEXT*6;
-  x_time_file=x_func(OPEN)+WB+HW;
-  com_diag2=x_func(UD)-HW;
-  com_diag1=x_time_now=com_diag2-WIDTH_TEXT*strlen(diagnos);
-
-/* window position & size */
-  x_win_mon=WIDTH_INFO;
-  y_win_mon=MARGIN;
-  if((n_zoom_max=(height_dpy-1-MARGIN)/HEIGHT_ZOOM)>N_ZOOM_MAX)
-    n_zoom_max=N_ZOOM_MAX;
   n_zoom=0;
-  height_win_mon=height_dpy-1-MARGIN-n_zoom*HEIGHT_ZOOM;
-  width_win_mon =width_dpy-WIDTH_INFO;
-  x_win_info=0;
-  y_win_info=MARGIN;
-  width_win_info =WIDTH_INFO;
+  set_geometry();
 
 /* define bitmap dpy */
   if(map_only) sprintf(textbuf," %s map",NAME_PRG);
@@ -4522,18 +4319,24 @@ main(argc,argv)
   invert_bits(buf_epi_s,sizeof(buf_epi_s));
   invert_bits(buf_epi_l,sizeof(buf_epi_l));
   invert_bits((unsigned char *)font16,sizeof(font16));
-  define_bm(&dpy,BM_FB,0,width_dpy,height_dpy,0);
-/* define bitmap cursor */
-  width_cursor=height_cursor=SIZE_CURSOR*2+1;
-  define_bm(&cursor,BM_MEM,p2w(width_cursor),width_cursor,height_cursor,
-	    buf_cursor);
-  define_bm(&cursor_mask,BM_MEM,p2w(width_cursor),width_cursor,height_cursor,
-	    buf_cursor_mask);
-  /* create GCs */
+  define_bm(&dpy,BM_FB,width_dpy,height_dpy,0);
+
+/* make patterns */
+  define_bm(&sym,BM_MEM,16*4,58,buf_sym);  
+  define_bm(&sym_stn,BM_MEM,16*1,16,buf_sym_stn);
+  define_bm(&arrows_ud,BM_MEM,16*2,16,buf_arrows_ud);
+  define_bm(&arrows_lr,BM_MEM,16*2,16,buf_arrows_lr);
+  define_bm(&arrows_lr_zoom,BM_MEM,16*2,16,buf_arrows_lr_zoom);
+  define_bm(&arrows_leng,BM_MEM,16*2,16,buf_arrows_leng);
+  define_bm(&arrows_scale,BM_MEM,16*2,16,buf_arrows_scale);
+  define_bm(&epi_s,BM_MEM,16*1,16,buf_epi_s);
+  define_bm(&epi_l,BM_MEM,16*1,16,buf_epi_l);
+
+/* create GCs */
   for(i=0;i<N_LPTN;i++)
     {
     gc_line[i]=XCreateGC(disp,dpy.drw,0,0);
-    gc_line_mem[i]=XCreateGC(disp,cursor.drw,0,0);
+    gc_line_mem[i]=XCreateGC(disp,sym.drw,0,0);
     XSetPlaneMask(disp,gc_line[i],BlackPixel(disp,0)^WhitePixel(disp,0));
     XSetForeground(disp,gc_line[i],BlackPixel(disp,0));
     XSetBackground(disp,gc_line[i],WhitePixel(disp,0));
@@ -4565,52 +4368,55 @@ main(argc,argv)
   XSetBackground(disp,gc_fbi,BlackPixel(disp,0));
   XSetGraphicsExposures(disp,gc_fbi,False);
 
-  gc_mem=XCreateGC(disp,cursor.drw,0,0);  /* depth=1 */
+  gc_mem=XCreateGC(disp,sym.drw,0,0);  /* depth=1 */
   XSetForeground(disp,gc_mem,1);
   XSetBackground(disp,gc_mem,0);
   XSetGraphicsExposures(disp,gc_mem,False);
 
-  gc_memi=XCreateGC(disp,cursor.drw,0,0);  /* depth=1 */
+  gc_memi=XCreateGC(disp,sym.drw,0,0);  /* depth=1 */
   XSetForeground(disp,gc_memi,0);
   XSetBackground(disp,gc_memi,1);
   XSetGraphicsExposures(disp,gc_memi,False);
 
+/* define cursor */
+  XQueryBestCursor(disp,dpy.drw,SIZE_CURSOR,SIZE_CURSOR,&i,&j);
+  if((s_cursor=i)>j) s_cursor=j;
+  if(s_cursor%2==0) s_cursor--;
+  define_bm(&cursor,BM_MEM,s_cursor,s_cursor,0);
+  put_bitblt(&cursor,0,0,s_cursor,s_cursor,&cursor,0,0,BF_SDX);
+  define_bm(&cursor_mask,BM_MEM,s_cursor,s_cursor,0);
+  put_bitblt(&cursor_mask,0,0,s_cursor,s_cursor,&cursor_mask,0,0,BF_SDX);
+  draw_seg(s_cursor/2,0,s_cursor/2,s_cursor-1,LPTN_FF,BF_1,&cursor);
+  draw_seg(0,s_cursor/2,s_cursor-1,s_cursor/2,LPTN_FF,BF_1,&cursor);
+  XSetLineAttributes(disp,gc_line_mem[LPTN_FF],3,LineSolid,CapButt,JoinMiter);
+  draw_circle(s_cursor/2,s_cursor/2,s_cursor/2,LPTN_FF,BF_1,&cursor);
+  XSetLineAttributes(disp,gc_line_mem[LPTN_FF],0,LineSolid,CapButt,JoinMiter);
   colormap=DefaultColormap(disp,0);
   c_black.pixel=BlackPixel(disp,0);
   XQueryColor(disp,colormap,&c_black);
   c_white.pixel=WhitePixel(disp,0);
   XQueryColor(disp,colormap,&c_white);
-  if(use_font_cursor) x11_cursor=XCreateFontCursor(disp,XC_crosshair);
-  else x11_cursor=XCreatePixmapCursor(disp,cursor.drw,cursor_mask.drw,
-    &c_black,&c_white,SIZE_CURSOR,SIZE_CURSOR);
+  x11_cursor=XCreatePixmapCursor(disp,cursor.drw,cursor.drw,
+    &c_black,&c_white,s_cursor/2,s_cursor/2);
+  if(XAllocNamedColor(disp,colormap,cursor_color,&c_cursor,&c_c)==True)
+    XRecolorCursor(disp,x11_cursor,&c_cursor,&c_white);
   XDefineCursor(disp,dpy.drw,x11_cursor);
-/* make patterns */
-  define_bm(&sym,BM_MEM,4,16*4,58,buf_sym);
-  define_bm(&sym_stn,BM_MEM,1,16*1,16,buf_sym_stn);
-  define_bm(&arrows_ud,BM_MEM,2,16*2,16,buf_arrows_ud);
-  define_bm(&arrows_lr,BM_MEM,2,16*2,16,buf_arrows_lr);
-  define_bm(&arrows_lr_zoom,BM_MEM,2,16*2,16,buf_arrows_lr_zoom);
-  define_bm(&arrows_leng,BM_MEM,2,16*2,16,buf_arrows_leng);
-  define_bm(&arrows_scale,BM_MEM,2,16*2,16,buf_arrows_scale);
-  define_bm(&epi_s,BM_MEM,1,16*1,16,buf_epi_s);
-  define_bm(&epi_l,BM_MEM,1,16*1,16,buf_epi_l);
+
 bg: if(map_only) goto skip_mon;
   else if(just_hypo) goto skip_mon_just_hypo;
 /* define bitmap info */
-  height_mon=ft.n_ch*PIXELS_PER_TRACE;
+  height_mon=ft.n_ch*pixels_per_trace;
   width_info=WIDTH_INFO;
   height_info=height_mon;
-  define_bm(&info,BM_MEM,p2w(width_info),width_info,height_info,0);
+  define_bm(&info,BM_MEM,width_info,height_info,0);
   put_white(&info,0,0,width_info,height_info);
 
 /* define bitmap zoom */
-  width_zoom=width_dpy+1;
-  height_zoom=HEIGHT_ZOOM+1;
-  define_bm(&zoom,BM_MEM,p2w(width_zoom),width_zoom,height_zoom,0);
-  put_white(&zoom,0,0,width_zoom,height_zoom);
+  define_bm(&zoom,BM_MEM,WIDTH_INFO_ZOOM+1,height_zoom,0);
+  put_white(&zoom,0,0,WIDTH_INFO_ZOOM+1,height_zoom);
   /* make zoom info format */
-  put_fram(&zoom,0,0,width_zoom,height_zoom);
-  put_fram(&zoom,0,1,width_zoom,height_zoom-1);
+  put_fram(&zoom,0,0,WIDTH_INFO_ZOOM+1,height_zoom);
+  put_fram(&zoom,0,1,WIDTH_INFO_ZOOM+1,height_zoom-1);
   put_black(&zoom,X_Z_CHN,Y_Z_CHN,W_Z_CHN+1,PIXELS_PER_LINE+1);
   put_fram(&zoom,X_Z_POL,Y_Z_POL,W_Z_POL+1,PIXELS_PER_LINE+1);
   put_fram(&zoom,X_Z_SCL,Y_Z_SCL,W_Z_SCL+1,PIXELS_PER_LINE+1);
@@ -4624,28 +4430,32 @@ bg: if(map_only) goto skip_mon;
   put_bitblt(&arrows_leng,0,0,32,16,&zoom,X_Z_TSC+X_Z_ARR,Y_Z_TSC+Y_Z_ARR,BF_SDO);
   put_bitblt(&arrows_lr_zoom,0,0,32,16,&zoom,X_Z_SFT+X_Z_ARR,
     Y_Z_SFT+Y_Z_ARR,BF_SDO);
-  put_text(&zoom,X_Z_POL,Y_Z_POL+Y_Z_OFS," +/-",BF_SDO);
-  put_text(&zoom,X_Z_FLT+HW,Y_Z_FLT+Y_Z_OFS," NO FILTER  ",BF_SDO);
-  put_text(&zoom,X_Z_GET+HW,Y_Z_GET+Y_Z_OFS,"GET",BF_SDO);
-  put_text(&zoom,X_Z_PUT+HW,Y_Z_PUT+Y_Z_OFS,"PUT",BF_SDO);
-  put_text(&zoom,X_Z_CLS+HW,Y_Z_CLS+Y_Z_OFS,"CLS",BF_SDO);
+  put_text(&zoom,X_Z_POL+(W_Z_POL-WIDTH_TEXT*3)/2,Y_Z_POL+Y_Z_OFS,"+/-",BF_SDO);
+  put_text(&zoom,X_Z_FLT+WIDTH_TEXT,Y_Z_FLT+Y_Z_OFS,"   NO FILTER     ",BF_SDO);
+  put_text(&zoom,X_Z_GET+(W_Z_GET-WIDTH_TEXT*3)/2,Y_Z_GET+Y_Z_OFS,"GET",BF_SDO);
+  put_text(&zoom,X_Z_PUT+(W_Z_PUT-WIDTH_TEXT*3)/2,Y_Z_PUT+Y_Z_OFS,"PUT",BF_SDO);
+  put_text(&zoom,X_Z_CLS+(W_Z_CLS-WIDTH_TEXT*3)/2,Y_Z_CLS+Y_Z_OFS,"CLS",BF_SDO);
 
 /* print info lines */
   yy=k=0;
   for(j=0;j<ft.n_ch;j++)
     {
-    sprintf(tbuf,"%s-%s",ft.stn[ft.pos2idx[j]].name,
-      ft.stn[ft.pos2idx[j]].comp);
+    sprintf(textbuf,"%04X",ft.idx2ch[ft.pos2idx[j]]);
+    for(i=0;i<WIDTH_INFO_C-4;i++) textbuf[4+i]=' ';
+    sprintf(tbuf,"%d",ft.stn[ft.pos2idx[j]].scale);
+    if(strlen(tbuf)==1) strcpy(textbuf+WIDTH_INFO_C-1,tbuf);
+    else strcpy(textbuf+WIDTH_INFO_C-2,tbuf);
+    sprintf(tbuf,"%s-%s",ft.stn[ft.pos2idx[j]].name,ft.stn[ft.pos2idx[j]].comp);
     if(!(j==0 || strcmp(ft.stn[ft.pos2idx[j]].name,
         ft.stn[ft.pos2idx[j-1]].name)))
       for(i=0;i<strlen(ft.stn[ft.pos2idx[j]].name)+1;i++) tbuf[i]=' ';
-    sprintf(textbuf,"%04X %-7s%d",ft.idx2ch[ft.pos2idx[j]],tbuf,
-      ft.stn[ft.pos2idx[j]].scale);
-    if(j>0 && ft.stn[ft.pos2idx[j]].rflag!=ft.stn[ft.pos2idx[j-1]].rflag)
-      k^=1;
+    if(WIDTH_INFO_C-5-1>=strlen(tbuf))
+      for(i=0;i<strlen(tbuf);i++) textbuf[5+i]=tbuf[i];
+    else for(i=0;i<strlen(tbuf);i++) textbuf[4+i]=tbuf[i]; 
+    if(j>0 && ft.stn[ft.pos2idx[j]].rflag!=ft.stn[ft.pos2idx[j-1]].rflag) k^=1;
     if(k) put_text(&info,0,yy,textbuf,BF_SI);
     else put_text(&info,0,yy,textbuf,BF_S);
-    yy+=PIXELS_PER_TRACE;
+    yy+=pixels_per_trace;
     }
 
   /* make mon */
@@ -4696,7 +4506,7 @@ bg: if(map_only) goto skip_mon;
         }
       }
     else plot_mon(base_sec,mon_len,p2w(width_mon)*2,buf_mon);
-    define_bm(&mon[i_mon],BM_MEM,p2w(width_mon),width_mon,height_mon,buf_mon);
+    define_bm(&mon[i_mon],BM_MEM,p2w(width_mon)*16,height_mon,buf_mon);
     if(flag_save==2)
       {
       if(i_mon==0) for(j=0;j<ft.n_ch;j++)
@@ -4795,13 +4605,18 @@ void proc_alarm()
   raise_ttysw(0);
   refresh(0);
   alarm(map_interval*60);
+  signal(SIGALRM,proc_alarm);
   }
 
 do_map()
   {
   other_epis=1;
   loop=LOOP_MAP;
-  if(map_interval) alarm(map_interval*60);
+  if(map_interval)
+    {
+    alarm(map_interval*60);
+    signal(SIGALRM,proc_alarm);
+    }
   init_map(MSE_BUTNL);
   if(bye) end_process(0);
   else bye_process();
@@ -4812,7 +4627,6 @@ window_main_loop()
   while (1)
     {
     wait_mouse(); /* Get the next event */
-    if(map_only) signal(SIGALRM,SIG_IGN);
     switch(loop)
       {
       case LOOP_MAIN: proc_main();break;
@@ -4821,7 +4635,6 @@ window_main_loop()
       case LOOP_MECHA:proc_mecha();break;
       case LOOP_PSUP: proc_psup();break;
       }
-    if(map_only) signal(SIGALRM,proc_alarm);
     }
   }
 
@@ -4841,11 +4654,29 @@ auto_wrap_off()
 
 open_save()
   {
+#define MAGIC 601
+  int magic;
   /* flag_save: 0-none, 1-load, 2-save */
   sprintf(ft.mon_file,"%s.sv",ft.data_file);
   if(flag_save==2 && (ft.fd_save=open(ft.mon_file,
-    O_WRONLY|O_CREAT|O_TRUNC,0664))>=0) flag_save=2;
-  else if((ft.fd_save=open(ft.mon_file,O_RDONLY))>=0) flag_save=1;
+      O_WRONLY|O_CREAT|O_TRUNC,0664))>=0)
+    {
+    magic=MAGIC;
+    write(ft.fd_save,&magic,sizeof(magic));
+    }
+  else if((ft.fd_save=open(ft.mon_file,O_RDONLY))>=0)
+    {
+    magic=0;
+    read(ft.fd_save,&magic,sizeof(magic));
+    if(magic==MAGIC) flag_save=1;
+    else
+      {
+      close(ft.fd_save);
+      flag_save=0;
+      fprintf(stderr,"ignore bitmap file '%s' (different endian ?)\007\n",
+        ft.mon_file);
+      }
+    }
   else flag_save=0;
   }
 
@@ -4881,9 +4712,8 @@ plot_zoom(izoom,leng,pt,put)
     endian[5],flag[5];
   char cc;
   short ss;
-  int xzero,yzero,i,j,k,sr,buf0,i_map,xz,join,start,np,np_last,
-    x,y,xp,ymax,ymin;
-  unsigned char tbuf[100],tbuf1[10];
+  int xzero,yzero,i,j,k,sr,buf0,i_map,xz,join,start,np,np_last,x,y,xp,ymax,ymin;
+  unsigned char tbuf[100],tbuf1[STNLEN+CMPLEN];
   double uv[MAX_FILT*4],rec[MAX_FILT*4],sd;
   lPoint pts[5];
   if(put)
@@ -4904,47 +4734,52 @@ plot_zoom(izoom,leng,pt,put)
     {
     i_map=(xz=zoom_win[izoom].sec_save*PIXELS_PER_SEC_MON)/ft.w_mon;
     xz-=i_map*ft.w_mon;
-    put_reverse(&mon[i_map],xz,zoom_win[izoom].pos_save*PIXELS_PER_TRACE,
-      zoom_win[izoom].length_save*PIXELS_PER_SEC_MON,PIXELS_PER_TRACE);
+    put_reverse(&mon[i_map],xz,zoom_win[izoom].pos_save*pixels_per_trace,
+      zoom_win[izoom].length_save*PIXELS_PER_SEC_MON,pixels_per_trace);
     if(++i_map<ft.n_mon &&
         xz+zoom_win[izoom].length_save*PIXELS_PER_SEC_MON>ft.w_mon)
       {
       xz-=ft.w_mon;
-      put_reverse(&mon[i_map],xz,zoom_win[izoom].pos_save*PIXELS_PER_TRACE,
-        zoom_win[izoom].length_save*PIXELS_PER_SEC_MON,PIXELS_PER_TRACE);
+      put_reverse(&mon[i_map],xz,zoom_win[izoom].pos_save*pixels_per_trace,
+        zoom_win[izoom].length_save*PIXELS_PER_SEC_MON,pixels_per_trace);
       }
     }
   if(leng) zoom_win[izoom].length=leng;
   i_map=(xz=zoom_win[izoom].sec*PIXELS_PER_SEC_MON)/ft.w_mon;
   xz-=i_map*ft.w_mon;
-  put_reverse(&mon[i_map],xz,zoom_win[izoom].pos*PIXELS_PER_TRACE,
-    zoom_win[izoom].length*PIXELS_PER_SEC_MON,PIXELS_PER_TRACE);
+  put_reverse(&mon[i_map],xz,zoom_win[izoom].pos*pixels_per_trace,
+    zoom_win[izoom].length*PIXELS_PER_SEC_MON,pixels_per_trace);
   if(++i_map<ft.n_mon &&
       xz+zoom_win[izoom].length*PIXELS_PER_SEC_MON>ft.w_mon)
     put_reverse(&mon[i_map],xz-ft.w_mon,
-      zoom_win[izoom].pos*PIXELS_PER_TRACE,
-      zoom_win[izoom].length*PIXELS_PER_SEC_MON,PIXELS_PER_TRACE);
+      zoom_win[izoom].pos*pixels_per_trace,
+      zoom_win[izoom].length*PIXELS_PER_SEC_MON,pixels_per_trace);
   zoom_win[izoom].sec_save=zoom_win[izoom].sec;
   zoom_win[izoom].length_save=zoom_win[izoom].length;
   zoom_win[izoom].pos_save=zoom_win[izoom].pos;
   put_mon(x_zero,y_zero);
   /* clear zoom window */
-  put_white(&dpy,WIDTH_INFO+1,height_dpy-1-(izoom+1)*HEIGHT_ZOOM+2,
-    width_dpy-WIDTH_INFO-1,HEIGHT_ZOOM-2);
+  put_white(&dpy,WIDTH_INFO_ZOOM+1,height_dpy-1-(izoom+1)*HEIGHT_ZOOM+2,
+    width_dpy-WIDTH_INFO_ZOOM-1,HEIGHT_ZOOM-2);
   /* print info */
-  xzero=WIDTH_INFO;
+  xzero=WIDTH_INFO_ZOOM;
   yzero=height_dpy-1-(izoom+1)*HEIGHT_ZOOM;
-  sprintf(tbuf1,"%s-%s",ft.stn[ft.ch2idx[zoom_win[izoom].sys_ch]].name,
+  sprintf(tbuf1," %04X %s-%s",zoom_win[izoom].sys_ch,
+    ft.stn[ft.ch2idx[zoom_win[izoom].sys_ch]].name,
     ft.stn[ft.ch2idx[zoom_win[izoom].sys_ch]].comp);
-  sprintf(tbuf,"%04X %-7s",zoom_win[izoom].sys_ch,tbuf1);
-  put_text(&dpy,X_Z_CHN+WIDTH_TEXT,yzero+Y_Z_CHN+Y_Z_OFS,tbuf,BF_SI);
+  if(strlen(tbuf1)>WIDTH_INFO_C)
+    sprintf(tbuf1,"%04X %s-%s",zoom_win[izoom].sys_ch,
+      ft.stn[ft.ch2idx[zoom_win[izoom].sys_ch]].name,
+      ft.stn[ft.ch2idx[zoom_win[izoom].sys_ch]].comp);
+  sprintf(tbuf,"%-18s",tbuf1); /* write WIDTH_INFO_C here */
+  put_text(&dpy,X_Z_CHN,yzero+Y_Z_CHN+Y_Z_OFS,tbuf,BF_SI);
   sprintf(tbuf,"%2d",zoom_win[izoom].scale);
-  if(zoom_win[izoom].integ) put_text(&dpy,X_Z_SCL+WIDTH_TEXT*6,
+  if(zoom_win[izoom].integ) put_text(&dpy,X_Z_SCL+X_Z_ARR+32+WIDTH_TEXT*1,
     yzero+Y_Z_SCL+Y_Z_OFS,tbuf,BF_SI);
-  else put_text(&dpy,X_Z_SCL+WIDTH_TEXT*6,
-    yzero+Y_Z_SCL+Y_Z_OFS,tbuf,BF_S);
+  else put_text(&dpy,X_Z_SCL+X_Z_ARR+32+WIDTH_TEXT*1,yzero+Y_Z_SCL+Y_Z_OFS,
+    tbuf,BF_S);
   /* plot trace */
-  zoom_win[izoom].pixels=(width_dpy-WIDTH_INFO+
+  zoom_win[izoom].pixels=(width_dpy-WIDTH_INFO_ZOOM+
     (zoom_win[izoom].length>>1))/zoom_win[izoom].length;
   zoom_win[izoom].valid=1;
   join=0;
@@ -4997,7 +4832,7 @@ plot_zoom(izoom,leng,pt,put)
         {
         /* get filter coefs */
         get_filter(zoom_win[izoom].filt,&zoom_win[izoom].f,sr,izoom);
-        put_text(&dpy,X_Z_FLT+HW,yzero+Y_Z_FLT+Y_Z_OFS,
+        put_text(&dpy,X_Z_FLT+WIDTH_TEXT,yzero+Y_Z_FLT+Y_Z_OFS,
           zoom_win[izoom].f.tfilt,BF_S);
         /* get zero-level */
         k=buf0=0;
@@ -5037,8 +4872,7 @@ plot_zoom(izoom,leng,pt,put)
             else strcpy(tbuf1,"?");
             sprintf(tbuf,"%.2e%s",
               ft.stn[ft.ch2idx[zoom_win[izoom].sys_ch]].units_per_bit
-              *(float)(HEIGHT_ZOOM<<zoom_win[izoom].scale)/
-              (float)sr,tbuf1);
+              *(float)(HEIGHT_ZOOM<<zoom_win[izoom].scale)/(float)sr,tbuf1);
             }
           else sprintf(tbuf,"%.2e%s",
             ft.stn[ft.ch2idx[zoom_win[izoom].sys_ch]].units_per_bit*
@@ -5204,10 +5038,38 @@ write_error:
   return;
   }
 
+close_zoom(izoom)
+  {
+  int xz,k,i_map;
+  if(zoom_win[izoom].valid)
+    {
+    i_map=(xz=zoom_win[izoom].sec_save*PIXELS_PER_SEC_MON)/ft.w_mon;
+    xz-=i_map*ft.w_mon;
+    put_reverse(&mon[i_map],xz,zoom_win[izoom].pos_save*pixels_per_trace,
+      zoom_win[izoom].length_save*PIXELS_PER_SEC_MON,pixels_per_trace);
+    if(++i_map<ft.n_mon &&
+        xz+zoom_win[izoom].length_save*PIXELS_PER_SEC_MON>ft.w_mon)
+      {
+      xz-=ft.w_mon;
+      put_reverse(&mon[i_map],xz,zoom_win[izoom].pos_save*pixels_per_trace,
+        zoom_win[izoom].length_save*PIXELS_PER_SEC_MON,pixels_per_trace);
+      }
+    }
+  if(izoom<n_zoom-1) for(k=izoom;k<n_zoom-1;k++)
+    {
+    zoom_win[k]=zoom_win[k+1];
+    put_bitblt(&dpy,0,height_dpy-1-(k+2)*HEIGHT_ZOOM,width_zoom,height_zoom,
+      &dpy,0,height_dpy-1-(k+1)*HEIGHT_ZOOM,BF_S);
+    }   /* move k+1 to k */
+  n_zoom--;
+  height_win_mon+=HEIGHT_ZOOM;
+  if((y_zero_max=height_mon-height_win_mon)<0) y_zero_max=0;
+  }
+
 proc_main()
   {
   static struct Pick_Time pt;
-  int xx,yy,x,y,i,j,k,kk,i_map,xz,ring_bell,plot_flag,xshift;
+  int xx,yy,x,y,i,j,k,kk,ring_bell,plot_flag,xshift;
   static int pos_zoom;
   char textbuf[LINELEN],textbuf1[LINELEN],tbuf[20],unit[10];
 
@@ -5223,7 +5085,7 @@ proc_main()
     if(y>=MARGIN+height_win_mon)
       {
       i=(height_dpy-1-y)/HEIGHT_ZOOM;   /* zoom no. */
-      if(x>=WIDTH_INFO && zoom_win[i].valid)  /* zoom trace */
+      if(x>=WIDTH_INFO_ZOOM && zoom_win[i].valid)  /* zoom trace */
         {
         kk=((height_dpy-1-(i+1)*HEIGHT_ZOOM+CENTER_ZOOM-y)<<
           zoom_win[i].scale)+zoom_win[i].zero;
@@ -5245,9 +5107,9 @@ proc_main()
           }
         else sprintf(tbuf,"%+9d     ",kk);
         xshift=zoom_win[i].shift*zoom_win[i].pixels/1000;
-        j=(((x-WIDTH_INFO-xshift)%zoom_win[i].pixels)*1000+
+        j=(((x-WIDTH_INFO_ZOOM-xshift)%zoom_win[i].pixels)*1000+
           (zoom_win[i].pixels>>1))/zoom_win[i].pixels;
-        k=zoom_win[i].sec+(x-WIDTH_INFO-xshift)/zoom_win[i].pixels;
+        k=zoom_win[i].sec+(x-WIDTH_INFO_ZOOM-xshift)/zoom_win[i].pixels;
         if(k<ft.len) sprintf(textbuf,"%04X %02x:%02x.%03d %s",
                 zoom_win[i].sys_ch,ft.ptr[k].time[4],
                 ft.ptr[k].time[5],j,tbuf);
@@ -5260,10 +5122,10 @@ proc_main()
       }
     else if(y<MARGIN+height_mon)
       {
-      k=(y_zero+y-y_win_mon)/PIXELS_PER_TRACE;
+      k=(y_zero+y-y_win_mon)/pixels_per_trace;
       if(x>=WIDTH_INFO && k<ft.n_ch)     /* mon traces */
         {
-        kk=(((PIXELS_PER_TRACE*k+PPT_HALF)-(y+y_zero-y_win_mon))
+        kk=(((pixels_per_trace*k+ppt_half)-(y+y_zero-y_win_mon))
           <<ft.stn[ft.pos2idx[k]].scale)+ft.stn[ft.pos2idx[k]].offset;
         if(*ft.stn[ft.pos2idx[k]].unit!='*')
           sprintf(tbuf,"%+.2e%-5s",
@@ -5287,7 +5149,7 @@ proc_main()
     if(y>=MARGIN+height_win_mon)  /* zoom area */
       {
       i=(height_dpy-1-y)/HEIGHT_ZOOM;   /* zoom no. */
-      if(x<WIDTH_INFO)        /* zoom info */
+      if(x<WIDTH_INFO_ZOOM)        /* zoom info */
         {
         j=(i+1)*HEIGHT_ZOOM-(height_dpy-1-y); /* relative y */
         switch(j/PIXELS_PER_LINE)      /* line no */
@@ -5518,33 +5380,7 @@ proc_main()
                   W_Z_GET-1,PIXELS_PER_LINE-1);
                 main_mode=MODE_NORMAL;
                 }
-              if(zoom_win[i].valid)
-                {
-                i_map=(xz=zoom_win[i].sec_save*PIXELS_PER_SEC_MON)/ft.w_mon;
-                xz-=i_map*ft.w_mon;
-                put_reverse(&mon[i_map],xz,
-                  zoom_win[i].pos_save*PIXELS_PER_TRACE,
-                  zoom_win[i].length_save*PIXELS_PER_SEC_MON,PIXELS_PER_TRACE);
-                if(++i_map<ft.n_mon &&
-                    xz+zoom_win[i].length_save*PIXELS_PER_SEC_MON>ft.w_mon)
-                  {
-                  xz-=ft.w_mon;
-                  put_reverse(&mon[i_map],xz,
-                    zoom_win[i].pos_save*PIXELS_PER_TRACE,
-                    zoom_win[i].length_save*PIXELS_PER_SEC_MON,
-                    PIXELS_PER_TRACE);
-                  }
-                }
-              if(i<n_zoom-1) for(k=i;k<n_zoom-1;k++)
-                {
-                zoom_win[k]=zoom_win[k+1];
-                put_bitblt(&dpy,0,height_dpy-1-(k+2)*HEIGHT_ZOOM,
-                  width_zoom,height_zoom,&dpy,0,
-                  height_dpy-1-(k+1)*HEIGHT_ZOOM,BF_S);
-                }   /* move k+1 to k */
-              n_zoom--;
-              height_win_mon+=HEIGHT_ZOOM;
-              if((y_zero_max=height_mon-height_win_mon)<0) y_zero_max=0;
+              close_zoom(i);
               if(y_zero>y_zero_max) yy=y_zero_max;
               plot_flag=1;
               ring_bell=0;
@@ -5596,9 +5432,9 @@ proc_main()
         else if(zoom_win[i].valid)
           {
           xshift=zoom_win[i].shift*zoom_win[i].pixels/1000;
-          pt.msec1=(((x-WIDTH_INFO-xshift)%zoom_win[i].pixels)*1000+
+          pt.msec1=(((x-WIDTH_INFO_ZOOM-xshift)%zoom_win[i].pixels)*1000+
             (zoom_win[i].pixels>>1))/zoom_win[i].pixels;
-          pt.sec1=zoom_win[i].sec+(x-WIDTH_INFO-xshift)/zoom_win[i].pixels;
+          pt.sec1=zoom_win[i].sec+(x-WIDTH_INFO_ZOOM-xshift)/zoom_win[i].pixels;
           pt.valid=i;  /* zoom window no. */
           main_mode=MODE_PICK;
           ring_bell=0;
@@ -5647,7 +5483,13 @@ proc_main()
             height_win_mon-=HEIGHT_ZOOM;
             if((y_zero_max=height_mon-height_win_mon)<0) y_zero_max=0;
           /* open a new zoom window */
-            put_bitblt(&zoom,0,0,width_zoom,height_zoom,&dpy,0,
+            put_white(&dpy,0,height_dpy-1-n_zoom*HEIGHT_ZOOM,width_zoom,
+              height_zoom);
+            put_fram(&dpy,0,height_dpy-1-n_zoom*HEIGHT_ZOOM,width_zoom,
+              height_zoom);
+            put_fram(&dpy,0,height_dpy-1-n_zoom*HEIGHT_ZOOM+1,width_zoom,
+              height_zoom-1);
+            put_bitblt(&zoom,0,0,WIDTH_INFO_ZOOM+1,height_zoom,&dpy,0,
               height_dpy-1-n_zoom*HEIGHT_ZOOM,BF_S);
             zoom_win[n_zoom-1].length=ZOOM_LENGTH;
             zoom_win[n_zoom-1].offset=1;  /* always 1 */
@@ -5731,7 +5573,7 @@ proc_main()
       i=(x_zero+x-x_win_mon)/PIXELS_PER_SEC_MON;
       j=(((x_zero+x-x_win_mon)%PIXELS_PER_SEC_MON)*10+
           (PIXELS_PER_SEC_MON>>1))/PIXELS_PER_SEC_MON;
-      k=(y_zero+y-y_win_mon)/PIXELS_PER_TRACE;
+      k=(y_zero+y-y_win_mon)/pixels_per_trace;
       if(x<WIDTH_TEXT*4)      /* select paste-up */
         {
         if(ft.stn[ft.pos2idx[k]].psup==0)
@@ -5807,9 +5649,9 @@ proc_main()
       if(i==pt.valid)  /* in the same zoom window ? */
         {
         xshift=zoom_win[i].shift*zoom_win[i].pixels/1000;
-        pt.msec2=(((x-WIDTH_INFO-xshift)%zoom_win[i].pixels)*1000+
+        pt.msec2=(((x-WIDTH_INFO_ZOOM-xshift)%zoom_win[i].pixels)*1000+
           (zoom_win[i].pixels>>1))/zoom_win[i].pixels;
-        pt.sec2=zoom_win[i].sec+(x-WIDTH_INFO-xshift)/zoom_win[i].pixels;
+        pt.sec2=zoom_win[i].sec+(x-WIDTH_INFO_ZOOM-xshift)/zoom_win[i].pixels;
         k=zoom_win[i].pos;
         switch(event.mse_code)
           {
@@ -5984,7 +5826,10 @@ put_main()
     draw_seg(0,height_dpy-1,width_dpy,height_dpy-1,LPTN_FF,BF_SDO,&dpy);
   for(i=0;i<n_zoom;i++) /* put zoom */
     {
-    put_bitblt(&zoom,0,0,width_zoom,height_zoom,&dpy,0,
+    put_white(&dpy,0,height_dpy-1-(i+1)*HEIGHT_ZOOM,width_zoom,height_zoom);
+    put_fram(&dpy,0,height_dpy-1-(i+1)*HEIGHT_ZOOM,width_zoom,height_zoom);
+    put_fram(&dpy,0,height_dpy-1-(i+1)*HEIGHT_ZOOM+1,width_zoom,height_zoom-1);
+    put_bitblt(&zoom,0,0,WIDTH_INFO_ZOOM+1,height_zoom,&dpy,0,
       height_dpy-1-(i+1)*HEIGHT_ZOOM,BF_S);
     if(zoom_win[i].valid) plot_zoom(i,0,0,0);
     }
@@ -6004,11 +5849,10 @@ get_screen_type(np,w_dpy,h_dpy,w_frame,h_frame)
     *h_dpy=W_HEIGHT;
     return;
     }
-  *np=1;
+  *np=DefaultDepth(disp,0);
   *w_frame=DisplayWidth(disp,0);
   *h_frame=DisplayHeight(disp,0);
   if((*w_dpy=W_WIDTH)>(*w_frame)-10) *w_dpy=((*w_frame)-10)/8*8;
-/*  if(executable("screendump")) *w_dpy-=16; /* for SUN PS printer */
   if(fit_height) *h_dpy=(*h_frame);
   else *h_dpy=((*h_frame)-10-35); /* 30 for title bar */
   }
@@ -6157,14 +6001,14 @@ put_mark_zoom(idx,izoom)
     {
     y=height_dpy-1-(izoom+1)*HEIGHT_ZOOM+MIN_ZOOM;
     xshift=zoom_win[izoom].shift*zoom_win[izoom].pixels/1000;
-    x=WIDTH_INFO+zoom_win[izoom].pixels*(pt->sec1-zoom_win[izoom].sec)+
+    x=WIDTH_INFO_ZOOM+zoom_win[izoom].pixels*(pt->sec1-zoom_win[izoom].sec)+
         (zoom_win[izoom].pixels*pt->msec1+500)/1000+xshift;
-    i=WIDTH_INFO+zoom_win[izoom].pixels*(pt->sec2-zoom_win[izoom].sec)+
+    i=WIDTH_INFO_ZOOM+zoom_win[izoom].pixels*(pt->sec2-zoom_win[izoom].sec)+
         (zoom_win[izoom].pixels*pt->msec2+500)/1000+xshift;
-    if(x>WIDTH_INFO)
+    if(x>WIDTH_INFO_ZOOM)
       {
       put_reverse(&dpy,x,y,i-x+1,MAX_ZOOM-MIN_ZOOM+1);
-      if(x>WIDTH_INFO+WIDTH_TEXT)
+      if(x>WIDTH_INFO_ZOOM+WIDTH_TEXT)
         {
         put_text(&dpy,x-WIDTH_TEXT,y,marks[idx],BF_SDXI);
         if(idx<MD && pt->polarity>0)
@@ -6174,7 +6018,7 @@ put_mark_zoom(idx,izoom)
         }
       }
     else
-      put_reverse(&dpy,WIDTH_INFO+1,y,i-WIDTH_INFO,MAX_ZOOM-MIN_ZOOM+1);
+      put_reverse(&dpy,WIDTH_INFO_ZOOM+1,y,i-WIDTH_INFO_ZOOM,MAX_ZOOM-MIN_ZOOM+1);
     }
   }
 
@@ -6227,16 +6071,14 @@ put_bitblt(sbm,xzero,yzero,xsize,ysize,dbm,x,y,func)
   XFlush(disp);
   }
 
-define_bm(bm,type,width,xsize,ysize,base)
+define_bm(bm,type,xsize,ysize,base)
   lBitmap *bm;
   char type;
-  int width,xsize,ysize;
+  int xsize,ysize;
   char *base;
   {
   if(background) return;
   bm->type=type;
-  bm->depth=1;
-  bm->width=width;
   bm->rect.origin.x=0;
   bm->rect.origin.y=0;
   bm->rect.extent.x=xsize;
@@ -6244,15 +6086,15 @@ define_bm(bm,type,width,xsize,ysize,base)
 /* X11 type ; Window (BM_FB) or Pixmap (BM_MEM) */
   if(bm->type==BM_MEM)
     {
-    if(base==0) bm->drw=XCreatePixmap(disp,dpy.drw,width*16,ysize,1);
-    else bm->drw=XCreateBitmapFromData(disp,dpy.drw,base,width*16,ysize);
+    if(base==0) bm->drw=XCreatePixmap(disp,dpy.drw,xsize,ysize,1);
+    else bm->drw=XCreateBitmapFromData(disp,dpy.drw,base,xsize,ysize);
+    bm->depth=1;
     }
-/*
   else if(bm->type==BM_FB)
     {
-    if(base) bm->drw=XCreatePixmap(disp,dpy.drw,width*16,ysize,8);
+/*  if(base) bm->drw=XCreatePixmap(disp,dpy.drw,xsize,ysize,8);*/
+    bm->depth=DefaultDepth(disp,0);
     }
-*/
   }
 
 invert_bits(base,bytes)
@@ -6285,7 +6127,7 @@ put_text(bm,xzero,yzero,text,func)
     code=text[i]-CODE_START;
     for(j=0;j<HEIGHT_TEXT;j++) bbm[j][i]=font16[j][code];
     }
-  define_bm(&bbuf,BM_MEM,N_BM/2,16*N_BM/2,HEIGHT_TEXT,(char *)bbm);
+  define_bm(&bbuf,BM_MEM,16*N_BM/2,HEIGHT_TEXT,(char *)bbm);
   put_bitblt(&bbuf,0,0,WIDTH_TEXT*len,HEIGHT_TEXT,bm,xzero,yzero,func);
   XFreePixmap(disp,bbuf.drw);
   }
@@ -6327,12 +6169,12 @@ put_mark_mon(idx,pos)
   pt=(&(ft.pick[ft.pos2idx[pos]][idx]));
   x=((pt->sec1+pt->sec2)*PIXELS_PER_SEC_MON+
     ((pt->msec1+pt->msec2)*PIXELS_PER_SEC_MON+500)/1000)/2;
-  y=pos*PIXELS_PER_TRACE;
+  y=pos*pixels_per_trace;
   i_map=(xz=x-(WIDTH_TEXT-1))/ft.w_mon;
-  put_text(&mon[i_map],xz-=i_map*ft.w_mon,y-(HEIGHT_TEXT-PPT_HALF),
+  put_text(&mon[i_map],xz-=i_map*ft.w_mon,y-(HEIGHT_TEXT-ppt_half),
     marks[idx],BF_SDXI);
   if(++i_map<ft.n_mon && xz+WIDTH_TEXT>ft.w_mon)
-    put_text(&mon[i_map],xz-=ft.w_mon,y-(HEIGHT_TEXT-PPT_HALF),
+    put_text(&mon[i_map],xz-=ft.w_mon,y-(HEIGHT_TEXT-ppt_half),
       marks[idx],BF_SDXI);
   }
 
@@ -6341,8 +6183,8 @@ make_visible(idx)
   {
   int pos,y;
   pos=ft.idx2pos[idx];
-  y=pos*PIXELS_PER_TRACE;
-  if(y<y_zero || y_zero+height_win_mon<y+PIXELS_PER_TRACE)
+  y=pos*pixels_per_trace;
+  if(y<y_zero || y_zero+height_win_mon<y+pixels_per_trace)
     {
     y_zero=y-height_win_mon/2;
     if(y_zero<0) y_zero=0;
@@ -6353,7 +6195,6 @@ make_visible(idx)
 init_list()
   {
   int i;
-  save_dpy(loop_stack_ptr-1);
   raise_ttysw(1);
   refresh(1);
   rfsh_req=0;
@@ -6417,9 +6258,9 @@ locate(flag)
     {
     if(strlen(text_buf)>60)
       {
-      sscanf(text_buf+49,"%f%f",&init_lat,&init_lon);
-      init_lat=0.1*(float)((int)(init_lat*10.0+0.5));
-      init_lon=0.1*(float)((int)(init_lon*10.0+0.5));
+      sscanf(text_buf,"%*s%*s%*s%*s%*s%*s%*s%*s%f%f",&init_lat,&init_lon);
+      init_lat+=0.0001;
+      init_lon+=0.0001;
       break;
       }
     }
@@ -6433,8 +6274,7 @@ locate(flag)
       init_late_init,init_lone_init,init_depe);
   fclose(fp);
   /* run hypo program */
-  sprintf(text_buf,"%s %s %s %s %s %s",
-    prog,stan,ft.seis_file,ft.finl_file,
+  sprintf(text_buf,"%s %s %s %s %s %s",prog,stan,ft.seis_file,ft.finl_file,
     ft.rept_file,ft.init_file);
   if(flag==0) strcat(text_buf," > /dev/null");
   system(text_buf);
@@ -6516,7 +6356,7 @@ proc_list()
         case RETN:
           raise_ttysw(0);
           loop=loop_stack[--loop_stack_ptr];
-          restore_dpy(loop_stack_ptr);
+          if(!background) refresh(0);    
           if(rfsh_req)
             {
             main_mode=MODE_NORMAL;
@@ -6650,7 +6490,7 @@ list_picks()
     output_pick(fp);
     fclose(fp);
     if(doing_auto_pick) sprintf(textbuf,"cat %s",ft.seis_file);
-    else sprintf(textbuf,"MORE= more -f %s",ft.seis_file);
+    else sprintf(textbuf,"more -f %s",ft.seis_file);
     system(textbuf);
     }
   else fprintf(stderr,"no picks\n");
@@ -6664,7 +6504,7 @@ list_finl()
   if(flag_hypo==1)
     {
     if(doing_auto_pick) sprintf(textbuf,"cat %s",ft.finl_file);
-    else sprintf(textbuf,"MORE= more -f %s",ft.finl_file);
+    else sprintf(textbuf,"more -f %s",ft.finl_file);
     system(textbuf);
     }
   else fprintf(stderr,"no hypocenter\n");
@@ -6713,7 +6553,7 @@ output_pick(fp)
       fprintf(fp,"                   %14s\n",get_time(0,0));
       init=0;
       }
-    fprintf(fp,"%-4s ",ft.stn[pos[j]].name);
+    fprintf(fp,"%-10s ",ft.stn[pos[j]].name);
     if(ft.pick[pos[j]][P].valid<0)
       {
       if(ft.pick[pos[j]][P].polarity>0)
@@ -6821,7 +6661,6 @@ wait_mouse()
   else if(xevent.type==MotionNotify) event.mse_trig=MSE_MOTION;
   else if(xevent.type==Expose) event.mse_trig=MSE_EXP;
   else event.mse_trig=(-1);
-
   if(xevent.type==ButtonRelease) event.mse_dir=MSE_UP;
   else if(xevent.type==ButtonPress) event.mse_dir=MSE_DOWN;
   else event.mse_dir=MSE_UNKOWN;
@@ -6835,6 +6674,7 @@ wait_mouse()
     }
   if(xevent.type==Expose)
     while(XCheckTypedEvent(disp,Expose,&xevent)==True);
+  XSync(disp,False);
   }
 
 hard_copy(ratio)
@@ -7129,9 +6969,11 @@ put_map(idx)  /* 0:redraw all, 1:plot only hypocenters, */
     char diag[4],owner[4];
     } hypob;      /* 28 bytes / event */
   struct YMDhms tim1;
-#if BYTE_ORDER == LITTLE_ENDIAN
-  SWAPU;
-#endif
+  union Swp {
+    float f;
+    unsigned long i;
+    unsigned char c[4];
+    } *swp;
 
   /* read map data file */
   if(mapdata==NULL)
@@ -7144,13 +6986,13 @@ put_map(idx)  /* 0:redraw all, 1:plot only hypocenters, */
       fseek(fp,0L,0);
       fread(mapdata,1,size,fp);
       fclose(fp); 
-#if BYTE_ORDER == LITTLE_ENDIAN
       for(i=0;i<size/sizeof(MapData);i++)
         {
-        SWAPF(mapdata[i].x);
-        SWAPF(mapdata[i].y);
+        swp=(union Swp *)&mapdata[i].x;
+        swp->i=(swp->c[0]<<24)+(swp->c[1]<<16)+(swp->c[2]<<8)+swp->c[3];
+        swp=(union Swp *)&mapdata[i].y;
+        swp->i=(swp->c[0]<<24)+(swp->c[1]<<16)+(swp->c[2]<<8)+swp->c[3];
         }
-#endif
       alat0=(double)mapdata[0].x;
       along0=(double)mapdata[0].y;
       }
@@ -7679,13 +7521,12 @@ is_a_file:  fread(textbuf,1,20,fp);
               }
             else while(fread(&hypob,sizeof(hypob),1,fp)>0)
               { /* binary format file */
-#if BYTE_ORDER == LITTLE_ENDIAN
-/*	      SWAPF(hypo.lat);
-	      SWAPF(hypo.lon);*/
-	      SWAPF(hypob.alat);
-	      SWAPF(hypob.along);
-	      SWAPF(hypob.dep);
-#endif
+              swp=(union Swp *)&hypob.alat;
+              swp->i=(swp->c[0]<<24)+(swp->c[1]<<16)+(swp->c[2]<<8)+swp->c[3];
+              swp=(union Swp *)&hypob.along;
+              swp->i=(swp->c[0]<<24)+(swp->c[1]<<16)+(swp->c[2]<<8)+swp->c[3];
+              swp=(union Swp *)&hypob.dep;
+              swp->i=(swp->c[0]<<24)+(swp->c[1]<<16)+(swp->c[2]<<8)+swp->c[3];
               strncpy(hypo.o,hypob.owner,4);
               if(strncmp(hypob.diag,"BLAST",4)==0) hypo.blast=1;
               else hypo.blast=0;
@@ -8137,11 +7978,7 @@ init_map(idx)
   double f;
   int i;
   map_mode=MODE_NORMAL;
-  if(!map_only)
-    {
-    save_dpy(loop_stack_ptr-1);
-    put_reverse(&dpy,x_func(MAP),0,WB,MARGIN);
-    }
+  if(!map_only) put_reverse(&dpy,x_func(MAP),0,WB,MARGIN);
   if(first_map)
     {
     if(flag_hypo)
@@ -8209,7 +8046,7 @@ proc_map()
     ulat,ulon;
   struct YMDhms tm;
 
-  if(map_vert && map_dir)
+  if(map_dir)
     {
     arg=PI*(double)map_dir/180.0;
     cs=cos(arg);
@@ -8246,7 +8083,7 @@ proc_map()
         }
       else if(x<width_horiz && y<MARGIN+height_horiz)
         {
-        if(map_vert && map_dir)
+        if(map_dir)
           {
           xd=XINV(x,y)/pixels_per_km+x_cent;
           yd=(-YINV(x,y))/pixels_per_km+y_cent;
@@ -8356,7 +8193,7 @@ proc_map()
         case RETN:
           if(map_only) end_process(0);
           loop=loop_stack[--loop_stack_ptr];
-          restore_dpy(loop_stack_ptr);
+          if(!background) refresh(0);    
           return;
         case RFSH:
             switch(event.mse_code)
@@ -8707,7 +8544,7 @@ change_dep:
       }
     else if(x<width_horiz && y<height_horiz+MARGIN)
       {
-      if(map_vert && map_dir)
+      if(map_dir)
         {
         xd=XINV(x,y)/pixels_per_km+x_cent;
         yd=(-YINV(x,y))/pixels_per_km+y_cent;
@@ -9054,7 +8891,6 @@ init_mecha()
     if(*textbuf=='l' || *textbuf=='L') strcpy(mec_hemi,"LOWER");
     else strcpy(mec_hemi,"UPPER");
     }
-  save_dpy(loop_stack_ptr-1);
   refresh();
   }
 
@@ -9076,7 +8912,7 @@ proc_mecha()
           {
           case RETN:
             loop=loop_stack[--loop_stack_ptr];
-            restore_dpy(loop_stack_ptr);
+            if(!background) refresh(0);    
             return;
           case UPPER:
             if(*mec_hemi=='L') strcpy(mec_hemi,"UPPER");
@@ -9224,18 +9060,18 @@ read_final()
     {
     fgets(textbuf,LINELEN,fp);
     sscanf(textbuf,"%s%s",ft.hypo.fnl[i].stn,ft.hypo.fnl[i].pol);
-    str2double(textbuf,7,6,&ft.hypo.fnl[i].delta);
-    str2double(textbuf,13,6,&ft.hypo.fnl[i].azim);
-    str2double(textbuf,19,6,&ft.hypo.fnl[i].emerg);
-    str2double(textbuf,25,6,&ft.hypo.fnl[i].incid);
-    str2double(textbuf,31,6,&ft.hypo.fnl[i].pt);
-    str2double(textbuf,37,5,&ft.hypo.fnl[i].pe);
-    str2double(textbuf,42,6,&ft.hypo.fnl[i].pomc);
-    str2double(textbuf,48,6,&ft.hypo.fnl[i].st);
-    str2double(textbuf,54,5,&ft.hypo.fnl[i].se);
-    str2double(textbuf,59,6,&ft.hypo.fnl[i].somc);
-    str2double(textbuf,65,10,&ft.hypo.fnl[i].amp);
-    str2double(textbuf,75,5,&ft.hypo.fnl[i].mag);
+    str2double(textbuf,13,8,&ft.hypo.fnl[i].delta);
+    str2double(textbuf,21,6,&ft.hypo.fnl[i].azim);
+    str2double(textbuf,27,6,&ft.hypo.fnl[i].emerg);
+    str2double(textbuf,33,6,&ft.hypo.fnl[i].incid);
+    str2double(textbuf,39,7,&ft.hypo.fnl[i].pt);
+    str2double(textbuf,46,6,&ft.hypo.fnl[i].pe);
+    str2double(textbuf,52,7,&ft.hypo.fnl[i].pomc);
+    str2double(textbuf,59,7,&ft.hypo.fnl[i].st);
+    str2double(textbuf,66,6,&ft.hypo.fnl[i].se);
+    str2double(textbuf,72,7,&ft.hypo.fnl[i].somc);
+    str2double(textbuf,79,10,&ft.hypo.fnl[i].amp);
+    str2double(textbuf,89,5,&ft.hypo.fnl[i].mag);
     ft.hypo.fnl[i].azim *=PI/180.0;
     ft.hypo.fnl[i].emerg*=PI/180.0;
     ft.hypo.fnl[i].incid*=PI/180.0;
@@ -9332,7 +9168,7 @@ switch_psup(idx,sw)
       else ft.stn[idx].psup=0;
       break;
     }
-  put_reverse(&info,0,PIXELS_PER_TRACE*ft.idx2pos[idx],WIDTH_TEXT*4,
+  put_reverse(&info,0,pixels_per_trace*ft.idx2pos[idx],WIDTH_TEXT*4,
     HEIGHT_TEXT);
   rfsh_req=1;
   }
@@ -9349,11 +9185,10 @@ init_psup()
     fprintf(stderr,"no hypocenter\007\n");
     return;
     }
-  save_dpy(loop_stack_ptr-1);
   if(refresh())
     {
     loop=loop_stack[--loop_stack_ptr];
-    restore_dpy(loop_stack_ptr);
+    if(!background) refresh(0);    
     bell();
     return;
     }
@@ -9376,7 +9211,6 @@ proc_psup()
   int ring_bell,x,y,idx,i,j,pos;
   char textbuf[30],textbuf1[30];
   double f,dist,time;
-
   x=event.mse_data.md_x;
   y=event.mse_data.md_y;
   ring_bell=0;
@@ -9402,15 +9236,15 @@ proc_psup()
         {
         case RETN:
             loop=loop_stack[--loop_stack_ptr];
-            restore_dpy(loop_stack_ptr);
+            if(!background) refresh(0);    
             return;
         case RFSH:
             if(refresh())
             {
-                    loop=loop_stack[--loop_stack_ptr];
-                  restore_dpy(loop_stack_ptr);
+            loop=loop_stack[--loop_stack_ptr];
+            if(!background) refresh(0);    
             bell();
-                    return;
+            return;
             }
           else ring_bell=0;
           break;
@@ -9701,7 +9535,7 @@ proc_psup()
     if(refresh())
       {
       loop=loop_stack[--loop_stack_ptr];
-      restore_dpy(loop_stack_ptr);
+      if(!background) refresh(0);    
       bell();
       return;
       }
@@ -9771,9 +9605,7 @@ put_psup()
     pu.x1=pu.x1_init;
     pu.x2=pu.x2_init;
     pu.xx1=PSUP_LMARGIN;
-    pu.xx2=width_dpy-PSUP_RMARGIN;
     pu.yy1=MARGIN+PSUP_TMARGIN;
-    pu.yy2=height_dpy-PSUP_BMARGIN;
     pu.clip=0;
     pu.filt=0;
     pu.valid=1;
@@ -9783,6 +9615,8 @@ put_psup()
     else pu.vred=8.0;
     }
   if(pu_new.valid) pu=pu_new;
+  pu.xx2=width_dpy-PSUP_RMARGIN;
+  pu.yy2=height_dpy-PSUP_BMARGIN;
 
   pu.pixels_per_sec=(pu.xx2-pu.xx1)/(double)(pu.t2-pu.t1);
   pu.pixels_per_km=(pu.yy2-pu.yy1)/(double)(pu.x2-pu.x1);
@@ -10003,7 +9837,7 @@ save_data(private)
     fgets(textbuf,LINELEN,fp);
     sscanf(textbuf,"%2d/%2d/%2d %2d:%2d",&year,&month,&day,&hour,&minute);
     fgets(textbuf,LINELEN,fp);
-    sscanf(textbuf+8,"%f",&sec);
+    sscanf(textbuf,"%*s%*s%f",&sec);
     fclose(fp);
     sprintf(ft.save_file,"%02d%02d%02d%1c%02d%02d%02d.%03d",
       year,month,day,dot,hour,minute,(int)sec,(int)(sec*1000.0)%1000);
@@ -10242,7 +10076,7 @@ get_filter(filt,f,sr,iz)
   int n,idx,i;
   char tbuf1[3],tbuf2[3];
   dt=1.0/(double)sr;
-  if(filt==0) strcpy(f->tfilt," NO FILTER   ");
+  if(filt==0) strcpy(f->tfilt,"   NO FILTER     ");
   else if(filt<0)
     {
     idx=ft.ch2idx[zoom_win[iz].sys_ch];

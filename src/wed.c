@@ -1,10 +1,12 @@
+/* $Id: wed.c,v 1.2 2000/04/30 10:05:23 urabe Exp $ */
 /* program "wed.c"
 	"wed" edits a win format data file by time range and channles
 	6/26/91,7/13/92,3/11/93,4/20/94,8/5/94,12/8/94   urabe
 	2/5/97    Little Endian (uehira)
 	2/5/97    High sampling rate (uehira)
         98.6.26 yo20000
-        99.4.19 BE/LE
+        99.4.19 byte-order-free
+        2000.4.17   wabort
 */
 
 #include	<stdio.h>
@@ -12,13 +14,7 @@
 
 #define		DEBUG		0
 #define		DEBUG1		0
-
-#define LongFromBigEndian(a) \
-  ((((unsigned char *)&(a))[0]<<24)+(((unsigned char *)&(a))[1]<<16)+ \
-  (((unsigned char *)&(a))[2]<<8)+((unsigned char *)&(a))[3])
-#define LongToBigEndian(a,b) \
-   (b)[0]=a>>24; (b)[1]=a>>16; (b)[2]=a>>8; (b)[3]=a;
-
+#define SWAPL(a) a=(((a)<<24)|((a)<<8)&0xff0000|((a)>>8)&0xff00|((a)>>24)&0xff)
 
 unsigned char *buf,*outbuf;
 int leng,dec_start[6],dec_end[6],dec_now[6],nch,sysch[65536];
@@ -129,7 +125,7 @@ time_cmp(t1,t2,i)
   return 0;  
   }
 
-abort() {exit();}
+wabort() {exit();}
 
 get_one_record()
 {
@@ -201,10 +197,10 @@ mklong(ptr)
 read_data()
 {
    static unsigned int size;
-   int re;
+   int i,re;
  
    if(fread(&re,1,4,stdin)==0) return 0;
-   re=LongFromBigEndian(re);
+   i=1;if(*(char *)&i) SWAPL(re);
    if(buf==0){
       buf=(unsigned char *)malloc(size=re*2);
       outbuf=(unsigned char *)malloc(size=re*2);
@@ -257,8 +253,10 @@ select_ch(sys_ch,n_ch,old_buf,new_buf)
       }
       else ptr+=gsize;
    } while(ptr<ptr_lim);
-
-   LongToBigEndian(new_size,new_buf);
+   new_buf[0]=new_size>>24;
+   new_buf[1]=new_size>>16;
+   new_buf[2]=new_size>>8;
+   new_buf[3]=new_size;
    return new_size;
 }
 
@@ -267,8 +265,8 @@ main(argc,argv)
      char *argv[];
 {
    int i;
-   signal(SIGINT,(void *)abort);
-   signal(SIGTERM,(void *)abort);
+   signal(SIGINT,(void *)wabort);
+   signal(SIGTERM,(void *)wabort);
    
    if(argc<4){
       fprintf(stderr," usage of 'wed' :\n");

@@ -1,6 +1,9 @@
+/* $Id: ras2lips.c,v 1.2 2000/04/30 10:05:23 urabe Exp $ */
 /********************************************************/
 /*  ras2lips.c   97.10.31-97.11.27             urabe    */
-/*               98.3.4      LITTLE ENDIAN    uehira   */
+/*               98.3.4      LITTLE ENDIAN    uehira    */
+/*               99.4.19     byte-order-free            */
+/*               2000.4.17   wabort                     */
 /********************************************************/
 #include <stdio.h>
 #include <sys/file.h>
@@ -10,27 +13,7 @@
 #define A4_FRAME_XB     392       /* framebuffer's width (byte) */
 #define A4_FRAME_YP     4516      /* framebuffer's height (pixel) */
 
-/*****************************/
-#ifndef         LITTLE_ENDIAN
-#define LITTLE_ENDIAN   1234    /* LSB first: i386, vax */
-#endif
-#ifndef         BIG_ENDIAN
-#define BIG_ENDIAN      4321    /* MSB first: 68000, ibm, net */
-#endif
-#ifndef  BYTE_ORDER
-#define  BYTE_ORDER      BIG_ENDIAN
-#endif
-
-#define SWAPU  union { long l; float f; short s; char c[4];} swap
-#define SWAPL(a) swap.l=(a); ((char *)&(a))[0]=swap.c[3];\
-    ((char *)&(a))[1]=swap.c[2]; ((char *)&(a))[2]=swap.c[1];\
-    ((char *)&(a))[3]=swap.c[0]
-#define SWAPF(a) swap.f=(a); ((char *)&(a))[0]=swap.c[3];\
-    ((char *)&(a))[1]=swap.c[2]; ((char *)&(a))[2]=swap.c[1];\
-    ((char *)&(a))[3]=swap.c[0]
-#define SWAPS(a) swap.s=(a); ((char *)&(a))[0]=swap.c[1];\
-    ((char *)&(a))[1]=swap.c[0]
-/*****************************/
+#define SWAPL(a) a=(((a)<<24)|((a)<<8)&0xff0000|((a)>>8)&0xff00|((a)>>24)&0xff)
 
 read_header(fp,height,width)
   FILE  *fp;
@@ -38,50 +21,33 @@ read_header(fp,height,width)
   {
   int i,length,type,maplength;
   static int buf;
-#if BYTE_ORDER == LITTLE_ENDIAN
-   SWAPU;
-#endif
 
 /* header */
   if(fread(&buf,4,1,fp)<1) return(1);  /* magic */
-#if BYTE_ORDER == LITTLE_ENDIAN
-  SWAPL(buf);
-#endif
+  i=1;
+  if(*(char *)&i) SWAPL(buf);
   if(buf!=0x59a66a95) return(0);
   if(fread(&buf,4,1,fp)<1) return(1);  /* width */
-#if BYTE_ORDER == LITTLE_ENDIAN
-  SWAPL(buf);
-#endif
+  if(*(char *)&i) SWAPL(buf);
   *width=buf;
   if(fread(&buf,4,1,fp)<1) return(1);  /* height */
-#if BYTE_ORDER == LITTLE_ENDIAN
-  SWAPL(buf);
-#endif
+  if(*(char *)&i) SWAPL(buf);
   *height=buf;
   if(fread(&buf,4,1,fp)<1) return(1);  /* depth */
-#if BYTE_ORDER == LITTLE_ENDIAN
-  SWAPL(buf);
-#endif
+  if(*(char *)&i) SWAPL(buf);
   if(buf!=1) return(1);
   if(fread(&buf,4,1,fp)<1) return(1);  /* length */
-#if BYTE_ORDER == LITTLE_ENDIAN
-  SWAPL(buf);
-#endif
+  if(*(char *)&i) SWAPL(buf);
   length=buf;
   if(fread(&buf,4,1,fp)<1) return(1);  /* type */
-#if BYTE_ORDER == LITTLE_ENDIAN
-  SWAPL(buf);
-#endif
+  if(*(char *)&i) SWAPL(buf);
   type=buf;
   if(type>1) return(1);    /* only RT_OLD and RT_STANDARD */
   if(fread(&buf,4,1,fp)<1) return(1);  /* maptype */
   if(fread(&buf,4,1,fp)<1) return(1);  /* maplength */
-#if BYTE_ORDER == LITTLE_ENDIAN
-  SWAPL(buf);
-#endif
+  if(*(char *)&i) SWAPL(buf);
   maplength=buf;
-  for(i=0;i<maplength;i++)
-    if(fgetc(fp)==EOF) return(1);  /* color map */
+  for(i=0;i<maplength;i++) if(fgetc(fp)==EOF) return(1);  /* color map */
 /* size */
   *width=((*width-1)/16+1)*16/8;
   return(0);
@@ -143,7 +109,7 @@ one_page(fp,inv)
   printf("\014");    /* form-feed */
   }
 
-abort() {exit(9);}
+wabort() {exit(9);}
 
 main(argc, argv)
   int argc;
@@ -151,9 +117,9 @@ main(argc, argv)
   {
   FILE *fp;
   int i;
-  signal(SIGINT,abort);
-  signal(SIGTERM,abort);
-  signal(SIGPIPE,abort);
+  signal(SIGINT,wabort);
+  signal(SIGTERM,wabort);
+  signal(SIGPIPE,wabort);
   printf("\033%%@");              /* begin text mode */
   printf("\033P41;600;0J\033\\"); /* start job LIPS4, 600dpi */
   printf("\033<");                /* soft reset */

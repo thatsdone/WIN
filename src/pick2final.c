@@ -1,3 +1,4 @@
+/* $Id: pick2final.c,v 1.2 2000/04/30 10:05:22 urabe Exp $ */
 /* pick2final.c */
 /* 8/22/91, 5/22/92, 7/9/92, 97.10.3 urabe */
 /* input (stdin)   : a list of pick file names (ls -l) */

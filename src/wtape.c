@@ -1,3 +1,4 @@
+/* $Id: wtape.c,v 1.2 2000/04/30 10:05:24 urabe Exp $ */
 /*
   program "wtape.c"
   8/23/89 - 8/8/90, 6/27/91, 12/24/91, 2/29/92  urabe
@@ -7,6 +8,8 @@
   98.6.30 FreeBSD
   98.7.14 <sys/time.h>
   99.2.4  put signal(HUP) in switch_sig()
+  99.4.19 byte-order-free
+  2000.4.17 deleted definition of usleep()
 */
 
 #include  <stdio.h>
@@ -18,34 +21,12 @@
 #include  <sys/stat.h>
 #include  <sys/time.h>
 #include  <sys/mtio.h>
+#include  <unistd.h>
 
 #define   DEBUGFLAG 1
 #define   SIZE_MAX  1000000
 #define   NAMLEN    80
 #define   N_EXABYTE 8
-
-/*****************************/
-/* 8/21/96 for little-endian (uehira) */
-#ifndef         LITTLE_ENDIAN
-#define LITTLE_ENDIAN   1234    /* LSB first: i386, vax */
-#endif
-#ifndef         BIG_ENDIAN
-#define BIG_ENDIAN      4321    /* MSB first: 68000, ibm, net */
-#endif
-#ifndef  BYTE_ORDER
-#define  BYTE_ORDER      BIG_ENDIAN
-#endif
-
-#define SWAPU  union { long l; float f; short s; char c[4];} swap
-#define SWAPL(a) swap.l=(a); ((char *)&(a))[0]=swap.c[3];\
-    ((char *)&(a))[1]=swap.c[2]; ((char *)&(a))[2]=swap.c[1];\
-    ((char *)&(a))[3]=swap.c[0]
-#define SWAPF(a) swap.f=(a); ((char *)&(a))[0]=swap.c[3];\
-    ((char *)&(a))[1]=swap.c[2]; ((char *)&(a))[2]=swap.c[1];\
-    ((char *)&(a))[3]=swap.c[0]
-#define SWAPS(a) swap.s=(a); ((char *)&(a))[0]=swap.c[1];\
-    ((char *)&(a))[1]=swap.c[0]
-/*****************************/
 
   unsigned char buf[SIZE_MAX];
   int init_flag,wfm,new_tape,switch_req,fd_exb,exb_status[N_EXABYTE],
@@ -59,15 +40,6 @@ switch_sig()
   {
   switch_req=1;
   signal(SIGHUP,switch_sig);
-  }
-
-usleep(ms)  /* after T.I. UNIX MAGAZINE 1994.10 P.176 */
-  unsigned int ms;
-  {
-  struct timeval tv;
-  tv.tv_sec=ms/1000000;
-  tv.tv_usec=ms%1000000;
-  select(0,NULL,NULL,NULL,&tv);
   }
 
 strncmp2(s1,s2,i)
@@ -417,23 +389,13 @@ switch_unit(unit)
     }
   }
 
-mklong(ptr)
+mklong(ptr)       
   unsigned char *ptr;
   {
-  unsigned char *ptr1;
   unsigned long a;
-#if BYTE_ORDER ==  LITTLE_ENDIAN
-  SWAPU;
-#endif
-  ptr1=(unsigned char *)&a;
-  *ptr1++=(*ptr++);
-  *ptr1++=(*ptr++);
-  *ptr1++=(*ptr++);
-  *ptr1  =(*ptr);
-#if BYTE_ORDER ==  LITTLE_ENDIAN
-  SWAPL(a);
-#endif
-  return a;
+  a=((ptr[0]<<24)&0xff000000)+((ptr[1]<<16)&0xff0000)+
+    ((ptr[2]<<8)&0xff00)+(ptr[3]&0xff);
+  return a;       
   }
 
 main(argc,argv)

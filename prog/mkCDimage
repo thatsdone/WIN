@@ -1,6 +1,10 @@
 #!/bin/sh
 # automatically make CD images
 # urabe 2001.3.30
+# revised for new mkisofs urabe 2002.11.6
+# use symbolic link for kurofu urabe 2002.11.6
+# revised by mochimaru 2003.2.26
+
 prog=mkCDimage
 if [ -z "$1" ]
 then
@@ -83,9 +87,13 @@ mkdir $prog.dir.$$
 cat $prog.list.$$|
 while read file
 do
-  cp $trg/$file $trg/$file.ch $prog.dir.$$ 2>> $prog.log
-  echo cp $trg/$file $trg/$file.ch $prog.dir.$$
-  blocks=`mkisofs -r -print-size $prog.dir.$$ 2>&1 | tail -1|awk '{print $8}`
+#  cp $trg/$file $trg/$file.ch $prog.dir.$$ 2>> $prog.log
+#  echo cp $trg/$file $trg/$file.ch $prog.dir.$$
+  ln -s $trg/$file $trg/$file.ch $prog.dir.$$ 2>> $prog.log
+  echo ln -s  $trg/$file $trg/$file.ch $prog.dir.$$
+#  blocks=`mkisofs -r -print-size $prog.dir.$$ 2>&1 | tail -1|awk '{print $8}`
+#  for new version of mkisofs 2002.11.6
+  blocks=`mkisofs -f -r -l -J -print-size -quiet $prog.dir.$$`
   echo $blocks
   if [ $blocks -gt $maxblks ]
   then
@@ -96,11 +104,12 @@ do
     mv $prog.newdir.$$ $prog.dir.$$
     date >> $prog.log
     echo $dname >> $prog.log
-    mkisofs -r -V "$dname" -o $outdir/$dname.iso $dname 2>&1 | egrep -v 'estimate|Using' >> $prog.log
+    mkisofs -f -r -l -J -V "$dname" -o $outdir/$dname.iso $dname 2>&1 | egrep -v 'estimate|Using' >> $prog.log
     rm -rf $dname
-    ls -l $dname.iso
+    ls -l $outdir/$dname.iso
     first=$file
   fi
   last=$file
 done
 rm -rf $prog.dir.$$ $prog.list.$$
+

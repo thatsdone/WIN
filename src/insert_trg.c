@@ -1,5 +1,5 @@
 /*
- * $Id: insert_trg.c,v 1.4 2003/11/03 03:47:15 uehira Exp $
+ * $Id: insert_trg.c,v 1.5 2005/03/12 14:13:57 uehira Exp $
  * Insert sorted timeout data to event data.
  *
  *------------ sample of parameter file ------------
@@ -11,6 +11,10 @@
  *|                     #   if blank, 0.           |
  *--------------------------------------------------
  *
+ */
+
+/*-
+ * 2005/3/12   memory leak bug fixed.
  */
 
 #ifdef HAVE_CONFIG_H
@@ -41,7 +45,7 @@
 #define BUF_SIZE 1024
 
 char *progname;
-static char rcsid[]="$Id: insert_trg.c,v 1.4 2003/11/03 03:47:15 uehira Exp $";
+static char rcsid[]="$Id: insert_trg.c,v 1.5 2005/03/12 14:13:57 uehira Exp $";
 
 struct Cnt_file {
   char  trg_dir[WIN_FILENAME_MAX];    /* trg data directory */
@@ -143,6 +147,7 @@ do_insert(int tim[], struct Cnt_file *cnt)
   WIN_blocksize  sizem,sizew,datas_num;
   WIN_blocksize  sizes;
   WIN_blocksize  data_num,data_num_save;
+  WIN_blocksize  array_size_of_data;
   unsigned char  *data,*datam,*datat,*tmpbuf;
   unsigned char  *datas;
   unsigned char  size_arr[WIN_BLOCKSIZE_LEN];
@@ -166,7 +171,8 @@ do_insert(int tim[], struct Cnt_file *cnt)
   while(fread(&a,1,WIN_BLOCKSIZE_LEN,fp)==WIN_BLOCKSIZE_LEN){  /*(1)*/
     /*** copy same minute data to data[] ***/
     data_num_save=data_num=size=(WIN_blocksize)mklong((unsigned char *)&a);
-    if((data=MALLOC(unsigned char,data_num))==NULL) memory_error();
+    array_size_of_data = data_num << 2;
+    if((data=MALLOC(unsigned char,array_size_of_data))==NULL) memory_error();
     memcpy(data,&a,WIN_BLOCKSIZE_LEN);
     size-=WIN_BLOCKSIZE_LEN;
     if(fread(data+WIN_BLOCKSIZE_LEN,1,size,fp)!=size){
@@ -199,12 +205,17 @@ do_insert(int tim[], struct Cnt_file *cnt)
 	break;
       }
       data_num+=size_save;
-      if((data=REALLOC(unsigned char,data,data_num))==NULL) memory_error();
+      if (array_size_of_data < data_num) {
+	array_size_of_data = data_num << 1;
+	if((data=REALLOC(unsigned char,data,array_size_of_data))==NULL)
+	  memory_error();
+      }
       memcpy(data+data_num_save,tmpbuf,size_save);
       data_num_save=data_num;
       fpt=ftell(fp);
       if(time_cmp(dtime_tmp,dtime_end,WIN_TIME_LEN)>0)
 	for(j=0;j<WIN_TIME_LEN;++j) dtime_end[j]=dtime_tmp[j];
+      FREE(tmpbuf);
     } /* while(fread(&a,1,WIN_BLOCKSIZE_LEN,fp)==WIN_BLOCKSIZE_LEN) (2) */
 
     for(j=0;j<5;++j) scan_tim_old[j]=scan_tim_yng[j]=dtime[j];

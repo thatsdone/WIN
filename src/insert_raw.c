@@ -1,5 +1,5 @@
 /*
- * $Id: insert_raw.c,v 1.4 2005/03/12 10:49:23 uehira Exp $
+ * $Id: insert_raw.c,v 1.5 2005/03/12 14:13:57 uehira Exp $
  * Insert sorted timeout data to raw data.
  *
  *------------ sample of parameter file ------------
@@ -11,6 +11,10 @@
  *|                     #   if blank, 0.           |
  *--------------------------------------------------
  *
+ */
+
+/*-
+ * 2005/3/12   memory leak bug fixed.
  */
 
 #ifdef HAVE_CONFIG_H
@@ -35,7 +39,7 @@
 #define BUF_SIZE 1024
 
 char *progname;
-static char rcsid[]="$Id: insert_raw.c,v 1.4 2005/03/12 10:49:23 uehira Exp $";
+static char rcsid[]="$Id: insert_raw.c,v 1.5 2005/03/12 14:13:57 uehira Exp $";
 
 struct Cnt_file {
   char  raw_dir[WIN_FILENAME_MAX];    /* raw data directory */

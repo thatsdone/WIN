@@ -1,10 +1,12 @@
 #!/bin/sh
 #
-# $Id: w2m,v 1.2 2000/04/30 10:10:39 urabe Exp $
+# $Id: w2m.in,v 1.1 2002/08/10 10:32:05 uehira Exp $
 #
 set --x
 td=/dat/tmp
-dp=/dat/bin/SPARC
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+dp=@bindir@
 of=$1
 rm $of 2>/dev/null
 shift
@@ -16,7 +18,7 @@ do
   $dp/wck $1 2>/dev/null|grep ' 1 Hz'|awk '{print $4}'|
   while read ch
   do
-    $dp/dewin $ch $1 2>/dev/null| wform $ymdhms $ch 60 > $td/w2m.$$
+    $dp/dewin $ch $1 2>/dev/null| $dp/wform $ymdhms $ch 60 > $td/w2m.$$
     if [ ! -f "$td/$bn" ]
     then
       cp $td/w2m.$$ $td/$bn 2>/dev/null

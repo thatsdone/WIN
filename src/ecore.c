@@ -1,4 +1,4 @@
-/* $Id: ecore.c,v 1.3 2002/01/13 06:57:50 uehira Exp $ */
+/* $Id: ecore.c,v 1.4 2003/05/11 15:28:03 urabe Exp $ */
 /* ddr news program "ecore.c"
   "ecore.c" works with "fromtape.c"
   "ecore.c" makes continuously filtered and decimated data
@@ -6,6 +6,13 @@
   3/13/91-7/31/91, 9/19/91-9/26/91,6/19/92,3/24/93,6/17/94 urabe
   98.6.26 yo2000
 */
+/*  03/03/07 change size by N.Nakakawaji  */
+/*	NCH:400=>1500
+	NAMLEN:80=>255
+	in_data:100*1000=>500*1000
+	output file:YYMMDDHH.mm...win format
+*/
+/*  03/04/25 for Endian free and fix by N.Nakakawaji */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -30,13 +37,22 @@
 #define   FIVE_MIN  0     /* devide in 5-minute files ? */
 #define   SR      20      /* sampling rate of output data */
 #define   SSR     250     /* max sampling rate of input data */
-#define   NCH     400     /* max of output channels */
+/* NCH 400 => 1200 03/03/03 N.Nakakawaji */
+/*#define   NCH     400  */   /* max of output channels */
+/* NCH 1200 => 1500 03/03/03 N.Nakakawaji */
+/*#define   NCH     1200 */     /* max of output channels changed 03/03/03 */
+#define   NCH     1500     /* max of output channels changed 03/03/05 */
 #define   CHMASK    0xffff    /* max of name channels */
 #define   MAX_FILT  25      /* max of filter order */
-#define   NAMLEN    80
+/* NAMLEN 80=> 255 03/03/07 */
+/*#define   NAMLEN    80*/
+#define   NAMLEN   255 
 
-short out_data[SR*NCH];
-unsigned char in_data[100*1000];
+/* not use out_data 03/03/07 */
+/*short out_data[SR*NCH];*/
+/* change size 100*1000=> 500*1000 03/02/28 */
+/*unsigned char in_data[100*1000]; */
+unsigned char in_data[500*1000];
 int pos_table[CHMASK+1],f_out,f_in;
 char path_raw[NAMLEN],file_written[NAMLEN],file_done[NAMLEN],
   file_list[NAMLEN],file_out[NAMLEN],dir_out[NAMLEN],
@@ -52,7 +68,7 @@ struct {
   double coef[MAX_FILT*4];
   double uv[MAX_FILT*4];
   } ch[NCH];
-
+/*****  deleted for Endian Free  03/04/25
 mklong(ptr)
         unsigned char *ptr;
         {
@@ -76,6 +92,25 @@ mkshort(ptr)
         *ptr1  =(*ptr);
         return a;
         }
+******/
+
+/* added for Endian free 03/04/25 */
+mklong(ptr)       
+  unsigned char *ptr;
+  {
+  unsigned long a;
+  a=((ptr[0]<<24)&0xff000000)+((ptr[1]<<16)&0xff0000)+
+    ((ptr[2]<<8)&0xff00)+(ptr[3]&0xff);
+  return a;       
+  }
+
+mkshort(ptr)
+  unsigned char *ptr;
+  {
+  unsigned short a;      
+  a=((ptr[0]<<8)&0xff00)+(ptr[1]&0xff);
+  return a;
+  }
 
 adj_time(tm)
   int *tm;
@@ -214,6 +249,10 @@ end_process(value)
   exit(value);
   }
 
+#define LongFromBigEndian(a) \
+  ((((unsigned char *)&(a))[0]<<24)+(((unsigned char *)&(a))[1]<<16)+ \
+  (((unsigned char *)&(a))[2]<<8)+((unsigned char *)&(a))[3])
+
 main(argc,argv)
   int argc;
   char *argv[];
@@ -223,6 +262,12 @@ main(argc,argv)
   unsigned char *ptr,*ptr_end,textbuf[NAMLEN];
   int dec_start[6],dec_end[6],dec_wtn[6],dec_now[6],dec_buf[6],
     i,j,nch,next,sys_ch,sr,pos,size,cnt_min;
+  //int fildata[SSR];   int => long 03/04/23
+  long fildata[SSR];
+  unsigned char windata[500*1000],*wptr;  /* added 03/03/07 */
+  int idx,bsize;  				  /* added 03/03/07 */
+  unsigned char min_head[6];  		  /* added 03/03/07 */
+  int c_bsize;			/* added 03/04/22 */
 
   f_in=f_out=(-1);
   printf("***** ecore start *****\n");
@@ -244,7 +289,8 @@ main(argc,argv)
   printf("start:%02d%02d%02d %02d%02d%02d\n",
     dec_start[0],dec_start[1],dec_start[2],
     dec_start[3],dec_start[4],dec_start[5]);
-  for(i=0;i<5;i++) dec_now[i]=dec_start[i];
+  //for(i=0;i<5;i++) dec_now[i]=dec_start[i];   5=>6 fix 03/04/25
+  for(i=0;i<6;i++) dec_now[i]=dec_start[i];
   printf("end  :%02d%02d%02d %02d%02d%02d\n",
     dec_end[0],dec_end[1],dec_end[2],
     dec_end[3],dec_end[4],dec_end[5]);
@@ -269,7 +315,7 @@ main(argc,argv)
     if(*textbuf=='#') continue;
     sscanf(textbuf,"%x",&i);
     i &= CHMASK;
-    printf(" %04X",i);
+    //printf(" %04X",i);
     ch[nch].sys_ch=i;
     ch[nch].flag_filt=0;
     pos_table[i]=nch;
@@ -277,11 +323,17 @@ main(argc,argv)
     }
   fclose(fp);
   printf("\nN of channels = %d\n",nch);
+  fflush(stdout); /* 03/03/07 */
 
-  /* read output directory */
+  /* read output directory  add error check 03/03/07 */
   if(argc>5) sscanf(argv[5],"%s",dir_out);
   else strcpy(dir_out,".");
-  sprintf(file_out,"%s/%02d%02d%02d.%02d%02d",dir_out,
+  if(strcmp(dir_out,path_raw)==0){
+    printf("not use same directory <in & out>\n");
+    end_process(1);
+  }
+  /*  out file => min win file 03/03/07 */
+  /*sprintf(file_out,"%s/%02d%02d%02d.%02d%02d",dir_out,
     dec_now[0],dec_now[1],dec_now[2],dec_now[3],dec_now[4]);
   if((f_out=open(file_out,O_RDWR|O_CREAT|O_TRUNC,0666))==-1)
     {
@@ -289,6 +341,7 @@ main(argc,argv)
     end_process(1);
     }
   printf("'%s' opened\n",file_out);
+  */
   cnt_min=0;
 
   while(1)
@@ -301,10 +354,10 @@ main(argc,argv)
     fscanf(fp,"%02d%02d%02d%02d.%02d",&dec_wtn[0],&dec_wtn[1],
       &dec_wtn[2],&dec_wtn[3],&dec_wtn[4]);
     fclose(fp);
-/*printf("next   =%02d%02d%02d%02d.%02d\n",dec_now[0],dec_now[1],dec_now[2],
-  dec_now[3],dec_now[4]);
-printf("written=%02d%02d%02d%02d.%02d\n",dec_wtn[0],dec_wtn[1],dec_wtn[2],
-  dec_wtn[3],dec_wtn[4]);*/
+//printf("next   =%02d%02d%02d%02d.%02d\n",dec_now[0],dec_now[1],dec_now[2],
+//  dec_now[3],dec_now[4]);
+//printf("written=%02d%02d%02d%02d.%02d\n",dec_wtn[0],dec_wtn[1],dec_wtn[2],
+//  dec_wtn[3],dec_wtn[4]);
     if(time_cmp(dec_wtn,dec_now,6)<0)
       {
       printf("waiting '%s' to be updated ...\n",file_written);
@@ -319,38 +372,74 @@ printf("written=%02d%02d%02d%02d.%02d\n",dec_wtn[0],dec_wtn[1],dec_wtn[2],
     if((f_in=open(name_file,O_RDONLY))==-1)
       {
       printf("no file : %s\n",name_file);
-      for(i=0;i<60;i++)
-        {
-        /* output dummy */
-        for(j=0;j<SR*nch;j++) out_data[j]=0;
-        if(write(f_out,(char *)out_data,SR*nch)==(-1))
-          {
-          perror("write");
-          end_process(1);
-          }
-        dec_now[5]++;
-        adj_time(dec_now);
-        }
+
+      //------------ no input file => no output file 03/03/12 
+      //for(i=0;i<60;i++)
+      //  {
+      //  /* output dummy */
+      //  for(j=0;j<sizeof(windata);j++) windata[j]=0;
+      //  /*if(write(f_out,(char *)out_data,h)==(-1))*/ /*03/03/07 */
+      //  if(write(f_out,(char *)windata,sizeof(windata))==(-1))
+      //    {
+      //    perror("write");
+      //    end_process(1);
+      //    }
+      //  dec_now[5]++;
+      //  adj_time(dec_now);
+      //  }
+      //-------------------------------------------------------*/
+      dec_now[4]++;
+      adj_time(dec_now);
+      continue;  /* return loop */
       }
     else
       {
       printf("'%s' opened\n",name_file);
+  	fflush(stdout); /* 03/03/07 */
+      /* out file 03/03/07 */
+      sprintf(file_out,"%s/%02d%02d%02d%02d.%02d",dir_out,
+        dec_now[0],dec_now[1],dec_now[2],dec_now[3],dec_now[4]);
+      if((f_out=open(file_out,O_RDWR|O_CREAT|O_TRUNC,0666))==-1)
+        {
+        printf("file open error : %s\n",file_out);
+        end_process(1);
+        }
+      printf("'%s' opened\n",file_out);
       /* one minute loop */
       for(i=0;i<60;i++)
         {
-        for(j=0;j<SR*nch;j++) out_data[j]=0;
+        /* added 2lines 03/03/07 */
+        idx = 0;
+        wptr = windata;
+        /*for(j=0;j<SR*nch;j++) out_data[j]=0;*/ /* deleted 03/03/07 */
+        for(j=0;j<sizeof(windata);j++) windata[j]=0;
         /* read one sec data */
         if(read(f_in,&size,4)<=0)
           {
           perror("read");
           break;
           }
+	size=mklong(&size);  /* for Endian free  03/04/25 */
+
+	//printf("size=%d(%x)\n",size,size);	/* 030228 */
+	//fflush(stdout);
         if(read(f_in,in_data,size-4)<=0)
           {
           perror("read");
           break;
           }
         bcd_dec(dec_buf,in_data);
+        /* min_header save 03/03/07 */
+        for(j=0;j<6;j++)
+		min_head[j]=in_data[j];
+//	printf("in_data:");
+//	for(j=0;j<6;j++)
+//		printf("%d ",in_data[j]);
+//	printf("\ndec_buf:");
+//	for(j=0;j<6;j++)
+//		printf("%d ",dec_buf[j]);
+//	printf("\n");
+
         /* check time of data */
         next=1;
         switch(time_cmp(dec_now,dec_buf,6))
@@ -370,7 +459,8 @@ printf("written=%02d%02d%02d%02d.%02d\n",dec_wtn[0],dec_wtn[1],dec_wtn[2],
                 continue;
                 }
               sr=get_data(&ptr,lbuf,1);
-              for(j=0;j<sr;j++) buf[j]=(double)lbuf[j];
+	      /*printf("ecore:get_data(sr=%d)\n",sr);*/  /* 03/03/03 */
+              for(j=0;j<sr;j++) buf[j]=(double)lbuf[j];  
 #if FILTER
             /* filtering */
               if(ch[pos].flag_filt==0)
@@ -398,10 +488,21 @@ printf("written=%02d%02d%02d%02d.%02d\n",dec_wtn[0],dec_wtn[1],dec_wtn[2],
 #else
                 dl=(long)buf[(j*sr)/SR];
 #endif
-                if(dl<(-32768)) dl=(-32768);
-                else if(dl>32767) dl=32767;
-                out_data[j*nch+pos]=dl;
+		/* deleted 2lines 03/03/07 */
+                /*if(dl<(-32768)) dl=(-32768);*/
+                /*else if(dl>32767) dl=32767;*/
+		/* out_data => 1sec data  03/03/07 */
+                /*out_data[j*nch+pos]=dl;*/
+                fildata[j]=dl;		/* filtering data => fildata 03/03/07 */
+		//printf("fildata[%d]=%x\n",j,fildata[j]);	/* /03/04/25 */
+		//fflush(stdout);
                 }
+	      /* data => channel block by win format 03/03/07 */
+		wptr=wptr+idx;
+		//idx = winform((long *)fildata,wptr,SR,(short)sys_ch); int=>long 03/04/23 
+		idx = winform(fildata,wptr,SR,(short)sys_ch);
+		//printf("winform:idx=%d,sys_ch=%x\n",idx,sys_ch);  /* 03/04/23 */
+		//fflush(stdout);
               }
             break;
           case 1:     /* not to write */
@@ -411,9 +512,30 @@ printf("written=%02d%02d%02d%02d.%02d\n",dec_wtn[0],dec_wtn[1],dec_wtn[2],
             break;
           }
 
-        if(next)      /* write data */
+        if(next)      /* write data => win format 03/03/07 */
           {
-          if(write(f_out,(char *)out_data,SR*2*nch)==(-1))
+	  /* write block size */
+          bsize = wptr - windata + 10;
+	  //printf("output bsize:%d(%x)\n",bsize,bsize); /* 03/03/14 */
+	  //fflush(stdout);
+	  c_bsize=mklong(&bsize);	/* added 03/04/22 */
+	  //printf("output c_bsize:%d(%x)\n",c_bsize,c_bsize); /* 03/03/22 */
+	  //fflush(stdout);
+          if(write(f_out,&c_bsize,4)==(-1))
+            {
+            perror("fprintf");
+            end_process(1);
+            }
+	  /* write min header */
+          if(write(f_out,min_head,6)==(-1))
+            {
+            perror("write");
+            end_process(1);
+            }
+	
+	  /* write channel blocks */
+          /*if(write(f_out,(char *)out_data,SR*2*nch)==(-1))*/ /*03/03/07 */
+          if(write(f_out,(char *)windata,bsize-10)==(-1))
             {
             perror("write");
             end_process(1);
@@ -423,6 +545,7 @@ printf("written=%02d%02d%02d%02d.%02d\n",dec_wtn[0],dec_wtn[1],dec_wtn[2],
           }
         }
       close(f_in);
+      close(f_out);	/* added 03/03/07 */
       }
 
     fp=fopen(file_done,"w");
@@ -456,6 +579,7 @@ get_data(dp,buf,idx)
   {
   unsigned char *ddp;
   int gh,s_rate,g_size,sys_ch,i,b_size;
+  short shreg;		/* added 03/05/02 */
   ddp=(*dp);
   s_rate=(gh=mklong(ddp))&0xfff;
   ddp+=4;
@@ -465,6 +589,8 @@ get_data(dp,buf,idx)
   sys_ch=gh>>16;
   if(idx==0) return(s_rate);
 
+  //printf("ecore(get_data):idx=%d,b_size=%x, gh=%x, g_size=%x, sys_ch=%x\n",idx,b_size,gh,g_size,sys_ch); /* 03/04/25 */
+  fflush(stdout);
   /* read group */
   buf[0]=mklong(ddp);
   ddp+=4;
@@ -484,8 +610,13 @@ get_data(dp,buf,idx)
     case 2:
       for(i=1;i<s_rate;i++)
         {
+	/* 2lines edit 03/05/02 N.Nakawaji
         buf[i]=buf[i-1]+mkshort(ddp);
         ddp+=2;
+	*/
+	shreg=((ddp[0]<<8) & 0xff00) + (ddp[1] & 0xff);
+	ddp += 2;
+	buf[i] = buf[i-1] + shreg;
         }
       break;
     case 3:
@@ -505,6 +636,8 @@ get_data(dp,buf,idx)
     default:
       return(-1); /* bad header */
     }
+  /*for(i=0;i<s_rate;i++) printf("%x",buf[i]);*/  /* 03/03/03 */
+  /*printf("\n");*/ /* 03/03/03 */
   return(s_rate); /* normal return */
   }
 
@@ -681,3 +814,97 @@ tandem(x,y,n,h,m,nml,uv)
   if(m>1) for(i=1;i<m;i++) recfil(y,y,n,&h[i*4],nml,&uv[i*4]);
   return(0);
   }
+
+
+/* winform.c  4/30/91,99.4.19   urabe */
+/* winform converts fixed-sample-size-data into win's format */
+/* winform returns the length in bytes of output data */
+/*   Added 03/03/07 */
+
+winform(inbuf,outbuf,sr,sys_ch)
+  long *inbuf;      /* input data array for one sec*/
+  unsigned char *outbuf;  /* output data array for one sec */
+  int sr;         /* n of data (i.e. sampling rate) */
+  unsigned short sys_ch;  /* 16 bit long channel ID number */
+  {
+  int dmin,dmax,aa,bb,br,i,byte_leng;
+  long *ptr;
+  unsigned char *buf;
+
+  /* differentiate and obtain min and max */
+  ptr=inbuf;
+  bb=(*ptr++);
+  dmax=dmin=0;
+  for(i=1;i<sr;i++)
+    {
+    aa=(*ptr);
+    *ptr++=br=aa-bb;
+    bb=aa;
+    if(br>dmax) dmax=br;
+    else if(br<dmin) dmin=br;
+    }
+
+  /* determine sample size */
+  if(((dmin&0xfffffff8)==0xfffffff8 || (dmin&0xfffffff8)==0) &&
+    ((dmax&0xfffffff8)==0xfffffff8 || (dmax&0xfffffff8)==0)) byte_leng=0;
+  else if(((dmin&0xffffff80)==0xffffff80 || (dmin&0xffffff80)==0) &&
+    ((dmax&0xffffff80)==0xffffff80 || (dmax&0xffffff80)==0)) byte_leng=1;
+  else if(((dmin&0xffff8000)==0xffff8000 || (dmin&0xffff8000)==0) &&
+    ((dmax&0xffff8000)==0xffff8000 || (dmax&0xffff8000)==0)) byte_leng=2;
+  else if(((dmin&0xff800000)==0xff800000 || (dmin&0xff800000)==0) &&
+    ((dmax&0xff800000)==0xff800000 || (dmax&0xff800000)==0)) byte_leng=3;
+  else byte_leng=4;
+  /* make a 4 byte long header */
+  buf=outbuf;
+  *buf++=(sys_ch>>8)&0xff;
+  *buf++=sys_ch&0xff;
+  *buf++=(byte_leng<<4)|(sr>>8);
+  *buf++=sr&0xff;
+
+  /* first sample is always 4 byte long */
+  *buf++=inbuf[0]>>24;
+  *buf++=inbuf[0]>>16;
+  *buf++=inbuf[0]>>8;
+  *buf++=inbuf[0];
+  /* second and after */
+  //printf("in winform: byte_leng=%d\n",byte_leng);  /* 03/04/23 */
+  fflush(stdout);
+  switch(byte_leng)
+    {
+    case 0:
+      for(i=1;i<sr-1;i+=2)
+        *buf++=(inbuf[i]<<4)|(inbuf[i+1]&0xf);
+      if(i==sr-1) *buf++=(inbuf[i]<<4);
+      break;
+    case 1:
+      for(i=1;i<sr;i++)
+        *buf++=inbuf[i];
+      break;
+    case 2:
+      for(i=1;i<sr;i++)
+        {
+        *buf++=inbuf[i]>>8;
+        *buf++=inbuf[i];
+        }
+      break;
+    case 3:
+      for(i=1;i<sr;i++)
+        {
+        *buf++=inbuf[i]>>16;
+        *buf++=inbuf[i]>>8;
+        *buf++=inbuf[i];
+        }
+      break;
+    case 4:
+      for(i=1;i<sr;i++)
+        {
+        *buf++=inbuf[i]>>24;
+        *buf++=inbuf[i]>>16;
+        *buf++=inbuf[i]>>8;
+        *buf++=inbuf[i];
+        }
+      break;
+    }
+  return (int)(buf-outbuf);
+  }
+

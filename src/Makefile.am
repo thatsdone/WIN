@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.9 2003/04/25 13:47:27 uehira Exp $
+# $Id: Makefile.am,v 1.10 2003/05/11 15:28:03 urabe Exp $
 #
 
 if SUNOS4
@@ -23,7 +23,7 @@ endif
 ONLINE_SO=recvt send_raw recvstatus recvstatus2 send_raw_old relay recvnmx \
        $(ONL_SOL2)
 TAPE_USER_MATH=pmon elist events
-ONLINE_MATH=ecore
+ONLINE_MATH=ecore ecore2
 OFFLINE_USER_MATH=wtime
 #OFFLINE_MATH=dewin select_stations
 OFFLINE_MATH=dewin select_stations hypomhc
@@ -199,6 +199,9 @@ recvnmx_LDADD = @LIBNSL@ @LIBSOCKET@ @LIBSHMGET@
 
 ecore_SOURCES = ecore.c $(SUBFUNC_H)
 ecore_LDADD = -lm
+
+ecore2_SOURCES = ecore2.c $(SUBFUNC_H)
+ecore2_LDADD = -lm
 
 recvts_SOURCES = recvts.c $(SUBFUNC_H)
 

@@ -1,7 +1,9 @@
-$Id: ChangeLog,v 1.18 2002/10/27 08:30:00 urabe Exp $
+$Id: ChangeLog,v 1.19 2002/10/27 08:36:10 urabe Exp $
 
 2002-10-27 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
-	* shmdump : input from 'stdin' by specifying Shm key as '-'
+	* shmdump.c : input from 'stdin' by specifying Shm key as '-'
+	* send_raw.c : added -T option to set TTL
+	* Version 1.1.10 released.
 
 2002-09-12 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
         * insert_raw2 : updates mon file if mon dir is specified in the 5th line of prm file.

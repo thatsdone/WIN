@@ -1,4 +1,8 @@
-$Id: ChangeLog,v 1.50 2003/10/29 14:44:11 urabe Exp $
+$Id: ChangeLog,v 1.51 2003/11/03 03:47:15 uehira Exp $
+
+2003-11-03 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* insert_trg : bug fix
+	* Version 1.1.25 released.
 
 2003-10-29 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
 	* dewin.c,wch.c,wchch.c,wed.c : exit()->exit(0)

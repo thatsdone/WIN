@@ -1,5 +1,5 @@
 /*
- * $Id: insert_trg.c,v 1.3 2002/01/23 06:06:13 uehira Exp $
+ * $Id: insert_trg.c,v 1.4 2003/11/03 03:47:15 uehira Exp $
  * Insert sorted timeout data to event data.
  *
  *------------ sample of parameter file ------------
@@ -41,7 +41,7 @@
 #define BUF_SIZE 1024
 
 char *progname;
-static char rcsid[]="$Id: insert_trg.c,v 1.3 2002/01/23 06:06:13 uehira Exp $";
+static char rcsid[]="$Id: insert_trg.c,v 1.4 2003/11/03 03:47:15 uehira Exp $";
 
 struct Cnt_file {
   char  trg_dir[WIN_FILENAME_MAX];    /* trg data directory */
@@ -335,6 +335,8 @@ do_insert(int tim[], struct Cnt_file *cnt)
 	  ptw+=sizes;
 	}
 	ptrd+=size;
+	if (ptrd<data+data_num)  /****** double check ? *****/
+	  break;
 	bcd_dec(dtime,ptrd+WIN_BLOCKSIZE_LEN);
       } /* while(time_cmp(dtime,tim_trg_end,WIN_TIME_LEN)<=0 && ptrd<data+data_num) */
       if(datas_num==0){

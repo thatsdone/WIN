@@ -1,4 +1,4 @@
-/* $Id: rtape.c,v 1.6 2002/05/11 15:02:05 urabe Exp $ */
+/* $Id: rtape.c,v 1.7 2004/09/05 00:06:48 urabe Exp $ */
 /*
   program "rtape.c"
   9/16/89 - 11/06/90, 6/26/91, 10/30/91, 6/26/92  urabe
@@ -12,6 +12,7 @@
   2000.5.10 deleted size=<0x3c000 limit
   2001.10.15 output to current dir if not specified
   2002.5.11 500K->1M
+  2004.9.5 stopped restriction of N of chs for selection
 */
 
 #ifdef HAVE_CONFIG_H
@@ -40,7 +41,7 @@
 
   unsigned char buf[MAXSIZE],outbuf[MAXSIZE];
   int fd_exb,f_get,leng,dec_start[6],dec_end[6],dec_begin[6],
-    dec_buf1[6],dec_now[6],ext,fm_type,nch,sysch[1024],old_format;
+    dec_buf1[6],dec_now[6],ext,fm_type,nch,sysch[65536],old_format;
   char name_file[NAMLEN],path[NAMLEN],textbuf[80],param[100],
     param_file[NAMLEN],name_prev[NAMLEN],dev_file[60];
   FILE *f_param;
@@ -403,7 +404,7 @@ get_one_record(blocking)
     }
   while(1)
     {
-    select_ch(sysch,nch,buf,outbuf,old_format);
+    select_ch(buf,outbuf,old_format);
   /* write one sec */
     re=write(f_get,(char *)outbuf,mklong(outbuf));
     if(time_cmp(dec_now,dec_end,6)==0) break;
@@ -472,9 +473,9 @@ mklong(ptr)
   return a;       
   }
 
-select_ch(sys_ch,n_ch,old_buf,new_buf,old_form)
+select_ch(old_buf,new_buf,old_form)
   unsigned char *old_buf,*new_buf;
-  int *sys_ch,n_ch,old_form;
+  int old_form;
   {
   int i,j,size,gsize,new_size,sr;
   unsigned char *ptr,*new_ptr,*ptr_lim;
@@ -501,8 +502,7 @@ select_ch(sys_ch,n_ch,old_buf,new_buf,old_form)
       if((gh>>12)&0xf) gsize=((gh>>12)&0xf)*(sr-1)+8;
       else gsize=(sr>>1)+8;
       }
-    for(j=0;j<n_ch;j++) if(i==sys_ch[j]) break;
-    if(n_ch==0 || j<n_ch)
+    if(sysch[i])
       {
       new_size+=gsize;
       while(gsize-->0) *new_ptr++=(*ptr++);
@@ -573,7 +573,7 @@ main(argc,argv)
     end_process(0);
     }
 
-  nch=0;
+  for(i=0;i<65536;i++) sysch[i]=1;
   if(argc>2+optbase) sscanf(argv[2+optbase],"%s",path);
   else strcpy(path,".");
   if(argc>3+optbase)
@@ -583,8 +583,15 @@ main(argc,argv)
       perror("fopen");
       end_process(1);
       }
-    while(fscanf(f_param,"%x",&sysch[nch])!=EOF)
-      printf(" %03X",sysch[nch++]);
+    for(i=0;i<65536;i++) sysch[i]=0;
+    while(fscanf(f_param,"%x",&i)!=EOF)
+      {
+      i&=0xffff;
+      sysch[i]=1;
+      printf(" %03X",i);
+      }
+    nch=0;
+    for(i=0;i<65536;i++) if(sysch[i]) nch++;
     printf("\n  <- %d chs according to '%s'\n",nch,argv[3+optbase]);
     fclose(f_param);
     }

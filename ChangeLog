@@ -1,4 +1,8 @@
-$Id: ChangeLog,v 1.65 2004/08/30 05:04:28 uehira Exp $
+$Id: ChangeLog,v 1.66 2004/09/05 00:06:48 urabe Exp $
+
+2004-09-05 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
+	* stopped restriction of N of chs for selection
+	* Version 1.1.37 released.
 
 2004-08-30 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* order2 : remove

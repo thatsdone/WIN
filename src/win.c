@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.30 2003/07/30 01:28:39 urabe Exp $
+   $Id: win.c,v 1.31 2003/11/06 00:38:36 urabe Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -13,7 +13,7 @@
    98.7.2 yo2000
 */
 #define NAME_PRG      "win"
-#define WIN_VERSION   "2003.7.30"
+#define WIN_VERSION   "2003.11.6"
 #define DEBUG_AP      0   /* for debugging auto-pick */
 /* 5:sr, 4:ch, 3:sec, 2:find_pick, 1:all */
 /************ HOW TO COMPILE THE PROGRAM **************************
@@ -967,7 +967,7 @@ char *get_time(rt,addsec)
   {
   static char c[18];
   struct tm *nt;
-  long ltime;
+  time_t ltime;
   time(&ltime);
   ltime+=addsec;
   nt=localtime(&ltime);
@@ -7885,8 +7885,8 @@ only:
                   {
                   *tbuf1=0;
                   sscanf(textbuf+3,"%*s%s",tbuf1);
-                  if(*tbuf1 && strcmp(tbuf1,"BLAST")==0)
-                    hypo.blast=1;
+                  for(ptr=tbuf1;*ptr;ptr++) *ptr=toupper(*ptr);
+                  if(*tbuf1 && strcmp(tbuf1,"BLAST")==0) hypo.blast=1;
                   else hypo.blast=0;                  
                   i=0;
                   }
@@ -7897,8 +7897,7 @@ only:
                   if(ptr) strncpy(hypo.o,ptr,4);
                   else *hypo.o=0;
                   sscanf(textbuf+3,"%d%d%d%d%d%lf%lf%lf%f%f",
-                    &ye,&mo,&da,&ho,&mi,&se,&alat,&along,
-                    &hypo.d,&mag);
+                    &ye,&mo,&da,&ho,&mi,&se,&alat,&along,&hypo.d,&mag);
                   pltxy(alat0,along0,&alat,&along,&xd,&yd,0);
                   hypo.lat=(float)alat;
                   hypo.lon=(float)along;
@@ -7945,11 +7944,10 @@ is_a_file:  fread(textbuf,1,20,fp);
               { /* ascii format file */
               *tbuf1=(*tbuf2)=0;
               sscanf(textbuf,"%d%d%d%d%d%lf%lf%lf%f%f%s%s",
-                &ye,&mo,&da,&ho,&mi,&se,&alat,&along,
-                &hypo.d,&mag,tbuf1,tbuf2);
+                &ye,&mo,&da,&ho,&mi,&se,&alat,&along,&hypo.d,&mag,tbuf1,tbuf2);
               strncpy(hypo.o,tbuf1,4);
-              if(*tbuf2 && strcmp(tbuf2,"BLAST")==0)
-                hypo.blast=1;
+              for(ptr=tbuf2;*ptr;ptr++) *ptr=toupper(*ptr);
+              if(*tbuf2 && strcmp(tbuf2,"BLAST")==0) hypo.blast=1;
               else hypo.blast=0;                  
               pltxy(alat0,along0,&alat,&along,&xd,&yd,0);
               hypo.lat=(float)alat;
@@ -7978,6 +7976,7 @@ is_a_file:  fread(textbuf,1,20,fp);
               swp=(union Swp *)&hypob.dep;
               swp->i=(swp->c[0]<<24)+(swp->c[1]<<16)+(swp->c[2]<<8)+swp->c[3];
               strncpy(hypo.o,hypob.owner,4);
+              for(ptr=hypob.diag;ptr<hypob.diag+4;ptr++) *ptr=toupper(*ptr);
               if(strncmp(hypob.diag,"BLAST",4)==0) hypo.blast=1;
               else hypo.blast=0;
               alat=(double)(hypo.lat=hypob.alat);

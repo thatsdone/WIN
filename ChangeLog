@@ -1,4 +1,7 @@
-$Id: ChangeLog,v 1.52 2003/11/03 10:08:01 uehira Exp $
+$Id: ChangeLog,v 1.53 2003/11/06 00:38:36 urabe Exp $
+
+2003-11-06 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
+	* win.c : BLAST,Blast,bLAst,..,blast are now all valid.
 
 2003-11-03 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* insert_trg : bug fix

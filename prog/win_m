@@ -1,14 +1,14 @@
-#!/usr/local/bin/wish -f
+#!/usr/local/bin/wish4.2jp
 
 #
-# $Id: win_m,v 1.1 2000/04/30 10:10:39 urabe Exp $
+# $Id: win_m,v 1.2 2000/08/02 07:16:08 uehira Exp $
 #  win_m : ＷＩＮのピックマネージャー
 #
 #    Uehira Kenji (Original 96.2.29)
 #      Special thank to Fujie Gou
 #
 
-set VERSION      "97.4.1"
+set VERSION      "2000.8.2 Tk4.2"
 
 set INIT_PRM        "./win_m.prm"
 set WM_GEO          "-10+0"
@@ -17,7 +17,7 @@ set win_prm         "./win.prm"
 set default_win_prm "./win.prm"
 set TERM            "xterm"
 set TERM_FN         "8x16"
-set TERM_GEO        "+250+250"
+set TERM_GEO        "94x24+230+250"
 set EE_COMMAND      "ee_manager"
 set EE_OPT_T        ""    ; # 時間のオプション
 set EE_OPT_P        ""    ; # 場所のオプション
@@ -194,16 +194,21 @@ proc win_multi {} {
 	    set win_option "$O_f $O_o $O_t $O_w $O_B $O_S $O_p $O_pf"
 	    
 	    set script [open $scrpt_file w]
-	    foreach i [selection get] {
-		set file [lindex $i 0]
-		set len [string length $file]
+	    foreach datafiles [selection get] {
+		if {[regexp {[0-9][0-9][0-9][0-9][0-9][0-9]\.[0-9][0-9][0-9][0-9][0-9][0-9]*} $datafiles] != 1} {
+			continue
+		}
+#		puts "aa $datafiles bb"
+		# ??????.??????x -> ??????.?????? etc.
+		set len [string length $datafiles]
 		if {$len != 13} {
-		    set file [string range $file 0 12]
+		    set file [string range $datafiles 0 12]
+		    set datafiles $file
 		}
 		puts $script "$TERM -fn $TERM_FN -sb\
-			-title \"$file \(Multi file select mode\)\"\
+			-title \"$datafiles \(Multi file select mode\)\"\
 			-geometry $TERM_GEO -e\
-			$WIN_COMMAND $win_option $TRG_DIR$file"
+			$WIN_COMMAND $win_option $TRG_DIR$datafiles"
 	    }
 	    puts $script "rm $scrpt_file"
 	    close $script
@@ -250,15 +255,21 @@ proc win_single {} {
 	set win_option "$O_f $O_o $O_t $O_w $O_B $O_S $O_p $O_pf"
 	#puts $win_option
 
-	set i [selection get]
-	set file [lindex $i 0]
-	set len [string length $file]
+	set datafile [selection get]
+#	puts $datafile
+	set datafile [lindex $datafile 0]
+#	puts $datafile
+	set len [string length $datafile]
+#	puts $len
+	# ??????.??????x -> ??????.?????? etc.
 	if {$len != 13} {
-	    set file [string range $file 0 12]
+	    set file [string range $datafile 0 12]
+	    set datafile $file
 	}
-	eval exec $TERM -fn $TERM_FN -sb -title $file\
+#	puts $datafile
+	eval exec $TERM -fn $TERM_FN -sb -title $datafile\
 		-geometry $TERM_GEO -e\
-		$WIN_COMMAND $win_option $TRG_DIR$file &
+		$WIN_COMMAND $win_option $TRG_DIR$datafile &
     } else {
 	error_display "パラメータファイル $win_prm が開けませんでした。\
 		WIN のオプション選択で正しいファイル名を指定して下さい。"
@@ -932,8 +943,10 @@ button $f2.head.right -text "Stop Multi" -command "kill_multi"\
 
 scrollbar $f2.scroll_x -command "$f2.list xview" -orient h -relief sunken
 scrollbar $f2.scroll_y -command "$f2.list yview" -relief sunken
+#listbox $f2.list -xscroll "$f2.scroll_x set" -yscroll "$f2.scroll_y set"\
+#	-geometry 70x20 -setgrid yes -font $FONT
 listbox $f2.list -xscroll "$f2.scroll_x set" -yscroll "$f2.scroll_y set"\
-	-geometry 70x20 -setgrid yes -font $FONT
+	-selectmode extended -height 18 -setgrid yes -font $FONT
 # パッキング
 pack $f2.head.left.1 $f2.head.left.2 $f2.head.left.3 $f2.head.left.4
 pack $f2.head.left -side left -in $f2.head
@@ -989,7 +1002,7 @@ bind $f1.ee_opt.t.entry <Return> {read_ee}
 bind $f1.ee_opt.p.entry <Return> {read_ee}
 bind $f2.list <Double-Button-1> {open_win}
 bind $f2.list <Button-2> {open_win}
-bind $f2.list <Button-3> {$f2.list select clear}
+bind $f2.list <Button-3> {$f2.list selection clear 0 end}
 bind $f2.list <Control-Button-1> {move 1}
 bind $f2.list <Control-Button-2> {open_win}
 bind $f2.list <Control-Button-3> {move -1}

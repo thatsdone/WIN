@@ -1,0 +1,91 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN">
+
+<html>
+  <head>
+    <title>WIN Anonymous CVS Server</title>
+    <meta http-equiv="content-type" content="text/html; charset=iso-2022-jp">
+    <style type="text/css">
+       body {background: white;}
+       img {color:white;}
+    </style>
+  </head>
+
+  <body>
+    <h1>Anonymous CVS Server を用いた win ソースファイルの取得</h1>
+    <hr>
+    <h2>1. はじめに</h2>
+    <p>　最新の win のソースファイルをインターネット経由で取得可能な Anonymous CVS server が立ち上がりました。CVS(Concurrent Versions System) とはバージョン管理システムであり、ソース・ファイルの変遷を記録するのに使用します。大規模なソフトウェア開発(例えば OS の開発等)で用いられています。CVS の詳細は下記の<a href="#LINK">リンク集</a>を御覧下さい。Anonymous CVS server を利用することにより日々(?)バージョンアップされる win のソースファイル群を追跡することが出来ます。</p>
+    <p>　Anonymous CVS (もしくは, <i>anoncvs</i> として知られています)は離れたところにある CVS リポジトリと同期を取るための機能です。win のユーザが、特別な権限なしに win の公式な anoncvs サーバに読み取り専用で CVS の操作をすることができるようにするためのものです。それを使うには、単に <tt>CVSROOT</tt> 環境変数を設定して適切な anoncvs サーバを指定し、<tt>cvs login</tt> を使ってパスワード "anoncvs" を入力して下さい。そして次に、cvs(1) コマンドを使うことで、手元にあるリポジトリと同じようにアクセスでるようになります。</p>
+
+    <h2>2. Anonymous CVS を使う</h2>
+    <p>　cvs(1) を設定して Anonymous CVS リポジトリを使うには単に <tt>CVSROOT</tt> 環境変数を設定して win の <i>anoncvs</i> サーバを指定するだけのことです。次のサーバが利用できるようになっています。</p>
+    <ul>
+      <li><i>ERI</i>: :pserver:anoncvs@win.eri.u-tokyo.ac.jp:/usr/home/cvsroot</li>
+    </ul>
+    <p>CVS は 2000/4/27 以降のほとんどすべてバージョンの win のソースを ``check out''することができますが、cvs(1) の リビジョン (-r) のオプションや win のリポジトリの中でそれをどのように指定したらいいものかということをよく知っておく必要があります。下記の<a href="#LINK">リンク集</a>を参照下さい。</p>
+    <p>タグには 2 種類あって、リビジョンタグとブランチタグがあります。リビジョンタグは特定の改訂版を指しており、それはいつも同じものを意味しています。一方ブランチタグは、指定されたときの指定された開発の流れにおける最も新しい改訂版を示しています。ブランチタグは特定の改訂版を指していないために、きょうと明日では違うものになっている可能性があります。</p>
+    <p>ブランチタグの一覧です。</p>
+    <dl>
+      <!-- one of (DD DT) -->
+      <dt>HEAD</dt>
+      <dd>最新版の流れです。リビジョンを指定しなかったときにはこれになります。</dd>
+    </dl>
+    <p>リビジョンタグの一覧です。</p>
+    <dl>
+      <!-- one of (DD DT) -->
+      <dt>NO_PREFIX</dt>
+      <dd>長い観測点名に対応する前のバージョンです。</dd>
+    </dl>
+
+    <h2>3. 例</h2>
+    <p>　cvs(1) のマニュアルページの全体をちゃんと読んでからのほうがいいのですが、Anonymous CVS の使い方の本質的なところを簡単に例を挙げて説明します。以下の例はすべて csh(1) 系で示してあります。sh(1) 系の方々は適宜読み換えて下さい。</p>
+    <p><b>Example 1.</b>　win の最新のソースファイルをカレントディレクトリの下に取得した後、確認を行い、消してみます。</p>
+    <pre>
+     <tt>% </tt><tt><b>setenv CVSROOT :pserver:anoncvs@win.eri.u-tokyo.ac.jp:/usr/home/cvsroot</b></tt>
+     <tt>% </tt><tt><b>cvs login</b></tt>
+       <tt>プロンプトが表示されたら、パスワード <b>``anoncvs''</b> を入力します。</tt>
+     <tt>% </tt><tt><b>cvs checkout WIN</b></tt>
+     <tt>% </tt><tt><b>(確認)</b></tt>
+     <tt>% </tt><tt><b>cvs release -d WIN</b></tt>
+     <tt>% </tt><tt><b>cvs logout</b></tt>
+    </pre>
+    <p><b>Example 2.</b>　すでに Example 1. のようにして取得した win のソースファイルを最新のものにします。</p>
+    <pre>
+     <tt>% </tt><tt><b>cd (win のソースファイルのあるディレクトリ)</b></tt>
+     <tt>% </tt><tt><b>cvs login</b></tt>
+       <tt>プロンプトが表示されたら、パスワード <b>``anoncvs''</b> を入力します。</tt>
+     <tt>% </tt><tt><b>cvs update</b></tt>
+     <tt>% </tt><tt><b>cvs logout</b></tt>
+    </pre>
+    <p><b>Example 3.</b>　長い観測点名に対応する前のソースファイルを取り出します。</p>
+    <pre>
+     <tt>% </tt><tt><b>setenv CVSROOT :pserver:anoncvs@win.eri.u-tokyo.ac.jp:/usr/home/cvsroot</b></tt>
+     <tt>% </tt><tt><b>cvs login</b></tt>
+       <tt>プロンプトが表示されたら、パスワード <b>``anoncvs''</b> を入力します。</tt>
+     <tt>% </tt><tt><b>cvs checkout -r NO_PREFIX WIN</b></tt>
+     <tt>% </tt><tt><b>cvs logout</b></tt>
+    </pre>
+    
+    
+    <h2><a name="LINK"></a>4. リンク集</h2>
+    <p>　win と cvs に関するリンク集です。</p>
+    <h3>4.1. win に関するもの</h3>
+    <ul>
+      <li><a href="http://eoc.eri.u-tokyo.ac.jp/WIN">win のホームページ</a>。win に関する情報やマニュアルがあります。</li>
+    </ul>
+    <h3>4.2. cvs に関するもの</h3>
+    <ul>
+      <li><a href="http://www-vox.dj.kit.ac.jp/nishi/cvs/cvs.html">CVS Manual</a></li>
+      <li><a href="http://www.konlab.j.dendai.ac.jp/~naney/comp/tool/cvs/index-ja.html">Concurrent Versions System CVS</a></li>
+      <li><a href="http://www.sodan.org/~penny/vc/index.html">Concurrent Version Control (CVS)</a></li>
+    </ul>
+
+    <hr>
+    <address>
+      植平 賢司(Uehira Kenji)<br>
+      <a href="mailto:uehira@sevo.kyushu-u.ac.jp">uehira@sevo.kyushu-u.ac.jp</a><br>
+      <a href="http://www2.sevo.kyushu-u.ac.jp/~uehira/uehira.pubkey">PGP fingerprint: EA 93 D1 A7 16 6B 61 76 ED 48 5E D5 F8 C3 B1 A2</a><br>
+      $Date: 2000/04/30 11:05:04 $<br>
+    </address>
+  </body>
+</html>

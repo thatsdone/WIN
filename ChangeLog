@@ -1,6 +1,9 @@
-$Id: ChangeLog,v 1.40 2003/06/23 06:07:00 tsuru Exp $
+$Id: ChangeLog,v 1.41 2003/06/23 06:29:12 tsuru Exp $
 
-2003-06-22 Tsuruoka Hiroshi <tsuru@eri.u-tokyo.ac.jp>
+2003-06-23 Tsuruoka Hiroshi <tsuru@eri.u-tokyo.ac.jp>
+	* Version 1.1.20 released.
+
+2003-06-23 Tsuruoka Hiroshi <tsuru@eri.u-tokyo.ac.jp>
         * wintosac.c : win text format to sac/sac2000 format
 
 2003-06-22 Tsuruoka Hiroshi <tsuru@eri.u-tokyo.ac.jp>

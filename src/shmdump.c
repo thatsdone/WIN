@@ -1,4 +1,4 @@
-/* $Id: shmdump.c,v 1.10 2002/06/25 03:01:33 urabe Exp $ */
+/* $Id: shmdump.c,v 1.11 2002/06/28 00:04:03 urabe Exp $ */
 /*  program "shmdump.c" 6/14/94 urabe */
 /*  revised 5/29/96 */
 /*  Little Endian (uehira) 8/27/96 */
@@ -11,7 +11,7 @@
 /*  2002.1.15 -m for MON data */
 /*  2002.2.28 size at EOB in shm_in */
 /*  2002.5.2 i<1000 -> 1000000 */
-/*  2002.6.24 -t for text output */
+/*  2002.6.24 -t for text output, 6.26 fixed */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -534,6 +534,7 @@ reset:
                     fprintf(fpout,"%04X %d",ch,sr);
                     for(i=0;i<sr;i++) fprintf(fpout," %d",abuf[i]);
                     fprintf(fpout,"\n");
+                    fflush(fpout);
                     }
                   }
                 else

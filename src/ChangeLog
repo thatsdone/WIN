@@ -1,4 +1,9 @@
-$Id: ChangeLog,v 1.1.2.6 2002/01/07 10:55:11 uehira Exp $
+$Id: ChangeLog,v 1.1.2.7 2002/01/07 11:18:12 urabe Exp $
+
+2002-01-07 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
+	* send_raw.c/recvt.c : now IP-multicast complient
+	* recvt.c : added '-n' option to suppress reports on abnormal packets.
+            (instead of #defining DEBUG2/DEBUG3 as 1)
 
 2002-1-7 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* bug fix in wadd.c

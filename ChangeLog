@@ -1,4 +1,7 @@
- $Id: ChangeLog,v 1.90 2005/02/01 09:39:25 urabe Exp $
+ $Id: ChangeLog,v 1.91 2005/02/02 15:36:35 uehira Exp $
+
+2005-02-03 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* TKY2JGD tools added.
 
 2005-02-01 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
 	* etc/map.dat and etc/map.japan.km -> WGS84
@@ -7,7 +10,6 @@
 2005-01-12 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* win.c : patch by Nakagawa
 	  "QUIT" button function fixed.
-
 	* Version 1.1.53 released.
 
 2005-01-07 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>

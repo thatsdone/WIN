@@ -1,0 +1,79 @@
+<html><head><title>世界測地系への移行</title></head>
+<body>
+<pre><center><font color="blue" size="+1">◆WIN震源データベースファイルの座標を日本測地系から世界測地系に変換する◆</font></center>
+
+この手順書は、バイナリ形式の震源データベースファイル(例えば
+/dat/finals/man/0501)の座標を日本測地系から世界測地系に変換する
+手順を説明したものです。まずfinalb2finalで/dat/finals/man/0501を
+テキストファイルに変換し、次にTKY2JGDで座標を世界測地系に変換します。
+最後にfinal2finalbでテキスト形式の震源情報ファイルをバイナリ形式に
+変換します。
+震源データベースファイルの詳細は<a href="http://eoc.eri.u-tokyo.ac.jp/cgi-bin/show_man?win">winのマニュアル</a>を参照ください。
+
+【手順】
+　1.プログラムを準備する
+　2.TKY2JGDの入力ファイルを作成する
+　3.TKY2JGDで座標値を変換する
+　4.テキスト形式震源データベースファイルの値を世界測地系座標に差し替え、
+　　バイナリ形式震源データベースファイルを作成する。
+
+1.プログラムを準備する
+　・国土地理院のTKY2JGD　　<a href="http://vldb.gsi.go.jp/sokuchi/program.html">http://vldb.gsi.go.jp/sokuchi/program.html</a>
+　　全国のパラメータファイル TKY2JGD.par もダウンロードする。
+
+　・その他のツールをコンパイルする
+　　cc final2tky2jgd.c -o final2tky2jgd　 <a href="ftp://eoc.eri.u-tokyo.ac.jp/pub/win/TKY2JGDtools/final2tky2jgd.c">ソース　ftp://eoc.eri.u-tokyo.ac.jp/pub/win/TKY2JGDtools/final2tky2jgd.c</a>
+　　cc tky2jgd2final.c -o tky2jgd2final　 <a href="ftp://eoc.eri.u-tokyo.ac.jp/pub/win/TKY2JGDtools/tky2jgd2final.c">ソース　ftp://eoc.eri.u-tokyo.ac.jp/pub/win/TKY2JGDtools/tky2jgd2final.c</a>
+
+
+2.TKY2JGDの入力ファイルを作成する
+
+　　　cat /dat/finals/man/0501 | finalb2final | final2tky2jgd &gt; final.in
+
+　　　　finalb2finalにより、バイナリ形式の震源データベースファイルが
+　　　　テキスト形式に変換される。final.inは以下のようになる。
+　　　　　360541.9640 1372151.7680 05 01 01 00 04 13.7 36.09499 137.36438  -0.0  2.5 auto Z-FI
+              (1)          (2)                           (3)       (4)
+
+             (1)震源データベースファイルの緯度を度分秒の単位に直したもの
+             (2)震源データベースファイルの経度を度分秒の単位に直したもの
+             (3)震源データベースファイルの緯度そのまま
+             (4)震源データベースファイルの経度そのまま
+
+　　　TKY2JGDをインストールしたマシンにfinal.inを運ぶ。
+      ftpで運ぶ際はアスキーモードで転送する。
+
+
+※final.in は任意の名前でよい。
+
+
+3.TKY2JGDで座標値を変換する
+
+　　TKY2JGDを起動
+　　　　「一括変換」をクリック
+　　　　「1.処理の選択」は、「緯度･経度→緯度･経度」を選択
+　　　　「3.入力ファイル」をクリックしてfinal.inを選択
+　　　　「4.出力ファイル」をクリックして出力ファイルを選択(ここではfinal.outとする)
+　　　　「5.ファイル一括変換処理開始」をクリックして変換開始
+
+　　出力ファイルfinal.outをUNIXマシンに運び、コードをeucに変換する。
+    ftpで運ぶ際はアスキーモードで転送する。
+　　　　nkf -e final.out &gt; final.out2
+
+　　先頭の日本語の説明文を削除する
+　　　　vi final.out2
+
+
+4.テキスト形式震源データベースファイルの値を世界測地系座標に差し替え、
+　バイナリ形式震源データベースファイルを作成する。
+
+　　　cat final.out2 | tky2jgd2final | final2finalb &gt; 0501.new
+
+
+ご不明な点は、地震研の衛星システム運用窓口(tech@senju.eri.u-tokyo.ac.jp)まで
+お問い合わせください。
+
+
+作成：2005年1月24日
+
+<pre></pre></pre></body></html>

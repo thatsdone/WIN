@@ -1,0 +1,90 @@
+<html><head><title>世界測地系への移行</title></head>
+<body>
+<pre><center><font color="blue" size="+1">◆WIN地図データファイルの座標を日本測地系から世界測地系に変換する◆</font></center>
+
+この手順書は、WIN地図データファイルの座標を日本測地系から世界測地系に
+変換する手順を説明したものです。この手順書では、map.datはテキスト形式の
+地図データファイルを、map.japan.kmはバイナリ形式の地図データファイルを
+指しています。
+まずmap2tky2jgdでTKY2JGDの入力ファイルを作り、次にTKY2JGDで座標を世界
+測地系に変換します。最後にtky2jgd2mapで地図データファイルの座標を差し替え、
+それを元にwinコマンドでバイナリ形式の地図データファイルを作成します。
+地図データファイルの詳細は<a href="http://eoc.eri.u-tokyo.ac.jp/cgi-bin/show_man?win">winのマニュアル</a>を参照ください。
+
+【手順】
+　1.プログラムを準備する
+　2.TKY2JGDの入力ファイルを作成する
+　3.TKY2JGDで座標値を変換する
+　4.テキスト地図データファイルの値を世界測地系座標に差し替える
+　5.バイナリ地図データファイルを作成する
+
+1.プログラムを準備する
+　・国土地理院のTKY2JGD　　<a href="http://vldb.gsi.go.jp/sokuchi/program.html">http://vldb.gsi.go.jp/sokuchi/program.html</a>
+　　全国のパラメータファイル TKY2JGD.par もダウンロードする。
+
+　・その他のツールをコンパイルする
+　　cc map2tky2jgd.c -o map2tky2jgd　 <a href="ftp://eoc.eri.u-tokyo.ac.jp/pub/win/TKY2JGDtools/map2tky2jgd.c">ソース　ftp://eoc.eri.u-tokyo.ac.jp/pub/win/TKY2JGDtools/map2tky2jgd.c</a>
+　　cc tky2jgd2map.c -o tky2jgd2map　 <a href="ftp://eoc.eri.u-tokyo.ac.jp/pub/win/TKY2JGDtools/tky2jgd2map.c">ソース　ftp://eoc.eri.u-tokyo.ac.jp/pub/win/TKY2JGDtools/tky2jgd2map.c</a>
+
+
+2.TKY2JGDの入力ファイルを作成する
+
+　　cat map.dat | map2tky2jgd &gt; map.in
+
+　　　map2tky2jgdの出力は以下のようになる。
+　　　　412319.3200 1401108.8800 41.3887 140.1858
+　　　　412455.0800 1400938.5200 41.4153 140.1607
+            (1)          (2)       (3)      (4)
+
+           (1)map.datの緯度を度分秒単位に直した値
+           (2)map.datの経度を度分秒単位に直した値
+           (3)map.datの緯度そのまま
+           (4)map.datの経度そのまま
+
+　　TKY2JGDはWindowsマシンで実行するため、map.inに日本語コードが含まれている場合は
+　　コードをsjisに変換する。
+　　　nkf -s map.in &gt; map.in.tmp
+      mv map.in.tmp map.in
+
+　　TKY2JGDをインストールしたマシンにmap.inを運ぶ。
+    ftpで運ぶ際はアスキーモードで転送する。
+
+※map.in は任意の名前でよい。
+
+
+3.TKY2JGDで変換する
+
+　　TKY2JGDを起動
+　　　　「一括変換」をクリック
+　　　　「1.処理の選択」は、「緯度･経度→緯度･経度」を選択
+　　　　「3.入力ファイル」をクリックしてmap.inを選択
+　　　　「4.出力ファイル」をクリックして出力ファイルを選択(ここではmap.outとする)
+　　　　「5.ファイル一括変換処理開始」をクリックして変換開始
+
+　　出力ファイルmap.outをUNIXマシンに運び、コードをeucに変換する。
+    ftpで運ぶ際はアスキーモードで転送する。
+　　　　nkf -e map.out &gt; map.out2
+
+　　先頭の日本語の説明文を削除する
+　　　　vi map.out2
+
+
+4.テキスト形式地図データファイルの値を世界測地系座標に差し替える
+
+    tky2jgd2map &lt; map.out2 &gt; map.dat.new
+
+
+5.バイナリ形式の地図データファイルを作成する
+
+　　win -c 35 140 &lt; map.dat.new &gt; map.japan.km.new
+
+※引数については<a href="http://eoc.eri.u-tokyo.ac.jp/cgi-bin/show_man?win">winのマニュアル</a>を参照ください。
+
+
+ご不明な点は、地震研の衛星システム運用窓口(tech@senju.eri.u-tokyo.ac.jp)まで
+お問い合わせください。
+
+
+作成：2005年1月24日
+
+<pre></pre></pre></body></html>

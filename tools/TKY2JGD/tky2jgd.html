@@ -1,0 +1,116 @@
+<html><head><title>世界測地系への移行</title></head>
+<body>
+<pre><center><font color="blue" size="+1">◆チャネル表の座標を日本測地系から世界測地系に変換する◆</font></center>
+
+この手順書は、チャネル表の座標を日本測地系から世界測地系に変換する
+手順を説明したものです。まずch2tky2jgdでTKY2JGDの入力ファイルを作り、
+次にTKY2JGDで座標を世界測地系に変換します。最後にtky2jgd2ch1と
+tky2jgd2ch2でチャネル表の座標を差し替えます。
+
+【手順】
+　1.プログラムを準備する
+　2.TKY2JGDの入力ファイルを作成する
+　3.TKY2JGDで座標値を変換する
+　4.出力ファイルの書式を変更する
+　5.チャネル表の座標を差し替える
+
+1.プログラムを準備する
+
+・国土地理院のTKY2JGD　　<a href="http://vldb.gsi.go.jp/sokuchi/program.html">http://vldb.gsi.go.jp/sokuchi/program.html</a>
+　全国のパラメータファイル TKY2JGD.par もダウンロードする。
+
+・その他のツールをコンパイルする
+　　cc ch2tky2jgd.c -o ch2tky2jgd     <a href="ftp://eoc.eri.u-tokyo.ac.jp/pub/win/TKY2JGDtools/ch2tky2jgd.c">ソース  ftp://eoc.eri.u-tokyo.ac.jp/pub/win/TKY2JGDtools/ch2tky2jgd.c</a>
+　　cc tky2jgd2ch1.c -o tky2jgd2ch1   <a href="ftp://eoc.eri.u-tokyo.ac.jp/pub/win/TKY2JGDtools/tky2jgd2ch1.c">ソース  ftp://eoc.eri.u-tokyo.ac.jp/pub/win/TKY2JGDtools/tky2jgd2ch1.c</a>
+　　cc tky2jgd2ch2.c -o tky2jgd2ch2   <a href="ftp://eoc.eri.u-tokyo.ac.jp/pub/win/TKY2JGDtools/tky2jgd2ch2.c">ソース  ftp://eoc.eri.u-tokyo.ac.jp/pub/win/TKY2JGDtools/tky2jgd2ch2.c</a>
+
+
+2.TKY2JGDの入力ファイルを作成する
+
+　変換するチャネル表が channels.tbl の場合、
+　　ch2tky2jgd &lt; channels.tbl &gt; file.in.tmp
+
+　　　ch2tky2jgdの出力は以下のようになる。
+　　　　350645.3960 1390433.2040 35.11261 139.07589 E.ATA 熱海
+            (1)          (2)       (3)      (4)
+
+           (1)チャネル表の緯度を度分秒単位に直した値
+           (2)チャネル表の経度を度分秒単位に直した値
+           (3)チャネル表の緯度そのまま
+           (4)チャネル表の経度そのまま
+
+　WindowsマシンでTKY2JGDを実行するため、コードをsjisに変換する。
+　　nkf -s file.in.tmp &gt; file.in
+
+
+　TKY2JGDをインストールしたマシンにfile.inを運ぶ。
+  ftpで運ぶ際はアスキーモードで転送する。
+
+※file.in.tmp と file.in は任意の名前でよい。
+
+
+3.TKY2JGDで座標値を変換する
+
+　TKY2JGDを起動
+　　「一括変換」をクリック
+　　「1.処理の選択」は、「緯度･経度→緯度･経度」を選択
+　　「3.入力ファイル」をクリックしてfile.inを選択
+　　「4.出力ファイル」をクリックして出力ファイルを選択(ここではfile.outとする)
+　　「5.ファイル一括変換処理開始」をクリックして変換開始
+
+　出力ファイルfile.outをUNIXマシンに運び、コードをeucに変換する。
+  ftpで運ぶ際はアスキーモードで転送する。
+　　nkf -e file.out &gt; file.out2
+
+　先頭の日本語の説明文を削除する
+　　vi file.out2
+
+
+4.出力ファイルの書式を変更する
+
+　tky2jgd2ch1 &lt; file.out2 &gt; file.out3
+
+　これにより第1･2項の座標が度分秒から度単位に変換される。
+
+
+5.チャネル表の座標を差し替える
+
+　tky2jgd2ch2 file.out3 &lt; channels.tbl &gt; channels.tbl.new
+
+　tky2jgd2ch2 は、置き換えるべき緯度経度が file.out3 に見つからない
+　行があった場合は、その時点でその旨のメッセージを出力して停止する。
+
+　channels.tbl.newの内容を確認して、channels.tblと置き換える。
+
+
+<font color="red">※</font>イベント波形ファイルに付属したチャネル表ファイルを変換する場合は、
+　必要な全チャネルが含まれたチャネル表で tky2jgd2ch1 まで(手順4まで)を
+　実行して file.out3 を1つ作成しておけば、後は個々のチャネル表ファイルに
+　ついてtky2jgd2ch2 を繰り返し実行すれば変換することができます。
+　つまりfile.out3が世界測地系と日本測地系の座標対応一覧表になり、
+　個々のチャネル表の変換については手順5だけを繰り返せばよいです。
+
+
+<font color="red">※</font>delta プログラムを使うと、変換前後の座標値の差(変換後－変換前)を
+　計算することができます。
+　　cc delta.c -lm -o delta     <a href="ftp://eoc.eri.u-tokyo.ac.jp/pub/win/TKY2JGDtools/delta.c">ソース  ftp://eoc.eri.u-tokyo.ac.jp/pub/win/TKY2JGDtools/delta.c</a>
+
+　　使い方は、手順4で作ったfile.out3(世界測地系と日本測地系の座標対応
+　　一覧表)をdeltaに入力します。
+　　　　delta &lt; file.out3 
+
+　　file.out3の各行の末尾に3つの数値が付加されて出力されます。
+　　3つの数値はいずれも単位はkmで、それぞれ南北成分の差(北が＋)、
+　　東西成分の差(東が＋)、合成した差(常に＋)です。
+
+　　(deltaの出力)
+　　35.11590 139.07274 35.11261 139.07589 E.ATA 熱海  0.366 -0.286  0.464
+
+
+ご不明な点は、地震研の衛星システム運用窓口(tech@senju.eri.u-tokyo.ac.jp)まで
+お問い合わせください。
+
+
+作成：2005年1月21日
+
+<pre></pre></pre></body></html>

@@ -1,11 +1,12 @@
-.TH send_raw 1W "2002.12.21" "WIN SYSTEM" "WIN SYSTEM"
+.TH send_raw 1W "2005.2.14" "WIN SYSTEM" "WIN SYSTEM"
 .SH 名称
 send_raw, send_mon, sendt_raw, sendt_mon, send_rawd, send_mond, sendt_rawd, sendt_mond - IPによる win 形式データの送信
 .SH 形式
 .IP
 .ti -7
 send_raw [\-\fB1aDrmt\fR] [\-\fBb\fI\ mtu\fR] [\-\fBi\fI\ interface\fR]
-[\-\fBh\fI\ hours\fR] [\-\fBp\fI\ src_port\fR] [\-\fBs\fI\ sec\fR] [\-\fBT\fI\ ttl\fR] [\-\fBw\fI\ key\fR]
+[\-\fBf\fI\ req_file\fR] [\-\fBh\fI\ hours\fR] [\-\fBp\fI\ src_port\fR]
+[\-\fBs\fI\ sec\fR] [\-\fBT\fI\ ttl\fR] [\-\fBw\fI\ key\fR]
 .I shmkey
 .I dest
 .I port
@@ -24,7 +25,8 @@ sendt_mon \%...
 .IP
 .ti -7
 send_rawd [\-\fB1armt\fR] [\-\fBb\fI\ mtu\fR] [\-\fBi\fI\ interface\fR]
-[\-\fBh\fI\ hours\fR] [\-\fBp\fI\ src_port\fR] [\-\fBs\fI\ sec\fR] [\-\fBT\fI\ ttl\fR] [\-\fBw\fI\ key\fR]
+[\-\fBf\fI\ req_file\fR] [\-\fBh\fI\ hours\fR] [\-\fBp\fI\ src_port\fR]
+[\-\fBs\fI\ sec\fR] [\-\fBT\fI\ ttl\fR] [\-\fBw\fI\ key\fR]
 .I shmkey
 .I dest
 .I port
@@ -113,13 +115,31 @@ recvt(1W)を参照してください。
 形式であると仮定されます。他のオプションはすべて無視されます。
 .br
 なお、現在このモードでは再送処理を行いません。
-.IP "\fB\-D" 5
-daemon モードで起動します。
 .IP "\fB\-b \fImtu" 5
 送信するIPパケットの最大サイズ(MTU)を \fImtu\fP バイトにします。
 デフォールトは1500バイトです。送信IPパケットは伝送効率を上げるため
 \fImtu\fP バイト以内(UDPデータグラムでは \fImtu\fP\-28 バイト)で
 なるべく大きなサイズになるように生成されます。
+.IP "\fB\-D" 5
+daemon モードで起動します。
+.IP "\fB\-f \fIreq_file" 5
+送信先ホスト(つまり受信ホスト)からの送信要求パケットを
+受け付け、要求されたチャネル番号のリストをファイル
+.I req_file
+に１行に１チャネルずつ、４桁の16進数で書き出します。
+送信要求パケットの形式については recvt(1W) を参照してください。
+このオプションが指定された場合、send_raw, send_mon, sendt_raw,
+sendt_mon プロセスは起動後待機状態に入り、送信要求パケットを
+受信するまではデータを送信しません。送信要求パケットを受信したら、
+.I chfile
+の制約の範囲内で、要求されたチャネルを送信します。
+送信要求パケットを10秒間受信しないと再度待機状態に入ります。
+送信要求パケットは再送要求パケットと同じく、データ送信用
+UDPポートに届かなくてはなりません。受信ホストは送信要求パケットを
+送信するために、このデータ送信用ポートの番号を知っている必要が
+ありますが、これは -p オプションにより起動時に指定することが可能です。
+.IP "\fB\-h \fIhours" 5
+送信の際にデータのタイムスタンプを \fIhours\fR 時間だけ進めます。
 .IP "\fB\-i \fIinterface" 5
 宛先
 .I dest
@@ -127,19 +147,17 @@ daemon モードで起動します。
 ネットワークインターフェースを、そのインターフェースのIPアドレス
 .I interface
 で指定します。
-.IP \fB\-r 5
-send_raw (オプション \fB\-t\fP と共に指定したときはsendt_raw)の動作をします。
 .IP \fB\-m 5
 send_mon (オプション \fB\-t\fP と共に指定したときはsendt_mon)の動作をします。
+.IP "\fB\-p \fIsrc_port" 5
+送信元UDPポート番号を \fIsrc_port\fR にします。通常指定する必要はありません。
+.IP \fB\-r 5
+send_raw (オプション \fB\-t\fP と共に指定したときはsendt_raw)の動作をします。
+.IP "\fB\-s \fIsec" 5
+送信の際にデータのタイムスタンプを \fIsec\fR 秒だけ進めます。
 .IP \fB\-t 5
 オプション \fB\-r\fP または \fB\-m\fP と共に指定すると，
 それぞれ sendt_raw または sendt_mon の動作をします。
-.IP "\fB\-h \fIhours" 5
-送信の際にデータのタイムスタンプを \fIhours\fR 時間だけ進めます。
-.IP "\fB\-p \fIsrc_port" 5
-送信元UDPポート番号を \fIsrc_port\fR にします。通常指定する必要はありません。
-.IP "\fB\-s \fIsec" 5
-送信の際にデータのタイムスタンプを \fIsec\fR 秒だけ進めます。
 .IP "\fB\-T \fIttl" 5
 送信先がマルチキャストアドレスであるとき、送信パケットのTTLの
 値をデフォルトの 1 ではなくて \fIsec\fR にします。

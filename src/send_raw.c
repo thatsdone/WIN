@@ -1,4 +1,4 @@
-/* $Id: send_raw.c,v 1.17 2004/11/26 14:09:45 uehira Exp $ */
+/* $Id: send_raw.c,v 1.18 2005/02/14 09:34:08 urabe Exp $ */
 /*
     program "send_raw/send_mon.c"   1/24/94 - 1/25/94,5/25/94 urabe
                                     6/15/94 - 6/16/94
@@ -43,6 +43,7 @@
                2003.4.8 added option -1 for 1 packet/sec mode
                2004.10.26 daemon mode (Uehira)
 	       2004.11.26 some systems (exp. Linux), select(2) changes timeout value
+	       2005.2.14 option -f for use and write list of requested chs
 */
 
 #ifdef HAVE_CONFIG_H
@@ -80,12 +81,14 @@
 
 #define DEBUG       0
 #define DEBUG1      0
+#define DEBUG2      0  /* -f */
 #define TEST_RESEND 0
 #define MTU       1500 /* (max of UDP data size) = IP_MTU - 28 */
 #define RSIZE   (MTU-28)
 #define SR_MON      5
 #define NBUF      250
 #define SLPLIMIT  100
+#define REQ_TIMO  10   /* timeout (sec) for request */
 
 /*
 #if defined(SUNOS4)
@@ -95,7 +98,8 @@
 
 int sock,raw,tow,all,psize[NBUF],n_ch,negate_channel,mtu,nbuf,slptime,
     n_bytes,n_packets;
-unsigned char *sbuf[NBUF],ch_table[65536],rbuf[RSIZE];
+unsigned char *sbuf[NBUF],ch_table[65536],rbuf[RSIZE],ch_req[65536],
+    ch_req_tmp[65536];
      /* sbuf[NBUF][mtu-28+8] ; +8 for overrun by "size" and "time" */
 char *progname,logfile[256],chfile[256];
 int  daemon_mode, syslog_mode;
@@ -146,7 +150,7 @@ shift_sec(tm_bcd,sec)
   {
   int tm[6];
   struct tm *nt,mt;
-  unsigned long ltime;
+  time_t ltime;
   memset((char *)&mt,0,sizeof(mt));
   if((mt.tm_year=b2d[tm_bcd[0]])<50) mt.tm_year+=100;
   mt.tm_mon=b2d[tm_bcd[1]]-1;
@@ -169,7 +173,7 @@ get_time(rt)
   int *rt;
   {
   struct tm *nt;
-  unsigned long ltime;
+  time_t ltime;
   time(&ltime);
   nt=localtime(&ltime);
   rt[0]=nt->tm_year%100;
@@ -249,7 +253,7 @@ read_chfile()
   FILE *fp;
   int i,j,k;
   char tbuf[1024];
-  static unsigned long ltime,ltime_p;
+  static time_t ltime,ltime_p;
 
   if(*chfile)
     {
@@ -335,18 +339,18 @@ main(argc,argv)
   char *argv[];
   {
   FILE *fp;
-  time_t watch;
+  time_t watch,time_req,ltime;
   key_t shm_key,shw_key;
   unsigned long uni;
   int i,j,k,c_save,shp,aa,bb,ii,bufno,bufno_f,fromlen,hours_shift,sec_shift,c,
     kk,nw,eobsize,eobsize_count,size2,size,gs,sr,re,shmid,shwid,atm,c_save_w,
-    standby,ttl,single;
+    standby,ttl,single,len,seq,n_seq,seq_exp,n_seq_exp,n_ch_req,req_timo;
   struct sockaddr_in to_addr,from_addr;
   struct hostent *h;
   unsigned short host_port,ch,src_port;
   unsigned long gh;
   unsigned char *ptr,*ptr1,*ptr_save,*ptr_lim,*ptw,*ptw_save,*ptw_size,
-    no,no_f,host_name[100],tbuf[256];
+    no,no_f,host_name[100],tbuf[1024],file_req[1024];
   struct Shm {
     unsigned long p;    /* write point */
     unsigned long pl;   /* write limit */
@@ -356,8 +360,7 @@ main(argc,argv)
     } *shm,*shw;
   extern int optind;
   extern char *optarg;
-  struct timeval timeout,tp;
-  struct timezone tzp;
+  struct timeval timeout;
   char interface[256]; /* multicast interface */
   unsigned long mif; /* multicast interface address */
 
@@ -379,23 +382,24 @@ main(argc,argv)
 
   if (daemon_mode)
     sprintf(tbuf,
-	    " usage : '%s (-1amrt) (-b [mtu]) (-h [h]) (-i [interface]) (-s [s])\\\n\
-   (-p [src_port]) (-w [key]) (-T [ttl]) [shmkey] [dest] [port] ([chfile]/- ([logfile]))'",
-	    progname);
+	    " usage : '%s (-1amrt) (-b [mtu]) (-f [req_file]) (-h [h])\\\n\
+   (-i [interface]) (-s [s]) (-p [src_port]) (-w [key]) (-T [ttl])\\\n\
+   [shmkey] [dest] [port] ([chfile]/- ([logfile]))'",progname);
   else
     sprintf(tbuf,
-	    " usage : '%s (-1aDmrt) (-b [mtu]) (-h [h]) (-i [interface]) (-s [s])\\\n\
-   (-p [src_port]) (-w [key]) (-T [ttl]) [shmkey] [dest] [port] ([chfile]/- ([logfile]))'",
-	    progname);
+	    " usage : '%s (-1aDmrt) (-b [mtu]) (-f [req_file]) (-h [h])\\\n\
+   (-i [interface]) (-s [s]) (-p [src_port]) (-w [key]) (-T [ttl])\\\n\
+   [shmkey] [dest] [port] ([chfile]/- ([logfile]))'",progname);
 
   *interface=0;
+  *file_req=0;
   mtu=MTU;
   ttl=1;
   shw_key=(-1);
   standby=0;
   src_port=0;
   single=0;
-  while((c=getopt(argc,argv,"1ab:h:i:mp:rs:tw:T:"))!=EOF)
+  while((c=getopt(argc,argv,"1ab:Df:h:i:mp:rs:tw:T:"))!=EOF)
     {
     switch(c)
       {
@@ -411,6 +415,15 @@ main(argc,argv)
       case 'D':
 	daemon_mode = 1;  /* daemon mode */
 	break;
+      case 'f':   /* requested channels list file */
+        strcpy(file_req,optarg);
+        if((fp=fopen(file_req,"a"))==0)
+          {
+          fprintf(stderr,"requested channels file '%s' not open.\n",file_req);
+          exit(1);
+          }
+        fclose(fp);
+        break;
       case 'h':   /* time to shift, in hours */
         hours_shift=atoi(optarg);
         break;
@@ -520,16 +533,29 @@ main(argc,argv)
   memset((char *)&to_addr,0,sizeof(to_addr));
   to_addr.sin_family=AF_INET;
   memcpy((caddr_t)&to_addr.sin_addr,h->h_addr,h->h_length);
-/*  to_addr.sin_addr.s_addr=mklong(h->h_addr);*/
   to_addr.sin_port=htons(host_port);
   /* my socket */
   if((sock=socket(AF_INET,SOCK_DGRAM,0))<0) err_sys("socket");
-  i=65535;
-  if(setsockopt(sock,SOL_SOCKET,SO_SNDBUF,(char *)&i,sizeof(i))<0)
+  for(j=256;j>=16;j-=4)
     {
-    i=50000;
-    if(setsockopt(sock,SOL_SOCKET,SO_SNDBUF,(char *)&i,sizeof(i))<0)
-      err_sys("SO_SNDBUF setsockopt error\n");
+    i=j*1024;
+    if(setsockopt(sock,SOL_SOCKET,SO_SNDBUF,(char *)&i,sizeof(i))>=0)
+      break;
+    }
+  if(j<16) err_sys("SO_SNDBUF setsockopt error\n");
+  sprintf(tbuf,"SNDBUF size=%d",j*1024);
+  write_log(logfile,tbuf);
+  if(*file_req)
+    {
+    for(j=256;j>=16;j-=4)
+      {
+      i=j*1024;
+      if(setsockopt(sock,SOL_SOCKET,SO_RCVBUF,(char *)&i,sizeof(i))>=0)
+        break;
+      }
+    if(j<16) err_sys("SO_RCVBUF setsockopt error\n");
+    sprintf(tbuf,"RCVBUF size=%d",j*1024);
+    write_log(logfile,tbuf);
     }
   if(setsockopt(sock,SOL_SOCKET,SO_BROADCAST,(char *)&i,sizeof(i))<0)
     err_sys("SO_BROADCAST setsockopt error\n");
@@ -572,6 +598,8 @@ main(argc,argv)
     }
   nbuf=i;
   no=bufno=n_packets=n_bytes=0;
+  if(*file_req) for(i=0;i<65526;i++) ch_req[i]=ch_req_tmp[i]=0;
+  else for(i=0;i<65526;i++) ch_req[i]=1;
 
 reset:
   while(shm->r==(-1)) sleep(1);
@@ -597,13 +625,135 @@ reset:
   eobsize_count=eobsize;
   sprintf(tbuf,"eobsize=%d",eobsize);
   write_log(logfile,tbuf);
+  seq_exp=1;
+  n_seq_exp=0;
+  req_timo=0;
 
   while(1)
     {
     if(shp+size>shm->pl) shp=0; /* advance pointer */
     else shp+=size;
     nw=atm=0;
-    while(shm->p==shp) {usleep(10000);nw++;}
+    while(shm->p==shp)
+      {
+/* resend if requested */
+      while(1)
+        {
+        k=1<<sock;
+        timeout.tv_sec=timeout.tv_usec=0;
+        if(select(sock+1,(fd_set *)&k,NULL,NULL,&timeout)>0)
+          {
+          fromlen=sizeof(from_addr);
+          len=recvfrom(sock,rbuf,RSIZE,0,(struct sockaddr *)&from_addr,
+              &fromlen);
+#if DEBUG1
+          fprintf(stderr,"len=%d : ",len);
+          for(k=0;k<20;k++) fprintf(stderr,"%02X",rbuf[k]);
+          fprintf(stderr,"\n");
+#endif
+          if(len==1 && (bufno_f=get_packet(bufno,no_f=(*rbuf)))>=0)
+            { /* resend request packet */
+            memcpy(sbuf[bufno],sbuf[bufno_f],psize[bufno]=psize[bufno_f]);
+            sbuf[bufno][0]=no;    /* packet no. */
+            sbuf[bufno][1]=no_f;  /* old packet no. */
+            if(!standby)
+              {
+              re=sendto(sock,sbuf[bufno],psize[bufno],0,
+                (struct sockaddr *)&to_addr,sizeof(to_addr));
+              if(re>=0) {n_packets++;n_bytes+=re;}
+              }
+#if DEBUG1
+            fprintf(stderr,"%5d>  ",re);
+            for(k=0;k<20;k++) fprintf(stderr,"%02X",sbuf[bufno][k]);
+            fprintf(stderr,"\n");
+#endif
+            sprintf(tbuf,"resend for %s:%d #%d as #%d, %d B",
+              inet_ntoa(from_addr.sin_addr),ntohs(from_addr.sin_port),
+              no_f,no,re);
+            write_log(logfile,tbuf);
+            if(++bufno==nbuf) bufno=0;
+            no++;
+            }
+          else if(len>=8 && strncmp(rbuf,"REQ",4)==0)
+            { /* send request packet (channels list) */
+            seq=mkshort(&rbuf[4]);
+            n_seq=mkshort(&rbuf[6]);
+            j=0; /* change flag */
+            n_ch_req=0;
+            if(len==8 && seq==0 && n_seq==0) /* all channels */
+              {
+              for(i=0;i<65536;i++)
+                {
+                if(ch_req[i]==0)
+                  {
+                  ch_req[i]=1;
+                  j=1;
+                  }
+                n_ch_req++;
+                }
+              }
+            else /* must be len>0 and seq>=0 and n_seq>0 */
+              {
+              if(n_seq_exp==0) n_seq_exp=n_seq;
+              if(seq==seq_exp)
+                {
+                for(i=8;i<len;i+=2) ch_req_tmp[mkshort(rbuf+i)]=1;
+                if(seq==n_seq)
+                  {
+                  for(i=0;i<65536;i++)
+                    {
+                    if(ch_req[i]!=ch_req_tmp[i])
+                      {
+                      ch_req[i]=ch_req_tmp[i];
+                      j=1;
+                      }
+                    ch_req_tmp[i]=0;
+                    if(ch_req[i]) n_ch_req++;
+                    }
+                  seq_exp=1;
+                  }
+                else seq_exp++;
+                }
+              else /* was not as expected */
+                {
+                seq_exp=1;
+                }
+              }
+#if DEBUG2
+            printf("received channel list from %s:%d (%d): %s %d/%d\n",
+            inet_ntoa(from_addr.sin_addr),ntohs(from_addr.sin_port),
+            n_ch_req,rbuf,seq,n_seq);
+#endif
+            if(seq==n_seq) {time(&time_req);req_timo=0;}
+            if(j)
+              {
+              if((fp=fopen(file_req,"w"))==0)
+                {
+                fprintf(stderr,"requested channels file '%s' not open.\n",
+                  file_req);
+                exit(1);
+                }
+              for(i=0;i<65536;i++) if(ch_req[i]) fprintf(fp,"%04X\n",i);
+              fclose(fp);
+              sprintf(tbuf,"req < %s:%d (%d) > %s",
+                inet_ntoa(from_addr.sin_addr),ntohs(from_addr.sin_port),
+                n_ch_req,file_req);
+              write_log(logfile,tbuf);
+              }
+            }
+          }
+        else break;
+        }
+      time(&ltime);
+      if(*file_req && time_req && !req_timo && ltime-time_req>REQ_TIMO)
+        {
+        for(i=0;i<65536;i++) ch_req[i]=0;
+        req_timo=1;
+        write_log(logfile,"request timeout");
+        }
+      usleep(10000);
+      nw++;
+      }
     if(nw>1 && slptime<SLPLIMIT) slptime*=2;
     else if(nw==0 && slptime>1) slptime/=2;
     i=shm->c-c_save;
@@ -713,7 +863,7 @@ reset:
         gs=ptr-ptr1;
         }
     /* add gs of data to buffer (after sending packet if it is full) */
-      if(ch_table[ch] && gs+11<=mtu-28)
+      if(ch_table[ch] && ch_req[ch] && gs+11<=mtu-28)
         {
         if(ptw+gs-ptw_save>mtu-28)
           {
@@ -742,6 +892,7 @@ send_packet:
 #endif
           if(++bufno==nbuf) bufno=0;
           no++;
+#if 0
 /* resend if requested */
           while(1)
             {
@@ -750,9 +901,15 @@ send_packet:
             if(select(sock+1,(fd_set *)&k,NULL,NULL,&timeout)>0)
               {
               fromlen=sizeof(from_addr);
-              if(recvfrom(sock,rbuf,RSIZE,0,(struct sockaddr *)&from_addr,
-                  &fromlen)==1 && (bufno_f=get_packet(bufno,no_f=(*rbuf)))>=0)
-                {
+              len=recvfrom(sock,rbuf,RSIZE,0,(struct sockaddr *)&from_addr,
+                  &fromlen);
+#if DEBUG1
+              fprintf(stderr,"len=%d",len);
+              for(k=0;k<20;k++) fprintf(stderr,"%02X",rbuf[k]);
+              fprintf(stderr,"\n");
+#endif
+              if(len==1 && (bufno_f=get_packet(bufno,no_f=(*rbuf)))>=0)
+                { /* resend request packet */
                 memcpy(sbuf[bufno],sbuf[bufno_f],psize[bufno]=psize[bufno_f]);
                 sbuf[bufno][0]=no;    /* packet no. */
                 sbuf[bufno][1]=no_f;  /* old packet no. */
@@ -774,9 +931,68 @@ send_packet:
                 if(++bufno==nbuf) bufno=0;
                 no++;
                 }
+              else if(len>=8 && strncmp(rbuf,"REQ",4)==0)
+                { /* send request packet (channels list) */
+                seq=mkshort(rbuf+4);
+                n_seq=mkshort(rbuf+6);
+                j=0; /* change flag */
+                if(len==8 && seq==0 && n_seq==0) /* all channels */
+                  {
+                  for(i=0;i<65536;i++)
+                    {
+                    if(ch_req[i]==0)
+                      {
+                      ch_req[i]=1;
+                      j=1;
+                      }
+                    }
+                  }
+                else /* must be len>0 and seq>=0 and n_seq>0 */
+                  {
+                  if(n_seq_exp==0) n_seq_exp=n_seq;
+                  if(seq==seq_exp)
+                    {
+                    for(i=8;i<len;i+=2) ch_req_tmp[mkshort(rbuf+i)]=1;
+                    if(seq==n_seq)
+                      {
+                      for(i=0;i<65536;i++)
+                        {
+                        if(ch_req[i]!=ch_req_tmp[i])
+                          {
+                          ch_req[i]=ch_req_tmp[i];
+                          j=1;
+                          }
+                        ch_req_tmp[i]=0;
+                        }
+                      seq_exp=1;
+                      }
+                    else seq_exp++;
+                    }
+                  else /* was not as expected */
+                    {
+                    seq_exp=1;
+                    }
+                  }
+        printf("recvd channel list from %s:%d : %s %d/%d\n",
+          inet_ntoa(from_addr.sin_addr),ntohs(from_addr.sin_port),
+          *rbuf,seq,n_seq);
+                if(j)
+                  {
+                  if((fp=fopen(file_req,"w"))==0)
+                    {
+                    fprintf(stderr,"requested channels file '%s' not open.\n",
+                      file_req);
+                    exit(1);
+                    }
+                  for(i=0;i<65536;i++) if(ch_req[i]) fprintf(fp,"%04X\n",i);
+                  fclose(fp);
+                  }
+                }
               }
             else break;
             }
+#endif
+
           for(k=2;k<8;k++) sbuf[bufno][3+k]=ptw_size[k];
           ptw=ptw_save=sbuf[bufno];
           *ptw++=no; /* packet no. */

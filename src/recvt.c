@@ -1,4 +1,4 @@
-/* $Id: recvt.c,v 1.24 2004/11/17 09:36:45 urabe Exp $ */
+/* $Id: recvt.c,v 1.25 2005/02/14 09:34:08 urabe Exp $ */
 /* "recvt.c"      4/10/93 - 6/2/93,7/2/93,1/25/94    urabe */
 /*                2/3/93,5/25/94,6/16/94 */
 /*                1/6/95 bug in adj_time fixed (tm[0]--) */
@@ -46,6 +46,7 @@
 /*                2004.8.9 fixed bug introduced in 2002.5.23 */
 /*                2004.10.26 daemon mode (Uehira) */
 /*                2004.11.15 corrected byte-order of port no. in log */
+/*                2005.2.14 option -o [source host]:[port] for send request */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -83,6 +84,7 @@
 #define DEBUG0    0
 #define DEBUG1    0
 #define DEBUG2    0
+#define DEBUG3    0     /* -o */
 #define BELL      0
 #define MAXMESG   32768
 #define N_PACKET  128   /* N of old packets to be requested */  
@@ -323,18 +325,17 @@ read_chfile()
       if(ii>0 && n_host==0) n_host=ii;
       sprintf(tb,"%d host rules",n_host);
       write_log(logfile,tb);
-      j=0;
+      n_ch=0;
+      for(i=0;i<65536;i++) if(ch_table[i]==1) n_ch++;
       if(negate_channel)
         {
-        for(i=0;i<65536;i++) if(ch_table[i]==0) j++;
-        if((n_ch=j)==65536) sprintf(tb,"-all channels");
-        else sprintf(tb,"-%d channels",n_ch=j);
+        if(n_ch==0) sprintf(tb,"-all channels");
+        else sprintf(tb,"-%d channels",65536-n_ch);
         }
       else
         {
-        for(i=0;i<65536;i++) if(ch_table[i]==1) j++;
-        if((n_ch=j)==65536) sprintf(tb,"all channels");
-        else sprintf(tb,"%d channels",n_ch=j);
+        if(n_ch==65536) sprintf(tb,"all channels");
+        else sprintf(tb,"%d channels",n_ch);
         }
       write_log(logfile,tb);
       }
@@ -401,6 +402,7 @@ check_pno(from_addr,pn,pn_f,sock,fromlen,n,nr) /* returns -1 if duplicated */
   port_=from_addr->sin_port;
   for(i=0;i<n_host;i++)
     {
+  struct hostent *h;
     if(hostlist[i][0]==1 && (hostlist[i][1]==0 || hostlist[i][1]==host_)) break;
     if(hostlist[i][0]==(-1) && (hostlist[i][1]==0 || hostlist[i][1]==host_))
       {
@@ -579,6 +581,71 @@ wincpy2(ptw,ts,ptr,size,mon,chhist,from_addr)
   return n;
   }
 
+send_req(sock,host_addr)
+  struct sockaddr_in *host_addr;  /* sender address */
+  int sock;                       /* socket */
+  {
+#define SWAPS(a) (((a)<<8)&0xff00|((a)>>8)&0xff)
+  int i,j;
+/*
+send list of chs : 2B/ch,1024B/packet->512ch/packet max 128packets
+header: magic number,seq,n,list...
+if all channels, seq=n=0 and no list.
+*/
+  unsigned seq,n_seq;
+  struct { char mn[4]; unsigned short seq[2]; unsigned short chlist[512];}
+    sendbuf;
+  strcpy(sendbuf.mn,"REQ");
+  if(n_ch<65536)
+    {
+    seq=1;
+    if(n_ch==0) n_seq=1;
+    else n_seq=(n_ch-1)/512+1;
+    sendbuf.seq[1]=SWAPS(n_seq);
+    j=0;
+    for(i=0;i<65536;i++)
+      {
+      sendbuf.seq[0]=SWAPS(seq);
+      if(ch_table[i]) sendbuf.chlist[j++]=SWAPS(i);
+      if(j==512)
+        {
+        sendto(sock,&sendbuf,8+2*j,0,(struct sockaddr *)host_addr,
+          sizeof(*host_addr));
+#if DEBUG3
+        printf("send channel list to %s:%d (%d): %s %d/%d %04X %04X %04X ...\n",
+          inet_ntoa(host_addr->sin_addr),ntohs(host_addr->sin_port),
+          n_ch,sendbuf.mn,SWAPS(sendbuf.seq[0]),SWAPS(sendbuf.seq[1]),
+          SWAPS(sendbuf.chlist[0]),SWAPS(sendbuf.chlist[1]),SWAPS(sendbuf.chlist[2]));
+#endif
+        j=0;
+        seq++;
+        }
+      }
+    if(j>0)
+      {
+      sendto(sock,&sendbuf,8+2*j,0,(struct sockaddr *)host_addr,
+        sizeof(*host_addr));
+#if DEBUG3
+        printf("send channel list to %s:%d (%d): %s %d/%d %04X %04X %04X ...\n",
+          inet_ntoa(host_addr->sin_addr),ntohs(host_addr->sin_port),
+          n_ch,sendbuf.mn,SWAPS(sendbuf.seq[0]),SWAPS(sendbuf.seq[1]),
+          SWAPS(sendbuf.chlist[0]),SWAPS(sendbuf.chlist[1]),SWAPS(sendbuf.chlist[2]));
+#endif
+      seq++;
+      }
+    }
+  else /* all channels */
+    {
+    sendbuf.seq[0]=sendbuf.seq[1]=0;
+    sendto(sock,&sendbuf,8,0,(struct sockaddr *)host_addr,sizeof(*host_addr));
+#if DEBUG3
+    printf("send channel list to %s:%d (%d): %s %d/%d\n",
+      inet_ntoa(host_addr->sin_addr),ntohs(host_addr->sin_port),
+      n_ch,sendbuf.mn,SWAPS(sendbuf.seq[0]),SWAPS(sendbuf.seq[1]));
+#endif
+    }
+  }
+
 main(argc,argv)
   int argc;
   char *argv[];
@@ -586,11 +653,11 @@ main(argc,argv)
   key_t shm_key;
   int shmid;
   unsigned long uni;
-  unsigned char *ptr,tm[6],*ptr_size,*ptr_size2;
+  unsigned char *ptr,tm[6],*ptr_size,*ptr_size2,host_name[1024];
   int i,j,k,size,fromlen,n,re,nlen,sock,nn,all,pre,post,c,mon,pl,eobsize,
     sbuf,noreq,no_ts,no_pno;
-  struct sockaddr_in to_addr,from_addr;
-  unsigned short to_port;
+  struct sockaddr_in to_addr,from_addr,host_addr;
+  unsigned short to_port,host_port;
   extern int optind;
   extern char *optarg;
   struct Shm {
@@ -604,8 +671,10 @@ main(argc,argv)
   struct ip_mreq stMreq;
   char mcastgroup[256]; /* multicast address */
   char interface[256]; /* multicast interface */
-  time_t ts;
+  time_t ts,sec,sec_p;
   struct { int n; time_t (*ts)[65536]; int p[65536];} chhist;
+  struct hostent *h;
+  struct timeval timeout;
 
   if(progname=strrchr(argv[0],'/')) progname++;
   else progname=argv[0];
@@ -617,21 +686,23 @@ main(argc,argv)
     sprintf(tb,
 	    " usage : '%s (-AaBnMNr) (-d [len(s)]) (-m [pre(m)]) (-p [post(m)]) \\\n\
               (-i [interface]) (-g [mcast_group]) (-s sbuf(KB)) \\\n\
+              (-o [src_host]:[src_port]) \\\n\
               [port] [shm_key] [shm_size(KB)] ([ctl file]/- ([log file]))'",
 	    progname);
   else
     sprintf(tb,
 	    " usage : '%s (-AaBDnMNr) (-d [len(s)]) (-m [pre(m)]) (-p [post(m)]) \\\n\
               (-i [interface]) (-g [mcast_group]) (-s sbuf(KB)) \\\n\
+              (-o [src_host]:[src_port]) \\\n\
               [port] [shm_key] [shm_size(KB)] ([ctl file]/- ([log file]))'",
 	    progname);
 
   all=no_pinfo=mon=eobsize=noreq=no_ts=no_pno=0;
   pre=post=0;
-  *interface=(*mcastgroup)=0;
+  *interface=(*mcastgroup)=(*host_name)=0;
   sbuf=256;
   chhist.n=N_HIST;
-  while((c=getopt(argc,argv,"AaBDd:g:i:m:MNnp:rs:"))!=EOF)
+  while((c=getopt(argc,argv,"AaBDd:g:i:m:MNno:p:rs:"))!=EOF)
     {
     switch(c)
       {
@@ -668,6 +739,20 @@ main(argc,argv)
         break;
       case 'n':   /* supress info on abnormal packets */
         no_pinfo=1;
+        break;
+      case 'o':   /* host and port for request */
+       if(ptr=(unsigned char *)strchr(optarg,':'))
+          {
+          *ptr=0;
+          host_port=atoi(ptr+1);
+          }
+        else
+          {
+          fprintf(stderr," option -o requires '[host]:[port]' pair !\n",c);
+          fprintf(stderr,"%s\n",tb);
+          exit(1);
+          }
+        strcpy(host_name,optarg);
         break;
       case 'p':   /* time limit after RT in minutes */
         post=atoi(optarg);
@@ -784,9 +869,34 @@ main(argc,argv)
       sizeof(stMreq))<0) err_sys("IP_ADD_MEMBERSHIP setsockopt error\n");
   }
 
+  if(*host_name) /* host_name and host_port specified */
+    {
+    /* source host/port */
+    if(!(h=gethostbyname(host_name))) err_sys("can't find host");
+    memset((char *)&host_addr,0,sizeof(host_addr));
+    host_addr.sin_family=AF_INET;
+    memcpy((caddr_t)&host_addr.sin_addr,h->h_addr,h->h_length);
+    host_addr.sin_port=htons(host_port);
+    for(j=sbuf;j>=16;j-=4)
+      {
+      i=j*1024;
+      if(setsockopt(sock,SOL_SOCKET,SO_SNDBUF,(char *)&i,sizeof(i))>=0)
+        break;
+      }
+    if(j<16) err_sys("SO_SNDBUF setsockopt error\n");
+    sprintf(tb,"SNDBUF size=%d",j*1024);
+    write_log(logfile,tb);
+    }
+
   if(noreq) write_log(logfile,"resend request disabled");
   if(no_ts) write_log(logfile,"time-stamps not interpreted");
   if(no_pno) write_log(logfile,"packet numbers not interpreted");
+  if(*host_name)
+    {
+    sprintf(tb,"send channel list to %s:%d",
+      inet_ntoa(host_addr.sin_addr),ntohs(host_addr.sin_port));
+    write_log(logfile,tb);
+    }
 
   signal(SIGTERM,(void *)ctrlc);
   signal(SIGINT,(void *)ctrlc);
@@ -795,9 +905,26 @@ main(argc,argv)
   for(i=0;i<6;i++) tm[i]=(-1);
   ptr=ptr_size=sh->d+sh->p;
   read_chfile();
+  time(&sec);
+  sec_p=sec-1;
 
   while(1)
     {
+    if(*host_name) /* send request */
+      {
+      time(&sec);
+      if(sec!=sec_p)
+        {
+        send_req(sock,&host_addr);
+        sec_p=sec;
+        }
+      }
+
+    k=1<<sock;
+    timeout.tv_sec=0;
+    timeout.tv_usec=500000;
+    if(select(sock+1,(fd_set *)&k,NULL,NULL,&timeout)<=0) continue;
+
     fromlen=sizeof(from_addr);
     n=recvfrom(sock,rbuf,MAXMESG,0,(struct sockaddr *)&from_addr,&fromlen);
 #if DEBUG0

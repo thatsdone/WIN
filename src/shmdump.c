@@ -1,4 +1,4 @@
-/* $Id: shmdump.c,v 1.2 2000/04/30 10:05:23 urabe Exp $ */
+/* $Id: shmdump.c,v 1.3 2000/05/01 04:19:43 urabe Exp $ */
 /*  program "shmdump.c" 6/14/94 urabe */
 /*  revised 5/29/96 */
 /*  Little Endian (uehira) 8/27/96 */
@@ -7,7 +7,7 @@
 /*  2000.3.13 packet_id format */
 /*  2000.4.17 deleted definition of usleep() */
 /*  2000.4.24 strerror() */
-
+/*  2000.4.28 -aonwz -s [s] -f [chfile] options */
 
 #include <stdio.h>
 #include <signal.h>
@@ -23,14 +23,17 @@
 #define DEBUG       0
 #define MAXMESG     2000
 
-char *progname;
+char *progname,outfile[256];
+int win;
+FILE *fpout;
+
 struct Shm
   {
   unsigned long p;    /* write point */
   unsigned long pl;   /* write limit */
   unsigned long r;    /* latest */
   unsigned long c;    /* counter */
-  unsigned char d[1];   /* data buffer */
+  unsigned char d[1]; /* data buffer */
   };
 
 mklong(ptr)       
@@ -39,7 +42,7 @@ mklong(ptr)
   unsigned long a;
   a=((ptr[0]<<24)&0xff000000)+((ptr[1]<<16)&0xff0000)+
     ((ptr[2]<<8)&0xff00)+(ptr[3]&0xff);
-  return a;       
+  return a;
   }
 
 get_time(rt)
@@ -91,29 +94,11 @@ time_dif(t1,t2) /* returns t1-t2(sec) */
   else return -(86400+sdif);
   }
 
-write_log(ptr)
-  char *ptr;
-  {
-  int tm[6];
-  get_time(tm);
-  printf("%02d%02d%02d.%02d%02d%02d %s %s\n",
-    tm[0],tm[1],tm[2],tm[3],tm[4],tm[5],progname,ptr);
-  fflush(stdout);
-  }
-
-ctrlc()
-  {
-  write_log("end");
-  exit(0);
-  }
-
 err_sys(ptr)
   char *ptr;
   {
-  perror(ptr);
-  write_log(ptr);
-  if(strerror(errno)) write_log(strerror(errno));
-  ctrlc();
+  fprintf(stderr,"%s %s\n",ptr,strerror(errno));
+  exit(0);
   }
 
 advance_s(shm,shp,c_save,size)
@@ -169,6 +154,19 @@ bcd_dec(dest,sour)
   return 1;
   }
 
+ctrlc()
+  {
+  char tb[100];
+  if(win) /* invoke "win" */
+    {
+    fclose(fpout);
+    sprintf(tb,"win %s",outfile);
+    system(tb);
+    unlink(outfile);
+    }
+  exit(0);
+  }
+
 main(argc,argv)
   int argc;
   char *argv[];
@@ -179,40 +177,127 @@ main(argc,argv)
     unsigned short s;
     char c[4];
     } un;
-  int i,j,k,c_save_in,shp_in,size,shmid_in,size_in,shp,c_save,wtow,packet_id;
-  unsigned long tow;
-  unsigned char *ptr,tbuf[100];
+  int i,j,k,c_save_in,shp_in,shmid_in,size_in,shp,c_save,wtow,c,out,all,
+    ch,sr,gs,size,chsel,nch,search,seconds,tbufp,bufsize,zero,nsec;
+  unsigned long tow,wsize,time_end,time_now;
+  unsigned int packet_id;
+  unsigned char *ptr,tbuf[100],*ptr_lim,*buf,chlist[65536/8],*ptw,tms[6];
   struct Shm *shm_in;
   struct tm *nt;
   int rt[6],ts[6];
+  extern int optind;
+  extern char *optarg;
+  FILE *fplist,*fp;
+  char *tmpdir;
+  static unsigned int mask[8]={0x80,0x40,0x20,0x10,0x08,0x04,0x02,0x01};
+#define setch(a) (chlist[a>>3]|=mask[a&0x07])
+#define testch(a) (chlist[a>>3]&mask[a&0x07])
 
   if(progname=strrchr(argv[0],'/')) progname++;
   else progname=argv[0];
+  search=out=all=seconds=win=zero=0;
+  fplist=stdout;
 
-  if(argc<2)
+  while((c=getopt(argc,argv,"aoqs:wf:z"))!=EOF)
     {
-    fprintf(stderr," usage : '%s [shm_key]'\n",progname);
+    switch(c)
+      {
+      case 'o':   /* data output */
+        out=1;
+        fpout=stdout;
+        fplist=stderr;
+        break;
+      case 'w':   /* invoke win */
+        if((tmpdir=getenv("TMP")) || (tmpdir=getenv("TEMP")))
+          sprintf(outfile,"%s/%s.%d",tmpdir,progname,getpid()); 
+        else sprintf(outfile,"%s.%d",progname,getpid());
+        if((fpout=fopen(outfile,"w+"))==0) err_sys(outfile);
+        win=out=1;
+        break;
+      case 'a':   /* list all channels */
+        all=1;
+        break;
+      case 'q':   /* supress listing */
+        fplist=fopen("/dev/null","a");
+        break;
+      case 'z':   /* read from the beginning of the SHM buffer */
+        zero=1;
+        break;
+      case 's':   /* period in sec */
+        seconds=atoi(optarg);
+        break;
+      case 'f':   /* channel file */
+        if(*optarg='-') fp=stdin;
+        else if((fp=fopen(optarg,"r"))==0) err_sys(outfile);
+        nch=0;
+        for(i=0;i<65536/8;i++) chlist[i]=0;
+        while(fgets(tbuf,100,fp))
+          {
+          if(*tbuf=='#' || sscanf(tbuf,"%x",&chsel)<0) continue;
+          chsel&=0xffff;
+          setch(chsel);
+          nch++;
+          }
+        if(nch) search=1;
+        break;
+      default:
+        fprintf(stderr," usage : '%s (-aoqwz) (-s [s]) (-f [chfile]/-) [shm_key] ([ch] ...)'\n",progname);
+        exit(1);
+      }
+    }
+  optind--;
+  if(argc<2+optind)
+    {
+    fprintf(stderr," usage : '%s (-aoqwz) (-s [s]) (-f [chfile]/-) [shm_key] ([ch] ...)'\n",progname);
     exit(0);
     }
 
-  shm_key_in=atoi(argv[1]);
+  shm_key_in=atoi(argv[1+optind]);
+
+  if(argc>2+optind)
+    {
+    nch=0;
+    for(i=0;i<65536/8;i++) chlist[i]=0;
+    for(i=2+optind;i<argc;i++)
+      {
+      chsel=strtol(argv[i],0,16);
+      setch(chsel);
+      nch++;
+      }
+    if(nch) search=1;
+    }
+
+  /* allocate buf */
+  if(out)
+    {
+    if(all) bufsize=MAXMESG*100;
+    else bufsize=MAXMESG*nch;
+    if((buf=(unsigned char *)malloc(bufsize))==0) err_sys("malloc");
+    }
 
   /* shared memory */
   if((shmid_in=shmget(shm_key_in,0,0))<0) err_sys("shmget");
   if((shm_in=(struct Shm *)shmat(shmid_in,(char *)0,0))==(struct Shm *)-1)
     err_sys("shmat");
-  sprintf(tbuf,"in : shm_key_in=%d id=%d",shm_key_in,shmid_in);
-  write_log(tbuf);
+/*fprintf(stderr,"in : shm_key_in=%d id=%d\n",shm_key_in,shmid_in);*/
 
   signal(SIGPIPE,(void *)ctrlc);
   signal(SIGINT,(void *)ctrlc);
   signal(SIGTERM,(void *)ctrlc);
+  if(seconds)
+    {
+    time(&time_end);
+    time_end+=seconds;
+    }
 
+  nsec=0;
 reset:
   while(shm_in->r==(-1)) usleep(200000);
   c_save_in=shm_in->c;
-  size_in=mklong(shm_in->d+(shp_in=shm_in->r));
+  if(zero) size_in=mklong(shm_in->d+(shp_in=0));
+  else size_in=mklong(shm_in->d+(shp_in=shm_in->r));
   wtow=0;
+  ptw=buf+4;
   while(1)
     {
     i=advance_s(shm_in,&shp_in,&c_save_in,&size_in);
@@ -222,8 +307,9 @@ reset:
       continue;
       }
     else if(i<0) goto reset;
-    printf("%4d : ",size_in);
+    sprintf(tbuf,"%4d : ",size_in);
     ptr=shm_in->d+shp_in+4;
+    ptr_lim=shm_in->d+shp_in+size_in;
     if(*ptr>0x20 && *ptr<0x90) /* with tow */
       {
       wtow=1;
@@ -237,19 +323,90 @@ reset:
       rt[3]=nt->tm_hour;
       rt[4]=nt->tm_min;
       rt[5]=nt->tm_sec;
-      printf("RT ");
-      printf("%02d",rt[0]%100);
-      for(j=1;j<6;j++) printf("%02d",rt[j]);
+      sprintf(tbuf+strlen(tbuf),"RT ");
+      sprintf(tbuf+strlen(tbuf),"%02d",rt[0]%100);
+      for(j=1;j<6;j++) sprintf(tbuf+strlen(tbuf),"%02d",rt[j]);
       if(*ptr>=0xA0) packet_id=(*ptr++);
+      else packet_id=0;
       bcd_dec(ts,ptr);
       j=time_dif(rt,ts); /* returns t1-t2(sec) */
-      printf(" %2d TS ",j);
+      sprintf(tbuf+strlen(tbuf)," %2d TS ",j);
       }
     else wtow=0;
-    if(wtow && packet_id>=0xA0) printf("%02X:",packet_id);
-    for(j=0;j<6;j++) printf("%02X",*ptr++);
-    printf(" ");
-    for(j=0;j<8;j++) printf("%02X",*ptr++);
-    printf("...\n");
+    if(wtow && packet_id>=0xA0)
+      {
+      sprintf(tbuf+strlen(tbuf),"%02X:",packet_id);
+      search=all=out=0;
+      }
+    if(out) memcpy(tms,ptr,6); /* save TS */
+    for(j=0;j<6;j++) sprintf(tbuf+strlen(tbuf),"%02X",*ptr++);
+    sprintf(tbuf+strlen(tbuf)," ");
+    tbufp=strlen(tbuf);
+    if(search || all)
+      {
+      i=0;
+      do
+        {
+        tbuf[tbufp]=0;
+        ch=ptr[1]+(((long)ptr[0])<<8);
+        sr=ptr[3]+(((long)(ptr[2]&0x0f))<<8);
+        size=(ptr[2]>>4)&0x7;
+        if(size) gs=size*(sr-1)+8;
+        else gs=(sr>>1)+8;
+        if(all ||(search && testch(ch)))
+          {
+          for(j=0;j<8;j++) sprintf(tbuf+strlen(tbuf),"%02X",ptr[j]);
+          sprintf(tbuf+strlen(tbuf),"(%d)",gs);
+          fputs(tbuf,fplist);
+          fputs("\n",fplist);
+          if(out)
+            {
+            if(ptw-buf+gs>bufsize)
+              {
+              j=ptw-buf;
+              if((buf=(unsigned char *)realloc(buf,bufsize+MAXMESG*100))==0)
+                {
+                fprintf(stderr,"buf realloc failed !\n");
+                break;
+                }
+              else
+                {
+                bufsize+=MAXMESG*100;
+                ptw=buf+j;
+                }
+              }
+            if(memcmp(buf+4,tms,6)) /* new time */
+              {
+              if((wsize=ptw-buf)>10)
+                {
+                buf[0]=wsize>>24;  /* size (H) */
+                buf[1]=wsize>>16;
+                buf[2]=wsize>>8;
+                buf[3]=wsize;      /* size (L) */
+                fwrite(buf,1,wsize,fpout);
+                fflush(fpout);
+                nsec++;
+                }
+              ptw=buf+4;
+              memcpy(ptw,tms,6); /* TS */
+              ptw+=6;
+              }
+            memcpy(ptw,ptr,gs);
+            ptw+=gs;
+            }
+          i=1;
+          }
+        ptr+=gs;
+        nch++;
+        } while(ptr<ptr_lim);
+      }
+    else
+      {
+      for(j=0;j<8;j++) sprintf(tbuf+strlen(tbuf),"%02X",*ptr++);
+      sprintf(tbuf+strlen(tbuf),"...\n");
+      fputs(tbuf,fplist);
+      }
+    time(&time_now);
+    if(seconds && (time_now>time_end || nsec>=seconds)) ctrlc();
     }
   }

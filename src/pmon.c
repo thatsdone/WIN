@@ -1,4 +1,4 @@
-/* $Id: pmon.c,v 1.12 2002/05/07 10:28:00 urabe Exp $ */
+/* $Id: pmon.c,v 1.13 2002/09/12 00:24:22 urabe Exp $ */
 /************************************************************************
 *************************************************************************
 **  program "pmon.c" for NEWS/SPARC                             *********
@@ -44,6 +44,7 @@
 **  2002.3.19 logfile (-l) / remove offset (-o)                 *********
 **  2002.3.19 delete illegal USED file                          *********
 **  2002.3.24 cancel offset (-o)                                *********
+**  2002.9.12 delay time (-d)                                   *********
 **                                                              *********
 **  font files ("font16", "font24" and "font32") are            *********
 **  not necessary                                               *********
@@ -1248,8 +1249,8 @@ main(argc,argv)
   char *argv[];
   {
   FILE *f_param,*fp;
-  int i,j,k,maxlen,ret,m_count,x_base,y_base,y,ch,tm[6],minutep,hourp,c,
-    count,count_max,offset;
+  int i,j,k,maxlen,ret,m_count,x_base,y_base,y,ch,tm[6],tm1[6],minutep,hourp,c,
+    count,count_max,offset,wait_min;
   char *ptr,textbuf[500],textbuf1[500],fn1[200],fn2[100],conv[256],tb[100],
     fn3[100],path_font[WIN_FILENAME_MAX],path_temp[WIN_FILENAME_MAX],
     path_mon[WIN_FILENAME_MAX],area[20],timebuf1[80],timebuf2[80],printer[40],
@@ -1259,14 +1260,17 @@ main(argc,argv)
 
   if(progname=strrchr(argv[0],'/')) progname++;
   else progname=argv[0];
-  sprintf(tb," usage : '%s (-o) (-l [log file]) [param file] ([YYMMDD] [hhmm] [length(min)])\n",
+  sprintf(tb," usage : '%s (-d [dly min]) (-o) (-l [log file]) [param file] ([YYMMDD] [hhmm] [length(min)])\n",
     progname);
-  offset=0;
+  offset=wait_min=0;
   *logfile=0;
-  while((c=getopt(argc,argv,"ol:"))!=EOF)
+  while((c=getopt(argc,argv,"d:ol:"))!=EOF)
     {
     switch(c)
       {
+      case 'd':   /* delay minute */
+        wait_min=atoi(optarg);
+        break;
       case 'o':   /* cancel offset */
         offset=1;
         break;
@@ -1394,6 +1398,11 @@ retry:
       goto retry;
       }
     fclose(fp);
+    for(k=0;k<wait_min;++k)
+      {
+      tim[5]=(-1);
+      adj_time(tim);
+      }
     /* decide 'even' start time */
     i=((tim[3]*60+tim[4])/min_per_sheet)*min_per_sheet;
     tim[3]=i/60;
@@ -1703,6 +1712,18 @@ retry:
         {
         fscanf(fp,"%s",timebuf1);
         fclose(fp);
+        if(wait_min)
+          {
+          sscanf(timebuf1,"%02d%02d%02d%02d.%02d",
+            &tm1[0],&tm1[1],&tm1[2],&tm1[3],&tm1[4]);
+          for(k=0;k<wait_min;++k)
+              {
+              tm1[5]=(-1);
+              adj_time(tm1);
+              }
+          sprintf(timebuf1,"%02d%02d%02d%02d.%02d",
+            tm1[0],tm1[1],tm1[2],tm1[3],tm1[4]);
+          }
         if(strlen(timebuf1)>=11 && strcmp2(timebuf1,timebuf2)>=0) break;
         }
       if(req_print) insatsu(fn1,fn2,fn3,path_temp,printer,count,count_max,conv);

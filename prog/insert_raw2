@@ -1,12 +1,15 @@
 #!/bin/sh
 # insert_raw2 : fast version of insert_raw
-#   wdisk and wadd2 are required.
+#   wdisk, wadd2 and raw2mon are required.
 # 2002.5.28 Urabe
+# 2002.9.11 Urabe added raw2mon function
 ## insert_raw.prm
 #/dat/raw        # raw data dir
 #/dat/raw_late   # time-out data dir
 #/dat/tmp        # temporary dir
 #3               # wait min. from raw LATEST
+#/dat/mon        # mon data dir
+#
 # read prm file
 cleanup(){
 rm -rf $tmpdir1; exit
@@ -18,14 +21,20 @@ then
   exit
 fi
 rawdir=`grep -v '^#' $1|head -1|awk '{print $1}'`
-latedir=`grep -v '^#' $1|head -2|tail -1|awk '{print $1}'`
-tmpdir=`grep -v '^#' $1|head -3|tail -1|awk '{print $1}'`
-waitmin=`grep -v '^#' $1|head -4|tail -1|awk '{print $1}'`
-#echo $rawdir $latedir $tmpdir $waitmin
+latedir=`grep -v '^#' $1|tail +2|head -1|awk '{print $1}'`
+tmpdir=`grep -v '^#' $1|tail +3|head -1|awk '{print $1}'`
+waitmin=`grep -v '^#' $1|tail +4|head -1|awk '{print $1}'`
+mondir=`grep -v '^#' $1|tail +5|head -1|awk '{print $1}'`
+#echo $rawdir $latedir $tmpdir $waitmin $mondir
 #
 if [ ! -d $rawdir ]
 then
   echo $rawdir : no directory !
+  exit
+fi
+if [ "$mondir" -a ! -d "$mondir" ]
+then
+  echo $mondir : no directory !
   exit
 fi
 if [ ! -d $latedir ]
@@ -33,7 +42,7 @@ then
   echo $latedir : no directory !
   exit
 fi
-if [ ! -d $rawdir ]
+if [ ! -d $tmpdir ]
 then
   echo $tmpdir : no directory !
   exit
@@ -69,6 +78,10 @@ do
       fi
 #      echo wadd2 $rawdir/$file $tmpdir1/$file
       wadd2 $rawdir/$file $tmpdir1/$file
+       if [ "$mondir" ]
+       then
+         raw2mon < $rawdir/$file >$mondir/$file
+       fi
     done
     rm -f $tmpdir1/*
   fi

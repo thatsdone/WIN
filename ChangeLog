@@ -1,4 +1,9 @@
-$Id: ChangeLog,v 1.16 2002/09/05 05:16:56 urabe Exp $
+$Id: ChangeLog,v 1.17 2002/09/12 00:24:22 urabe Exp $
+
+2002-09-12 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
+        * insert_raw2 : updates mon file if mon dir is specified in the 5th line of prm file.
+        * pmon.c : introduced "-d [delay minute]" like in wtape.c
+	* Version 1.1.9 released.
 
 2002-09-05 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
 	* win.c : fixed a bug in picking the first sec.

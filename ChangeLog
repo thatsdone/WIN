@@ -1,4 +1,7 @@
-$Id: ChangeLog,v 1.63 2004/08/10 04:56:46 urabe Exp $
+$Id: ChangeLog,v 1.64 2004/08/29 00:24:14 urabe Exp $
+
+2004-08-29 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
+	* man/winformat.1, man/win.1 : fixed gtbl error
 
 2004-08-10 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
 	* man/recvt.1 : improved description of ctlfile

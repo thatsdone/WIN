@@ -1,4 +1,4 @@
-/* $Id: recvnmx.c,v 1.1 2001/08/06 05:33:30 urabe Exp $ */
+/* $Id: recvnmx.c,v 1.2 2001/08/06 06:35:11 urabe Exp $ */
 /* "recvnmx.c"    2001.7.18-19 modified from recvt.c and nmx2raw.c  urabe */
 /*                2001.8.6 */
 
@@ -422,7 +422,7 @@ parse_one_packet(unsigned char *inbuf,int len,struct Nmx_Packet *pk)
       else if(cnt==10) pk->seq+=(b<<8);
       else if(cnt==11) pk->seq+=(b<<16);
       else if(cnt==12) pk->seq+=(b<<24);
-      else if(pk->ptype&0x1){ /* compressed data packet */
+      else if((pk->ptype&0x0f)==1){ /* compressed data packet */
         if(cnt==13) {sr=(b>>3);pk->sr=srtab[sr];pk->ch=(b&0x7);}
         else if(cnt==14) pk->first=(b<<8);
         else if(cnt==15) pk->first+=(b<<16);
@@ -526,7 +526,7 @@ proc_soh(int bpp,struct Nmx_Packet *pk)
 }
 
 ch2idx(rbuf,serno,ch)
-  int **rbuf;
+  int *rbuf[];
   int serno,ch;
 {
   char tb[256];
@@ -547,7 +547,7 @@ ch2idx(rbuf,serno,ch)
     s[i]=serno;
     c[i]=ch;
     n_idx++;
-    sprintf(tb,"registered serno=%d ch=%d idx=%d\n",serno,ch,i);
+    sprintf(tb,"registered serno=%d ch=%d idx=%d",serno,ch,i);
     write_log(logfile,tb);
   }
   return i;
@@ -560,7 +560,7 @@ main(argc,argv)
   char tb[256];
   FILE *fp;
   unsigned char pbuf[MAXMESG];
-  int **rbuf,*ptr,idx;
+  int *rbuf[MAXCH],*ptr,idx;
   unsigned long uni;
   struct Nmx_Packet pk;
   int i,j,k,size_shm,n,fd,baud,c,bpp,oldest,nn,verbose,rbuf_ptr,sock,fromlen,

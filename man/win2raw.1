@@ -2,11 +2,13 @@
 .SH 名称
 win2raw - win 形式ファイルの1分ファイルへの分割
 .SH 形式
-win2raw [ \-huv ] 
+win2raw [ \-uv ] [ \-m h|d ]
 .I dirname
 [
 .I file
 ]
+.LP
+win2raw \-h
 .LP
 .SH 解説
 win2raw は、win形式ファイル
@@ -14,7 +16,9 @@ win2raw は、win形式ファイル
 を
 .I dirname
 へ1分ファイルに分割して出力します。ファイル名は wdisk(1W)で出力される
-ファイル名と同じ'YYMMDDhh.mm' の形式です。
+ファイル名と同じ'YYMMDDhh.mm' の形式です。オプション -m を指定すること
+により、1時間ファイル、もしくは1日ファイルに分割して出力することも出来
+ます。
 .LP
 .I file
 が与えられない場合は、win2raw は標準入力からデータを読みます。
@@ -22,9 +26,16 @@ win2raw は、win形式ファイル
 win2raw は引数なしで起動すると簡単な使用法を表示します。
 .SH オプション
 .TP 
+\-m \fImode
+分割モードをセットします。
+.nf
+h: 1時間ファイルに分割 (YYMMDD.hh 形式)
+d: 1日ファイルに分割 (YYMMDD 形式)
+.fi
+.TP
 \-u
 標準入力からのデータでない場合、出力後
-.I file
+.I file 
 を削除します。
 .TP 
 \-v

@@ -1,0 +1,35 @@
+.TH wck_wdisk 1W "2002.5.3" "WIN SYSTEM" "WIN SYSTEM"
+.SH 名称
+wck_wdisk - wdisk で書き込まれた win 形式ファイルの内容の検査
+.SH 形式
+wck_wdisk
+.I chfile
+[
+.I file
+]
+.LP
+.SH 解説
+wck_wdisk は、win のチャンネルファイル
+.I chfile
+にリストされているチャンネルが、wdisk によって書き込まれた win 形式ファ
+イル
+.I file
+に存在するかどうかを表示します。入力データがRAW形式にしか対応していま
+せん。また、閏秒にも対応していません。
+.LP
+.I file
+が与えられない場合は、wck_wdisk は標準
+入力からデータを読みます。出力は常に標準出力です。
+.LP
+cron(8)から定期的に起動し、結果をメールで配信すると良いかもしれません。
+サンプルのシェルスクリプト ck_wdisk.sh を参考して下さい。
+.LP
+wck_wdisk は引数なしで起動すると簡単な使用法を表示します。
+.SH オプション
+.TP 
+なし
+.SH ソース 
+.TP
+`wck_wdisk.c'
+.SH 関連事項
+win(1W), wdisk(1W), winformat(1W)

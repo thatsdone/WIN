@@ -1,4 +1,4 @@
-/* $Id: subst_func.h,v 1.2 2002/01/13 06:57:51 uehira Exp $ */
+/* $Id: subst_func.h,v 1.3 2002/05/03 10:49:49 uehira Exp $ */
 
 /*
  * Copyright (c) 2001
@@ -22,5 +22,42 @@ extern const char *const sys_errlist[];
 #if defined(SUNOS4) && defined(HAVE_TIMELOCAL)
 #define mktime timelocal
 #endif
+
+/***** snprintf(3) ******/
+#ifndef HAVE_SNPRINTF
+#include <stdio.h>
+#include <string.h>
+#ifdef HAVE_STDARG_H
+#include <stdarg.h>
+#endif /* HAVE_STDARG_H */
+#ifdef HAVE_VARARGS_H   /* cf. SunOS 4 */
+#include <varargs.h>
+#endif /* HAVE_STDARG_H */
+static int snprintf(char *, size_t, const char *, ...);
+
+/*
+ * The function below just acts like sprintf(); it is not safe, but it
+ * tries to detect overflow.
+ */
+static int
+snprintf(char *buf, size_t size, const char *fmt, ...)
+{
+  int  n;
+  va_list  ap;
+
+  va_start(ap, fmt);
+
+  /* Sigh, some vsprintf's return ptr, not length */
+  (void)vsprintf(buf, fmt, ap); 
+
+  n = strlen(buf);
+  va_end(ap);
+  if (n >= size) {
+    (void)fprintf(stderr, "snprintf: '%s' overflowed array", fmt);
+    exit(1);
+  }
+  return(n);
+}
+#endif /* !HAVE_SNPRINTF */
 
 #endif  /* !_SUBST_FUNC_H_ */

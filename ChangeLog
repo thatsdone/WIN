@@ -1,5 +1,10 @@
-$Id: ChangeLog,v 1.7 2002/05/01 09:20:13 uehira Exp $
+$Id: ChangeLog,v 1.8 2002/05/03 10:49:48 uehira Exp $
 	
+2002-05-03 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 1.0.4 released.
+	* Add wck_wdisk.c wck_wdisk.1 ck_wdisk.sh
+	  check lost packet in 1 minute raw data.
+
 2002-05-01 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* fix typo in wck.1
 

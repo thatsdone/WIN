@@ -1,4 +1,4 @@
-/* $Id: win_system.h,v 1.2 2002/01/13 06:57:52 uehira Exp $ */
+/* $Id: win_system.h,v 1.3 2002/05/03 10:49:49 uehira Exp $ */
 
 #ifndef _WIN_SYSTEM_H_
 #define _WIN_SYSTEM_H_
@@ -20,6 +20,8 @@ typedef unsigned long  WIN_sr;
 #define WIN_CHHEADERH_LEN  5  /* byte */
 
 #define WIN_CH_MAX_NUM  65536   /* 2^16 */
+#define WIN_STANAME_LEN    11   /* (length of station code)+1 */
+#define WIN_STACOMP_LEN     7   /* (length of component code)+1 */
 
 /* 'events' process makes the following files */
 #define EVENTS_OLDEST  "OLDEST"
@@ -54,6 +56,9 @@ typedef unsigned long  WIN_sr;
 #define WADD    "wadd"
 
 #define SWAPL(a) a=(((a)<<24)|((a)<<8)&0xff0000|((a)>>8)&0xff00|((a)>>24)&0xff)
+#define LongFromBigEndian(a) \
+    ((((unsigned char *)&(a))[0] << 24) + (((unsigned char *)&(a))[1] << 16) +\
+     (((unsigned char *)&(a))[2] << 8) + ((unsigned char *)&(a))[3])
 
 /* memory malloc utility macro */
 #ifndef MALLOC
@@ -66,6 +71,28 @@ typedef unsigned long  WIN_sr;
 #ifndef FREE
 #define FREE(a)         (void)free((void *)(a))
 #endif
+
+/* channel table */
+struct channel_tbl {
+  WIN_ch  sysch;                  /* channel number [2byte hex] */
+  int     flag;                   /* record flag */
+  int     delay;                  /* line delay [ms] */
+  char    name[WIN_STANAME_LEN];  /* station name */
+  char    comp[WIN_STACOMP_LEN];  /* component name */
+  int     scale;                  /* display scale */
+  char    bit[256];                    /* bit value of A/D converter */
+  double  sens;                   /* sensitivity of instruments */
+  char    unit[256];              /* unit of sensitivity */
+  double  t0;                     /* natural period [s] */
+  double  h;                      /* damping factor */
+  double  gain;                   /* gain [dB] */
+  double  adc;                    /* [V/LSB] */
+  double  lat;                    /* latitude of station */
+  double  lng;                    /* longitude of station */
+  double  higt;                   /* height of station */
+  double  stcp;                   /* station correction of P phase */
+  double  stcs;                   /* station correction of P phase */
+};
 
 unsigned long  mklong(unsigned char *ptr);
 void  adj_time(int tm[]);
@@ -85,5 +112,7 @@ WIN_blocksize get_select_data(unsigned char *selectbuf,
 			      WIN_ch chlist[], WIN_ch ch_num,
 			      unsigned char *buf,  WIN_blocksize buf_num);
 int WIN_time_hani(char fname[], int start[], int end[]);
+int read_channel_file(FILE *, struct channel_tbl [], int);
+int **imatrix(int, int);
 
 #endif  /*_WIN_SYSTEM_H_ */

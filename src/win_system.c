@@ -1,4 +1,4 @@
-/* $Id: win_system.c,v 1.4 2002/01/23 06:06:13 uehira Exp $ */
+/* $Id: win_system.c,v 1.5 2002/05/03 10:49:49 uehira Exp $ */
 /* win system utility functions */
 
 #ifdef HAVE_CONFIG_H
@@ -453,4 +453,62 @@ WIN_time_hani(char fname[], int start[], int end[])
   fclose(fp);
 
   return(status);
+}
+
+int
+read_channel_file(FILE *fp, struct channel_tbl tbl[], int arrynum)
+{
+  char  tbuf[BUF_SIZE], format[BUF_SIZE];
+  int   i, ich;
+
+  i = 0;
+  if (snprintf(format, sizeof(format),
+	       "%%x%%d%%d%%%ds%%%ds%%d%%255s%%lf%%255s%%lf%%lf%%lf%%lf%%lf%%lf%%lf%%lf%%lf",
+	       WIN_STANAME_LEN - 1, WIN_STACOMP_LEN - 1) >= sizeof(format)) {
+    (void)fprintf(stderr, "buffer overtun!\n");
+    exit(1);
+  }
+  /* printf("%s\n", format); */
+
+  while (fgets(tbuf, sizeof(tbuf), fp) != NULL) {
+    if (tbuf[0] == '#')   /* skip comment line */
+      continue;
+    if (sscanf(tbuf, format,
+	       &ich, &tbl[i].flag, &tbl[i].delay, tbl[i].name, tbl[i].comp,
+	       &tbl[i].scale, tbl[i].bit, &tbl[i].sens, tbl[i].unit,
+	       &tbl[i].t0, &tbl[i].h, &tbl[i].gain, &tbl[i].adc, &tbl[i].lat,
+	       &tbl[i].lng, &tbl[i].higt, &tbl[i].stcp, &tbl[i].stcs) < 1)
+      continue;   /* skip blank line */
+    tbl[i++].sysch = (WIN_ch)ich;
+    if (i == arrynum)
+      break;
+  }
+
+  return (i);
+}
+
+/*** make matrix: m[nrow][ncol] ***/
+int **
+imatrix(int nrow, int ncol)
+{
+  int  **m;
+  int  i, j;
+
+  if (NULL == (m = (int **)malloc((size_t)(sizeof(int *) * nrow)))) {
+    (void)fprintf(stderr, "malloc error\n");
+    exit(1);
+  }
+  if (NULL == (m[0] = (int *)malloc((size_t)(sizeof(int) * nrow * ncol)))) {
+    (void)fprintf(stderr, "malloc error\n");
+    exit(1);
+  }
+  for (i = 1; i < nrow; ++i)
+    m[i] = m[i - 1] + ncol;
+
+  /* initialize */
+  for (i = 0; i < nrow; ++i)
+    for (j = 0; j < ncol; ++j)
+      m[i][j] = 0;
+
+  return (m);
 }

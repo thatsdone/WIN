@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.10 2003/05/11 15:28:03 urabe Exp $
+# $Id: Makefile.am,v 1.11 2003/06/01 02:53:41 tsuru Exp $
 #
 
 if SUNOS4
@@ -159,7 +159,7 @@ cormeisei_SOURCES = cormeisei.c $(SUBFUNC_H)
 cormeisei_LDADD = @LIBSHMGET@
 
 shmdump_SOURCES = shmdump.c $(SUBFUNC_H)
-shmdump_LDADD = @LIBSHMGET@
+shmdump_LDADD = @LIBSHMGET@ -lm
 
 raw_ch_SOURCES = raw_ch.c $(SUBFUNC_H)
 raw_ch_LDADD = @LIBSHMGET@

@@ -1,0 +1,395 @@
+#! @WISH@
+#
+# $Id: shmx.in,v 1.2 2002/08/08 12:28:53 uehira Exp $
+# shmx
+# 2002.06.28 - (C) Hiroshi TSURUOKA / All Rights Researved.
+#
+# version 0.1 2002/06/28 
+#         0.9.1 2002/06/30 plot multi channel 
+#         0.9.2 2002/07/01 fpin,fpout, modify flush
+#         0.9.3 2002/07/09 remove Dc
+#         0.9.4 2002/07/09 LTA
+#         0.9.5 2002/07/09 CHID toupper
+#         0.9.6 2002/07/09 int(rmean)
+#         0.9.7 2002/07/13 freq=1sec
+#         0.9.8 2002/08/05 read win channel table
+#	  1.0.0 2002/08/05 
+#         1.0.1 2002/08/07 clip level
+#         1.0.2 2002/08/07 wy=lsb
+#
+set version 1.0.2
+#fconfigure stdin -buffering none
+#console show
+
+if { $argc < 1 } {
+	puts "wish shmx <-mMIN> <-nNLINE> <-yPIXEL> <-wCLIPLEVEL> <-lLTA> <-p> <-xWIDTH> <-cNCOLOR> <-fSHMDUMP> <-tTABLE> channel1 channel2 ..."
+	exit
+}
+
+# default setting
+set pipe 0
+set maxch 0
+set min 1
+set nsec [expr $min*60]
+set nline 6
+set wy2 12
+set wy [expr 2.0*$wy2]
+set clip 1.0
+set lsb [expr $clip*$wy2]
+set cw 800
+set ncol 0
+set shmdump ""
+set table 0
+set LTA 60.0
+set LTA2 [expr 1.0/$LTA]
+set LTA1 [expr 1.0-$LTA2]
+
+for { set j 0 } { $j < $argc } { incr j } {
+	set tmpargv [lindex $argv $j]
+	set optflag [string range $tmpargv 0 1]
+	if { $optflag == "-m" } {
+		set min [string range $tmpargv 2 [string length $tmpargv]]
+		set nsec [expr 60*$min]
+	} elseif { $optflag == "-n" } {
+		set nline [string range $tmpargv 2 [string length $tmpargv]]
+	} elseif { $optflag == "-y" } {
+		set wy2 [string range $tmpargv 2 [string length $tmpargv]]
+		set wy [expr 2.0*$wy2]
+		set lsb [expr $clip*$wy2]
+	} elseif { $optflag == "-w" } {
+		set clip [string range $tmpargv 2 [string length $tmpargv]]
+		set lsb [expr $clip*$wy2]
+	} elseif { $optflag == "-p" } {
+		set pipe 1
+	} elseif { $optflag == "-x" } {
+		set cw [string range $tmpargv 2 [string length $tmpargv]]
+	} elseif { $optflag == "-c" } {
+		set ncol [string range $tmpargv 2 [string length $tmpargv]]
+	} elseif { $optflag == "-q" } {
+		set quick [string range $tmpargv 2 [string length $tmpargv]]
+	} elseif { $optflag == "-f" } {
+		set shmdump [string range $tmpargv 2 [string length $tmpargv]]
+	} elseif { $optflag == "-t" } {
+		set ftable [string range $tmpargv 2 [string length $tmpargv]]
+		set table 1
+	} elseif { $optflag == "-l" } {
+		set LTA [string range $tmpargv 2 [string length $tmpargv]]
+		set LTA2 [expr 1.0/$LTA]
+		set LTA1 [expr 1.0-$LTA2]
+	} else {
+		set channel($maxch) [lindex $argv $j]
+		set channel($maxch) [string toupper $channel($maxch)]
+		set MON($channel($maxch)) 0
+		set CHINFO($channel($maxch)) "--- --"
+#		puts "$channel($maxch)"
+		incr maxch
+	}
+}
+
+if { $maxch > 20 } {
+	set maxch 20
+}
+
+if { $table == 1 } {
+ set ft [open $ftable r]
+ puts "$ftable"
+ while {![eof $ft]} {
+	gets $ft line
+	set tmpchid [lindex $line 0]
+	set tmpstn [lindex $line 3]
+	set tmpcomp [lindex $line 4]
+	set tmpmon [lindex $line 5]
+	set tmpsens [lindex $line 7]
+	set tmpgain [lindex $line 11]
+	set tmplsb [lindex $line 12]
+#	puts "$tmpchid $tmpstn.$tmpcomp $tmpmon $tmpsens $tmpgain $tmplsb"
+	set CHINFO($tmpchid) "$tmpstn $tmpcomp"
+	set MON($tmpchid) $tmpmon
+ }
+ close $ft
+}
+
+set title "SHMX version $version"
+
+#set wx  0.25; set wy 20; set nsec 3600; set nline 24; # 1 day
+#set wx  0.75; set wy 25 set nsec 900; set nline 6; # 1 hour
+
+if { $shmdump == "" } {
+	set fpin stdin
+} else {
+	set fpin $shmdump
+}
+set fpout stdout
+
+set wdy 0.1
+#set cw [expr $wx*$nsec]
+#set cw 800.0
+set wx [expr double($cw)/double($nsec)]
+set ch [expr $wy*($nline-1+2+2.0*$wdy)]
+
+wm title . $title
+wm resizable . 0 0
+wm geometry . +0+10
+
+set bk #000000
+for { set j 0 } { $j < $maxch } { incr j } {
+	frame .v($j)
+	label .v($j).info($j) -text $channel($j) -width 5
+	frame .v($j).gain($j)
+	set tmpch $channel($j)
+	set gain($j) 0
+	if { $MON($tmpch) != 0 } {
+		set gain($j) [expr $MON($tmpch)]
+	}
+	if { $j == 0 } then {
+	button .v($j).gain($j).large  -text "+" -command { set gain(0) [expr $gain(0)-1] } -relief ridge -width 1
+	button .v($j).gain($j).small  -text "-" -command { set gain(0) [expr $gain(0)+1] } -relief ridge -width 1
+        } elseif { $j == 1 } then {
+	button .v($j).gain($j).large  -text "+" -command { set gain(1) [expr $gain(1)-1] } -relief ridge -width 1
+	button .v($j).gain($j).small  -text "-" -command { set gain(1) [expr $gain(1)+1] } -relief ridge -width 1
+        } elseif { $j == 2 } then {
+	button .v($j).gain($j).large  -text "+" -command { set gain(2) [expr $gain(2)-1] } -relief ridge -width 1
+	button .v($j).gain($j).small  -text "-" -command { set gain(2) [expr $gain(2)+1] } -relief ridge -width 1
+        } elseif { $j == 3 } then {
+	button .v($j).gain($j).large  -text "+" -command { set gain(3) [expr $gain(3)-1] } -relief ridge -width 1
+	button .v($j).gain($j).small  -text "-" -command { set gain(3) [expr $gain(3)+1] } -relief ridge -width 1
+        } elseif { $j == 4 } then {
+	button .v($j).gain($j).large  -text "+" -command { set gain(4) [expr $gain(4)-1] } -relief ridge -width 1
+	button .v($j).gain($j).small  -text "-" -command { set gain(4) [expr $gain(4)+1] } -relief ridge -width 1
+        } elseif { $j == 5 } then {
+	button .v($j).gain($j).large  -text "+" -command { set gain(5) [expr $gain(5)-1] } -relief ridge -width 1
+	button .v($j).gain($j).small  -text "-" -command { set gain(5) [expr $gain(5)+1] } -relief ridge -width 1
+        } elseif { $j == 6 } then {
+	button .v($j).gain($j).large  -text "+" -command { set gain(6) [expr $gain(6)-1] } -relief ridge -width 1
+	button .v($j).gain($j).small  -text "-" -command { set gain(6) [expr $gain(6)+1] } -relief ridge -width 1
+        } elseif { $j == 7 } then {
+	button .v($j).gain($j).large  -text "+" -command { set gain(7) [expr $gain(7)-1] } -relief ridge -width 1
+	button .v($j).gain($j).small  -text "-" -command { set gain(7) [expr $gain(7)+1] } -relief ridge -width 1
+        } elseif { $j == 8 } then {
+	button .v($j).gain($j).large  -text "+" -command { set gain(8) [expr $gain(8)-1] } -relief ridge -width 1
+	button .v($j).gain($j).small  -text "-" -command { set gain(8) [expr $gain(8)+1] } -relief ridge -width 1
+        } elseif { $j == 9 } then {
+	button .v($j).gain($j).large  -text "+" -command { set gain(9) [expr $gain(9)-1] } -relief ridge -width 1
+	button .v($j).gain($j).small  -text "-" -command { set gain(9) [expr $gain(9)+1] } -relief ridge -width 1
+	} elseif { $j == 10 } then {
+	button .v($j).gain($j).large  -text "+" -command { set gain(10) [expr $gain(10)-1] } -relief ridge -width 1
+	button .v($j).gain($j).small  -text "-" -command { set gain(10) [expr $gain(10)+1] } -relief ridge -width 1
+        } elseif { $j == 11 } then {
+	button .v($j).gain($j).large  -text "+" -command { set gain(11) [expr $gain(11)-1] } -relief ridge -width 1
+	button .v($j).gain($j).small  -text "-" -command { set gain(11) [expr $gain(11)+1] } -relief ridge -width 1
+        } elseif { $j == 12 } then {
+	button .v($j).gain($j).large  -text "+" -command { set gain(12) [expr $gain(12)-1] } -relief ridge -width 1
+	button .v($j).gain($j).small  -text "-" -command { set gain(12) [expr $gain(12)+1] } -relief ridge -width 1
+        } elseif { $j == 13 } then {
+	button .v($j).gain($j).large  -text "+" -command { set gain(13) [expr $gain(13)-1] } -relief ridge -width 1
+	button .v($j).gain($j).small  -text "-" -command { set gain(13) [expr $gain(13)+1] } -relief ridge -width 1
+        } elseif { $j == 14 } then {
+	button .v($j).gain($j).large  -text "+" -command { set gain(14) [expr $gain(14)-1] } -relief ridge -width 1
+	button .v($j).gain($j).small  -text "-" -command { set gain(14) [expr $gain(14)+1] } -relief ridge -width 1
+        } elseif { $j == 15 } then {
+	button .v($j).gain($j).large  -text "+" -command { set gain(15) [expr $gain(15)-1] } -relief ridge -width 1
+	button .v($j).gain($j).small  -text "-" -command { set gain(15) [expr $gain(15)+1] } -relief ridge -width 1
+        } elseif { $j == 16 } then {
+	button .v($j).gain($j).large  -text "+" -command { set gain(16) [expr $gain(16)-1] } -relief ridge -width 1
+	button .v($j).gain($j).small  -text "-" -command { set gain(16) [expr $gain(16)+1] } -relief ridge -width 1
+        } elseif { $j == 17 } then {
+	button .v($j).gain($j).large  -text "+" -command { set gain(17) [expr $gain(17)-1] } -relief ridge -width 1
+	button .v($j).gain($j).small  -text "-" -command { set gain(17) [expr $gain(17)+1] } -relief ridge -width 1
+        } elseif { $j == 18 } then {
+	button .v($j).gain($j).large  -text "+" -command { set gain(18) [expr $gain(18)-1] } -relief ridge -width 1
+	button .v($j).gain($j).small  -text "-" -command { set gain(18) [expr $gain(18)+1] } -relief ridge -width 1
+        } elseif { $j == 19 } then {
+	button .v($j).gain($j).large  -text "+" -command { set gain(19) [expr $gain(19)-1] } -relief ridge -width 1
+	button .v($j).gain($j).small  -text "-" -command { set gain(19) [expr $gain(19)+1] } -relief ridge -width 1
+	}
+	label .v($j).gain($j).text -text "gain" -textvariable gain($j) -width 4
+#	button .v($j).gain($j).large  -text "+" -command { set gain($j) [expr $gain($j)-1] } -relief ridge -width 4
+#	button .v($j).gain($j).small  -text "-" -command { set gain($j) [expr $gain($j)+1] } -relief ridge -width 4
+#	label .v($j).gain($j).text -text "gain" -textvariable gain($j) -width 2
+	if { $nline < 2 && $wy <= 30 } {
+	pack .v($j).gain($j).large .v($j).gain($j).small .v($j).gain($j).text -side left
+	} else {
+	pack .v($j).gain($j).large .v($j).gain($j).small .v($j).gain($j).text
+	}
+	canvas .v($j).canvas($j) -background $bk -width $cw -height $ch -relief sunken -border 1
+	for { set i 0 } { $i < $nline } { incr i } {
+		set y0 [expr $wy*($i + 1.0 + $wdy)]
+		eval .v($j).canvas($j) create line 0 $y0 $cw $y0 -fill #333333 -width 1
+	}
+	label .v($j).chinfo -text "CHINFO" -textvariable CHINFO($tmpch) -width 10
+	pack .v($j).info($j) .v($j).gain($j) .v($j).canvas($j) .v($j).chinfo -side left
+}
+for { set j 0 } { $j < $maxch } { incr j } {
+	pack .v($j)
+}
+frame .bottom
+label .bottom.m -text "MIN:"
+label .bottom.min -text "min" -textvariable min
+label .bottom.l -text "LTA:"
+label .bottom.lta -text "sec" -textvariable LTA
+label .bottom.lsbl -text "LSB +/-:"
+label .bottom.lsb -text "LSB" -textvariable lsb
+label .bottom.pixell -text "PIXEL +/-:"
+label .bottom.pixel -text "PIXEL" -textvariable wy2
+label .bottom.time -text "date" -textvariable nowtime -width 24
+button .bottom.quit -text "QUIT" -command { exit } -relief raised -width 20 -border 1
+pack .bottom.m .bottom.min .bottom.l .bottom.lta .bottom.lsbl .bottom.lsb .bottom.pixell .bottom.pixel .bottom.time .bottom.quit -side left
+pack .bottom -expand yes -side top
+update
+
+#bind all <ButtonPress>  { 
+#	set win [winfo parent %W]
+#	puts "$win $tmpch"
+#}
+
+set nx 0
+set ny 0
+set dt 0
+set tag line0
+
+if { $fpin == "stdin" } {
+	set fp $fpin 
+} else {
+	set fp [open $fpin r]
+}
+
+for { set j 0 } { $j < $maxch } { incr j } {
+	set rmean($j) 0
+}
+# read 1 sec data
+gets $fp line
+scan $line "%d %d %d %d %d %d %d" yr mo dy hr mi sc nch
+set sc0 $sc
+for { set j 0 } { $j < $maxch } { incr j } {
+	set freq($channel($j)) 0
+}
+for { set i 0 } { $i < $nch } { incr i } {
+	gets $fp tmpdata
+	set chid "[lindex $tmpdata 0]"
+	set freq($chid) "[lindex $tmpdata 1]"
+	set data($chid) $tmpdata
+}
+for { set j 0 } { $j < $maxch } { incr j } {
+	set tmpch $channel($j)
+	set freq2 $freq($tmpch)
+	set sum 0.0
+	for { set i 0 } { $i < $freq2 } { incr i } {
+               	set y [lindex $data($tmpch) [expr $i + 2]]
+		set sum [expr $sum+$y]
+	}
+	if { $freq2 > 0 } {
+		set rmean($j) [expr $sum/$freq2]
+		set rmean($j) [expr int($rmean($j))]
+		set ylast($j) [lindex $data($tmpch) [expr $freq2 + 1]]
+	} else {
+		set ylast($j) 0
+	}
+}
+
+while {![eof $fp]} {
+	gets $fp line
+	scan $line "%d %d %d %d %d %d %d" yr mo dy hr mi sc nch
+	if { $pipe } { puts $line }
+	set dt [expr $sc - $sc0]
+	if { $dt < 0 } { set dt [expr $dt+60] }
+	set sc0 $sc
+	set nowtime [format "%02d/%02d/%02d %02d:%02d:%02d" $yr $mo $dy $hr $mi $sc]
+	set get 0
+  	for { set j 0 } { $j < $maxch } { incr j } {
+		set freq($channel($j)) 0
+	}
+	for { set i 0 } { $i < $nch } { incr i } {
+		gets $fp tmpdata
+		if { $pipe } { puts $tmpdata }
+		set chid "[lindex $tmpdata 0]"
+		set freq($chid) "[lindex $tmpdata 1]"
+		set data($chid) $tmpdata
+		if { $nch > 0 } then { 
+			set get 1 
+		}
+	}
+	if { $pipe == 1 } { flush $fpout}
+	if { $get == 1 } then {
+	  for { set j 0 } { $j < $maxch } { incr j } {
+		if { $gain($j) < 0}  {
+			set gain($j) 0
+		}
+		set g($j) {}
+		set tmpch $channel($j)
+		set freq2 $freq($tmpch)
+# calc mean
+		set sum 0.0
+		for { set i 0 } { $i < $freq2 } { incr i } {
+                	set y [lindex $data($tmpch) [expr $i + 2]]
+			set sum [expr $sum+$y]
+		}
+#		set rmean($j) [expr 0.5*($rmean($j)+$sum/$freq2)]
+		if { $freq2 > 0 } {
+			set rmean($j) [expr $LTA1*$rmean($j)+$LTA2*($sum/$freq2)]
+			set rmean($j) [expr int($rmean($j))]
+#			puts $rmean($j)
+		}
+#		puts "$j $sum $rmean($j)"
+               	set gx [expr $wx*$nx]
+		set div [expr pow(2.0,$gain($j))]
+		set ymax [expr $clip*$wy2*$div]
+		set y $ylast($j)
+		set yy [expr $y - $rmean($j)]
+		if { $yy > $ymax } { set yy $ymax; }
+		if { $yy < [expr -$ymax] } { set yy [expr -$ymax]; }
+#              	set gy [expr -$wy*($y-$rmean($j))/pow(2.0,$gain($j)) + $wy*($ny+1.0+$wdy)]
+               	set gy [expr -$yy/$div + $wy*($ny+1.0+$wdy)]
+               	set g($j) [concat $g($j) $gx $gy]
+		for { set i 0 } { $i < $freq2 } { incr i } {
+                	set gx [expr $wx*$nx+$wx*($i+1)/$freq2]
+                	set y [lindex $data($tmpch) [expr $i + 2]]
+			set yy [expr $y - $rmean($j)]
+			if { $yy > $ymax } { set yy $ymax; }
+			if { $yy < [expr -$ymax] } { set yy [expr -$ymax]; }
+                	set gy [expr -$yy/$div + $wy*($ny+1.0+$wdy)]
+                	set g($j) [concat $g($j) $gx $gy]
+        	}
+		if { $freq2 > 0 } {
+			set ylast($j) [lindex $data($tmpch) [expr $freq2 + 1]]
+		}
+#		if { $nx % $nsec == 0 } then {
+#			eval .v($j).canvas($j) create text 5 [expr $wy*($ny+1.0+$wdy)] -fill white -text $ny -tags $tag -anchor sw 
+#		}
+		if { $ncol == 0 } {
+			set color white
+		} else {
+			set col [expr $j % $ncol]
+			if { $col == 0 } {
+				set color red
+			} elseif { $col == 1 } {
+				set color cyan
+			} elseif { $col == 2 }  {
+				set color yellow
+			} else { 
+				set color white
+			}
+		}
+		if { $freq2 > 0 } {
+			eval .v($j).canvas($j) create line $g($j) -fill $color -tags $tag -width 1
+		}
+	  }
+ 	  update	
+		set nx [expr $nx + $dt]
+		if { $nx >= $nsec } then {
+			set ny [expr $ny + 1]
+			set tag [format "line%d" [expr $ny % $nline]]
+			for { set j 0 } { $j < $maxch } { incr j } {
+				eval .v($j).canvas($j) delete $tag
+			}
+			set nx [expr $nx % $nsec]
+		}
+		if { $ny == $nline } then {
+			set ny 0
+		}
+	}
+}
+if { $fpin == "stdin" } {
+	;
+} else {
+	close $fp
+}

@@ -2,6 +2,10 @@ WIN package NEWS
   History of user-visible changes.
   17 Jan. 2002
 
+Version 1.1.7   (8 August, 2002)
+
+* import 'shmx' and 'shmx2'
+
 Version 1.1.4   (23 July, 2002)
 
 * add win2raw.c
@@ -10,4 +14,4 @@ Version 1.0.0   (17 January, 2002)
 
 (Changes before Versions 1.0.0 were never recorded.  Sorry.)
 
-$Id: NEWS,v 1.3 2002/08/04 11:17:04 uehira Exp $
+$Id: NEWS,v 1.4 2002/08/08 12:29:30 uehira Exp $

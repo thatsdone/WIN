@@ -87,7 +87,7 @@ char *argv[];
 #define setch(a) (chlist[a>>3]|=mask[a&0x07])
     int table = 0;
     char chtable[256];
-    c_info ch_info[65536];
+    c_info ch_info[128];
     char sacfile[256];
     int idum[40], itmp;
     float fdum[70], ftmp;
@@ -120,25 +120,6 @@ char *argv[];
 	case 't':
 	    table = 1;
 	    sprintf(chtable, "%s", optarg);
-	    if ((fp = fopen(chtable, "r")) == NULL) {
-		fprintf(stderr, "file not open %s\n", chtable);
-		exit(1);
-	    }
-	    while (fgets(cbuf, 200, fp) != NULL) {
-		ntoken = tokenize(cbuf, tokens, MAXTOKEN);
-		if (*cbuf == '#' || ntoken < 6)
-		    continue;
-		chsel = strtol(tokens[0], 0, 16);
-		setch(chsel);
-		sprintf(ch_info[chsel].chid, "%s", tokens[0]);
-		sprintf(ch_info[chsel].code, "%s", tokens[3]);
-		sprintf(ch_info[chsel].comp, "%s", tokens[4]);
-		ch_info[chsel].stla = atof(tokens[13]);
-		ch_info[chsel].stlo = atof(tokens[14]);
-		ch_info[chsel].stel = atof(tokens[15]);
-		ch_info[chsel].mul = atof(tokens[12]) / (atof(tokens[7]) * pow(10.0, atoi(tokens[11]) / 20.0));
-	    }
-	    fclose(fp);
 	    break;
 	default:
 	    fprintf(stderr, " option -%c unknown\n", c);
@@ -166,6 +147,35 @@ char *argv[];
 	exit(1);
     }
 
+    if (table) {
+        if ((fp = fopen(chtable, "r")) == NULL) {
+            fprintf(stderr, "file not open %s\n", chtable);
+            exit(1);
+        }
+        while (fgets(cbuf, 200, fp) != NULL) {
+            ntoken = tokenize(cbuf, tokens, MAXTOKEN);
+            if (*cbuf == '#' || ntoken < 6)
+                continue;
+            chsel = strtol(tokens[0], 0, 16);
+            setch(chsel);
+/* 
+            fprintf(stderr,"%s chindex %d\n",tokens[0],chindex[chsel]);
+ */
+    
+            if (chindex[chsel] > -1) {
+                sprintf(ch_info[chindex[chsel]].chid, "%s", tokens[0]);
+                sprintf(ch_info[chindex[chsel]].code, "%s", tokens[3]);
+                sprintf(ch_info[chindex[chsel]].comp, "%s", tokens[4]);
+                ch_info[chindex[chsel]].mul = atof(tokens[12]) / (atof(tokens[7]) * pow(10.0, atoi(tokens[11]) / 20.0));
+/*
+                fprintf(stderr, "%04X %g\n", tokens[0], ch_info[chindex[chsel]].mul);
+ */
+    
+            }
+        }
+        fclose(fp);
+    }
+
     n = 0;
     ndata = 0;
     while (fgets(cbuf, 2048, stdin) != NULL) {
@@ -191,8 +201,8 @@ char *argv[];
 	    sprintf(stime, "%02d/%02d/%02d %02d:%02d", yr % 100, mo, dy, hr, mi);
 	    if (!out) {
 		if (table) {
-		    sprintf(sacfile, "%02d%02d%02d%02d%02d_%s_%s.s", yr % 100, mo, dy, hr, mi, ch_info[id[0]].code,
-			    ch_info[id[0]].comp);
+		    sprintf(sacfile, "%02d%02d%02d%02d%02d_%s_%s.s", yr % 100, mo, dy, hr, mi, ch_info[0].code,
+			    ch_info[0].comp);
 		} else {
 		    sprintf(sacfile, "%02d%02d%02d%02d%02d_%04X.s", yr % 100, mo, dy, hr, mi, id[0]);
 		}
@@ -218,7 +228,7 @@ char *argv[];
 
     if (table) {
 	for (i = 0; i < ndata; i++)
-	    data[i] = ch_info[id[0]].mul * data[i];
+	    data[i] = ch_info[0].mul * data[i];
     }
 
 /* write sac data */
@@ -228,22 +238,25 @@ char *argv[];
     fdum[0] = 1.0 / (float) nfreq;	/* DELTA */
     fdum[5] = begin;		/* B */
     fdum[6] = fdum[5] + fdum[0] * (float) (ndata - 1);	/* E */
+/*
     if (table) {
-	fdum[31] = ch_info[id[0]].stla;	/* STN LAT */
-	fdum[32] = ch_info[id[0]].stlo;	/* STN LON */
-	fdum[33] = ch_info[id[0]].stel;	/* STN ELE */
+	fdum[31] = ch_info[0].stla;
+	fdum[32] = ch_info[0].stlo;	
+	fdum[33] = ch_info[0].stel;	
     }
+ */
 
     for (i = 0; i < 40; i++)
 	idum[i] = -12345;
     idum[6] = 6;		/* NVHDR */
+
     idum[9] = ndata;		/* NPTS */
     idum[15] = 01;		/* IFTYPE */
     idum[35] = 1;		/* LEVEN */
 
     if (table) {
 	sprintf(kevnm, "%s", stime);
-	sprintf(kstnm, "%s%s", ch_info[id[0]].code, ch_info[id[0]].comp);
+	sprintf(kstnm, "%s%s", ch_info[0].code, ch_info[0].comp);
     } else {
 	sprintf(kevnm, "%s", stime);
 	sprintf(kstnm, "%04X", id[0]);

@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.8 2000/08/14 10:51:00 urabe Exp $
+   $Id: win.c,v 1.9 2000/08/23 09:52:37 urabe Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -13,7 +13,7 @@
    98.7.2 yo2000
 */
 #define NAME_PRG      "win"
-#define VERSION       "2000.8.14"
+#define VERSION       "2000.8.23"
 #define DEBUG_AP      0   /* for debugging auto-pick */
 /* 5:sr, 4:ch, 3:sec, 2:find_pick, 1:all */
 /************ HOW TO COMPILE THE PROGRAM **************************
@@ -2730,6 +2730,10 @@ get_range(sec,msec,aic,sd1,sd2,nm,n,i_min,sr,pt)
 
   nn=(double)(n-nm);
   ms=((i_min-1)*1000-500)/sr;   /* -1 from experience */
+#if DEBUG_AP>=2
+fprintf(stderr,"sec=%d msec=%d i_min=%d n=%d nm=%d nn=%f ms=%d\n",
+sec,msec,i_min,n,nm,nn,ms);
+#endif
   dj=sum=0.0;
   for(i=i_min-1;i>nm;i--)
     {
@@ -2738,7 +2742,7 @@ get_range(sec,msec,aic,sd1,sd2,nm,n,i_min,sr,pt)
     dj+=1.0;
     if(d>LEVEL_2 || sd2[i]==0.0 || sd1[i]/sd2[i]>1.0) break;
     }
-  if((sum*=2.0/dj)==0.0) return 0;
+  if((sum*=2.0/dj)==0.0||sum<dj*0.00001) return 0;
   ms1=(int)((LEVEL_1*dj/sum+0.5)*1000.0)/sr;
 #if DEBUG_AP>=2
 fprintf(stderr,"sum=%f dj=%f ms1=%d\n",sum,dj,ms1);
@@ -2751,7 +2755,7 @@ fprintf(stderr,"sum=%f dj=%f ms1=%d\n",sum,dj,ms1);
     dj+=1.0;
     if(d>LEVEL_2 || sd1[i]/sd2[i]>1.0) break;
     }
-  if((sum*=2.0/dj)==0.0) return 0;
+  if((sum*=2.0/dj)==0.0||sum<dj*0.00001) return 0;
   ms2=(int)((LEVEL_1*dj/sum+0.5)*1000.0)/sr;
 #if DEBUG_AP>=1
 fprintf(stderr,"sum=%f dj=%f ms2=%d\n",sum,dj,ms2);

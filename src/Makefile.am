@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.14 2003/07/02 04:41:45 urabe Exp $
+# $Id: Makefile.am,v 1.15 2003/08/09 02:11:51 uehira Exp $
 #
 
 if SUNOS4
@@ -31,7 +31,8 @@ OFFLINE_F77=hypomh
 
 OFFLINE_USER=win $(OFFLINE_F77) wed wck wadd $(OFFLINE_MATH) wchch pick2tseis \
              wch pick2finalb pick2final finalb2final final2finalb finalb2seis \
-             wform wintowin $(OFFLINE_USER_MATH) winadd wck_wdisk wadd2 win2raw
+             wform wintowin $(OFFLINE_USER_MATH) winadd wck_wdisk wadd2 \
+             win2raw wchasn
 TAPE_USER=rtape fromtape wdisk wdiskts ras2rpdl ras2lips file_older raw2mon \
           $(TAPE_USER_MATH)
 ONLINE=order raw_mon wtape setexb timeout raw_raw raw_100 cormeisei shmdump \
@@ -84,6 +85,8 @@ select_stations_SOURCES = select_stations.c $(SUBFUNC_H)
 select_stations_LDADD = -lm
 
 wchch_SOURCES = wchch.c $(SUBFUNC_H)
+
+wchasn_SOURCES = wchasn.c $(WIN_UTIL_C) $(WIN_UTIL_H) $(SUBFUNC_H)
 
 pick2tseis_SOURCES = pick2tseis.c $(SUBFUNC_H)
 

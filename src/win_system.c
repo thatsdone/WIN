@@ -1,4 +1,4 @@
-/* $Id: win_system.c,v 1.6 2002/07/22 15:12:32 uehira Exp $ */
+/* $Id: win_system.c,v 1.7 2003/08/09 02:11:51 uehira Exp $ */
 /* win system utility functions */
 
 #ifdef HAVE_CONFIG_H
@@ -544,4 +544,27 @@ read_onesec_win(FILE *fp, unsigned char **rbuf)
     return (0);
 
   return (size);
+}
+
+WIN_blocksize
+win_get_chhdr(unsigned char *ptr, WIN_ch *chnum, WIN_sr *sr)
+{
+  unsigned long  gh;
+  WIN_blocksize  gsize;
+
+  gh = mklong(ptr);
+  
+  /* channel number */
+  *chnum = (WIN_ch)(gh >> 16);
+  
+  /* sampling rate */
+  *sr = (WIN_sr)(gh & 0xfff);
+
+  /* size */
+  if ((gh >> 12) & 0xf)
+    gsize = ((gh >> 12) & 0xf) * (*sr - 1) + 8;
+  else
+    gsize = (*sr >> 1) + 8;
+
+  return (gsize);
 }

@@ -1,4 +1,8 @@
-$Id: ChangeLog,v 1.46 2003/07/30 01:28:39 urabe Exp $
+$Id: ChangeLog,v 1.47 2003/08/09 02:11:50 uehira Exp $
+
+2003-08-09 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* wchasn.c : channel number assignment filter.
+	* Version 1.1.22 released.
 
 2003-07-30 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
 	* win.c : Ignore clicks on horizontal borders in ZOOM window.

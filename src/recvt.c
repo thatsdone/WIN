@@ -1,3 +1,4 @@
+/* $Id: recvt.c,v 1.21 2004/08/09 01:42:04 urabe Exp $ */
 /* "recvt.c"      4/10/93 - 6/2/93,7/2/93,1/25/94    urabe */
 /*                2/3/93,5/25/94,6/16/94 */
 /*                1/6/95 bug in adj_time fixed (tm[0]--) */
@@ -42,6 +43,7 @@
 /*                2002.11.29 corrected byte-order of port no. in log */
 /*                2002.12.21 disable resend request if -r */
 /*                2003.3.24-25 -N (no pno) and -A (no TS) options */
+/*                2004.8.9 fixed bug introduced in 2002.5.23 */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -116,7 +118,7 @@ get_time(rt)
   int *rt;
   {
   struct tm *nt;
-  unsigned long ltime;
+  time_t ltime;
   time(&ltime);
   nt=localtime(&ltime);
   rt[0]=nt->tm_year%100;
@@ -226,7 +228,7 @@ read_chfile()
   int i,j,k,ii;
   char tbuf[1024],host_name[80],tb[256];
   struct hostent *h;
-  static unsigned long ltime,ltime_p;
+  static time_t ltime,ltime_p;
 
   n_host=0;
   if(*chfile)

@@ -12,7 +12,7 @@ insert_raw
 .LP
 .SH 解説
 insert_raw は、wdiskts(1W) によって生成された、
-order(1W) または order2(1W) にタイムアウトしたデータファイルを読み、
+order(1W) にタイムアウトしたデータファイルを読み、
 wdisk(1W) が書いた１分ファイル(連続ファイル)の適切な位置に挿入します。
 .I prmfile
 は
@@ -42,4 +42,4 @@ insert_raw は引数なしで起動すると簡単な使用法を表示します。
 .TP
 `insert_raw.c'
 .SH 関連事項
-wdiskts(1W), wdisk(1W), order(1W), order2(1W), insert_trg(1W)
+wdiskts(1W), wdisk(1W), order(1W), insert_trg(1W)

@@ -1,5 +1,9 @@
-$Id: ChangeLog,v 1.64 2004/08/29 00:24:14 urabe Exp $
+$Id: ChangeLog,v 1.65 2004/08/30 05:04:28 uehira Exp $
 
+2004-08-30 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* order2 : remove
+	* Version 1.1.36 released.
+	
 2004-08-29 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
 	* man/winformat.1, man/win.1 : fixed gtbl error
 

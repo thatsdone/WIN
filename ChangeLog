@@ -1,4 +1,7 @@
- $Id: ChangeLog,v 1.101 2005/03/15 06:23:19 urabe Exp $
+ $Id: ChangeLog,v 1.102 2005/03/16 05:52:17 uehira Exp $
+
+2005-03-15 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* wdiskts : improved memory management.
 
 2005-03-15 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
 	* rtape/fromtape : made smart in obtaining bl_count.

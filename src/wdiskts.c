@@ -1,4 +1,4 @@
-/* $Id: wdiskts.c,v 1.3 2004/12/03 14:07:11 uehira Exp $ */
+/* $Id: wdiskts.c,v 1.4 2005/03/16 05:52:17 uehira Exp $ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
+#include <unistd.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <sys/file.h>
@@ -33,7 +34,7 @@
 #include "daemon_mode.h"
 #include "subst_func.h"
 
-#define   DEBUG   0
+/*  #define   DEBUG   0 */
 #define   DEBUG1  0
 #define   DEBUG3  0
 #define   BELL    0
@@ -48,8 +49,8 @@ char tbuf[256],latest[20],oldest[20],busy[20],outdir[80];
 char *progname,logfile[256];
 int count,count_max,mode;
 FILE *fd;
-static unsigned char  *datbuf,*sortbuf;
-unsigned long  dat_num,sort_num;
+static unsigned char  *datbuf,*sortbuf,*datbuf_tmp;
+unsigned long  dat_num,sort_num,array_num_datbuf;
 jmp_buf  mx;
 int  daemon_mode, syslog_mode;
 
@@ -273,6 +274,7 @@ bcd2time(bcd)
    struct tm     tim_str;
    time_t        tim;
 
+   memset(&tim_str, 0, sizeof(tim_str));
    bcd_dec(t,bcd);
    if(t[0]>=70)
       tim_str.tm_year=t[0];
@@ -527,7 +529,7 @@ switch_file(tm)
 	}
         FREE(datbuf);
 	FREE(sortbuf);
-        dat_num=0;
+        array_num_datbuf=dat_num=0;
 	datbuf=NULL;
       }
       fclose(fd);
@@ -687,7 +689,7 @@ main(argc,argv)
    setjmp(mx);
  reset:
    datbuf=NULL;
-   dat_num=0;
+   array_num_datbuf = dat_num = 0;
    fd=NULL;
    while(shm->r==(-1)) sleep(1);
    shp=shm->r;    /* read position */
@@ -728,9 +730,15 @@ main(argc,argv)
 	}
 	c_save=shm->c;
 	dat_num+=size;
-	if((datbuf=REALLOC(unsigned char,datbuf,dat_num))==NULL){
-	  write_log(logfile,"realloc");
-	  goto reset;
+	if (array_num_datbuf < dat_num) {
+	  array_num_datbuf = dat_num << 1;
+	  datbuf_tmp=REALLOC(unsigned char,datbuf,array_num_datbuf);
+	  if(datbuf_tmp==NULL){ 
+	    FREE(datbuf);
+	    write_log(logfile,"realloc");
+	    goto reset;
+	  }
+	  datbuf = datbuf_tmp;
 	}
 	ptw=datbuf+dat_num-size;
 	ptr=&size_out[0];
@@ -738,7 +746,8 @@ main(argc,argv)
 	size-=4;
 	ptr=shm->d+shp+8;
 #if DEBUG
-	printf("size=%d dat_num=%d\n",size,dat_num);
+	printf("size=%5d\t dat_num=%d\t array_num_datbuf=%d\n",
+	       size,dat_num,array_num_datbuf);
 #endif
 	while((size--)>0) *ptw++=(*ptr++);
 	shp+=size_save;

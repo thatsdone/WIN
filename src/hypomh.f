@@ -1,4 +1,4 @@
-C $Id: hypomh.f,v 1.6 2001/11/14 09:49:20 urabe Exp $
+C $Id: hypomh.f,v 1.7 2003/06/09 04:35:28 urabe Exp $
 C HYPOMH   : main program for hypocenter location
 C           original version was made on March 13, 1984  and
 C            modified by N.H. on Feb. 8, 1985, May 8, 1985.
@@ -15,6 +15,7 @@ C        BUG IN SDATA (read station height) FIXED  7/28/93
 C        MAXIMUM N OF STATIONS IS 999              JAN06,2001 K.Katsumata
 C        TRAVEL-TIME CALCULATION MODE              6/12/2001 Urabe
 C        fixed format of 'year' in format#2200 in sub final()  10/17/2001 Urabe
+C        bug fixed by Honda/Nagai for initialization of IYEAR 6/9/2003
 C
       PROGRAM HYPOMH
 C
@@ -95,12 +96,12 @@ C REPORT FILE NAME
       call getarg(4,FILE)
       OPEN(21,FILE=FILE,STATUS='unknown')
 C INITIAL VALUE FILE NAME
+      IYEAR=-1
       IF(IARGC().GE.5) THEN
         call getarg(5,FILE)
         OPEN(12,FILE=FILE,STATUS='OLD')
         READ(12,100) ALAT00,ALNG00,DEPT00
         READ(12,100) ELAT00,ELNG00,EDPT00
-        IYEAR=-1
 C If third line exists, enter 'travel-time calculation only' mode.
         READ(12,*,END=10) IYEAR,IMONT,IDAY,IHOUR,IMINU,SECC,ALAT00,
      1   ALNG00,DEPT00,AMAG00

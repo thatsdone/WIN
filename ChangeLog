@@ -1,4 +1,8 @@
-$Id: ChangeLog,v 1.36 2003/06/03 15:11:24 tsuru Exp $
+$Id: ChangeLog,v 1.37 2003/06/09 04:35:28 urabe Exp $
+
+2003-06-09 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
+	* hypomh.f : bug fixed by Honda/Nagai for initialization of IYEAR 
+	* Version 1.1.18 released.
 
 2003-06-03 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
 	* ecore2.c : replaced err-related ext defs with '#include <errno.h>'

@@ -1,4 +1,4 @@
-/* $Id: wch.c,v 1.5 2002/03/24 15:35:47 urabe Exp $ */
+/* $Id: wch.c,v 1.6 2002/05/07 08:57:14 urabe Exp $ */
 /*
 program "wch.c"
 "wch" edits a win format data file by channles
@@ -7,7 +7,7 @@ program "wch.c"
 1997.10.1 FreeBSD
 1999.4.20 byte-order free
 2000.4.17 wabort
-2002.2.18 delete duplicated data
+2002.2.18 delete duplicated data & negate_channel
 */
 
 #ifdef HAVE_CONFIG_H
@@ -24,6 +24,7 @@ program "wch.c"
 
 unsigned char *buf,*outbuf;
 unsigned char ch_table[65536];
+int negate_channel;
 
 wabort() {exit();}
 
@@ -33,55 +34,51 @@ read_chfile(chfile)
   FILE *fp;
   int i,j,k;
   char tbuf[1024];
-  if((fp=fopen(chfile,"r"))!=NULL)
+  if(*chfile)
     {
-#if DEBUG
-    fprintf(stderr,"ch_file=%s\n",chfile);
-#endif
-    for(i=0;i<65536;i++) ch_table[i]=0;
-    i=j=0;
-    while(fgets(tbuf,1024,fp))
+    if((fp=fopen(chfile,"r"))!=NULL)
       {
-      if(*tbuf=='#' || sscanf(tbuf,"%x",&k)<0) continue;
-      k&=0xffff;
-#if DEBUG
-      fprintf(stderr," %04X",k);
-#endif
-      if(ch_table[k]==0)
+      if(negate_channel) for(i=0;i<65536;i++) ch_table[i]=1;
+      else for(i=0;i<65536;i++) ch_table[i]=0;
+      i=j=0;
+      while(fgets(tbuf,1024,fp))
         {
-        ch_table[k]=1;
-        j++;
+        if(*tbuf=='#' || sscanf(tbuf,"%x",&k)<0) continue;
+        k&=0xffff;
+        if(negate_channel)
+          {
+          if(ch_table[k]==1)
+            {
+            ch_table[k]=0;
+            j++;
+            }
+          }
+        else
+          {
+          if(ch_table[k]==0)
+            {
+            ch_table[k]=1;
+            j++;
+            }
+          }
+        i++;
         }
-      i++;
+      if(negate_channel) fprintf(stderr,"-%d channels\n",j);
+      else fprintf(stderr,"%d channels\n",j);
+      return j;
       }
-#if DEBUG
-    fprintf(stderr,"\n",k);
-#endif
+    else
+      {
+      fprintf(stderr,"ch_file '%s' not open\n",chfile);
+      return 0;
+      }
     }
   else
     {
-    fprintf(stderr,"ch_file '%s' not open\n",chfile);
-    return 0;
+    for(i=0;i<65536;i++) ch_table[i]=1;
+    fprintf(stderr,"all channels\n");
+    return i;
     }
-  return j;
-  }
-
-get_one_record()
-  {
-  int i,re;
-  while(read_data()>0)
-    {
-    /* read one sec */
-    if(select_ch(ch_table,buf,outbuf)>10)
-      /* write one sec */
-      if((re=fwrite(outbuf,1,mklong(outbuf),stdout))==0) exit(1);
-#if DEBUG       
-    fprintf(stderr,"in:%d B out:%d B\n",mklong(buf),mklong(outbuf));
-#endif
-    }
-#if DEBUG
-  fprintf(stderr," : done\n");
-#endif
   }
 
 mklong(ptr)       
@@ -153,20 +150,54 @@ select_ch(table,old_buf,new_buf)
   return new_size;
   }
 
+get_one_record()
+  {
+  int i,re;
+  while(read_data()>0)
+    {
+    /* read one sec */
+    if(select_ch(ch_table,buf,outbuf)>10)
+      /* write one sec */
+      if((re=fwrite(outbuf,1,mklong(outbuf),stdout))==0) exit(1);
+#if DEBUG
+    fprintf(stderr,"in:%d B out:%d B\n",mklong(buf),mklong(outbuf));
+#endif
+    }
+#if DEBUG
+  fprintf(stderr," : done\n");
+#endif
+  }
+
 main(argc,argv)
   int argc;
   char *argv[];
   {
+  char chfile[1024];
   signal(SIGINT,(void *)wabort);
   signal(SIGTERM,(void *)wabort);
 
   if(argc<2)
     {
     fprintf(stderr," usage of 'wch' :\n");
-    fprintf(stderr,"   'wch [ch file] <[in_file] >[out_file]'\n");
+    fprintf(stderr,"   'wch -/[ch file]/-[ch file] <[in_file] >[out_file]'\n");
     exit(0);
     }
+  if(strcmp("-",argv[1])==0) *chfile=0;
+  else
+    {
+    if(argv[1][0]=='-')
+      {
+      strcpy(chfile,argv[1]+1);
+      negate_channel=1;
+      }
+    else
+      {
+      strcpy(chfile,argv[1]);
+      negate_channel=0;
+      }
+    }
 
-  if(read_chfile(argv[1])>0) get_one_record();
+  if(!read_chfile(chfile)) exit(1);
+  get_one_record();
   exit(0);
   }

@@ -1,4 +1,4 @@
-/* $Id: pmon.c,v 1.11 2002/03/24 15:35:46 urabe Exp $ */
+/* $Id: pmon.c,v 1.12 2002/05/07 10:28:00 urabe Exp $ */
 /************************************************************************
 *************************************************************************
 **  program "pmon.c" for NEWS/SPARC                             *********
@@ -1254,6 +1254,8 @@ main(argc,argv)
     fn3[100],path_font[WIN_FILENAME_MAX],path_temp[WIN_FILENAME_MAX],
     path_mon[WIN_FILENAME_MAX],area[20],timebuf1[80],timebuf2[80],printer[40],
     name[STNLEN],comp[CMPLEN],path_mon1[WIN_FILENAME_MAX];
+  extern int optind;
+  extern char *optarg;
 
   if(progname=strrchr(argv[0],'/')) progname++;
   else progname=argv[0];

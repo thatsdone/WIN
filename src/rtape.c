@@ -1,4 +1,4 @@
-/* $Id: rtape.c,v 1.3.2.1 2001/11/02 11:43:38 uehira Exp $ */
+/* $Id: rtape.c,v 1.3.2.2 2001/11/19 02:42:46 uehira Exp $ */
 /*
   program "rtape.c"
   9/16/89 - 11/06/90, 6/26/91, 10/30/91, 6/26/92  urabe
@@ -10,6 +10,7 @@
   98.9.8   Multi-block sec
   99.4.19  byte-order-free
   2000.5.10 deleted size=<0x3c000 limit
+  2001.10.15 output to current dir if not specified
 */
 
 #ifdef HAVE_CONFIG_H
@@ -565,13 +566,15 @@ main(argc,argv)
   printf("%02x%02x%02x %02x%02x%02x  %d (type=%d)\n",buf[4],buf[5],
     buf[6],buf[7],buf[8],buf[9],mklong(buf),fm_type);
 
-  if(argc<3+optbase)
+  if(argc<2+optbase)
     {
     print_usage();
     end_process(0);
     }
 
   nch=0;
+  if(argc>2+optbase) sscanf(argv[2+optbase],"%s",path);
+  else strcpy(path,".");
   if(argc>3+optbase)
     {
     if((f_param=fopen(argv[3+optbase],"r"))==NULL)
@@ -584,7 +587,6 @@ main(argc,argv)
     printf("\n  <- %d chs according to '%s'\n",nch,argv[3+optbase]);
     fclose(f_param);
     }
-  sscanf(argv[2+optbase],"%s",path);
   sscanf(argv[1+optbase],"%s",param_file);
   if((f_param=fopen(param_file,"r"))==NULL)
     {

@@ -1,6 +1,8 @@
-$Id: ChangeLog,v 1.1.2.2 2001/11/19 02:23:46 uehira Exp $
+$Id: ChangeLog,v 1.1.2.3 2001/11/19 02:42:46 uehira Exp $
 
 2001-11-19 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* MFC: output to current dir if not specified
+	  rtape.c
 	* MFC: fixed bug in port no. with ntohs()
 	  recvnmx.c recvs.c recvstatus.c recvt.c relay.c send_raw.c 
 	  send_raw_old.c sends.c 

@@ -3,20 +3,20 @@
 .SH 名称
 wdisk, wdisk60 - win 形式データのディスクファイルへの書き込み
 .SH 形式
-wdisk [\-\fBn\fR]
+wdisk [\-\fBns\fR]
 .I shmkey
 .I outdir
 [
-.I nfiles
+.I nfiles/freespace(-s)
 [
 .I logfile
 ]]
 .br
-wdisk60 [\-\fBn\fR]
+wdisk60 [\-\fBns\fR]
 .I shmkey
 .I outdir
 [
-.I nfiles
+.I nfiles/freespace(-s)
 [
 .I logfile
 ]]
@@ -41,8 +41,11 @@ wdisk60 では、ファイルは
 .I \ nfiles
 は保存するべき最大のファイル数で、常時最新の
 .I \ nfiles
-個のファイルが保存され、それより古いファイルは消されていきます。
-.I nfiles
+個のファイルが保存され、それより古いファイルは消されていきます。ただし、
+オプション
+\fB\-s\fR
+を指定した場合は、常に確保すべきスペース(MB)を指定したことになります。
+.I nfiles/freespace
 を指定しないか、'0' を指定すると、ファイルを自動的に消すことは
 しません。
 .LP
@@ -57,6 +60,9 @@ wdisk, wdisk60 は引数なしで起動すると簡単な使用法を表示します。
 .SH 共有メモリ上の形式
 order(1W) を参照してください。
 .SH オプション
+.IP "\fB\-s" 5
+保存すべきファイルを、ファイル数ではなく、常に確保すべきスペースで指定
+するようにします。MB 単位で第3引数に指定します。
 .IP "\fB\-n" 5
 次節に書いてある動作状況を示すファイルのうち、MAX を除く BUSY、COUNT、
 LATEST、OLDEST のファイルを作りません。このオプションを指定した時は、
@@ -75,13 +81,14 @@ l l.
 BUSY	現在書き込み中のファイル名
 COUNT	現在のファイル数
 LATEST	最も新しく書き込みの完了したファイル
-MAX	保存すべきファイルの数
+MAX	保存すべきファイルの数/常に確保すべきスペース(MB)
 OLDEST	最も古いファイル名
 .TE
 .RE
 .LP
 wdisk, wdisk60 の動作中でもファイル MAX を書き換えると、それ以降は
-「保存されるファイルの数」が新しい値に変わります。
+「保存されるファイルの数/常に確保すべきスペース(MB)」が新しい値に変わ
+ります。
 .SH ソース 
 .TP
 `wdisk.c'

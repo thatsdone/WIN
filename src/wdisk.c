@@ -1,4 +1,4 @@
-/* $Id: wdisk.c,v 1.11 2004/08/30 05:09:53 uehira Exp $ */
+/* $Id: wdisk.c,v 1.12 2004/09/07 11:39:54 uehira Exp $ */
 /*
   program "wdisk.c"   4/16/93-5/13/93,7/2/93,7/5/94  urabe
                       1/6/95 bug in adj_time fixed (tm[0]--)
@@ -15,6 +15,7 @@
                       2002.5.2 i<1000 -> 1000000
                       2002.5.28 read from stdin
                       2004.8.1 added option -n (uehira)
+                      2004.9.4 added option -s (uehira)
 */
 
 #ifdef HAVE_CONFIG_H
@@ -46,17 +47,35 @@
 #include <errno.h>
 #include <unistd.h>
 
+#ifdef HAVE_SYS_PARAM_H
+#include <sys/param.h>
+#endif
+#ifdef HAVE_SYS_MOUNT_H
+#include <sys/mount.h>
+#endif
+#ifdef HAVE_SYS_VFS_H
+#include <sys/vfs.h>
+#endif
+#ifdef HAVE_SYS_STATVFS_H
+#include <sys/statvfs.h>
+#define statfs statvfs
+#define f_bsize f_frsize
+#endif
+
 #include "subst_func.h"
 
 #define   DEBUG   0
 #define   BELL    0
 
-char tbuf[256],latest[20],oldest[20],busy[20],outdir[80];
-char *progname,logfile[256];
+#define   NAMELEN  1025
+
+char tbuf[NAMELEN],latest[NAMELEN],oldest[NAMELEN],busy[NAMELEN],
+  outdir[NAMELEN];
+char *progname,logfile[NAMELEN];
 unsigned char *buf;
 int count,count_max,mode;
 FILE *fd;
-int  nflag;
+int  nflag, smode;
 
 mklong(ptr)
   unsigned char *ptr;
@@ -66,7 +85,7 @@ mklong(ptr)
     ((ptr[2]<<8)&0xff00)+(ptr[3]&0xff);
   return a;
   }   
-        
+
 write_log(logfil,ptr)
      char *logfil;
      char *ptr;
@@ -149,11 +168,33 @@ get_time(rt)
    rt[5]=nt->tm_sec;
 }
 
+long
+check_space(path,fsbsize)
+     char *path;
+     long *fsbsize;
+{
+  struct statfs fsbuf;
+  char  path1[NAMELEN];
+
+  if (snprintf(path1, sizeof(path1), "%s/.", path) >= sizeof(path1)) {
+    write_log(logfile, "path1[]: buffer overflow");
+    ctrlc();
+  }
+  if (statfs(path1, &fsbuf) < 0)
+    err_sys("statfs");
+
+  *fsbsize = fsbuf.f_bsize;
+
+  return (fsbuf.f_bavail);
+}
+
 switch_file(tm)
   int *tm;
 {
    FILE *fp;
-   char oldst[20];
+   char oldst[NAMELEN];
+   long freeb, fsbsize, space_raw;
+
    if(fd!=NULL){  /* if file is open, close last file */
       fclose(fd);
       fd=NULL;
@@ -165,28 +206,70 @@ switch_file(tm)
 	wmemo("LATEST",latest);
       }
    }
+
    /* delete oldest file */
-   sprintf(tbuf,"%s/MAX",outdir);
-   if(fp=fopen(tbuf,"r")){
-      fscanf(fp,"%d",&count_max);
-      fclose(fp);
-      if(count_max>0 && count_max<3) count_max=3;
-   }
-   else count_max=0;
-   
-   while((count=find_oldest(outdir,oldst))>=count_max && count_max){
-      sprintf(tbuf,"%s/%s",outdir,oldst);
-      unlink(tbuf);
-      count--;
+   if (smode) {
+     if (snprintf(tbuf,sizeof(tbuf),"%s/MAX",outdir) >= sizeof(tbuf)) {
+       write_log(logfile, "tbuf[]: buffer overflow");
+       ctrlc();
+     }
+     if(fp=fopen(tbuf,"r")){
+       fscanf(fp,"%d",&count_max);
+       fclose(fp);
+     }
+     else count_max=0;
+
+     for (;;) {
+       freeb = check_space(outdir, &fsbsize);
+       space_raw = ((long)count_max << 20) / fsbsize;
+       count = find_oldest(outdir,oldst);
 #if DEBUG
-      printf("%s deleted\n",tbuf);
+       printf("freeb, space_raw: %d %d (%d)\n",
+	      freeb, space_raw, fsbsize);
 #endif
+       if (space_raw < freeb || count == 0)
+	 break;
+       if (snprintf(tbuf, sizeof(tbuf), "%s/%s", outdir, oldst)
+	   >= sizeof(tbuf)) {
+	 write_log(logfile, "tbuf[]: buffer overflow");
+	 ctrlc();
+       }
+       unlink(tbuf);
+       sync();
+       sync();
+       sync();
+       count--;
+     }
+
+     if (!nflag) {
+       strcpy(oldest,oldst);
+       wmemo("OLDEST",oldest);
+     }
+   } else {
+     if (snprintf(tbuf,sizeof(tbuf),"%s/MAX",outdir) >= sizeof(tbuf)) {
+       write_log(logfile, "tbuf[]: buffer overflow");
+       ctrlc();
+     }
+     if(fp=fopen(tbuf,"r")){
+       fscanf(fp,"%d",&count_max);
+       fclose(fp);
+       if(count_max>0 && count_max<3) count_max=3;
+     }
+     else count_max=0;
+     
+     while((count=find_oldest(outdir,oldst))>=count_max && count_max){
+       sprintf(tbuf,"%s/%s",outdir,oldst);
+       unlink(tbuf);
+       count--;
+#if DEBUG
+       printf("%s deleted\n",tbuf);
+#endif
+     }
+     if (!nflag) {
+       strcpy(oldest,oldst);
+       wmemo("OLDEST",oldest);
+     }
    }
-   if (!nflag) {
-     strcpy(oldest,oldst);
-     wmemo("OLDEST",oldest);
-   }
-   
    /* make new file name */
    if(mode==60) sprintf(busy,"%02d%02d%02d%02d",tm[0],tm[1],tm[2],tm[3]);
    else sprintf(busy,"%02d%02d%02d%02d.%02d",tm[0],tm[1],tm[2],tm[3],tm[4]);
@@ -251,7 +334,7 @@ usage()
 {
 
   fprintf(stderr,
-	  " usage : '%s (-n) [shm_key]/- [out dir] ([N of files] ([log file]))'\n",
+	  " usage : '%s (-ns) [shm_key]/- [out dir] ([N of files]/[freespace in MB(-s)] ([log file]))'\n",
 	  progname);
 }
 
@@ -280,11 +363,14 @@ main(argc,argv)
    if(strcmp(progname,"wdisk60")==0) mode=60;
    else mode=1;
 
-   nflag = 0;
-   while ((c = getopt(argc, argv, "n")) != -1) {
+   smode = nflag = 0;
+   while ((c = getopt(argc, argv, "ns")) != -1) {
      switch (c) {
      case 'n':
        nflag = 1;  /* don't make control files except 'MAX' */
+       break;
+     case 's':
+       smode = 1;  /* space mode */
        break;
      default:
        usage();
@@ -310,7 +396,10 @@ main(argc,argv)
    else count_max=0;
    sprintf(tbuf,"%s/MAX",outdir);
    fp=fopen(tbuf,"w+");
-   fprintf(fp,"%d\n",count_max);
+   if (smode)
+     fprintf(fp,"%d MB\n",count_max);
+   else
+     fprintf(fp,"%d\n",count_max);
    fclose(fp);
    
    if(argc>3) strcpy(logfile,argv[3]);

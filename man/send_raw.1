@@ -1,8 +1,16 @@
-.TH send_raw 1W "1996.5.24" "WIN SYSTEM" "WIN SYSTEM"
+.TH send_raw 1W "2000.12.23" "WIN SYSTEM" "WIN SYSTEM"
 .SH 名称
 send_raw, send_mon, sendt_raw, sendt_mon - IPによる win 形式データの送信
 .SH 形式
-send_raw
+.IP
+.ti -7
+send_raw [
+.I \-armt
+] [
+.I \-h hours
+] [
+.I \-s sec
+]
 .I shmkey
 .I dest
 .I port
@@ -12,7 +20,15 @@ send_raw
 .I logfile
 ]]
 .br
+.ti -7
 send_mon
+[
+.I \-armt
+] [
+.I \-h hours
+] [
+.I \-s sec
+]
 .I shmkey
 .I dest
 .I port
@@ -22,7 +38,32 @@ send_mon
 .I logfile
 ]]
 .br
+.ti -7
 sendt_raw
+[
+.I \-armt
+] [
+.I \-h hours
+] [
+.I \-s sec
+]
+.I shmkey
+.I dest
+.I port
+[
+.I chfile
+[
+.I logfile
+]]
+.ti -7
+sendt_mon
+[
+.I \-armt
+] [
+.I \-h hours
+] [
+.I \-s sec
+]
 .I shmkey
 .I dest
 .I port
@@ -32,15 +73,6 @@ sendt_raw
 .I logfile
 ]]
 .br
-sendt_mon
-.I shmkey
-.I dest
-.I port
-[
-.I chfile
-[
-.I logfile
-]]
 .SH 解説
 send_raw, send_mon, sendt_raw, sendt_monは、キー
 .I \ shmkey
@@ -93,11 +125,29 @@ recvt(1W)を参照してください。伝送効率を上げるため、
 １パケットのサイズは1472バイト以内（IPパケットサイズで1500バイト
 以内）でなるべく大きくなるように生成されます。
 .SH オプション
-.TP 
-なし
+.IP \fB\-a\fP 5
+共有メモリ上のデータ形式を，「パケット種別付き」（recvs(1W) 参照）
+とみなし，そのままの形式で送信します。この場合，チャネルファイルに
+よるチャネルの選択は行われず，共有メモリ上では「書き込み時刻付き」
+形式であると仮定されます。他のオプションはすべて無視されます。
+.br
+なお、現在このモードでは再送処理を行いません。
+.IP \fB\-r\fP 5
+send_raw または sendt_raw （オプション \fB\-t\fP と共に指定したとき）
+の動作をします。
+.IP \fB\-m\fP 5
+send_mon または sendt_mon （オプション \fB\-t\fP と共に指定したとき）
+の動作をします。
+.IP \fB\-t\fP 5
+オプション \fB\-r\fP または \fB\-m\fP と共に指定すると，
+それぞれ sendt_raw または sendt_mon の動作をします。
+.IP \fB\-h [hours]\fP 5
+送信の際にデータのタイムスタンプを hours 時間だけ進めます。
+.IP \fB\-s [sec]\fP 5
+送信の際にデータのタイムスタンプを sec 秒だけ進めます。
 .SH ソース 
 .TP
 `send_raw.c'
 .SH 関連事項
 winformat(1W), recvt(1W), relay(1W), order(1W), raw_raw(1W),
-raw_mon(1W)
+raw_mon(1W), recvs(1W)

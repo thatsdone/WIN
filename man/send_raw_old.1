@@ -1,4 +1,4 @@
-.TH send_raw_old 1W "1999.3.29" "WIN SYSTEM" "WIN SYSTEM"
+.TH send_raw_old 1W "2000.12.22" "WIN SYSTEM" "WIN SYSTEM"
 .SH 名称
 send_raw_old, send_mon_old, sendt_raw_old, sendt_mon_old - IPによる win 形式データの送信（旧パケット形式）
 .SH 形式
@@ -97,6 +97,12 @@ send_raw_old, send_mon_old, sendt_raw_old, sendt_mon_old の
 伝送効率を上げるため、
 １パケットのサイズは1472バイト以内（IPパケットサイズで1500バイト
 以内）でなるべく大きくなるように生成されます。
+.LP
+ただし、send_raw_old, send_mon_old, sendt_raw_old, sendt_mon_old は
+「複数再送要求パケット」を受け付けます。これは気象庁へのデータ送信
+だけに使用されていて、１つの再送要求パケットに、再送されるべき
+複数のパケット番号が入っているものです。この場合、再送要求パケットの
+長さは、通常の１バイトではなくて[要求されるパケット数]バイトとなります。
 .SH オプション
 .TP 
 なし

@@ -1,6 +1,6 @@
 #! @WISH@
 #
-# $Id: shmx2.in,v 1.5 2002/08/19 01:55:26 tsuru Exp $
+# $Id: shmx2.in,v 1.6 2002/08/21 07:32:54 tsuru Exp $
 # shmx2 
 # 2002.06.28- (C) Hiroshi TSURUOKA / All Rights Reserved.
 #
@@ -21,8 +21,10 @@
 #         1.2.0.2 2002/08/09 -q option
 #         1.4 2002/08/12 plot 1sec data
 #         1.5 2002/08/12 julday
+#	  1.6 2002/08/21 if (nfreq>1) ylast off
+#                        add offset off option: -o
 #
-set version 1.5
+set version 1.6
 
 # NR f77 -> tcl
 # 2002/08/12 Hiroshi TSURUOKA
@@ -53,7 +55,7 @@ return $julday;
 #console show
 
 if { $argc < 1 } {
-	puts "wish shmx2 <-mMIN> <-nNLINE> <-yPIXEL> <-wCLIPLEVEL> <-lLTA> <-p> <-xWIDTH> <-cNCOLOR> <-fSHMDUMP> <-tTABLE> <-qQUICK> channel1 channel2 ..."
+	puts "wish shmx2 <-mMIN> <-nNLINE> <-yPIXEL> <-wCLIPLEVEL> <-lLTA> <-p> <-o> <-xWIDTH> <-cNCOLOR> <-fSHMDUMP> <-tTABLE> <-qQUICK> channel1 channel2 ..."
 	exit
 }
 
@@ -75,6 +77,7 @@ set LTA 1.0
 set LTA2 [expr 1.0/$LTA]
 set LTA1 [expr 1.0-$LTA2]
 set quick 1
+set offset 1
 
 for { set j 0 } { $j < $argc } { incr j } {
 	set tmpargv [lindex $argv $j]
@@ -94,6 +97,8 @@ for { set j 0 } { $j < $argc } { incr j } {
 		set lsb [expr $clip*$wy2]
 	} elseif { $optflag == "-p" } {
 		set pipe 1
+	} elseif { $optflag == "-o" } {
+		set offset 0
 	} elseif { $optflag == "-x" } {
 		set cw [string range $tmpargv 2 [string length $tmpargv]]
 	} elseif { $optflag == "-c" } {
@@ -109,6 +114,7 @@ for { set j 0 } { $j < $argc } { incr j } {
 		set LTA [string range $tmpargv 2 [string length $tmpargv]]
 		set LTA2 [expr 1.0/$LTA]
 		set LTA1 [expr 1.0-$LTA2]
+		set offset 1
 	} else {
 		set channel($maxch) [lindex $argv $j]
 		set channel($maxch) [string toupper $channel($maxch)]
@@ -298,6 +304,7 @@ if { $fpin == "stdin" } {
 
 for { set j 0 } { $j < $maxch } { incr j } {
 	set rmean($j) 0.0
+	set calrmean($j) 0
 }
 
 set mi0 -999
@@ -349,7 +356,12 @@ while {![eof $fp]} {
 		}
 #		set rmean($j) [expr 0.5*($rmean($j)+$sum/$freq2)]
 		if { $freq2 > 0 } {
-			set rmean($j) [expr $LTA1*$rmean($j)+$LTA2*($sum/$freq2)]
+			if { $calrmean($j) == 0 } {
+			  set rmean($j) [expr $sum/$freq2]
+			  set calrmean($j) 1
+			} else {
+			  set rmean($j) [expr $LTA1*$rmean($j)+$LTA2*($sum/$freq2)]
+			} 
 			set rmean($j) [expr int($rmean($j))]
 #			puts $rmean($j)
 		}
@@ -359,18 +371,28 @@ while {![eof $fp]} {
                	set div [expr pow(2.0,$gain($j))]
                	set ymax [expr $clip*$wy2*$div]
                	set y $ylast($j)
-               	set yy [expr $y - $rmean($j)]
+		if { $offset == 1 } {
+               	  set yy [expr $y - $rmean($j)]
+		} else {
+               	  set yy $y
+		}
                	if { $yy > $ymax } { set yy $ymax; }
                	if { $yy < [expr -$ymax] } { set yy [expr -$ymax]; }
                	set gy [expr -$yy/$div + $wy*($ny+1.0+$wdy)]
-               	set g($j) [concat $g($j) $gx $gy]
+		if { $freq2 > 1 } {
+               	  set g($j) [concat $g($j) $gx $gy]
+		}
 #		}
 		for { set i 0 } { $i < $freq2 } { incr i $quick } {
                 	set gx [expr $wx*$nx+$wx*($i+1)/$freq2]
                 	set y [lindex $data($tmpch) [expr $i + 2]]
 			set div [expr pow(2.0,$gain($j))]
 			set ymax [expr $clip*$wy2*$div]
-			set yy [expr $y - $rmean($j)]
+			if { $offset == 1 } {
+			  set yy [expr $y - $rmean($j)]
+			} else {
+			  set yy $y
+			}
 			if { $yy > $ymax } { set yy $ymax; }
 			if { $yy < [expr -$ymax] } { set yy [expr -$ymax]; }
 #                	set gy [expr -$wy*$yy/$ymax + $wy*($ny+1.0+$wdy)]

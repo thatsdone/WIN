@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.11 2001/07/02 15:50:40 urabe Exp $
+   $Id: win.c,v 1.12 2001/08/01 16:41:00 urabe Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -13,7 +13,7 @@
    98.7.2 yo2000
 */
 #define NAME_PRG      "win"
-#define VERSION       "2001.6.27"
+#define VERSION       "2001.8.2"
 #define DEBUG_AP      0   /* for debugging auto-pick */
 /* 5:sr, 4:ch, 3:sec, 2:find_pick, 1:all */
 /************ HOW TO COMPILE THE PROGRAM **************************
@@ -3239,11 +3239,17 @@ auto_pick_pick(sec_now,hint)
       {
       if(pick_phase(idx,P))
         {
+        if(hint)
+          {
+          pt.sec2=ft.pick[idx][S].sec2;
+          pt.msec2=ft.pick[idx][S].msec2;
+          }
         pick_s(idx,sec_now,hint);
       /* measure max in the range from P to 10 sec after S */
         pt.sec1=ft.pick[idx][P].sec1;
         pt.msec1=ft.pick[idx][P].msec1;
-        if(ft.pick[idx][S].valid && ft.pick[idx][S].sec2+10<=sec_now)
+        if(ft.pick[idx][S].valid && hint);
+        else if(ft.pick[idx][S].valid && ft.pick[idx][S].sec2+10<=sec_now)
           {
           pt.sec2=ft.pick[idx][S].sec2+10;
           pt.msec2=ft.pick[idx][S].msec2;
@@ -3252,7 +3258,7 @@ auto_pick_pick(sec_now,hint)
           {
           pt.msec2=1000;
           pt.sec2=sec_now;
-            }
+          }
         pt.valid=j=1;
         k=ft.idx2pos[idx];
         while(1)
@@ -3307,7 +3313,7 @@ auto_pick_hypo(tbuf,hint)
       raise_ttysw(1);
       fprintf(stderr,"PRELIMINARY TRY ...\n");
       hypo_use_ratio=1;
-      locate(1);
+      locate(1,hint);
       raise_ttysw(0);
     /* omit 2*RMS(O-C) or 3.0 s for P */ 
     /* omit 2*RMS(O-C) or 5.0 s for S */
@@ -3338,7 +3344,7 @@ auto_pick_hypo(tbuf,hint)
       else if(j==2) fprintf(stderr,"SECOND TRY ...\n");
       else if(j==3) fprintf(stderr,"THIRD TRY ...\n");
       else fprintf(stderr,"%dTH TRY ...\n",j);
-      locate(1);
+      locate(1,hint);
       raise_ttysw(0);
       }
     /* check O-C (TT/2 or 3 s (5 s for S)) and omit bad data */
@@ -3428,7 +3434,7 @@ auto_pick_hypo(tbuf,hint)
         fprintf(stderr,"AIR FOCUS - DEPTH FIXED ...\n");
         init_dep =0.0;
         init_depe=0.5;
-        locate(1);
+        locate(1,hint);
         init_dep =init_dep_init;
         init_depe=init_depe_init;
         raise_ttysw(0);
@@ -4775,7 +4781,7 @@ do_just_hypo()
   fprintf(stderr,"JUST-HYPO mode\n");
   load_data(MSE_BUTNL);
 
-  locate(1);
+  locate(1,0);
   save_data(0);
   end_process(0);
   }
@@ -4892,6 +4898,7 @@ plot_zoom(izoom,leng,pt,put)
     endian[5],flag[5];
   char cc;
   short ss;
+  long ll;
   int xzero,yzero,i,j,k,sr,buf0,i_map,xz,join,start,np,np_last,x,y,xp,ymax,ymin;
   unsigned char tbuf[100],tbuf1[STNLEN+CMPLEN];
   double uv[MAX_FILT*4],rec[MAX_FILT*4],sd;
@@ -4974,22 +4981,26 @@ plot_zoom(izoom,leng,pt,put)
       if(put)
         {
         j=zoom_win[izoom].sec+i;
-        if(!strcmp(endian,"A"))
+        if(!strncmp(path,"/dev/",5)) sprintf(filename,"%s",path); /* device */
+        else /* path contains directory name */
           {
-          sprintf(filename,"%s",path); /* audio */
-          flg=1;
-          }
-        else if(flg) sprintf(filename,"%s/%s-%s",path,
-          ft.stn[ft.ch2idx[zoom_win[izoom].sys_ch]].name,
-          ft.stn[ft.ch2idx[zoom_win[izoom].sys_ch]].comp);
-        else sprintf(filename,"%s/%02x%02x%02x.%02x%02x%02x.%d.%X.%s",
-          path,ft.ptr[j].time[0],ft.ptr[j].time[1],ft.ptr[j].time[2],
-          ft.ptr[j].time[3],ft.ptr[j].time[4],ft.ptr[j].time[5],
-          sr,zoom_win[izoom].sys_ch,endian);
-        if(zoom_win[izoom].filt && flg==0)
-          {
-          sprintf(flag,".F%d",zoom_win[izoom].filt);
-          strcat(filename,flag);
+          if(flg)
+            sprintf(filename,"%s/%02x%02x%02x.%02x%02x%02x.%d.%04X.%s-%s.%s",
+            path,ft.ptr[j].time[0],ft.ptr[j].time[1],ft.ptr[j].time[2],
+            ft.ptr[j].time[3],ft.ptr[j].time[4],ft.ptr[j].time[5],
+            sr,zoom_win[izoom].sys_ch,
+            ft.stn[ft.ch2idx[zoom_win[izoom].sys_ch]].name,
+            ft.stn[ft.ch2idx[zoom_win[izoom].sys_ch]].comp,
+            endian);
+          else sprintf(filename,"%s/%02x%02x%02x.%02x%02x%02x.%d.%04X.%s",
+            path,ft.ptr[j].time[0],ft.ptr[j].time[1],ft.ptr[j].time[2],
+            ft.ptr[j].time[3],ft.ptr[j].time[4],ft.ptr[j].time[5],
+            sr,zoom_win[izoom].sys_ch,endian);
+          if(zoom_win[izoom].filt)
+            {
+            sprintf(flag,".F%d",zoom_win[izoom].filt);
+            strcat(filename,flag);
+            }
           }
         if((fp=fopen(filename,"w+"))==NULL) goto write_error;
         }
@@ -5183,6 +5194,18 @@ plot_zoom(izoom,leng,pt,put)
           for(j=0;j<sr;j++)
             {
             cc=ulaw(buf[j]<<k);
+            if(!fwrite(&cc,1,1,fp)) goto write_error;
+            }
+          }
+        else if(!strncmp(endian,"B1",2) || !strncmp(endian,"L1",2) )
+                              /* 1 byte scaled */
+          {
+          for(j=0;j<sr;j++)
+            {
+            ll=buf[j]>>zoom_win[izoom].scale;
+            if(ll>127) cc=127;
+            else if(ll<(-128)) cc=(-128);
+            else cc=ll;
             if(!fwrite(&cc,1,1,fp)) goto write_error;
             }
           }
@@ -5780,7 +5803,7 @@ proc_main()
         case HYPO:
           raise_ttysw(1);
           put_reverse(&dpy,x_func(HYPO),0,WB,MARGIN);
-          locate(1);
+          locate(1,0);
           get_calc();
           put_reverse(&dpy,x_func(HYPO),0,WB,MARGIN);
           ring_bell=0;
@@ -6617,7 +6640,7 @@ get_calc()  /* get calculated arrival times for all stations */
 {
   int iz,i,j,tm_p[7],tm_s[7],tm_ot[7],tm_base[6];
   time_t lsec_bs;
-  double sec;
+  double sec,sec_ot;
   FILE *fp;
   char prog[NAMLEN],stan[NAMLEN],text_buf[LINELEN];
   read_parameter(PARAM_HYPO,prog);
@@ -6639,7 +6662,7 @@ get_calc()  /* get calculated arrival times for all stations */
   read_final(ft.finl_file2,&ft.hypoall);
   bcd_dec(tm_base,ft.ptr[0].time);
   lsec_bs=time2lsec(tm_base);
-  adj_sec(ft.hypoall.tm,&ft.hypoall.se,tm_ot,&sec);
+  adj_sec(ft.hypoall.tm,&ft.hypoall.se,tm_ot,&sec_ot);
   cancel_picks_calc();
   set_pick(&ft.pick_calc_ot,(int)(time2lsec(tm_ot)-lsec_bs),tm_ot[6],0,0);
   for(i=0;i<ft.hypoall.ndata;i++){ /* station loop */
@@ -6658,12 +6681,13 @@ get_calc()  /* get calculated arrival times for all stations */
   }
   fprintf(stderr,
    "calculated for '%02d %02d %02d %02d %02d %02.3f %.5f %.5f %.3f %.1f'\n",
-       tm_ot[0],tm_ot[1],tm_ot[2],tm_ot[3],tm_ot[4],sec,ft.hypoall.alat,
+       tm_ot[0],tm_ot[1],tm_ot[2],tm_ot[3],tm_ot[4],sec_ot,ft.hypoall.alat,
        ft.hypoall.along,ft.hypoall.dep,ft.hypoall.mag);
 }
 
-locate(flag)
+locate(flag,hint)
   int flag; /* 1:output on display */
+  int hint; /* 1:use present hypocenter as the initial value */
   {
   FILE *fp;
   float init_lat,init_lon;
@@ -6691,11 +6715,21 @@ locate(flag)
   fclose(fp);
   /* make init file */
   fp=fopen(ft.init_file,"w+");
-  fprintf(fp,"%10.4f%10.4f%6d.0\n",init_lat,init_lon,init_dep);
-  if(init_depe==0) fprintf(fp,"  %6.1f     %6.1f        0.1\n",
+  if(hint)
+    {
+    fprintf(fp,"%10.4f%10.4f%8.2f\n",
+      ft.hypoall.alat,ft.hypoall.along,ft.hypoall.dep);
+    if(init_depe==0) fprintf(fp,"  5.0       5.0       0.1\n");
+    else fprintf(fp,"  5.0       5.0       5.0\n");
+    }
+  else
+    {
+    fprintf(fp,"%10.4f%10.4f%6d.0\n",init_lat,init_lon,init_dep);
+    if(init_depe==0) fprintf(fp,"  %6.1f     %6.1f        0.1\n",
       init_late_init,init_lone_init);
-  else fprintf(fp,"  %6.1f     %6.1f     %4d.0\n",
+    else fprintf(fp,"  %6.1f     %6.1f     %4d.0\n",
       init_late_init,init_lone_init,init_depe);
+    }
   fclose(fp);
   /* run hypo program */
   sprintf(text_buf,"%s %s %s %s %s %s",prog,stan,ft.seis_file,ft.finl_file,

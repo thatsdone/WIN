@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.24 2002/08/01 02:58:05 urabe Exp $
+   $Id: win.c,v 1.25 2002/09/05 05:16:58 urabe Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -13,7 +13,7 @@
    98.7.2 yo2000
 */
 #define NAME_PRG      "win"
-#define WIN_VERSION   "2002.8.1"
+#define WIN_VERSION   "2002.9.5"
 #define DEBUG_AP      0   /* for debugging auto-pick */
 /* 5:sr, 4:ch, 3:sec, 2:find_pick, 1:all */
 /************ HOW TO COMPILE THE PROGRAM **************************
@@ -6084,7 +6084,7 @@ proc_main()
           {
           if((pt.msec1-=500/zoom_win[i].pixels)<0)
             {pt.msec1+=1000;pt.sec1-=1;}
-          if(pt.sec1<=0) pt.msec1=pt.sec1=0;
+          if(pt.sec1<0) pt.msec1=pt.sec1=0;
           if((pt.msec2+=500/zoom_win[i].pixels)>=1000)
             {pt.msec2-=1000;pt.sec2+=1;}
           if(pt.sec2>ft.len-1) {pt.msec2=999;pt.sec2=ft.len-1;}

@@ -1,4 +1,4 @@
-/* $Id: events.c,v 1.6 2002/01/13 06:57:50 uehira Exp $ */
+/* $Id: events.c,v 1.7 2002/09/05 05:16:57 urabe Exp $ */
 /****************************************************************************
 *****************************************************************************
 **     program "events.c" for NEWS                                  *********
@@ -30,6 +30,7 @@
 **     99.6.12        not make zero-size waveform file              *********
 **     99.11.9        SGI IRIX                                      *********
 **     2001.1.22      used_raw & check_path                         *********
+**     2002.9.5       -u [dir] for USED_EVENTS file                 *********
 **                                                                  *********
 **   Example of parameter file (events.prm)                         *********
 =============================================================================
@@ -352,6 +353,7 @@ get_trig(trigfile,init_flag,tbuf,pbuf)
           {
 #if DEBUG
           printf("rewind\n");
+          printf("pbuf=%s\n",pbuf);
 #endif
           rewind(fp);
           do
@@ -363,7 +365,7 @@ get_trig(trigfile,init_flag,tbuf,pbuf)
               fclose(fp);
               goto again;
               }
-            } while(strcmp(tbuf,pbuf));
+            } while(strncmp(tbuf,pbuf,17));
           }
 #if DEBUG
         else printf("hit!\n");
@@ -543,6 +545,25 @@ get_time(rt)
   rt[5]=nt->tm_sec;
   }
 
+print_usage(progname)
+  char *progname;
+  {
+  printf("usage of %s :\n",progname);
+  printf("  %s [param file] ([YYMMDD.hhmm(1)] [YYMMDD.hhmm(2)])\n",progname);
+  if(strcmp(progname,"eventsrtape")==0)
+    {
+    printf("       options: -f [tape device]\n");
+    printf("                -u [directory for 'USED' file]\n");
+    printf("                -x [zone to be ignored]\n");
+    printf("   ('param file's format is the same as that of 'events')\n");
+    }
+  else
+    {
+    printf("       options: -x [zone to be ignored]\n");
+    printf("                -u [directory for 'USED' file]\n");
+    }
+  }
+
 main(argc,argv)
   int argc;
   char *argv[];
@@ -563,24 +584,30 @@ main(argc,argv)
     tapeunit[LEN],raw_file[20],lpr_body[LEN],
     zone_file[LEN],ch_file[LEN],nxt_file[LEN],log_file[LEN],
     file_chs[LEN],rtape_file[LEN],tmpfile1[LEN],tmpfile2[LEN],
-    tmpfile3[LEN],xzones[N_ZONES][20];
+    tmpfile3[LEN],xzones[N_ZONES][20],file_used[LEN];
   char *ptr,*ptr_lim,*ptw;
   struct stat st_buf;
 
   ix=0;
+  *file_used=0;
   strcpy(tapeunit,"/dev/nrst0");
-  while((c=getopt(argc,argv,"f:x:"))!=EOF)
+  while((c=getopt(argc,argv,"f:x:u:"))!=EOF)
     {
     switch(c)
       {
       case 'f':
         strcpy(tapeunit,optarg);
         break;
+      case 'u':
+        strcpy(file_used,optarg);
+        strcat(file_used,"/USED_EVENTS");
+        break;
       case 'x':
         strcpy(xzones[ix++],optarg);
         break;
       case 'h':
       default:
+        print_usage(progname);
         exit(0);
       }
     }
@@ -588,33 +615,15 @@ main(argc,argv)
 
   if(progname=strrchr(argv[0],'/')) progname++;
   else progname=argv[0];
-  if(strcmp(progname,"eventsrtape")==0)
+  if(argc<2+optbase)
     {
-    if(argc<2+optbase)
-      {
-      printf("usage of eventsrtape :\n");
-printf("  eventsrtape [param file] ([YYMMDD.hhmm(1)] [YYMMDD.hhmm(2)])\n");
-printf("       options: -f [tape device]\n"); 
-printf("                -x [zone to be ignored]\n"); 
-printf("   ('param file's format is the same as that of 'events')\n");
-      exit(1);
-      }
-    strcpy(param_file,argv[1+optbase]);
-    rtape=1;
+    print_usage(progname);
+    exit(1);
     }
-  else if(strcmp(progname,"events")==0)
-    {
-    if(argc<2+optbase)
-      {
-      printf("usage of events :\n");
-printf("  events [param file] ([YYMMDD.hhmm(1)] [YYMMDD.hhmm(2)])\n");
-printf("       option: -x [zone to be ignored]\n"); 
-      exit(1);
-      }
-    strcpy(param_file,argv[1+optbase]);
-    rtape=0;
-    }
-  else exit(1);
+
+  strcpy(param_file,argv[1+optbase]);
+  if(strcmp(progname,"eventsrtape")==0) rtape=1;
+  else rtape=0;
 
   if(argc>=4+optbase)
     {
@@ -708,13 +717,21 @@ printf("       option: -x [zone to be ignored]\n");
     }
   else
     {
-    if(time_flag==0)
+    if(*file_used && (fp=fopen(file_used,"r"))!=NULL)
+      {
+      fgets(textbuf,20,fp);
+      fclose(fp);
+      strncpy(lastline,textbuf,13);
+      strcat(lastline," on,");
+      }
+    else if(time_flag==0)
       {
       while(fgets(lastline,LEN,fp_trig)!=NULL);
       if(*lastline) printf("last line = %s",lastline);
       }
     fclose(fp_trig);
     }
+printf("lastline=%s\n",lastline);
 
   signal(SIGINT,(void *)owari);
   signal(SIGTERM,(void *)owari);
@@ -1002,6 +1019,11 @@ fprintf(fp,"%02d/%02d/%02d %02d:%02d:%02d %s %02d%02d%02d.%02d%02d%02d %d",
     system(textbuf);
 #endif
 
+    if(*file_used && (fp=fopen(file_used,"w+"))!=NULL)
+      {
+      fprintf(fp,"%s\n",file_name);
+      fclose(fp);
+      }
     printf("%s:'%s/%s' completed\n",progname,out_path,file_name);
     continue;
 

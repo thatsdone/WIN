@@ -1,0 +1,23 @@
+#!/bin/sh
+# $Id: clean_nmx,v 1.1 2002/09/05 05:16:57 urabe Exp $
+# clean_nmx ([dir] ([period]))
+#
+if [ "$1" ]
+then
+  dir=$1
+else
+  dir=/dat/nmx
+fi
+if [ "$2" ]
+then
+  tim=$2
+else
+  tim=1H
+fi
+file=/tmp/clean_nmx.$$
+if [ -d $dir ]
+then
+  touch -t `date -v -$tim +%m%d%H%M` $file
+  find $dir ! -newer $file -delete
+fi
+rm $file

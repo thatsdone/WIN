@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.8 2002/07/22 15:12:32 uehira Exp $
+# $Id: Makefile.am,v 1.9 2003/04/25 13:47:27 uehira Exp $
 #
 
 if SUNOS4
@@ -14,10 +14,10 @@ else
 ONL_SOL2 = 
 endif
 
-if X86
-ONL_X86=recvts
+if FREEBSD
+ONL_FREEBSD=recvts
 else
-ONL_X86=
+ONL_FREEBSD=
 endif
 
 ONLINE_SO=recvt send_raw recvstatus recvstatus2 send_raw_old relay recvnmx \
@@ -36,7 +36,7 @@ TAPE_USER=rtape fromtape wdisk wdiskts ras2rpdl ras2lips file_older raw2mon \
           $(TAPE_USER_MATH)
 ONLINE=order raw_mon wtape setexb timeout raw_raw raw_100 cormeisei shmdump \
        raw_ch extraw order2 insert_raw insert_trg find_picks raw_shift \
-       $(ONLINE_SO) $(ONLINE_MATH) $(ONL_X86)
+       $(ONLINE_SO) $(ONLINE_MATH) $(ONL_FREEBSD)
 
 ONL_OPT_=robot
 OTHR=cpdat sepline joint order_raw
@@ -110,8 +110,10 @@ rtape_SOURCES = rtape.c $(SUBFUNC_H)
 fromtape_SOURCES = fromtape.c $(SUBFUNC_H)
 
 wdisk_SOURCES = wdisk.c $(SUBFUNC_H)
+wdisk_LDADD = @LIBSHMGET@
 
 wdiskts_SOURCES = wdiskts.c $(SUBFUNC_H)
+wdiskts_LDADD = @LIBSHMGET@
 
 ras2rpdl_SOURCES = ras2rpdl.c $(SUBFUNC_H)
 
@@ -133,8 +135,10 @@ events_SOURCES = events.c $(SUBFUNC_H)
 events_LDADD = -lm
 
 order_SOURCES = order.c $(SUBFUNC_H)
+order_LDADD = @LIBSHMGET@
 
 raw_mon_SOURCES = raw_mon.c $(SUBFUNC_H)
+raw_mon_LDADD = @LIBSHMGET@
 
 wtape_SOURCES = wtape.c $(SUBFUNC_H)
 
@@ -143,20 +147,28 @@ setexb_SOURCES = setexb.c $(SUBFUNC_H)
 timeout_SOURCES = timeout.c $(SUBFUNC_H)
 
 raw_raw_SOURCES = raw_raw.c $(SUBFUNC_H)
+raw_raw_LDADD = @LIBSHMGET@
 
 raw_shift_SOURCES = raw_shift.c $(SUBFUNC_H)
+raw_shift_LDADD = @LIBSHMGET@
 
 raw_100_SOURCES = raw_100.c $(SUBFUNC_H)
+raw_100_LDADD = @LIBSHMGET@
 
 cormeisei_SOURCES = cormeisei.c $(SUBFUNC_H)
+cormeisei_LDADD = @LIBSHMGET@
 
 shmdump_SOURCES = shmdump.c $(SUBFUNC_H)
+shmdump_LDADD = @LIBSHMGET@
 
 raw_ch_SOURCES = raw_ch.c $(SUBFUNC_H)
+raw_ch_LDADD = @LIBSHMGET@
 
 extraw_SOURCES = extraw.c $(SUBFUNC_H)
+extraw_LDADD = @LIBSHMGET@
 
 order2_SOURCES = order2.c $(SUBFUNC_H)
+order2_LDADD = @LIBSHMGET@
 
 insert_raw_SOURCES = insert_raw.c $(WIN_UTIL_C) $(WIN_UTIL_H) $(SUBFUNC_H)
 
@@ -165,10 +177,10 @@ insert_trg_SOURCES = insert_trg.c $(WIN_UTIL_C) $(WIN_UTIL_H) $(SUBFUNC_H)
 find_picks_SOURCES = find_picks.c $(SUBFUNC_H)
 
 recvt_SOURCES = recvt.c $(SUBFUNC_H)
-recvt_LDADD = @LIBNSL@ @LIBSOCKET@
+recvt_LDADD = @LIBNSL@ @LIBSOCKET@ @LIBSHMGET@
 
 send_raw_SOURCES = send_raw.c $(SUBFUNC_H)
-send_raw_LDADD = @LIBNSL@ @LIBSOCKET@
+send_raw_LDADD = @LIBNSL@ @LIBSOCKET@ @LIBSHMGET@
 
 recvstatus_SOURCES = recvstatus.c $(SUBFUNC_H)
 recvstatus_LDADD = @LIBNSL@ @LIBSOCKET@
@@ -177,13 +189,13 @@ recvstatus2_SOURCES = recvstatus2.c $(SUBFUNC_H)
 recvstatus2_LDADD = @LIBNSL@ @LIBSOCKET@
 
 send_raw_old_SOURCES = send_raw_old.c $(SUBFUNC_H)
-send_raw_old_LDADD = @LIBNSL@ @LIBSOCKET@
+send_raw_old_LDADD = @LIBNSL@ @LIBSOCKET@ @LIBSHMGET@
 
 relay_SOURCES = relay.c $(SUBFUNC_H)
 relay_LDADD = @LIBNSL@ @LIBSOCKET@
 
 recvnmx_SOURCES = recvnmx.c $(SUBFUNC_H)
-recvnmx_LDADD = @LIBNSL@ @LIBSOCKET@
+recvnmx_LDADD = @LIBNSL@ @LIBSOCKET@ @LIBSHMGET@
 
 ecore_SOURCES = ecore.c $(SUBFUNC_H)
 ecore_LDADD = -lm

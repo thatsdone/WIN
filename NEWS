@@ -2,6 +2,10 @@ WIN package NEWS
   History of user-visible changes.
   17 Jan. 2002
 
+Version 1.1.14 (25 April, 2003)
+
+* WIN_pkg now supports Cygwin environment.
+
 Version 1.1.11 (13 November, 2002)
 
 * merge shmx and shmx2 to shmx
@@ -18,4 +22,4 @@ Version 1.0.0   (17 January, 2002)
 
 (Changes before Versions 1.0.0 were never recorded.  Sorry.)
 
-$Id: NEWS,v 1.5 2002/11/13 07:25:01 tsuru Exp $
+$Id: NEWS,v 1.6 2003/04/25 13:47:26 uehira Exp $

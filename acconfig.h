@@ -18,3 +18,6 @@
 
 /* Define to `int' if <sys/socket.h> doesn't define.  */
 #undef socklen_t
+
+/* tm_gmtoff is a member of struct tm or not */
+#undef HAVE_STRUCT_TM_GMTOFF

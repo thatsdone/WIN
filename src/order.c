@@ -1,4 +1,4 @@
-/* $Id: order.c,v 1.8 2002/05/11 15:02:05 urabe Exp $ */
+/* $Id: order.c,v 1.9 2003/04/25 13:47:27 uehira Exp $ */
 /*  program "order.c" 1/26/94 - 2/7/94, 6/14/94 urabe */
 /*                              1/6/95 bug in adj_time(tm[0]--) fixed */
 /*                              3/17/95 write_log() */
@@ -167,8 +167,13 @@ time_t mktime2(struct tm *mt) /* high-speed version of mktime() */
   j+=mt->tm_mday-1; /* days */
 #if defined(__SVR4)
   return j*86400+mt->tm_hour*3600+mt->tm_min*60+mt->tm_sec+timezone;
-#else
+#endif
+#if defined(HAVE_STRUCT_TM_GMTOFF)
   return j*86400+mt->tm_hour*3600+mt->tm_min*60+mt->tm_sec-m->tm_gmtoff;
+#endif
+#if defined(__CYGWIN__)
+  tzset();
+  return j*86400+mt->tm_hour*3600+mt->tm_min*60+mt->tm_sec+_timezone;
 #endif
   }
 
@@ -187,7 +192,11 @@ time_t bcd_t(ptr)
   mt.tm_min=tm[4];
   mt.tm_sec=tm[5];
   mt.tm_isdst=0;
+#if defined(__SVR4) || defined(HAVE_STRUCT_TM_GMTOFF) || defined(__CYGWIN__)
   ts=mktime2(&mt);
+#else
+  ts=mktime(&mt);
+#endif
   return ts;
   }
 

@@ -531,8 +531,11 @@ wincpy2(ptw,ts,ptr,size,mon,chhist,from_addr)
       for(i=0;i<chhist->n;i++) if(chhist->ts[i][ch]==ts) break;
       if(i==chhist->n) /* TS not found in last chhist->n packets */
         {
-        chhist->ts[chhist->p[ch]][ch]=ts;
-        if(++chhist->p[ch]==chhist->n) chhist->p[ch]=0;
+        if(chhist->n>0)
+          {
+          chhist->ts[chhist->p[ch]][ch]=ts;
+          if(++chhist->p[ch]==chhist->n) chhist->p[ch]=0;
+          }
 #if DEBUG1
         fprintf(stderr,"%5d",gs);
 #endif

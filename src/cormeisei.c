@@ -1,4 +1,4 @@
-/* $Id: cormeisei.c,v 1.4 2002/01/13 06:57:50 uehira Exp $ */
+/* $Id: cormeisei.c,v 1.5 2002/05/31 09:33:04 urabe Exp $ */
 /* "cormeisei.c"    June'97 Ide changed from*/
 /* "raw_raw.c"      3/4/96 urabe */
 /*                  revised on 5/20/96 */
@@ -16,6 +16,7 @@
 /*                  99.4.19   byte-order-free by urabe */
 /*                  2000.4.17 deleted definition of usleep() */
 /*                  2000.4.24/2001.11.14 strerror() */
+/*                  2002.5.31 MAX_SEC_SIZE 500000 -> 1000000 */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -52,7 +53,7 @@
 #define CH_TOTAL  200  /* max N of meisei chs */
 #endif
 #ifndef MAX_SEC_SIZE
-#define MAX_SEC_SIZE  500000  /* max size of one sec data in bytes */
+#define MAX_SEC_SIZE  1000000  /* max size of one sec data in bytes */
 #endif
 
 #define XPM       30

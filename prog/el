@@ -1,0 +1,11 @@
+#! /bin/sh
+if [ -z "$TMP" ]
+then
+	TMP=.
+fi
+(cd $1;ls -s) | egrep -v '[A-z]' | cat -n > $TMP/tmp.$$
+echo '     #    KB YYMMDD hhmmss'
+head -3 $TMP/tmp.$$
+echo '     .   ... ...... ......'
+tail -7 $TMP/tmp.$$
+rm $TMP/tmp.$$

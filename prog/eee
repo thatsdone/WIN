@@ -1,0 +1,19 @@
+#!/bin/sh
+ED=/dat/etc
+TD=/tmp
+
+if [ ! -f $TD/eee.tmp ] || file_older $ED/pick_zones.tbl $TD/eee.tmp > /dev/null
+then
+  if [ -f $TD/eee.tmp ]
+  then
+    rm $TD/eee.tmp
+  fi
+  grep `cat $ED/SYS` $ED/pick_zones.tbl | tr -s ' ' '\012' | grep '[A-Z]' |
+  while read zone
+  do
+    zone=`echo $zone|cut -c1-7`
+    echo "s/^\(.*  $zone.*\)$/[1m\1[m/" >> $TD/eee.tmp
+  done
+  chmod 666 $TD/eee.tmp
+fi
+ee $* | sed -f $TD/eee.tmp | more -cd

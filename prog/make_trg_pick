@@ -1,0 +1,27 @@
+#!/bin/sh
+PDM=/dat/picks/man
+ED=/dat/etc
+XD=/home/auto
+
+(cd $PDM;ls) |
+while read ym
+do
+# if [ "$ym" -ge 9412 ]
+  if [ "$ym" -ge 9608 ]
+  then
+    if [ ! -f $ED/trg-zone.$ym ] || $XD/file_older $PDM/$ym $ED/trg-zone.$ym \
+          >/dev/null 2>&1
+    then
+      cd $PDM/$ym
+      rm $ED/trg-pick.$ym
+      ls -l | grep '^-.* [\.0-9]*$' |
+      while read mode link owner size month date time file
+      do
+        ((head -1 $file|awk '{printf("%s %s ",$2,$4)}');\
+            echo $file $size:$month:$date:$time) |
+              grep -v '^[0-9]*\.[0-9][0-9] ' >>$ED/trg-pick.$ym
+      done
+      cat $ED/pmon.out.$ym|awk '/on, at/{print $1,$4}'>$ED/trg-zone.$ym
+    fi
+  fi
+done

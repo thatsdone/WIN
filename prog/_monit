@@ -1,0 +1,94 @@
+#! /bin/sh
+#
+#	_monit	10/11/94	urabe
+#
+
+. win.conf
+
+RAW=$DD/raw
+MON=$DD/mon
+TRG=$DD/trg
+AUTO=$DD/auto
+AUTOS=$DD/autos
+#
+
+STATUS(){
+if [ -f BUSY ]
+then
+	BUSY=`cat BUSY`
+else
+	BUSY="           "
+fi
+if [ -f LATEST ]
+then
+	LATEST=`cat LATEST`
+else
+	LATEST="           "
+fi
+if [ -f USED ]
+then
+	USED=`cat USED`
+else
+	USED="           "
+fi
+if [ -f OLDEST ]
+then
+	OLDEST=`cat OLDEST`
+else
+	OLDEST="           "
+fi
+if [ -f COUNT ]
+then
+	COUNT=`cat COUNT`
+else
+	COUNT="    "
+fi
+if [ -f MAX ]
+then
+	MAX=`cat MAX`
+else
+	MAX="    "
+fi
+}
+
+echo "*******************************  STATUS MONITOR  ******************************"
+echo "<DISK FILE STATUS>"
+echo "         DIR     BUSY          LATEST        USED          OLDEST     COUNT/MAX"
+
+cd $RAW
+STATUS
+echo "  RAW $RAW $BUSY   $LATEST   $USED   $OLDEST   $COUNT/$MAX"
+
+cd $MON
+STATUS
+echo "  MON $MON $BUSY   $LATEST   $USED   $OLDEST  $COUNT/$MAX"
+
+cd $TRG
+STATUS
+echo "  TRG $TRG $BUSY $LATEST $USED $OLDEST"
+#
+if [ -f $RAW/UNITS ]
+then
+	total=`cat $RAW/TOTAL`
+	busy=`cat $RAW/EXABYTE`
+	ready=`paste -s -d" " $RAW/_UNITS`
+	echo "<EXABYTES>"
+	echo "  UNITS = $ready    BUSY = $busy ($total KB)"
+fi
+
+echo "<AUTOPICK>"
+echo -n "  processing : "
+cd $AUTOS;ls -1 */* 2>/dev/null |
+while read file
+do
+	echo -n "$file "
+done
+echo
+echo -n "  waiting    : "
+cd $AUTO;ls -1 * 2>/dev/null |
+while read file
+do
+	echo -n "$file "
+done
+#echo
+#echo "*******************************************************************************"

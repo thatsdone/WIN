@@ -1,0 +1,1 @@
+tail -50 /dat/etc/pmon.out|awk '/on,/{printf("%s %s ",$1,$4)}; /off,/{print $3,$4,$5,$6,$7,$8,$9}'

@@ -1,0 +1,21 @@
+#!/bin/sh
+. win.conf
+tmp=/tmp/monitor_procs.$$
+ps agxww > $tmp
+cat _win | grep -v '^#' | grep -v '^nice' | sed -n 's/ *&//p' |
+while read procs
+do
+  pid=`grep "$procs" $tmp|awk '{print $1}'`
+  if [ -n "$pid" ]
+  then
+    if [ "$1" = kill ]
+    then
+      echo kill $pid
+#      /bin/kill $pid
+      kill $pid
+    fi
+  else
+    echo Not found : $procs
+  fi
+done
+rm $tmp

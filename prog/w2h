@@ -1,0 +1,19 @@
+#!/bin/sh
+set --x
+td=/dat/tmp
+dp=/dat/bin/SPARC
+of=$1
+rm $of 2>/dev/null
+shift
+while [ $# -gt 0 ]
+do
+  bn=`basename $1`
+  ymd=`echo $bn|cut -c1-6`
+  hms=`echo $bn|cut -c7-8``echo $bn|cut -c10-11`00
+  ymdhms=`echo $bn|cut -c1-8``echo $bn|cut -c10-11`00
+  rm $td/$bn 2>/dev/null
+  $dp/wck $1 2>/dev/null|grep ' 1 Hz'|awk '{print $4}'>$td/w2m.$$
+  cat $1|wed $ymd $hms 1 $td/w2m.$$>>$of
+  shift
+done
+rm $td/w2m.$$

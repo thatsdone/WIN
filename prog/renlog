@@ -1,0 +1,25 @@
+#!/bin/sh
+# renlog
+#
+cd /dat/log
+ls -1 *.log|grep -v recvstatus.log|grep -v wtape.log|
+while read file
+do
+  if [ -f $file.3 ]
+    then
+    rm $file.3
+  fi
+  if [ -f $file.2 ]
+    then
+    mv $file.2 $file.3
+  fi
+  if [ -f $file.1 ]
+    then
+    mv $file.1 $file.2
+  fi
+  if [ -f $file.0 ]
+    then
+    mv $file.0 $file.1
+  fi
+  mv $file $file.0
+done

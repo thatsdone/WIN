@@ -1,0 +1,62 @@
+#! /bin/sh
+#
+#	newym 98.7.1  urabe
+#
+if [ -z "$DD" ]
+then
+  DD=/dat
+fi
+
+old=`cat $DD/etc/YYMM`
+if [ "$old" -le 7000 ]
+then
+  old1=20$old
+else
+  old1=19$old
+fi
+new=`date +%y%m`
+if [ "$new" -le 7000 ]
+then
+  new1=20$new
+else
+  new1=19$new
+fi
+day=`date +%d`
+#
+if [ "$day" -le 01 ] || [ "$old1" -ge "$new1" ]
+then
+#	echo It is already $old !
+	exit 1
+fi
+#
+echo $new > $DD/etc/YYMM
+echo $DD/etc/YYMM updated
+#
+_stop pmon
+_stop events
+echo edit $DD/etc/pmon.out.$old and create $DD/etc/pmon.out.$new
+grep '^'$new $DD/etc/pmon.out.$old > $DD/etc/pmon.out.$new
+rm $DD/etc/pmon.out
+ln -s pmon.out.$new $DD/etc/pmon.out
+echo symlink $DD/etc/pmon.out to $DD/etc/pmon.out.$new 
+grep '^'$old $DD/etc/pmon.out.$old > $DD/etc/newym$$
+cp $DD/etc/newym$$ $DD/etc/pmon.out.$old
+rm $DD/etc/newym$$
+_cont events
+_cont pmon
+#
+am=man
+echo resettle pick files in $DD/picks/$am
+mkdir $DD/picks/$am/$new
+chgrp pickers $DD/picks/$am/$new
+chmod 775 $DD/picks/$am/$new
+(cd $DD/picks/$am;picks_settle)
+#
+am=auto
+echo resettle pick files in $DD/picks/$am
+mkdir $DD/picks/$am/$new
+#chgrp pickers $DD/picks/$am/$new
+chmod 755 $DD/picks/$am/$new
+(cd $DD/picks/$am;picks_settle)
+#
+exit 0

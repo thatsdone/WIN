@@ -1,0 +1,113 @@
+#! /bin/sh
+#
+#  _update  98.7.2  urabe
+#
+
+ED=$DD/etc
+PDA=$DD/picks/auto
+PDM=$DD/picks/man
+FDA=$DD/finals/auto
+FDM=$DD/finals/man
+FA=$ED/final.auto
+FM=$ED/final.man
+SD=$DD/seis
+QD=$DD/trg
+AD=$DD/auto
+ASD=$DD/autos
+RD=$DD/request
+
+umask 022
+ym=`cat $ED/YYMM`
+
+# make 'finalb' files for 'man'
+(cd $PDM;ls) |
+while read file
+do
+  if file_older $PDM/$file $FDM/$file > /dev/null
+  then
+    (cd $PDM/$file;ls -l| pick2finalb) > $TD/$file.$$
+    mv $TD/$file.$$ $FDM/$file
+#   echo $FDM/$file updated
+    touch $TD/man.$$
+# copy finalb file to other hosts
+    for host in $*
+    do
+      timeout $TIMO rcp $FDM/$file $host:/dat/etc/$SEIS/finals/man
+    done
+  fi
+done
+
+# make 'finalb' files for 'auto'
+(cd $PDA;ls) |
+while read file
+do
+  if file_older $PDA/$file $FDA/$file > /dev/null
+  then
+    (cd $PDA/$file;ls -l| pick2finalb) > $TD/$file.$$
+    mv $TD/$file.$$ $FDA/$file
+#   echo $FDA/$file updated
+    touch $TD/auto.$$
+  fi
+done
+
+# make 'seis' files for 'man'
+if [ -f $TD/man.$$ ]
+then
+  (cat $FDM/[7-9]*;cat $FDM/[0-6]*) > $FM 2>/dev/null
+  cat $FM | finalb2seis $SD/$SEIS
+  echo final/seis database updated
+  rm $TD/man.$$
+  for host in $*
+  do
+    timeout $TIMO rsh -n $host cat $DD/etc/$SEIS/finals/man/"*>"/dat/etc/$SEIS/etc/final.man
+  done
+fi
+
+# make 'seis' files for 'auto'
+if [ -f $TD/auto.$$ ]
+then
+  (cat $FDA/[7-9]*;cat $FDA/[0-6]*) > $FA 2>/dev/null
+  cat $FA | finalb2seis $SD/$SEIS'a'
+# echo final/seis updated for auto
+  rm $TD/auto.$$
+fi
+
+
+# make 'evtemp.YYMM' files for 'man'
+(cd $PDM;ls) |
+while read file
+do
+  if [ $file = $ym ]
+  then
+    td="$QD $AD $ASD/ $RD/"
+  else
+    td="$QD"
+  fi
+  if [ $file != $ym ] && (file_older $PDM/$file $ED/evtemp.$file > /dev/null || \
+    file_older $ED/pmon.out.$file $ED/evtemp.$file > /dev/null)
+  then
+    elist $PDM/$file $ED/pmon.out.$file $td > $TD/evtemp.$file
+#   mv $TD/evtemp.$file $ED
+    grep -v '#' $TD/evtemp.$file > $ED/evtemp.$file
+    rm $TD/evtemp.$file
+#     this is to hide 'NOISE' events
+    for host in $*
+    do
+      timeout $TIMO rcp $ED/evtemp.$file $host:/dat/etc/$SEIS/etc
+    done
+    echo 'evtemp(ee) database updated'
+  fi
+done
+
+# make 'evtempa.YYMM' files for 'auto'
+(cd $PDA;ls) |
+while read file
+do
+  if file_older $PDA/$file $ED/evtempa.$file > /dev/null || \
+    file_older $ED/pmon.out.$file $ED/evtempa.$file > /dev/null
+  then
+    elist $PDA/$file $ED/pmon.out.$file > $TD/evtempa.$file
+    mv $TD/evtempa.$file $ED
+#   echo $ED/evtempa.$file updated
+  fi
+done

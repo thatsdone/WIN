@@ -1,0 +1,9 @@
+#! /bin/sh
+if [ $# -eq 0 ]
+then
+	f=1
+else
+	f=$1
+fi
+awk '{s+=$'$f'}
+END{print s}'

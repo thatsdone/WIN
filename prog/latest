@@ -1,0 +1,37 @@
+#!/bin/sh
+# "latest"   98.4.20 Urabe
+if [ "$WINDIR" ]
+then
+  dat=$WINDIR
+else
+  dat=/dat
+fi
+#
+name=`cat $dat/raw/LATEST`
+if [ $# -eq 0 ]
+then
+  win $dat/raw/$name
+else
+  if [ -f win.prm ]
+  then
+    channels=`head -2 win.prm|tail -1|awk '{print $1}'`
+    zones=`head -3 win.prm|tail -1|awk '{print $1}'`
+    tmpdir=`head -16 win.prm|tail -1|awk '{print $1}'`
+  else
+    channels=$dat/etc/channels.tbl
+    zones=$dat/etc/zones.tbl
+    tmpdir=/tmp
+  fi
+  tmp1=/tmp/latest1.$$
+  tmp2=/tmp/latest2.$$
+  trap "rm $tmp1 $tmp2 $tmpdir/$name.$$; exit" 1 2 15
+  echo Extracting data for \'$*\' from $dat/raw/$name in $tmpdir ...
+  for zone in $*
+  do
+    grep -i $zone $zones|tr -s '\011 /' '\012'|grep -v '^#'|awk '{printf(" %s \n",$1)}'>>$tmp1
+  done
+  fgrep -f $tmp1 $channels>$tmp2
+  wch $tmp2<$dat/raw/$name>$tmpdir/$name.$$
+  win $tmpdir/$name.$$
+  rm $tmp1 $tmp2 $tmpdir/$name.$$
+fi

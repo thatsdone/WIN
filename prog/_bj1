@@ -1,0 +1,15 @@
+#! /bin/sh
+#
+# _bj 98.6.10
+#
+if [ -f "$1" ]
+then
+  . $1
+else
+  . win.conf
+fi
+while true
+do
+        _update1 $PUSH
+	sleep 20
+done

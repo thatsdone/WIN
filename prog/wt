@@ -1,0 +1,65 @@
+#!/bin/sh
+set -x
+drive=A         # tape drive A/B
+tty=/dev/ttya   # serial device
+#
+if [ -f wtape.prm ]; then
+  dir=`head -1 wtape.prm|cut -f2 -d:` 
+  logfile=`head -2 wtape.prm|tail -1`
+  device=`head -3 wtape.prm|tail -1`
+else
+  echo wtape.prm not found.
+  exit
+fi
+if robot -f $tty; then
+  :
+else
+  echo robot command not found.
+  exit
+fi
+if [ ! -f $dir/EXABYTE ]; then
+  echo 0 > $dir/EXABYTE
+fi
+if [ ! -f $dir/UNITS ]; then
+  echo 0 > $dir/UNITS
+fi
+if [ ! -f $dir/TAPE_MAX ]; then
+  echo 54 > $dir/TAPE_MAX
+fi
+#
+mt -f $device offline
+robot -f $tty unload $drive
+#
+while :
+do
+  if [ -f $dir/TAPE_BUSY ]; then
+    busy=`cat $dir/TAPE_BUSY`
+  else
+    busy=0
+  fi
+  busy=`expr $busy + 1`
+  max=`cat $dir/TAPE_MAX`
+  if [ $busy -eq $max ]; then
+    busy=1
+  fi
+  echo $busy > $dir/TAPE_BUSY
+  echo TAPE_BUSY=$busy
+#
+  robot -f $tty tag $busy 1
+  robot -f $tty load $drive $busy
+  until  mt -f $device status
+  do
+    sleep 3
+  done
+  echo -n "slot $busy " >> $logfile
+  wtape
+#  mt -f $device offline
+  robot -f $tty seek $drive $busy
+  robot -f $tty eject $drive
+# clean drive
+  robot -f $tty load $drive 54
+  until robot unload $drive
+  do
+    sleep 10
+  done
+done

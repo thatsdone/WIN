@@ -1,0 +1,16 @@
+#!/bin/sh
+# run this script when /dat/etc/*.tbl was changed on tkyryu
+cd /dat/etc
+#files="kanto.station tky.station channels.tbl zones.tbl nxtzones.tbl pick_zones.tbl"
+#files="channels.tbl zones.tbl nxtzones.tbl channels.all zones.all"
+files="channels.tbl"
+rcp -p $files sso1:/dat/etc
+rcp -p $files sso2:/dat/etc
+rcp -p $files fco1:/dat/etc
+rcp -p $files fco2:/dat/etc
+rcp -p $files zocho:/dat/etc
+rcp -p $files neputa:/dat/etc
+#
+# send HUP signal to processes which use /dat/etc/channels.tbl on carina
+#
+#rsh carina kill -HUP `rsh carina "ps agx|grep /dat/etc/channels.tbl"|egrep 'send|recv|raw_' |grep -v grep|awk '{print $1}'`

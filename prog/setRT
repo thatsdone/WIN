@@ -1,0 +1,20 @@
+#!/bin/sh
+# set process class into RT
+# must be the root
+tmp=/tmp/setRT.$$
+cat /var/home/auto/_win|grep -v '^#'|grep -v '^nice'|sed -n 's/ *&//p'|
+  sed -n 's/\(.*\)/\1/p'>$tmp
+/usr/bin/ps -ef -o pid,class,args|fgrep -f $tmp|
+while read pid class proc rest
+do
+  if (echo $proc|grep 'recvt'>/dev/null)||(echo $proc|grep 'relay'>/dev/null)
+  then
+    if [ $class = TS ]
+    then
+#      echo $pid $class $proc $rest
+#      echo priocntl -s -c RT $pid
+      priocntl -s -c RT $pid
+    fi
+  fi
+done
+rm $tmp

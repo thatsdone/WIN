@@ -1,0 +1,17 @@
+#! /bin/sh
+if [ $# -eq 0 ]
+then
+	(cd /dat/trg;ls -1s)>trgstat1.$$
+else
+	(cd $1;ls -1s)>trgstat1.$$
+fi
+head -1 trgstat1.$$
+tail +2 trgstat1.$$|awk '{print $2,$1}'|grep '^9'>trgstat2.$$
+echo ' Y M D  events      KB'
+cut -c1-6 trgstat2.$$|uniq|
+while read file
+do
+	echo -n $file
+	cat trgstat2.$$|grep '^'$file|awk '/[0-9] [0-9]/{c++}{s+=$2}END{printf("%6d %9d\n",c,s)}'
+done
+rm trgstat?.$$

@@ -1,0 +1,28 @@
+#!/bin/sh
+set --x
+td=/dat/tmp
+dp=/dat/bin/SPARC
+of=$1
+rm $of 2>/dev/null
+shift
+while [ $# -gt 0 ]
+do
+  bn=`basename $1`
+  ymdhms=`echo $bn|cut -c1-8``echo $bn|cut -c10-11`00
+  rm $td/$bn 2>/dev/null
+  $dp/wck $1 2>/dev/null|grep ' 1 Hz'|awk '{print $4}'|
+  while read ch
+  do
+    $dp/dewin $ch $1 2>/dev/null| wform $ymdhms $ch 60 > $td/w2m.$$
+    if [ ! -f "$td/$bn" ]
+    then
+      cp $td/w2m.$$ $td/$bn 2>/dev/null
+    else
+      $dp/wadd $td/$bn $td/w2m.$$ $td 2>/dev/null
+    fi
+  done 
+  cat $td/$bn>>$of
+  rm $td/$bn.ch $td/$bn
+  shift
+done
+rm $td/w2m.$$

@@ -1,0 +1,9 @@
+#! /bin/sh
+pid=`ps -agxw | cut -c-6,18- | awk '$3 ~ /(^|\/)pmon$/{print $1}'`
+if [ -n "$pid" ]
+then
+	/bin/kill -HUP $pid
+	echo PRINT MONITOR signal sent to \#$pid
+else
+	echo \"pmon\" process not found
+fi

@@ -1,0 +1,6 @@
+#!/bin/sh
+while [ "$1" ]
+do
+  w2h /dat/LP/$1 /raw1/$1*
+  shift
+done

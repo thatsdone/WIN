@@ -1,0 +1,16 @@
+ls |
+while read yymm
+do
+	ls $yymm | grep -v '^'$yymm |
+	while read file
+	do
+		ym=`echo $file|sed 's/^\(....\).*/\1/'`
+		if [ ! -d $ym ]
+		then
+			echo mkdir $ym
+			mkdir $ym
+		fi
+		echo mv $yymm/$file $ym
+		mv $yymm/$file $ym
+	done
+done

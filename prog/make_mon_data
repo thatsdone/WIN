@@ -1,0 +1,20 @@
+#!/bin/sh
+rawdir=/dat/raw
+mondir=/dat/mon
+#
+while true
+do
+  latest=`cat $rawdir/LATEST`
+  if [ \( -n "$latest" \) -a \( "$latest" != "$prev" \) ]
+  then
+    if [ -n "$prev" ]
+    then
+      cat $rawdir/$prev | raw2mon > $mondir/$prev
+      echo $prev > $mondir/LATEST
+    fi
+    prev=$latest
+    sleep 20
+  else
+    sleep 30
+  fi
+done

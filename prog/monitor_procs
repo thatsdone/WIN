@@ -1,0 +1,18 @@
+#!/bin/sh
+. win.conf
+tmp=/tmp/monitor_procs.$$
+ps agxww > $tmp
+cat _win | grep -v '^#' | grep -v '^nice' | sed -n 's/ *&//p' |
+while read procs
+do
+  if grep "$procs" $tmp >/dev/null
+  then
+    :
+  else
+    $procs &
+    time=`date +%y%m%d.%H%M%S`
+    echo -n $time >> /dat/log/monitor_procs.log
+    echo " "$procs >> /dat/log/monitor_procs.log
+  fi
+done
+rm $tmp

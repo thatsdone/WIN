@@ -1,0 +1,25 @@
+#!/bin/sh
+# list orphan pick files
+# list_orphan_picks [(pick dir)]
+if [ $# -ne 0 ]
+then
+  cd $1
+fi
+directory=`pwd`
+pmonout=/dat/etc/pmon.out.`basename $directory`
+trap "rm /tmp/tmp.$$" 2
+cat $pmonout|grep 'on,'|cut -c1-13>/tmp/tmp.$$
+ls -1|
+while read file
+do
+  trgfile=`head -1 $file | cut -c4-16`
+#  echo $trgfile
+  if grep $trgfile /tmp/tmp.$$ >/dev/null
+  then
+#   echo picks file $file belongs to trgfile $trgfile
+    :
+  else
+#   echo picks file $file is orphan because trgfile $trgfile is invalid
+    echo $file
+  fi
+done

@@ -1,0 +1,5 @@
+(cd /dat/trg;/bin/ls [0-9]*[0-9]) > /dat/tmp/mktrg.$$
+/bin/cat /dat/tmp/mktrg.$$ | /usr/ucb/wc -l > /dat/trg/COUNT
+/usr/ucb/head -1 /dat/tmp/mktrg.$$ > /dat/trg/OLDEST
+/usr/ucb/tail -1 /dat/tmp/mktrg.$$ > /dat/trg/LATEST
+/bin/rm /dat/tmp/mktrg.$$

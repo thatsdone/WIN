@@ -1,0 +1,11 @@
+#!/bin/sh
+ymd=`echo $1|cut -c1-6`
+cd /dat/LP
+cat $ymd* >tmp.$$
+if [ -s tmp.$$ ]
+then
+  rm $ymd*
+  mv tmp.$$ $ymd
+else
+  rm tmp.$$
+fi

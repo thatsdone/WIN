@@ -1,0 +1,986 @@
+C HYPOMH   : main program for hypocenter location
+C           original version was made on March 13, 1984  and
+C            modified by N.H. on Feb. 8, 1985, May 8, 1985.
+C
+C ********** MS-DOS VERSION / TRANSPLANTED BY T.U. 5/27/85 **********
+C            INCIDENT ANGLES TO STATIONS ARE OUTPUTTED 
+C
+C ********** micro VAX / VMS VERSION               8/10/88 **********
+C ********** NEWS VERSION                          6/23/90 **********
+C        F-P MAGNITUDE IS CALCULATED IN FINAL      1/ 9/91
+C        MAXIMUM N OF STATIONS IS 100              6/12/91
+C        AMPLITUDE MAGNITUDE IS CALCULATED IN FINAL 6/30/92
+C        BUG IN SDATA (read station height) FIXED  7/28/93
+C
+      PROGRAM HYPOMH
+C
+C     HYPOCENTER LOCATION USING A BAYESIAN APPROACH DEVELOPED BY
+C        MATSU'URA (1984): PROGRAMED BY MATSU'URA AND HIRATA ON
+C        MARCH 13, 1984: GEOPHYSICAL INSTITUTE, FACULTY OF SCIENCE,
+C        THE UNIVERSITY OF TOKYO, TOKYO, JAPAN.
+C
+C     INPUT:  FT11F001 - VELOCITY STRUCTURE
+C             FT13F001 - ARRIVAL TIME DATA
+C     OUTPUT: FT21F001 - STRUCTURE AND INTERIM REPORT
+C             FT22F001 - FINAL RESULTS
+C
+C     NUMBER OF CHARACTERS IN A STATION NAME IS CHANGED TO 6 FROM 2
+C                                             2/8/1985 N.H.
+C
+      CALL FOPEN
+      CALL HYPINI
+      CALL VLSTR
+  100 CALL SDATA(NERQ,NDAT)
+C
+C          NEQR: ID NUMBER OF THE EARTHQUAKE:IF NERQ=0 THEN END OF DATA
+C          NDAT: NUMBER OF ARRIVAL TIME DATA FOR THE EVENT
+C                IF NDATA=0, THEN THERE IS NO DATA FOR THE EVENT
+C
+      IF(NERQ.LT.0) GO TO 200
+      IF(NDAT.EQ.0) GO TO 100
+      CALL START
+  150 CALL NLINV(IER)
+C
+C                IER=0 : NORMAL RETURN ( EQ.2-24 WAS SOLVED)
+C                    1 : NOT SOLVED BECAUSE OF AIR-FOCUS
+C                    2 : NOT SOLVED BECAUSE OF TOO DEEP FOCUS
+C                    3 : NOT SOLVED; FAIL IN CONVERGENCE OF ITERATION
+C                   10 : FITAL ERROR. CHECK INTERIM REPRT ON
+C                        FT21F001. THIS MAY HAPPEN WHEN ERROR ON
+C                        TRAVEL TIME CALCULATION BY "TRAVEL" WHICH
+C                        IS USED IN "NLINV": I.E., "NO RAY PATH IS
+C                        FOUND"
+C                   11 : FATAL ERROR. ERROR IN "MXINV" : CHECK ELEMENTS
+C                        OF MATRIX "B"
+C
+      IF(IER.GE.10) GO TO 100
+      CALL FINAL(IER)
+C                    4 : EQ.2-24 WAS SOLVED BUT THERE ARE DATA WHICH
+C                        HAVE TOO LARGE RESIDUALS. WEIGHT OF DATA ARE
+C                        SET TO BE -2.0 (PE(I) AND/OR SE(I) USED IN
+C                        "SDATA" AND "NLINV")
+C      IF(IER.EQ.4)  GO TO 150
+      GO TO 100
+  200 CALL HYPEND
+      STOP
+      END
+C
+      SUBROUTINE FOPEN
+C     INPUT  UNIT 11 : STATION, STRUCTURE
+C                 12 : INITIAL GUESS
+C                 13 : ARRIVAL TIME DATA
+C     OUTPUT UNIT 21 : REPORT
+C                 22 : FINAL RESULTS
+      IMPLICIT REAL*8(A-H,O-Z)
+      CHARACTER*80 FILE,BLK
+      COMMON /INITL/ALAT00,ALNG00,DEPT00,ELAT00,ELNG00,EDPT00
+      DATA BLK/'              '/
+      WRITE(6,'(A)') '************ HYPOMH ***********'
+C STRUCTURE LIST FILE NAME
+      call getarg(1,FILE)
+      OPEN(11,FILE=FILE,STATUS='OLD')
+C ARRIVAL TIME DATA FILE NAME
+      call getarg(2,FILE)
+      OPEN(13,FILE=FILE,STATUS='OLD')
+C FINAL RESULTS FILE NAME
+      call getarg(3,FILE)
+      OPEN(22,FILE=FILE,STATUS='unknown')
+C REPORT FILE NAME
+      call getarg(4,FILE)
+      OPEN(21,FILE=FILE,STATUS='unknown')
+C INITIAL VALUE FILE NAME
+      IF(IARGC().GE.5) THEN
+		call getarg(5,FILE)
+        OPEN(12,FILE=FILE,STATUS='OLD')
+        READ(12,100) ALAT00,ALNG00,DEPT00
+        READ(12,100) ELAT00,ELNG00,EDPT00
+      END IF
+  100 FORMAT(3F10.3)
+      RETURN
+      END
+C
+      SUBROUTINE HYPINI
+      IMPLICIT REAL*8 (A-H,O-Z)
+      COMMON /CNTP/ EPS1,EPS2,LIT1,LIT2
+      EPS1=1.0D-8
+      EPS2=1.0D-14
+      LIT1=30
+      LIT2=10
+      WRITE(21,2100)
+ 2100 FORMAT(' HYPOCENTER LOCATION USING A BAYESIAN APPROACH'/
+     145(1H-))
+      RETURN
+      END
+C
+      SUBROUTINE HYPEND
+C      WRITE(22,2200)
+C 2200 FORMAT(10X)
+      WRITE(6,500)
+  500 FORMAT('****** END OF HYPOMH ******')
+      RETURN
+      END
+C
+      SUBROUTINE FINAL(JUDG)
+C
+C     WRITE FINAL RESULTS TO FILE NO. 21 AND FILE NO. 22
+C     REVISED ON FEB-3-85  BY N.H.
+C     REVISED ON FEB-19-85 BY N.H.
+C     REVISED ON JAN- 9-91 BY T.U.
+C     RESULTS ARE CHECKED IN TERMS OF RESIDUALS
+C           IF A RESIDUAL IS GREATER THAN FACOR*(STANDARD DEVIATION)
+C              PUT JUDG=4 AND RE-CALCULATION: PE(I) OR SE(I)=-2.0
+      IMPLICIT REAL*8(A-H,O-Z)
+      CHARACTER*4 DIAG,POLA
+      CHARACTER*6 SA
+      CHARACTER*3 VST
+      DIMENSION DL(100),AZ(100),TA(100),TB(100),BMAG(100)
+      COMMON /STRC/ Y(22),VR(22),VLG(21),V(21),N1
+      COMMON /STRC1/ VST
+      COMMON /DATA/ SC(3,100),PT(100),PE(100),ST(100),SE(100),
+     1              FMP(100),AMP(100),NE,ND,IYR,MNT,IDY,IHR,MIN
+      COMMON /DATA1/ SA(100)
+      COMMON /DATF/ APT(100),AST(100),NPD,NSD
+      COMMON /DATF1/ POLA(100)
+      COMMON /STRT/ XM0(3),EX0(3)
+      COMMON /RSLT/ XM1(3),EX1(3),H(3,3),RSL(3),COT,EOT,
+     1              RPT(100),RST(100),TAG(100),TBG(100)
+      COMMON /OCOD/ ALAT0,ALNG0,DEPT0
+      NPR=3
+      PI=3.1415926D0
+      PD=1.8D2/PI
+      CALL PLTXY(ALATI,ALNGI,XM0(1),-XM0(2),1)
+      CALL PLTXY(ALATF,ALNGF,XM1(1),-XM1(2),1)
+      IF(JUDG.EQ.0) DIAG='CONV'
+      IF(JUDG.EQ.1) DIAG='AIRF'
+      IF(JUDG.EQ.2) DIAG='DEEP'
+      IF(JUDG.EQ.3) DIAG='NOCN'
+C
+      NSRP=0
+       SRP=0.0
+      NSRS=0
+       SRS=0.0
+      NMAG=0
+       AMAG=0.0
+C
+      DO 10 I=1,ND
+      XX=SC(1,I)-XM1(1)
+      YY=SC(2,I)-XM1(2)
+      DL(I)=DSQRT(XX*XX+YY*YY)
+      AZ(I)=PD*DATAN2(XX,-YY)
+      IF(AZ(I).LT.0.0D0) AZ(I)=AZ(I)+3.6D2
+      TA(I)=PD*TAG(I)
+      TB(I)=PD*TBG(I)
+      IF(PE(I).GT.0.0D0) THEN
+        NSRP=NSRP+1
+        SRP =SRP+RPT(I)*RPT(I)
+      END IF
+      IF(SE(I).GT.0.0D0) THEN
+        NSRS=NSRS+1
+        SRS =SRS+RST(I)*RST(I)
+      END IF
+      BMAG(I)=9.9
+      IF(FMP(I).EQ.0.0.AND.AMP(I).EQ.0.0) GOTO 10
+      HDIST=DSQRT(DL(I)*DL(I)+XM1(3)*XM1(3))
+      IF(AMP(I).GT.0.0) THEN
+C ********** WATANABE'S FORMULA (Watanabe[1971]) **********
+C  AMP(I) is maximum deflection in m/s
+        IF(HDIST.LT.200.0) THEN
+          BMAG(I)=(LOG10(AMP(I)*100.0)+1.73*LOG10(HDIST)+2.50)/0.85
+        ELSE
+          BMAG(I)=(LOG10(AMP(I)*100.0)+1.73*LOG10(HDIST)+2.50+
+     *                   0.0015*(HDIST-200.0))/0.85
+        END IF
+C *******************************************************
+      ELSE
+C ********** TSUMURA'S FORMULA (Tsumura[1967]) **********
+C WE USE HYPOCENTRAL DISTANCE, INSTED OF EPICENTRAL DISTANCE 
+        IF(HDIST.LT.200.0) THEN
+          BMAG(I)=-2.36+2.85*LOG10(FMP(I))
+        ELSE
+          BMAG(I)=-2.53+2.85*LOG10(FMP(I))+0.0014*HDIST
+        END IF
+C *******************************************************
+      ENDIF
+      NMAG=NMAG+1
+      AMAG=AMAG+BMAG(I)
+   10 CONTINUE
+C
+      IF(NMAG.GT.0) THEN
+        AMAG=AMAG/NMAG
+      ELSE
+        AMAG=9.9
+      END IF
+C
+      WRITE(21,2100)
+ 2100 FORMAT('***** FINAL RESULTS *****')
+      WRITE( 6,2200) IYR,MNT,IDY,IHR,MIN,COT,ALATF,ALNGF,XM1(3)
+     *              ,AMAG
+      WRITE(22,2200) IYR,MNT,IDY,IHR,MIN,COT,ALATF,ALNGF,XM1(3)
+     *              ,AMAG
+      WRITE(21,2200) IYR,MNT,IDY,IHR,MIN,COT,ALATF,ALNGF,XM1(3)
+     *              ,AMAG
+      WRITE(22,2210) DIAG,EOT,EX1(2),EX1(1),EX1(3)
+      WRITE(21,2210) DIAG,EOT,EX1(2),EX1(1),EX1(3)
+      WRITE( 6,2210) DIAG,EOT,EX1(2),EX1(1),EX1(3)
+      WRITE(22,2220) H(1,1),-H(1,2),H(1,3),H(2,2),-H(2,3),H(3,3)
+      WRITE(21,2220) H(1,1),-H(1,2),H(1,3),H(2,2),-H(2,3),H(3,3)
+      WRITE( 6,2220) H(1,1),-H(1,2),H(1,3),H(2,2),-H(2,3),H(3,3)
+      WRITE(22,2230) ALATI,EX0(2),ALNGI,EX0(1),XM0(3),EX0(3)
+      WRITE(21,2230) ALATI,EX0(2),ALNGI,EX0(1),XM0(3),EX0(3)
+      WRITE( 6,2230) ALATI,EX0(2),ALNGI,EX0(1),XM0(3),EX0(3)
+      WRITE(22,2240) ND,VST,NPD,RSL(1),NSD,RSL(2),NPR,RSL(3)
+      WRITE(21,2240) ND,VST,NPD,RSL(1),NSD,RSL(2),NPR,RSL(3)
+      WRITE( 6,2240) ND,VST,NPD,RSL(1),NSD,RSL(2),NPR,RSL(3)
+C
+      DO 15 I=1,ND
+C
+C      WRITE(22,2250) SA(I),POLA(I),DL(I),AZ(I),TA(I),TB(I),APT(I),
+C     1   PT(I),PE(I),RPT(I),AST(I),ST(I),SE(I),RST(I),FMP(I),AMP(I),
+C     2   BMAG(I)
+C      WRITE(21,2250) SA(I),POLA(I),DL(I),AZ(I),TA(I),TB(I),APT(I),
+C     1   PT(I),PE(I),RPT(I),AST(I),ST(I),SE(I),RST(I),FMP(I),AMP(I),
+C     2   BMAG(I)
+C      WRITE( 6,2250) SA(I),POLA(I),DL(I),AZ(I),TA(I),TB(I),APT(I),
+C     1   PT(I),PE(I),RPT(I),AST(I),ST(I),SE(I),RST(I),FMP(I),AMP(I),
+C     2   BMAG(I)
+C
+      IF(AMP(I).GT.0.0) THEN
+        FMAG=AMP(I)
+      ELSEIF(FMP(I).GT.0.0) THEN
+        FMAG=FMP(I)
+      ELSE
+        FMAG=0.0
+      ENDIF
+C
+      WRITE(22,2250) SA(I),POLA(I),DL(I),AZ(I),TA(I),TB(I),
+     1   PT(I),PE(I),RPT(I),ST(I),SE(I),RST(I),FMAG,BMAG(I)
+      WRITE(21,2250) SA(I),POLA(I),DL(I),AZ(I),TA(I),TB(I),
+     1   PT(I),PE(I),RPT(I),ST(I),SE(I),RST(I),FMAG,BMAG(I)
+      WRITE( 6,2250) SA(I),POLA(I),DL(I),AZ(I),TA(I),TB(I),
+     1   PT(I),PE(I),RPT(I),ST(I),SE(I),RST(I),FMAG,BMAG(I)
+   15 CONTINUE
+      IF(NSRP.GT.0) SRP=DSQRT(SRP/NSRP)
+      IF(NSRS.GT.0) SRS=DSQRT(SRS/NSRS)
+      WRITE(22,2260) SRP,SRS
+      WRITE(21,2260) SRP,SRS
+      WRITE( 6,2260) SRP,SRS
+ 2200 FORMAT(3I3,3X,2I3,F8.3,2F11.5,    F8.3,F6.1)
+ 2210 FORMAT(3X,A4,11X, F8.3,2(F9.3,2X),F8.3)
+C 2220 FORMAT(2(F8.3,1X),F8.3,2(F9.3,2X),F8.3)
+ 2220 FORMAT(6F10.3)
+ 2230 FORMAT(12X,3(F7.3,1X,F5.1,1X))
+ 2240 FORMAT(2X,I2,1X,A4,1X,3(I2,1X,'(',F5.1,'%',1X,')',1X))
+C 2250 FORMAT(A5,A2,4F6.1,8F6.2,F6.1,E10.3,F5.1)
+ 2250 FORMAT(A5,A2,4F6.1,2(F6.2,F5.2,F6.2),E10.3,F5.1)
+C 2260 FORMAT(49X,F6.2,18X,F6.2)
+ 2260 FORMAT(42X,F6.2,11X,F6.2)
+C
+C ***** CHECK RESULTS ******
+C
+      FACTOR=2.0D0
+      ICHECK=0
+      DO 20 I=1,ND
+         IF(DABS(RPT(I)).GT.FACTOR*SRP) THEN
+           PE(I)=-2.0
+           ICHECK=ICHECK+1
+           NPD=NPD-1
+         END IF
+         IF(DABS(RST(I)).GT.FACTOR*SRS) THEN
+           SE(I)=-2.0
+           ICHECK=ICHECK+1
+           NSD=NSD-1
+         END IF
+   20 CONTINUE
+      IF(ICHECK.GT.0) JUDG=4
+      RETURN
+      END
+C
+      SUBROUTINE NLINV(JUDG)
+C
+C     JULY-31-84:    REVISED BY N.H.
+C     FEB.-8-85 :    REVISED BY N.H. CHARACTER*6 SA
+C     MAY-7-85 :     REVISED BY N.H.
+C
+C     INVERSION OF ARRIVAL TIME DATA FOR HYPOCENTER COORDINATES
+      IMPLICIT REAL*8(A-H,O-Z)
+      CHARACTER*6 SA
+      CHARACTER*3 VNAME
+      COMMON /STRC/ Y(22),VR(22),VLG(21),V(21),NN
+      COMMON /STRC1/ VNAME
+      COMMON /STRC2/ VLCT,ZMIN,ZMAX
+      COMMON /DATA/ SC(3,100),PT(100),PE(100),ST(100),SE(100),
+     1              FMP(100),AMP(100),NE,ND,IYR,MNT,IDY,IHR,MIN
+      COMMON /DATA1/ SA(100)
+      COMMON /STRT/ XM0(3),EX0(3)
+      COMMON /RSLT/ XM1(3),EX1(3),H(3,3),RSL(3),COT,EOT,
+     1              RPT(100),RST(100),TAG(100),TBG(100)
+      DIMENSION A(100,3),B(3,3),XMC(3),RVX(3),VXM(3),VPS(100),XW(3)
+      DIMENSION CP(100,3),CS(100,3),DP(3,3),DS(3,3),FP(100,100),
+     1              FS(100,100)
+      DIMENSION VPT(100),VST(100),TPT(100),ANG(22),TRV(22),TW(100),
+     1              BNG(100)
+      LL=0
+      LM=20
+      JM=10
+      JUDG=0
+      CCP=1.0D-3
+      AL2=3.0D0
+      ALP=DSQRT(AL2)
+      WRITE(21,2100)
+ 2100 FORMAT(' ***** INVERSION OF ARRIVAL TIME DATA *****'/
+     *2X,'LL',4X,'SR',22X,'CP',19X,'JJ',4X,'X',7X,'Y',7X,'Z')
+      DO 10 I=1,3
+      XM1(I)=XM0(I)
+   10 VXM(I)=1.0D0/EX0(I)**2
+      AS=0.0D0
+      DO 15 I=1,ND
+      IF(PE(I).LE.0.0D0) VPT(I)=0.0D0
+      IF(PE(I).GT.0.0D0) VPT(I)=1.0D0/PE(I)**2
+      IF(SE(I).LE.0.0D0) VST(I)=0.0D0
+      IF(SE(I).GT.0.0D0) VST(I)=1.0D0/SE(I)**2
+      VPS(I)=VPT(I)+ALP*VST(I)
+   15 AS=AS+VPT(I)+VST(I)
+      DO 17 I=1,ND
+      DO 17 J=1,ND
+      FP(I,J)=-VPS(I)/AS
+      FS(I,J)=FP(I,J)/ALP
+      IF(I.NE.J) GO TO 16
+      FP(I,J)=1.0D0+FP(I,J)
+      FS(I,J)=1.0D0+FS(I,J)
+   16 FP(I,J)=FP(I,J)*VPT(J)
+   17 FS(I,J)=FS(I,J)*VST(J)
+  300 JJ=0
+  200 CALL WHERE(XM1(3),LN)
+      DO 140 I=1,ND
+      XX=XM1(1)-SC(1,I)
+      YY=XM1(2)-SC(2,I)
+      RR=DSQRT(XX*XX+YY*YY)
+      CALL TRAVEL ( RR, XM1(3), SC(3,I), NP, ANG, TRV, BNG)
+      IF (NP.EQ.0) THEN
+                   WRITE(21,2110) I
+ 2110 FORMAT(' *** RAY PATH TO ',I3,'-STATION IS NOT FOUND ***')
+           JUDG=10
+           RETURN
+      END IF
+      TPT(I)=1.0D5
+      DO 120 J=1,NP
+         IF(TRV(J).GT.TPT(I)) GO TO 120
+         TPT(I)=TRV(J)
+         TAG(I)=ANG(J)
+         TBG(I)=BNG(J)
+  120 CONTINUE
+      SN=DSIN(TAG(I))
+      CN=DCOS(TAG(I))
+      VRE=VLG(LN)*(XM1(3)+V(LN))
+      A(I,1)=SN*XX/RR/VRE
+      A(I,2)=SN*YY/RR/VRE
+  140 A(I,3)=-CN/VRE
+      SRB=0.0D0
+      SRC=0.0D0
+      DO 20 I=1,ND
+      IF(PE(I).LE.0.0D0) RPT(I)=0.0D0
+      IF(PE(I).GT.0.0D0) RPT(I)=PT(I)-TPT(I)
+      IF(SE(I).LE.0.0D0) RST(I)=0.0D0
+      IF(SE(I).GT.0.0D0) RST(I)=ST(I)-ALP*TPT(I)
+      WPT=VPT(I)*RPT(I)
+      WST=VST(I)*RST(I)
+      SRB=SRB+WPT*RPT(I)+WST*RST(I)
+   20 SRC=SRC+WPT+WST
+      SRB=SRB-SRC**2/AS
+      BCP=0.0D0
+      DO 30 I=1,3
+      XW(I)=0.0D0
+      DO 25 J=1,ND
+      TW(J)=0.0D0
+      DO 27 K=1,ND
+   27 TW(J)=TW(J)+FP(J,K)*RPT(K)+ALP*FS(J,K)*RST(K)
+   25 XW(I)=XW(I)+A(J,I)*TW(J)
+      RMX=XM0(I)-XM1(I)
+      RVX(I)=XW(I)+VXM(I)*RMX
+      SRB=SRB+VXM(I)*RMX**2
+   30 BCP=BCP+RVX(I)**2
+      BCP=DSQRT(BCP/3.0D0)
+      IF(LL.EQ.0) GO TO 100
+      IF(SRB.LT.SRA) GO TO 50
+      JJ=JJ+1
+      IF(JJ.GT.JM) GO TO 45
+      AA=0.5D0**JJ
+      DO 40 I=1,3
+   40 XM1(I)=XM1(I)-AA*XMC(I)
+      GO TO 200
+   45 JUDG=3
+      LM=LL
+      GO TO 57
+   50 ZM1=DABS(ZMIN-XM1(3))
+      ZM2=DABS(ZMAX-XM1(3))
+      IF(ZM1.GT.CCP.AND.ZM2.GT.CCP) GO TO 55
+      IF(ZM1.LE.CCP) JUDG=1
+      IF(ZM2.LE.CCP) JUDG=2
+      LM=LL
+      GO TO 57
+   55 IF(BCP.LE.CCP) LM=LL
+   57 WRITE(21,2120) LL,SRB,SRA,BCP,ACP,JJ,(XM1(I),I=1,3)
+ 2120 FORMAT(I3,4D12.5,I3,3F8.3)
+  100 DO 60 I=1,ND
+      DO 60 J=1,3
+      CP(I,J)=0.0D0
+      CS(I,J)=0.0D0
+      DO 60 L=1,ND
+      CP(I,J)=CP(I,J)+FP(I,L)*A(L,J)
+   60 CS(I,J)=CS(I,J)+FS(I,L)*A(L,J)
+      DO 65 I=1,3
+      DO 65 J=1,3
+      DP(I,J)=0.0D0
+      DS(I,J)=0.0D0
+      DO 67 L=1,ND
+      DP(I,J)=DP(I,J)+A(L,I)*CP(L,J)
+   67 DS(I,J)=DS(I,J)+A(L,I)*CS(L,J)
+      B(I,J)=DP(I,J)+AL2*DS(I,J)
+   65 IF(I.EQ.J) B(I,J)=B(I,J)+VXM(I)
+      CALL MXINV(B,H,IND)
+      IF(IND.EQ.-1) THEN
+         JUDG=11
+         RETURN
+      END IF
+      IF(LL.NE.LM) GO TO 80
+      SRT=0.0D0
+      DO 70 I=1,ND
+   70 SRT=SRT+RPT(I)*VPT(I)+RST(I)*VST(I)
+      COT=SRT/AS
+      EOT=1.0D0/AS
+      DO 73 I=1,3
+   73 EX1(I)=DSQRT(H(I,I))
+      R1=0.0D0
+      R2=0.0D0
+      R3=0.0D0
+      DO 75 I=1,3
+      DO 74 J=1,3
+      R1=R1+H(I,J)*DP(J,I)
+   74 R2=R2+H(I,J)*DS(J,I)
+   75 R3=R3+H(I,I)*VXM(I)
+      RSL(1)=1.0D2*R1/3.0D0
+      RSL(2)=1.0D2*AL2*R2/3.0D0
+      RSL(3)=1.0D2*R3/3.0D0
+      DO 77 I=1,ND
+      IF(PE(I).GT.0.0D0) RPT(I)=RPT(I)-COT
+   77 IF(SE(I).GT.0.0D0) RST(I)=RST(I)-COT
+      RETURN
+   80 DO 90 I=1,3
+      XMC(I)=0.0D0
+      DO 95 J=1,3
+   95 XMC(I)=XMC(I)+H(I,J)*RVX(J)
+      IF(I.NE.3) GO TO 90
+      XMZ=XM1(I)+XMC(I)
+      IF(XMZ.LT.ZMIN) XMC(I)=ZMIN-XM1(I)
+      IF(XMZ.GT.ZMAX) XMC(I)=ZMAX-XM1(I)
+   90 XM1(I)=XM1(I)+XMC(I)
+      SRA=SRB
+      ACP=BCP
+      LL=LL+1
+      GO TO 300
+      END
+C
+      SUBROUTINE SDATA(NERQ,NDAT)
+C
+C     READ ARRIVAL TIMES FROM FILE NO. 13 AND WRITE TO FILE NO. 21
+C     IF PTE(STE)=<0.0, NO INFORMATION ABOUT P(S) ARRIVAL TIME
+C
+C     NEQR     : ID NUMBER OF EARTHQUAKE
+C                NERQ=-1 MEANS END OF EARTHQUAKE IN FILE FT13FTXXX
+C     NDAT     : NUMBER OF DATA IN THE EARTHQUAKE
+C
+C     IYR1     : YEAR
+C     MNT1     : MONTH
+C     IDY1     : DAY
+C     IHR      : HOUR
+C     MIN      : MINUTE
+C
+C     SA1(I)   : STATION ABBREVIATION   (WITHIN 6 CHARACTERS)
+C     POLA1(I) : POLARITY OF THE FIRST MOTION
+C     PT1(I)   : P-PHASE ARRIVAL TIME             (IN SECOND)
+C     ST1(I)   : S-PHASE ARRIVAL TIME             (IN SECOND)
+C     PE1(I)   : STANDARD ERROR IN P-ARRIVAL DATA (IN SECOND)
+C     SE1(I)   : STANDARD ERROR IN S-ARRIVAL DATA (IN SECOND)
+C     FMP(I)   : F-P TIME DATA (IN SECOND, 0.0 FOR NO USE)
+C     AMP(I)   : MAXIMUM AMPLITUDE DATA (IN m/s, 0.0 FOR NO USE)
+C
+C     PE(I) AND SE(I) ARE RECALCULATED IN "START": 1 % OF TRAVEL TIMES
+C     ARE ADDED TO THE PE(I) AND SE(I).
+      IMPLICIT REAL*8(A-H,O-Z)
+      CHARACTER*4 POLA,POLA1
+      CHARACTER*6 SA,SA1,BLK
+      COMMON /STRC2/ VLCT,ZMIN,ZMAX
+      COMMON /DATA/ SC(3,100),PT(100),PE(100),ST(100),SE(100),
+     1              FMP(100),AMP(100),NE,ND,IYR,MNT,IDY,IHR,MIN
+      COMMON /DATA1/ SA(100)
+      COMMON /DATF/ APT(100),AST(100),NPD,NSD
+      COMMON /DATF1/ POLA(100)
+      COMMON /OCOD/ ALAT0,ALNG0,DEPT0
+      DIMENSION PT1(100),PE1(100),ST1(100),SE1(100),POLA1(100),
+     1             SA1(100),ALAT(100),ALNG(100),AHGT(100),XST(100),
+     1             YST(100),STCP(100),STCS(100)
+C
+      BLK='    '
+      NE=0
+      READ(13,1300,END=40) IYR,MNT,IDY,IHR,MIN
+ 1300 FORMAT(5(I2,1X))
+      IF(NERQ.EQ.-1) RETURN
+      I=1
+    2 READ(13,1310,END=4) SA1(I),POLA1(I),PT1(I),PE1(I),ST1(I),SE1(I),
+     1XT,AMP(I),ALAT(I),ALNG(I),IAHGT,STCP(I),STCS(I)
+ 1310 FORMAT(A4,1X,A1,2(F8.3,F6.3),F6.1,E9.2,2F11.5,I7,2F7.3)
+      AHGT(I)=FLOAT(IAHGT)*0.001
+      IF(PE1(I).GT.0.0.AND.XT.GT.PT1(I)) THEN
+        FMP(I)=XT-PT1(I)
+      ELSE
+        FMP(I)=0.0
+      ENDIF
+      IF(SA1(I).NE.BLK) THEN
+        I=I+1
+        IF(I.GT.100) I=100
+        GO TO 2
+      END IF
+    4 NA=I-1
+      WRITE(21,2100) IYR,MNT,IDY,IHR,MIN
+ 2100 FORMAT(' ***** EARTHQUAKE ',5I2.2,' *****')
+      K=1
+      NPD=0
+      NSD=0
+      IF(NA.LE.0) GO TO 35
+      DO 30 I=1,NA
+      WRITE(21,2110) SA1(I),POLA1(I),PT1(I),PE1(I),ST1(I),SE1(I),
+     1FMP(I),AMP(I),ALAT(I),ALNG(I),AHGT(I),STCP(I),STCS(I)
+ 2110 FORMAT(A4,1X,A1,2(F8.3,F6.3),F6.1,E10.3,2F11.5,3F7.3)
+      IF(ALAT(I).EQ.0.0.AND.ALNG(I).EQ.0.0) THEN
+        WRITE(21,2120) SA1(I)
+ 2120 FORMAT(5X,'*** ',A6,' IS NOT CATALOGUED ***')
+        GO TO 30
+      ENDIF
+      CALL PLTXY(ALAT(I),ALNG(I),XST(I),YST(I),0)
+      SA(K)=SA1(I)
+      SC(1,K)=XST(I)
+      SC(2,K)=-YST(I)
+      SC(3,K)=-AHGT(I)-VLCT*STCP(I)
+      IF(PE1(I).LE.0.0D0) GO TO 25
+      PT(K)=PT1(I)+STCP(I)
+      NPD=NPD+1
+      GO TO 26
+   25 PT(K)=0.0D0
+   26 IF(SE1(I).LE.0.0D0) GO TO 27
+      ST(K)=ST1(I)+STCS(I)
+      NSD=NSD+1
+      GO TO 28
+   27 ST(K)=0.0D0
+   28 PE(K)=PE1(I)
+      SE(K)=SE1(I)
+      APT(K)=PT1(I)
+      AST(K)=ST1(I)
+      POLA(K)=POLA1(I)
+      K=K+1
+   30 CONTINUE
+   35 ND=K-1
+      NDAT=ND
+      RETURN
+   40 NERQ=-1
+      RETURN
+      END
+C
+      SUBROUTINE START
+C     IF INITIAL VALUES ARE GIVEN IN FILE NO. 12, THEN THOSE ARE USED
+C     OTHERWISE INITIAL VALUES ARE ASSUMED TO BE THE ORIGIN OF
+C        COORDINATES FOR EPICENTER, AND THE STANDARD DEPTH FOP DEPTH
+C     STANDARD ERRORS OF INITIAL VALUES ARE ALSO GIVEN IN FILE NO. 12
+C     DEFAULT VALUE IS 30 KM FOR EVERY SPATIAL COORDINATE (IF INITIAL
+C        VALUES  ARE GIVEN IN FILE NO. 12, A HALF OF DEF-VAL IS TAKEN
+C        AS STANDARD ERROR FOR EVERY SPATIAL COORDINATE)
+      IMPLICIT REAL*8(A-H,O-Z)
+      CHARACTER*6 SA
+      COMMON /OCOD/ ALAT0,ALNG0,DEPT0
+      COMMON /DATA/ SC(3,100),PT(100),PE(100),ST(100),SE(100),
+     1              FMP(100),AMP(100),NE,ND,IYR,MNT,IDY,IHR,MIN
+      COMMON /DATA1/ SA(100)
+      COMMON /STRT/ XM0(3),EX0(3)
+      COMMON /STRT1/ EX1(3)
+      COMMON /INITL/ALAT00,ALNG00,DEPT00,ELAT00,ELNG00,EDPT00
+      A=1.7320508D0
+      B=1.0D0/(A-1.0D0)
+      C=A*B
+      DFS=3.0D1
+  200 K=0
+      SOT=0.0D0
+      SVR=0.0D0
+      FAT=1.0D5
+      DO 20 I=1,ND
+      IF(PE(I).GT.0.0D0) FAT=DMIN1(FAT,PT(I))
+      IF(SE(I).GT.0.0D0) FAT=DMIN1(FAT,ST(I))
+      IF(PE(I).LE.0.0D0.OR.SE(I).LE.0.0D0) GO TO 20
+      OTM=B*(A*PT(I)-ST(I))
+      PE2=PE(I)**2+((PT(I)-OTM)/1.0D2)**2
+      SE2=SE(I)**2+((ST(I)-OTM)/5.0D1)**2
+      VAR=PE2*C**2+SE2*B**2
+      SOT=SOT+OTM/VAR
+      SVR=SVR+1.0D0/VAR
+      K=K+1
+   20 CONTINUE
+      IF(K.EQ.0) COT=FAT-1.0D0
+      IF(K.NE.0) COT=SOT/SVR
+C
+      IF(IARGC().GE.5) THEN
+        CALL PLTXY(ALAT00,ALNG00,XF,YF,0)
+        XM0(1)=XF
+        XM0(2)=-YF
+        XM0(3)=DEPT00
+        EX0(1)=ELNG00
+        EX0(2)=ELAT00
+        EX0(3)=EDPT00
+      ELSE
+        CALL PLTXY(ALAT0,ALNG0,XF,YF,0)
+        XM0(1)=XF
+        XM0(2)=-YF
+        XM0(3)=DEPT0
+        DO 40 I=1,3
+   40   EX0(I)=EX1(I)
+      ENDIF
+  300 WRITE(21,2120) NE,IYR,MNT,IDY,IHR,MIN,COT,XM0(1),XM0(2),XM0(3)
+      WRITE(21,2130) EX0(1),EX0(2),EX0(3)
+ 2120 FORMAT(' *** ADOPTED INITIAL VALUES ***',
+     *       ' X(KM)   Y(KM)  Z(KM)'/I4,2X,5I3,4F8.3)
+ 2130 FORMAT(29X,3F8.3)
+      DO 50 I=1,ND
+      IF(PE(I).LE.0.0D0) GO TO 45
+      PTRV=(PT(I)-COT)/1.0D2
+      PE(I)=DSQRT(PE(I)**2+PTRV**2)
+   45 IF(SE(I).LE.0.0D0) GO TO 50
+      STRV=(ST(I)-COT)/5.0D1
+      SE(I)=DSQRT(SE(I)**2+STRV**2)
+   50 CONTINUE
+      RETURN
+      END
+C
+      SUBROUTINE TRAVEL ( RR,YA,YB,NP,ANG,TRV,BNG )
+C
+C     CALCULATION OF TAKE-OFF ANGLES AND TRAVEL TIMES
+C
+C     JULY-31-84. REVISED BY N.H.
+C
+C     SEARCH FOR RAY PATH
+C
+C     RR  : HORIZONTAL DISTANCE BETWEEN TWO POINTS
+C     YA  : DEPTH OF POINT 'A'
+C     YB  : DEPTH OF POINT 'B'
+C     NP  : NUMBER OF POSSIBLE RAYS BETWEEN 'A' AND 'B'
+C     ANG : TAKE-OFF ANGLES FROM DWONWARD
+C     TRV : TRAVEL TIMES
+C     BNG : INCIDENT ANGLES FROM DOWNWARD 
+C
+      IMPLICIT REAL*8(A-H,O-Z)
+      CHARACTER*3 VST
+      COMMON /CNTP/ EPS1,EPS2,LIT1,LIT2
+      COMMON /STRC/ Y(22),VR(22),VLG(21),V(21),N1
+      COMMON /STRC1/ VST
+      DIMENSION XC(22),TAC(22),ANG(22),TRV(22),BNG(22)
+      IF ( YA .GE. YB ) THEN
+         Y1= YA
+         Y2= YB
+      ELSE
+         Y1 = YB
+         Y2 = YA
+      END IF
+      CALL WHERE ( Y1, L1 )
+      CALL WHERE ( Y2, L2 )
+      CALL RPCOD(Y1,L1,Y2,L2,XC,TAC)
+      NP=0
+      DO 60 I=L1,N1
+      J=I+1
+      T1=RR-XC(I)
+      T2=XC(J)-RR
+      IF(T1*T2.LT.0.0D0) GO TO 60
+      NP=NP+1
+      X1=XC(I)
+      X2=XC(J)
+      TA1=TAC(I)
+      TA2=TAC(J)
+      DO 20 K=1,LIT1
+      XR=X1-X2
+      IF(DABS(XR/RR).LT.EPS1) GO TO 30
+      TA0=(TA1+TA2)/2.0D0
+      CALL RXCOD(Y1,L1,Y2,L2,TA0,X0,A0)
+      T0=RR-X0
+      IF(T0*T1.LE.0.0D0) GO TO 10
+      X1=X0
+      TA1=TA0
+      GO TO 20
+   10 X2=X0
+      TA2=TA0
+   20 CONTINUE
+   30 DT0=DABS((RR-X0)/RR)
+      DO 50 K=1,LIT2
+      DTA=(RR-X0)/A0
+      TAG=TA0+DTA
+      IF(DABS(DTA).LT.EPS2) GO TO 55
+      CALL RXCOD(Y1,L1,Y2,L2,TAG,X0,A0)
+      DTC=DABS((RR-X0)/RR)
+      IF(DT0.GT.DTC) GO TO 40
+      TAG=TA0
+      GO TO 55
+   40 IF(DTC.LT.EPS2) GO TO 55
+   50 CONTINUE
+   55 CALL TRVEL ( Y1, L1, Y2, L2, TAG, TRV(NP) )
+      IF ( YA .GE. YB ) THEN
+         ANG(NP)=TAG
+         SANG=DSIN(TAG)*VLG(L2)*(Y2+V(L2))/(VLG(L1)*(Y1+V(L1)))
+         BNG(NP)=DASIN(SANG)
+      ELSE
+         SANG=DSIN(TAG)*VLG(L2)*(Y2+V(L2))/(VLG(L1)*(Y1+V(L1)))
+         ANG(NP)=DASIN(SANG)
+         BNG(NP)=TAG
+      END IF
+   60 CONTINUE
+      RETURN
+      END
+C
+      SUBROUTINE RPCOD(Y1,L1,Y2,L2,XC,TAC)
+      IMPLICIT REAL*8(A-H,O-Z)
+      CHARACTER*3 VST
+      COMMON /STRC/ Y(22),VR(22),VLG(21),V(21),N1
+      COMMON /STRC1/ VST
+      DIMENSION XC(22),TAC(22)
+      PI=3.1415926D0
+      XC(L1)=0.0D0
+      TAC(L1)=PI
+      DO 10 I=L1,N1
+      NL=I
+      J=NL+1
+      PP=1.0D0/VR(1+NL)
+      YN=Y(1+NL)
+      CALL RXINC(0,PP,Y1,L1,Y2,L2,XA,A)
+      CALL RXINC(1,PP,YN,NL,Y1,L1,XB,B)
+      XC(J)=XA+2.0D0*XB
+      SC=PP*VLG(L1)*(Y1+V(L1))
+      IF(SC.GT.1.0D0) SC=1.0D0
+   10 TAC(J)=DASIN(SC)
+      RETURN
+      END
+      SUBROUTINE RXCOD(Y1,L1,Y2,L2,TA,X,A)
+      IMPLICIT REAL*8(A-H,O-Z)
+      CHARACTER*3 VST
+      COMMON /STRC/ Y(22),VR(22),VLG(21),V(21),N1
+      COMMON /STRC1/ VST
+      P2=1.5707963D0
+      PP=DSIN(TA)/(VLG(L1)*(Y1+V(L1)))
+      CALL RXINC(0,PP,Y1,L1,Y2,L2,X,A)
+      IF(TA.LT.P2) GO TO 10
+      A=-A
+      RETURN
+   10 PN=1.0D0/PP
+      DO 20 I=1,N1
+   20 IF(VR(1+I).GE.PN) GO TO 30
+   30 NL=I
+      YN=PN/VLG(NL)-V(NL)
+      CALL RXINC(1,PP,YN,NL,Y1,L1,XD,B)
+      X=X+2.0D0*XD
+      A=A+2.0D0*B
+      RETURN
+      END
+      SUBROUTINE RXINC(ID,PP,Y1,L1,Y2,L2,X,A)
+C     IF ID=0, Y1 TO Y2 (Y1.GT.Y2)
+C     IF ID=1, Y2 TO Y1 (Y2.GT.Y1)
+      IMPLICIT REAL*8(A-H,O-Z)
+      CHARACTER*3 VST
+      COMMON /STRC/ Y(22),VR(22),VLG(21),V(21),N1
+      COMMON /STRC1/ VST
+      DIMENSION SN(22),CN(22),RN(22)
+      X=0.0D0
+      A=0.0D0
+      IF(Y1.EQ.Y2) RETURN
+      K1=L2-1
+      IF(ID.EQ.0) LM=L1+1
+      IF(ID.EQ.1) LM=L2+1
+      DO 10 I=K1,L1
+      J=I+1
+      SN(J)=PP*VR(1+I)
+      IF(I.EQ.K1) SN(J)=PP*VLG(L2)*(Y2+V(L2))
+      IF(I.EQ.L1) SN(J)=PP*VLG(L1)*(Y1+V(L1))
+      IF(SN(J).GT.1.0D0) SN(J)=1.0D0
+   10 CN(J)=DSQRT(1.0D0-SN(J)**2)
+      DO 40 I=K1,L1
+      J=I+1
+      IF(ID.EQ.0.AND.I.EQ.L1) GO TO 20
+      IF(ID.EQ.1.AND.I.EQ.K1) GO TO 20
+      IF(ID.EQ.1.AND.I.EQ.L1) GO TO 30
+      RN(J)=CN(LM)/CN(J)
+      GO TO 40
+   20 RN(J)=1.0D0
+      GO TO 40
+   30 RN(J)=0.0D0
+   40 CONTINUE
+      DO 50 I=L2,L1
+      J=I+1
+      X=X+(CN(I)-CN(J))/VLG(I)
+   50 A=A+(RN(I)-RN(J))/VLG(I)
+      X=X/PP
+      A=-A/(PP*SN(LM))
+      RETURN
+      END
+      SUBROUTINE TRVEL(Y1,L1,Y2,L2,TA,TT)
+C     COMPUTATION OF TRAVEL TIME
+      IMPLICIT REAL*8(A-H,O-Z)
+      CHARACTER*3 VST
+      COMMON /STRC/ Y(22),VR(22),VLG(21),V(21),N1
+      COMMON /STRC1/ VST
+      P2=1.5707963D0
+      PP=DSIN(TA)/(VLG(L1)*(Y1+V(L1)))
+      CALL RTINC(PP,Y1,L1,Y2,L2,TT)
+      IF(TA.GE.P2) RETURN
+      PN=1.0D0/PP
+      DO 10 I=1,N1
+   10 IF(VR(1+I).GE.PN) GO TO 20
+   20 NL=I
+      YN=PN/VLG(NL)-V(NL)
+      CALL RTINC(PP,YN,NL,Y1,L1,TD)
+      TT=TT+2.0D0*TD
+      RETURN
+      END
+      SUBROUTINE RTINC(PP,Y1,L1,Y2,L2,TT)
+      IMPLICIT REAL*8(A-H,O-Z)
+      CHARACTER*3 VST
+      COMMON /STRC/ Y(22),VR(22),VLG(21),V(21),N1
+      COMMON /STRC1/ VST
+      DIMENSION SN(22),CN(22)
+      TT=0.0D0
+      IF(Y1.EQ.Y2) RETURN
+      K1=L2-1
+      DO 10 I=K1,L1
+      J=I+1
+      SN(J)=PP*VR(1+I)
+      IF(I.EQ.K1) SN(J)=PP*VLG(L2)*(Y2+V(L2))
+      IF(I.EQ.L1) SN(J)=PP*VLG(L1)*(Y1+V(L1))
+      IF(SN(J).GT.1.0D0) SN(J)=1.0D0
+   10 CN(J)=DSQRT(1.0D0-SN(J)**2)
+      DO 20 I=L2,L1
+      J=I+1
+      CNR=(1.0D0-CN(J))*(1.0D0+CN(I))/((1.0D0+CN(J))*(1.0D0-CN(I)))
+   20 TT=TT+DLOG(CNR)/(2.0D0*VLG(I))
+      RETURN
+      END
+      SUBROUTINE MXINV(B,H,IND)
+C     INVERSION OF A SYMMETRIC, POSITIVE-DEFINITE MATRIX
+      IMPLICIT REAL*8(A-H,O-Z)
+      DIMENSION B(3,3),H(3,3),C(3,3)
+      C(1,1)=B(2,2)*B(3,3)-B(2,3)*B(2,3)
+      C(1,2)=B(1,3)*B(2,3)-B(1,2)*B(3,3)
+      C(1,3)=B(1,2)*B(2,3)-B(1,3)*B(2,2)
+      C(2,2)=B(1,1)*B(3,3)-B(1,3)*B(1,3)
+      C(2,3)=B(1,2)*B(1,3)-B(1,1)*B(2,3)
+      C(3,3)=B(1,1)*B(2,2)-B(1,2)*B(1,2)
+      DTB=B(1,1)*C(1,1)+B(1,2)*C(1,2)+B(1,3)*C(1,3)
+      IF(DTB.GT.0.0D0) GO TO 100
+      WRITE(21,2100)
+ 2100 FORMAT(' *** THE MATRIX IS NOT POSITIVE-DEFINITE ***')
+      IND=-1
+      RETURN
+  100 DO 10 I=1,3
+      DO 10 J=I,3
+      H(I,J)=C(I,J)/DTB
+      IF(J.EQ.I) GO TO 10
+      H(J,I)=H(I,J)
+   10 CONTINUE
+      RETURN
+      END
+      SUBROUTINE  PLTXY (ALAT,ALONG,X,Y,IND)
+C     PLTXY TRANSFORMS (X,Y) TO (ALAT,ALONG) IF IND.EQ.1
+C     PLTXY TRANSFORMS (ALAT,ALONG) TO (X,Y) IF IND.EQ.0
+      IMPLICIT REAL*8 (A-H,O-Z)
+      COMMON /OCOD/ ALAT0,ALNG0,DEPT0
+      A=6.378160D3
+      E2=6.6944541D-3
+      E12=6.7395719D-3
+      D=5.72958D1
+      RD=1.0D0/D
+      IF(IND.EQ.1) GO TO 100
+      RLAT = RD*ALAT
+      SLAT = DSIN(RLAT)
+      CLAT = DCOS(RLAT)
+      V2 = 1.0D0 + E12*CLAT**2
+      AL=ALONG-ALNG0
+      PH1 = ALAT + (V2*AL**2*SLAT*CLAT)/(2.0D0*D )
+      RPH1 = PH1*RD
+      RPH2 = (PH1 + ALAT0)*0.5D0*RD
+      R = A*(1.0D0-E2)/DSQRT((1.0D0-E2*DSIN(RPH2)**2)**3)
+      AN = A/DSQRT(1.0D0-E2*DSIN(RPH1)**2)
+      C1 = D/R
+      C2 = D/AN
+      Y=(PH1-ALAT0)/C1
+      X=(AL*CLAT)/C2+(AL**3*CLAT*DCOS(2.0D0*RLAT))/(6.0D0*C2*D**2)
+      RETURN
+ 100  RLATO = ALAT0*RD
+      SLATO = DSIN(RLATO)
+      R = A*(1.0D0-E2)/DSQRT((1.0D0-E2*SLATO**2)**3)
+      AN = A/DSQRT(1.0D0-E2*SLATO**2)
+      V2 = 1.0D0 + E12*DCOS(RLATO)**2
+      C1 = D/R
+      C2 = D/AN
+      PH1=ALAT0+C1*Y
+      RPH1 = PH1*RD
+      TPHI1 = DTAN(RPH1)
+      CPHI1 = DCOS(RPH1)
+      ALAT=PH1-(C2*X)**2*V2*TPHI1/(2.0D0*D)
+      ALONG=ALNG0+C2*X/CPHI1-(C2*X)**3*(1.0D0+2.0D0*TPHI1**2)/(6.0D0*D**
+     12*CPHI1)
+      RETURN
+      END
+      SUBROUTINE WHERE(YY,LN)
+C     SEARCH FOR THE LAYER NUMBER
+      IMPLICIT REAL*8(A-H,O-Z)
+      CHARACTER*3 VST
+      COMMON /STRC/ Y(22),VR(22),VLG(21),V(21),N1
+      COMMON /STRC1/ VST
+      DO 10 I=1,N1
+   10 IF(Y(1+I).GE.YY) GO TO 20
+   20 LN=I
+      RETURN
+      END
+      SUBROUTINE VLSTR
+C     READ VELOCITY STRUCTURE FROM FILE NO. 11, AND WRITE TO FILE NO. 21
+      IMPLICIT REAL*8(A-H,O-Z)
+      CHARACTER*3 VST
+      COMMON /STRC/ Y(22),VR(22),VLG(21),V(21),N1
+      COMMON /STRC1/ VST
+      COMMON /STRC2/ VLCT,ZMIN,ZMAX
+      COMMON /STRT1/ EX1(3)
+      COMMON /OCOD/ ALAT0,ALNG0,DEPT0
+      DIMENSION TH(21)
+      READ(11,1101) ALAT0,ALNG0,DEPT0
+ 1101 FORMAT(3F10.0)
+      READ(11,1100) NN,VST,VA,VB
+ 1100 FORMAT(I5,2X,A3,2F10.3)
+      IF(VB.LE.VA) VLCT=0.0D0
+      IF(VB.GT.VA) VLCT=(VB-VA)/DLOG(VB/VA)
+      N1=NN+1
+      READ(11,1110) (VR(1+I),I=0,N1)
+      READ(11,1110) (TH(I),I=1,N1)
+      READ(11,1110) EOT,EX1(2),EX1(1),EX1(3)
+ 1110 FORMAT(7F10.0)
+      DO 10 I=1,N1
+   10 VLG(I)=(VR(1+I)-VR(1+I-1))/TH(I)
+      Y(1+0)=0.0D0
+      DO 20 I=1,N1
+   20 Y(1+I)=Y(1+I-1)+TH(I)
+      V(1)=VR(1+0)/VLG(1)
+      DO 30 I=2,N1
+      J=I-1
+   30 V(I)=(VLG(J)*V(J)+(VLG(J)-VLG(I))*Y(1+J))/VLG(I)
+      ZMIN=-VR(1+0)/VLG(1)+1.0D-1
+      ZMAX=Y(1+N1)-1.0D-1
+      WRITE(21,2100) VST
+ 2100 FORMAT(' ***** VELOCITY STRUCTURE (',A3,') *****'/9X,
+     1'I',4X,'Y(I)',6X,'VR(I)',5X,'ALPHA(I)',4X,'VLG(I)')
+      DO 60 I=1,N1
+      J=I-1
+      WRITE(21,2110) J,Y(1+J),VR(1+J)
+   60 WRITE(21,2120) V(I),VLG(I)
+      WRITE(21,2110) N1,Y(1+N1),VR(1+N1)
+ 2110 FORMAT(5X,I5,2F10.4)
+ 2120 FORMAT(30X,2D12.3)
+      RETURN
+      END

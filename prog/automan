@@ -1,0 +1,44 @@
+#! /bin/sh
+#
+#   automan 99.4.15  urabe
+#
+if [ -n "$1" ]
+then
+  DD=$1
+else
+  DD=/dat
+fi
+#
+dir=$DD/auto		# master directory
+dirs=$DD/autos		# directory for slave directories
+tmp=/tmp/automan.$$	# flag file
+# $dirs/ORDER		# list of hosts in order
+echo \"automan\" started  at `date '+%y/%m/%d %H:%M'`
+while true
+do
+  ls -1 $dir |
+  while read file
+  do
+    cat $dirs/ORDER |
+    while read ws
+    do
+      if [ -d $dirs/$ws ]
+      then
+        if [ "`ls -1 $dirs/$ws|wc -l`" -eq 0 ]
+        then
+          echo mv $dir/$file $dirs/$ws
+          mv $dir/$file $dirs/$ws
+          touch $tmp
+          break
+        fi
+      fi
+    done
+    if [ -f $tmp ]
+    then
+      rm $tmp
+    else
+      break
+    fi
+  done
+  sleep 10
+done

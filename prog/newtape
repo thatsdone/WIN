@@ -1,0 +1,9 @@
+#! /bin/sh
+pid=`ps -agx | awk '$5 ~ /(^|\/)wtape$/{print $1}'`
+if [ -n "$pid" ]
+then
+	/bin/kill -HUP $pid
+	echo SWITCH EXABYTE signal sent to \#$pid
+else
+	echo \"wtape\" process not found
+fi

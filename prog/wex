@@ -1,0 +1,25 @@
+#!/bin/sh
+# "wex"   97.6.23 Urabe
+if [ $# -eq 0 ]
+then
+  exit
+else
+  if [ -f win.prm ]
+  then
+    channels=`head -2 win.prm|tail -1|awk '{print $1}'`
+    zones=`head -3 win.prm|tail -1|awk '{print $1}'`
+  else
+    channels=/dat/etc/channels.tbl
+    zones=/dat/etc/zones.tbl
+  fi
+  tmp1=/tmp/latest1.$$
+  tmp2=/tmp/latest2.$$
+  trap "rm $tmp1 $tmp2; exit" 1 2 15
+  for zone in $*
+  do
+    grep -i $zone $zones|tr -s '\011 /' '\012'|grep -v '^#'|awk '{printf(" %s \n",$1)}'>>$tmp1
+  done
+  fgrep -f $tmp1 $channels>$tmp2
+  wch $tmp2
+  rm $tmp1 $tmp2
+fi

@@ -1,0 +1,23 @@
+#!/bin/sh
+if [ ! "$1" ]
+then
+  echo usage: denoise YYMM (trg_dir)
+  exit
+fi
+if [ "$2" ]
+then
+  dir=$2
+else
+  dir=/dat/trg
+fi
+cd /dat/picks/man/$1
+ls|
+while read file
+do
+	fn=`head -1 $file|awk '$3=="NOISE"{print $2}'`
+	if [ "$fn" -a -f "$dir/$fn" ]
+	then
+		echo rm $dir/$fn $dir/$fn.ch
+		rm $dir/$fn $dir/$fn.ch	
+	fi
+done

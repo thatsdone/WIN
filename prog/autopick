@@ -1,0 +1,50 @@
+#!/bin/sh
+#
+#   autopick   98.7.1  urabe
+#
+if [ -n "$1" ]
+then
+  DD=$1
+  PF=$1/etc/win.prm.auto
+else
+  DD=/dat
+  PF=win.prm.auto
+fi
+host=`hostname|cut -f 1 -d'.'`
+dir=$DD/autos/$host
+#clear
+echo \"autopick\" started on $host at `date '+%y/%m/%d %H:%M'`
+while true
+do
+  file=`cd $dir ; ls [0-9]* 2>/dev/null | head -1`
+  if [ -n "$file" ]
+  then
+    echo DO $DD/trg/$file
+    if [ \( -n "$2" \) -a \( "$DISPLAY" = ":0.0" \) ]
+    then
+      if [ "$2" = keep ]
+      then
+        if [ -n "$!" ]
+        then
+          kill -HUP $!
+          wait
+        fi
+        win -aw -p $PF $file &
+      else
+        win -aqw -p $PF $file
+      fi
+    else
+      win -abw -p $PF $file
+    fi
+    rm $dir/$file
+    echo DONE $DD/trg/$file
+    echo `date '+%y/%m/%d %H:%M'` : $file by $host >> $DD/log/autopick.log
+    if [ -d $DD/trg ]
+    then
+      echo $file > $DD/trg/USED
+    fi
+  else
+#   echo WAITING ...
+    sleep 20
+  fi
+done

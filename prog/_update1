@@ -1,0 +1,36 @@
+#!/bin/sh
+#
+#  _update1  98.7.1  urabe
+#
+ED=$DD/etc
+PDA=$DD/picks/auto
+PDM=$DD/picks/man
+FDA=$DD/finals/auto
+FDM=$DD/finals/man
+FA=$ED/final.auto
+FM=$ED/final.man
+SD=$DD/seis
+QD=$DD/trg
+AD=$DD/auto
+ASD=$DD/autos
+RD=$DD/request
+
+umask 022
+
+file=`cat $ED/YYMM`
+
+# make 'evtemp.YYMM' files for 'man'
+if file_older $PDM/$file $ED/evtemp.$file > /dev/null || \
+  file_older $ED/pmon.out.$file $ED/evtemp.$file > /dev/null
+then
+  elist $PDM/$file $ED/pmon.out.$file $QD $AD $ASD/ $RD/ > $TD/evtemp.$file.$$
+# mv $TD/evtemp.$file.$$ $ED
+  grep -v '#' $TD/evtemp.$file.$$ > $ED/evtemp.$file
+  rm $TD/evtemp.$file.$$
+#   this is to hide 'NOISE' events
+  for host in $*
+  do
+    timeout $TIMO rcp $ED/evtemp.$file $host:/dat/etc/$SEIS/etc
+  done
+  echo 'evtemp(ee) database updated'
+fi

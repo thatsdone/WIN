@@ -1,0 +1,29 @@
+#!/bin/sh
+# 95.4.13 urabe
+# apply station correction to ".ch" file
+tmp=/tmp/stc.$$
+ch=/dat/etc/channels.tbl
+#
+stn1="YMKR U"
+stn2="TYSK U"
+#
+ch1=`grep "$stn1" $ch`
+ch2=`grep "$stn2" $ch`
+#
+while [ "$#" -ne 0 ]
+do
+  file=$1
+  cat $file|sed '
+/'"$stn1"'/c\
+'"$ch1"'
+/'"$stn2"'/c\
+'"$ch2"'
+' > $tmp
+  if [ -s $tmp ]
+  then
+    cp $tmp $file
+    echo \'$file\' done
+  fi
+  rm $tmp
+  shift
+done

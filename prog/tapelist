@@ -1,0 +1,5 @@
+if file_older /dat/log/wtape.log /dat/etc/tapelist > /dev/null
+then
+	cat -n /dat/log/wtape.log > /dat/etc/tapelist
+fi
+tail -r /dat/etc/tapelist | more -d

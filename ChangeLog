@@ -1,8 +1,9 @@
-$Id: ChangeLog,v 1.1 2002/01/17 11:26:13 uehira Exp $
+$Id: ChangeLog,v 1.2 2002/01/17 13:59:16 uehira Exp $
 
 2002-01-17 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
-	* use sub directories.
 	* Version 1.0.0 released.
+	* use sub directories.
+	* check 'perl' and 'wish' path and replace them.
 
 2002-01-13 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* join 'autoconf branch' to 'main branch'

@@ -1,6 +1,6 @@
-#! /usr/local/bin/perl
+#! @PERL@
 #
-# $Id: final2mf,v 1.1 2000/04/30 10:10:38 urabe Exp $
+# $Id: final2mf.in,v 1.1 2002/01/17 13:59:17 uehira Exp $
 #
 
 #final形式の読み込み

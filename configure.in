@@ -1,5 +1,5 @@
 dnl ------------------------------------------------------------------------- 
-dnl $Id: configure.in,v 1.1 2002/01/17 11:26:13 uehira Exp $
+dnl $Id: configure.in,v 1.2 2002/01/17 13:59:16 uehira Exp $
 dnl -------------------------------------------------------------------------
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT(src/win.c)
@@ -130,7 +130,30 @@ dnl ---------------------------------------
 esac
 dnl AC_SUBST(FLDFLAGS)
 
+dnl ---------------------------------------
+dnl check perl
+dnl ---------------------------------------
+AC_PATH_PROGS(PERL, perl, :)
+if test $PERL = ":"; then
+	AC_MSG_ERROR(Test for perl failed. Please install sort program.)
+fi
+       
+dnl ---------------------------------------
+dnl check wish
+dnl ---------------------------------------
+AC_PATH_PROGS(WISH, wish4.2jp wish, :)
+if test $WISH = ":"; then
+	AC_MSG_ERROR(Test for wish failed. Please install sort program.)
+fi
+       
 dnl -------------------------------------------------------------------------
 dnl output Makefile
 dnl -------------------------------------------------------------------------
-AC_OUTPUT(Makefile src/Makefile man/Makefile etc/Makefile pick/Makefile prog/Makefile)
+AC_OUTPUT([Makefile src/Makefile man/Makefile etc/Makefile pick/Makefile
+	prog/Makefile
+	prog/win_m
+	prog/ch2mf
+	prog/ee_manager
+	prog/final2mf
+	prog/wincd
+	])

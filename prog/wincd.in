@@ -1,9 +1,9 @@
-#!/usr/local/bin/perl
-  eval "exec /usr/local/bin/perl -S $0 $*"
+#! @PERL@
+  eval "exec @PERL@ -S $0 $*"
   if $running_under_some_shell;
 
 #
-# $Id: wincd,v 1.1 2000/04/30 10:10:39 urabe Exp $
+# $Id: wincd.in,v 1.1 2002/01/17 13:59:18 uehira Exp $
 # wincd
 #     1995.12.18     Uehira Kenji
 #     1998.2.27      version up

@@ -1,4 +1,4 @@
-/* $Id: win_system.c,v 1.1 2000/05/26 10:52:14 uehira Exp $ */
+/* $Id: win_system.c,v 1.2 2001/03/23 01:45:46 uehira Exp $ */
 /* win system utility functions */
 
 #include <stdio.h>
@@ -430,7 +430,10 @@ WIN_time_hani(char fname[], int start[], int end[])
       FREE(tbuf);
       break;
     }
-    if(!bcd_dec(dtime,tbuf)) continue;
+    if(!bcd_dec(dtime,tbuf)){
+      FREE(tbuf);
+      continue;
+    }
     if(init_flag){
       for(i=0;i<WIN_TIME_LEN;++i) start[i]=end[i]=dtime[i];
       init_flag=0;

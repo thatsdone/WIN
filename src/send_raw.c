@@ -1,4 +1,4 @@
-/* $Id: send_raw.c,v 1.3.2.4 2002/01/07 11:05:49 urabe Exp $ */
+/* $Id: send_raw.c,v 1.3.2.5 2002/01/08 10:33:23 urabe Exp $ */
 /*
     program "send_raw/send_mon.c"   1/24/94 - 1/25/94,5/25/94 urabe
                                     6/15/94 - 6/16/94
@@ -27,6 +27,7 @@
                                   2000.4.24 strerror()
                                   2001.8.19 send interval control
                                   2002.1.7  option '-i' to specify multicast IF
+                                  2002.1.8  option '-b' for max IP packet size
 */
 
 #ifdef HAVE_CONFIG_H
@@ -63,9 +64,10 @@
 #define DEBUG       0
 #define DEBUG1      0
 #define TEST_RESEND 0
-#define MAXMESG   (1500-28)  /* max of UDP data size, +28 <= IP MTU  */
+#define MTU       1500 /* (max of UDP data size) = IP_MTU - 28 */
+#define RSIZE   (MTU-28)
 #define SR_MON      5
-#define BUFNO     128
+#define NBUF      128
 #define NWSTEP    4000  /* 4000 for Ultra1 */
 #define NWLIMIT 100000
 
@@ -75,9 +77,9 @@
 #endif
 */
 
-int sock,raw,mon,tow,all,psize[BUFNO],n_ch,negate_channel;
-unsigned char sbuf[BUFNO][MAXMESG+8],ch_table[65536],rbuf[MAXMESG];
-     /* sbuf[BUFNO][MAXMESG+8] ; +8 for overrun by "size" and "time" */
+int sock,raw,mon,tow,all,psize[NBUF],n_ch,negate_channel,mtu,nbuf;
+unsigned char *sbuf[NBUF],ch_table[65536],rbuf[RSIZE];
+     /* sbuf[NBUF][mtu-28+8] ; +8 for overrun by "size" and "time" */
 char *progname,logfile[256],chfile[256];
 static int b2d[]={
      0, 1, 2, 3, 4, 5, 6, 7, 8, 9,0,0,0,0,0,0,  /* 0x00 - 0x0F */
@@ -288,11 +290,11 @@ get_packet(bufno,no)
   unsigned char no; /* packet no. to find */
   {
   int i;
-  if((i=bufno-1)<0) i=BUFNO-1;
+  if((i=bufno-1)<0) i=nbuf-1;
   while(i!=bufno && psize[i]>0)
     {
     if(sbuf[i][0]==no) return i;
-    if(--i<0) i=BUFNO-1;
+    if(--i<0) i=nbuf-1;
     }
   return -1;  /* not found */
   }
@@ -407,16 +409,20 @@ main(argc,argv)
   else if(strcmp(progname,"sendt_mon")==0) {mon=1;tow=1;}
   else exit(1);
   sprintf(tbuf,
-" usage : '%s (-aimrt) (-h [h])/(-s [s]) [shmkey] [dest] [port] \\\n\
+" usage : '%s (-aimrt) (-b mtu) (-h [h])/(-s [s]) [shmkey] [dest] [port] \\\n\
             ([chfile]/- ([logfile]))'\n",progname);
 
   *interface=0;
-  while((c=getopt(argc,argv,"ah:i:mrs:t"))!=EOF)
+  mtu=MTU;
+  while((c=getopt(argc,argv,"ab:h:i:mrs:t"))!=EOF)
     {
     switch(c)
       {
       case 'a':   /* "all" mode */
         all=tow=1;
+        break;
+      case 'b':   /* maximum size of IP packet in bytes (or MTU) */
+        mtu=atoi(optarg);
         break;
       case 'h':   /* time to shift, in hours */
         hours_shift=atoi(optarg);
@@ -528,7 +534,15 @@ main(argc,argv)
   signal(SIGPIPE,(void *)ctrlc);
   signal(SIGINT,(void *)ctrlc);
   signal(SIGTERM,(void *)ctrlc);
-  for(i=0;i<BUFNO;i++) psize[i]=(-1);
+  for(i=0;i<NBUF;i++)
+    { /* allocate buffers */
+    psize[i]=(-1);
+    if((sbuf[i]=(unsigned char *)malloc(mtu-28+8))==NULL){
+      fprintf(stderr,"malloc failed. nbuf=%d\n",i);
+      break;
+      }
+    }
+  nbuf=i;
   no=bufno=0;
 
 reset:
@@ -617,9 +631,9 @@ reset:
         gs=ptr-ptr1;
         }
     /* add gs of data to buffer (after sending packet if it is full) */
-      if(ch_table[ch] && gs+11<=MAXMESG)
+      if(ch_table[ch] && gs+11<=mtu-28)
         {
-        if(ptw+gs-ptw_save>MAXMESG)
+        if(ptw+gs-ptw_save>mtu-28)
           {
           if(j==0) ptw-=8;
 #if TEST_RESEND
@@ -639,7 +653,7 @@ reset:
 #if DEBUG
           fprintf(stderr,"%5d>  ",re);
 #endif
-          if(++bufno==BUFNO) bufno=0;
+          if(++bufno==nbuf) bufno=0;
           no++;
 /* resend if requested */
           while(1)
@@ -648,7 +662,7 @@ reset:
             if(select(sock+1,(fd_set *)&k,NULL,NULL,&timeout)>0)
               {
               fromlen=sizeof(from_addr);
-              if(recvfrom(sock,rbuf,MAXMESG,0,(struct sockaddr *)&from_addr,
+              if(recvfrom(sock,rbuf,RSIZE,0,(struct sockaddr *)&from_addr,
                   &fromlen)==1 && (bufno_f=get_packet(bufno,no_f=(*rbuf)))>=0)
                 {
                 memcpy(sbuf[bufno],sbuf[bufno_f],psize[bufno]=psize[bufno_f]);
@@ -665,7 +679,7 @@ reset:
                   inet_ntoa(from_addr.sin_addr),ntohs(from_addr.sin_port),
                   no_f,no,re);
                 write_log(logfile,tbuf);
-                if(++bufno==BUFNO) bufno=0;
+                if(++bufno==nbuf) bufno=0;
                 no++;
                 }
               }

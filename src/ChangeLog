@@ -1,4 +1,8 @@
-$Id: ChangeLog,v 1.1.2.7 2002/01/07 11:18:12 urabe Exp $
+$Id: ChangeLog,v 1.1.2.8 2002/01/08 10:33:23 urabe Exp $
+
+2002-01-08 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
+	* send_raw.c : added option '-b' for set max IP packet size or mtu
+	* recvt.c : max packet size increased to 32KB
 
 2002-01-07 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
 	* send_raw.c/recvt.c : now IP-multicast complient

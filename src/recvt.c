@@ -1,4 +1,4 @@
-/* $Id: recvt.c,v 1.5.2.4 2002/01/07 11:05:49 urabe Exp $ */
+/* $Id: recvt.c,v 1.5.2.5 2002/01/08 10:33:23 urabe Exp $ */
 /* "recvt.c"      4/10/93 - 6/2/93,7/2/93,1/25/94    urabe */
 /*                2/3/93,5/25/94,6/16/94 */
 /*                1/6/95 bug in adj_time fixed (tm[0]--) */
@@ -28,6 +28,7 @@
 /*                2001.3.9 debugged for sh->r */
 /*                2002.1.7 implemented multicasting (options -g, -i) */
 /*                2002.1.7 option -n to suppress info on abnormal packets */
+/*                2002.1.8 MAXMESG increased to 32768 bytes */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -60,9 +61,10 @@
 #include "subst_func.h"
 
 #define DEBUG     0
+#define DEBUG0    0
 #define DEBUG1    0
 #define BELL      0
-#define MAXMESG   2048
+#define MAXMESG   32768
 #define N_PACKET  64    /* N of old packets to be requested */  
 #define N_HOST    100   /* max N of hosts */  
 
@@ -737,11 +739,11 @@ main(argc,argv)
     {
     fromlen=sizeof(from_addr);
     n=recvfrom(sock,rbuf,MAXMESG,0,(struct sockaddr *)&from_addr,&fromlen);
-#if DEBUG1
+#if DEBUG0
     if(rbuf[0]==rbuf[1]) printf("%d ",rbuf[0]);
     else printf("%d(%d) ",rbuf[0],rbuf[1]);
     for(i=0;i<16;i++) printf("%02X",rbuf[i]);
-    printf("\n");
+    printf(" (%d)\n",n);
 #endif
 
     if(check_pno(&from_addr,rbuf[0],rbuf[1],sock,fromlen,n)<0) continue;

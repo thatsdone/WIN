@@ -1,4 +1,4 @@
-/* $Id: wdisk.c,v 1.8 2004/08/01 04:07:59 uehira Exp $ */
+/* $Id: wdisk.c,v 1.9 2004/08/01 04:23:25 uehira Exp $ */
 /*
   program "wdisk.c"   4/16/93-5/13/93,7/2/93,7/5/94  urabe
                       1/6/95 bug in adj_time fixed (tm[0]--)
@@ -14,6 +14,7 @@
                       2002.3.2 eobsize_in(auto)
                       2002.5.2 i<1000 -> 1000000
                       2002.5.28 read from stdin
+                      2004.8.1 added option -n (uehira)
 */
 
 #ifdef HAVE_CONFIG_H

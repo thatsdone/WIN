@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.12 2003/06/22 08:45:06 tsuru Exp $
+# $Id: Makefile.am,v 1.13 2003/06/23 06:07:37 tsuru Exp $
 #
 
 if SUNOS4
@@ -26,7 +26,7 @@ TAPE_USER_MATH=pmon elist events
 ONLINE_MATH=ecore ecore2
 OFFLINE_USER_MATH=wtime
 #OFFLINE_MATH=dewin select_stations
-OFFLINE_MATH=dewin select_stations hypomhc
+OFFLINE_MATH=dewin select_stations hypomhc wintosac
 OFFLINE_F77=hypomh
 
 OFFLINE_USER=win $(OFFLINE_F77) wed wck wadd $(OFFLINE_MATH) wchch pick2tseis \
@@ -76,6 +76,9 @@ wadd2_SOURCES = wadd2.c $(SUBFUNC_H)
 
 dewin_SOURCES = dewin.c $(SUBFUNC_H)
 dewin_LDADD = -lm
+
+wintosac_SOURCES = wintosac.c
+wintosac_LDADD = -lm
 
 select_stations_SOURCES = select_stations.c $(SUBFUNC_H)
 select_stations_LDADD = -lm

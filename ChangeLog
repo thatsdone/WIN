@@ -1,4 +1,8 @@
- $Id: ChangeLog,v 1.89 2005/01/12 08:47:37 uehira Exp $
+ $Id: ChangeLog,v 1.90 2005/02/01 09:39:25 urabe Exp $
+
+2005-02-01 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
+	* etc/map.dat and etc/map.japan.km -> WGS84
+	* Version 1.1.54 released.
 
 2005-01-12 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* win.c : patch by Nakagawa

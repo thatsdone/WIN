@@ -1,7 +1,7 @@
 #! @WISH@
 
 #
-# $Id: win_m.in,v 1.1 2002/01/17 13:59:17 uehira Exp $
+# $Id: win_m.in,v 1.2 2004/03/04 09:44:30 uehira Exp $
 #  win_m : ＷＩＮのピックマネージャー
 #
 #    Uehira Kenji (Original 96.2.29)
@@ -279,19 +279,46 @@ proc win_single {} {
 # latest
 # --------------------------------------------------------------------------
 proc latest {} {
+    global WIN_COMMAND
     global win_prm
     global default_win_prm
     global TERM
     global TERM_FN
     global TERM_GEO
+    global  O_f
+    global  O_o
+    global  O_t
+    global  O_w
+    global  O_B
+    global  O_S
+    global  O_p
 
-    if [file isfile $default_win_prm] {
+    if [file isfile $win_prm] {
+	if [string compare $win_prm $default_win_prm] {
+	    set O_p "-p"
+	    set O_pf [glob $win_prm]
+	} else {
+	    set O_p ""
+	    set O_pf ""
+	}
+	set win_option "$O_f $O_o $O_t $O_w $O_B $O_S $O_p $O_pf"
+
+	# set windir from WINDIR env
+	set windir [exec printenv WINDIR]
+	if {$windir==""} {
+	    set windir /dat
+	}
+	set rawname [exec cat $windir/raw/LATEST]
+	set datafile $windir/raw/$rawname
+#	puts $windir/raw/$rawname
+#	puts $windir
+#	puts $rawname
 	eval exec $TERM -fn $TERM_FN -sb -title "latest" -geometry $TERM_GEO\
-		-e latest &
+		-e\
+		$WIN_COMMAND $win_option $datafile &
     } else {
-	error_display "./win.prm が開けませんでした。\
-		win_m を win.prm のあるディレクトリに移って\
-		起動しなおして下さい。"
+	error_display "パラメータファイル $win_prm が開けませんでした。\
+		WIN のオプション選択で正しいファイル名を指定して下さい。"
     }
 }
 # --------------------------------------------------------------------------

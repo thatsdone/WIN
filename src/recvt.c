@@ -37,6 +37,7 @@
 /*                2002.5.3 N_PACKET 64->128, 'no request resend' log */
 /*                2002.5.3 maximize RCVBUF size */
 /*                2002.5.3,7 maximize RCVBUF size ( option '-s' )*/
+/*                2002.5.14 -n debugged / -d to set ddd length */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -76,6 +77,7 @@
 #define MAXMESG   32768
 #define N_PACKET  128   /* N of old packets to be requested */  
 #define N_HOST    100   /* max N of hosts */  
+#define N_HIST    10    /*  length of packet history */
 
 unsigned char rbuf[MAXMESG],ch_table[65536];
 char *progname,logfile[256],chfile[256];
@@ -454,22 +456,21 @@ check_pno(from_addr,pn,pn_f,sock,fromlen,n) /* returns -1 if duplicated */
   return 0;
   }
 
-wincpy2(ptw,ts,ptr,size,mon)
+wincpy2(ptw,ts,ptr,size,mon,chhist)
   unsigned char *ptw,*ptr;
   time_t ts;
   int size,mon;
+  struct { int n; time_t (*ts)[65536]; int p[65536];} *chhist;
   {
 #define MAX_SR 500
 #define MAX_SS 4
 #define SR_MON 5
-#define N_HIST 10
   int sr,n,ss;
   unsigned char *ptr_lim,*ptr1;
   unsigned short ch;
   int gs,i,j,aa,bb,k;
   unsigned long gh;
   char tb[256];
-  static struct { time_t ts[N_HIST]; int p; } hist[65536];
 
   ptr_lim=ptr+size;
   n=0;
@@ -523,11 +524,11 @@ wincpy2(ptw,ts,ptr,size,mon)
       }
     if(ch_table[ch] && ptr+gs<=ptr_lim)
       {
-      for(i=0;i<N_HIST;i++) if(hist[ch].ts[i]==ts) break;
-      if(i==N_HIST) /* TS not found in last N_HIST packets */
+      for(i=0;i<chhist->n;i++) if(chhist->ts[i][ch]==ts) break;
+      if(i==chhist->n) /* TS not found in last chhist->n packets */
         {
-        hist[ch].ts[hist[ch].p]=ts;
-        if(++hist[ch].p==N_HIST) hist[ch].p=0;
+        chhist->ts[chhist->p[ch]][ch]=ts;
+        if(++chhist->p[ch]==chhist->n) chhist->p[ch]=0;
 #if DEBUG1
         fprintf(stderr,"%5d",gs);
 #endif
@@ -571,19 +572,22 @@ main(argc,argv)
   char mcastgroup[256]; /* multicast address */
   char interface[256]; /* multicast interface */
   time_t ts;
+  struct { int n; time_t (*ts)[65536]; int p[65536];} chhist;
 
   if(progname=strrchr(argv[0],'/')) progname++;
   else progname=argv[0];
   sprintf(tb,
-" usage : '%s (-aBnM) (-m [pre(m)]) (-p [post(m)]) (-i [interface]) \\\n\
-              (-g [mcast_group]) (-s sbuf(KB)) [port] [shm_key] [shm_size(KB)] \\\n\
-              ([ctl file]/- ([log file]))'",progname);
+" usage : '%s (-aBnM) (-d [len(s)]) (-m [pre(m)]) (-p [post(m)]) \\\n\
+              (-i [interface]) (-g [mcast_group]) (-s sbuf(KB)) \\\n\
+              [port] [shm_key] [shm_size(KB)] ([ctl file]/- ([log file]))'",
+          progname);
 
   all=no_pinfo=mon=eobsize=0;
   pre=post=0;
   *interface=(*mcastgroup)=0;
   sbuf=256;
-  while((c=getopt(argc,argv,"aBg:i:m:Mp:s:"))!=EOF)
+  chhist.n=N_HIST;
+  while((c=getopt(argc,argv,"aBd:g:i:m:Mnp:s:"))!=EOF)
     {
     switch(c)
       {
@@ -592,6 +596,9 @@ main(argc,argv)
         break;
       case 'B':   /* write blksize at EOB for backward search */
         eobsize=1;
+        break;
+      case 'd':   /* length of packet history in sec */
+        chhist.n=atoi(optarg);
         break;
       case 'i':   /* interface (ordinary IP address) which receive mcast */
         strcpy(interface,optarg);
@@ -651,6 +658,20 @@ main(argc,argv)
       }
     }
   if(argc>5+optind) strcpy(logfile,argv[5+optind]);
+
+  if((chhist.ts=
+      (time_t (*)[65536])malloc(65536*chhist.n*sizeof(time_t)))==NULL)
+    {
+    chhist.n=N_HIST;
+    if((chhist.ts=
+        (time_t (*)[65536])malloc(65536*chhist.n*sizeof(time_t)))==NULL)
+      {
+      fprintf(stderr,"malloc failed (chhist.ts)\n");
+      exit(1);
+      }
+    }
+  sprintf(tb,"n_hist=%d size=%d",chhist.n,65536*chhist.n*sizeof(time_t));
+  write_log(logfile,tb);
 
   /* shared memory */
   if((shmid=shmget(shm_key,size,IPC_CREAT|0666))<0) err_sys("shmget");
@@ -721,7 +742,7 @@ main(argc,argv)
       for(i=0;i<6;i++) if(rbuf[i+2]!=tm[i]) break;
       if(i==6)  /* same time */
         {
-        nn=wincpy2(ptr,ts,rbuf+8,n-8,mon);
+        nn=wincpy2(ptr,ts,rbuf+8,n-8,mon,&chhist);
         ptr+=nn;
         uni=time(0);
         ptr_size[4]=uni>>24;  /* tow (H) */
@@ -783,7 +804,7 @@ main(argc,argv)
           ptr+=4;   /* time of write */
           memcpy(ptr,rbuf+2,6);
           ptr+=6;
-          nn=wincpy2(ptr,ts,rbuf+8,n-8,mon);
+          nn=wincpy2(ptr,ts,rbuf+8,n-8,mon,&chhist);
           ptr+=nn;
           memcpy(tm,rbuf+2,6);
           uni=time(0);
@@ -805,7 +826,7 @@ main(argc,argv)
         for(i=0;i<6;i++) if(rbuf[j+i]!=tm[i]) break;
         if(i==6)  /* same time */
           {
-          nn=wincpy2(ptr,ts,rbuf+j+6,n-8,mon);
+          nn=wincpy2(ptr,ts,rbuf+j+6,n-8,mon,&chhist);
           ptr+=nn;
           uni=time(0);
           ptr_size[4]=uni>>24;  /* tow (H) */
@@ -868,7 +889,7 @@ main(argc,argv)
             ptr+=4;   /* time of write */
             memcpy(ptr,rbuf+j,6);
             ptr+=6;
-            nn=wincpy2(ptr,ts,rbuf+j+6,n-8,mon);
+            nn=wincpy2(ptr,ts,rbuf+j+6,n-8,mon,&chhist);
             ptr+=nn;
             memcpy(tm,rbuf+j,6);
             uni=time(0);

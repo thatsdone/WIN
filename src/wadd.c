@@ -1,4 +1,4 @@
-/* $Id: wadd.c,v 1.2.2.2 2002/01/07 10:55:11 uehira Exp $ */
+/* $Id: wadd.c,v 1.2.2.3 2002/01/07 10:57:33 uehira Exp $ */
 /* program "wadd.c"
   "wadd" puts two win data files together
   7/24/91 - 7/25/91, 4/20/94,6/27/94-6/28/94,7/12/94   urabe
@@ -361,7 +361,7 @@ main(argc,argv)
     system(textbuf);
     if(*chfile2)
       {
-      sprintf(textbuf,"grep -v '^#' %s|awk '{print \"^\ "$1}'|grep -v '^$'>%s",
+      sprintf(textbuf,"grep -v '^#' %s|awk '{print \"^\" $1}'|grep -v '^$'>%s",
         tmpfile2,tmpfile3);
       system(textbuf);
       sprintf(textbuf,"egrep -f %s -v %s >> %s",tmpfile3,chfile2,tmpfile2);

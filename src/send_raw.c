@@ -1,4 +1,4 @@
-/* $Id: send_raw.c,v 1.16 2004/10/26 14:42:01 uehira Exp $ */
+/* $Id: send_raw.c,v 1.17 2004/11/26 14:09:45 uehira Exp $ */
 /*
     program "send_raw/send_mon.c"   1/24/94 - 1/25/94,5/25/94 urabe
                                     6/15/94 - 6/16/94
@@ -42,6 +42,7 @@
                2002.11.29 added option -p to set source port (-p src_port)
                2003.4.8 added option -1 for 1 packet/sec mode
                2004.10.26 daemon mode (Uehira)
+	       2004.11.26 some systems (exp. Linux), select(2) changes timeout value
 */
 
 #ifdef HAVE_CONFIG_H
@@ -364,7 +365,6 @@ main(argc,argv)
   else progname=argv[0];
 
   tow=all=hours_shift=sec_shift=0;
-  timeout.tv_sec=timeout.tv_usec=0;
   daemon_mode = syslog_mode =0;
 
   if(strcmp(progname,"send_raw")==0) raw=1;
@@ -746,6 +746,7 @@ send_packet:
           while(1)
             {
             k=1<<sock;
+	    timeout.tv_sec=timeout.tv_usec=0;
             if(select(sock+1,(fd_set *)&k,NULL,NULL,&timeout)>0)
               {
               fromlen=sizeof(from_addr);

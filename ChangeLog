@@ -1,4 +1,4 @@
- $Id: ChangeLog,v 1.81 2004/11/26 13:55:38 uehira Exp $
+ $Id: ChangeLog,v 1.82 2004/11/26 14:09:45 uehira Exp $
 
 2004-11-26 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* relaym : MF relay.c
@@ -7,6 +7,9 @@
 	  - write host statistics on HUP signal
 	  - no packet info option -n
 	  - maximize size of receive socket buffer (option -b)
+	* relay.c, send_raw.c, send_raw_old.c, sends.c :
+	  some systems (exp. Linux), select(2) changes timeout value
+	* Version 1.1.48 released.
 
 2004-11-24 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* pick2final, pick2finalb : get owner information from pickfile

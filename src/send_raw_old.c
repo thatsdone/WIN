@@ -1,4 +1,4 @@
-/* $Id: send_raw_old.c,v 1.7 2002/01/13 08:34:33 uehira Exp $ */
+/* $Id: send_raw_old.c,v 1.8 2004/11/26 14:09:45 uehira Exp $ */
 /*
     program "send_raw_old/send_mon_old.c"   1/24/94 - 1/25/94,5/25/94 urabe
                                     6/15/94 - 6/16/94
@@ -12,6 +12,7 @@
                                   2000.4.24 strerror()
                           2000.9.7 multiple resend-request by MEISEI < 1/30/97
                                   2001.11.14 strerror(),ntohs()
+				  2004.11.26 some systems (exp. Linux), select(2) changes timeout value
 */
 
 #ifdef HAVE_CONFIG_H
@@ -219,7 +220,6 @@ main(argc,argv)
   else progname=argv[0];
 
   raw=mon=tow=0;
-  timeout.tv_sec=timeout.tv_usec=0;
   if(strcmp(progname,"send_raw_old")==0) raw=1;
   else if(strcmp(progname,"send_mon_old")==0) mon=1;
   else if(strcmp(progname,"sendt_raw_old")==0) {raw=1;tow=1;}
@@ -417,6 +417,7 @@ reset:
 #endif
       }
     i=1<<sock;
+    timeout.tv_sec=timeout.tv_usec=0;
     while(select(sock+1,(fd_set *)&i,NULL,NULL,&timeout)>0)
       {
       j=recvfrom(sock,rbuf,MAXMESG,0,(struct sockaddr *)&from_addr,&fromlen);
@@ -436,6 +437,7 @@ reset:
           no++;
           }
         }
+      timeout.tv_sec=timeout.tv_usec=0;
       }
     }
   }

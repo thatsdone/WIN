@@ -1,10 +1,11 @@
-/* $Id: sends.c,v 1.5 2002/01/13 06:57:51 uehira Exp $ */
+/* $Id: sends.c,v 1.6 2004/11/26 14:09:45 uehira Exp $ */
 /*   program "sends"   2000.3.20 urabe                   */
 /*   2000.3.21 */
 /*   2000.4.17 */
 /*   2000.4.24 strerror() */
 /*   2000.12.20 option -i fixed */
 /*   2001.11.14 strerror(),ntohs() */
+/*   2004.11.26 some systems (exp. Linux), select(2) changes timeout value */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -341,7 +342,6 @@ main(argc,argv)
   else progname=argv[0];
   baud=aurora=to_port=dupl=station=0;
   sock=(-1);
-  timeout.tv_sec=timeout.tv_usec=0;
   sprintf(tbuf,
 " usage : '%s (-ad) (-p req_port) (-b rate) (-i my_ID) [shm_key] [device] ([log file]))'",
     progname);
@@ -475,6 +475,7 @@ reset:
     if(sock>=0) while(1)
       {
       i=1<<sock;
+      timeout.tv_sec=timeout.tv_usec=0;
       if(select(sock+1,&i,NULL,NULL,&timeout)>0)
         {
         fromlen=sizeof(from_addr);
@@ -503,6 +504,7 @@ reset:
     else while(1)
       {
       i=1<<fd;
+      timeout.tv_sec=timeout.tv_usec=0;
       if(select(fd+1,&i,NULL,NULL,&timeout)>0)
         {
         re=read(fd,rbuf,MAXMESG);

@@ -1,4 +1,4 @@
-/* $Id: relay.c,v 1.12 2004/11/17 09:36:45 urabe Exp $ */
+/* $Id: relay.c,v 1.13 2004/11/26 14:09:45 uehira Exp $ */
 /* "relay.c"      5/23/94-5/25/94,6/15/94-6/16/94,6/23/94,3/16/95 urabe */
 /*                3/26/95 check_packet_no; port# */
 /*                5/24/96 added processing of "host table full" */
@@ -23,6 +23,7 @@
 /*                2004.11.15 no packet info (-n) */
 /*                2004.11.15 corrected byte-order of port no. in log */
 /*                2004.11.16 maximize size of receive socket buffer (-b) */
+/*                2004.11.26 some systems (exp. Linux), select(2) changes timeout value */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -609,7 +610,6 @@ main(argc,argv)
   no=0;
   for(i=0;i<BUFNO;i++) psize[i]=2;
   bufno=0;
-  timeout.tv_sec=timeout.tv_usec=0;
   read_chfile();
 
   while(1)
@@ -656,6 +656,7 @@ main(argc,argv)
     while(1)
       {
       i=1<<sock_out;
+      timeout.tv_sec=timeout.tv_usec=0;
       if(select(sock_out+1,(fd_set *)&i,NULL,NULL,&timeout)>0)
         {
         fromlen=sizeof(from_addr);

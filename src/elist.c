@@ -1,11 +1,13 @@
-/* $Id: elist.c,v 1.3 2000/08/10 04:51:20 urabe Exp $ */
+/* $Id: elist.c,v 1.4 2001/02/06 07:33:40 urabe Exp $ */
 /* program elist.c    2/5/91 - 2/25/91 ,  4/16/92, 4/22/92  urabe */
 /*                      6/10/92, 8/18/92, 10/25/92, 6/8/93, 1/5/94  */
 /*      4/21/94,12/5/94,6/2/95 bug in dat_dir fixed */
 /*      98.1.22 getpwuid()==NULL */
 /*      98.6.26 yo2000           */
+/*      2001.2.6 a lot of functions added (options -h/u/p/o/n) */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -13,315 +15,9 @@
 #include <math.h>
 #include <ctype.h>
 #include <pwd.h>
-#define   NAMLEN    80
-#define   LINELEN   250
-#define   NPICK   100000
-
-char *getname(id)
-  int id;
-  {
-  struct passwd *pwd;
-  if(pwd=getpwuid(id)) return pwd->pw_name;
-  else return ".";
-  }
-
-main(argc,argv)
-    int argc;
-    char *argv[];
-  {
-  FILE *fp,*fa;
-  struct dirent *dir_ent;
-  struct stat st_buf;
-  DIR *dir_ptr;
-  static char dfname[NPICK][18],diagnos[NPICK][8];
-  static uid_t user[NPICK];
-  static u_short mode[NPICK];
-  static int hypo[NPICK],mech[NPICK],pick[NPICK];
-  static float mag[NPICK];
-  static char pick_dir[NAMLEN],out_file[NAMLEN],dat_dir[NAMLEN],
-    req_dir[3][NAMLEN],
-    filename[NAMLEN],textbuf[LINELEN],group[20],mes1[20],
-    tbuf[LINELEN],mes2[20],gbuf[LINELEN],name_dat[NAMLEN],
-    name_ch[NAMLEN],name_sv[NAMLEN],*ptr;
-  int i,npick,t[6],toff[6],init,j,m,k,kk,no_file,noise,not_noise,re;
-  long dp;
-  static int magni[7]={7,15,35,80,100,120,130};
-    /* boundaries for M=0/1/2/3/4/5/6/7 */
-  if(argc<3)
-    {
-    printf("Usage :  elist [pick dir] [pmon.out file] ([data dir] ([request dir] ..))\n");
-    printf("    If 'data directory' is specified, 'NOISE' files will be deleted.\n");
-    exit(1);
-    }
-  else
-    {
-    if(argc>=4 && strcmp(argv[3],"-")!=0) strcpy(dat_dir,argv[3]);
-    else *dat_dir=0;
-    if(argc>=5)
-      {
-      strcpy(req_dir[0],argv[4]);
-      if(req_dir[0][strlen(req_dir[0])-1]=='/')
-      strcat(req_dir[0],"*");
-      }
-    else *req_dir[0]=0;
-    if(argc>=6)
-      {
-      strcpy(req_dir[1],argv[5]);
-      if(req_dir[1][strlen(req_dir[1])-1]=='/')
-      strcat(req_dir[1],"*");
-      }
-    else *req_dir[1]=0;
-    if(argc>=7)
-      {
-      strcpy(req_dir[2],argv[6]);
-      if(req_dir[2][strlen(req_dir[2])-1]=='/')
-      strcat(req_dir[2],"*");
-      }
-    else *req_dir[2]=0;
-    }
-  strcpy(pick_dir,argv[1]);
-  strcpy(out_file,argv[2]);
-
-  /* read pick files */
-  if((dir_ptr=opendir(pick_dir))==NULL)
-    {
-    printf("directory '%s' not open\n",pick_dir);
-    exit(1);
-    }
-  i=0;
-  while((dir_ent=readdir(dir_ptr))!=NULL)
-    {
-    if(*dir_ent->d_name=='.') continue;
-    sprintf(filename,"%s/%s",pick_dir,dir_ent->d_name);
-
-    if((fp=fopen(filename,"r"))==NULL)
-      {
-      printf("file '%s' not open\n",filename);
-      continue;
-      }
-
-    stat(filename,&st_buf);
-    user[i]=st_buf.st_uid;
-    mode[i]=st_buf.st_mode;
-    fgets(textbuf,LINELEN,fp);
-    diagnos[i][0]=0;
-    sscanf(textbuf,"%*s%s%5s",dfname[i],diagnos[i]);
-    diagnos[i][5]=0;
-    pick[i]=hypo[i]=mech[i]=0;
-    mag[i]=9.9;
-    while(fgets(textbuf,LINELEN,fp)!=NULL)
-      {
-      if(strncmp(textbuf,"#p",2)==0) pick[i]=1;
-      if(strncmp(textbuf,"#f",2)==0)
-        {
-        hypo[i]=1;
-        sscanf(textbuf,"%*s%*s%*s%*s%*s%*s%*s%*s%*s%*s%f",&mag[i]);
-        break;
-        }
-      }
-    if(hypo[i]) while(fgets(textbuf,LINELEN,fp)!=NULL)
-      {
-      if(strncmp(textbuf,"#m",2)==0)
-        {
-        mech[i]=1;
-        break;
-        }
-      }
-    fclose(fp);
-
-    if(++i==NPICK)
-      {
-      printf("buffer full (N=%d)\n",NPICK);
-      break;
-      }
-    }
-  npick=i;
-  closedir(dir_ptr);
-/*
-for(i=0;i<npick;i++)
-printf("%3d : %s %d %3.1f %d %d %d\n",
-i,dfname[i],hypo[i],mag[i],mech[i],user[i],mode[i]);
-*/
-  if((fp=fopen(out_file,"r"))==NULL)
-    {
-    printf("file '%s' not open\n",out_file);
-    exit(1);
-    }
-  fseek(fp,0,2);
-  dp=ftell(fp)-2;
-
-  init=1;
-  printf("---------------------------------------------------\n");
-  printf(" date   time                       M      triggered\n");
-  printf("YYMMDD hhmmss  picker      PHMM 1.....7   region(s)\n");
-  printf("---------------------------------------------------\n");
-
-  do
-    {
-    dp=get_line(fp,dp,textbuf);
-    if(*textbuf==' ')
-      {
-      if(dp<=0) break;
-      else continue;
-      }
-    *mes2=0;
-    sscanf(textbuf,"%2d%2d%2d.%2d%2d%2d%s%s%s",
-      &t[0],&t[1],&t[2],&t[3],&t[4],&t[5],mes1,mes2,group);
-    if(strcmp(mes1,"on,")==0 && init==0)
-      {
-      i=1;
-      while(time_cmp(t,toff,6)!=0)
-        {
-        toff[5]--;
-        adj_time(toff);
-        i++;
-        }
-/*      for(m=0;m<7;m++) if(i<=magni[m]) break;*/
-      m=(int)(-2.36+2.85*log10((double)i+
-        3.0*sqrt((double)i))+0.5);      /* after Tsumura */
-      printf("%02d%02d%02d.%02d%02d%02d",
-        t[0],t[1],t[2],t[3],t[4],t[5]);
-      no_file=0;
-      if(*dat_dir)
-        {
-        strcpy(name_dat,dat_dir);
-        strcat(name_dat,"/");
-        strncat(name_dat,textbuf,13);
-        strcpy(name_ch,name_dat);
-        strcat(name_ch,".ch");
-        strcpy(name_sv,name_dat);
-        strcat(name_sv,".sv");
-        if((fa=fopen(name_dat,"r"))==NULL) no_file=1;
-        else fclose(fa);
-        }
-      if(*req_dir[0])
-        {
-        sprintf(tbuf,"test \"`ls %s/%.13s ",req_dir[0],textbuf);
-        if(*req_dir[1]) sprintf(tbuf+strlen(tbuf),
-          "%s/%.13s ",req_dir[1],textbuf);
-        if(*req_dir[2]) sprintf(tbuf+strlen(tbuf),
-          "%s/%.13s ",req_dir[2],textbuf);
-        strcat(tbuf,"2>/dev/null`\"");
-        re=system(tbuf); /* re==0 if flag file exists */
-        }
-      else re=256;
-      if(re==0) putchar('&'); /* not joined yet */
-      else if(no_file) putchar('x'); /* no data file */
-      else putchar(' ');
-      j=0;
-      noise=not_noise=0;
-      for(i=0;i<npick;i++)
-        {
-        if(strncmp(dfname[i],textbuf,13)==0)
-          {
-        /* picker name */
-          ptr=getname(user[i]);
-          if((mode[i] & S_IWGRP) == 0) /* PRIVATE */
-            {
-            putchar(' ');
-            for(kk=0;kk<strlen(ptr);kk++)
-              {
-              if(kk==5) break;
-              putchar(toupper(ptr[kk]));
-              }
-            }
-          else printf(" %-.5s",ptr);
-          if(strlen(ptr)<5)
-            {
-            for(kk=0;kk<5-strlen(ptr);kk++) putchar(' ');
-            }
-          putchar(' ');
-        /* diagnosis */
-          if(diagnos[i][0]!=0)
-            {
-            if(strcmp(diagnos[i],"NOISE")==0 || 
-              strcmp(diagnos[i],"noise")==0) noise=1;
-            else not_noise=1;
-            printf("%s",diagnos[i]);
-            for(k=0;k<5-strlen(diagnos[i]);k++) putchar(' ');
-            }
-          else
-            {
-            printf("     ");
-            not_noise=1;
-            }
-        /* status */
-          putchar(' ');
-          if(pick[i]) putchar('P');
-          else putchar('.');
-          if(hypo[i]) putchar('H');
-          else putchar('.');
-          if(mag[i]<9.0) putchar('M');
-          else putchar('.');
-          if(mech[i]) putchar('M');
-          else putchar('.');
-          putchar(' ');
-          j=1;
-          }
-        }
-      if(j==0) printf("                  ");
-      else if(*dat_dir && no_file==0 && noise==1 && not_noise==0)
-        {
-        unlink(name_dat);
-        unlink(name_ch);
-        unlink(name_sv);
-        }
-      for(i=0;i<m;i++) putchar('*');
-      for(i=m;i<7;i++) putchar(' ');
-      printf("  %s %s",group,gbuf);
-/*      if(*dat_dir && no_file==1 && noise==1 && not_noise==0)*/
-      if(noise==1 && not_noise==0) printf("#\n");
-      else putchar('\n');     
-      *group=(*gbuf)=0;
-      }
-    else if(strcmp(mes1,"off,")==0)
-      {
-      init=0;
-      for(i=0;i<6;i++) toff[i]=t[i];
-      if(ptr=strchr(textbuf,'\n')) *ptr=0;
-      if(*mes2) strcpy(gbuf,strchr(textbuf,*mes2));
-      else *gbuf=0;
-      }
-    } while(dp>0);
-  fclose(fp);
-  exit(0);
-  }
-
-get_line(fp,dp,buf)
-  FILE *fp;
-  long dp;
-  char *buf;
-  {
-  int c;
-  fseek(fp,dp,0);
-  while((c=getc(fp))!=0x0a)
-    {
-    if(--dp<0)
-      {
-      fseek(fp,0,0);
-      break;
-      }
-    fseek(fp,dp,0);
-    }
-  fgets(buf,LINELEN,fp);
-  --dp;
-  return(dp);
-  }
-
-time_cmp(t1,t2,i)
-  int *t1,*t2,i;  
-  {
-  int cntr;
-  cntr=0;
-  if(t1[cntr]<70 && t2[cntr]>70) return 1;
-  if(t1[cntr]>70 && t2[cntr]<70) return -1;
-  for(;cntr<i;cntr++)
-    {
-    if(t1[cntr]>t2[cntr]) return 1;
-    if(t1[cntr]<t2[cntr]) return -1;
-    } 
-  return 0;  
-  }
+#define   NAMLEN    128
+#define   LINELEN   512
+#define   NPICK   10000  /* this is NOT the limit */
 
 adj_time(tm)
   int *tm;
@@ -402,15 +98,15 @@ adj_time(tm)
             case 4:
             case 6:
             case 9:
-            case 11:
+            case 11:  
               tm[2]=30;
               break;
             default:
-              tm[2]=31;
+              tm[2]=31;  
               break;
             }
           if(tm[1]==0)
-            {
+            {  
             tm[1]=12;
             if(--tm[0]==-1) tm[0]=99;
             }
@@ -418,4 +114,464 @@ adj_time(tm)
         }
       }
     }
+  }
+
+time_cmp(t1,t2,i)
+  int *t1,*t2,i;
+  {
+  int cntr;
+  cntr=0;
+  if(t1[cntr]<70 && t2[cntr]>70) return 1;
+  if(t1[cntr]>70 && t2[cntr]<70) return -1;
+  for(;cntr<i;cntr++)
+    {
+    if(t1[cntr]>t2[cntr]) return 1;
+    if(t1[cntr]<t2[cntr]) return -1;
+    }
+  return 0;
+  }
+
+char *getname(id)
+  int id;
+  {
+  static char t[10];
+  struct passwd *pwd;
+  if(pwd=getpwuid(id)) return pwd->pw_name;
+  else
+    {
+    sprintf(t,"%d",id);
+    return t;
+    }
+/*  else return ".";*/
+  }
+
+print_usage()
+  {
+  fprintf(stderr,"Usage :  elist (-hupon) [pick dir] [pmon.out file] ([data dir] ([request dir] ..))\n");
+  fprintf(stderr,"    If 'data dir' is specified, 'NOISE' files will be deleted.\n");
+  fprintf(stderr,"    -h  hide 'NOISE only' events\n");
+  fprintf(stderr,"    -p [pktemp file] output 'pplist' file\n");
+  fprintf(stderr,"    -o [evtemp file] output file (default to stdout)\n");
+  fprintf(stderr,"    -n  normal (not reverse) order\n");
+  fprintf(stderr,"    -s  don`t delete 'NOISE only' event files in data dir\n");
+  fprintf(stderr,"    -u  print usage\n");
+  exit(1);
+  }
+
+str2double(t,n,m,d)
+  char *t;
+  int n,m;
+  double *d;
+  { 
+  char tb[20];
+  strncpy(tb,t+n,m);
+  tb[m]=0;
+  if(tb[0]=='*') *d=100.0;
+  else *d=atof(tb);
+  }
+
+main(argc,argv)
+  int argc;
+  char *argv[];
+  {
+  extern int optind;
+  extern char *optarg;
+  FILE *fp,*fa,*fee,*fpp;
+  struct dirent *dir_ent;
+  struct stat st_buf;
+  DIR *dir_ptr;
+  struct Pk {
+    char dfname[14],diagnos[20],fname[18],name[10],near[12];
+    uid_t user;
+    u_short mode;
+    int hypo,mech,pick,np,ns,nm;
+    float lat,lon,dep,mag;
+    } *pk;
+  char pick_dir[NAMLEN],out_file[NAMLEN],dat_dir[NAMLEN],req_dir[3][NAMLEN],
+    filename[NAMLEN],textbuf[LINELEN],group[20],mes1[20],mes2[20],mes3[20],
+    tbuf[LINELEN],gbuf[LINELEN],name_dat[NAMLEN],name_ch[NAMLEN],
+    name_sv[NAMLEN],*ptr,ppfile[NAMLEN],eefile[NAMLEN],outbuf[LINELEN];
+  int i,npick,t[6],ton[6],init,j,m,k,kk,no_file,noise,not_noise,re,search,
+    npick_lim,c,reverse,hidenoise,kkk,pn,fn,sn,mn,nstn,delete;
+  long dp;
+  double pt,pe,pomc,st,se,somc,mag;
+
+  *ppfile=(*eefile)=0;
+  reverse=delete=1;
+  hidenoise=0;
+  while((c=getopt(argc,argv,"hup:o:ns"))!=EOF)
+    {
+    switch(c)
+      {
+      case 'o':  /* write evtemp file (ee list) */
+        strcpy(eefile,optarg);
+        break;
+      case 'p':  /* write pktemp file (pp list)  */
+        strcpy(ppfile,optarg);
+        break;
+      case 'n':  /* normal order (i.e. not reverse order) */
+        reverse=0;
+        break;
+      case 'h':  /* hide NOISE only events */
+        hidenoise=1;
+        break;
+      case 's':  /* not delete NOISE only events in trg dir*/
+        delete=0;
+        break;
+      case 'u':
+      default:
+        print_usage();
+      }
+    }
+
+  optind--;
+  if(argc<3+optind) print_usage();
+  else
+    {
+    if(argc>=4+optind && strcmp(argv[3+optind],"-")!=0)
+      strcpy(dat_dir,argv[3+optind]);
+    else *dat_dir=0;
+    if(argc>=5+optind)
+      {
+      strcpy(req_dir[0],argv[4+optind]);
+      if(req_dir[0][strlen(req_dir[0])-1]=='/')
+      strcat(req_dir[0],"*");
+      }
+    else *req_dir[0]=0;
+    if(argc>=6+optind)
+      {
+      strcpy(req_dir[1],argv[5+optind]);
+      if(req_dir[1][strlen(req_dir[1])-1]=='/')
+      strcat(req_dir[1],"*");
+      }
+    else *req_dir[1]=0;
+    if(argc>=7+optind)
+      {
+      strcpy(req_dir[2],argv[6+optind]);
+      if(req_dir[2][strlen(req_dir[2])-1]=='/')
+      strcat(req_dir[2],"*");
+      }
+    else *req_dir[2]=0;
+    }
+  strcpy(pick_dir,argv[1+optind]);
+  strcpy(out_file,argv[2+optind]);
+
+  /* read pick files */
+  if((dir_ptr=opendir(pick_dir))==NULL)
+    {
+    printf("directory '%s' not open\n",pick_dir);
+    exit(1);
+    }
+
+  npick_lim=NPICK;
+  if((pk=(struct Pk *)malloc(sizeof(*pk)*npick_lim))==0)
+    {
+    fprintf(stderr,"malloc (Npicks=%d) failed !\n",npick_lim);
+    exit(1);
+    }
+
+  i=0;
+  while((dir_ent=readdir(dir_ptr))!=NULL)
+    {
+    if(*dir_ent->d_name=='.') continue;
+    strcpy(pk[i].fname,dir_ent->d_name);
+    sprintf(filename,"%s/%s",pick_dir,dir_ent->d_name);
+
+    if((fp=fopen(filename,"r"))==NULL)
+      {
+      printf("file '%s' not open\n",filename);
+      continue;
+      }
+
+    stat(filename,&st_buf);
+    pk[i].user=st_buf.st_uid;
+    pk[i].mode=st_buf.st_mode;
+    fgets(textbuf,LINELEN,fp);
+    pk[i].diagnos[0]=0;
+    sscanf(textbuf,"%*s%s%s%s",pk[i].dfname,pk[i].diagnos,pk[i].name);
+    pk[i].diagnos[5]=0;
+    pk[i].pick=pk[i].hypo=pk[i].mech=pk[i].np=pk[i].ns=pk[i].nm=0;
+    pk[i].mag=9.9;
+    pn=sn=fn=mn=0;
+    while(fgets(textbuf,LINELEN,fp)!=NULL)
+      {
+      if(strncmp(textbuf,"#p",2)==0)
+        {
+        pn++;
+        pk[i].pick=1;
+        continue;
+        }
+      if(strncmp(textbuf,"#s",2)==0)
+        {
+        sn++;
+        continue;
+        }
+      if(strncmp(textbuf,"#f",2)==0)
+        {
+        fn++;
+        pk[i].hypo=1;
+        if(fn==1) sscanf(textbuf,"%*s%*s%*s%*s%*s%*s%*s%f%f%f%f",
+          &pk[i].lat,&pk[i].lon,&pk[i].dep,&pk[i].mag);
+        if(fn==5) sscanf(textbuf,"%*s%d",&nstn);
+        if(fn>5 && fn<=5+nstn)
+          {
+          sscanf(textbuf,"%*s%s",&pk[i].near);
+          str2double(textbuf,39+3,7,&pt);
+          str2double(textbuf,46+3,6,&pe);
+          str2double(textbuf,52+3,7,&pomc);
+          str2double(textbuf,59+3,7,&st);
+          str2double(textbuf,66+3,6,&se);
+          str2double(textbuf,72+3,7,&somc);
+          str2double(textbuf,89+3,5,&mag);
+          if(pt!=0.0 || pe!=0.0 || pomc!=0.0) pk[i].np++;
+          if(st!=0.0 || se!=0.0 || somc!=0.0) pk[i].ns++;
+          if(mag!=9.9) pk[i].nm++;
+          } 
+        continue;
+        }
+      if(strncmp(textbuf,"#m",2)==0)
+        {
+        mn++;
+        pk[i].mech=1;
+        continue;
+        }
+      }
+    fclose(fp);
+
+    if(++i==npick_lim)
+      {
+      if((pk=(struct Pk *)realloc((char *)pk,sizeof(*pk)*(npick_lim+NPICK)))==0)
+        {
+        fprintf(stderr,"realloc failed !  Npicks=%d (size=%d)\n",
+          npick_lim,sizeof(*pk)*npick_lim);
+        break;
+        }
+      else npick_lim+=NPICK;
+/*printf("npick_lim=%d\n",npick_lim);*/
+      }
+    }
+  npick=i;
+  closedir(dir_ptr);
+/*printf("npick=%d\n",npick);*/
+  if(*ppfile)
+    {
+    if((fpp=fopen(ppfile,"w"))==NULL)
+      fprintf(stderr,"file '%s' not open.\n",ppfile);
+    else
+      {
+fprintf(fpp,"-----------------------------------------------------------------------------\n");
+fprintf(fpp,"pickfile          trgfile       picker P   S   M Lat.  Lon.   Dep. M  nearest\n");
+fprintf(fpp,"-----------------------------------------------------------------------------\n");
+      fclose(fpp);
+      }
+    sprintf(tbuf,"sort >> %s",ppfile);
+    if((fpp=popen(tbuf,"w"))==NULL)
+      fprintf(stderr,"pipe '%s' not open.\n",tbuf);    
+    else
+      {
+      for(i=0;i<npick;i++)
+        {
+        fprintf(fpp,"%s %s %4.4s%4d%4d%4d",pk[i].fname,pk[i].dfname,
+          getname(pk[i].user),pk[i].np,pk[i].ns,pk[i].nm);
+        if(pk[i].hypo) fprintf(fpp,"%6.2f%7.2f%4.0f M%3.1f %4.4s\n",
+            pk[i].lat,pk[i].lon,pk[i].dep,pk[i].mag,pk[i].near);
+        else fprintf(fpp," -     -       -    -    -\n");
+        }
+      pclose(fpp);
+      }
+    }
+
+  if((fp=fopen(out_file,"r"))==NULL)
+    {
+    printf("file '%s' not open\n",out_file);
+    exit(1);
+    }
+
+  if(*eefile)
+    {
+    if(reverse)
+      {
+      sprintf(tbuf,"tail -r > %s",eefile);
+      if((fee=popen(tbuf,"w"))==NULL)
+        {
+        fprintf(stderr,"pipe '%s' not open.\n",tbuf);
+        exit(1);
+        }
+      } 
+    else if((fee=fopen(eefile,"w"))==NULL)
+      {
+      fprintf(stderr,"eefile '%s' not open.\n",eefile);
+      exit(1);
+      }
+    }
+  else
+    {
+    if(reverse)
+      {
+      sprintf(tbuf,"tail -r");
+      if((fee=popen(tbuf,"w"))==NULL)
+        {
+        fprintf(stderr,"pipe '%s' not open.\n",tbuf);
+        exit(1);
+        }
+      }
+    else fee=stdout;
+    }
+
+  if(!reverse)
+    {
+    fprintf(fee,"---------------------------------------------------\n");
+    fprintf(fee," date   time                       M      triggered\n");
+    fprintf(fee,"YYMMDD hhmmss  picker      PHMM 1.....7   region(s)\n");
+    fprintf(fee,"---------------------------------------------------\n");
+    }
+
+  init=1;
+#define ON 1
+#define OFF 0
+  search=ON;
+  while(fgets(textbuf,LINELEN,fp))
+    {
+    if(*textbuf==' ') continue;
+    *mes1=(*mes2)=(*mes3)=0;
+    sscanf(textbuf,"%2d%2d%2d.%2d%2d%2d%s%s%s",
+      &t[0],&t[1],&t[2],&t[3],&t[4],&t[5],mes1,mes2,mes3);
+/*printf("%s",textbuf);*/
+    if(search==ON) /* search "on" */
+      {
+      if(strcmp(mes1,"on,")) continue;
+      if(init==0 && time_cmp(t,ton,6)<0) continue;
+      init=0;
+      for(i=0;i<6;i++) ton[i]=t[i];
+      strcpy(group,mes3);
+      search=OFF;
+/*printf("ON=%02d%02d%02d.%02d%02d%02d",t[0],t[1],t[2],t[3],t[4],t[5]);*/
+      }
+    else if(search==OFF)
+      {
+      if(strcmp(mes1,"off,")) continue;
+      if(time_cmp(t,ton,6)<0) continue;
+      if(ptr=strchr(textbuf,'\n')) *ptr=0;
+      if(*mes2) strcpy(gbuf,strchr(textbuf,*mes2));
+      else *gbuf=0;
+/*printf("OFF=%02d%02d%02d.%02d%02d%02d",t[0],t[1],t[2],t[3],t[4],t[5]);*/
+      i=1;
+      while(time_cmp(t,ton,6)>0)
+        {
+        t[5]--;
+        adj_time(t);
+        i++;
+        }
+      m=(int)(-2.36+2.85*log10((double)i+3.0*sqrt((double)i))+0.5);
+          /* After Tsumura */
+/*printf("i=%d, M=%d\n",i,m);*/
+      sprintf(outbuf,"%02d%02d%02d.%02d%02d%02d",
+        ton[0],ton[1],ton[2],ton[3],ton[4],ton[5]);
+      sprintf(textbuf,"%02d%02d%02d.%02d%02d%02d",
+        ton[0],ton[1],ton[2],ton[3],ton[4],ton[5]);
+      no_file=0;
+      if(*dat_dir)
+        {
+        sprintf(name_dat,"%s/%s",dat_dir,textbuf);
+        sprintf(name_ch,"%s.ch",name_dat);
+        sprintf(name_sv,"%s.sv",name_dat);
+        if((fa=fopen(name_dat,"r"))==NULL) no_file=1;
+        else fclose(fa);
+        }
+      if(*req_dir[0])
+        {
+        sprintf(tbuf,"test \"`ls %s/%s ",req_dir[0],textbuf);
+        if(*req_dir[1]) sprintf(tbuf+strlen(tbuf),"%s/%s ",req_dir[1],textbuf);
+        if(*req_dir[2]) sprintf(tbuf+strlen(tbuf),"%s/%s ",req_dir[2],textbuf);
+        strcat(tbuf,"2>/dev/null`\"");
+        re=system(tbuf); /* re==0 if flag file exists */
+        }
+      else re=256;
+      if(re==0) strcat(outbuf,"&"); /* not joined yet */
+      else if(no_file) strcat(outbuf,"x"); /* no data file */
+      else strcat(outbuf," ");
+      j=0;
+      noise=not_noise=0;
+      for(i=0;i<npick;i++)
+        {
+        if(strcmp(pk[i].dfname,textbuf)==0)
+          {
+        /* picker name */
+          ptr=getname(pk[i].user);
+          if((pk[i].mode & S_IWGRP) == 0) /* PRIVATE */
+            {
+            strcat(outbuf," ");
+            kkk=strlen(outbuf);
+            for(kk=0;kk<strlen(ptr);kk++)
+              {
+              if(kk==5) break;
+              outbuf[kkk+kk]=toupper(ptr[kk]);
+              }
+            outbuf[kkk+kk]=0;
+            }
+          else sprintf(outbuf+strlen(outbuf)," %-.5s",ptr);
+          if(strlen(ptr)<5)
+            {
+            for(kk=0;kk<5-strlen(ptr);kk++) strcat(outbuf," ");
+            }
+          strcat(outbuf," ");
+        /* diagnosis */
+          if(pk[i].diagnos[0]!=0)
+            {
+            if(strcmp(pk[i].diagnos,"NOISE")==0 || 
+              strcmp(pk[i].diagnos,"noise")==0) noise=1;
+            else not_noise=1;
+            sprintf(outbuf+strlen(outbuf),"%s",pk[i].diagnos);
+            for(k=0;k<5-strlen(pk[i].diagnos);k++) strcat(outbuf," ");
+            }
+          else
+            {
+            strcat(outbuf,"     ");
+            not_noise=1;
+            }
+        /* status */
+          strcat(outbuf," ");
+          if(pk[i].pick) strcat(outbuf,"P");
+          else strcat(outbuf,".");
+          if(pk[i].hypo) strcat(outbuf,"H");
+          else strcat(outbuf,".");
+          if(pk[i].mag<9.0) strcat(outbuf,"M");
+          else strcat(outbuf,".");
+          if(pk[i].mech) strcat(outbuf,"M");
+          else strcat(outbuf,".");
+          strcat(outbuf," ");
+          j=1;
+          }
+        }
+      if(j==0) strcat(outbuf,"                  ");
+      else if(*dat_dir && no_file==0 && noise==1 && not_noise==0 && delete)
+        {
+        unlink(name_dat);
+        unlink(name_ch);
+        unlink(name_sv);
+        }
+      for(i=0;i<m;i++) strcat(outbuf,"*");
+      for(i=m;i<7;i++) strcat(outbuf," ");
+      sprintf(outbuf+strlen(outbuf),"  %s %s",group,gbuf);
+/*    if(*dat_dir && no_file==1 && noise==1 && not_noise==0)*/
+      if(noise==1 && not_noise==0)
+        {
+        if(!hidenoise) fprintf(fee,"%s#\n",outbuf);
+        }
+      else fprintf(fee,"%s\n",outbuf);
+      *group=(*gbuf)=0;
+      search=ON;
+      }
+    }
+  fclose(fp);
+  if(reverse)
+    {
+    fprintf(fee,"---------------------------------------------------\n");
+    fprintf(fee,"YYMMDD hhmmss  picker      PHMM 1.....7   region(s)\n");
+    fprintf(fee," date   time                       M      triggered\n");
+    fprintf(fee,"---------------------------------------------------\n");
+    pclose(fee);
+    }
+  else fclose(fee);
+  exit(0);
   }

@@ -1,4 +1,4 @@
-# $Id: makefile,v 1.5 2000/05/26 08:43:16 uehira Exp $
+# $Id: makefile,v 1.6 2000/05/26 10:52:14 uehira Exp $
 #########################
 #                       #
 # win system makefile   #
@@ -43,12 +43,16 @@ OFFLINE_USER=win $(OFFLINE_F77) wed wck wadd $(OFFLINE_MATH) wchch pick2tseis \
 TAPE_USER=rtape fromtape wdisk wdiskts ras2rpdl ras2lips file_older raw2mon \
           $(TAPE_USER_MATH)
 ONLINE=order raw_mon wtape setexb timeout raw_raw raw_100 cormeisei shmdump \
-       raw_ch extraw order2 $(ONLINE_SO) $(ONLINE_MATH) $(ONL_X86)
+       raw_ch extraw order2 insert_raw insert_trg \
+       $(ONLINE_SO) $(ONLINE_MATH) $(ONL_X86)
 
 ONL_OPT_=robot
 OTHR=wform cpdat sepline joint order_raw
 OTHR_=rund
 SUB=winform win2fix
+
+WIN_INC = win_system.h
+WIN_OBJ = win_system.o
 
 all : $(OFFLINE_USER) $(TAPE_USER) $(ONLINE)
 	@cp -p $(OFFLINE_USER) $(TAPE_USER) $(ONLINE) $(BINDIR)
@@ -68,7 +72,7 @@ offline : $(OFFLINE_USER)
 	@cp -p $(OFFLINE_USER) $(BINDIR)
 
 clean :
-	@rm -f  $(OFFLINE_USER) $(TAPE_USER) $(ONLINE)
+	@rm -f  $(OFFLINE_USER) $(TAPE_USER) $(ONLINE) *.o
 
 cleanbin :
 	@cd $(BINDIR);rm -f  $(OFFLINE_USER) $(TAPE_USER) $(ONLINE) \
@@ -85,3 +89,14 @@ win :
 
 hypomh : hypomh.f
 	f77 $@.f -o $@
+
+insert_raw : insert_raw.o $(WIN_OBJ) $(WIN_INC)
+	$(CC) $(CFLAGS) $@.o $(WIN_OBJ) -o $@
+
+insert_trg : insert_trg.o $(WIN_OBJ) $(WIN_INC)
+	$(CC) $(CFLAGS) $@.o $(WIN_OBJ) -o $@
+
+
+insert_raw.o : $(WIN_INC)
+insert_trg.o : $(WIN_INC)
+$(WIN_OBJ) : $(WIN_INC)

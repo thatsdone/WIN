@@ -1,0 +1,562 @@
+/*
+ * $Id: insert_trg.c,v 1.1 2000/05/26 10:52:14 uehira Exp $
+ * Insert sorted timeout data to event data.
+ *
+ *------------ sample of parameter file ------------
+ *|# This file is insert_trg's parameter file      |
+ *|/dat/trg		# trg data dir             |
+ *|/dat/raw_timeouts	# time-out data dir        |
+ *|/dat/tmp		# temporary dir            |
+ *|3                    # wait time[min].          |
+ *|                     #   if blank, 0.           |
+ *--------------------------------------------------
+ *
+ */
+
+#include <stdio.h>
+#include <string.h>
+#include <signal.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <dirent.h>
+#include <ctype.h>
+#include "win_system.h"
+
+#define DEBUG   0
+#define DEBUG1  0
+
+#define PRE_MIN  30  /* minute */
+#define POST_MIN  2  /* minute */
+
+#define TMP_ADD_NAME   "insert_trg.add"
+#define DEFAULT_WAIT_MIN  POST_MIN   /* minute */
+
+#ifndef FILENAME_MAX
+#define FILENAME_MAX 1024
+#endif
+#ifndef BUFSIZ
+#define BUFSIZ 1024
+#endif
+
+char *progname;
+static char rcsid[]="$Id: insert_trg.c,v 1.1 2000/05/26 10:52:14 uehira Exp $";
+
+struct Cnt_file {
+  char  trg_dir[FILENAME_MAX];    /* trg data directory */
+  char  junk_dir[FILENAME_MAX];   /* time-out data directory */
+  char  tmp_dir[FILENAME_MAX];    /* temporary directory */
+  char  trg_latst[FILENAME_MAX];  /* trg LATEST */ 
+  char  trg_oldst[FILENAME_MAX];  /* trg OLDEST */
+  char  junk_latst[FILENAME_MAX]; /* time-out LATEST */
+  char  junk_oldst[FILENAME_MAX]; /* time-out OLDEST */
+  char  junk_used[FILENAME_MAX];  /* time-out USED */
+  int   wait_min;       /* wait time[min.](>=POST_MIN) from timeout LATEST */
+};
+
+/* exit program with status */
+static void
+end_prog(int status)
+{
+  printf("*****  %s end  *****\n",progname);
+  exit(status);
+}
+
+static void
+memory_error()
+{
+  fprintf(stderr,"'%s': cannot allocate memory.\n",progname);
+  end_prog(-3);
+}
+
+/* print usage */
+static void
+print_usage()
+{
+  fprintf(stderr,"%s\n",rcsid);
+  fprintf(stderr,"Usage of %s :\n",progname);
+  fprintf(stderr,"\t%s [param file] ([YYMMDDhh.mm(1)] [YYMMDDhh.mm(2)])\n",
+	  progname);
+}
+
+/* 
+   read_param(char filename[], struct Cnt_file *Cnt_file)
+      read parameter file and write to "struct Cnt_file".
+      Input: char filename[]
+      Output: struct Cnt_file *Cnt_file
+      Return value: 
+       -1: cannot open parameter file.
+        0: normal end.
+	1: parameter values are not enough. */
+static int
+read_param(char filename[], struct Cnt_file *Cnt_file)
+{
+  FILE  *fp;
+  char  buf[BUFSIZ],out[BUFSIZ];
+  int   status,count;
+
+  if(NULL==(fp=fopen(filename,"r"))){
+    fprintf(stderr,"Cannot open parameter file: %s\n",filename);
+    return(-1);
+  }
+  count=0;
+  status=1;
+  Cnt_file->wait_min=DEFAULT_WAIT_MIN;
+  while(fgets(buf,BUFSIZ,fp)!=NULL){
+    if(buf[0]=='#') continue;  /* skip comment line */
+    if(sscanf(buf,"%s",out)<1) break;
+    if(count==0) strcpy(Cnt_file->trg_dir,out);
+    else if(count==1) strcpy(Cnt_file->junk_dir,out);
+    else if(count==2){
+      strcpy(Cnt_file->tmp_dir,out);
+      status=0;
+    }
+    else if(count==3){
+      Cnt_file->wait_min=atoi(out);
+      if(Cnt_file->wait_min<DEFAULT_WAIT_MIN){
+	fprintf(stderr,"Warrning: default wait time set to %d minutes.\n",
+		DEFAULT_WAIT_MIN);
+	Cnt_file->wait_min=DEFAULT_WAIT_MIN;
+      }
+      break;
+    }
+    count++;
+  }
+  fclose(fp);
+  if(status)
+    fprintf(stderr,"Parameter is not enough. Please check %s\n",filename);
+  return(status);
+}
+
+static void
+do_insert(int tim[], struct Cnt_file *cnt)
+{
+  FILE  *fp,*fptrg,*fpadd,*fpch;
+  long  fpt;
+  struct dirent  *dir_ent;
+  DIR  *dir_ptr;
+  static WIN_ch  trg_ch[WIN_CH_MAX_NUM],trg_chnum;
+  WIN_blocksize  a;
+  WIN_blocksize  size,size_save;
+  WIN_blocksize  sizet;
+  WIN_blocksize  sizem,sizew,datas_num;
+  WIN_blocksize  sizes;
+  WIN_blocksize  data_num,data_num_save;
+  unsigned char  *data,*datam,*datat,*tmpbuf;
+  unsigned char  *datas;
+  unsigned char  size_arr[WIN_BLOCKSIZE_LEN];
+  unsigned char  *ptrd,*ptw,*ptrs;
+  int  dtime[WIN_TIME_LEN],dtime_start[WIN_TIME_LEN],dtime_end[WIN_TIME_LEN];
+  int  dttime[WIN_TIME_LEN],dstime[WIN_TIME_LEN];
+  int  dtime_tmp[WIN_TIME_LEN];
+  int  scan_tim_old[WIN_TIME_LEN],scan_tim_yng[WIN_TIME_LEN];
+  int  /* tim_trg_oldest[WIN_TIME_LEN], */tim_trg[WIN_TIME_LEN];
+  int  tim_trg_start[WIN_TIME_LEN],tim_trg_end[WIN_TIME_LEN];
+  char  data_name[FILENAME_MAX];
+  char  outname[FILENAME_MAX],chname[FILENAME_MAX];
+  char  addname[FILENAME_MAX];
+  char  cmdbuf[FILENAME_MAX];
+  int  j;
+
+  sprintf(data_name,"%s/%02d%02d%02d%02d.%02d",
+	  cnt->junk_dir,tim[0],tim[1],tim[2],tim[3],tim[4]);
+  if((fp=fopen(data_name,"r"))==NULL) return;
+
+  while(fread(&a,1,WIN_BLOCKSIZE_LEN,fp)==WIN_BLOCKSIZE_LEN){  /*(1)*/
+    /*** copy same minute data to data[] ***/
+    data_num_save=data_num=size=(WIN_blocksize)mklong((unsigned char *)&a);
+    if((data=MALLOC(unsigned char,data_num))==NULL) memory_error();
+    memcpy(data,&a,WIN_BLOCKSIZE_LEN);
+    size-=WIN_BLOCKSIZE_LEN;
+    if(fread(data+WIN_BLOCKSIZE_LEN,1,size,fp)!=size){
+      FREE(data);
+      break; /* exit do_insert() in case of timeout file broken */
+    }
+    if(!bcd_dec(dtime,data+WIN_BLOCKSIZE_LEN)){
+      FREE(data);
+      continue; /* skip in case of strange time stamp */
+    }
+    for(j=0;j<WIN_TIME_LEN;++j) dtime_start[j]=dtime_end[j]=dtime[j];
+    fpt=ftell(fp);
+    while(fread(&a,1,WIN_BLOCKSIZE_LEN,fp)==WIN_BLOCKSIZE_LEN){  /*(2)*/
+      size_save=size=(WIN_blocksize)mklong((unsigned char *)&a);
+      if((tmpbuf=MALLOC(unsigned char,size))==NULL) memory_error();
+      memcpy(tmpbuf,&a,WIN_BLOCKSIZE_LEN);
+      size-=WIN_BLOCKSIZE_LEN;
+      if(fread(tmpbuf+WIN_BLOCKSIZE_LEN,1,size,fp)!=size){
+	FREE(tmpbuf); FREE(data);
+	goto insert_end; /* exit do_insert() in case of timeout file broken */
+      }
+      if(!bcd_dec(dtime_tmp,tmpbuf+WIN_BLOCKSIZE_LEN)){
+	FREE(tmpbuf);
+	continue; /* skip in case of strange time stamp */
+      }
+      /* if next minutes, exit this loop */
+      if(time_cmp(dtime,dtime_tmp,5)){
+	FREE(tmpbuf);
+	fseek(fp,fpt,0);
+	break;
+      }
+      data_num+=size_save;
+      if((data=REALLOC(unsigned char,data,data_num))==NULL) memory_error();
+      memcpy(data+data_num_save,tmpbuf,size_save);
+      data_num_save=data_num;
+      fpt=ftell(fp);
+      if(time_cmp(dtime_tmp,dtime_end,WIN_TIME_LEN)>0)
+	for(j=0;j<WIN_TIME_LEN;++j) dtime_end[j]=dtime_tmp[j];
+    } /* while(fread(&a,1,WIN_BLOCKSIZE_LEN,fp)==WIN_BLOCKSIZE_LEN) (2) */
+
+    for(j=0;j<5;++j) scan_tim_old[j]=scan_tim_yng[j]=dtime[j];
+    scan_tim_old[5]=scan_tim_yng[5]=0;
+    for(j=0;j<PRE_MIN;++j){
+      scan_tim_old[4]--;
+      adj_time_m(scan_tim_old);
+    }
+    for(j=0;j<POST_MIN;++j){
+      scan_tim_yng[4]++;
+      adj_time_m(scan_tim_yng);
+    }
+#if DEBUG1
+    fprintf(stderr,
+	    "packet %02d%02d%02d.%02d%02d%02d-%02d%02d%02d.%02d%02d%02d:  ",
+	    dtime[0],dtime[1],dtime[2],dtime[3],dtime[4],dtime[5],
+	    dtime_end[0],dtime_end[1],dtime_end[2],
+	    dtime_end[3],dtime_end[4],dtime_end[5]);
+    fprintf(stderr,"%02d%02d%02d.%02d%02d%02d <---> ",
+	    scan_tim_old[0],scan_tim_old[1],scan_tim_old[2],
+	    scan_tim_old[3],scan_tim_old[4],scan_tim_old[5]);
+    fprintf(stderr,"%02d%02d%02d.%02d%02d%02d\n",
+	    scan_tim_yng[0],scan_tim_yng[1],scan_tim_yng[2],
+	    scan_tim_yng[3],scan_tim_yng[4],scan_tim_yng[5]);
+    fflush(stderr);
+#endif
+
+    /* compare with oldest trg data */
+    /* skip data which is older than OLDEST */
+    /* rmemo6(cnt->trg_oldst,tim_trg_oldest);
+    if(time_cmp(scan_tim_yng,tim_trg_oldest,WIN_TIME_LEN)<0){
+      FREE(data);
+      continue;
+    } */
+
+    /***** open trg dir & sweep all trg files *****/
+    if((dir_ptr=opendir(cnt->trg_dir))==NULL){
+      fprintf(stderr,"Cannot access trg directory: '%s'\n",cnt->trg_dir);
+      end_prog(-1);
+    }
+    while((dir_ent=readdir(dir_ptr))!=NULL){
+      if(dir_ent->d_name[0]=='.') continue;
+      if(!isdigit(dir_ent->d_name[0])) continue;
+      /* skip *.ch file */
+      if(!isdigit(dir_ent->d_name[strlen(dir_ent->d_name)-1])) continue;
+      if(sscanf(dir_ent->d_name,"%2d%2d%2d.%2d%2d%2d",&tim_trg[0],
+		&tim_trg[1],&tim_trg[2],&tim_trg[3],
+		&tim_trg[4],&tim_trg[5])<WIN_TIME_LEN)
+	continue;
+      if(time_cmp(tim_trg,scan_tim_old,WIN_TIME_LEN)<0) continue;
+      if(time_cmp(tim_trg,scan_tim_yng,WIN_TIME_LEN)>0) continue;
+#if DEBUG1>3
+      /* fprintf(stderr,"%s\n",dir_ent->d_name); */
+#endif
+
+      /* get start_time and end_time of 1 trg file. */
+      sprintf(outname,"%s/%s",cnt->trg_dir,dir_ent->d_name);
+      if(WIN_time_hani(outname,tim_trg_start,tim_trg_end)) continue;
+      if(time_cmp(dtime_end,tim_trg_start,WIN_TIME_LEN)<0) continue;
+      if(time_cmp(dtime_start,tim_trg_end,WIN_TIME_LEN)>0) continue;
+#if DEBUG1
+      fprintf(stderr,
+	      "  %s: %02d%02d%02d.%02d%02d%02d--%02d%02d%02d.%02d%02d%02d\n",
+	      outname,tim_trg_start[0],tim_trg_start[1],tim_trg_start[2],
+	      tim_trg_start[3],tim_trg_start[4],tim_trg_start[5],
+	      tim_trg_end[0],tim_trg_end[1],tim_trg_end[2],
+	      tim_trg_end[3],tim_trg_end[4],tim_trg_end[5]);
+      fflush(stderr);
+#endif
+
+      /** read .ch file or trg file(first sec.) to get channel list **/
+      sprintf(chname,"%s/%s%s",cnt->trg_dir,dir_ent->d_name,TRG_CHFILE_SUFIX);
+      trg_chnum=0;
+      if((fpch=fopen(chname,"r"))==NULL){
+	if((fptrg=fopen(outname,"r"))!=NULL){
+	  if(fread(&a,1,WIN_BLOCKSIZE_LEN,fptrg)==WIN_BLOCKSIZE_LEN){
+	    sizet=(WIN_blocksize)mklong((unsigned char *)&a)-WIN_BLOCKSIZE_LEN;
+	    if((tmpbuf=MALLOC(unsigned char,sizet))==NULL) memory_error();
+	    if(fread(tmpbuf,1,sizet,fptrg)==sizet){
+	      trg_chnum=get_sysch_list(tmpbuf,sizet,trg_ch);
+	    }
+	    FREE(tmpbuf);
+	  }
+	  fclose(fptrg);
+	}
+      }
+      else{
+	trg_chnum=get_chlist_chfile(fpch,trg_ch);
+	fclose(fpch);
+      }
+#if DEBUG1
+      fprintf(stderr,"\ttrg_chnum=%d  [%X,%X]\n",trg_chnum,
+	      trg_ch[trg_chnum-2],
+	      trg_ch[trg_chnum-1]);
+#endif
+      if(trg_chnum==0) continue;
+
+      /** read data[](timeout data) and select add data to datas[] **/
+      ptrd=data;
+      for(j=0;j<WIN_TIME_LEN;++j) dtime[j]=dtime_start[j];
+      while(time_cmp(dtime,tim_trg_start,WIN_TIME_LEN)<0){  /* skip */
+	size=(WIN_blocksize)mklong((unsigned char *)ptrd);
+	ptrd+=size;
+	bcd_dec(dtime,ptrd+WIN_BLOCKSIZE_LEN);
+      }
+      if(time_cmp(dtime,tim_trg_end,WIN_TIME_LEN)>0) continue;
+      if((datas=MALLOC(unsigned char,data_num))==NULL) memory_error();
+      ptw=datas;
+      datas_num=0;
+      while(time_cmp(dtime,tim_trg_end,WIN_TIME_LEN)<=0 && ptrd<data+data_num){
+	size=(WIN_blocksize)mklong((unsigned char *)ptrd)-WIN_BLOCKSIZE_LEN;
+	ptrd+=WIN_BLOCKSIZE_LEN;
+#if DEBUG1>5
+	fprintf(stderr,"size=%ld dtime=%02d%02d%02d.%02d%02d%02d\n",
+		size,dtime[0],dtime[1],dtime[2],dtime[3],dtime[4],dtime[5]);
+	fflush(stderr);
+#endif
+	sizes=get_select_data(ptw+WIN_BLOCKSIZE_LEN+WIN_TIME_LEN,
+				trg_ch,trg_chnum,ptrd,size);
+	if(sizes){
+	  sizes+=WIN_BLOCKSIZE_LEN+WIN_TIME_LEN;
+	  ptw[0]=sizes>>24;
+	  ptw[1]=sizes>>16;
+	  ptw[2]=sizes>>8;
+	  ptw[3]=sizes;
+	  memcpy(ptw+WIN_BLOCKSIZE_LEN,ptrd,WIN_TIME_LEN);
+	  datas_num+=sizes;
+	  ptw+=sizes;
+	}
+	ptrd+=size;
+	bcd_dec(dtime,ptrd+WIN_BLOCKSIZE_LEN);
+      } /* while(time_cmp(dtime,tim_trg_end,WIN_TIME_LEN)<=0 && ptrd<data+data_num) */
+      if(datas_num==0){
+	FREE(datas);
+	continue;  /* There is no selected data, go to next trg file */
+      }
+#if DEBUG1
+      fprintf(stderr,"\t\t datas_num=%ld\n",datas_num);
+      fflush(stderr);
+#endif
+
+      if((fptrg=fopen(outname,"r"))==NULL) continue;
+      sprintf(addname,"%s/%s.%d",cnt->tmp_dir,TMP_ADD_NAME,getpid());
+      if((fpadd=fopen(addname,"w"))==NULL){
+	fprintf(stderr,"Cannot create file: '%s'\n",addname);
+	end_prog(-4);
+      }
+      ptrs=datas;
+      for(j=0;j<WIN_TIME_LEN;++j) dttime[j]=tim_trg_start[j];
+      bcd_dec(dstime,datas+WIN_BLOCKSIZE_LEN);
+#if DEBUG1>5
+      fprintf(stderr,"aa dstime=%02d%02d%02d.%02d%02d%02d dttime=%02d%02d%02d.%02d%02d%02d\n",dstime[0],dstime[1],dstime[2],dstime[3],dstime[4],dstime[5],
+dttime[0],dttime[1],dttime[2],dttime[3],dttime[4],dttime[5]);
+      fflush(stderr);
+#endif
+      /* merge data */
+      while(fread(&a,1,WIN_BLOCKSIZE_LEN,fptrg)==WIN_BLOCKSIZE_LEN){
+	sizet=(WIN_blocksize)mklong((unsigned char *)&a)-WIN_BLOCKSIZE_LEN;
+	if((datat=MALLOC(unsigned char,sizet))==NULL) memory_error();
+	if(fread(datat,1,sizet,fptrg)!=sizet){
+	  FREE(datat);
+	  fwrite(ptrs,1,datas_num-(WIN_blocksize)(ptrs-datas),fpadd);
+	  break;
+	}
+	if(!bcd_dec(dttime,datat)){
+	  FREE(datat);
+	  continue; /* skip in case of strange time stamp in trg file */
+	}
+	/* output only trg data, if time stamp differ */
+#if DEBUG1>10
+	fprintf(stderr,"dstime=%02d%02d%02d.%02d%02d%02d dttime=%02d%02d%02d.%02d%02d%02d\n",dstime[0],dstime[1],dstime[2],dstime[3],dstime[4],dstime[5],
+dttime[0],dttime[1],dttime[2],dttime[3],dttime[4],dttime[5]);
+	fflush(stderr);
+#endif
+	if(time_cmp(dstime,dttime,WIN_TIME_LEN)){
+	  fwrite(&a,1,WIN_BLOCKSIZE_LEN,fpadd);
+	  fwrite(datat,1,sizet,fpadd);
+	}
+	/* In case of time stamp same */
+	else{
+	  size=(WIN_blocksize)mklong(ptrs)-WIN_BLOCKSIZE_LEN;
+	  ptrs+=WIN_BLOCKSIZE_LEN;
+	  if((datam=MALLOC(unsigned char,size))==NULL) memory_error();
+	  sizem=get_merge_data(datam,datat,&sizet,ptrs,&size);
+#if DEBUG1>5
+	  fprintf(stderr,"sizem=%ld  ",sizem);
+	  fprintf(stderr,"dstime=%02d%02d%02d.%02d%02d%02d dttime=%02d%02d%02d.%02d%02d%02d\n",dstime[0],dstime[1],dstime[2],dstime[3],dstime[4],dstime[5],
+dttime[0],dttime[1],dttime[2],dttime[3],dttime[4],dttime[5]);
+	  fflush(stderr);
+#endif
+	  sizew=WIN_BLOCKSIZE_LEN+sizet+sizem;
+	  size_arr[0]=sizew>>24;
+	  size_arr[1]=sizew>>16;
+	  size_arr[2]=sizew>>8;
+	  size_arr[3]=sizew;
+	  fwrite(size_arr,1,WIN_BLOCKSIZE_LEN,fpadd); /* write block_size */
+	  fwrite(datat,1,sizet,fpadd); /* write trg data part */
+	  fwrite(datam,1,sizem,fpadd); /* write add data part */
+	  FREE(datam);
+	  ptrs+=size;
+	  if(ptrs<datas+datas_num)
+	    bcd_dec(dstime,ptrs+WIN_BLOCKSIZE_LEN);
+	  else
+	    dstime[0]=-1;
+	} /* if(time_cmp(dstime,dttime,WIN_TIME_LEN)) */
+	FREE(datat);
+      } /* while(fread(&a,1,WIN_BLOCKSIZE_LEN,fptrg)==WIN_BLOCKSIZE_LEN) */
+      fclose(fpadd);
+      sprintf(cmdbuf,"cp %s %s",addname,outname);
+      system(cmdbuf);
+      unlink(addname);
+      fclose(fptrg);
+      FREE(datas);
+    } /* while((dir_ent=readdir(dir_ptr))!=NULL) */
+    closedir(dir_ptr);
+    FREE(data);
+  } /* while(fread(&a,1,WIN_BLOCKSIZE_LEN,fp)==WIN_BLOCKSIZE_LEN) (1) */
+
+insert_end:
+  fclose(fp);
+}
+
+void
+main(int argc, char *argv[])
+{
+  FILE  *fp;
+  struct Cnt_file  cnt;
+  int  status;
+  int  time_flag,bad_flag,wait_flag;
+  int  tim[5],tim_end[5];
+  int  tim_junk_oldest[5],tim_junk_latest[5];
+  int  i;
+
+  if((progname=strrchr(argv[0],'/'))) progname++;
+  else progname=argv[0];
+
+  if(argc<2){
+    print_usage();
+    exit(0);
+  }
+  if(argc>3) time_flag=1;
+  else time_flag=0;
+
+  printf("*****  %s start  *****\n",progname);
+
+  /** read parameter file **/
+  if((status=read_param(argv[1],&cnt))) end_prog(status);
+#if DEBUG
+  fprintf(stderr,"trg:  %s\njunk: %s\ntmp:  %s\n",
+	  cnt.trg_dir,cnt.junk_dir,cnt.tmp_dir);
+  fflush(stderr);
+#endif
+
+  /** set names of control files **/
+  sprintf(cnt.junk_used,"%s/%s",cnt.junk_dir,INSERT_TRG_USED);
+  sprintf(cnt.junk_latst,"%s/%s",cnt.junk_dir,WDISKT_LATEST);
+  sprintf(cnt.junk_oldst,"%s/%s",cnt.junk_dir,WDISKT_OLDEST);
+  sprintf(cnt.trg_latst,"%s/%s",cnt.trg_dir,EVENTS_LATEST);
+  sprintf(cnt.trg_oldst,"%s/%s",cnt.trg_dir,EVENTS_OLDEST);
+#if DEBUG
+  fprintf(stderr,"used: %s\nlatst: %s\n",cnt.junk_used,cnt.junk_latst);
+  fprintf(stderr,"oldest: %s\n",cnt.junk_oldst);
+  fprintf(stderr,"out latest: %s\nout oldest: %s\n",
+	  cnt.trg_latst,cnt.trg_oldst);
+  fprintf(stderr,"wait time: %d [min.]\n",cnt.wait_min);
+  fflush(stderr);
+#endif
+
+  /** set begin time **/
+  if(time_flag){
+    if(sscanf(argv[2],
+	      "%2d%2d%2d%2d.%2d",&tim[0],&tim[1],&tim[2],&tim[3],&tim[4])<5){
+      fprintf(stderr,"'%s' illegal time.\n",argv[2]);
+      end_prog(-1);
+    }
+    if(sscanf(argv[3],"%2d%2d%2d%2d.%2d",
+	      &tim_end[0],&tim_end[1],&tim_end[2],&tim_end[3],&tim_end[4])<5){
+      fprintf(stderr,"'%s' illegal time.\n",argv[3]);
+      end_prog(-1);
+    }
+    tim[4]--;
+    /* adj_time_m(tim); */
+    cnt.wait_min=0;
+  }
+  else{ /* if(time_flag) */
+    do{
+      /* read USED or LATEST file to get start time */
+      if((fp=fopen(cnt.junk_used,"r"))==NULL){
+	while((fp=fopen(cnt.junk_latst,"r"))==NULL){
+	  fprintf(stderr,"'%s' not found. Waiting ...\n",cnt.junk_latst);
+	  sleep(30);
+	}
+      }
+      if(fscanf(fp,"%2d%2d%2d%2d.%2d",
+		&tim[0],&tim[1],&tim[2],&tim[3],&tim[4])>=5) bad_flag=0;
+      else{
+	bad_flag=1;
+	fprintf(stderr,"'%s' illegal. Waiting ...\n",cnt.junk_dir);
+	sleep(30);
+      }
+      fclose(fp);
+    } while(bad_flag);
+  } /* if(time_flag) */
+#if DEBUG
+  fprintf(stderr,"begin: %02d%02d%02d%02d.%02d\n",
+	  tim[0],tim[1],tim[2],tim[3],tim[4]);
+  fflush(stderr);
+#endif
+  
+  signal(SIGINT,end_prog);
+  signal(SIGTERM,end_prog);
+
+  while(1){
+    tim[4]++;
+    adj_time_m(tim);
+#if DEBUG
+    /*sleep(1);*/
+    fprintf(stderr,"timeout data: %02d%02d%02d%02d.%02d\n",
+	    tim[0],tim[1],tim[2],tim[3],tim[4]);
+    fflush(stderr);
+#endif
+    if(time_flag){
+      if(time_cmp(tim,tim_end,5)==1) end_prog(0);
+    }
+    /* compare with oldest */
+    rmemo5(cnt.junk_oldst,tim_junk_oldest);
+    if(time_cmp(tim,tim_junk_oldest,5)<0)
+      for(i=0;i<5;++i) tim[i]=tim_junk_oldest[i];
+    /* compare with latest */
+    do{
+      rmemo5(cnt.junk_latst,tim_junk_latest);
+      /*fprintf(stderr,"%02d%02d%02d%02d.%02d-%02d%02d%02d%02d.%02d\n",
+	      tim[0],tim[1],tim[2],tim[3],tim[4],
+	      tim_junk_latest[0],tim_junk_latest[1],
+	      tim_junk_latest[2],tim_junk_latest[3],tim_junk_latest[4]);*/
+      for(i=0;i<cnt.wait_min;++i){ /* set wait time */
+	tim_junk_latest[4]--;
+	adj_time_m(tim_junk_latest);
+      }
+      if(time_cmp(tim,tim_junk_latest,5)<=0) wait_flag=0;
+      else{
+	wait_flag=1;
+#if DEBUG
+	fprintf(stderr,"Waiting junk LATEST:%02d%02d%02d%02d.%02d + %d\n",
+		tim[0],tim[1],tim[2],tim[3],tim[4],cnt.wait_min);
+	fflush(stderr);
+#endif
+	sleep(5); /* wait junk new LATEST */
+      }
+    } while(wait_flag);
+    
+    do_insert(tim,&cnt);
+
+    if(!time_flag && (status=wmemo5(cnt.junk_used,tim)))
+      end_prog(status);
+  }/* while(1) */
+}

@@ -1,7 +1,9 @@
-$Id: ChangeLog,v 1.51 2003/11/03 03:47:15 uehira Exp $
+$Id: ChangeLog,v 1.52 2003/11/03 10:08:01 uehira Exp $
 
 2003-11-03 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* insert_trg : bug fix
+	* winadd : add memory mode.
+	           first, try to read all files and write into memory.
 	* Version 1.1.25 released.
 
 2003-10-29 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>

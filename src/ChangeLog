@@ -1,4 +1,7 @@
-$Id: ChangeLog,v 1.4 2002/01/13 08:38:15 uehira Exp $
+$Id: ChangeLog,v 1.5 2002/01/14 11:52:18 uehira Exp $
+
+2002-01-14 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 1.0.0 released.
 
 2002-01-13 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* join 'autoconf branch' to 'main branch'

@@ -1,4 +1,8 @@
-$Id: ChangeLog,v 1.24 2003/04/04 04:29:30 urabe Exp $
+$Id: ChangeLog,v 1.25 2003/04/08 12:24:37 urabe Exp $
+
+2003-04-8 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
+        * send_raw.c : added option -1 for 1 packet/sec mode
+	* Version 1.1.13 released.
 
 2003-04-4 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
 	* recvts.c : avoid overwrite ch_table[] by memcpy(rbuf)

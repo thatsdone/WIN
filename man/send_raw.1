@@ -4,7 +4,7 @@ send_raw, send_mon, sendt_raw, sendt_mon - IPによる win 形式データの送信
 .SH 形式
 .IP
 .ti -7
-send_raw [\-\fBarmt\fR] [\-\fBb\fI\ mtu\fR] [\-\fBi\fI\ interface\fR]
+send_raw [\-\fB1armt\fR] [\-\fBb\fI\ mtu\fR] [\-\fBi\fI\ interface\fR]
 [\-\fBh\fI\ hours\fR] [\-\fBp\fI\ src_port\fR] [\-\fBs\fI\ sec\fR] [\-\fBT\fI\ ttl\fR] [\-\fBw\fI\ key\fR]
 .I shmkey
 .I dest
@@ -78,6 +78,10 @@ send_raw, send_mon, sendt_raw, sendt_mon プロセスは
 .SH ネットワーク上の形式と再送プロトコル
 recvt(1W)を参照してください。
 .SH オプション
+.IP \fB\-1 5
+１パケットに複数秒分のデータを詰め込むことをしません。データ量が
+少ない場合に、MTUに近い大きさまでデータが貯るのを待って遅延が
+大きくなってしまうことを避けることができます。
 .IP \fB\-a 5
 共有メモリ上のデータ形式を，「パケット種別付き」（recvs(1W) 参照）
 とみなし，そのままの形式で送信します。この場合，チャネルファイルに

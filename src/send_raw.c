@@ -1,4 +1,4 @@
-/* $Id: send_raw.c,v 1.14 2002/12/08 04:55:37 urabe Exp $ */
+/* $Id: send_raw.c,v 1.15 2003/04/08 12:24:38 urabe Exp $ */
 /*
     program "send_raw/send_mon.c"   1/24/94 - 1/25/94,5/25/94 urabe
                                     6/15/94 - 6/16/94
@@ -40,6 +40,7 @@
                2002.5.15 standby mode (-w SHMKEY) / packet statistics on HUP
                2002.9.19 added option -T to set TTL (-T ttl)
                2002.11.29 added option -p to set source port (-p src_port)
+               2003.4.8 added option -1 for 1 packet/sec mode
 */
 
 #ifdef HAVE_CONFIG_H
@@ -315,7 +316,7 @@ main(argc,argv)
   unsigned long uni;
   int i,j,k,c_save,shp,aa,bb,ii,bufno,bufno_f,fromlen,hours_shift,sec_shift,c,
     kk,nw,eobsize,eobsize_count,size2,size,gs,sr,re,shmid,shwid,atm,c_save_w,
-    standby,ttl;
+    standby,ttl,single;
   struct sockaddr_in to_addr,from_addr;
   struct hostent *h;
   unsigned short host_port,ch,src_port;
@@ -347,7 +348,7 @@ main(argc,argv)
   else if(strcmp(progname,"sendt_mon")==0) {raw=0;tow=1;}
   else exit(1);
   sprintf(tbuf,
-" usage : '%s (-amrt) (-b [mtu]) (-h [h]) (-i [interface]) (-s [s])\\\n\
+" usage : '%s (-1amrt) (-b [mtu]) (-h [h]) (-i [interface]) (-s [s])\\\n\
    (-p [src_port]) (-w [key]) (-T [ttl]) [shmkey] [dest] [port] ([chfile]/- ([logfile]))'",
     progname);
 
@@ -357,10 +358,14 @@ main(argc,argv)
   shw_key=(-1);
   standby=0;
   src_port=0;
-  while((c=getopt(argc,argv,"ab:h:i:mp:rs:tw:T:"))!=EOF)
+  single=0;
+  while((c=getopt(argc,argv,"1ab:h:i:mp:rs:tw:T:"))!=EOF)
     {
     switch(c)
       {
+      case '1':   /* "single" mode */
+        single=1;
+        break;
       case 'a':   /* "all" mode */
         all=tow=1;
         break;
@@ -660,6 +665,7 @@ reset:
         if(ptw+gs-ptw_save>mtu-28)
           {
           if(j==0) ptw-=8;
+send_packet:
 #if TEST_RESEND
           if(no%10!=9) {
 #endif
@@ -734,6 +740,11 @@ reset:
         j++;
         }
       i++;
+      if(single && ptr>=ptr_lim && ptw-ptw_save>11)
+        {
+        gs=0;
+        goto send_packet;
+        }
       }
 #if DEBUG
     fprintf(stderr,"\007");

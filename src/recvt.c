@@ -1,4 +1,4 @@
-/* $Id: recvt.c,v 1.3 2000/05/01 04:20:46 urabe Exp $ */
+/* $Id: recvt.c,v 1.4 2001/02/20 10:21:04 urabe Exp $ */
 /* "recvt.c"      4/10/93 - 6/2/93,7/2/93,1/25/94    urabe */
 /*                2/3/93,5/25/94,6/16/94 */
 /*                1/6/95 bug in adj_time fixed (tm[0]--) */
@@ -24,6 +24,7 @@
 /*                2000.4.24 strerror() */
 /*                2000.4.25 added check_time() in >=A1 format */
 /*                2000.4.26 host control, statistics, -a, -m, -p options */
+/*                2001.2.20 wincpy() improved */
 
 #include <stdio.h>
 #include <signal.h>
@@ -542,16 +543,20 @@ wincpy(ptw,ptr,size)
     ch=(gh>>16)&0xffff;
     sr=gh&0xfff;
     ss=(gh>>12)&0xf;
-    if(sr>MAX_SR || ss>MAX_SS)
-      {
-      sprintf(tb,"ill ch hdr %02X%02X%02X%02X %02X%02X%02X%02X",
-            ptr[0],ptr[1],ptr[2],ptr[3],ptr[4],ptr[5],ptr[6],ptr[7]);
-      write_log(logfile,tb);
-      return n;
-      }
     if(ss) gs=ss*(sr-1)+8;
     else gs=(sr>>1)+8;
-    if(ch_table[ch])
+    if(sr>MAX_SR || ss>MAX_SS || ptr+gs>ptr_lim)
+      {
+#if DEBUG2
+      sprintf(tb,
+"ill ch hdr %02X%02X%02X%02X %02X%02X%02X%02X psiz=%d sr=%d ss=%d gs=%d rest=%d",
+        ptr[0],ptr[1],ptr[2],ptr[3],ptr[4],ptr[5],ptr[6],ptr[7],
+        size,sr,ss,gs,ptr_lim-ptr);
+      write_log(logfile,tb);
+#endif
+      return n;
+      }
+    if(ch_table[ch] && ptr+gs<=ptr_lim)
       {
 #if DEBUG1
       fprintf(stderr,"%5d",gs);

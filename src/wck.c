@@ -1,4 +1,4 @@
-/* $Id: wck.c,v 1.3 2000/08/10 04:51:20 urabe Exp $ */
+/* $Id: wck.c,v 1.4 2000/08/14 05:50:07 urabe Exp $ */
 /* 
    program "wck.c"
 	"wck" checks a win format data file
@@ -11,6 +11,7 @@
         99.4.19  BE/LE urabe
         2000.2.1 added "Count" mode
         2000.8.10 added "Table" mode
+        2000.8.14 Count and Table modes made independent
 */
 
 #include <stdio.h>
@@ -91,6 +92,7 @@ main(argc,argv)
          break;
        case 't':   /* "Table" mode (in Count mode) */
          mode|=TABLE;
+         for(i=0;i<65536;i++) count[i]=0;
          break;
        case 'u':   /* show usage */
        default:
@@ -125,7 +127,7 @@ main(argc,argv)
      do
        {
        sysch=ptr[1]+(((long)ptr[0])<<8);
-       if(mode&COUNT) count[sysch]++;
+       if(mode&(COUNT|TABLE)) count[sysch]++;
        if(mode&MON)
          {
          gs=2;
@@ -134,7 +136,7 @@ main(argc,argv)
            gs+=j+1;
            if(j==0) gs++;
            }
-         if(!(mode&COUNT) && sec==ss) {
+         if(!(mode&(COUNT|TABLE)) && sec==ss) {
            printf("%4d : ch %04X    %3d Hz  %4d B\n",nch+1,sysch,SR_MON,gs);
            }
          }
@@ -150,7 +152,7 @@ main(argc,argv)
 printf("gs=%d gh=%02x%02x%02x%02x%02x sr=%d gs=%d ptr=%08x ptr_lim=%08x\n",
   gs,ptr[0],ptr[1],ptr[2],ptr[3],ptr[4],sr,gs,ptr,ptr_lim); 
 #endif
-           if(!(mode&COUNT) && sec==ss)
+           if(!(mode&(COUNT|TABLE)) && sec==ss)
              {
              switch(size)
                {
@@ -186,7 +188,7 @@ printf("gs=%d gh=%02x%02x%02x%02x%02x sr=%d gs=%d ptr=%08x ptr_lim=%08x\n",
              if(size) gs=size*(sr-1)+8;
              else gs=(sr>>1)+8;
              gs++;
-             if(!(mode&COUNT) && sec==ss)
+             if(!(mode&(COUNT|TABLE)) && sec==ss)
                {
                switch(size)
                  {
@@ -218,7 +220,7 @@ printf("gs=%d gh=%02x%02x%02x%02x%02x sr=%d gs=%d ptr=%08x ptr_lim=%08x\n",
              sr=ptr[3]+(((long)(ptr[2]&0x03))<<8);
              size=((ptr[2]>>2)&0x1F)+1; /* in bits */
              gs=((sr-1)*size-1)/8+1+8;
-             if(!(mode&COUNT) && sec==ss)
+             if(!(mode&(COUNT|TABLE)) && sec==ss)
                printf("%4d : ch %04X    %3d Hz  x  %2d b  = %4d B\n",
                nch+1,sysch,sr,size,gs);
              }
@@ -227,7 +229,7 @@ printf("gs=%d gh=%02x%02x%02x%02x%02x sr=%d gs=%d ptr=%08x ptr_lim=%08x\n",
        ptr+=gs;
        nch++;
        } while(ptr<ptr_lim);
-     if(!(mode&COUNT))
+     if(!(mode&(COUNT|TABLE)))
        {
        if(sec==ss) printf("\n");
        printf("%4d : %02x%02x%02x %02x%02x%02x",sec+1,mainbuf[4],
@@ -237,8 +239,8 @@ printf("gs=%d gh=%02x%02x%02x%02x%02x sr=%d gs=%d ptr=%08x ptr_lim=%08x\n",
      ts+=mainsize;
      sec++;
    }
-   if(!(mode&COUNT)) printf("\nlength = %d s  (%d bytes)\n\n",sec,ts);
-   else if(mode&TABLE)
+   if(!(mode&(COUNT|TABLE))) printf("\nlength = %d s  (%d bytes)\n\n",sec,ts);
+   if(mode&TABLE)
      {
      chs=chs16=0;
      printf("    +000             +100             +200             +300\n");
@@ -263,6 +265,7 @@ printf("gs=%d gh=%02x%02x%02x%02x%02x sr=%d gs=%d ptr=%08x ptr_lim=%08x\n",
        }
      printf("%d chs used (max %d)\n",chs,0x10000);
      }
-   else {for(i=0;i<65536;i++) if(count[i]>0) printf("%04X %d\n",i,count[i]);}
+   if(mode&COUNT)
+     {for(i=0;i<65536;i++) if(count[i]>0) printf("%04X %d\n",i,count[i]);}
    exit(0);
 }

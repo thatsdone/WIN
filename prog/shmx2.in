@@ -1,6 +1,6 @@
 #! @WISH@
 #
-# $Id: shmx2.in,v 1.4 2002/08/12 04:48:48 tsuru Exp $
+# $Id: shmx2.in,v 1.5 2002/08/19 01:55:26 tsuru Exp $
 # shmx2 
 # 2002.06.28- (C) Hiroshi TSURUOKA / All Rights Reserved.
 #
@@ -20,8 +20,35 @@
 #         1.2.0.1 2002/08/09 -m option
 #         1.2.0.2 2002/08/09 -q option
 #         1.4 2002/08/12 plot 1sec data
+#         1.5 2002/08/12 julday
 #
-set version 1.4
+set version 1.5
+
+# NR f77 -> tcl
+# 2002/08/12 Hiroshi TSURUOKA
+proc julday { mm id iyyy } {
+set  igreg [expr int(15+31*(10+12*1582))]
+if { $iyyy == 0 } {
+	puts "there is no year zero."
+}
+if { $iyyy<0 } {
+	set iyyy [expr $iyyy+1]
+}
+if { $mm>2 } {
+   set jy $iyyy
+   set jm [expr $mm + 1]
+} else {
+   set jy [expr $iyyy - 1]
+   set jm [expr $mm + 13]
+}
+set julday [expr int(365.25*$jy)+int(30.6001*$jm)+$id+1720995]
+if { [expr $id+31*($mm+12*$iyyy)] >= $igreg } {
+   set ja [expr int(0.01*$jy)]
+   set julday [expr $julday+2-$ja+int(0.25*$ja)]
+}
+return $julday;
+}
+
 #fconfigure stdin -buffering none
 #console show
 
@@ -54,7 +81,7 @@ for { set j 0 } { $j < $argc } { incr j } {
 	set optflag [string range $tmpargv 0 1]
 	if { $optflag == "-m" } {
 		set min [string range $tmpargv 2 [string length $tmpargv]]
-		if { $min > 60 } { set min 60 }
+#		if { $min > 60 } { set min 60 }
 		set nsec [expr 60*$min]
 	} elseif { $optflag == "-n" } {
 		set nline [string range $tmpargv 2 [string length $tmpargv]]
@@ -280,8 +307,12 @@ while {![eof $fp]} {
 	gets $fp line
 	scan $line "%d %d %d %d %d %d %d" yr mo dy hr mi sc nch
 #	if { $mi0 == -999 } { set mi0 $mi }
-	if { $mi0 == -999 } { set mi0 0; set hr0 0; }
-	set mm [expr 60*($hr - $hr0) + $mi - $mi0]
+	if { $mi0 == -999 } { 
+		set mi0 0; set hr0 0;
+		set jul0 [julday $mo $dy [expr 2000+$yr]]
+	}
+	set jul [julday $mo $dy [expr 2000+$yr]]
+	set mm [expr 1440*($jul-$jul0)+60*($hr - $hr0) + $mi - $mi0]
 	set nx [expr 60*($mm%$min)+$sc]
 	set ny [expr int($mm/$min)%$nline]
 	if { $pipe } { puts $line }

@@ -19,6 +19,7 @@
 /*  2003.6.1 bug fix (-f) mode */
 /*  2003.6.4 output filtering info to stderr (tsuru) */
 /*  2003.7.24 -x (hexadecimal dump) and -f (file output) */
+/*  2003.11.3 splitted sprintf(tb,...) / use time_t */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -77,7 +78,7 @@ get_time(rt)
   int *rt;
   {
   struct tm *nt;
-  unsigned long ltime;
+  time_t ltime;
   time(&ltime);
   nt=localtime(&ltime);
   rt[0]=nt->tm_year%100;
@@ -668,7 +669,8 @@ main(argc,argv)
     ch,sr,gs,size,chsel,nch,search,seconds,tbufp,bufsize,zero,nsec,aa,bb,end,
     eobsize,eobsize_count,size2,tout,abuf[4096],bufsize_in,rawdump,quiet,
     hexdump;
-  unsigned long tow,wsize,time_end,time_now;
+  time_t tow,time_end,time_now;
+  unsigned long wsize;
   unsigned int packet_id;
   unsigned char *ptr,tbuf[256],*ptr_lim,*buf,chlist[65536/8],*ptw,tms[6],
     tb[256],*ptr1,*ptr_save;
@@ -695,13 +697,12 @@ main(argc,argv)
 
   if(progname=strrchr(argv[0],'/')) progname++;
   else progname=argv[0];
-  sprintf(tb,
-    " usage : '%s (-amoqrtwxz) (-s [s]) (-f [chfile]/-) [shm_key]/- 
-          (-L [fp]:[fs]:[ap]:[as] -H [fp]:[fs]:[ap]:[as] -B [fl]:[fh]:[fs]:[ap]:[as]) 
-          (-R [freq]) ([ch] ...)'",
-      progname);
-  search=out=all=seconds=win=zero=mon=tout=rawdump=quiet=
-    hexdump=0;
+  sprintf(tb," usage : '%s (-amoqrtwxz) (-s [s]) (-f [chfile]/-) (-R [freq])\n", 
+    progname);
+  strcat(tb,
+    "   (-L [fp]:[fs]:[ap]:[as] -H [fp]:[fs]:[ap]:[as] -B [fl]:[fh]:[fs]:[ap]:[as])\n");
+  strcat(tb,"   [shm_key]/- ([ch] ...)'");
+  search=out=all=seconds=win=zero=mon=tout=rawdump=quiet=hexdump=0;
   fplist=stdout;
   *fname=0;
 

@@ -1,4 +1,4 @@
-/* $Id: send_raw.c,v 1.4 2001/11/14 10:22:30 urabe Exp $ */
+/* $Id: send_raw.c,v 1.5 2001/11/14 10:58:56 urabe Exp $ */
 /*
     program "send_raw/send_mon.c"   1/24/94 - 1/25/94,5/25/94 urabe
                                     6/15/94 - 6/16/94
@@ -26,7 +26,7 @@
                                   2000.4.17 deleted definition of usleep() 
                                   2000.4.24 strerror()
                                   2001.8.19 send interval control
-                                  2001.11.14 strerror()
+                                  2001.11.14 strerror(),ntohs()
 */
 
 #include <stdio.h>
@@ -631,7 +631,8 @@ reset:
                 fprintf(stderr,"\n");
 #endif
                 sprintf(tbuf,"resend for %s:%d #%d as #%d, %d B",
-                  inet_ntoa(from_addr.sin_addr),from_addr.sin_port,no_f,no,re);
+                  inet_ntoa(from_addr.sin_addr),ntohs(from_addr.sin_port),
+                  no_f,no,re);
                 write_log(logfile,tbuf);
                 if(++bufno==BUFNO) bufno=0;
                 no++;

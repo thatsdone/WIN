@@ -1,4 +1,4 @@
-/* $Id: recvt.c,v 1.6 2001/11/14 10:22:30 urabe Exp $ */
+/* $Id: recvt.c,v 1.7 2001/11/14 10:58:56 urabe Exp $ */
 /* "recvt.c"      4/10/93 - 6/2/93,7/2/93,1/25/94    urabe */
 /*                2/3/93,5/25/94,6/16/94 */
 /*                1/6/95 bug in adj_time fixed (tm[0]--) */
@@ -26,7 +26,7 @@
 /*                2000.4.26 host control, statistics, -a, -m, -p options */
 /*                2001.2.20 wincpy() improved */
 /*                2001.3.9 debugged for sh->r */
-/*                2001.11.14 strerror() */
+/*                2001.11.14 strerror(),ntohs() */
 
 #include <stdio.h>
 #include <signal.h>
@@ -508,7 +508,7 @@ check_pno(from_addr,pn,pn_f,sock,fromlen,n) /* returns -1 if duplicated */
       pnc=pn_1;
       sendto(sock,&pnc,1,0,from_addr,fromlen);
       sprintf(tb,"request resend %s:%d #%d",
-        inet_ntoa(from_addr->sin_addr),from_addr->sin_port,pn_1);
+        inet_ntoa(from_addr->sin_addr),ntohs(from_addr->sin_port),pn_1);
       write_log(logfile,tb);
 #if DEBUG1
       printf("<%d ",pn_1);
@@ -740,7 +740,7 @@ main(argc,argv)
           sprintf(tb,"ill time %02X:%02X %02X%02X%02X.%02X%02X%02X:%02X%02X%02X%02X%02X%02X%02X%02X from %s:%d",
             rbuf[0],rbuf[1],rbuf[2],rbuf[3],rbuf[4],rbuf[5],rbuf[6],rbuf[7],
             rbuf[8],rbuf[9],rbuf[10],rbuf[11],rbuf[12],rbuf[13],rbuf[14],
-            rbuf[15],inet_ntoa(from_addr.sin_addr),from_addr.sin_port);
+            rbuf[15],inet_ntoa(from_addr.sin_addr),ntohs(from_addr.sin_port));
           write_log(logfile,tb);
 #endif
           for(i=0;i<6;i++) tm[i]=(-1);
@@ -815,7 +815,7 @@ main(argc,argv)
               rbuf[j],rbuf[j+1],rbuf[j+2],rbuf[j+3],rbuf[j+4],rbuf[j+5],
               rbuf[j+6],rbuf[j+7],rbuf[j+8],rbuf[j+9],rbuf[j+10],rbuf[j+11],
               rbuf[j+12],rbuf[j+13],
-              inet_ntoa(from_addr.sin_addr),from_addr.sin_port);
+              inet_ntoa(from_addr.sin_addr),ntohs(from_addr.sin_port));
             write_log(logfile,tb);
 #endif
             for(i=0;i<6;i++) tm[i]=(-1);
@@ -848,7 +848,8 @@ main(argc,argv)
         sprintf(tb,"ill time %02X:%02X %02X %02X%02X%02X.%02X%02X%02X:%02X%02X%02X%02X%02X%02X%02X%02X from %s:%d",
           rbuf[0],rbuf[1],rbuf[2],rbuf[3],rbuf[4],rbuf[5],rbuf[6],rbuf[7],
           rbuf[8],rbuf[9],rbuf[10],rbuf[11],rbuf[12],rbuf[13],rbuf[14],
-          rbuf[15],rbuf[16],inet_ntoa(from_addr.sin_addr),from_addr.sin_port);
+          rbuf[15],rbuf[16],inet_ntoa(from_addr.sin_addr),
+          ntohs(from_addr.sin_port));
         write_log(logfile,tb);
 #endif
         for(i=0;i<6;i++) tm[i]=(-1);

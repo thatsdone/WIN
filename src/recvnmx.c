@@ -1,9 +1,9 @@
-/* $Id: recvnmx.c,v 1.8 2001/11/14 10:22:30 urabe Exp $ */
+/* $Id: recvnmx.c,v 1.9 2001/11/14 10:58:56 urabe Exp $ */
 /* "recvnmx.c"    2001.7.18-19 modified from recvt.c and nmx2raw.c  urabe */
 /*                2001.8.18 */
 /*                2001.10.5 workaround for hangup */
 /*                2001.11.2 workaround for bundle types 32,33,34,13 */
-/*                2001.11.14 strerror()*/
+/*                2001.11.14 strerror(), ntohs()*/
 
 #include <stdio.h>
 #include <signal.h>
@@ -703,7 +703,7 @@ main(argc,argv)
     else winch=(pk.serno<<5)+pk.ch;
     if(verbose)
  printf("%s:%d>%02X %02d/%02d/%02d %02d:%02d:%02d.%04d %s#%d p#%d %dHz ch%d x0=%d %04X\n",
-        inet_ntoa(from_addr.sin_addr),from_addr.sin_port,
+        inet_ntoa(from_addr.sin_addr),ntohs(from_addr.sin_port),
         pk.ptype,pk.t->tm_year%100,pk.t->tm_mon+1,pk.t->tm_mday,pk.t->tm_hour,
         pk.t->tm_min,pk.t->tm_sec,pk.subsec,pk.model,pk.serno,pk.seq,
         pk.sr,pk.ch,pk.first,winch);

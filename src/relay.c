@@ -1,4 +1,4 @@
-/* $Id: relay.c,v 1.3 2001/11/14 10:22:30 urabe Exp $ */
+/* $Id: relay.c,v 1.4 2001/11/14 10:58:56 urabe Exp $ */
 /* "relay.c"      5/23/94-5/25/94,6/15/94-6/16/94,6/23/94,3/16/95 urabe */
 /*                3/26/95 check_packet_no; port# */
 /*                5/24/96 added processing of "host table full" */
@@ -9,6 +9,7 @@
 /*                97.9.3               &50000 */ 
 /*                98.6.30 FreeBSD */ 
 /*                2000.4.24/2001.11.14 strerror() */
+/*                2001.11.14 ntohs() */
 
 #include <stdio.h>
 #include <signal.h>
@@ -157,7 +158,7 @@ check_pno(from_addr,pn,pn_f,sock,fromlen) /* returns -1 if duplicated */
       pnc=pn_1;
       sendto(sock,&pnc,1,0,from_addr,fromlen);
       sprintf(tb,"request resend %s:%d #%d",
-        inet_ntoa(from_addr->sin_addr),from_addr->sin_port,pn_1);
+        inet_ntoa(from_addr->sin_addr),ntohs(from_addr->sin_port),pn_1);
       write_log(logfile,tb);
 #if DEBUG1
       printf("<%d ",pn_1);
@@ -309,7 +310,7 @@ main(argc,argv)
           re=sendto(sock_out,sbuf[bufno],psize[bufno],0,&to_addr,
             sizeof(to_addr));
           sprintf(tb,"resend to %s:%d #%d as #%d, %d B",
-            inet_ntoa(to_addr.sin_addr),to_addr.sin_port,no_f,no,re);
+            inet_ntoa(to_addr.sin_addr),ntohs(to_addr.sin_port),no_f,no,re);
           write_log(logfile,tb);
 #if DEBUG
           for(i=0;i<8;i++) fprintf(stderr,"%02X",sbuf[bufno][i]);

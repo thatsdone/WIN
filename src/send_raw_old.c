@@ -1,4 +1,4 @@
-/* $Id: send_raw_old.c,v 1.4 2001/11/14 10:22:30 urabe Exp $ */
+/* $Id: send_raw_old.c,v 1.5 2001/11/14 10:58:56 urabe Exp $ */
 /*
     program "send_raw_old/send_mon_old.c"   1/24/94 - 1/25/94,5/25/94 urabe
                                     6/15/94 - 6/16/94
@@ -11,7 +11,7 @@
                                   2000.4.17 deleted definition of usleep()
                                   2000.4.24 strerror()
                           2000.9.7 multiple resend-request by MEISEI < 1/30/97
-                                  2001.11.14 strerror()
+                                  2001.11.14 strerror(),ntohs()
 */
 
 #include <stdio.h>
@@ -413,7 +413,7 @@ reset:
           sbuf[bufno][1]=no_f;  /* old packet no. */
           re=sendto(sock,sbuf[bufno],psize[bufno],0,&to_addr,sizeof(to_addr));
           sprintf(tbuf,"resend to %s:%d #%d as #%d, %d B",
-            inet_ntoa(to_addr.sin_addr),to_addr.sin_port,no_f,no,re);
+            inet_ntoa(to_addr.sin_addr),ntohs(to_addr.sin_port),no_f,no,re);
           write_log(logfile,tbuf);
           if(++bufno==BUFNO) bufno=0;
           no++;

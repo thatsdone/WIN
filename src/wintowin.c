@@ -1,6 +1,7 @@
 /* 
    win text format to win format 
    2003.06.22- (C) Hiroshi TSURUOKA / All Rights Reserved.   
+        06.30  bug fix & add fflush
  */
 
 #ifdef HAVE_CONFIG_H
@@ -17,7 +18,7 @@
 /* #define SR 4096 */
 #define SR 200
 
-/* $Id: wintowin.c,v 1.1 2003/06/22 08:45:06 tsuru Exp $ */
+/* $Id: wintowin.c,v 1.2 2003/06/30 05:40:21 tsuru Exp $ */
 /* winform.c  4/30/91,99.4.19   urabe */
 /* winform converts fixed-sample-size-data into win's format */
 /* winform returns the length in bytes of output data */
@@ -156,7 +157,7 @@ char *argv[];
     optind--;
 
     while (fgets(buf, 2048, stdin) != NULL) {
-	sscanf(buf, "%2x %2x %2x %2x %2x %2x %2x", &t[0], &t[1], &t[2], &t[3], &t[4], &t[5], &nch);
+	sscanf(buf, "%2x %2x %2x %2x %2x %2x %d", &t[0], &t[1], &t[2], &t[3], &t[4], &t[5], &nch);
 	for (i = 0; i < 6; i++)
 	    tt[i] = t[i];
 	size = 0;
@@ -183,5 +184,6 @@ char *argv[];
 	fwrite(tt, 6, 1, stdout);
 	for (j = 0; j < nch; j++)
 	    fwrite(outbuf[j], chsize[j], 1, stdout);
+        fflush(stdout);
     }				/* read data loop end */
 }

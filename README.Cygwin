@@ -1,4 +1,4 @@
-$Id: README.Cygwin,v 1.1 2003/04/25 13:47:27 uehira Exp $
+$Id: README.Cygwin,v 1.2 2004/12/01 11:25:08 uehira Exp $
 
 Cygwin 環境での WIN_pkg のコンパイル時及び実行時における tip 集
 
@@ -8,10 +8,15 @@ Cygwin 環境での WIN_pkg のコンパイル時及び実行時における tip 集
 
 1. 共有メモリ関連のライブラリ(cygipc パッケージ)をインストールする
 
-  本家の Cygwin 環境では共有メモリを使っているプログラムが動かすことが
-出来ないので，cygipc パッケージを下記 URL から取ってきてインストールする．
+!!! ***********************************************************!!!!
+   現在は，cygwin のセットアップからダウンロードできます．Libsカテ
+ゴリのcygipcを選択してインストールします．
+!!! ***********************************************************!!!!
 
-  http://www.neuro.gatech.edu/users/cwilson/cygutils/index.html
+  (本家の Cygwin 環境では共有メモリを使っているプログラムが動かすことが
+出来ないので，cygipc パッケージを下記 URL から取ってきてインストールする．)
+
+  (http://www.neuro.gatech.edu/users/cwilson/cygutils/index.html)
 
 2. run configure
 
@@ -25,9 +30,9 @@ cygwin$ LDFLAGS=-L/usr/local/lib ./configure
 
 3. 共有メモリを使えるようにする
 
-  共有メモリを使えるようにするためには ipc-daemon が動いている必要がある．
+  共有メモリを使えるようにするためには ipc-daemon2 が動いている必要がある．
 
-cygwin$ ipc-daemon &
+cygwin$ ipc-daemon2 &
 
 4. タイムゾーン(TZ 環境変数)の設定
 

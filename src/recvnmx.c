@@ -1,9 +1,10 @@
-/* $Id: recvnmx.c,v 1.11 2002/01/13 08:38:15 uehira Exp $ */
+/* $Id: recvnmx.c,v 1.12 2002/02/20 02:13:01 urabe Exp $ */
 /* "recvnmx.c"    2001.7.18-19 modified from recvt.c and nmx2raw.c  urabe */
 /*                2001.8.18 */
 /*                2001.10.5 workaround for hangup */
 /*                2001.11.2 workaround for bundle types 32,33,34,13 */
 /*                2001.11.14 strerror(), ntohs()*/
+/*                2002.2.20 allow SR of only 20/100/200Hz */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -723,7 +724,8 @@ main(argc,argv)
         pk.ptype,pk.t->tm_year%100,pk.t->tm_mon+1,pk.t->tm_mday,pk.t->tm_hour,
         pk.t->tm_min,pk.t->tm_sec,pk.subsec,pk.model,pk.serno,pk.seq,
         pk.sr,pk.ch,pk.first,winch);
-    if((pk.ptype&0x0f)==1 && winch>=0){ /* compressed data packet */
+    if((pk.ptype&0x0f)==1 && winch>=0 && (pk.sr==100||pk.sr==20||pk.sr==200)){
+         /* compressed data packet */
       idx=ch2idx(rbuf,&pk,winch);
       rbuf_ptr=(pk.subsec*pk.sr+5000)/10000;
       n=bundle2fix(&pk,rbuf[idx]+rbuf_ptr);

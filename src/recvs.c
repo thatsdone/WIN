@@ -1,4 +1,4 @@
-/* $Id: recvs.c,v 1.4 2002/01/13 06:57:51 uehira Exp $ */
+/* $Id: recvs.c,v 1.5 2002/02/20 02:13:01 urabe Exp $ */
 /* "recvs.c"    receive sync frames      2000.3.14       urabe */
 /* 2000.3.21 */
 /* 2000.4.17 */
@@ -314,7 +314,7 @@ check_pno_s(to_addr,pn,pn_f,sock,fd_req) /* returns -1 if duplicated */
     pnc[7]=pn_1;            /* packet No. to request */
     if(sock>=0)
       {
-      sendto(sock,pnc,8,0,to_addr,sizeof(*to_addr));
+      sendto(sock,pnc,8,0,(struct sockaddr *)to_addr,sizeof(*to_addr));
       sprintf(tb,"request resend %s:%d #%02X",
         inet_ntoa(to_addr->sin_addr),ntohs(to_addr->sin_port),pn_1);
       write_log(logfile,tb);
@@ -383,7 +383,7 @@ main(argc,argv)
         aurora=1;
         break;
       case 'p':   /* host:port */
-        if((ptr=index(optarg,':'))==NULL)
+        if((ptr=(unsigned char *)index(optarg,':'))==NULL)
           {
           fprintf(stderr,"Illegal host:port\n");
           exit(-1);

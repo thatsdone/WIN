@@ -1,4 +1,4 @@
-$Id: ChangeLog,v 1.74 2004/10/26 14:42:00 uehira Exp $
+ $Id: ChangeLog,v 1.75 2004/10/26 15:00:44 uehira Exp $
 
 2004-10-26 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* recvt : added option -D : daemon mode (recvtd)
@@ -11,6 +11,14 @@ $Id: ChangeLog,v 1.74 2004/10/26 14:42:00 uehira Exp $
 	* wdiskd   : Daemon mode of wdisk
 	* wdisk60d : Daemon mode of wdisk60
 	* Version 1.1.44 released.
+	
+2004-10-20 Tsuruoka Hiroshi <tsuru@eri.u-tokyo.ac.jp>
+	* add program of winsimu
+	* Version 1.1.43 released.
+	
+2004-10-14 Tsuruoka Hiroshi <tsuru@eri.u-tokyo.ac.jp>
+	* wintowin: writing to shared memory option
+	* shmdump: XINETD compile option
 	
 2004-10-04 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* wdisk : added option -D : Daemon mode

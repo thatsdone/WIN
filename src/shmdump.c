@@ -12,6 +12,7 @@
 /*  2002.5.2 i<1000 -> 1000000 */
 /*  2002.6.24 -t for text output, 6.26 fixed */
 /*  2002.10.27 stdin input */
+/*  2003.3.26,4.4 rawdump (-r) mode */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -275,11 +276,11 @@ main(argc,argv)
     } un;
   int i,j,k,c_save_in,shp_in,shmid_in,size_in,shp,c_save,wtow,c,out,all,mon,
     ch,sr,gs,size,chsel,nch,search,seconds,tbufp,bufsize,zero,nsec,aa,bb,
-    eobsize,eobsize_count,size2,tout,abuf[4096],bufsize_in;
+    eobsize,eobsize_count,size2,tout,abuf[4096],bufsize_in,rawdump,quiet;
   unsigned long tow,wsize,time_end,time_now;
   unsigned int packet_id;
   unsigned char *ptr,tbuf[256],*ptr_lim,*buf,chlist[65536/8],*ptw,tms[6],
-    tb[256],*ptr1;
+    tb[256],*ptr1,*ptr_save;
   struct Shm *shm_in;
   struct tm *nt;
   int rt[6],ts[6];
@@ -294,12 +295,12 @@ main(argc,argv)
   if(progname=strrchr(argv[0],'/')) progname++;
   else progname=argv[0];
   sprintf(tb,
-    " usage : '%s (-amoqtwz) (-s [s]) (-f [chfile]/-) [shm_key]/- ([ch] ...)'",
+    " usage : '%s (-amoqrtwz) (-s [s]) (-f [chfile]/-) [shm_key]/- ([ch] ...)'",
       progname);
-  search=out=all=seconds=win=zero=mon=tout=0;
+  search=out=all=seconds=win=zero=mon=tout=rawdump=quiet=0;
   fplist=stdout;
 
-  while((c=getopt(argc,argv,"amoqs:twf:z"))!=EOF)
+  while((c=getopt(argc,argv,"amoqrs:twf:z"))!=EOF)
     {
     switch(c)
       {
@@ -322,7 +323,12 @@ main(argc,argv)
         all=1;
         break;
       case 'q':   /* supress listing */
-        fplist=fopen("/dev/null","a");
+        quiet=1;
+        break;
+      case 'r':   /* raw dump mode */
+        rawdump=1;
+        fpout=stdout;
+        fplist=stderr;
         break;
       case 'z':   /* read from the beginning of the SHM buffer */
         zero=1;
@@ -362,6 +368,9 @@ main(argc,argv)
     exit(1);
     }
 
+  if(rawdump) search=all=win=out=tout=mon=0;
+  if(quiet) fplist=fopen("/dev/null","a");
+
   if(strcmp(argv[1+optind],"-"))
     {
     shm_key_in=atoi(argv[1+optind]); /* shared memory */
@@ -369,13 +378,13 @@ main(argc,argv)
     if((shm_in=(struct Shm *)shmat(shmid_in,(char *)0,0))==(struct Shm *)-1)
       err_sys("shmat");
     /*fprintf(stderr,"in : shm_key_in=%d id=%d\n",shm_key_in,shmid_in);*/
-    zero=0;
     }
   else /* read data from stdin instead of Shm */
     {
     shm_key_in=0;
     bufsize_in=MAXMESG*100;
     if((shm_in=(struct Shm *)malloc(bufsize_in))==0) err_sys("malloc inbuf");
+    zero=0;
     }
 
   if(argc>2+optind)
@@ -460,7 +469,7 @@ reset:
       }
     if(eobsize) sprintf(tbuf,"%4d B ",size_in);
     else sprintf(tbuf,"%4d : ",size_in);
-    ptr=shm_in->d+shp_in+4;
+    ptr=ptr_save=shm_in->d+shp_in+4;
     ptr_lim=shm_in->d+shp_in+size_in;
     if(eobsize) ptr_lim-=4;
     if(*ptr>0x20 && *ptr<0x90) /* with tow */
@@ -470,6 +479,7 @@ reset:
       nt=localtime(&tow);
 /*      printf("%d ",tow);*/
       ptr+=4;
+      ptr_save+=4;
       rt[0]=nt->tm_year;
       rt[1]=nt->tm_mon+1;
       rt[2]=nt->tm_mday;
@@ -587,6 +597,7 @@ reset:
       sprintf(tbuf+strlen(tbuf),"...\n");
       fputs(tbuf,fplist);
       }
+    if(rawdump) fwrite(ptr_save,1,ptr_lim-ptr_save,fpout);
     time(&time_now);
     if(seconds && (time_now>time_end || nsec>=seconds)) ctrlc();
     }

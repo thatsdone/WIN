@@ -7,6 +7,7 @@
 /*                2001.2.20 wincpy() */
 /*                2002.5.11 pre/post */
 /*                2002.8.4 fixed bug in advancing SHM pointers */
+/*                2003.4.4 avoid overwrite ch_table[] by memcpy(rbuf) */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -275,7 +276,6 @@ get_packet(fd,pbuf)
 #endif
   plim=p+psize;
   p+=4;
-  memcpy(pbuf,buf+p,psize-5);
 #if DEBUG3
   printf("%02X ",buf[p++]);
   for(i=0;i<6;i++) printf("%02X",buf[p++]);
@@ -283,8 +283,17 @@ get_packet(fd,pbuf)
   for(i=0;i<20;i++) printf("%02X",buf[p++]);
   printf(" : %d/%d\n",plim,len);
 #endif
-  p=plim;
-  return psize-5;
+  if(psize-5<MAXMESG)
+    {
+    memcpy(pbuf,buf+p,psize-5);
+    p=plim;
+    return psize-5;
+    }
+  else
+    {
+    p=plim;
+    return 0;
+    }
   }
 
 time_t check_ts(ptr,pre,post)
@@ -420,7 +429,7 @@ main(argc,argv)
 #endif
 
   /* check packet ID */
-    if(rbuf[0]==0xA1)
+    if(n>0 && rbuf[0]==0xA1)
       {
       for(i=0;i<6;i++) if(rbuf[i+1]!=tm[i]) break;
       if(i==6)  /* same time -> just extend the sec block */

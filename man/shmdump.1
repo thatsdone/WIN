@@ -1,8 +1,8 @@
-.TH shmdump 1W "2002.6.25" "WIN SYSTEM" "WIN SYSTEM"
+.TH shmdump 1W "2003.4.3" "WIN SYSTEM" "WIN SYSTEM"
 .SH 名称
 shmdump - 共有メモリ・セグメント上のデータのモニタ
 .SH 形式
-shmdump [\-\fBamoqtwz\fR] [\-\fBs\fI\ sec\fR] [\-\fBf\fI\ file\fR]
+shmdump [\-\fBamoqrtwz\fR] [\-\fBs\fI\ sec\fR] [\-\fBf\fI\ file\fR]
 .I shmkey
 [
 .I ch ...
@@ -50,6 +50,11 @@ MON形式のデータを扱います。データがMON形式のときはこれを
 .IP "\fB\-q" 5
 １行１チャネルの形式のダンプ出力を抑制します。ふつうは\fB\-o\fPオプション
 または\fB\-t\fPオプションとともに指定されます。
+.IP "\fB\-r" 5
+無変換で標準出力に書き出します。
+このとき、通常の(１行１チャネルの)ダンプ出力は標準エラー出力に
+書き出されます。このオプションを指定した場合は、\fB\-q\fR、\fB\-s\fR 以外の
+すべてのオプションは無効になります。
 .IP "\fB\-t" 5
 指定されたチャネル(\fB\-a\fPオプションが指定されたときは全チャネル)
 のデータをテキスト形式に変換して、標準出力に書き出します。

@@ -1,4 +1,4 @@
-/* $Id: relay.c,v 1.7 2002/12/12 02:28:17 urabe Exp $ */
+/* $Id: relay.c,v 1.8 2003/04/04 04:29:30 urabe Exp $ */
 /* "relay.c"      5/23/94-5/25/94,6/15/94-6/16/94,6/23/94,3/16/95 urabe */
 /*                3/26/95 check_packet_no; port# */
 /*                5/24/96 added processing of "host table full" */
@@ -11,6 +11,8 @@
 /*                2000.4.24/2001.11.14 strerror() */
 /*                2001.11.14 ntohs() */
 /*                2002.12.10 multicast(-i,-t), stdin(to_port=0), src_port(-p) */
+/*                2003.3.25 bug fixed in optind */
+/*                2003.3.26 bug fixed in psize for stdin  */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -259,7 +261,7 @@ main(argc,argv)
   to_port=atoi(argv[1+optind]);
   strcpy(host_name,argv[2+optind]);
   host_port=atoi(argv[3+optind]);
-  if(argc>4) strcpy(logfile,argv[4+optind]);
+  if(argc>4+optind) strcpy(logfile,argv[4+optind]);
   else *logfile=0;
 
   sprintf(tb,"start in_port=%d to host '%s' port=%d",
@@ -361,7 +363,7 @@ main(argc,argv)
       {
       if(fgets(sbuf[bufno]+2,MAXMESG-2,stdin)==NULL) ctrlc();
       if(sbuf[bufno][2]==0x04) ctrlc();
-      psize[bufno]=strlen(sbuf[bufno]+2);
+      psize[bufno]=strlen(sbuf[bufno]+2)+2;
       }
 
     sbuf[bufno][0]=sbuf[bufno][1]=no;

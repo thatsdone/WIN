@@ -1,8 +1,16 @@
-$Id: ChangeLog,v 1.23 2003/02/27 02:08:57 urabe Exp $
+$Id: ChangeLog,v 1.24 2003/04/04 04:29:30 urabe Exp $
+
+2003-04-4 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
+	* recvts.c : avoid overwrite ch_table[] by memcpy(rbuf)
+	* shmdump.c : rawdump (-r) mode
+	* win.c : patch by S.Nakagawa not to die at SAVE without hypo
+	* relay.c : bug fixed in optind, psize for stdin
+	* recvt.c : added -N (no pno) and -A (no TS) options
 
 2003-02-27 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
 	* mkCDimage : suite for FreeBSD4.7 and Redhat7.2
 	* manuals recvt.1,relay.1,send_raw.1 : updated.
+	* recvt.c : disable resend request if -r option.
 
 2003-01-22 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
 	* wadd.c : eliminate blank line from ch file

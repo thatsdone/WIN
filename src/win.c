@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.25 2002/09/05 05:16:58 urabe Exp $
+   $Id: win.c,v 1.26 2003/04/04 04:29:31 urabe Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -13,7 +13,7 @@
    98.7.2 yo2000
 */
 #define NAME_PRG      "win"
-#define WIN_VERSION   "2002.9.5"
+#define WIN_VERSION   "2003.4.3"
 #define DEBUG_AP      0   /* for debugging auto-pick */
 /* 5:sr, 4:ch, 3:sec, 2:find_pick, 1:all */
 /************ HOW TO COMPILE THE PROGRAM **************************
@@ -10214,7 +10214,8 @@ save_data(private)
   flag_change=0;
 
   /* make save file name */
-  if(*ft.save_file==0 && !just_hypo)
+  /*  if(*ft.save_file==0 && !just_hypo) */
+  if(!just_hypo)
     {
     if(k) /* there is at least one pick */
       {
@@ -10227,19 +10228,25 @@ save_data(private)
       fgets(textbuf,LINELEN,fp);
       sscanf(textbuf,"%*s%*s%f",&sec); /* read the earliest P time */
       fclose(fp);
-      if(sec==0.0) /* 2001.6.7 for picks only with max ampl. */
-        sprintf(ft.save_file,"%02X%02x%02x%1c%02X%02x%02x.000",
-          ft.ptr[0].time[0],ft.ptr[0].time[1],ft.ptr[0].time[2],dot,
-          ft.ptr[0].time[3],ft.ptr[0].time[4],ft.ptr[0].time[5]);
-      else
-        sprintf(ft.save_file,"%02d%02d%02d%1c%02d%02d%02d.%03d",
-          year,month,day,dot,hour,minute,(int)sec,(int)(sec*1000.0)%1000);
+      if(*ft.save_file==0)
+        {
+	if(sec==0.0) /* 2001.6.7 for picks only with max ampl. */
+	  sprintf(ft.save_file,"%02X%02x%02x%1c%02X%02x%02x.000",
+	    ft.ptr[0].time[0],ft.ptr[0].time[1],ft.ptr[0].time[2],dot,
+	    ft.ptr[0].time[3],ft.ptr[0].time[4],ft.ptr[0].time[5]);
+	else
+	  sprintf(ft.save_file,"%02d%02d%02d%1c%02d%02d%02d.%03d",
+	    year,month,day,dot,hour,minute,(int)sec,(int)(sec*1000.0)%1000);
+	}
       }
     else /* there is no pick */
       {
-      sprintf(ft.save_file,"%02X%02x%02x%1c%02X%02x%02x.000",
-        ft.ptr[0].time[0],ft.ptr[0].time[1],ft.ptr[0].time[2],dot,
-        ft.ptr[0].time[3],ft.ptr[0].time[4],ft.ptr[0].time[5]);
+      if(*ft.save_file==0)
+        {
+        sprintf(ft.save_file,"%02X%02x%02x%1c%02X%02x%02x.000",
+          ft.ptr[0].time[0],ft.ptr[0].time[1],ft.ptr[0].time[2],dot,
+          ft.ptr[0].time[3],ft.ptr[0].time[4],ft.ptr[0].time[5]);
+	}
       }
     }
 

@@ -41,6 +41,7 @@
 /*                2002.5.23 stronger to destructed packet */
 /*                2002.11.29 corrected byte-order of port no. in log */
 /*                2002.12.21 disable resend request if -r */
+/*                2003.3.24-25 -N (no pno) and -A (no TS) options */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -565,7 +566,7 @@ main(argc,argv)
   unsigned long uni;
   unsigned char *ptr,tm[6],*ptr_size,*ptr_size2;
   int i,j,k,size,fromlen,n,re,nlen,sock,nn,all,pre,post,c,mon,pl,eobsize,
-    sbuf,noreq;
+    sbuf,noreq,no_ts,no_pno;
   struct sockaddr_in to_addr,from_addr;
   unsigned short to_port;
   extern int optind;
@@ -587,20 +588,23 @@ main(argc,argv)
   if(progname=strrchr(argv[0],'/')) progname++;
   else progname=argv[0];
   sprintf(tb,
-" usage : '%s (-aBnMr) (-d [len(s)]) (-m [pre(m)]) (-p [post(m)]) \\\n\
+" usage : '%s (-AaBnMNr) (-d [len(s)]) (-m [pre(m)]) (-p [post(m)]) \\\n\
               (-i [interface]) (-g [mcast_group]) (-s sbuf(KB)) \\\n\
               [port] [shm_key] [shm_size(KB)] ([ctl file]/- ([log file]))'",
           progname);
 
-  all=no_pinfo=mon=eobsize=noreq=0;
+  all=no_pinfo=mon=eobsize=noreq=no_ts=no_pno=0;
   pre=post=0;
   *interface=(*mcastgroup)=0;
   sbuf=256;
   chhist.n=N_HIST;
-  while((c=getopt(argc,argv,"aBd:g:i:m:Mnp:rs:"))!=EOF)
+  while((c=getopt(argc,argv,"AaBd:g:i:m:MNnp:rs:"))!=EOF)
     {
     switch(c)
       {
+      case 'A':   /* don't check time stamps */
+        no_ts=1;
+        break;
       case 'a':   /* accept >=A1 packets */
         all=1;
         break;
@@ -622,6 +626,9 @@ main(argc,argv)
         break;
       case 'M':   /* 'mon' format data */
         mon=1;
+        break;
+      case 'N':   /* no packet nos */
+        no_pno=no_ts=1;
         break;
       case 'n':   /* supress info on abnormal packets */
         no_pinfo=1;
@@ -729,6 +736,8 @@ main(argc,argv)
   }
 
   if(noreq) write_log(logfile,"resend request disabled");
+  if(no_ts) write_log(logfile,"time-stamps not interpreted");
+  if(no_pno) write_log(logfile,"packet numbers not interpreted");
 
   signal(SIGTERM,(void *)ctrlc);
   signal(SIGINT,(void *)ctrlc);
@@ -748,6 +757,51 @@ main(argc,argv)
     for(i=0;i<16;i++) printf("%02X",rbuf[i]);
     printf(" (%d)\n",n);
 #endif
+
+    if(no_ts) /* no time stamp */
+      {
+      ptr+=4;   /* size */
+      ptr+=4;   /* time of write */
+      if(no_pno) memcpy(ptr,rbuf,nn=n);
+      else
+        {
+        if(check_pno(&from_addr,rbuf[0],rbuf[1],sock,fromlen,n,noreq)<0) continue;
+        memcpy(ptr,rbuf+2,nn=n-2);
+        }
+      ptr+=nn;
+      uni=time(0);
+      ptr_size[4]=uni>>24;  /* tow (H) */
+      ptr_size[5]=uni>>16;
+      ptr_size[6]=uni>>8;
+      ptr_size[7]=uni;      /* tow (L) */
+      ptr_size2=ptr;
+      if(eobsize) ptr+=4; /* size(2) */
+      uni=ptr-ptr_size;
+      ptr_size[0]=uni>>24;  /* size (H) */
+      ptr_size[1]=uni>>16;
+      ptr_size[2]=uni>>8;
+      ptr_size[3]=uni;      /* size (L) */
+      if(eobsize)
+        {
+        ptr_size2[0]=ptr_size[0];  /* size (H) */
+        ptr_size2[1]=ptr_size[1];
+        ptr_size2[2]=ptr_size[2];
+        ptr_size2[3]=ptr_size[3];  /* size (L) */
+        }
+      sh->r=sh->p;      /* latest */
+      if(eobsize && ptr>sh->d+pl) {sh->pl=ptr-sh->d-4;ptr=sh->d;}
+      if(!eobsize && ptr>sh->d+sh->pl) ptr=sh->d;
+      sh->p=ptr-sh->d;
+      sh->c++;
+      ptr_size=ptr;
+#if DEBUG1
+      printf("%s:%d(%d)>",inet_ntoa(from_addr.sin_addr),ntohs(from_addr.sin_port),n);
+      printf("%d(%d) ",rbuf[0],rbuf[1]);
+      rbuf[n]=0;
+      printf("%s\n",rbuf);
+#endif
+      continue;
+      }
 
     if(check_pno(&from_addr,rbuf[0],rbuf[1],sock,fromlen,n,noreq)<0) continue;
 

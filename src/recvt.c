@@ -1,4 +1,4 @@
-/* $Id: recvt.c,v 1.22 2004/08/09 01:47:42 urabe Exp $ */
+/* $Id: recvt.c,v 1.23 2004/10/26 14:42:01 uehira Exp $ */
 /* "recvt.c"      4/10/93 - 6/2/93,7/2/93,1/25/94    urabe */
 /*                2/3/93,5/25/94,6/16/94 */
 /*                1/6/95 bug in adj_time fixed (tm[0]--) */
@@ -44,6 +44,7 @@
 /*                2002.12.21 disable resend request if -r */
 /*                2003.3.24-25 -N (no pno) and -A (no TS) options */
 /*                2004.8.9 fixed bug introduced in 2002.5.23 */
+/*                2004.10.26 daemon mode (Uehira) */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -72,7 +73,9 @@
 #include <netinet/in.h>
 #include <netdb.h>
 #include <errno.h>
+#include <syslog.h>
 
+#include "daemon_mode.h"
 #include "subst_func.h"
 
 #define DEBUG     0
@@ -88,6 +91,8 @@
 unsigned char rbuf[MAXMESG],ch_table[65536];
 char *progname,logfile[256],chfile[256];
 int n_ch,negate_channel,hostlist[N_HOST][2],n_host,no_pinfo;
+int  daemon_mode, syslog_mode;
+
 struct {
     int host;
     int port;
@@ -199,28 +204,42 @@ write_log(logfil,ptr)
   {
   FILE *fp;
   int tm[6];
-  if(*logfil) fp=fopen(logfil,"a");
-  else fp=stdout;
-  get_time(tm);
-  fprintf(fp,"%02d%02d%02d.%02d%02d%02d %s %s\n",
-    tm[0],tm[1],tm[2],tm[3],tm[4],tm[5],progname,ptr);
-  if(*logfil) fclose(fp);
+
+  if (syslog_mode)
+    syslog(LOG_NOTICE, "%s", ptr);
+  else
+    {
+      if(*logfil) fp=fopen(logfil,"a");
+      else fp=stdout;
+      get_time(tm);
+      fprintf(fp,"%02d%02d%02d.%02d%02d%02d %s %s\n",
+	      tm[0],tm[1],tm[2],tm[3],tm[4],tm[5],progname,ptr);
+      if(*logfil) fclose(fp);
+    }
   }
 
 ctrlc()
   {
   write_log(logfile,"end");
+  if (syslog_mode)
+    closelog();
   exit(0);
   }
 
 err_sys(ptr)
   char *ptr;
-  {
-  perror(ptr);
-  write_log(logfile,ptr);
+{
+  
+  if (syslog_mode)
+    syslog(LOG_NOTICE, "%s", ptr);
+  else
+    {
+      perror(ptr);
+      write_log(logfile,ptr);
+    }
   if(strerror(errno)) write_log(logfile,strerror(errno));
   ctrlc();
-  }
+}
 
 read_chfile()
   {
@@ -589,18 +608,29 @@ main(argc,argv)
 
   if(progname=strrchr(argv[0],'/')) progname++;
   else progname=argv[0];
-  sprintf(tb,
-" usage : '%s (-AaBnMNr) (-d [len(s)]) (-m [pre(m)]) (-p [post(m)]) \\\n\
+
+  daemon_mode = syslog_mode = 0;
+  if(strcmp(progname,"recvtd")==0) daemon_mode=1;
+
+  if(strcmp(progname,"recvtd")==0)
+    sprintf(tb,
+	    " usage : '%s (-AaBnMNr) (-d [len(s)]) (-m [pre(m)]) (-p [post(m)]) \\\n\
               (-i [interface]) (-g [mcast_group]) (-s sbuf(KB)) \\\n\
               [port] [shm_key] [shm_size(KB)] ([ctl file]/- ([log file]))'",
-          progname);
+	    progname);
+  else
+    sprintf(tb,
+	    " usage : '%s (-AaBDnMNr) (-d [len(s)]) (-m [pre(m)]) (-p [post(m)]) \\\n\
+              (-i [interface]) (-g [mcast_group]) (-s sbuf(KB)) \\\n\
+              [port] [shm_key] [shm_size(KB)] ([ctl file]/- ([log file]))'",
+	    progname);
 
   all=no_pinfo=mon=eobsize=noreq=no_ts=no_pno=0;
   pre=post=0;
   *interface=(*mcastgroup)=0;
   sbuf=256;
   chhist.n=N_HIST;
-  while((c=getopt(argc,argv,"AaBd:g:i:m:MNnp:rs:"))!=EOF)
+  while((c=getopt(argc,argv,"AaBDd:g:i:m:MNnp:rs:"))!=EOF)
     {
     switch(c)
       {
@@ -613,6 +643,9 @@ main(argc,argv)
       case 'B':   /* write blksize at EOB for backward search */
         eobsize=1;
         break;
+      case 'D':
+	daemon_mode = 1;  /* daemon mode */
+	break;   
       case 'd':   /* length of packet history in sec */
         chhist.n=atoi(optarg);
         break;
@@ -661,7 +694,7 @@ main(argc,argv)
   to_port=atoi(argv[1+optind]);
   shm_key=atoi(argv[2+optind]);
   size=atoi(argv[3+optind])*1000;
-  *chfile=(*logfile)=0;
+  *chfile=0;
   if(argc>4+optind)
     {
     if(strcmp("-",argv[4+optind])==0) *chfile=0;
@@ -680,6 +713,12 @@ main(argc,argv)
       }
     }
   if(argc>5+optind) strcpy(logfile,argv[5+optind]);
+  else
+    {
+      *logfile=0;
+      if (daemon_mode)
+	syslog_mode = 1;
+    }
 
   if((chhist.ts=
       (time_t (*)[65536])malloc(65536*chhist.n*sizeof(time_t)))==NULL)
@@ -692,6 +731,13 @@ main(argc,argv)
       exit(1);
       }
     }
+
+   /* daemon mode */
+   if (daemon_mode) {
+     daemon_init(progname, LOG_USER, syslog_mode);
+     umask(022);
+   }
+
   sprintf(tb,"n_hist=%d size=%d",chhist.n,65536*chhist.n*sizeof(time_t));
   write_log(logfile,tb);
 

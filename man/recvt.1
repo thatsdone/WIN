@@ -1,11 +1,23 @@
 .TH recvt 1W "2004.8.10" "WIN SYSTEM" "WIN SYSTEM"
 .UC 4
 .SH 名称
-recvt - IPによる win 形式データの受信
+recvt, recvtd - IPによる win 形式データの受信
 .SH 形式
 .IP
 .ti -7
-recvt [\-\fBAaBnMNr\fR] [\-\fBd\fI pkts\fR] [\-\fBg\fI group\fR]
+recvt [\-\fBAaDBnMNr\fR] [\-\fBd\fI pkts\fR] [\-\fBg\fI group\fR]
+[\-\fBi\fI interface\fR] [\-\fBm\fI before\fR] [\-\fBp\fI after\fR]
+[\-\fBs\fI bufsiz\fR]
+.I port
+.I shmkey
+.I shmsize
+[
+.I ctlfile
+[
+.I logfile
+]]
+.LP
+recvtd [\-\fBAaBnMNr\fR] [\-\fBd\fI pkts\fR] [\-\fBg\fI group\fR]
 [\-\fBi\fI interface\fR] [\-\fBm\fI before\fR] [\-\fBp\fI after\fR]
 [\-\fBs\fI bufsiz\fR]
 .I port
@@ -32,6 +44,10 @@ recvt は、自ホストの UDP ポート番号
 \ (KB) よりも小さいとエラーになります。
 UDP ポート番号は16ビットの整数値、共有メモリ・キーは32ビットの
 整数値です。
+.LP
+recvtd は daemon モードで起動します。recvt でオプション
+\fB\-D\fR
+を指定した時と同じ動作です。
 .LP
 制御ファイル
 .I \ ctlfile
@@ -82,9 +98,9 @@ UDP ポート番号は16ビットの整数値、共有メモリ・キーは32ビットの
 .LP
 ログファイル名
 .I \ logfile
-を指定すると、ここに動作ログがとられ、指定しないとログ情報は標準出力に
-送られます。ログファイルは書き込みのたび毎に
-オープン／クローズされます。
+を指定すると、ここに動作ログがとられます。指定しないとログ情報は標準出力に
+送られます(ただし、daemon モードで動いている時は syslogd(8) に送られま
+す)。ログファイルは書き込みのたび毎にオープン／クローズされます。
 .LP
 recvt は、HUPシグナルを受けると制御ファイル
 .I \ ctlfile
@@ -263,6 +279,8 @@ recvt は、連続して受け取ったデータパケットの
 として利用することができます。読み出し側プログラムでは、共有メモリが
 この形式であるかどうかを自動判別するのが普通です。
 この形式は、order(1W) の絶対時刻準拠モードに利用されています。
+.IP \fB\-D 5
+daemon モードで起動します。
 .IP "\fB\-d \fIpkts" 5
 recvt はチャネル番号とタイムスタンプの履歴を持っていて、受信した
 データ(１チャネル×１秒分のデータブロック)のチャネル番号とタイムスタンプを

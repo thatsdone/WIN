@@ -1,4 +1,4 @@
-/* $Id: relay.c,v 1.10 2004/09/09 03:36:47 urabe Exp $ */
+/* $Id: relay.c,v 1.11 2004/10/26 14:42:01 uehira Exp $ */
 /* "relay.c"      5/23/94-5/25/94,6/15/94-6/16/94,6/23/94,3/16/95 urabe */
 /*                3/26/95 check_packet_no; port# */
 /*                5/24/96 added processing of "host table full" */
@@ -16,6 +16,7 @@
 /*                2003.9.9 no req resend(-r), receive mcast(-g), send delay(-d) */
 /*                2003.10.26 "sinterface" */
 /*                2004.9.9 fixed a bug in -s option ("sinterface") */
+/*                2004.10.26 daemon mode (Uehira) */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -44,7 +45,9 @@
 #include <netinet/in.h>
 #include <netdb.h>
 #include <errno.h>
+#include <syslog.h>
 
+#include "daemon_mode.h"
 #include "subst_func.h"
 
 #define DEBUG     0
@@ -59,6 +62,7 @@ int sock_in,sock_out;   /* socket */
 unsigned char sbuf[BUFNO][MAXMESG],sbuf_in[MAXMESG];
 int psize[BUFNO],psize_in;
 char tb[100],tb1[100],*progname,host_name[100],logfile[256];
+int  daemon_mode, syslog_mode;
 
 mklong(ptr)
   unsigned char *ptr;
@@ -94,12 +98,18 @@ write_log(logfil,ptr)
   {
   FILE *fp;
   int tm[6];
-  if(*logfil) fp=fopen(logfil,"a");
-  else fp=stdout;
-  get_time(tm);
-  fprintf(fp,"%02d%02d%02d.%02d%02d%02d %s %s\n",
-    tm[0],tm[1],tm[2],tm[3],tm[4],tm[5],progname,ptr);
-  if(*logfil) fclose(fp);
+
+  if (syslog_mode)
+    syslog(LOG_NOTICE, "%s", ptr);
+  else
+    {
+      if(*logfil) fp=fopen(logfil,"a");
+      else fp=stdout;
+      get_time(tm);
+      fprintf(fp,"%02d%02d%02d.%02d%02d%02d %s %s\n",
+	      tm[0],tm[1],tm[2],tm[3],tm[4],tm[5],progname,ptr);
+      if(*logfil) fclose(fp);
+    }
   }
 
 ctrlc()
@@ -107,17 +117,23 @@ ctrlc()
   write_log(logfile,"end");
   close(sock_in);
   close(sock_out);
+  if (syslog_mode)
+    closelog();
   exit(0);
   }
 
 err_sys(ptr)
   char *ptr;
-  {
-  perror(ptr);
-  write_log(logfile,ptr);
+{
+
+  if (syslog_mode)
+    syslog(LOG_NOTICE, "%s", ptr);
+  else
+    {
+      perror(ptr);
+      write_log(logfile,ptr);
+    }
   if(strerror(errno)) write_log(logfile,strerror(errno));
-  close(sock_in);
-  close(sock_out);
   ctrlc();
   }
 
@@ -240,18 +256,31 @@ main(argc,argv)
 
   if(progname=strrchr(argv[0],'/')) progname++;
   else progname=argv[0];
-  sprintf(tb,
-" usage : '%s (-r) (-d [delay_ms]) (-g [mcast_group]) (-i [interface]) (-s [sinterface]) (-p [src port]) (-t [ttl]) [in_port] [host] [host_port] ([log file])'\n",
-      progname);
+
+  daemon_mode = syslog_mode = 0;
+  if(strcmp(progname,"relayd")==0) daemon_mode=1;
+
+  if (daemon_mode)
+    sprintf(tb,
+	    " usage : '%s (-r) (-d [delay_ms]) (-g [mcast_group]) (-i [interface]) (-s [sinterface]) (-p [src port]) (-t [ttl]) [in_port] [host] [host_port] ([log file])'\n",
+	    progname);
+  else
+    sprintf(tb,
+	    " usage : '%s (-rD) (-d [delay_ms]) (-g [mcast_group]) (-i [interface]) (-s [sinterface]) (-p [src port]) (-t [ttl]) [in_port] [host] [host_port] ([log file])'\n",
+	    progname);
+
 
   *interface=(*mcastgroup)=(*sinterface)=0;
   ttl=1;
   src_port=delay=noreq=0;
 
-  while((c=getopt(argc,argv,"d:g:i:p:rs:t:T:"))!=EOF)
+  while((c=getopt(argc,argv,"Dd:g:i:p:rs:t:T:"))!=EOF)
     {
     switch(c)
       {
+      case 'D':
+	daemon_mode = 1;  /* daemon mode */
+	break;   
       case 'd':   /* delay time in msec */
         delay=atoi(optarg);
         break;
@@ -288,10 +317,27 @@ main(argc,argv)
     }
 
   to_port=atoi(argv[1+optind]);
+  if (to_port == 0 && daemon_mode)
+    {
+      fprintf(stderr,
+	      "daemon mode cannnot active in case of data from STDIN\n");
+      exit(1);
+    }
   strcpy(host_name,argv[2+optind]);
   host_port=atoi(argv[3+optind]);
   if(argc>4+optind) strcpy(logfile,argv[4+optind]);
-  else *logfile=0;
+  else
+    {
+      *logfile=0;
+      if (daemon_mode)
+	syslog_mode = 1;
+    }
+
+   /* daemon mode */
+   if (daemon_mode) {
+     daemon_init(progname, LOG_USER, syslog_mode);
+     umask(022);
+   }
 
   sprintf(tb,"start in_port=%d to host '%s' port=%d",
     to_port,host_name,host_port);

@@ -1,10 +1,10 @@
 .TH send_raw 1W "2002.12.21" "WIN SYSTEM" "WIN SYSTEM"
 .SH 名称
-send_raw, send_mon, sendt_raw, sendt_mon - IPによる win 形式データの送信
+send_raw, send_mon, sendt_raw, sendt_mon, send_rawd, send_mond, sendt_rawd, sendt_mond - IPによる win 形式データの送信
 .SH 形式
 .IP
 .ti -7
-send_raw [\-\fB1armt\fR] [\-\fBb\fI\ mtu\fR] [\-\fBi\fI\ interface\fR]
+send_raw [\-\fB1aDrmt\fR] [\-\fBb\fI\ mtu\fR] [\-\fBi\fI\ interface\fR]
 [\-\fBh\fI\ hours\fR] [\-\fBp\fI\ src_port\fR] [\-\fBs\fI\ sec\fR] [\-\fBT\fI\ ttl\fR] [\-\fBw\fI\ key\fR]
 .I shmkey
 .I dest
@@ -21,6 +21,25 @@ send_mon \%...
 sendt_raw \%...
 .ti -7
 sendt_mon \%...
+.IP
+.ti -7
+send_rawd [\-\fB1armt\fR] [\-\fBb\fI\ mtu\fR] [\-\fBi\fI\ interface\fR]
+[\-\fBh\fI\ hours\fR] [\-\fBp\fI\ src_port\fR] [\-\fBs\fI\ sec\fR] [\-\fBT\fI\ ttl\fR] [\-\fBw\fI\ key\fR]
+.I shmkey
+.I dest
+.I port
+[
+.I chfile
+[
+.I logfile
+]]
+.br
+.ti -7
+send_mond \%...
+.ti -7
+sendt_rawd \%...
+.ti -7
+sendt_mond \%...
 .SH 解説
 send_raw, send_mon, sendt_raw, sendt_monは、キー
 .I \ shmkey
@@ -37,11 +56,16 @@ send_raw, send_mon, sendt_raw, sendt_monは、キー
 .I chfile
 が与えられないか、または '\-' である場合は、全チャネルが送信されます。
 .LP
+send_rawd, send_mond, sendt_rawd, sendt_mond は daemon モードで起動し
+ます。send_raw, send_mon, sendt_raw, sendt_mon でオプション
+\fB\-D\fR
+を指定した時と同じ動作です。
+.LP
 ログファイル名
 .I \ logfile
-を指定すると、ここに動作ログがとられ、
-指定しないとログ情報は標準出力に
-送られます。ログファイルは書き込みのたび毎に
+を指定すると、ここに動作ログがとられます。
+指定しないとログ情報は標準出力に送られます(ただし、daemon モードで動い
+ている時は syslogd(8) に送られます)。ログファイルは書き込みのたび毎に
 オープン／クローズされます。
 .LP
 send_raw, sendt_raw は RAW 形式のデータを、
@@ -89,6 +113,8 @@ recvt(1W)を参照してください。
 形式であると仮定されます。他のオプションはすべて無視されます。
 .br
 なお、現在このモードでは再送処理を行いません。
+.IP "\fB\-D" 5
+daemon モードで起動します。
 .IP "\fB\-b \fImtu" 5
 送信するIPパケットの最大サイズ(MTU)を \fImtu\fP バイトにします。
 デフォールトは1500バイトです。送信IPパケットは伝送効率を上げるため

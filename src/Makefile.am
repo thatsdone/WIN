@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.21 2004/10/21 12:54:41 uehira Exp $
+# $Id: Makefile.am,v 1.22 2004/10/26 14:42:01 uehira Exp $
 #
 
 if SUNOS4
@@ -61,6 +61,10 @@ install-exec-hook:
 	(rm -f @bindir@/send_mon; cd @bindir@ && @LN_S@ send_raw send_mon)
 	(rm -f @bindir@/sendt_raw; cd @bindir@ && @LN_S@ send_raw sendt_raw)
 	(rm -f @bindir@/sendt_mon; cd @bindir@ && @LN_S@ send_raw sendt_mon)
+	(rm -f @bindir@/send_rawd; cd @bindir@ && @LN_S@ send_raw send_rawd)
+	(rm -f @bindir@/send_mond; cd @bindir@ && @LN_S@ send_raw send_mond)
+	(rm -f @bindir@/sendt_rawd; cd @bindir@ && @LN_S@ send_raw sendt_rawd)
+	(rm -f @bindir@/sendt_mond; cd @bindir@ && @LN_S@ send_raw sendt_mond)
 	(rm -f @bindir@/send_mon_old;\
 			cd @bindir@ && @LN_S@ send_raw_old send_mon_old)
 	(rm -f @bindir@/sendt_raw_old;\
@@ -71,6 +75,8 @@ install-exec-hook:
 	(rm -f @bindir@/wdisk60; cd @bindir@ && @LN_S@ wdisk wdisk60)
 	(rm -f @bindir@/wdisk60d; cd @bindir@ && @LN_S@ wdisk wdisk60d)
 	(rm -f @bindir@/orderd; cd @bindir@ && @LN_S@ order orderd)
+	(rm -f @bindir@/recvtd; cd @bindir@ && @LN_S@ recvt recvtd)
+	(rm -f @bindir@/relayd; cd @bindir@ && @LN_S@ relay relayd)
 
 win_SOURCES = win.c $(SUBFUNC_H)
 win_CFLAGS = @X_CFLAGS@ $(AM_CFLAGS)
@@ -192,10 +198,10 @@ insert_trg_SOURCES = insert_trg.c $(WIN_UTIL_C) $(WIN_UTIL_H) $(SUBFUNC_H)
 
 find_picks_SOURCES = find_picks.c $(SUBFUNC_H)
 
-recvt_SOURCES = recvt.c $(SUBFUNC_H)
+recvt_SOURCES = recvt.c $(SUBFUNC_H) $(DAEMON_MODE)
 recvt_LDADD = @LIBNSL@ @LIBSOCKET@ @LIBSHMGET@
 
-send_raw_SOURCES = send_raw.c $(SUBFUNC_H)
+send_raw_SOURCES = send_raw.c $(SUBFUNC_H) $(DAEMON_MODE)
 send_raw_LDADD = @LIBNSL@ @LIBSOCKET@ @LIBSHMGET@
 
 recvstatus_SOURCES = recvstatus.c $(SUBFUNC_H)
@@ -207,7 +213,7 @@ recvstatus2_LDADD = @LIBNSL@ @LIBSOCKET@
 send_raw_old_SOURCES = send_raw_old.c $(SUBFUNC_H)
 send_raw_old_LDADD = @LIBNSL@ @LIBSOCKET@ @LIBSHMGET@
 
-relay_SOURCES = relay.c $(SUBFUNC_H)
+relay_SOURCES = relay.c $(SUBFUNC_H) $(DAEMON_MODE)
 relay_LDADD = @LIBNSL@ @LIBSOCKET@
 
 recvnmx_SOURCES = recvnmx.c $(SUBFUNC_H)

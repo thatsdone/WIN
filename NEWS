@@ -2,6 +2,10 @@ WIN package NEWS
   History of user-visible changes.
   17 Jan. 2002
 
+Version 1.1.45 (26 October, 2004)
+* daemon mode now supports.
+  recvt, relay, send_raw, order, wdisk
+
 Version 1.1.38 (7 September, 2004)
 * wdisk : added option -s : Freespace mode
 
@@ -40,4 +44,4 @@ Version 1.0.0   (17 January, 2002)
 
 (Changes before Versions 1.0.0 were never recorded.  Sorry.)
 
-$Id: NEWS,v 1.13 2004/09/07 11:39:53 uehira Exp $
+$Id: NEWS,v 1.14 2004/10/26 14:42:00 uehira Exp $

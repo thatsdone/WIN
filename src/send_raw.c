@@ -1,4 +1,4 @@
-/* $Id: send_raw.c,v 1.15 2003/04/08 12:24:38 urabe Exp $ */
+/* $Id: send_raw.c,v 1.16 2004/10/26 14:42:01 uehira Exp $ */
 /*
     program "send_raw/send_mon.c"   1/24/94 - 1/25/94,5/25/94 urabe
                                     6/15/94 - 6/16/94
@@ -41,6 +41,7 @@
                2002.9.19 added option -T to set TTL (-T ttl)
                2002.11.29 added option -p to set source port (-p src_port)
                2003.4.8 added option -1 for 1 packet/sec mode
+               2004.10.26 daemon mode (Uehira)
 */
 
 #ifdef HAVE_CONFIG_H
@@ -71,7 +72,9 @@
 #include <netdb.h>
 #include <unistd.h>
 #include <errno.h>
+#include <syslog.h>
 
+#include "daemon_mode.h"
 #include "subst_func.h"
 
 #define DEBUG       0
@@ -94,6 +97,8 @@ int sock,raw,tow,all,psize[NBUF],n_ch,negate_channel,mtu,nbuf,slptime,
 unsigned char *sbuf[NBUF],ch_table[65536],rbuf[RSIZE];
      /* sbuf[NBUF][mtu-28+8] ; +8 for overrun by "size" and "time" */
 char *progname,logfile[256],chfile[256];
+int  daemon_mode, syslog_mode;
+
 static int b2d[]={
      0, 1, 2, 3, 4, 5, 6, 7, 8, 9,0,0,0,0,0,0,  /* 0x00 - 0x0F */
     10,11,12,13,14,15,16,17,18,19,0,0,0,0,0,0,
@@ -180,29 +185,47 @@ write_log(logfil,ptr)
   {
   FILE *fp;
   int tm[6];
-  if(*logfil) fp=fopen(logfil,"a");
-  else fp=stdout;
-  get_time(tm);
-  fprintf(fp,"%02d%02d%02d.%02d%02d%02d %s %s\n",
-    tm[0],tm[1],tm[2],tm[3],tm[4],tm[5],progname,ptr);
-  if(*logfil) fclose(fp);
+
+  if (syslog_mode)
+    {
+      syslog(LOG_NOTICE, "%s", ptr);
+    }
+  else
+    {
+      if(*logfil) fp=fopen(logfil,"a");
+      else fp=stdout;
+      get_time(tm);
+      fprintf(fp,"%02d%02d%02d.%02d%02d%02d %s %s\n",
+	      tm[0],tm[1],tm[2],tm[3],tm[4],tm[5],progname,ptr);
+      if(*logfil) fclose(fp);
+    }
   }
 
 ctrlc()
   {
   write_log(logfile,"end");
   close(sock);
+  if (syslog_mode)
+    closelog();
   exit(0);
   }
 
 err_sys(ptr)
   char *ptr;
-  {
-  perror(ptr);
-  write_log(logfile,ptr);
+{
+
+  if (syslog_mode)
+    syslog(LOG_NOTICE, "%s", ptr);
+  else
+    {
+      perror(ptr);
+      write_log(logfile,ptr);
+    }
   if(strerror(errno)) write_log(logfile,strerror(errno));
   write_log(logfile,"end");
   close(sock);
+  if (syslog_mode)
+    closelog();
   exit(1);
   }
 
@@ -342,15 +365,28 @@ main(argc,argv)
 
   tow=all=hours_shift=sec_shift=0;
   timeout.tv_sec=timeout.tv_usec=0;
+  daemon_mode = syslog_mode =0;
+
   if(strcmp(progname,"send_raw")==0) raw=1;
+  else if(strcmp(progname,"send_rawd")==0) {raw=0;daemon_mode=1;}
   else if(strcmp(progname,"send_mon")==0) raw=0;
+  else if(strcmp(progname,"send_mond")==0) {raw=0;daemon_mode=1;}
   else if(strcmp(progname,"sendt_raw")==0) {raw=1;tow=1;}
+  else if(strcmp(progname,"sendt_rawd")==0) {raw=1;tow=1;daemon_mode=1;}
   else if(strcmp(progname,"sendt_mon")==0) {raw=0;tow=1;}
+  else if(strcmp(progname,"sendt_mond")==0) {raw=0;tow=1;daemon_mode=1;}
   else exit(1);
-  sprintf(tbuf,
-" usage : '%s (-1amrt) (-b [mtu]) (-h [h]) (-i [interface]) (-s [s])\\\n\
+
+  if (daemon_mode)
+    sprintf(tbuf,
+	    " usage : '%s (-1amrt) (-b [mtu]) (-h [h]) (-i [interface]) (-s [s])\\\n\
    (-p [src_port]) (-w [key]) (-T [ttl]) [shmkey] [dest] [port] ([chfile]/- ([logfile]))'",
-    progname);
+	    progname);
+  else
+    sprintf(tbuf,
+	    " usage : '%s (-1aDmrt) (-b [mtu]) (-h [h]) (-i [interface]) (-s [s])\\\n\
+   (-p [src_port]) (-w [key]) (-T [ttl]) [shmkey] [dest] [port] ([chfile]/- ([logfile]))'",
+	    progname);
 
   *interface=0;
   mtu=MTU;
@@ -372,6 +408,9 @@ main(argc,argv)
       case 'b':   /* maximum size of IP packet in bytes (or MTU) */
         mtu=atoi(optarg);
         break;
+      case 'D':
+	daemon_mode = 1;  /* daemon mode */
+	break;
       case 'h':   /* time to shift, in hours */
         hours_shift=atoi(optarg);
         break;
@@ -415,7 +454,7 @@ main(argc,argv)
   shm_key=atoi(argv[1+optind]);
   strcpy(host_name,argv[2+optind]);
   host_port=atoi(argv[3+optind]);
-  *chfile=(*logfile)=0;
+  *chfile=0;
   if(argc>4+optind)
     {
     if(strcmp("-",argv[4+optind])==0) *chfile=0;
@@ -434,6 +473,19 @@ main(argc,argv)
       }
     }    
   if(argc>5+optind) strcpy(logfile,argv[5+optind]);
+  else
+    {
+      *logfile=0;
+      if (daemon_mode)
+	syslog_mode = 1;
+    }
+
+  /* daemon mode */
+  if (daemon_mode) {
+    daemon_init(progname, LOG_USER, syslog_mode);
+    umask(022);
+  }
+  
   read_chfile();
   if(hours_shift!=0)
     {
@@ -513,7 +565,8 @@ main(argc,argv)
     { /* allocate buffers */
     psize[i]=(-1);
     if((sbuf[i]=(unsigned char *)malloc(mtu-28+8))==NULL){
-      fprintf(stderr,"malloc failed. nbuf=%d\n",i);
+      sprintf(tbuf,"malloc failed. nbuf=%d\n",i);
+      write_log(logfile,tbuf);
       break;
       }
     }

@@ -1,4 +1,4 @@
-/* $Id: daemon_mode.c,v 1.1 2004/10/03 15:23:05 uehira Exp $ */
+/* $Id: daemon_mode.c,v 1.2 2004/10/26 14:42:01 uehira Exp $ */
 
 /*-
  * Daemon mode utility
@@ -46,7 +46,7 @@ daemon_init(const char *pname, int facility, int use_syslog)
     exit(0);   /* 1st child terminates */
 
   /* 2nd child continues */
-  (void)chdir("/");   /* change working directory */
+  /* (void)chdir("/"); */   /* change working directory */
   
   (void)umask(0);     /* clear our file mode creation mask */
 

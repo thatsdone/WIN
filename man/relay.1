@@ -1,10 +1,18 @@
 .TH relay 1W "2003.10.26" "WIN SYSTEM" "WIN SYSTEM"
 .SH 名称
-relay - win 形式データのIP上の中継
+relay, relayd - win 形式データのIP上の中継
 .SH 形式
-.IP
-.ti -7
-relay [\-\fBr\fR] [\-\fBd\fI\ delay\fR] [\-\fBg\fI\ group\fR] 
+relay [\-\fBrD\fR] [\-\fBd\fI\ delay\fR] [\-\fBg\fI\ group\fR] 
+[\-\fBi\fI\ interface\fR] [\-\fBp\fI\ src_port\fR] [\-\fBs\fI\ sinterface\fR] 
+[\-\fBt\fI\ ttl\fR]
+.I inport
+.I dest
+.I outport
+[
+.I logfile
+]
+.LP
+relayd [\-\fBr\fR] [\-\fBd\fI\ delay\fR] [\-\fBg\fI\ group\fR] 
 [\-\fBi\fI\ interface\fR] [\-\fBp\fI\ src_port\fR] [\-\fBs\fI\ sinterface\fR] 
 [\-\fBt\fI\ ttl\fR]
 .I inport
@@ -35,12 +43,16 @@ relay は、自ホストの UDP ポート番号
 end-of-fileが検出されると relay は終了します。
 この動作はテキストデータの配信に利用されます。
 .LP
+relayd は daemon モードで起動します。relay でオプション
+\fB\-D\fR
+を指定した時と同じ動作です。
+.LP
 ログファイル名
 .I \ logfile
-を指定すると、ここに動作ログがとられ、
+を指定すると、ここに動作ログがとられます。
 指定しないとログ情報は標準出力に
-送られます。ログファイルは書き込みのたび毎にオープン／クローズ
-されます。
+送られます(ただし、daemon モードで動いている時は syslogd(8) に送られま
+す)。ログファイルは書き込みのたび毎にオープン／クローズされます。
 .LP
 relay は引数なしで起動すると簡単な使用法を表示します。
 .SH ネットワーク上の形式と再送プロトコル
@@ -51,6 +63,8 @@ relay はパケット番号の連続性を監視して
 できます。100ヶ所を超えると、recvt は送信元テーブルを一旦白紙に戻し、
 改めて登録を始めます。
 .SH オプション
+.IP \fB\-D 5
+daemon モードで起動します。
 .IP "\fB\-d \fIdelay" 5
 前のパケットを中継してから0.5秒以上経過した後に
 パケットが届いたとき、そのパケットを送信する前に

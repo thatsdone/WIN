@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.16 2004/10/21 12:54:40 uehira Exp $
+# $Id: Makefile.am,v 1.17 2004/10/26 14:42:00 uehira Exp $
 #
 #  Makefile.am in man subdirectory.
 #
@@ -23,10 +23,17 @@ EXTRA_DIST = $(WIN_MAN)
 
 install-data-hook:
 	(rm -f $(man1dir)/eventsrtape.1; cd $(man1dir) && @LN_S@ events.1 eventsrtape.1)
+
 	(rm -f $(man1dir)/send_mon.1; cd $(man1dir) && @LN_S@ send_raw.1 send_mon.1)
 	(rm -f $(man1dir)/sendt_mon.1; cd $(man1dir) && @LN_S@ send_raw.1 sendt_mon.1)
 	(rm -f $(man1dir)/sendt_raw.1; cd $(man1dir) && @LN_S@ send_raw.1 sendt_raw.1)
+	(rm -f $(man1dir)/send_rawd.1; cd $(man1dir) && @LN_S@ send_raw.1 send_rawd.1)
+	(rm -f $(man1dir)/send_mond.1; cd $(man1dir) && @LN_S@ send_raw.1 send_mond.1)
+	(rm -f $(man1dir)/sendt_mond.1; cd $(man1dir) && @LN_S@ send_raw.1 sendt_mond.1)
+	(rm -f $(man1dir)/sendt_rawd.1; cd $(man1dir) && @LN_S@ send_raw.1 sendt_rawd.1)
 	(rm -f $(man1dir)/wdisk60.1; cd $(man1dir) && @LN_S@ wdisk.1 wdisk60.1)
 	(rm -f $(man1dir)/wdiskd.1; cd $(man1dir) && @LN_S@ wdisk.1 wdiskd.1)
 	(rm -f $(man1dir)/wdisk60d.1; cd $(man1dir) && @LN_S@ wdisk.1 wdisk60d.1)
 	(rm -f $(man1dir)/orderd.1; cd $(man1dir) && @LN_S@ order.1 orderd.1)
+	(rm -f $(man1dir)/recvtd.1; cd $(man1dir) && @LN_S@ recvt.1 recvtd.1)
+	(rm -f $(man1dir)/relayd.1; cd $(man1dir) && @LN_S@ relay.1 relayd.1)

@@ -1,4 +1,4 @@
-/* $Id: wdisk.c,v 1.14 2004/10/21 11:30:15 uehira Exp $ */
+/* $Id: wdisk.c,v 1.15 2004/10/26 14:42:01 uehira Exp $ */
 /*
   program "wdisk.c"   4/16/93-5/13/93,7/2/93,7/5/94  urabe
                       1/6/95 bug in adj_time fixed (tm[0]--)
@@ -351,9 +351,14 @@ wmemo(f,c)
 usage()
 {
 
-  fprintf(stderr,
-	  " usage : '%s (-Dns) [shm_key]/- [out dir] ([N of files]/[freespace in MB(-s)] ([log file]))'\n",
-	  progname);
+  if(daemon_mode)
+    fprintf(stderr,
+	    " usage : '%s (-ns) [shm_key]/- [out dir] ([N of files]/[freespace in MB(-s)] ([log file]))'\n",
+	    progname);
+  else
+    fprintf(stderr,
+	    " usage : '%s (-Dns) [shm_key]/- [out dir] ([N of files]/[freespace in MB(-s)] ([log file]))'\n",
+	    progname);
 }
 
 main(argc,argv)

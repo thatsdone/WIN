@@ -1,6 +1,8 @@
-$Id: ChangeLog,v 1.1.2.4 2001/11/19 03:11:39 uehira Exp $
+$Id: ChangeLog,v 1.1.2.5 2001/11/19 10:44:11 uehira Exp $
 
 2001-11-19 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* use strerror(3)
+	  order2.c wdiskts.c
 	* MFC: fixed format of 'year' in format#2200 in sub final()
 	  hypomh.f hypomhc.c
 	* MFC: output to current dir if not specified

@@ -1,4 +1,4 @@
-/* $Id: wdiskts.c,v 1.1.2.1 2001/11/02 11:43:40 uehira Exp $ */
+/* $Id: wdiskts.c,v 1.1.2.2 2001/11/19 10:44:11 uehira Exp $ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -26,6 +26,7 @@
 #include <dirent.h>
 #include <signal.h>
 #include <ctype.h>
+#include <errno.h>
 #include <setjmp.h>
 
 #include "subst_func.h"
@@ -40,10 +41,6 @@
 #define REALLOC(type, ptr, n) \
 (type*)realloc((void *)ptr, (size_t)(sizeof(type)*(n)))
 #define FREE(a)         (void)free((void *)(a))
-
-extern const int sys_nerr;
-extern const char *const sys_errlist[];
-extern int errno;
 
 char tbuf[256],latest[20],oldest[20],busy[20],outdir[80];
 char *progname,logfile[256];
@@ -88,7 +85,7 @@ err_sys(ptr)
 {
    perror(ptr);
    write_log(logfile,ptr);
-   if(errno<sys_nerr) write_log(logfile,sys_errlist[errno]);
+   if(strerror(errno)) write_log(logfile,strerror(errno));
    ctrlc();
 }
 

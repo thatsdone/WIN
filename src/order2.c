@@ -1,4 +1,4 @@
-/*  $Id: order2.c,v 1.1.2.1 2001/11/02 11:43:37 uehira Exp $  */
+/*  $Id: order2.c,v 1.1.2.2 2001/11/19 10:44:11 uehira Exp $  */
 /*  program "order.c" 1/26/94 - 2/7/94, 6/14/94 urabe */
 /*                              1/6/95 bug in adj_time(tm[0]--) fixed */
 /*                              3/17/95 write_log() */
@@ -10,6 +10,7 @@
 /*                              98.6.26 yo2000 */
 /*                              99.4.19 byte-order-free */
 /*                            2000.2.23 timeout data output (uehira) */
+/*                            2000.11.19 strerror() */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -22,6 +23,7 @@
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
+
 #if TIME_WITH_SYS_TIME
 #include <sys/time.h>
 #include <time.h>
@@ -33,13 +35,11 @@
 #endif  /* !HAVE_SYS_TIME_H */
 #endif  /* !TIME_WITH_SYS_TIME */
 
+#include <errno.h>
+
 #include "subst_func.h"
 
 #define SWAPL(a) a=(((a)<<24)|((a)<<8)&0xff0000|((a)>>8)&0xff00|((a)>>24)&0xff)
-
-extern const int sys_nerr;
-extern const char *const sys_errlist[];
-extern int errno;
 
 char *progname,logfile[256];
 struct Shm {
@@ -336,7 +336,7 @@ err_sys(ptr)
 {
   perror(ptr);
   write_log(logfile,ptr);
-  if(errno<sys_nerr) write_log(logfile,sys_errlist[errno]);
+  if(strerror(errno)) write_log(logfile,strerror(errno));
   ctrlc();
 }
 

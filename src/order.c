@@ -1,4 +1,4 @@
-/* $Id: order.c,v 1.6 2002/05/02 10:50:13 urabe Exp $ */
+/* $Id: order.c,v 1.7 2002/05/07 06:01:16 urabe Exp $ */
 /*  program "order.c" 1/26/94 - 2/7/94, 6/14/94 urabe */
 /*                              1/6/95 bug in adj_time(tm[0]--) fixed */
 /*                              3/17/95 write_log() */
@@ -14,6 +14,7 @@
 /*                              2002.3.1 option -a ; system clock mode */
 /*                              2002.3.1 eobsize_in(auto), eobsize_out(-B) */
 /*                              2002.5.2 i<1000 -> 1000000 */
+/*                              2002.5.7 mktime2() */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -44,6 +45,7 @@
 
 #define SWAPL(a) a=(((a)<<24)|((a)<<8)&0xff0000|((a)>>8)&0xff00|((a)>>24)&0xff)
 #define DEBUG     0
+#define DEBUG1    0
 
 char *progname,logfile[256];
 struct Shm {
@@ -140,6 +142,28 @@ static unsigned char d2b[]={
   ptr[5]=d2b[nt->tm_sec];
 }
 
+time_t mktime2(struct tm *mt) /* high-speed version of mktime() */
+  {
+  static struct tm *m;
+  time_t t;
+  register int i,j,ye;
+  static int dm[]={31,28,31,30,31,30,31,31,30,31,30,31};
+  static int dy[]={365,365,366,365,365,365,366,365,365,365,366,365, /* 1970-81 */
+                   365,365,366,365,365,365,366,365,365,365,366,365, /* 1982-93 */
+                   365,365,366,365,365,365,366,365,365,365,366,365, /* 1994-2005 */
+                   365,365,366,365,365,365,366,365,365,365,366,365, /* 2006-17 */
+                   365,365,366,365,365,365,366,365,365,365,366,365, /* 2018-2029 */
+                   365,365,366,365,365,365,366,365,365,365,366,365};/* 2030-2041 */
+  if(m==NULL) m=localtime(&t);
+  ye=mt->tm_year-70;
+  j=0;
+  for(i=0;i<ye;i++) j+=dy[i]; /* days till the previous year */
+  for(i=0;i<mt->tm_mon;i++) j+=dm[i]; /* days till the previous month */
+  if(!(mt->tm_year&0x3) && mt->tm_mon>1) j++;  /* in a leap year */
+  j+=mt->tm_mday-1; /* days */
+  return j*86400+mt->tm_hour*3600+mt->tm_min*60+mt->tm_sec-m->tm_gmtoff;
+  }
+
 time_t bcd_t(ptr)
   unsigned char *ptr;
   {
@@ -155,7 +179,7 @@ time_t bcd_t(ptr)
   mt.tm_min=tm[4];
   mt.tm_sec=tm[5];
   mt.tm_isdst=0;
-  ts=mktime(&mt);
+  ts=mktime2(&mt);
   return ts;
   }
 
@@ -401,8 +425,8 @@ reset:
           goto reset;
           }
         else if(sec_1==0) /* waiting */
-          { /* sweep output data if RT advenced */
-          if((rt=time(0))<rt_next) continue;
+          { /* sweep output data if RT advanced */
+          if((rt=time(0))<rt_next) {usleep(10000);continue;}
           ptr_save=shm_in->d+shp_in;
           for(t_out=rt_next-n_sec;t_out<=rt-n_sec;t_out++)
             {

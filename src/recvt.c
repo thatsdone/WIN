@@ -36,6 +36,7 @@
 /*                2002.3.18 host control debugged */
 /*                2002.5.3 N_PACKET 64->128, 'no request resend' log */
 /*                2002.5.3 maximize RCVBUF size */
+/*                2002.5.3,7 maximize RCVBUF size ( option '-s' )*/
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -552,7 +553,8 @@ main(argc,argv)
   int shmid;
   unsigned long uni;
   unsigned char *ptr,tm[6],*ptr_size,*ptr_size2;
-  int i,j,k,size,fromlen,n,re,nlen,sock,nn,all,pre,post,c,mon,pl,eobsize;
+  int i,j,k,size,fromlen,n,re,nlen,sock,nn,all,pre,post,c,mon,pl,eobsize,
+    sbuf;
   struct sockaddr_in to_addr,from_addr;
   unsigned short to_port;
   extern int optind;
@@ -574,13 +576,14 @@ main(argc,argv)
   else progname=argv[0];
   sprintf(tb,
 " usage : '%s (-aBnM) (-m [pre(m)]) (-p [post(m)]) (-i [interface]) \\\n\
-              (-g [mcast_group]) [port] [shm_key] [shm_size(KB)] \\\n\
+              (-g [mcast_group]) (-s sbuf(KB)) [port] [shm_key] [shm_size(KB)] \\\n\
               ([ctl file]/- ([log file]))'",progname);
 
   all=no_pinfo=mon=eobsize=0;
   pre=post=0;
   *interface=(*mcastgroup)=0;
-  while((c=getopt(argc,argv,"aBg:i:m:Mp:"))!=EOF)
+  sbuf=256;
+  while((c=getopt(argc,argv,"aBg:i:m:Mp:s:"))!=EOF)
     {
     switch(c)
       {
@@ -608,6 +611,9 @@ main(argc,argv)
         break;
       case 'p':   /* time limit after RT in minutes */
         post=atoi(optarg);
+        break;
+      case 's':   /* preferred socket buffer size (KB) */
+        sbuf=atoi(optarg);
         break;
       default:
         fprintf(stderr," option -%c unknown\n",c);
@@ -664,7 +670,7 @@ main(argc,argv)
   write_log(logfile,tb);
 
   if((sock=socket(AF_INET,SOCK_DGRAM,0))<0) err_sys("socket");
-  for(j=256;j>=16;j-=4)
+  for(j=sbuf;j>=16;j-=4)
     {
     i=j*1024;
     if(setsockopt(sock,SOL_SOCKET,SO_RCVBUF,(char *)&i,sizeof(i))>=0)

@@ -1,7 +1,11 @@
-$Id: ChangeLog,v 1.35 2003/06/03 00:19:46 urabe Exp $
+$Id: ChangeLog,v 1.36 2003/06/03 15:11:24 tsuru Exp $
 
 2003-06-03 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
 	* ecore2.c : replaced err-related ext defs with '#include <errno.h>'
+
+2003-06-01 Tsuruoka Hiroshi  <tsuru@eri.u-tokyo.ac.jp>
+	* shmdump.c : add filtering option 
+                    : bug fix -f option
 
 2003-05-25 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* hypomhc.c : TRAVEL-TIME CALCULATION MODE

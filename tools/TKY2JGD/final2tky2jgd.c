@@ -1,3 +1,5 @@
+/* $Id: final2tky2jgd.c,v 1.2 2005/02/02 15:49:27 uehira Exp $ */
+
 /* final2tky2jgd.c */
 /* 2005.1.20 urabe */
 /* convert from WIN final file to tky2jgd input file */
@@ -6,12 +8,12 @@
 #include <stdlib.h>
 main()
   {
-  unsigned char ye[20],mo[20],da[20],ho[20],mi[20],se[20],
-    lat[20],lon[20],dep[20],mag[20],name[20],label[20],tb[256];
+  unsigned char ye[1024],mo[1024],da[1024],ho[1024],mi[1024],se[1024],
+    lat[1024],lon[1024],dep[1024],mag[1024],name[1024],label[1024],tb[1024];
   int i;
   double latit,longit,lat_min,lat_sec,lon_min,lon_sec;
 
-  while(fgets(tb,256,stdin))
+  while(fgets(tb,sizeof(tb),stdin))
     {
     *lat=*lon=0;
     sscanf(tb,"%s%s%s%s%s%s%s%s%s%s%s%s",

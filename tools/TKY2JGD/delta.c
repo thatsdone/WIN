@@ -1,9 +1,11 @@
+/* $Id */
+
 /* delta.c */
 /* 2005.1.12  urabe */
 /* get geometrical distance in km (y,x,d) between two points */
 /*
-input  : 35.11590 139.07274 35.11261 139.07589 E.ATA $BG.3$(B
-output : 35.11590 139.07274 35.11261 139.07589 E.ATA $BG.3$(B  0.366 -0.286  0.464
+input  : 35.11590 139.07274 35.11261 139.07589 E.ATA Ç®³¤
+output : 35.11590 139.07274 35.11261 139.07589 E.ATA Ç®³¤  0.366 -0.286  0.464
 */
 #include <stdio.h>
 #include <math.h>
@@ -61,7 +63,7 @@ main(argc,argv)
   char **argv;
   {
   double alat0,along0,lat1,lon1,lat2,lon2,x1,y1,x2,y2,d;
-  unsigned char st[20],name[20],tb[256];
+  unsigned char st[1024],name[1024],tb[1024];
 
   if(argc>=3)
     {
@@ -74,7 +76,7 @@ main(argc,argv)
     along0=139.5;
     }
 
-  while(fgets(tb,256,stdin))
+  while(fgets(tb,sizeof(tb),stdin))
     {
     sscanf(tb,"%lf%lf%lf%lf%s%s",&lat2,&lon2,&lat1,&lon1,st,name);
     pltxy(alat0,along0,&lat2,&lon2,&x2,&y2,0);

@@ -8,8 +8,8 @@ main(argc,argv)
   int argc;
   char **argv;
   {
-  unsigned char c[30][30],lat1[20],lon1[20],lat2[20],lon2[20],
-    s1[20],s2[20],tb[256],tb2[256];
+  unsigned char c[30][1024],lat1[20],lon1[20],lat2[20],lon2[20],
+    s1[1024],s2[1024],tb[1024],tb2[1024];
   int i;
   FILE *fp;
 
@@ -18,7 +18,7 @@ main(argc,argv)
     exit(1);
     }
 
-  while(fgets(tb,256,stdin))
+  while(fgets(tb,sizeof(tb),stdin))
     {
     if(*tb==' ' || *tb=='#')
       {printf("%s",tb);continue;}
@@ -30,7 +30,7 @@ main(argc,argv)
 
     rewind(fp);
     while(!feof(fp)){
-      if(fgets(tb2,256,fp)==NULL) continue;
+      if(fgets(tb2,sizeof(tb2),fp)==NULL) continue;
       sscanf(tb2,"%s%s%s%s%s%s",lat1,lon1,lat2,lon2,s1,s2);
       if(strcmp(lat2,c[13])==0 && strcmp(lon2,c[14])==0)
         {

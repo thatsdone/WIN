@@ -7,8 +7,8 @@
 #include <stdlib.h>
 main()
   {
-  unsigned char tb[1024],lat1[1024],lon1[1024],lat2[1024],lon2[1024],st[1024],name[1000],
-     tt[1024];
+  unsigned char tb[1024],lat1[1024],lon1[1024],lat2[1024],lon2[1024],
+    st[1024],name[1024],tt[1024];
   double latit,longit,lat_min,lat_sec,lon_min,lon_sec;
 
   while(fgets(tb,sizeof(tb),stdin))

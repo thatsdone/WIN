@@ -1,4 +1,8 @@
- $Id: ChangeLog,v 1.96 2005/02/20 13:56:16 urabe Exp $
+ $Id: ChangeLog,v 1.97 2005/03/07 09:40:35 uehira Exp $
+
+2005-03-07 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* raw_raw : added daemon mode (raw_rawd)
+	* Version 1.1.57 released.
 
 2005-02-20 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
 	* recvt.c : option -f [ch file] for additional channels file(s)

@@ -1,4 +1,4 @@
-/* $Id: raw_raw.c,v 1.8 2005/02/20 13:56:17 urabe Exp $ */
+/* $Id: raw_raw.c,v 1.9 2005/03/07 09:40:35 uehira Exp $ */
 /* "raw_raw.c"    97.8.5 urabe */
 /*                  modified from raw_100.c */
 /*                  98.4.17 FreeBSD */
@@ -11,6 +11,7 @@
 /* 2002.3.28 sleep(1) -> usleep(10000) */
 /* 2002.5.2 i<1000 -> 1000000 */
 /* 2005.2.20 added fclose() in read_chfile() */
+/* 2005.3.7  daemon mode (Uehira) */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -37,7 +38,10 @@
 
 #include <sys/types.h>
 #include <errno.h>
+#include <syslog.h>
+#include <unistd.h>
 
+#include "daemon_mode.h"
 #include "subst_func.h"
 
 #define DEBUG       0
@@ -46,6 +50,7 @@
 unsigned char ch_table[65536];
 char *progname,logfile[256],chfile[256];
 int n_ch,negate_channel;
+int  daemon_mode, syslog_mode;
 
 mklong(ptr)
   unsigned char *ptr;
@@ -77,12 +82,18 @@ write_log(logfil,ptr)
   {
   FILE *fp;
   int tm[6];
-  if(*logfil) fp=fopen(logfil,"a");
-  else fp=stdout;
-  get_time(tm);
-  fprintf(fp,"%02d%02d%02d.%02d%02d%02d %s %s\n",
-    tm[0],tm[1],tm[2],tm[3],tm[4],tm[5],progname,ptr);
-  if(*logfil) fclose(fp);
+
+  if (syslog_mode)
+    syslog(LOG_NOTICE, "%s", ptr);
+  else
+    {
+      if(*logfil) fp=fopen(logfil,"a");
+      else fp=stdout;
+      get_time(tm);
+      fprintf(fp,"%02d%02d%02d.%02d%02d%02d %s %s\n",
+	      tm[0],tm[1],tm[2],tm[3],tm[4],tm[5],progname,ptr);
+      if(*logfil) fclose(fp);
+    }
   }
 
 ctrlc()
@@ -94,8 +105,13 @@ ctrlc()
 err_sys(ptr)
   char *ptr;
   {
-  perror(ptr);
-  write_log(logfile,ptr);
+  if (syslog_mode)
+    syslog(LOG_NOTICE, "%s", ptr);
+  else
+    {
+      perror(ptr);
+      write_log(logfile,ptr);
+    }
   if(strerror(errno)) write_log(logfile,strerror(errno));
   ctrlc();
   }
@@ -196,11 +212,19 @@ main(argc,argv)
   shift45=0;
   if(progname=strrchr(argv[0],'/')) progname++;
   else progname=argv[0];
-  sprintf(tb," usage : '%s (-gB) [in_key] [out_key] [shm_size(KB)] \\\n\
+
+  daemon_mode = syslog_mode = 0;
+  if(strcmp(progname,"raw_rawd")==0) daemon_mode=1;
+
+  if(strcmp(progname,"raw_rawd")==0)
+    sprintf(tb," usage : '%s (-gB) [in_key] [out_key] [shm_size(KB)] \\\n\
+                  (-/[ch_file]/-[ch_file] ([log file]))'",progname);
+  else
+    sprintf(tb," usage : '%s (-gBD) [in_key] [out_key] [shm_size(KB)] \\\n\
                   (-/[ch_file]/-[ch_file] ([log file]))'",progname);
 
   eobsize_out=eobsize_in=0;
-  while((c=getopt(argc,argv,"gB"))!=EOF)
+  while((c=getopt(argc,argv,"gBD"))!=EOF)
     {
     switch(c)
       {
@@ -209,6 +233,9 @@ main(argc,argv)
         break;
       case 'B':   /* eobsize */
         eobsize_out=1;
+        break;
+      case 'D':   /* daemon mode */
+	daemon_mode = 1;
         break;
       default:
         fprintf(stderr," option -%c unknown\n",c);
@@ -245,7 +272,19 @@ main(argc,argv)
       }
     }    
   if(argc>5+optind) strcpy(logfile,argv[5+optind]);
-    
+  else
+    {
+      *logfile=0;
+      if (daemon_mode)
+	syslog_mode = 1;
+    }
+
+  /* daemon mode */
+  if (daemon_mode) {
+    daemon_init(progname, LOG_USER, syslog_mode);
+    umask(022);
+  }
+
   read_chfile();
 
   /* in shared memory */

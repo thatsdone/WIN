@@ -1,8 +1,18 @@
-.TH raw_raw 1W "2002.5.31" "WIN SYSTEM" "WIN SYSTEM"
+.TH raw_raw 1W "2005.3.7" "WIN SYSTEM" "WIN SYSTEM"
 .SH 名称
 raw_raw - RAW 形式データからチャネルを選択
 .SH 形式
-raw_raw [\-\fBBg\fR]
+raw_raw [\-\fBBDg\fR]
+.I inkey
+.I outkey
+.I shmsize
+[
+.I chfile
+[
+.I logfile
+]]
+.LP
+raw_rawd [\-\fBBg\fR]
 .I inkey
 .I outkey
 .I shmsize
@@ -37,11 +47,14 @@ win 形式のデータを読み込み、キー
 \ (KB) よりも小さいとエラーになります。
 共有メモリ・キーは32ビットの整数値です。
 .LP
+raw_mond は daemon モードで起動します。
+.LP
 ログファイル名
 .I \ logfile
 を指定すると、ここに動作ログがとられ、
 指定しないとログ情報は標準出力に
-送られます。ログファイルは書き込みのたび毎に
+送られます(ただし、daemon モードで動い
+ている時は syslogd(8) に送られます)。ログファイルは書き込みのたび毎に
 オープン／クローズされます。
 .LP
 チャネルファイルは、１行に１つずつ、16進数でチャネル番号を書
@@ -72,6 +85,8 @@ raw_raw は、引数なしで起動すると簡単な使用法を表示します。
 出力共有メモリに「ブロック末尾にもブロックサイズを
 持つ形式」で書き込みます。これについては recvt(1W), order(1W) を
 参照してください。
+.IP "\fB\-D" 5
+daemon モードで起動します。
 .SH ソース
 .TP
 `raw_raw.c'

@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.27 2004/12/28 07:10:27 uehira Exp $
+# $Id: Makefile.am,v 1.28 2005/03/07 09:40:35 uehira Exp $
 #
 
 if SUNOS4
@@ -86,6 +86,7 @@ install-exec-hook:
 	(rm -f @bindir@/relayd; cd @bindir@ && @LN_S@ relay relayd)
 	(rm -f @bindir@/relaymd; cd @bindir@ && @LN_S@ relaym relaymd)
 	(rm -f @bindir@/raw_mond; cd @bindir@ && @LN_S@ raw_mon raw_mond)
+	(rm -f @bindir@/raw_rawd; cd @bindir@ && @LN_S@ raw_raw raw_rawd)
 	(rm -f @bindir@/wdisktsd; cd @bindir@ && @LN_S@ wdiskts wdisktsd)
 
 win_SOURCES = win.c $(SUBFUNC_H)
@@ -186,7 +187,7 @@ setexb_SOURCES = setexb.c $(SUBFUNC_H)
 
 timeout_SOURCES = timeout.c $(SUBFUNC_H)
 
-raw_raw_SOURCES = raw_raw.c $(SUBFUNC_H)
+raw_raw_SOURCES = raw_raw.c $(SUBFUNC_H) $(DAEMON_MODE)
 raw_raw_LDADD = @LIBSHMGET@
 
 raw_shift_SOURCES = raw_shift.c $(SUBFUNC_H)

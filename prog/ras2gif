@@ -1,0 +1,7 @@
+#!/bin/sh
+# ras2gif [rasfile] [outdir] [basename]
+PATH=/usr/local/bin:/usr/X11R6/bin
+rasttopnm $1|ppmtogif>$2/$3.gif
+rasttopnm $1|pbmreduce -threshold -value 0.8 2|ppmtogif>$2/$3.2.gif
+rasttopnm $1|pbmreduce -threshold -value 0.8 3|ppmtogif>$2/$3.3.gif
+rasttopnm $1|pbmreduce -threshold -value 0.8 4|ppmtogif>$2/$3.4.gif

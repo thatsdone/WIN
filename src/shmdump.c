@@ -1,4 +1,3 @@
-/* $Id: shmdump.c,v 1.11 2002/06/28 00:04:03 urabe Exp $ */
 /*  program "shmdump.c" 6/14/94 urabe */
 /*  revised 5/29/96 */
 /*  Little Endian (uehira) 8/27/96 */
@@ -12,6 +11,7 @@
 /*  2002.2.28 size at EOB in shm_in */
 /*  2002.5.2 i<1000 -> 1000000 */
 /*  2002.6.24 -t for text output, 6.26 fixed */
+/*  2002.10.27 stdin input */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -275,7 +275,7 @@ main(argc,argv)
     } un;
   int i,j,k,c_save_in,shp_in,shmid_in,size_in,shp,c_save,wtow,c,out,all,mon,
     ch,sr,gs,size,chsel,nch,search,seconds,tbufp,bufsize,zero,nsec,aa,bb,
-    eobsize,eobsize_count,size2,tout,abuf[4096];
+    eobsize,eobsize_count,size2,tout,abuf[4096],bufsize_in;
   unsigned long tow,wsize,time_end,time_now;
   unsigned int packet_id;
   unsigned char *ptr,tbuf[256],*ptr_lim,*buf,chlist[65536/8],*ptw,tms[6],
@@ -294,7 +294,7 @@ main(argc,argv)
   if(progname=strrchr(argv[0],'/')) progname++;
   else progname=argv[0];
   sprintf(tb,
-    " usage : '%s (-amoqtwz) (-s [s]) (-f [chfile]/-) [shm_key] ([ch] ...)'",
+    " usage : '%s (-amoqtwz) (-s [s]) (-f [chfile]/-) [shm_key]/- ([ch] ...)'",
       progname);
   search=out=all=seconds=win=zero=mon=tout=0;
   fplist=stdout;
@@ -362,7 +362,21 @@ main(argc,argv)
     exit(1);
     }
 
-  shm_key_in=atoi(argv[1+optind]);
+  if(strcmp(argv[1+optind],"-"))
+    {
+    shm_key_in=atoi(argv[1+optind]); /* shared memory */
+    if((shmid_in=shmget(shm_key_in,0,0))<0) err_sys("shmget");
+    if((shm_in=(struct Shm *)shmat(shmid_in,(char *)0,0))==(struct Shm *)-1)
+      err_sys("shmat");
+    /*fprintf(stderr,"in : shm_key_in=%d id=%d\n",shm_key_in,shmid_in);*/
+    zero=0;
+    }
+  else /* read data from stdin instead of Shm */
+    {
+    shm_key_in=0;
+    bufsize_in=MAXMESG*100;
+    if((shm_in=(struct Shm *)malloc(bufsize_in))==0) err_sys("malloc inbuf");
+    }
 
   if(argc>2+optind)
     {
@@ -382,14 +396,8 @@ main(argc,argv)
     {
     if(all) bufsize=MAXMESG*100;
     else bufsize=MAXMESG*nch;
-    if((buf=(unsigned char *)malloc(bufsize))==0) err_sys("malloc");
+    if((buf=(unsigned char *)malloc(bufsize))==0) err_sys("malloc outbuf");
     }
-
-  /* shared memory */
-  if((shmid_in=shmget(shm_key_in,0,0))<0) err_sys("shmget");
-  if((shm_in=(struct Shm *)shmat(shmid_in,(char *)0,0))==(struct Shm *)-1)
-    err_sys("shmat");
-/*fprintf(stderr,"in : shm_key_in=%d id=%d\n",shm_key_in,shmid_in);*/
 
   signal(SIGPIPE,(void *)ctrlc);
   signal(SIGINT,(void *)ctrlc);
@@ -402,10 +410,13 @@ main(argc,argv)
 
   nsec=0;
 reset:
-  while(shm_in->r==(-1)) usleep(200000);
-  c_save_in=shm_in->c;
-  if(zero) size_in=mklong(shm_in->d+(shp_in=0));
-  else size_in=mklong(shm_in->d+(shp_in=shm_in->r));
+  if(shm_key_in)
+    {
+    while(shm_in->r==(-1)) usleep(200000);
+    c_save_in=shm_in->c;
+    if(zero) size_in=mklong(shm_in->d+(shp_in=0));
+    else size_in=mklong(shm_in->d+(shp_in=shm_in->r));
+    }
   wtow=0;
   ptw=buf+4;
 
@@ -416,19 +427,37 @@ reset:
 
   while(1)
     {
-    i=advance_s(shm_in,&shp_in,&c_save_in,&size_in);
-    if(i==0)
+    if(shm_key_in)
       {
-      usleep(100000);
-      continue;
+      i=advance_s(shm_in,&shp_in,&c_save_in,&size_in);
+      if(i==0)
+        {
+        usleep(100000);
+        continue;
+        }
+      else if(i<0) goto reset;
+
+      if(size_in==mklong(shm_in->d+shp_in+size_in-4)) eobsize_count++;
+      else eobsize_count=0;
+      if(eobsize && eobsize_count==0) goto reset;
+      if(!eobsize && eobsize_count>3) goto reset;
       }
-    else if(i<0) goto reset;
-
-    if(size_in==mklong(shm_in->d+shp_in+size_in-4)) eobsize_count++;
-    else eobsize_count=0;
-    if(eobsize && eobsize_count==0) goto reset;
-    if(!eobsize && eobsize_count>3) goto reset;
-
+    else
+      {
+      if(fread(shm_in->d,1,4,stdin)==0) exit(0);
+      size_in=mklong(shm_in->d);
+      if(sizeof(long)*4+size_in>bufsize_in)
+        {
+        bufsize_in=sizeof(long)*4+size_in+MAXMESG*100;
+        if((shm_in=(struct Shm *)realloc(shm_in,bufsize_in))==0)
+          {
+          fprintf(stderr,"inbuf realloc failed !\n");
+          exit(1);
+          }
+        }
+      if(fread(shm_in->d+4,1,size_in-4,stdin)==0) exit(0);
+      shp_in=0;
+      }
     if(eobsize) sprintf(tbuf,"%4d B ",size_in);
     else sprintf(tbuf,"%4d : ",size_in);
     ptr=shm_in->d+shp_in+4;
@@ -503,16 +532,11 @@ reset:
             {
             if(ptw-buf+gs>bufsize)
               {
-              j=ptw-buf;
-              if((buf=(unsigned char *)realloc(buf,bufsize+MAXMESG*100))==0)
+              bufsize=ptw-buf+gs+MAXMESG*100;
+              if((buf=(unsigned char *)realloc(buf,bufsize))==0)
                 {
                 fprintf(stderr,"buf realloc failed !\n");
-                break;
-                }
-              else
-                {
-                bufsize+=MAXMESG*100;
-                ptw=buf+j;
+                exit(1);
                 }
               }
             if(memcmp(buf+4,tms,6)) /* new time */

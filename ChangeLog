@@ -1,4 +1,7 @@
-$Id: ChangeLog,v 1.17 2002/09/12 00:24:22 urabe Exp $
+$Id: ChangeLog,v 1.18 2002/10/27 08:30:00 urabe Exp $
+
+2002-10-27 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
+	* shmdump : input from 'stdin' by specifying Shm key as '-'
 
 2002-09-12 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
         * insert_raw2 : updates mon file if mon dir is specified in the 5th line of prm file.

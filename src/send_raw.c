@@ -1,4 +1,4 @@
-/* $Id: send_raw.c,v 1.12 2002/05/15 02:29:19 urabe Exp $ */
+/* $Id: send_raw.c,v 1.13 2002/10/27 08:30:01 urabe Exp $ */
 /*
     program "send_raw/send_mon.c"   1/24/94 - 1/25/94,5/25/94 urabe
                                     6/15/94 - 6/16/94
@@ -38,6 +38,7 @@
                2002.5.2  i<1000 -> 1000000
                2002.5.3  NBUF 128->250
                2002.5.15 standby mode (-w SHMKEY) / packet statistics on HUP
+               2002.9.19 added option -T to set TTL (-T ttl)
 */
 
 #ifdef HAVE_CONFIG_H
@@ -313,7 +314,7 @@ main(argc,argv)
   unsigned long uni;
   int i,j,k,c_save,shp,aa,bb,ii,bufno,bufno_f,fromlen,hours_shift,sec_shift,c,
     kk,nw,eobsize,eobsize_count,size2,size,gs,sr,re,shmid,shwid,atm,c_save_w,
-    standby;
+    standby,ttl;
   struct sockaddr_in to_addr,from_addr;
   struct hostent *h;
   unsigned short host_port,ch;
@@ -346,14 +347,15 @@ main(argc,argv)
   else exit(1);
   sprintf(tbuf,
 " usage : '%s (-amrt) (-b [mtu]) (-h [h]) (-i [interface]) (-s [s])\\\n\
-           (-w [key]) [shmkey] [dest] [port] ([chfile]/- ([logfile]))'",
+         (-w [key]) (-T [ttl]) [shmkey] [dest] [port] ([chfile]/- ([logfile]))'",
     progname);
 
   *interface=0;
   mtu=MTU;
+  ttl=1;
   shw_key=(-1);
   standby=0;
-  while((c=getopt(argc,argv,"ab:h:i:mrs:tw:"))!=EOF)
+  while((c=getopt(argc,argv,"ab:h:i:mrs:tw:T:"))!=EOF)
     {
     switch(c)
       {
@@ -383,6 +385,9 @@ main(argc,argv)
         break;
       case 'w':   /* shm key to watch */
         shw_key=atoi(optarg);
+        break;
+      case 'T':   /* ttl for MCAST */
+        ttl=atoi(optarg);
         break;
       default:
         fprintf(stderr," option -%c unknown\n",c);
@@ -471,6 +476,12 @@ main(argc,argv)
     mif=inet_addr(interface);
     if(setsockopt(sock,IPPROTO_IP,IP_MULTICAST_IF,(char *)&mif,sizeof(mif))<0)
       err_sys("IP_MULTICAST_IF setsockopt error\n");
+    }
+  if(ttl>1)
+    {
+    no=ttl;
+    if(setsockopt(sock,IPPROTO_IP,IP_MULTICAST_TTL,&no,sizeof(no))<0)
+      err_sys("IP_MULTICAST_TTL setsockopt error\n");
     }
   /* bind my socket to a local port */
   memset((char *)&from_addr,0,sizeof(from_addr));

@@ -1,4 +1,4 @@
-/* $Id: raw_raw.c,v 1.6 2002/04/30 01:31:08 urabe Exp $ */
+/* $Id: raw_raw.c,v 1.7 2002/05/02 10:50:13 urabe Exp $ */
 /* "raw_raw.c"    97.8.5 urabe */
 /*                  modified from raw_100.c */
 /*                  98.4.17 FreeBSD */
@@ -9,6 +9,7 @@
 /* 2000.4.24/2001.11.14 strerror() */
 /* 2002.3.5 eobsize_in(auto), eobsize_out(-B) */
 /* 2002.3.28 sleep(1) -> usleep(10000) */
+/* 2002.5.2 i<1000 -> 1000000 */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -400,7 +401,7 @@ reset:
     if((ptr=ptr_save+size)>shr->d+shr->pl) ptr=shr->d;
     while(ptr==shr->d+shr->p) usleep(10000);
     i=shr->c-c_save;
-    if(!(i<1000 && i>=0) || mklong(ptr_save)!=size)
+    if(!(i<1000000 && i>=0) || mklong(ptr_save)!=size)
       {
       write_log(logfile,"reset");
       goto reset;

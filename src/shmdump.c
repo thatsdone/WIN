@@ -1,4 +1,4 @@
-/* $Id: shmdump.c,v 1.7 2002/03/24 15:35:47 urabe Exp $ */
+/* $Id: shmdump.c,v 1.8 2002/05/02 10:50:14 urabe Exp $ */
 /*  program "shmdump.c" 6/14/94 urabe */
 /*  revised 5/29/96 */
 /*  Little Endian (uehira) 8/27/96 */
@@ -10,6 +10,7 @@
 /*  2000.4.28 -aonwz -s [s] -f [chfile] options */
 /*  2002.1.15 -m for MON data */
 /*  2002.2.28 size at EOB in shm_in */
+/*  2002.5.2 i<1000 -> 1000000 */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -127,7 +128,7 @@ advance_s(shm,shp,c_save,size)
   int shpp,tmp,i;
   shpp=(*shp);
   i=shm->c-(*c_save);
-  if(!(i<1000 && i>=0) || *size!=mklong(shm->d+(*shp))) return -1;
+  if(!(i<1000000 && i>=0) || *size!=mklong(shm->d+(*shp))) return -1;
   if(shpp+(*size)>shm->pl) shpp=0; /* advance pointer */
   else shpp+=(*size);
   if(shm->p==shpp) return 0;

@@ -1,4 +1,4 @@
-/* $Id: order.c,v 1.5 2002/03/24 15:35:46 urabe Exp $ */
+/* $Id: order.c,v 1.6 2002/05/02 10:50:13 urabe Exp $ */
 /*  program "order.c" 1/26/94 - 2/7/94, 6/14/94 urabe */
 /*                              1/6/95 bug in adj_time(tm[0]--) fixed */
 /*                              3/17/95 write_log() */
@@ -13,6 +13,7 @@
 /*                              2002.2.19-28 use mktime(), -l option after order2.c */
 /*                              2002.3.1 option -a ; system clock mode */
 /*                              2002.3.1 eobsize_in(auto), eobsize_out(-B) */
+/*                              2002.5.2 i<1000 -> 1000000 */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -206,7 +207,7 @@ advance(shm,shp,c_save,size,t,shp_busy_save)
 
   shpp=(*shp); /* copy read pointer */
   i=shm->c-(*c_save);
-  if(!(i<1000 && i>=0) || *size!=mklong(shm->d+(*shp))) return -2;
+  if(!(i<1000000 && i>=0) || *size!=mklong(shm->d+(*shp))) return -2;
   if((shpp+=(*size))>shm->pl) shpp=0; /* advance read pointer by one block */
   if(shm->p==shpp) {  /* block is still busy */
     if(shp_busy_save) *shp_busy_save=shpp;

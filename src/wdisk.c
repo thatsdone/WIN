@@ -1,4 +1,4 @@
-/* $Id: wdisk.c,v 1.5 2002/03/24 15:35:47 urabe Exp $ */
+/* $Id: wdisk.c,v 1.6 2002/05/02 10:50:14 urabe Exp $ */
 /*
   program "wdisk.c"   4/16/93-5/13/93,7/2/93,7/5/94  urabe
                       1/6/95 bug in adj_time fixed (tm[0]--)
@@ -12,6 +12,7 @@
                       99.4.19 byte-order-free
                       2000.4.24 strerror()
                       2002.3.2 eobsize_in(auto)
+                      2002.5.2 i<1000 -> 1000000
 */
 
 #ifdef HAVE_CONFIG_H
@@ -447,7 +448,7 @@ main(argc,argv)
       if((shp+=size)>shm->pl) shp=shp_save=0;
       while(shm->p==shp) sleep(1);
       i=shm->c-c_save;
-      if(!(i<1000 && i>=0) || mklong(ptr_save)!=size){
+      if(!(i<1000000 && i>=0) || mklong(ptr_save)!=size){
 	 write_log(logfile,"reset");
 	 goto reset;
       }

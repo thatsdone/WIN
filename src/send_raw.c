@@ -1,4 +1,4 @@
-/* $Id: send_raw.c,v 1.9 2002/03/24 15:35:47 urabe Exp $ */
+/* $Id: send_raw.c,v 1.10 2002/05/02 10:50:13 urabe Exp $ */
 /*
     program "send_raw/send_mon.c"   1/24/94 - 1/25/94,5/25/94 urabe
                                     6/15/94 - 6/16/94
@@ -34,6 +34,8 @@
                                   2002.1.12 function shift_hour() deleted
                                   2002.2.28 NW* x10, print nwloop on HUP
                                   2002.3.2  eobsize(auto)
+               2002.5.2  improved send interval control (slptime/atm)
+               2002.5.2  i<1000 -> 1000000
 */
 
 #ifdef HAVE_CONFIG_H
@@ -74,8 +76,7 @@
 #define RSIZE   (MTU-28)
 #define SR_MON      5
 #define NBUF      128
-#define NWSTEP    40000  /* 4000 for Ultra1 */
-#define NWLIMIT 1000000
+#define SLPLIMIT  100
 
 /*
 #if defined(SUNOS4)
@@ -83,7 +84,7 @@
 #endif
 */
 
-int sock,raw,tow,all,psize[NBUF],n_ch,negate_channel,mtu,nbuf,nwloop;
+int sock,raw,tow,all,psize[NBUF],n_ch,negate_channel,mtu,nbuf,slptime;
 unsigned char *sbuf[NBUF],ch_table[65536],rbuf[RSIZE];
      /* sbuf[NBUF][mtu-28+8] ; +8 for overrun by "size" and "time" */
 char *progname,logfile[256],chfile[256];
@@ -279,7 +280,7 @@ read_chfile()
     n_ch=i;
     write_log(logfile,"all channels");
     }
-  sprintf(tbuf,"nwloop=%d (STEP=%d,LIMIT=%d)",nwloop,NWSTEP,NWLIMIT);
+  sprintf(tbuf,"slptime=%d (LIMIT=%d)",slptime,SLPLIMIT);
   write_log(logfile,tbuf);
   signal(SIGHUP,(void *)read_chfile);
   }
@@ -292,7 +293,7 @@ main(argc,argv)
   key_t shm_key;
   unsigned long uni;
   int i,j,k,c_save,shp,aa,bb,ii,bufno,bufno_f,fromlen,hours_shift,sec_shift,c,
-    kk,nw,eobsize,eobsize_count,size2,size,gs,sr,re,shmid;
+    kk,nw,eobsize,eobsize_count,size2,size,gs,sr,re,shmid,atm;
   struct sockaddr_in to_addr,from_addr;
   struct hostent *h;
   unsigned short host_port,ch;
@@ -468,7 +469,7 @@ reset:
   *ptw++=no;  /* packet no. */
   *ptw++=no;  /* packet no.(2) */
   if(!all) *ptw++=0xA0;
-  nwloop=0;
+  slptime=1;
 
   if(mklong(ptr_save+size-4)==size) eobsize=1;
   else eobsize=0;
@@ -480,12 +481,12 @@ reset:
     {
     if(shp+size>shm->pl) shp=0; /* advance pointer */
     else shp+=size;
-    nw=0;
+    nw=atm=0;
     while(shm->p==shp) {usleep(10000);nw++;}
-    if(nw>1 && nwloop<NWLIMIT) nwloop+=NWSTEP;
-    else if(nw==0 && nwloop>0) nwloop-=NWSTEP;
+    if(nw>1 && slptime<SLPLIMIT) slptime*=2;
+    else if(nw==0 && slptime>1) slptime/=2;
     i=shm->c-c_save;
-    if(!(i<1000 && i>=0) || mklong(ptr_save)!=size)
+    if(!(i<1000000 && i>=0) || mklong(ptr_save)!=size)
       {   /* previous block has been destroyed */
       write_log(logfile,"reset");
       goto reset;
@@ -508,7 +509,7 @@ reset:
       {
       memcpy(ptw,ptr,size2-8);
       ptw+=size2-8;
-      for(kk=0;kk<nwloop;kk++);
+      for(atm+=(slptime-1);atm>=100;atm-=100) usleep(10000);
       re=sendto(sock,ptw_save,ptw-ptw_save,0,(struct sockaddr *)&to_addr,
         sizeof(to_addr));
 #if DEBUG1
@@ -568,7 +569,7 @@ reset:
 #if TEST_RESEND
           if(no%10!=9) {
 #endif
-          for(kk=0;kk<nwloop;kk++);
+          for(atm+=(slptime-1);atm>=100;atm-=100) usleep(10000);
           re=sendto(sock,ptw_save,psize[bufno]=ptw-ptw_save,0,
             (struct sockaddr *)&to_addr,sizeof(to_addr));
 #if DEBUG1

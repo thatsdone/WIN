@@ -1,4 +1,4 @@
-.TH raw_raw 1W "2000.4.7" "WIN SYSTEM" "WIN SYSTEM"
+.TH raw_raw 1W "2000.12.20" "WIN SYSTEM" "WIN SYSTEM"
 .SH 名称
 raw_raw - RAW 形式データからチャネルを選択
 .SH 形式
@@ -15,8 +15,8 @@ raw_raw
 .SH 解説
 raw_raw は、キー
 .I \ inkey
-の共有メモリ・セグメントに書き込まれている時間順に整列
-された win 形式のデータを読み込み、キー
+の共有メモリ・セグメントに巡回的に書き込まれている
+win 形式のデータを読み込み、キー
 .I \ outkey
 で与えられる共有メモリ・セグメントに書き出します。
 チャネルファイル

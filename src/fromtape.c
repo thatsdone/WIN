@@ -1,4 +1,4 @@
-/* $Id: fromtape.c,v 1.5 2002/04/30 01:31:08 urabe Exp $ */
+/* $Id: fromtape.c,v 1.6 2005/03/15 06:23:20 urabe Exp $ */
 /*
   program "fromtape.c"
   12/10/90 - 12/13/90, 9/19/91, 10/30/91, 6/19/92  urabe
@@ -10,6 +10,8 @@
   99.4.19  byte-order-free
   2000.5.10 deleted size=<0x3c000 limit
   2002.4.30 MAXSIZE 500K->1M, SIZE_WBUF 50K->300K
+  2005.3.15 introduced blpersec (blocks/sec) factor
+            MAXSIZE : 1M -> 2M, TRY_LIMIT : 10 -> 16, SIZE_WBUF 300K->600K
 */
 
 #ifdef HAVE_CONFIG_H
@@ -27,11 +29,12 @@
 
 #include "subst_func.h"
 
+#define   DEBUG1    0
 #define   N_FILE    30
-#define   TRY_LIMIT 10
-#define   NAMLEN    100
-#define   MAXSIZE   1000000
-#define   SIZE_WBUF 300000
+#define   TRY_LIMIT 16
+#define   NAMLEN    256
+#define   MAXSIZE   2000000
+#define   SIZE_WBUF 600000
 #define   SR_MON    5
 #define   MAX_SR    1024
 
@@ -643,6 +646,7 @@ get_pos()
   {
   int i,try_count,fm_count,bl_count,bl_count_last,advanced,
     sec_togo,sec_togo_last;
+  static double blpersec=1.0;
   try_count=0;
   do
     {
@@ -654,7 +658,7 @@ get_pos()
 
   /* obtain space counts */
     fm_count=0;
-    bl_count=(-1);
+    sec_togo=(-1);
     if(time_cmp(dec_start,dec_now,6)==0) return;
     else if(time_cmp(dec_start,dec_now,6)<0)
       {
@@ -667,10 +671,11 @@ get_pos()
           (fm_type==60 && dec_buf[5]==59 && dec_buf[4]==59))
           {
           fm_count--;
-          bl_count=(-1);
+          sec_togo=(-1);
           }
-        else bl_count--;
+        else sec_togo--;
         }
+      sec_togo--; /* adjust 2005.3.14 */
       }
     else if(time_cmp(dec_start,dec_now,6)>0)
       {
@@ -683,28 +688,30 @@ get_pos()
           (fm_type==60 && dec_buf[5]==0 && dec_buf[4]==0))
           {
           fm_count++;
-          bl_count=0;
+          sec_togo=0;
           }
-        else bl_count++;
+        else sec_togo++;
         }
       }
-    sec_togo=bl_count;
-    if(try_count>1 && fm_count==0)
+    if(try_count>1)
       {
-      sec_togo=bl_count;
       advanced=sec_togo_last-sec_togo;
-      if((advanced>0 && sec_togo>advanced) ||
-          (advanced<0 && sec_togo<advanced))
+      if(sec_togo_last>0)
         {
-        bl_count=bl_count_last;
-        try_count--;
+        if(advanced<=0) blpersec*=2;
+        else blpersec=(double)bl_count_last/(double)advanced; 
         }
-      else if(advanced==0) bl_count=bl_count_last*2;
-#if DEBUG
-      printf(" togo_last=%d advanced=%d togo=%d bl_count=%d try=%d\n",
-        sec_togo_last,advanced,sec_togo,bl_count,try_count);
-#endif
+      else
+        {
+        if(advanced>=0) blpersec*=2;
+        else blpersec=(double)bl_count_last/(double)advanced;
+        }
       }
+    bl_count=(double)sec_togo*blpersec;
+#if DEBUG1
+    printf(" togo_last=%d bl_count_last=%d advanced=%d blpersec=%.1f togo=%d bl_count=%d try=%d\n",
+      sec_togo_last,bl_count_last,advanced,blpersec,sec_togo,bl_count,try_count);
+#endif
     sec_togo_last=sec_togo;
     bl_count_last=bl_count;
     printf(" skipping %d fms and %d blks ...",fm_count,bl_count);

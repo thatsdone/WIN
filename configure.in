@@ -1,9 +1,9 @@
 dnl ------------------------------------------------------------------------- 
-dnl $Id: configure.in,v 1.73 2005/03/12 03:05:59 uehira Exp $
+dnl $Id: configure.in,v 1.74 2005/03/15 06:23:19 urabe Exp $
 dnl -------------------------------------------------------------------------
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT(src/win.c)
-AM_INIT_AUTOMAKE(WIN_pkg, 1.1.58)
+AM_INIT_AUTOMAKE(WIN_pkg, 1.1.59)
 AM_CONFIG_HEADER(config.h)
 AC_ARG_PROGRAM
 AC_CANONICAL_TARGET

@@ -1,4 +1,4 @@
-/* $Id: rtape.c,v 1.7 2004/09/05 00:06:48 urabe Exp $ */
+/* $Id: rtape.c,v 1.8 2005/03/15 06:23:20 urabe Exp $ */
 /*
   program "rtape.c"
   9/16/89 - 11/06/90, 6/26/91, 10/30/91, 6/26/92  urabe
@@ -13,6 +13,8 @@
   2001.10.15 output to current dir if not specified
   2002.5.11 500K->1M
   2004.9.5 stopped restriction of N of chs for selection
+  2005.3.15 introduced blpersec (blocks/sec) factor
+            MAXSIZE : 1M -> 2M, TRY_LIMIT : 10 -> 16
 */
 
 #ifdef HAVE_CONFIG_H
@@ -30,9 +32,9 @@
 #include "subst_func.h"
 
 #define   DEBUG     0
-#define   TRY_LIMIT 10
-#define   NAMLEN    80
-#define   MAXSIZE   1000000
+#define   TRY_LIMIT 16
+#define   NAMLEN    256
+#define   MAXSIZE   2000000
 
 #define   TIME1   "9005151102"  /* 10 m / fm before this time */
 #define   TIME2   "9005161000"  /* no fms before this time */
@@ -42,8 +44,8 @@
   unsigned char buf[MAXSIZE],outbuf[MAXSIZE];
   int fd_exb,f_get,leng,dec_start[6],dec_end[6],dec_begin[6],
     dec_buf1[6],dec_now[6],ext,fm_type,nch,sysch[65536],old_format;
-  char name_file[NAMLEN],path[NAMLEN],textbuf[80],param[100],
-    param_file[NAMLEN],name_prev[NAMLEN],dev_file[60];
+  char name_file[NAMLEN],path[NAMLEN],textbuf[80],
+    param_file[NAMLEN],name_prev[NAMLEN],dev_file[NAMLEN];
   FILE *f_param;
   int e_ch[241]={
     0x0000,0x0001,0x0002,0x0003,0x0004,0x0005,0x0006,0x0007,
@@ -310,6 +312,7 @@ get_one_record(blocking)
   {
   int i,re,try_count,fm_count,bl_count,bl_count_last,advanced,
     sec_togo,sec_togo_last;
+  static double blpersec=1.0;
   for(i=0;i<6;i++) dec_end[i]=dec_start[i];
   for(i=leng-1;i>0;i--)
     {
@@ -334,7 +337,7 @@ get_one_record(blocking)
 
   /* obtain space counts */
     fm_count=0;
-    bl_count=(-1);
+    sec_togo=(-1);
     if(time_cmp(dec_start,dec_now,6)<0)
       {
       for(i=0;i<6;i++) dec_buf1[i]=dec_now[i];
@@ -346,10 +349,11 @@ get_one_record(blocking)
           (fm_type==60 && dec_buf1[5]==59 && dec_buf1[4]==59))
           {
           fm_count--;
-          bl_count=(-1);
+          sec_togo=(-1);
           }
-        else bl_count--;
+        else sec_togo--;
         }
+      sec_togo--; /* adjust 2005.3.13 */
       }
     else if(time_cmp(dec_start,dec_now,6)>0)
       {
@@ -362,28 +366,30 @@ get_one_record(blocking)
           (fm_type==60 && dec_buf1[5]==0 && dec_buf1[4]==0))
           {
           fm_count++;
-          bl_count=0;
+          sec_togo=0;
           }
-        else bl_count++;
+        else sec_togo++;
         }
       }
-    sec_togo=bl_count;
-    if(try_count>1 && fm_count==0)
+    if(try_count>1)
       {
-      sec_togo=bl_count;
       advanced=sec_togo_last-sec_togo;
-      if((advanced>0 && sec_togo>advanced) ||
-          (advanced<0 && sec_togo<advanced))
+      if(sec_togo_last>0)
         {
-        bl_count=bl_count_last;
-        try_count--;
+        if(advanced<=0) blpersec*=2;
+        else blpersec=(double)bl_count_last/(double)advanced;
         }
-      else if(advanced==0) bl_count=bl_count_last*2;
-#if DEBUG
-      printf(" togo_last=%d advanced=%d togo=%d bl_count=%d try=%d\n",
-        sec_togo_last,advanced,sec_togo,bl_count,try_count);
-#endif
+      else
+        {
+        if(advanced>=0) blpersec*=2;
+        else blpersec=(double)bl_count_last/(double)advanced;
+        }
       }
+    bl_count=(double)sec_togo*blpersec;
+#if DEBUG1
+    printf(" togo_last=%d bl_count_last=%d advanced=%d blpersec=%.1f togo=%d bl_count=%d try=%d\n",
+      sec_togo_last,bl_count_last,advanced,blpersec,sec_togo,bl_count,try_count);
+#endif
     sec_togo_last=sec_togo;
     bl_count_last=bl_count;
     printf(" skipping %d fms and %d blks ...",fm_count,bl_count);
@@ -553,8 +559,7 @@ main(argc,argv)
   if((blocking=read_exb())<=0) blocking=1;
   bcd_dec(dec_begin,(char *)buf+4);
   for(i=0;i<6;i++) dec_now[i]=dec_begin[i];
-  sprintf(textbuf,"%02x%02x%02x%02x%02x",buf[4],buf[5],
-    buf[6],buf[7],buf[8]);
+  sprintf(textbuf,"%02x%02x%02x%02x%02x",buf[4],buf[5],buf[6],buf[7],buf[8]);
   old_format=0;
   if(strcmp2(textbuf,TIME1)<0)
     {

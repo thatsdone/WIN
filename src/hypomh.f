@@ -1,4 +1,4 @@
-C $Id: hypomh.f,v 1.5 2001/08/07 07:58:48 urabe Exp $
+C $Id: hypomh.f,v 1.5.2.1 2001/11/19 03:11:39 uehira Exp $
 C HYPOMH   : main program for hypocenter location
 C           original version was made on March 13, 1984  and
 C            modified by N.H. on Feb. 8, 1985, May 8, 1985.
@@ -14,6 +14,7 @@ C        AMPLITUDE MAGNITUDE IS CALCULATED IN FINAL 6/30/92
 C        BUG IN SDATA (read station height) FIXED  7/28/93
 C        MAXIMUM N OF STATIONS IS 999              JAN06,2001 K.Katsumata
 C        TRAVEL-TIME CALCULATION MODE              6/12/2001 Urabe
+C        fixed format of 'year' in format#2200 in sub final()  10/17/2001 Urabe
 C
       PROGRAM HYPOMH
 C
@@ -282,7 +283,7 @@ C
       WRITE(22,2260) SRP,SRS
       WRITE(21,2260) SRP,SRS
       WRITE( 6,2260) SRP,SRS
- 2200 FORMAT(3I3,3X,2I3,F8.3,2F11.5,    F8.3,F6.1)
+ 2200 FORMAT(3I3.2,3X,2I3,F8.3,2F11.5,    F8.3,F6.1)
  2210 FORMAT(3X,A4,11X, F8.3,2(F9.3,2X),F8.3)
 C 2220 FORMAT(2(F8.3,1X),F8.3,2(F9.3,2X),F8.3)
  2220 FORMAT(6F10.3)

@@ -1,5 +1,5 @@
 /*
-  $Id: hypomhc.c,v 1.1.2.1 2001/11/02 11:43:36 uehira Exp $
+  $Id: hypomhc.c,v 1.1.2.2 2001/11/19 03:11:39 uehira Exp $
    hypomhc.c    : main program for hypocenter location
      original version was made on March 13, 1984 and
      modified by N.H. on Feb. 8, 1985, May 8, 1985.
@@ -1206,11 +1206,11 @@ main(argc, argv)
    else
      amag=9.9;
    fprintf(fp_21, "***** FINAL RESULTS *****\n");
-   fprintf(fp_21, "%3d%3d%3d   %3d%3d%8.3lf%11.5lf%11.5lf%8.3lf%6.1lf\n"
+   fprintf(fp_21, "%3.2d%3.2d%3.2d   %3d%3d%8.3lf%11.5lf%11.5lf%8.3lf%6.1lf\n"
            ,iyr,mnt,idy,ihr,min,cot,alatf,alngf,xm1[2],amag);
-   fprintf(fp_22, "%3d%3d%3d   %3d%3d%8.3lf%11.5lf%11.5lf%8.3lf%6.1lf\n"
+   fprintf(fp_22, "%3.2d%3.2d%3.2d   %3d%3d%8.3lf%11.5lf%11.5lf%8.3lf%6.1lf\n"
            ,iyr,mnt,idy,ihr,min,cot,alatf,alngf,xm1[2],amag);
-   fprintf(stdout, "%3d%3d%3d   %3d%3d%8.3lf%11.5lf%11.5lf%8.3lf%6.1lf\n"
+   fprintf(stdout, "%3.2d%3.2d%3.2d   %3d%3d%8.3lf%11.5lf%11.5lf%8.3lf%6.1lf\n"
            ,iyr,mnt,idy,ihr,min,cot,alatf,alngf,xm1[2],amag);
 
    fprintf(fp_21, "   %s           %8.3lf%9.3lf  %9.3lf  %8.3lf\n",

@@ -1,5 +1,6 @@
 #!/bin/sh
 # 2001.4.25 added ".png"
+# 2001.10.6 added lock by lock
 if [ "$1" ]
 then
   pmondir=$1
@@ -8,6 +9,11 @@ else
   echo '               scale - 1,2,3 or 4.'
   exit
 fi
+if [ -f $pmondir/LOCK ]
+then
+  exit
+fi
+touch $pmondir/LOCK
 tempfile=/tmp/make_pmon_index.$$
 shift
 while [ "$1" ]
@@ -52,3 +58,4 @@ END
   shift
 done
 rm $tempfile
+rm $pmondir/LOCK

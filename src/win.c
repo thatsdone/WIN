@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.6 2000/08/09 09:45:23 urabe Exp $
+   $Id: win.c,v 1.7 2000/08/10 15:31:37 urabe Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -13,7 +13,7 @@
    98.7.2 yo2000
 */
 #define NAME_PRG      "win"
-#define VERSION       "2000.8.9"
+#define VERSION       "2000.8.10"
 #define DEBUG_AP      0   /* for debugging auto-pick */
 /* 5:sr, 4:ch, 3:sec, 2:find_pick, 1:all */
 /************ HOW TO COMPILE THE PROGRAM **************************
@@ -776,7 +776,7 @@ LOCAL
     char hypo_dir1[NAMLEN];   /* pick dir(2) */
     char final_opt[NAMLEN];   /* final file(dir) by command line option */
     char pick_server[NAMLEN]; /* pick file server host name or IP address */
-    int pick_server_port;     /* pick file server TCP port */
+    unsigned short pick_server_port; /* pick file server TCP port */
     FILE *fp_log;       /* fp of log file */
     char mailer[NAMLEN];    /* mailer printer */
     struct {
@@ -1822,7 +1822,7 @@ print_usage()
   fprintf(stderr,"                  p [parameter file]\n");
   fprintf(stderr,"                  q    - 'quit' mode\n");
   fprintf(stderr,"                  r    - 'rapid report' in auto-pick\n");
-  fprintf(stderr,"                  s [server:port] - pick file server & port\n");
+  fprintf(stderr,"                  s [server(:port)] - pick file server & port\n");
   fprintf(stderr,"                  t    - copy data-file to local\n");
   fprintf(stderr,"                  w    - write bitmap (.sv) file\n");
   fprintf(stderr,"                  x [pick file] - just calculate hypocenter\n");
@@ -4194,9 +4194,10 @@ main(argc,argv)
   fpsetmask(fpgetmask() & ~(FP_X_DZ|FP_X_INV));
 #endif
 
-  if(ptr=getenv("WIN_PICK_SERVER")) strcpy(ft.pick_server,ptr);
+  if(ptr=(unsigned char *)getenv("WIN_PICK_SERVER")) strcpy(ft.pick_server,ptr);
   else *ft.pick_server=0;
-  if(ptr=getenv("WIN_PICK_SERVER_PORT")) ft.pick_server_port=atoi(ptr);
+  if(ptr=(unsigned char *)getenv("WIN_PICK_SERVER_PORT"))
+    ft.pick_server_port=atoi(ptr);
   else ft.pick_server_port=PICK_SERVER_PORT;
   sprintf(ft.param_file,"%s.prm",NAME_PRG);
   background=map_only=mc=bye=auto_flag=not_save=copy_file=got_hup=0;
@@ -4243,7 +4244,7 @@ main(argc,argv)
         rapid_report=1;
         break;
       case 's':   /* specify find_picks server & port */
-        if(ptr=strchr(optarg,':'))
+        if(ptr=(unsigned char *)strchr(optarg,':'))
           {
           *ptr=0;
           ft.pick_server_port=atoi(ptr+1);
@@ -8712,13 +8713,47 @@ change_dep:
   else if(event.mse_trig==MSE_EXP) refresh(0);
   }
 
+open_sock(host,port)
+  char *host;
+  unsigned short port;
+  {
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netdb.h>
+  int sockfd;
+  struct sockaddr_in serv_addr;
+  struct hostent *h;
+
+  memset((char *)&serv_addr,0,sizeof(serv_addr));
+  serv_addr.sin_family=AF_INET;
+  if(!(h=gethostbyname(host)))
+    {
+    fprintf(stderr,"can't find host '%s'\n",host);
+    return -1;
+    }
+  memcpy((caddr_t)&serv_addr.sin_addr,h->h_addr,h->h_length);
+  serv_addr.sin_port=htons(port);
+
+  if((sockfd=socket(AF_INET,SOCK_STREAM,0))<0)
+    {
+    fprintf(stderr,"can't open stream socket\n");
+    return -1;
+    }
+  if(connect(sockfd,(struct sockaddr *)&serv_addr,sizeof(serv_addr))<0)
+    {
+    fprintf(stderr,"can't connect to server\n");
+    return -1;
+    }
+  return sockfd;
+  }
+
 load_data(btn)
   int btn;  /* MSE_BUTNL, MSE_BUTNM or MSE_BUTNR */
   {
   FILE *fp,*fq;
   struct dirent *dir_ent;
   DIR *dir_ptr;
-  int re,ii,i,j,k1,k2,k3,k4,k5,find_file,tm_begin[6],tm[6],sec_max;
+  int re,ii,i,j,k1,k2,k3,k4,k5,find_file,tm_begin[6],tm[6],sec_max,sockfd;
   float k6;
   char text_buf[LINELEN],*ptr,name1[NAMLEN],name2[NAMLEN],pickfile[NAMLEN],
     name_low[NAMLEN],name_high[NAMLEN],filename[NAMLEN],
@@ -8751,26 +8786,33 @@ load_data(btn)
       {
       if((ptr=strrchr(ft.data_file,'/'))==NULL) ptr=ft.data_file;
       else ptr++;
-      sprintf(text_buf,"telnet %s %d",ft.pick_server,ft.pick_server_port);
-      if(fp=popen(text_buf,"r+"))
+      if((sockfd=open_sock(ft.pick_server,ft.pick_server_port))!=-1)
         {
+        fprintf(stderr,"connected to pick file server %s - ",ft.pick_server);
+        fp=fdopen(sockfd,"r+");
         while(fgets(text_buf,LINELEN,fp)) if(strncmp(text_buf,"PICKS OK",8)==0)
           {
           re=1;
+          rewind(fp);
           break;
           }
         if(re && (re=fprintf(fp,"%s %s %s %s\n",name1,name2,ptr,ft.hypo_dir))>0)
-            while(fgets(text_buf,LINELEN,fp))
           {
-          sscanf(text_buf,"%s",pickfile);
-          /* find the earliest (but later than "name_low") pick file */
-          if(*name_low && strncmp2(pickfile,name_low,17)<=0) continue;
-          if(*name_high && strncmp2(pickfile,name_high,17)>=0) continue;
-          strcpy(name_high,pickfile);
-          } 
-        pclose(fp);
+          fflush(fp);
+          rewind(fp);
+          fprintf(stderr,"OK\n");
+          while(fgets(text_buf,LINELEN,fp))
+            {
+            sscanf(text_buf,"%s",pickfile);
+            /* find the earliest (but later than "name_low") pick file */
+            if(*name_low && strncmp2(pickfile,name_low,17)<=0) continue;
+            if(*name_high && strncmp2(pickfile,name_high,17)>=0) continue;
+            strcpy(name_high,pickfile);
+            }
+          }
+        close(sockfd);
         if(*name_high) strcpy(ft.save_file,name_high);
-        else if(re) return 0;
+        else if(re) {fprintf(stderr,"NG\n");return 0;}
         }
       }
     if(re==0) /* search pick directory */

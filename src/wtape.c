@@ -1,4 +1,4 @@
-/* $Id: wtape.c,v 1.10 2004/01/29 01:58:16 urabe Exp $ */
+/* $Id: wtape.c,v 1.11 2004/01/29 02:31:36 urabe Exp $ */
 /*
   program "wtape.c"
   8/23/89 - 8/8/90, 6/27/91, 12/24/91, 2/29/92  urabe
@@ -64,7 +64,7 @@
   int  wait_min;
   char param_name[WIN_FILENAME_MAX];
   char *progname;
-  static char rcsid[]="$Id: wtape.c,v 1.10 2004/01/29 01:58:16 urabe Exp $";
+  static char rcsid[]="$Id: wtape.c,v 1.11 2004/01/29 02:31:36 urabe Exp $";
 
 switch_sig()
   {
@@ -655,8 +655,8 @@ main(argc,argv)
 #endif
 */
         /* write one sec */
-        if(j%(64*1024)==0) j+=2; /* avoid N*64KB block size */
         if(j%2) j++; /* avoid odd byte block size */
+        if(j%(64*1024)==0) j+=2; /* avoid N*64KB block size */
         if((re=write(fd_exb,buf,j))<j)
           {
 #if DEBUGFLAG

@@ -1,22 +1,12 @@
-.TH recvt 1W "2002.1.11" "WIN SYSTEM" "WIN SYSTEM"
+.TH recvt 1W "2002.1.15" "WIN SYSTEM" "WIN SYSTEM"
 .UC 4
 .SH 名称
 recvt - IPによる win 形式データの受信
 .SH 形式
 .IP
 .ti -7
-recvt
-[
-.I \-an
-] [
-.I \-g group
-] [
-.I \-i interface
-] [
-.I \-m before
-] [
-.I \-p after
-]
+recvt [\-\fBanM\fR] [\-\fBg\fI group\fR] [\-\fBi\fI interface\fR]
+[\-\fBm\fI before\fR] [\-\fBp\fI after\fR]
 .I port
 .I shmkey
 .I shmsize
@@ -229,6 +219,10 @@ IPマルチキャストアドレス
 .IP "\fB\-m \fIbefore" 5
 マシンの内部時計の時刻よりも before分だけ前の(遅れた)タイムスタンプを
 もつパケットまで受け入れます。デフォールトは30分です。
+.IP \fB\-M 5
+MON形式のデータを受信します。受信するデータがMON形式のときは
+これを指定しなければなりません。MON形式については raw_mon(1W)を
+参照してください。
 .IP "\fB\-n \fIbefore" 5
 拒否すべき送り元アドレスからのパケット、重複して受信した再送パケット、
 不正なチャネルヘッダーをもつパケット、不正(許容時間範囲外を含む)な
@@ -241,4 +235,4 @@ IPマルチキャストアドレス
 `recvt.c'
 .SH 関連事項
 winformat(1W), send_raw(1W), sendt_raw(1W), send_mon(1W),
-sendt_mon(1W), relay(1W)
+sendt_mon(1W), relay(1W), raw_mon(1W)

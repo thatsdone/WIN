@@ -1,0 +1,44 @@
+'\" t
+.TH insert_trg 1W "2002.5.31" "WIN SYSTEM" "WIN SYSTEM"
+.SH 名称
+insert_trg - タイムアウトしたデータをイベントファイルに挿入
+.SH 形式
+insert_trg
+.I prmfile
+[
+.I start
+.I end
+]
+.LP
+.SH 解説
+insert_trg は、wdiskts(1W) によって生成された、
+order(1W) または order2(1W) にタイムアウトしたデータファイルを読み、
+events(1W) が書いたイベントファイルに挿入します。
+.I prmfile
+は
+.nf
+━━━━━ここから━━━━━
+# This file is insert_trg's parameter file
+/dat/trg                # trg data dir
+/dat/raw_timeouts       # time-out data dir
+/dat/tmp                # temporary dir
+3                       # wait min. from timeout LATEST
+━━━━━ここまで━━━━━             ^^^^^^^
+.fi
+のようになっています。# で始まる行はコメントです。4つ目の数字は timeout の
+LATEST より 3分前のファイルまでは即座にタイムアウトデータの挿入を試み
+るという値です。insert_raw とは違います。この数字が指定していない場合
+は、default で DEFAULT_WAIT_MIN になります。DEFAULT_WAIT_MIN より小さ
+な値を指定した場合もDEFAULT_WAIT_MINになります。
+.I start
+と
+.I end
+はtimeout データの範囲の指定で、'YYMMDDhh.mm' の形式です。
+raw データの範囲を指定するものではありません。
+.LP
+insert_trg は引数なしで起動すると簡単な使用法を表示します。
+.SH ソース 
+.TP
+`insert_trg.c'
+.SH 関連事項
+wdiskts(1W), events(1W), order(1W), order2(1W), insert_raw(1W)

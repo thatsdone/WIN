@@ -1,0 +1,45 @@
+'\" t
+.TH insert_raw 1W "2002.5.31" "WIN SYSTEM" "WIN SYSTEM"
+.SH 名称
+insert_raw - タイムアウトしたデータを１分ファイルに挿入
+.SH 形式
+insert_raw
+.I prmfile
+[
+.I start
+.I end
+]
+.LP
+.SH 解説
+insert_raw は、wdiskts(1W) によって生成された、
+order(1W) または order2(1W) にタイムアウトしたデータファイルを読み、
+wdisk(1W) が書いた１分ファイル(連続ファイル)の適切な位置に挿入します。
+.I prmfile
+は
+.nf
+━━━━━ここから━━━━━
+# This file is insert_raw's parameter file
+/dat/raw                # raw data dir
+/dat/raw_timeouts       # time-out data dir
+/dat/tmp                # temporary dir
+3                       # wait min. from raw LATEST
+━━━━━ここまで━━━━━             ^^^
+.fi
+のようになっています。# で始まる行はコメントです。4つ目の数字は raw の
+LATEST より 3分前のファイルまでは即座にタイムアウトデータを挿入すると
+いう値です。この数字が指定していない場合は、default で 
+DEFAULT_WAIT_MIN になります。events がファイルを切り出している途中に 
+raw を書き変えたらまずそうだということでこのparameterを設定しました。
+未来パケットがあるとその時刻まで sleep してしまいます。
+.I start
+と
+.I end
+はtimeout データの範囲の指定で、'YYMMDDhh.mm' の形式です。
+raw データの範囲を指定するものではありません。
+.LP
+insert_raw は引数なしで起動すると簡単な使用法を表示します。
+.SH ソース 
+.TP
+`insert_raw.c'
+.SH 関連事項
+wdiskts(1W), wdisk(1W), order(1W), order2(1W), insert_trg(1W)

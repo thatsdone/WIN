@@ -1,8 +1,8 @@
-.TH raw_raw 1W "2000.12.21" "WIN SYSTEM" "WIN SYSTEM"
+.TH raw_raw 1W "2002.5.31" "WIN SYSTEM" "WIN SYSTEM"
 .SH 名称
 raw_raw - RAW 形式データからチャネルを選択
 .SH 形式
-raw_raw
+raw_raw [\-\fBBg\fR]
 .I inkey
 .I outkey
 .I shmsize
@@ -64,8 +64,14 @@ raw_raw プロセスは
 raw_raw は、引数なしで起動すると簡単な使用法を表示します。
 .LP
 .SH オプション
-.TP 
-なし
+.IP "\fB\-g" 5
+サンプリングレート 1Hz のチャネルのデータのみ、
+値を４ビット右シフト(つまり1/16に)します。
+これは明星電気製GTA-45Uの低速データ用です。
+.IP "\fB\-B" 5
+出力共有メモリに「ブロック末尾にもブロックサイズを
+持つ形式」で書き込みます。これについては recvt(1W), order(1W) を
+参照してください。
 .SH ソース
 .TP
 `raw_raw.c'

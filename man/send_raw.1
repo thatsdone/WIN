@@ -1,11 +1,11 @@
-.TH send_raw 1W "2001.1.11" "WIN SYSTEM" "WIN SYSTEM"
+.TH send_raw 1W "2002.5.31" "WIN SYSTEM" "WIN SYSTEM"
 .SH 名称
 send_raw, send_mon, sendt_raw, sendt_mon - IPによる win 形式データの送信
 .SH 形式
 .IP
 .ti -7
 send_raw [\-\fBarmt\fR] [\-\fBb\fI\ mtu\fR] [\-\fBi\fI\ interface\fR]
-[\-\fBh\fI\ hours\fR] [\-\fBs\fI\ sec\fR]
+[\-\fBh\fI\ hours\fR] [\-\fBs\fI\ sec\fR] [\-\fBw\fI\ key\fR]
 .I shmkey
 .I dest
 .I port
@@ -108,6 +108,14 @@ send_mon (オプション \fB\-t\fP と共に指定したときはsendt_mon)の動作をします。
 送信の際にデータのタイムスタンプを \fIhours\fR 時間だけ進めます。
 .IP "\fB\-s \fIsec" 5
 送信の際にデータのタイムスタンプを \fIsec\fR 秒だけ進めます。
+.IP "\fB\-w \fIkey" 5
+キー
+.I key
+の共有メモリにデータが書き込まれていない状態が約２秒継続したことを
+検出した場合にのみ、データを送信します。共有メモリにデータが書き込まれている
+ことを検出したら、直ちに送信を停止して待機状態になります。これは
+send_rawを実行する別のマシンの障害を検出してバックアップするための
+ものです。
 .SH ソース 
 .TP
 `send_raw.c'

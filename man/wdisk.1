@@ -1,5 +1,5 @@
 '\" t
-.TH wdisk 1W "1996.5.24" "WIN SYSTEM" "WIN SYSTEM"
+.TH wdisk 1W "2002.5.31" "WIN SYSTEM" "WIN SYSTEM"
 .SH 名称
 wdisk, wdisk60 - win 形式データのディスクファイルへの書き込み
 .SH 形式
@@ -28,6 +28,10 @@ wdisk と wdisk60 は、キー
 た win 形式のデータを、ディスクのディレクトリ
 .I \ outdir
 の中に、win 形式のファイルとして書き込みます。
+.I \ shmkey
+として '\-'を指定した場合は、入力データは共有メモリのかわりに
+標準入力から読み込まれます。その場合の入力データの
+形式は wdiskts(1W) の出力ファイルと同じです。
 wdisk では、ファイルは
 １分間分ずつ、'YYMMDDhh.mm' の形式の名前をもつファイルに
 まとめられます。

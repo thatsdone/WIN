@@ -1,0 +1,38 @@
+'\" t
+.TH insert_raw2 1W "2002.5.31" "WIN SYSTEM" "WIN SYSTEM"
+.SH 名称
+insert_raw2 - タイムアウトしたデータを１分ファイルに挿入
+.SH 形式
+insert_raw2
+.I prmfile
+.LP
+.SH 解説
+insert_raw2 は insert_raw(1W) の高速(低負荷)版で、シェルスクリプトです。
+insert_raw2 は、wdiskts(1W) によって生成された、
+order(1W) または order2(1W) にタイムアウトしたデータファイルを読み、
+wdisk(1W) が書いた１分ファイル(連続ファイル)の適切な位置に挿入します。
+.I prmfile
+は
+.nf
+━━━━━ここから━━━━━
+# This file is insert_raw's parameter file
+/dat/raw                # raw data dir
+/dat/raw_timeouts       # time-out data dir
+/dat/tmp                # temporary dir
+3                       # wait min. from raw LATEST
+━━━━━ここまで━━━━━             ^^^
+.fi
+のようになっています。# で始まる行はコメントです。4つ目の数字は raw の
+LATEST より 3分前のファイルまでは即座にタイムアウトデータを挿入すると
+いう値です。
+.LP
+insert_raw2 は内部で wdisk(1W) と wadd2(1W) を利用しています。
+insert_raw2 は内部で 'date -j'コマンドを使用していますが、これは
+FreeBSD4.X以降でしか利用できないようです。
+.LP
+insert_raw2 は引数なしで起動すると簡単な使用法を表示します。
+.SH ソース 
+.TP
+`insert_raw2'
+.SH 関連事項
+insert_raw(1W), wdisk(1W), wadd2(1W)

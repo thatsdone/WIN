@@ -1,9 +1,17 @@
 #!/bin/sh
 #
-# $Id: monitor_procs,v 1.2 2000/04/30 10:10:38 urabe Exp $
+# $Id: monitor_procs,v 1.3 2001/05/31 04:05:30 urabe Exp $
 #
 . win.conf
-tmp=/tmp/monitor_procs.$$
+if [ -z "$TD" ]
+then
+  TD=/tmp
+fi
+if [ -z "$DD" ]
+then
+  DD=/dat
+fi
+tmp=$TD/monitor_procs.$$
 ps agxww|sed 's/ (.*)$//'> $tmp
 cat _win|grep -v '^#'|grep -v '^nice'|sed -n 's/ *&//p'|expand|tr -s " "|
 while read procs
@@ -14,8 +22,8 @@ do
   else
     $procs &
     time=`date +%y%m%d.%H%M%S`
-    echo -n $time >> /dat/log/monitor_procs.log
-    echo " "$procs >> /dat/log/monitor_procs.log
+    echo -n $time >> $DD/log/monitor_procs.log
+    echo " "$procs >> $DD/log/monitor_procs.log
   fi
 done
 rm $tmp

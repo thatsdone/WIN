@@ -1,0 +1,106 @@
+#!/bin/sh
+# automatically make CD images
+# urabe 2001.3.30
+prog=mkCDimage
+if [ -z "$1" ]
+then
+  echo $prog '[work_dir] ([out_dir])'
+  exit
+fi
+if [ "$2" ]
+then
+  outdir=`cd $2;pwd`
+else
+  outdir=`pwd`
+fi
+if [ ! -d $1 ]
+then
+  echo directory $1 not found
+  exit
+fi
+if [ ! -d $outdir ]
+then
+  echo directory $outdir not found
+  exit
+fi
+cd $1
+if [ -s ID ]
+then
+  id=`cat ID`
+else
+  echo ID file not found
+  exit
+fi
+if [ -s DIR ]
+then
+  trg=`cat DIR`
+else
+  echo DIR file not found
+  exit
+fi
+if [ -s USED ]
+then
+  used=`cat USED`
+else
+  echo USED file not found
+  exit
+fi
+if [ -s LIMIT ]
+then
+  limit=`cat LIMIT`
+else
+  echo LIMIT file not found
+  exit
+fi
+#
+maxblks=335100
+rm -f $prog.list.$$
+touch $prog.list.$$
+#
+(cd $trg;ls)|grep '^[0-9].*[0-9]$'|
+while read file
+do
+  if [ "$file" '>' "$limit" ]
+  then
+    break
+  fi
+  if [ "$file" '>' "$used" ]
+  then
+    echo $file >> $prog.list.$$
+  fi
+done
+if [ ! -s $prog.list.$$ ]
+then
+  echo list empty !
+  exit
+fi
+#
+nfiles=`wc -l $prog.list.$$|awk '{print $1}'`
+echo $nfiles files
+#
+first=`head -1 $prog.list.$$`
+mkdir $prog.dir.$$
+cat $prog.list.$$|
+while read file
+do
+  cp $trg/$file $trg/$file.ch $prog.dir.$$ 2>> $prog.log
+  echo cp $trg/$file $trg/$file.ch $prog.dir.$$
+  blocks=`mkisofs -r -print-size $prog.dir.$$ 2>&1 | tail -1|awk '{print $8}`
+  echo $blocks
+  if [ $blocks -gt $maxblks ]
+  then
+    mkdir $prog.newdir.$$
+    mv $prog.dir.$$/$file $prog.dir.$$/$file.ch $prog.newdir.$$
+    dname="$id""$first"-"$last"
+    mv $prog.dir.$$ $dname
+    mv $prog.newdir.$$ $prog.dir.$$
+    date >> $prog.log
+    echo $dname >> $prog.log
+    mkisofs -r -V "$dname" -o $outdir/$dname.iso $dname 2>&1 | egrep -v 'estimate|Using' >> $prog.log
+    rm -rf $dname
+    ls -l $dname.iso
+    first=$file
+  fi
+  last=$file
+done
+rm -rf $prog.dir.$$ $prog.list.$$

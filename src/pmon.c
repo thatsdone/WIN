@@ -1,4 +1,4 @@
-/* $Id: pmon.c,v 1.6 2001/01/31 01:30:36 urabe Exp $ */
+/* $Id: pmon.c,v 1.7 2001/05/31 04:05:30 urabe Exp $ */
 /************************************************************************
 *************************************************************************
 **  program "pmon.c" for NEWS/SPARC                             *********
@@ -39,6 +39,7 @@
 **  2001.1.23 leave RAS files                                   *********
 **  2001.1.29 call conv program with arguments                  *********
 **                            "[infile] [outdir] [basename]"    *********
+**  2001.5.31 introduced FILENAME_MAX as size of path names     *********
 **                                                              *********
 **  font files ("font16", "font24" and "font32") are            *********
 **  not necessary                                               *********
@@ -208,10 +209,10 @@ int fd,n_ch,min_trig[M_CH],tim[6],n_zone,n_trig[M_CH],n_stn[M_CH],
 long long_max[M_CH][SR_MON],long_min[M_CH][SR_MON];
 short idx[65536];
 unsigned char frame[HEIGHT_LBP][WIDTH_LBP],zone[M_CH][20],
-  file_trig[80],param_file[80],buf[LENGTH],file_zone[80],
-  font24[SIZE_FONT24],font32[SIZE_FONT32],last_line[LEN],
-  temp_done[80],line[LEN],latest[80],ch_file[80],time_text[20],
-  file_trig_lock[80],idx2[65536];
+  file_trig[FILENAME_MAX],param_file[FILENAME_MAX],buf[LENGTH],
+  file_zone[FILENAME_MAX],font24[SIZE_FONT24],font32[SIZE_FONT32],
+  last_line[LEN],temp_done[FILENAME_MAX],line[LEN],latest[FILENAME_MAX],
+  ch_file[FILENAME_MAX],time_text[20],file_trig_lock[FILENAME_MAX],idx2[65536];
 double dt=1.0/(double)SR_MON,time_on,time_off,time_lta,time_lta_off,
   time_sta,a_sta,b_sta,a_lta,b_lta,a_lta_off,b_lta_off;
 char *progname;
@@ -1007,7 +1008,7 @@ wmemo(f,c,outdir)
   char *f,*c;
   {  
   FILE *fp;
-  char tb[100];
+  char tb[256];
   sprintf(tb,"%s/%s",outdir,f);
   fp=fopen(tb,"w+");
   fprintf(fp,"%s\n",c);
@@ -1034,7 +1035,7 @@ insatsu(tb1,tb2,tb3,path_spool,printer,count,count_max,convert)
 #define RMT_NONE  0   /* ras_maplength is expected to be 0 */
   FILE *lbp;
   int i,j,ye,mo,da,ho1,ho2,mi1,mi2;
-  char filename[100],tb[100],timename[100],oldst[100],latst[100];
+  char filename[FILENAME_MAX],tb[100],timename[100],oldst[100],latst[100];
 
   if(!isalpha(*printer) && count_max<0) return;
 
@@ -1167,9 +1168,9 @@ main(argc,argv)
   int i,j,k,maxlen,ret,m_count,x_base,y_base,y,ch,tm[6],minutep,hourp,
     count,count_max;
   char *ptr,textbuf[500],textbuf1[500],fn1[200],fn2[100],conv[100],
-    fn3[100],path_font[80],path_temp[80],path_mon[80],area[20],
-    timebuf1[80],timebuf2[80],printer[40],name[STNLEN],comp[CMPLEN],
-    path_mon1[80];
+    fn3[100],path_font[FILENAME_MAX],path_temp[FILENAME_MAX],
+    path_mon[FILENAME_MAX],area[20],timebuf1[80],timebuf2[80],printer[40],
+    name[STNLEN],comp[CMPLEN],path_mon1[FILENAME_MAX];
 
   if(progname=strrchr(argv[0],'/')) progname++;
   else progname=argv[0];

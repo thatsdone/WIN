@@ -1,0 +1,9 @@
+#!/bin/sh
+chfile=/dat/etc/channels.tbl
+dtfile=./rt.dat
+#
+if [ ! "$1" ]; then echo "usage: rt [station] ([sec] ([ShmID]))"; exit; fi
+if [ "$2" ]; then len=$2; else len=10; fi
+if [ "$3" ]; then shmid=$3; else shmid=11; fi
+grep -v '^#' $chfile|grep -iw $1| rsh goemon -l auto shmdump -os $len -f - $shmid > $dtfile
+win $dtfile

@@ -1,6 +1,6 @@
 #! @WISH@
 #
-# $Id: shmx2.in,v 1.8 2002/08/22 06:19:25 tsuru Exp $
+# $Id: shmx2.in,v 1.9 2002/08/23 05:37:49 tsuru Exp $
 # shmx2 
 # 2002.06.28- (C) Hiroshi TSURUOKA / All Rights Reserved.
 #
@@ -25,8 +25,9 @@
 #                        add offset off option: -o
 #	  1.7 2002/08/21 add Level button: offset setting
 #         1.8 2002/08/22 bug fix 1.7 of nfreq=1
+#         1.9 2002/08/23 stop int($rmean)
 #
-set version 1.8
+set version 1.9
 
 # NR f77 -> tcl
 # 2002/08/12 Hiroshi TSURUOKA
@@ -191,83 +192,83 @@ for { set j 0 } { $j < $maxch } { incr j } {
 	if { $j == 0 } then {
 	button .v($j).gain($j).large  -text "+" -command { set gain(0) [expr $gain(0)-1] } -relief ridge -width 1
 	button .v($j).gain($j).small  -text "-" -command { set gain(0) [expr $gain(0)+1] } -relief ridge -width 1
-	button .v($j).level.change    -text "Level" -command { set level(0) $rmean(0) } -relief ridge -width 5
+	button .v($j).level.change    -text "Level" -command { set level(0) [expr int($rmean(0))] } -relief ridge -width 5
         } elseif { $j == 1 } then {
 	button .v($j).gain($j).large  -text "+" -command { set gain(1) [expr $gain(1)-1] } -relief ridge -width 1
 	button .v($j).gain($j).small  -text "-" -command { set gain(1) [expr $gain(1)+1] } -relief ridge -width 1
-	button .v($j).level.change    -text "Level" -command { set level(1) $rmean(1) } -relief ridge -width 5
+	button .v($j).level.change    -text "Level" -command { set level(1) [expr int($rmean(1))] } -relief ridge -width 5
         } elseif { $j == 2 } then {
 	button .v($j).gain($j).large  -text "+" -command { set gain(2) [expr $gain(2)-1] } -relief ridge -width 1
 	button .v($j).gain($j).small  -text "-" -command { set gain(2) [expr $gain(2)+1] } -relief ridge -width 1
-	button .v($j).level.change    -text "Level" -command { set level(2) $rmean(2) } -relief ridge -width 5
+	button .v($j).level.change    -text "Level" -command { set level(2) [expr int($rmean(2))] } -relief ridge -width 5
         } elseif { $j == 3 } then {
 	button .v($j).gain($j).large  -text "+" -command { set gain(3) [expr $gain(3)-1] } -relief ridge -width 1
 	button .v($j).gain($j).small  -text "-" -command { set gain(3) [expr $gain(3)+1] } -relief ridge -width 1
-	button .v($j).level.change    -text "Level" -command { set level(3) $rmean(3) } -relief ridge -width 5
+	button .v($j).level.change    -text "Level" -command { set level(3) [expr int($rmean(3))] } -relief ridge -width 5
         } elseif { $j == 4 } then {
 	button .v($j).gain($j).large  -text "+" -command { set gain(4) [expr $gain(4)-1] } -relief ridge -width 1
 	button .v($j).gain($j).small  -text "-" -command { set gain(4) [expr $gain(4)+1] } -relief ridge -width 1
-	button .v($j).level.change    -text "Level" -command { set level(4) $rmean(4) } -relief ridge -width 5
+	button .v($j).level.change    -text "Level" -command { set level(4) [expr int($rmean(4))] } -relief ridge -width 5
         } elseif { $j == 5 } then {
 	button .v($j).gain($j).large  -text "+" -command { set gain(5) [expr $gain(5)-1] } -relief ridge -width 1
 	button .v($j).gain($j).small  -text "-" -command { set gain(5) [expr $gain(5)+1] } -relief ridge -width 1
-	button .v($j).level.change    -text "Level" -command { set level(5) $rmean(5) } -relief ridge -width 5
+	button .v($j).level.change    -text "Level" -command { set level(5) [expr int($rmean(5))] } -relief ridge -width 5
         } elseif { $j == 6 } then {
 	button .v($j).gain($j).large  -text "+" -command { set gain(6) [expr $gain(6)-1] } -relief ridge -width 1
 	button .v($j).gain($j).small  -text "-" -command { set gain(6) [expr $gain(6)+1] } -relief ridge -width 1
-	button .v($j).level.change    -text "Level" -command { set level(6) $rmean(6) } -relief ridge -width 5
+	button .v($j).level.change    -text "Level" -command { set level(6) [expr int($rmean(6))] } -relief ridge -width 5
         } elseif { $j == 7 } then {
 	button .v($j).gain($j).large  -text "+" -command { set gain(7) [expr $gain(7)-1] } -relief ridge -width 1
 	button .v($j).gain($j).small  -text "-" -command { set gain(7) [expr $gain(7)+1] } -relief ridge -width 1
-	button .v($j).level.change    -text "Level" -command { set level(7) $rmean(7) } -relief ridge -width 5
+	button .v($j).level.change    -text "Level" -command { set level(7) [expr int($rmean(7))] } -relief ridge -width 5
         } elseif { $j == 8 } then {
 	button .v($j).gain($j).large  -text "+" -command { set gain(8) [expr $gain(8)-1] } -relief ridge -width 1
 	button .v($j).gain($j).small  -text "-" -command { set gain(8) [expr $gain(8)+1] } -relief ridge -width 1
-	button .v($j).level.change    -text "Level" -command { set level(8) $rmean(8) } -relief ridge -width 5
+	button .v($j).level.change    -text "Level" -command { set level(8) [expr int($rmean(8))] } -relief ridge -width 5
         } elseif { $j == 9 } then {
 	button .v($j).gain($j).large  -text "+" -command { set gain(9) [expr $gain(9)-1] } -relief ridge -width 1
 	button .v($j).gain($j).small  -text "-" -command { set gain(9) [expr $gain(9)+1] } -relief ridge -width 1
-	button .v($j).level.change    -text "Level" -command { set level(9) $rmean(9) } -relief ridge -width 5
+	button .v($j).level.change    -text "Level" -command { set level(9) [expr int($rmean(9))] } -relief ridge -width 5
 	} elseif { $j == 10 } then {
 	button .v($j).gain($j).large  -text "+" -command { set gain(10) [expr $gain(10)-1] } -relief ridge -width 1
 	button .v($j).gain($j).small  -text "-" -command { set gain(10) [expr $gain(10)+1] } -relief ridge -width 1
-	button .v($j).level.change    -text "Level" -command { set level(10) $rmean(10) } -relief ridge -width 5
+	button .v($j).level.change    -text "Level" -command { set level(10) [expr int($rmean(10))] } -relief ridge -width 5
         } elseif { $j == 11 } then {
 	button .v($j).gain($j).large  -text "+" -command { set gain(11) [expr $gain(11)-1] } -relief ridge -width 1
 	button .v($j).gain($j).small  -text "-" -command { set gain(11) [expr $gain(11)+1] } -relief ridge -width 1
-	button .v($j).level.change    -text "Level" -command { set level(11) $rmean(11) } -relief ridge -width 5
+	button .v($j).level.change    -text "Level" -command { set level(11) [expr int($rmean(11))] } -relief ridge -width 5
         } elseif { $j == 12 } then {
 	button .v($j).gain($j).large  -text "+" -command { set gain(12) [expr $gain(12)-1] } -relief ridge -width 1
 	button .v($j).gain($j).small  -text "-" -command { set gain(12) [expr $gain(12)+1] } -relief ridge -width 1
-	button .v($j).level.change    -text "Level" -command { set level(12) $rmean(12) } -relief ridge -width 5
+	button .v($j).level.change    -text "Level" -command { set level(12) [expr int($rmean(12))] } -relief ridge -width 5
         } elseif { $j == 13 } then {
 	button .v($j).gain($j).large  -text "+" -command { set gain(13) [expr $gain(13)-1] } -relief ridge -width 1
 	button .v($j).gain($j).small  -text "-" -command { set gain(13) [expr $gain(13)+1] } -relief ridge -width 1
-	button .v($j).level.change    -text "Level" -command { set level(13) $rmean(13) } -relief ridge -width 5
+	button .v($j).level.change    -text "Level" -command { set level(13) [expr int($rmean(13))] } -relief ridge -width 5
         } elseif { $j == 14 } then {
 	button .v($j).gain($j).large  -text "+" -command { set gain(14) [expr $gain(14)-1] } -relief ridge -width 1
 	button .v($j).gain($j).small  -text "-" -command { set gain(14) [expr $gain(14)+1] } -relief ridge -width 1
-	button .v($j).level.change    -text "Level" -command { set level(14) $rmean(14) } -relief ridge -width 5
+	button .v($j).level.change    -text "Level" -command { set level(14) [expr int($rmean(14))] } -relief ridge -width 5
         } elseif { $j == 15 } then {
 	button .v($j).gain($j).large  -text "+" -command { set gain(15) [expr $gain(15)-1] } -relief ridge -width 1
 	button .v($j).gain($j).small  -text "-" -command { set gain(15) [expr $gain(15)+1] } -relief ridge -width 1
-	button .v($j).level.change    -text "Level" -command { set level(15) $rmean(15) } -relief ridge -width 5
+	button .v($j).level.change    -text "Level" -command { set level(15) [expr int($rmean(15))] } -relief ridge -width 5
         } elseif { $j == 16 } then {
 	button .v($j).gain($j).large  -text "+" -command { set gain(16) [expr $gain(16)-1] } -relief ridge -width 1
 	button .v($j).gain($j).small  -text "-" -command { set gain(16) [expr $gain(16)+1] } -relief ridge -width 1
-	button .v($j).level.change    -text "Level" -command { set level(16) $rmean(16) } -relief ridge -width 5
+	button .v($j).level.change    -text "Level" -command { set level(16) [expr int($rmean(16))] } -relief ridge -width 5
         } elseif { $j == 17 } then {
 	button .v($j).gain($j).large  -text "+" -command { set gain(17) [expr $gain(17)-1] } -relief ridge -width 1
 	button .v($j).gain($j).small  -text "-" -command { set gain(17) [expr $gain(17)+1] } -relief ridge -width 1
-	button .v($j).level.change    -text "Level" -command { set level(17) $rmean(17) } -relief ridge -width 5
+	button .v($j).level.change    -text "Level" -command { set level(17) [expr int($rmean(17))] } -relief ridge -width 5
         } elseif { $j == 18 } then {
 	button .v($j).gain($j).large  -text "+" -command { set gain(18) [expr $gain(18)-1] } -relief ridge -width 1
 	button .v($j).gain($j).small  -text "-" -command { set gain(18) [expr $gain(18)+1] } -relief ridge -width 1
-	button .v($j).level.change    -text "Level" -command { set level(18) $rmean(18) } -relief ridge -width 5
+	button .v($j).level.change    -text "Level" -command { set level(18) [expr int($rmean(18)) } -relief ridge -width 5
         } elseif { $j == 19 } then {
 	button .v($j).gain($j).large  -text "+" -command { set gain(19) [expr $gain(19)-1] } -relief ridge -width 1
 	button .v($j).gain($j).small  -text "-" -command { set gain(19) [expr $gain(19)+1] } -relief ridge -width 1
-	button .v($j).level.change    -text "Level" -command { set level(19) $rmean(19) } -relief ridge -width 5
+	button .v($j).level.change    -text "Level" -command { set level(19) [expr int($rmean(19))] } -relief ridge -width 5
 	}
 	label .v($j).gain($j).text -text "gain" -textvariable gain($j) -width 2
 	label .v($j).level.text -text "LEVEL" -textvariable level($j) -width 5
@@ -392,7 +393,7 @@ while {![eof $fp]} {
 			  set calrmean($j) 1
 			} else {
 			  set rmean($j) [expr $LTA1*$rmean($j)+$LTA2*($sum/$freq2)]
-			  set rmean($j) [expr int($rmean($j))]
+#			  set rmean($j) [expr int($rmean($j))]
 			} 
 		}
 #		puts "$j $sum $rmean($j)"

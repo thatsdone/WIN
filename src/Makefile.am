@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.23 2004/10/27 03:49:47 uehira Exp $
+# $Id: Makefile.am,v 1.24 2004/11/11 10:50:30 uehira Exp $
 #
 
 if SUNOS4
@@ -26,8 +26,8 @@ else
 OFFLINE_X=win
 endif
 
-ONLINE_SO=recvt send_raw recvstatus recvstatus2 send_raw_old relay recvnmx \
-       $(ONL_SOL2)
+ONLINE_SO=recvt send_raw recvstatus recvstatus2 send_raw_old relay relaym\
+	recvnmx $(ONL_SOL2)
 TAPE_USER_MATH=pmon elist events
 ONLINE_MATH=ecore ecore2
 OFFLINE_USER_MATH=wtime
@@ -50,10 +50,11 @@ OTHR=cpdat sepline joint order_raw
 OTHR_=rund
 SUB=winform win2fix
 
-WIN_UTIL_H = win_system.h
-WIN_UTIL_C = win_system.c
+WIN_UTIL = win_system.h win_system.c
 SUBFUNC_H = subst_func.h
 DAEMON_MODE = daemon_mode.h daemon_mode.c
+WIN_LOG = win_log.h win_log.c win_externs.h
+UDP_UTILITY = udpu.h udp_accept.c udp_dest.c
 
 bin_PROGRAMS = $(OFFLINE_USER) $(TAPE_USER) $(ONLINE)
 
@@ -103,7 +104,7 @@ select_stations_LDADD = -lm
 
 wchch_SOURCES = wchch.c $(SUBFUNC_H)
 
-wchasn_SOURCES = wchasn.c $(WIN_UTIL_C) $(WIN_UTIL_H) $(SUBFUNC_H)
+wchasn_SOURCES = wchasn.c $(WIN_UTIL) $(SUBFUNC_H)
 
 pick2tseis_SOURCES = pick2tseis.c $(SUBFUNC_H)
 
@@ -127,9 +128,9 @@ wintowin_LDADD = @LIBSHMGET@
 wtime_SOURCES = wtime.c $(SUBFUNC_H)
 wtime_LDADD = -lm
 
-winadd_SOURCES = winadd.c $(WIN_UTIL_C) $(WIN_UTIL_H) $(SUBFUNC_H)
+winadd_SOURCES = winadd.c $(WIN_UTIL) $(SUBFUNC_H)
 
-wck_wdisk_SOURCES = wck_wdisk.c $(WIN_UTIL_C) $(WIN_UTIL_H) $(SUBFUNC_H)
+wck_wdisk_SOURCES = wck_wdisk.c $(WIN_UTIL) $(SUBFUNC_H)
 
 rtape_SOURCES = rtape.c $(SUBFUNC_H)
 
@@ -149,7 +150,7 @@ file_older_SOURCES = file_older.c $(SUBFUNC_H)
 
 raw2mon_SOURCES = raw2mon.c $(SUBFUNC_H)
 
-win2raw_SOURCES = win2raw.c $(WIN_UTIL_C) $(WIN_UTIL_H) $(SUBFUNC_H)
+win2raw_SOURCES = win2raw.c $(WIN_UTIL) $(SUBFUNC_H)
 
 pmon_SOURCES = pmon.c $(SUBFUNC_H)
 pmon_LDADD = -lm
@@ -193,9 +194,9 @@ raw_ch_LDADD = @LIBSHMGET@
 extraw_SOURCES = extraw.c $(SUBFUNC_H)
 extraw_LDADD = @LIBSHMGET@
 
-insert_raw_SOURCES = insert_raw.c $(WIN_UTIL_C) $(WIN_UTIL_H) $(SUBFUNC_H)
+insert_raw_SOURCES = insert_raw.c $(WIN_UTIL) $(SUBFUNC_H)
 
-insert_trg_SOURCES = insert_trg.c $(WIN_UTIL_C) $(WIN_UTIL_H) $(SUBFUNC_H)
+insert_trg_SOURCES = insert_trg.c $(WIN_UTIL) $(SUBFUNC_H)
 
 find_picks_SOURCES = find_picks.c $(SUBFUNC_H)
 
@@ -216,6 +217,9 @@ send_raw_old_LDADD = @LIBNSL@ @LIBSOCKET@ @LIBSHMGET@
 
 relay_SOURCES = relay.c $(SUBFUNC_H) $(DAEMON_MODE)
 relay_LDADD = @LIBNSL@ @LIBSOCKET@
+
+relaym_SOURCES = relaym.c $(SUBFUNC_H) $(DAEMON_MODE) $(WIN_LOG) $(UDP_UTILITY)
+relaym_LDADD = @LIBNSL@ @LIBSOCKET@
 
 recvnmx_SOURCES = recvnmx.c $(SUBFUNC_H)
 recvnmx_LDADD = @LIBNSL@ @LIBSOCKET@ @LIBSHMGET@

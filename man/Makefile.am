@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.4 2002/07/22 15:12:32 uehira Exp $
+# $Id: Makefile.am,v 1.5 2002/07/22 15:14:44 uehira Exp $
 #
 #  Makefile.am in man subdirectory.
 #
@@ -13,7 +13,7 @@ WIN_MAN = _bj.1 _update.1 automan.1 autopick.1 cormeisei.1 dat.1 dewin.1 \
 	wck_wdisk.1 wdisk.1 raw_shift.1 insert_trg.1 order2.1 wdiskts.1 \
         insert_raw2.1 wadd2.1 recvstatus.1 recvstatus2.1 \
 	wed.1 wex.1 win.1 win2fix.1 winform.1 winformat.1 wtape.1 wtime.1 \
-	win2raw
+	win2raw.1
 
 man_MANS = $(WIN_MAN)
 	

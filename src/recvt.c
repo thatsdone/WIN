@@ -40,6 +40,7 @@
 /*                2002.5.14 -n debugged / -d to set ddd length */
 /*                2002.5.23 stronger to destructed packet */
 /*                2002.11.29 corrected byte-order of port no. in log */
+/*                2002.12.21 disable resend request if -r */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -356,12 +357,13 @@ read_chfile()
   signal(SIGHUP,(void *)read_chfile);
   }
 
-check_pno(from_addr,pn,pn_f,sock,fromlen,n) /* returns -1 if duplicated */
+check_pno(from_addr,pn,pn_f,sock,fromlen,n,nr) /* returns -1 if duplicated */
   struct sockaddr_in *from_addr;  /* sender address */
   unsigned int pn,pn_f;           /* present and former packet Nos. */
   int sock;                       /* socket */
   int fromlen;                    /* length of from_addr */
   int n;                          /* size of packet */
+  int nr;                         /* no resend request if 1 */
   {
   int i,j;
   int host_;  /* 32-bit-long host address in network byte-order */
@@ -424,7 +426,7 @@ check_pno(from_addr,pn,pn_f,sock,fromlen,n) /* returns -1 if duplicated */
   else /* check packet no */
     {
     pn_1=(j+1)&0xff;
-    if(pn!=pn_1)
+    if(!nr && (pn!=pn_1))
       {
       if(((pn-pn_1)&0xff)<N_PACKET) do
         { /* send request-resend packet(s) */
@@ -563,7 +565,7 @@ main(argc,argv)
   unsigned long uni;
   unsigned char *ptr,tm[6],*ptr_size,*ptr_size2;
   int i,j,k,size,fromlen,n,re,nlen,sock,nn,all,pre,post,c,mon,pl,eobsize,
-    sbuf;
+    sbuf,noreq;
   struct sockaddr_in to_addr,from_addr;
   unsigned short to_port;
   extern int optind;
@@ -585,17 +587,17 @@ main(argc,argv)
   if(progname=strrchr(argv[0],'/')) progname++;
   else progname=argv[0];
   sprintf(tb,
-" usage : '%s (-aBnM) (-d [len(s)]) (-m [pre(m)]) (-p [post(m)]) \\\n\
+" usage : '%s (-aBnMr) (-d [len(s)]) (-m [pre(m)]) (-p [post(m)]) \\\n\
               (-i [interface]) (-g [mcast_group]) (-s sbuf(KB)) \\\n\
               [port] [shm_key] [shm_size(KB)] ([ctl file]/- ([log file]))'",
           progname);
 
-  all=no_pinfo=mon=eobsize=0;
+  all=no_pinfo=mon=eobsize=noreq=0;
   pre=post=0;
   *interface=(*mcastgroup)=0;
   sbuf=256;
   chhist.n=N_HIST;
-  while((c=getopt(argc,argv,"aBd:g:i:m:Mnp:s:"))!=EOF)
+  while((c=getopt(argc,argv,"aBd:g:i:m:Mnp:rs:"))!=EOF)
     {
     switch(c)
       {
@@ -626,6 +628,9 @@ main(argc,argv)
         break;
       case 'p':   /* time limit after RT in minutes */
         post=atoi(optarg);
+        break;
+      case 'r':   /* disable resend request */
+        noreq=1;
         break;
       case 's':   /* preferred socket buffer size (KB) */
         sbuf=atoi(optarg);
@@ -723,6 +728,8 @@ main(argc,argv)
       sizeof(stMreq))<0) err_sys("IP_ADD_MEMBERSHIP setsockopt error\n");
   }
 
+  if(noreq) write_log(logfile,"resend request disabled");
+
   signal(SIGTERM,(void *)ctrlc);
   signal(SIGINT,(void *)ctrlc);
   signal(SIGPIPE,(void *)ctrlc);
@@ -742,7 +749,7 @@ main(argc,argv)
     printf(" (%d)\n",n);
 #endif
 
-    if(check_pno(&from_addr,rbuf[0],rbuf[1],sock,fromlen,n)<0) continue;
+    if(check_pno(&from_addr,rbuf[0],rbuf[1],sock,fromlen,n,noreq)<0) continue;
 
   /* check packet ID */
     if(rbuf[2]<0xA0)

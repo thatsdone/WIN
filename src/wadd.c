@@ -1,4 +1,4 @@
-/* $Id: wadd.c,v 1.5 2002/04/30 01:38:20 urabe Exp $ */
+/* $Id: wadd.c,v 1.6 2003/02/27 02:08:57 urabe Exp $ */
 /* program "wadd.c"
   "wadd" puts two win data files together
   7/24/91 - 7/25/91, 4/20/94,6/27/94-6/28/94,7/12/94   urabe
@@ -10,6 +10,7 @@
   2000.4.24 permit blank lines in egrep pattern file (Uehira)
   2002.1.7  fix bug in pattern file (Uehira)
   2002.4.30 MAXSIZE 300K->1M
+  2003.1.22 eliminate blank line from ch file
 */
 
 #ifdef HAVE_CONFIG_H
@@ -362,7 +363,7 @@ main(argc,argv)
     system(textbuf);
     if(*chfile2)
       {
-      sprintf(textbuf,"grep -v '^#' %s|awk '{print \"^\" $1}'|grep -v '^$'>%s",
+      sprintf(textbuf,"egrep -v '^#|^$' %s|awk '{print \"^\" $1}'>%s",
         tmpfile2,tmpfile3);
       system(textbuf);
       sprintf(textbuf,"egrep -f %s -v %s >> %s",tmpfile3,chfile2,tmpfile2);

@@ -1,4 +1,11 @@
-$Id: ChangeLog,v 1.22 2002/12/17 03:51:40 uehira Exp $
+$Id: ChangeLog,v 1.23 2003/02/27 02:08:57 urabe Exp $
+
+2003-02-27 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
+	* mkCDimage : suite for FreeBSD4.7 and Redhat7.2
+	* manuals recvt.1,relay.1,send_raw.1 : updated.
+
+2003-01-22 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
+	* wadd.c : eliminate blank line from ch file
 
 2002-12-17 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* recvstatus2.c : bug fix

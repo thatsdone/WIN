@@ -1,4 +1,4 @@
-/* $Id: relaym.c,v 1.5 2004/11/30 14:16:30 uehira Exp $ */
+/* $Id: relaym.c,v 1.6 2005/02/08 07:53:21 uehira Exp $ */
 
 /* 2004/11/26 MF relay.c: 
  *   - check_pno() and read_chfile() brought from relay.c
@@ -54,7 +54,7 @@
 #define MAXMSG       1025
 
 static char rcsid[] =
-  "$Id: relaym.c,v 1.5 2004/11/30 14:16:30 uehira Exp $";
+  "$Id: relaym.c,v 1.6 2005/02/08 07:53:21 uehira Exp $";
 
 /* destination host info. */
 struct hostinfo {
@@ -367,11 +367,13 @@ usage(void)
   (void)fprintf(stderr, "Usage of %s :\n", progname);
   if (daemon_mode)
     (void)fprintf(stderr,
-		  "  %s (-nr) (-b [sbuf(KB)]) (-d [delay_ms]) (-f [host_file]) [in_port] [param] (logfile)\n",
+		  /*  "  %s (-nr) (-b [sbuf(KB)]) (-d [delay_ms]) (-f [host_file]) [in_port] [param] (logfile)\n", */
+		  "  %s (-nr) (-b [sbuf(KB)]) (-f [host_file]) [in_port] [param] (logfile)\n",
 		  progname);
   else
     (void)fprintf(stderr,
-		  "  %s (-Dnr) (-b [sbuf(KB)]) (-d [delay_ms]) (-f [host_file]) [in_port] [param] (logfile)\n",
+		  /*  "  %s (-Dnr) (-b [sbuf(KB)]) (-d [delay_ms]) (-f [host_file]) [in_port] [param] (logfile)\n", */
+		  "  %s (-Dnr) (-b [sbuf(KB)]) (-f [host_file]) [in_port] [param] (logfile)\n",
 		  progname);
   exit(1);
 }

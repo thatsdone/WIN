@@ -2,14 +2,16 @@
 .SH 名称
 relaym, relaymd - win 形式データのIP上の複数の宛先への中継
 .SH 形式
-relaym [\-\fBDnr\fR] [\-\fBb\fI bufsiz\fR] [\-\fBd\fI\ delay\fR] [\-\fBf\fI ctlfile\fR]
+.\" relaym [\-\fBDnr\fR] [\-\fBb\fI bufsiz\fR] [\-\fBd\fI\ delay\fR] [\-\fBf\fI ctlfile\fR]
+relaym [\-\fBDnr\fR] [\-\fBb\fI bufsiz\fR] [\-\fBf\fI ctlfile\fR]
 .I inport
 .I paramfile
 [
 .I logfile
 ]
 .LP
-relaymd [\-\fBnr\fR] [\-\fBb\fI bufsiz\fR] [\-\fBd\fI\ delay\fR] [\-\fBf\fI ctlfile\fR]
+.\" relaymd [\-\fBnr\fR] [\-\fBb\fI bufsiz\fR] [\-\fBd\fI\ delay\fR] [\-\fBf\fI ctlfile\fR]
+relaymd [\-\fBnr\fR] [\-\fBb\fI bufsiz\fR] [\-\fBf\fI ctlfile\fR]
 .I inport
 .I paramfile
 [
@@ -72,11 +74,11 @@ KBにします。ただしこれはシステムで許される値の範囲でなければ
 なりません。デフォルトは256KBです。
 .IP \fB\-D 5
 daemon モードで起動します。
-.IP "\fB\-d \fIdelay" 5
-前のパケットを中継してから0.5秒以上経過した後に
-パケットが届いたとき、そのパケットを送信する前に
-.I delay
-ミリ秒の遅延を挿入します。
+.\" .IP "\fB\-d \fIdelay" 5
+.\" 前のパケットを中継してから0.5秒以上経過した後に
+.\" パケットが届いたとき、そのパケットを送信する前に
+.\" .I delay
+.\" ミリ秒の遅延を挿入します。
 .IP "\fB\-f \fIctlfile" 5
 制御ファイル
 .I \ ctlfile

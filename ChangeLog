@@ -1,4 +1,7 @@
- $Id: ChangeLog,v 1.91 2005/02/02 15:36:35 uehira Exp $
+ $Id: ChangeLog,v 1.92 2005/02/08 07:53:21 uehira Exp $
+
+2005-02-08 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* relaym : -d option comment out. Must be enough test.
 
 2005-02-03 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* TKY2JGD tools added.

@@ -1,4 +1,4 @@
-/* $Id: relaym.c,v 1.2 2004/11/11 11:36:51 uehira Exp $ */
+/* $Id: relaym.c,v 1.3 2004/11/13 05:49:37 uehira Exp $ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -14,6 +14,17 @@
 #include <signal.h>
 #include <unistd.h>
 #include <errno.h>
+
+#if TIME_WITH_SYS_TIME
+#include <sys/time.h>
+#include <time.h>
+#else  /* !TIME_WITH_SYS_TIME */
+#if HAVE_SYS_TIME_H
+#include <sys/time.h>
+#else  /* !HAVE_SYS_TIME_H */
+#include <time.h>
+#endif  /* !HAVE_SYS_TIME_H */
+#endif  /* !TIME_WITH_SYS_TIME */
 
 #include <syslog.h>
 
@@ -33,7 +44,7 @@
 #define MAXMSG       1025
 
 static char rcsid[] =
-  "$Id: relaym.c,v 1.2 2004/11/11 11:36:51 uehira Exp $";
+  "$Id: relaym.c,v 1.3 2004/11/13 05:49:37 uehira Exp $";
 
 char *progname, *logfile;
 int  daemon_mode, syslog_mode;

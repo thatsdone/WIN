@@ -1,6 +1,6 @@
 #! @WISH@
 #
-# $Id: shmz.in,v 1.3 2004/09/20 12:51:05 tsuru Exp $
+# $Id: shmz.in,v 1.4 2004/09/23 09:11:30 tsuru Exp $
 # shmz
 # 2004.04.28- (C) Hiroshi TSURUOKA / All Rights Reserved.
 #
@@ -8,8 +8,9 @@
 #         0.9.2      05/06
 #         0.9.3      09/20 add socket connection
 #         1.0.0      09/20 
+#         1.1        09/23     flexible chs & filter option etc.
 #
-set version 1.0.0
+set version 1.1
 
 # NR f77 -> tcl
 # 2002/08/12 Hiroshi TSURUOKA
@@ -42,7 +43,8 @@ proc julday { mm id iyyy } {
 if { $argc < 1 } {
     puts "shmz <-mMIN> <-nNLINE> <-yPIXEL> <-wCLIPLEVEL> <-p> <-o>"
     puts "     <-xWIDTH> <-cNCOLOR> <-fSHMDUMP> <-tTABLE> <-qQUICK>" 
-    puts "     <-sSCALE> <-Ddiv> <-Hhostname> <-Pport> channel1 channel2 ..."
+    puts "     <-sSCALE> <-Hhostname> <-Pport> <-Ffilter> <-Rsample> <-Kshmid>"
+    puts "      channel1 channel2 ..."
     exit
 }
 
@@ -68,6 +70,9 @@ set offset 1
 set order 1
 set DIV 1e-6
 set CHIDS {}
+set chs ""
+set shmid 11
+set option ""
 
 for { set j 0 } { $j < $argc } { incr j } {
     set tmpargv [lindex $argv $j]
@@ -107,14 +112,22 @@ for { set j 0 } { $j < $argc } { incr j } {
 	set LTA2 [expr 1.0/$LTA]
 	set LTA1 [expr 1.0-$LTA2]
 	set offset 1
-    } elseif { $optflag == "-D" } {
-	set DIV [string range $tmpargv 2 [string length $tmpargv]]
+#    } elseif { $optflag == "-D" } {
+#	set DIV [string range $tmpargv 2 [string length $tmpargv]]
     } elseif { $optflag == "-H" } {
 	set host [string range $tmpargv 2 [string length $tmpargv]]
 	set shmdump "socket"
     } elseif { $optflag == "-P" } {
 	set port [string range $tmpargv 2 [string length $tmpargv]]
 	set shmdump "socket"
+    } elseif { $optflag == "-K" } {
+	set shmid [string range $tmpargv 2 [string length $tmpargv]]
+    } elseif { $optflag == "-F" } {
+	set filter [string range $tmpargv 2 [string length $tmpargv]]
+	set option [concat $option $filter]
+    } elseif { $optflag == "-R" } {
+	set resample [string range $tmpargv 2 [string length $tmpargv]]
+	set option [concat $option "-R" $resample]
     } else {
 	set channel($maxch) [lindex $argv $j]
 	set channel($maxch) [string toupper $channel($maxch)]
@@ -122,6 +135,7 @@ for { set j 0 } { $j < $argc } { incr j } {
 	set MON($channel($maxch)) 0
 	set CHINFO($channel($maxch)) "--- --"
 	#	  puts "$channel($maxch)"
+	set chs [concat $chs $channel($maxch)]
 	incr maxch
     }
 }
@@ -256,6 +270,11 @@ if { $fpin == "stdin" } {
     set fp $fpin 
 } elseif { $fpin == "socket" } {
     set fp [socket $host $port]
+    if { $port == 7007 } {
+	set shmdump_args [concat $option "-tq" $shmid $chs]
+	puts $fp $shmdump_args
+	flush $fp
+    }
 } else {
     set fp [open $fpin r]
 }

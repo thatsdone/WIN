@@ -1,6 +1,6 @@
 #! @WISH@
 #
-# $Id: shmx.in,v 1.7 2004/09/20 01:47:36 tsuru Exp $
+# $Id: shmx.in,v 1.8 2004/09/23 09:11:30 tsuru Exp $
 # shmx 
 # 2002.06.28- (C) Hiroshi TSURUOKA / All Rights Reserved.
 #
@@ -30,8 +30,9 @@
 #         1.11 2002/11/13 default order 1
 #                         merge shmx,shmx2
 #         1.12 2004/09/19 add socket connection
+#         1.13      09/23     flexible chs & filter option etc.
 #
-set version 1.12
+set version 1.13
 
 # NR f77 -> tcl
 # 2002/08/12 Hiroshi TSURUOKA
@@ -64,7 +65,8 @@ proc julday { mm id iyyy } {
 if { $argc < 1 } {
     puts "shmx <-mMIN> <-nNLINE> <-yPIXEL> <-wCLIPLEVEL> <-p> <-o>"
     puts "     <-xWIDTH> <-cNCOLOR> <-fSHMDUMP> <-tTABLE> <-qQUICK>"
-    puts "     <-Hhostname> <-Pportno> channel1 channel2 ..."
+    puts "     <-Hhostname> <-Pportno> <-Ffilter> <-Rsample> <-Kshmid>"
+    puts "     channel1 channel2 ..."
     exit
 }
 
@@ -88,6 +90,9 @@ set LTA1 [expr 1.0-$LTA2]
 set quick 1
 set offset 1
 set order 1
+set chs ""
+set shmid 11
+set option ""
 
 for { set j 0 } { $j < $argc } { incr j } {
     set tmpargv [lindex $argv $j]
@@ -130,12 +135,22 @@ for { set j 0 } { $j < $argc } { incr j } {
 	set shmdump "socket"
     } elseif { $optflag == "-P" } {
 	set port [string range $tmpargv 2 [string length $tmpargv]]
+	set shmdump "socket"
+    } elseif { $optflag == "-K" } {
+	set shmid [string range $tmpargv 2 [string length $tmpargv]]
+    } elseif { $optflag == "-F" } {
+	set filter [string range $tmpargv 2 [string length $tmpargv]]
+        set option [concat $option $filter]
+    } elseif { $optflag == "-R" } {
+	set resample [string range $tmpargv 2 [string length $tmpargv]]
+        set option [concat $option "-R" $resample]
     } else {
 	set channel($maxch) [lindex $argv $j]
 	set channel($maxch) [string toupper $channel($maxch)]
 	set MON($channel($maxch)) 0
 	set CHINFO($channel($maxch)) "--- --"
 	#		puts "$channel($maxch)"
+        set chs [concat $chs $channel($maxch)]
 	incr maxch
     }
 }
@@ -342,6 +357,12 @@ if { $fpin == "stdin" } {
     set fp $fpin 
 } elseif { $fpin == "socket" } {
     set fp [socket $host $port]
+    if { $port == 7007 } {
+#        set shmdump_args sprintf("%s -tq %s %s", $option, $shmid, $chs)
+        set shmdump_args [concat $option "-tq" $shmid $chs]
+	puts $fp $shmdump_args
+        flush $fp
+    }
 } else {
     set fp [open $fpin r]
 }

@@ -1,4 +1,4 @@
-/* $Id: shmdump.c,v 1.8 2002/05/02 10:50:14 urabe Exp $ */
+/* $Id: shmdump.c,v 1.9 2002/06/25 02:02:26 urabe Exp $ */
 /*  program "shmdump.c" 6/14/94 urabe */
 /*  revised 5/29/96 */
 /*  Little Endian (uehira) 8/27/96 */
@@ -11,6 +11,7 @@
 /*  2002.1.15 -m for MON data */
 /*  2002.2.28 size at EOB in shm_in */
 /*  2002.5.2 i<1000 -> 1000000 */
+/*  2002.6.24 -t for text output */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -188,6 +189,79 @@ ctrlc()
   exit(0);
   }
 
+win2fix(ptr,abuf,sys_ch,sr) /* returns group size in bytes */
+  unsigned char *ptr; /* input */
+  register long *abuf;/* output */
+  long *sys_ch;       /* sys_ch */
+  long *sr;           /* sr */
+  {
+  int b_size,g_size;
+  register int i,s_rate;
+  register unsigned char *dp;
+  unsigned int gh;
+  short shreg;
+  int inreg;
+
+  dp=ptr;
+  gh=((dp[0]<<24)&0xff000000)+((dp[1]<<16)&0xff0000)+
+    ((dp[2]<<8)&0xff00)+(dp[3]&0xff);
+  dp+=4;
+  *sr=s_rate=gh&0xfff;
+/*  if(s_rate>MAX_SR) return 0;*/
+  if(b_size=(gh>>12)&0xf) g_size=b_size*(s_rate-1)+8;
+  else g_size=(s_rate>>1)+8;
+  *sys_ch=(gh>>16)&0xffff;
+
+  /* read group */
+  abuf[0]=((dp[0]<<24)&0xff000000)+((dp[1]<<16)&0xff0000)+
+    ((dp[2]<<8)&0xff00)+(dp[3]&0xff);
+  dp+=4;
+  if(s_rate==1) return g_size;  /* normal return */
+  switch(b_size)
+    {
+    case 0:
+      for(i=1;i<s_rate;i+=2)
+        {
+        abuf[i]=abuf[i-1]+((*(char *)dp)>>4);
+        abuf[i+1]=abuf[i]+(((char)(*(dp++)<<4))>>4);
+        }
+      break;
+    case 1:
+      for(i=1;i<s_rate;i++)
+        abuf[i]=abuf[i-1]+(*(char *)(dp++));
+      break;
+    case 2:
+      for(i=1;i<s_rate;i++)
+        {
+        shreg=((dp[0]<<8)&0xff00)+(dp[1]&0xff);
+        dp+=2;
+        abuf[i]=abuf[i-1]+shreg;
+        }
+      break;
+    case 3:
+      for(i=1;i<s_rate;i++)
+        {
+        inreg=((dp[0]<<24)&0xff000000)+((dp[1]<<16)&0xff0000)+
+          ((dp[2]<<8)&0xff00);
+        dp+=3;
+        abuf[i]=abuf[i-1]+(inreg>>8);
+        }
+      break;
+    case 4:
+      for(i=1;i<s_rate;i++)
+        {
+        inreg=((dp[0]<<24)&0xff000000)+((dp[1]<<16)&0xff0000)+
+          ((dp[2]<<8)&0xff00)+(dp[3]&0xff);
+        dp+=4;
+        abuf[i]=abuf[i-1]+inreg;
+        }
+      break;
+    default:
+      return 0; /* bad header */
+    }
+  return g_size;  /* normal return */
+  }
+
 main(argc,argv)
   int argc;
   char *argv[];
@@ -201,11 +275,11 @@ main(argc,argv)
     } un;
   int i,j,k,c_save_in,shp_in,shmid_in,size_in,shp,c_save,wtow,c,out,all,mon,
     ch,sr,gs,size,chsel,nch,search,seconds,tbufp,bufsize,zero,nsec,aa,bb,
-    eobsize,eobsize_count,size2;
+    eobsize,eobsize_count,size2,tout,abuf[4096];
   unsigned long tow,wsize,time_end,time_now;
   unsigned int packet_id;
   unsigned char *ptr,tbuf[256],*ptr_lim,*buf,chlist[65536/8],*ptw,tms[6],
-    tb[256],*ptr1;
+    tb[256],*ptr1,chlist2[65536/8];
   struct Shm *shm_in;
   struct tm *nt;
   int rt[6],ts[6];
@@ -216,16 +290,18 @@ main(argc,argv)
   static unsigned int mask[8]={0x80,0x40,0x20,0x10,0x08,0x04,0x02,0x01};
 #define setch(a) (chlist[a>>3]|=mask[a&0x07])
 #define testch(a) (chlist[a>>3]&mask[a&0x07])
+#define resetch2(a) (chlist2[a>>3]&=~mask[a&0x07])
+#define testch2(a) (chlist2[a>>3]&mask[a&0x07])
 
   if(progname=strrchr(argv[0],'/')) progname++;
   else progname=argv[0];
   sprintf(tb,
-    " usage : '%s (-amoqwz) (-s [s]) (-f [chfile]/-) [shm_key] ([ch] ...)'",
+    " usage : '%s (-amoqtwz) (-s [s]) (-f [chfile]/-) [shm_key] ([ch] ...)'",
       progname);
-  search=out=all=seconds=win=zero=mon=0;
+  search=out=all=seconds=win=zero=mon=tout=0;
   fplist=stdout;
 
-  while((c=getopt(argc,argv,"amoqs:wf:z"))!=EOF)
+  while((c=getopt(argc,argv,"amoqs:twf:z"))!=EOF)
     {
     switch(c)
       {
@@ -252,6 +328,9 @@ main(argc,argv)
         break;
       case 'z':   /* read from the beginning of the SHM buffer */
         zero=1;
+        break;
+      case 't':   /* text out */
+        tout=out=1;
         break;
       case 's':   /* period in sec */
         seconds=atoi(optarg);
@@ -443,8 +522,31 @@ reset:
                 buf[1]=wsize>>16;
                 buf[2]=wsize>>8;
                 buf[3]=wsize;      /* size (L) */
-                fwrite(buf,1,wsize,fpout);
-                fflush(fpout);
+                if(tout) /* convert to text before output */
+                  {
+                  fprintf(fpout,"%02X %02X %02X %02X %02X %02X %d\n",
+                    buf[4],buf[5],buf[6],buf[7],buf[8],buf[9],nch);
+                  ptw=buf+10;
+                  for(i=0;i<65536/8;i++) chlist2[i]=chlist[i];
+                  while(ptw<buf+wsize)
+                    {
+                    ptw+=win2fix(ptw,abuf,&ch,&sr);
+                    fprintf(fpout,"%04X %d",ch,sr);
+                    for(i=0;i<sr;i++) fprintf(fpout," %d",abuf[i]);
+                    fprintf(fpout,"\n");
+                    resetch2(ch); 
+                    }
+                  for(i=0;i<65536;i++)
+                    {
+                    if(testch2(i)) fprintf(fpout,"%04X 0\n",i); 
+                    resetch2(i);
+                    }
+                  }
+                else
+                  {
+                  fwrite(buf,1,wsize,fpout);
+                  fflush(fpout);
+                  }
                 nsec++;
                 }
               ptw=buf+4;
@@ -457,7 +559,6 @@ reset:
           i=1;
           }
         ptr+=gs;
-        nch++;
         } while(ptr<ptr_lim);
       }
     else

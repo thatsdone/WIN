@@ -1,5 +1,5 @@
 /*
- * $Id: win2raw.c,v 1.2 2002/07/22 15:34:10 uehira Exp $
+ * $Id: win2raw.c,v 1.3 2002/07/23 06:47:40 uehira Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -16,7 +16,7 @@
 #include "subst_func.h"
 
 static const char  rcsid[] =
-   "$Id: win2raw.c,v 1.2 2002/07/22 15:34:10 uehira Exp $";
+   "$Id: win2raw.c,v 1.3 2002/07/23 06:47:40 uehira Exp $";
 static char  *progname;
 
 static void usage(void);
@@ -31,7 +31,6 @@ main(int argc, char *argv[])
   int  c, uflag = 0, vflag = 0;
   char  *rawdir, fullname[NAMELEN];
   unsigned char  *dbuf = NULL;
-  unsigned char  *ptr_time;
   WIN_blocksize  dsize;
   int  dtime[WIN_TIME_LEN], dtime_save[5];
   int  i;
@@ -82,8 +81,6 @@ main(int argc, char *argv[])
 
   /*** main loop ***/
   while ((dsize = read_onesec_win(fpin, &dbuf)) != 0) {
-    ptr_time = dbuf + WIN_BLOCKSIZE_LEN;
-
     /* skip invalid time stamp */
     if (bcd_dec(dtime, dbuf + WIN_BLOCKSIZE_LEN) == 0)
       continue;

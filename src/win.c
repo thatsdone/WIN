@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.3 2000/07/19 11:08:58 urabe Exp $
+   $Id: win.c,v 1.4 2000/07/26 12:24:16 urabe Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -13,7 +13,7 @@
    98.7.2 yo2000
 */
 #define NAME_PRG      "win"
-#define VERSION       "2000.7.19"
+#define VERSION       "2000.7.26"
 #define DEBUG_AP      0   /* for debugging auto-pick */
 /* 5:sr, 4:ch, 3:sec, 2:find_pick, 1:all */
 /************ HOW TO COMPILE THE PROGRAM **************************
@@ -773,6 +773,7 @@ LOCAL
     char log_file[NAMLEN];    /* log file */
     char hypo_dir[NAMLEN];    /* pick dir */
     char hypo_dir1[NAMLEN];   /* pick dir(2) */
+    char final_opt[NAMLEN];   /* final file(dir) by command line option */
     FILE *fp_log;       /* fp of log file */
     char mailer[NAMLEN];    /* mailer printer */
     struct {
@@ -1809,6 +1810,7 @@ print_usage()
   fprintf(stderr,"       options:   a    - do 'auto-pick'\n");
   fprintf(stderr,"                  b    - background mode\n");
   fprintf(stderr,"                  c    - mapconv (text -> binary)\n");
+  fprintf(stderr,"                  d [file] - hypo data file\n");
   fprintf(stderr,"                  f    - fit window to screen (X only)\n");
   fprintf(stderr,"                  h    - print usage\n");
   fprintf(stderr,"                  m ([period]h/d) ([interval]m) - 'just map' mode\n");
@@ -4183,8 +4185,9 @@ main(argc,argv)
   background=map_only=mc=bye=auto_flag=not_save=copy_file=got_hup=0;
   rapid_report=mon_offset=just_hypo=just_hypo_offset=0;
   flag_save=1;
+  *ft.final_opt=0;
   dot='.';
-  while((c=getopt(argc,argv,"abcfhmnop:qrtwx:BC:_"))!=EOF)
+  while((c=getopt(argc,argv,"abcd:fhmnop:qrtwx:BC:_"))!=EOF)
     {
     switch(c)
       {
@@ -4196,6 +4199,9 @@ main(argc,argv)
         break;
       case 'c':   /* works as 'mapconv' */
         mc=1;
+        break;
+      case 'd':   /* final (hypocenter) data file or dir */
+        strcpy(ft.final_opt,optarg);
         break;
       case 'f':   /* fit height */
         fit_height=1;
@@ -7412,8 +7418,13 @@ only:
         sel.mag2=magsteps[sel.mag2_idx=
           sizeof(magsteps)/sizeof(*magsteps)-1];
         }
-      if(read_parameter(PARAM_FINAL,final_dir)==0 ||
-          ((dir_ptr=opendir(final_dir))==NULL) &&
+      if(*ft.final_opt)
+        {
+        strcpy(final_dir,ft.final_opt);
+        i=1;
+        }
+      else i=read_parameter(PARAM_FINAL,final_dir);
+      if(i==0 || ((dir_ptr=opendir(final_dir))==NULL) &&
           ((fp=fopen(final_dir,"r"))==NULL))
         {
         /* (1) read hypocenter data from 'PICK' directory */

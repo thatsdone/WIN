@@ -1,5 +1,11 @@
-$Id: ChangeLog,v 1.59 2004/04/21 16:28:16 uehira Exp $
+$Id: ChangeLog,v 1.60 2004/07/30 02:47:52 uehira Exp $
 
+2004-07-30 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* If there are no X libraries or X includes, or if you set
+	--without-x option in 'configure' command, don't compile program
+	with X library (i.e. win)
+	* Version 1.1.32 released.
+	
 2004-04-22 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* make md5 target in Makefile.am
 	* Version 1.1.31 released.

@@ -1,9 +1,9 @@
 dnl ------------------------------------------------------------------------- 
-dnl $Id: configure.in,v 1.41 2004/04/21 16:28:16 uehira Exp $
+dnl $Id: configure.in,v 1.42 2004/07/30 02:47:52 uehira Exp $
 dnl -------------------------------------------------------------------------
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT(src/win.c)
-AM_INIT_AUTOMAKE(WIN_pkg, 1.1.31)
+AM_INIT_AUTOMAKE(WIN_pkg, 1.1.32)
 AM_CONFIG_HEADER(config.h)
 AC_ARG_PROGRAM
 AC_CANONICAL_TARGET
@@ -213,6 +213,11 @@ if test $WISH = ":"; then
 	AC_MSG_WARN(Test for wish failed. Please install wish program.)
 fi
        
+dnl -------------------------------------------------------------------------
+dnl X src compile or not
+dnl -------------------------------------------------------------------------
+AM_CONDITIONAL(NO_X_SRC, test x$no_x = xyes)
+
 dnl -------------------------------------------------------------------------
 dnl output Makefile
 dnl -------------------------------------------------------------------------

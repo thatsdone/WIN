@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.15 2003/08/09 02:11:51 uehira Exp $
+# $Id: Makefile.am,v 1.16 2004/07/30 02:47:52 uehira Exp $
 #
 
 if SUNOS4
@@ -20,6 +20,12 @@ else
 ONL_FREEBSD=
 endif
 
+if NO_X_SRC
+OFFLINE_X=
+else
+OFFLINE_X=win
+endif
+
 ONLINE_SO=recvt send_raw recvstatus recvstatus2 send_raw_old relay recvnmx \
        $(ONL_SOL2)
 TAPE_USER_MATH=pmon elist events
@@ -29,7 +35,7 @@ OFFLINE_USER_MATH=wtime
 OFFLINE_MATH=dewin select_stations hypomhc wintosac
 OFFLINE_F77=hypomh
 
-OFFLINE_USER=win $(OFFLINE_F77) wed wck wadd $(OFFLINE_MATH) wchch pick2tseis \
+OFFLINE_USER=$(OFFLINE_X) $(OFFLINE_F77) wed wck wadd $(OFFLINE_MATH) wchch pick2tseis \
              wch pick2finalb pick2final finalb2final final2finalb finalb2seis \
              wform wintowin $(OFFLINE_USER_MATH) winadd wck_wdisk wadd2 \
              win2raw wchasn

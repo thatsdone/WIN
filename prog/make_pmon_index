@@ -1,18 +1,4 @@
 #!/bin/sh
-#
-# $Id: make_pmon_index,v 1.1 2001/02/07 09:21:49 urabe Exp $
-#
-# ex. 'make_pmon_index /dat/pmon 1 2 3 4'
-#
-# Sun Raster to GIF converter for pmon
-##!/bin/sh
-## ras2gif [rasfile] [outdir] [basename]
-#PATH=/usr/X11R6/bin
-#rasttopnm $1|ppmtogif>$2/$3.gif
-#rasttopnm $1|pbmreduce -threshold -value 0.8 2|ppmtogif>$2/$3.2.gif
-#rasttopnm $1|pbmreduce -threshold -value 0.8 3|ppmtogif>$2/$3.3.gif
-#rasttopnm $1|pbmreduce -threshold -value 0.8 4|ppmtogif>$2/$3.4.gif
-#
 if [ "$1" ]
 then
   pmondir=$1
@@ -42,7 +28,7 @@ do
 END
 # Body
   day_prev=000000
-  (cd $pmondir; ls [0-9]*[0-9]?."$scale"gif|tail -1008)|
+  (cd $pmondir;ls -1|grep '[0-9]*0'."$scale"gif|tail -1008)|
   while read filename
   do
     day=`echo $filename|cut -c1-6`

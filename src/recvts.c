@@ -1,12 +1,10 @@
-/* $Id: recvts.c,v 1.3 2000/08/14 07:41:52 urabe Exp $ */
 /* "recvts.c"     97.9.19 modified from recvt.c      urabe */
 /*                97.9.21  ch_table */
 /*                98.4.23  b2d[] etc. */
 /*                98.6.26  yo2000 */
 /*                99.2.4   moved signal(HUP) to read_chfile() by urabe */
 /*                99.4.19  byte-order-free */
-/*                2000.4.24 strerror() */
-/*                2000.5.2 data amount statistics */
+/*                2001.2.18 wincpy() */
 
 #include <stdio.h>
 #include <signal.h>
@@ -16,7 +14,6 @@
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <sys/time.h>
-#include <errno.h>
 
 #define DEBUG     0
 #define DEBUG1    0
@@ -25,10 +22,13 @@
 #define BELL      0
 #define MAXMESG   2048
 
+extern const int sys_nerr;
+extern const char *const sys_errlist[];
+extern int errno;
+
 unsigned char rbuf[MAXMESG],ch_table[65536];
 char tb[100],*progname,logfile[256],chfile[256];
 int n_ch,negate_channel;
-unsigned long n_packets,n_bytes,last_time;
 
 get_time(rt)
   int *rt;
@@ -247,7 +247,7 @@ err_sys(ptr)
   {
   perror(ptr);
   write_log(logfile,ptr);
-  if(strerror(errno)) write_log(strerror(errno));
+  if(errno<sys_nerr) write_log(logfile,sys_errlist[errno]);
   ctrlc();
   }
 
@@ -256,7 +256,6 @@ read_chfile()
   FILE *fp;
   int i,j,k;
   char tbuf[1024];
-  unsigned long ltime;
   if(*chfile)
     {
     if((fp=fopen(chfile,"r"))!=NULL)
@@ -318,14 +317,58 @@ read_chfile()
     n_ch=i;
     write_log(logfile,"all channels");
     }
-/* statistics */
-  time(&ltime);
-  i=ltime-last_time;
-  sprintf(tbuf,"np=%d nb=%d per=%d s",n_packets,n_bytes,i);
-  write_log(logfile,tbuf);
-  last_time=ltime;
-  n_packets=n_bytes=0;
   signal(SIGHUP,(void *)read_chfile);
+  }
+
+mklong(ptr)
+  unsigned char *ptr;
+  {
+  unsigned long a;
+  a=((ptr[0]<<24)&0xff000000)+((ptr[1]<<16)&0xff0000)+
+    ((ptr[2]<<8)&0xff00)+(ptr[3]&0xff);
+  return a;
+  }
+
+wincpy(ptw,ptr,size)
+  unsigned char *ptw,*ptr;
+  int size;
+  {
+#define MAX_SR 500
+#define MAX_SS 4
+  int sr,n,ss;
+  unsigned char *ptr_lim;
+  unsigned short ch;
+  int gs;
+  unsigned long gh;
+  ptr_lim=ptr+size;
+  n=0;
+  do    /* loop for ch's */
+    {
+    gh=mklong(ptr);
+    ch=(gh>>16)&0xffff;
+    sr=gh&0xfff;
+    ss=(gh>>12)&0xf;
+    if(sr>MAX_SR || ss>MAX_SS)
+      {
+      sprintf(tb,"ill ch hdr %02X%02X%02X%02X %02X%02X%02X%02X",
+            ptr[0],ptr[1],ptr[2],ptr[3],ptr[4],ptr[5],ptr[6],ptr[7]);
+      write_log(logfile,tb);
+      return n;
+      }
+    if(ss) gs=ss*(sr-1)+8;
+    else gs=(sr>>1)+8;
+    if(ch_table[ch] && ptr+gs<=ptr_lim)
+      {
+#if DEBUG1
+      fprintf(stderr,"%5d",gs);
+#endif
+      memcpy(ptw,ptr,gs);
+      ptw+=gs;
+      n+=gs;
+      }
+    ptr+=gs;
+    } while(ptr<ptr_lim);
+  return n;
   }
 
 get_packet(fd,pbuf)
@@ -342,8 +385,6 @@ get_packet(fd,pbuf)
     printf("%d\n",len);
 #endif
     p=18;
-    n_packets++;
-    n_bytes+=len;
     }
   psize=(buf[p]<<8)+buf[p+1];
   p+=2;
@@ -372,7 +413,7 @@ main(argc,argv)
   int shmid;
   unsigned long uni;
   unsigned char *ptr,tm[6],*ptr_size;
-  int i,j,k,size,n,re,fd;
+  int i,j,k,size,n,re,fd,nn;
   struct Shm {
     unsigned long p;    /* write point */
     unsigned long pl;   /* write limit */
@@ -444,13 +485,13 @@ main(argc,argv)
 #endif
 
   /* check packet ID */
-    if(rbuf[0]==0xA1 && ch_table[(rbuf[7]<<8)+rbuf[8]]==1)
+    if(rbuf[0]==0xA1)
       {
       for(i=0;i<6;i++) if(rbuf[i+1]!=tm[i]) break;
       if(i==6)  /* same time */
         {
-        memcpy(ptr,rbuf+7,n-7);
-        ptr+=n-7;
+        nn=wincpy(ptr,rbuf+7,n-7);
+        ptr+=nn;
         uni=time(0);
         ptr_size[4]=uni>>24;  /* tow (H) */
         ptr_size[5]=uni>>16;
@@ -459,16 +500,19 @@ main(argc,argv)
         }
       else
         {
-        uni=ptr-ptr_size;
-        ptr_size[0]=uni>>24;  /* size (H) */
-        ptr_size[1]=uni>>16;
-        ptr_size[2]=uni>>8;
-        ptr_size[3]=uni;      /* size (L) */
+        if((uni=ptr-ptr_size)>14)
+          {
+          ptr_size[0]=uni>>24;  /* size (H) */
+          ptr_size[1]=uni>>16;
+          ptr_size[2]=uni>>8;
+          ptr_size[3]=uni;      /* size (L) */
 #if DEBUG
-        printf("(%d)",time(0));
-        for(i=8;i<14;i++) printf("%02X",ptr_size[i]);
-        printf(" : %d > %d\n",uni,ptr_size-sh->d);
+          printf("(%d)",time(0));
+          for(i=8;i<14;i++) printf("%02X",ptr_size[i]);
+          printf(" : %d > %d\n",uni,ptr_size-sh->d);
 #endif
+          }
+        else ptr=ptr_size;
         if(check_time(rbuf+1))
           {
 #if DEBUG2
@@ -488,8 +532,10 @@ main(argc,argv)
           ptr_size=ptr;
           ptr+=4;   /* size */
           ptr+=4;   /* time of write */
-          memcpy(ptr,rbuf+1,n-1);
-          ptr+=n-1;
+          memcpy(ptr,rbuf+1,6);
+          ptr+=6;
+          nn=wincpy(ptr,rbuf+7,n-7);
+          ptr+=nn;
           memcpy(tm,rbuf+1,6);
           uni=time(0);
           ptr_size[4]=uni>>24;  /* tow (H) */

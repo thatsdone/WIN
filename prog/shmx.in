@@ -1,6 +1,6 @@
 #! @WISH@
 #
-# $Id: shmx.in,v 1.6 2002/11/13 07:21:42 tsuru Exp $
+# $Id: shmx.in,v 1.7 2004/09/20 01:47:36 tsuru Exp $
 # shmx 
 # 2002.06.28- (C) Hiroshi TSURUOKA / All Rights Reserved.
 #
@@ -29,8 +29,9 @@
 #         1.10 2002/08/23  -o option -> read orderd data
 #         1.11 2002/11/13 default order 1
 #                         merge shmx,shmx2
+#         1.12 2004/09/19 add socket connection
 #
-set version 1.11
+set version 1.12
 
 # NR f77 -> tcl
 # 2002/08/12 Hiroshi TSURUOKA
@@ -61,7 +62,9 @@ proc julday { mm id iyyy } {
 #console show
 
 if { $argc < 1 } {
-    puts "shmx <-mMIN> <-nNLINE> <-yPIXEL> <-wCLIPLEVEL> <-p> <-o> <-xWIDTH> <-cNCOLOR> <-fSHMDUMP> <-tTABLE> <-qQUICK> channel1 channel2 ..."
+    puts "shmx <-mMIN> <-nNLINE> <-yPIXEL> <-wCLIPLEVEL> <-p> <-o>"
+    puts "     <-xWIDTH> <-cNCOLOR> <-fSHMDUMP> <-tTABLE> <-qQUICK>"
+    puts "     <-Hhostname> <-Pportno> channel1 channel2 ..."
     exit
 }
 
@@ -122,6 +125,11 @@ for { set j 0 } { $j < $argc } { incr j } {
 	set LTA2 [expr 1.0/$LTA]
 	set LTA1 [expr 1.0-$LTA2]
 	set offset 1
+    } elseif { $optflag == "-H" } {
+	set host [string range $tmpargv 2 [string length $tmpargv]]
+	set shmdump "socket"
+    } elseif { $optflag == "-P" } {
+	set port [string range $tmpargv 2 [string length $tmpargv]]
     } else {
 	set channel($maxch) [lindex $argv $j]
 	set channel($maxch) [string toupper $channel($maxch)]
@@ -332,6 +340,8 @@ for { set j 0 } { $j < $maxch } { incr j } {
 
 if { $fpin == "stdin" } {
     set fp $fpin 
+} elseif { $fpin == "socket" } {
+    set fp [socket $host $port]
 } else {
     set fp [open $fpin r]
 }

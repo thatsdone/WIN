@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.27 2003/05/11 15:38:59 urabe Exp $
+   $Id: win.c,v 1.28 2003/05/20 08:02:51 urabe Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -13,7 +13,7 @@
    98.7.2 yo2000
 */
 #define NAME_PRG      "win"
-#define WIN_VERSION   "2003.5.2"
+#define WIN_VERSION   "2003.5.20"
 #define DEBUG_AP      0   /* for debugging auto-pick */
 /* 5:sr, 4:ch, 3:sec, 2:find_pick, 1:all */
 /************ HOW TO COMPILE THE PROGRAM **************************
@@ -2609,8 +2609,8 @@ set_period(idx,pt)
 set_pick(pt,sec,msec,ms_width1,ms_width2)
   struct Pick_Time *pt;
   int sec,msec,ms_width1,ms_width2;
-  {
-  if(sec<0 || sec>=ft.len) pt->valid=0;
+  { /* negative time is permitted only for ft.pick_calc_ot */
+  if(pt!=&ft.pick_calc_ot &&(sec<0 || sec>=ft.len)) pt->valid=0;
   else
     {
     pt->sec1=pt->sec2=sec;
@@ -2640,7 +2640,7 @@ set_width(pt,ms_width1,ms_width2)
   set_pick(pt,msec/1000,msec%1000,ms_width1,ms_width2);
   }
 
-show_pick(idx,pt,i)
+show_pick(idx,pt,i) /* set and show pick time */
   int idx,i;
   struct Pick_Time *pt;
   {
@@ -3694,6 +3694,13 @@ fprintf(stderr,"%2d.%03d - %2d.%03d\n",pt1.sec1,pt1.msec1,pt1.sec2,pt1.msec2);
     {
     if(ft.pick[idx][S].valid==0) return -1;
     pt_ss=ft.pick[idx][S];
+    if(ft.pick[idx][P].valid &&
+        ((double)pt_ss.sec1+(double)pt_ss.msec1*0.001 <
+         (double)ft.pick[idx][P].sec2+(double)ft.pick[idx][P].msec2*0.001));
+      {
+      pt_ss.sec1=ft.pick[idx][P].sec2;
+      pt_ss.msec1=ft.pick[idx][P].msec2;
+      }
     }
   name=ft.stn[idx].name;
   for(j=0;j<2;j++) /* j==0 - horizontal, j==1 - vertical */

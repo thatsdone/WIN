@@ -1,0 +1,36 @@
+#!/bin/sh
+# update_ch   2003.5.20 urabe
+# usage : update_ch [chfile] [host]
+#
+if [ $# -lt 1 ]
+then
+  echo 'usage : update_ch [chfile] ([host])'
+  exit
+fi
+chfile=$1
+progname=`basename $0`
+if [ $# -eq 1 ]
+then
+  if [ -f "$chfile" ]
+  then
+    ps agxww|grep $chfile|grep -v grep|grep -v $progname|awk '{print $1}'|
+    while read pid
+    do
+      echo kill -HUP $pid
+      kill -HUP $pid
+    done
+  else
+    echo file $chfile not found
+  fi
+else
+  host=$2
+  if rcp $chfile auto@$host:$chfile
+  then
+    rsh -l auto $host ps agxww|grep $chfile|awk '{print $1}'|
+    while read pid
+    do
+      echo rsh $host kill -HUP $pid
+      rsh $host kill -HUP $pid
+    done
+  fi
+fi

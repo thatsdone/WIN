@@ -1,12 +1,16 @@
-.TH _bj 1W "1998.6.18" "WIN SYSTEM" "WIN SYSTEM"
+.TH _bj 1W "2001.2.7" "WIN SYSTEM" "WIN SYSTEM"
 .SH 名称
-_bj, _bj1 - イベント収録サーバーのデータベース処理
+_bj, _bj1, _bj2 - イベント収録サーバーのデータベース処理
 .SH 形式
 _bj [
 .I conf_file
 ]
 .LP
 _bj1 [
+.I conf_file
+]
+.LP
+_bj2 [
 .I conf_file
 ]
 .SH 解説
@@ -21,10 +25,10 @@ _bj は _win(1W) から起動され、常時バックグラウンドで実行されている
 実行するだけです。ただし当月分の収録・検測状況一覧だけは別に
 _bj1 が _update1(1W) を使って行ないます。
 .LP
-_bj/_bj1 はカレントディレクトリの win.conf ファイルからサイトに
-依存する設定を読み込みますが、
+_bj/_bj1 は win.conf スクリプトを実行してサイトに
+依存する設定を行いますが、
 .I conf_file
-を指定すると代わりにここから読み込みます。win.conf の例は次のような
+を指定すると代わりにこれを実行します。win.conf の例は次のような
 ものです。
 .LP
 .nf
@@ -42,6 +46,9 @@ DD=/dat             # directory for win system
 export TD SEIS PUSH TIMO DD
 #
 .fi
+.LP
+_bj2 は _bj と _bj1 の両機能を加えて簡略化したもので、_update2(1W) を
+使用します。処理内容については _update2(1W) を参照してください。
 .SH オプション
 .TP 
 なし
@@ -50,6 +57,8 @@ export TD SEIS PUSH TIMO DD
 `_bj'
 .TP
 `_bj1'
+.TP
+`_bj2'
 .SH 関連事項
 _win(1W), pmon(1W), events(1W), automan(1W), autopick(1W),
-newym(1W), _update(1W),_update1(1W)
+newym(1W), _update(1W),_update1(1W), _update2

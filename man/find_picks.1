@@ -1,0 +1,78 @@
+.TH find_picks 1W "2001.2.7" "WIN SYSTEM" "WIN SYSTEM"
+.SH 名称
+find_picks - pickファイル検索サーバープログラム
+.SH 形式
+find_picks
+.SH 解説
+find_picks は、標準入力から時間範囲とイベント波形ファイル名、
+pickファイル(検測情報ファイル)ディレクトリ名を読み込み、それに
+適合するpickファイル名を検索して結果を標準出力に返します。
+find_picks のやりとりは次の通りです。
+.IP "" 3
+.ti -3
+(1)find_picks は文字列 "PICKS OK" を出力する。
+.IP "" 3
+.ti -3
+(2)検索時間範囲(開始時刻と終了時刻)・イベント波形ファイル名・
+pickディレクトリ名を標準入力から読み込む。検索時間範囲は、
+開始・終了時刻をそれぞれ "YYMMDD.hhmmss" の形式。
+.IP "" 3
+.ti -3
+(3)find_picks は検索結果の pickファイル名を出力する(１つまたは複数)。
+.LP
+実行例は次の通り("PICKS OK"の次の行が端末からの入力です)。
+.LP
+.nf
+$find_picks
+PICKS OK
+010207.050000 010207.050059 010207.050012 /dat/picks/man/0102
+010207.050009.970
+010207.050019.100
+$
+.fi
+.LP
+通常、find_picks はネットワーク経由で問い合わせに答えるために使用されます。
+例えば/etc/inetd.conf に
+.LP
+.nf
+win-find_picks stream tcp nowait auto /home/auto/find_picks find_picks
+.fi
+.LP
+/etc/services に
+.LP
+.nf
+win-find_picks 7130/tcp   # WIN system find_picks
+.fi
+.LP
+のように設定すると、find_picks は TCPポート7130番でクライアントからの
+問い合わせに答えるようになります("PICKS OK"の次の行が端末からの入力です)。
+.LP
+.nf
+$telnet server 7130
+Trying 192.168.100.100...
+Connected to server.
+Escape character is '^]'.
+PICKS OK
+010207.050000 010207.050059 010207.050012 /dat/picks/man/0102
+010207.050009.970
+010207.050019.100
+Connection closed by foreign host.
+$
+.fi
+.LP
+win(1W) は、イベント波形ファイルに属する pickファイル名を得る際に、
+TCP/IP経由で find_picks による pickファイルサーバーに
+問い合わせることができます。この方法は、比較的遅い回線でIP接続されている
+場合には有効です。さもないとNFSでpickファイルを検索することになります
+が、これは時間がかかります。
+.LP
+NFS環境では、クライアント側でのpickディレクトリ名は必ずしもサーバー側での
+それと一致しません。そのような場合には工夫が必要です。
+.SH オプション
+.TP
+なし。
+.SH ソース
+.TP
+`find_picks.c'
+.SH 関連事項
+win(1W)

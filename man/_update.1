@@ -1,6 +1,6 @@
-.TH _update 1W "1998.6.18" "WIN SYSTEM" "WIN SYSTEM"
+.TH _update 1W "2001.2.7" "WIN SYSTEM" "WIN SYSTEM"
 .SH 名称
-_update, _update1 - イベント収録サーバーのデータベース更新処理
+_update, _update1, _update2 - イベント収録サーバーのデータベース更新処理
 .SH 形式
 _update [ 
 .I host ...
@@ -10,6 +10,7 @@ _update1 [
 .I host ...
 ]
 .LP
+_update2
 .SH 解説
 _update はイベント収録サーバーにおいて、pmon(1W) が生成する
 トリガーリスト、events(1W) が生成するイベント波形ファイル、
@@ -40,7 +41,7 @@ pick2finalb(1W) を使って後者を生成します。
 .I host ...
 が指定してあれば、結果は rcp でこれらのホストの、
  /dat/etc/"SEIS"/finals/man ディレクトリにも転送されます。
-ここで、"SEIS" は設定ファイル win.conf 中で定義された名前で、
+ここで、"SEIS" は設定ファイル win.conf 中で定義された名前(変数)で、
 システム名を表わします（たとえば "eri"）。ただし、各ホストへの
 転送が win.conf で定義される "TIMO"秒以内に終了しない場合は、
 その転送は放棄されます。
@@ -77,6 +78,12 @@ elist(1W) によって
 自動検測中かどうかについても調べます。また "NOISE" のラベルが
 ついている検測情報ファイルがそのイベントに唯一のものであるとき、
 /dat/trg 中のイベント波形ファイルは削除されます。
+.LP
+_update2 は _update と _update1 の両機能を加えて簡略にしたもの
+で、通常 _bj2(1W)から起動されます。_update2 は当月分も含めてすべての
+年月分の処理を行いますが、"auto" 関係(/dat/picks/auto/に基づく)の処理は
+行いません。また、rcpによる他ホストへの結果の転送は行いません。"SEIS"
+関連の処理も行いません。
 .SH オプション
 .TP 
 なし。
@@ -85,6 +92,8 @@ elist(1W) によって
 `_update'
 .TP
 `_update1'
+.TP
+`_update2'
 .SH 関連事項
 pick2finalb(1W), finalb2seis(1W), elist(1W), pmon(1W),
-_bj(1W), _bj1(1W)
+_bj(1W), _bj1(1W), _bj2(1W)

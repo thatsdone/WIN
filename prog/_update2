@@ -41,7 +41,7 @@ do
   if (file_older $PDM/$file $ED/evtemp.$file > /dev/null || \
     file_older $ED/pmon.out.$file $ED/evtemp.$file > /dev/null)
   then
-    elist -h -o $ED/evtemp.$$ -p $ED/pktemp.$file $PDM/$file $ED/pmon.out.$file $td
+    elist -h -o $ED/evtemp.$file -p $ED/pktemp.$file $PDM/$file $ED/pmon.out.$file $td
     echo 'evtemp(ee) database updated'
   fi
 done

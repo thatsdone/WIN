@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.13 2003/06/23 06:07:37 tsuru Exp $
+# $Id: Makefile.am,v 1.14 2003/07/02 04:41:45 urabe Exp $
 #
 
 if SUNOS4
@@ -206,7 +206,7 @@ ecore_SOURCES = ecore.c $(SUBFUNC_H)
 ecore_LDADD = -lm
 
 ecore2_SOURCES = ecore2.c $(SUBFUNC_H)
-ecore2_LDADD = -lm
+ecore2_LDADD = -lm @LIBSHMGET@
 
 recvts_SOURCES = recvts.c $(SUBFUNC_H)
 

@@ -1,8 +1,9 @@
-/* $Id: recvnmx.c,v 1.7 2001/11/14 09:49:20 urabe Exp $ */
+/* $Id: recvnmx.c,v 1.8 2001/11/14 10:22:30 urabe Exp $ */
 /* "recvnmx.c"    2001.7.18-19 modified from recvt.c and nmx2raw.c  urabe */
 /*                2001.8.18 */
 /*                2001.10.5 workaround for hangup */
 /*                2001.11.2 workaround for bundle types 32,33,34,13 */
+/*                2001.11.14 strerror()*/
 
 #include <stdio.h>
 #include <signal.h>
@@ -12,6 +13,7 @@
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <sys/time.h>
+#include <time.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
@@ -252,7 +254,7 @@ err_sys(ptr)
   {
   perror(ptr);
   write_log(logfile,ptr);
-  if(strerror(errno)) write_log(strerror(errno));
+  if(strerror(errno)) write_log(logfile,strerror(errno));
   ctrlc();
   }
 

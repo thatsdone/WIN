@@ -1,6 +1,6 @@
-/* $Id: extraw.c,v 1.1 2000/04/30 10:05:22 urabe Exp $ */
+/* $Id: extraw.c,v 1.2 2001/11/14 10:22:29 urabe Exp $ */
 /* "extraw.c"    2000.3.17 urabe */
-/* 2000.4.24 strerror() */
+/* 2000.4.24/2001.11.14 strerror() */
 
 #include <stdio.h>
 #include <signal.h>
@@ -10,6 +10,7 @@
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <sys/time.h>
+#include <time.h>
 #include <sys/types.h>
 #include <errno.h>
 
@@ -67,7 +68,7 @@ err_sys(ptr)
   {
   perror(ptr);
   write_log(logfile,ptr);
-  if(strerror(errno)) write_log(strerror(errno));
+  if(strerror(errno)) write_log(logfile,strerror(errno));
   ctrlc();
   }
 

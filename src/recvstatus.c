@@ -1,7 +1,7 @@
-/* $Id: recvstatus.c,v 1.2 2000/04/30 10:05:23 urabe Exp $ */
+/* $Id: recvstatus.c,v 1.3 2001/11/14 10:22:30 urabe Exp $ */
 /* "recvstatus.c"      5/24/95    urabe */
 /* 97.7.17 two lines of "if() continue;" in the main loop */
-/* 2000.4.24 strerror() */
+/* 2000.4.24/2001.11.14 strerror() */
 
 #include <stdio.h>
 #include <signal.h>
@@ -11,6 +11,7 @@
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <sys/time.h>
+#include <time.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
@@ -63,7 +64,7 @@ err_sys(ptr)
   {
   perror(ptr);
   write_log(logfile,ptr);
-  if(strerror(errno)) write_log(strerror(errno));
+  if(strerror(errno)) write_log(logfile,strerror(errno));
   close(sock);
   ctrlc();
   }

@@ -1,4 +1,4 @@
-/* $Id: wdisk.c,v 1.2 2000/04/30 10:05:23 urabe Exp $ */
+/* $Id: wdisk.c,v 1.3 2001/11/14 10:22:30 urabe Exp $ */
 /*
   program "wdisk.c"   4/16/93-5/13/93,7/2/93,7/5/94  urabe
                       1/6/95 bug in adj_time fixed (tm[0]--)
@@ -21,6 +21,7 @@
 #include <sys/shm.h>
 #include <sys/file.h>
 #include <sys/time.h>
+#include <time.h>
 #include <dirent.h>
 #include <signal.h>
 #include <ctype.h>

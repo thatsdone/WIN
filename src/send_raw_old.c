@@ -1,4 +1,4 @@
-/* $Id: send_raw_old.c,v 1.3 2000/09/07 15:23:08 urabe Exp $ */
+/* $Id: send_raw_old.c,v 1.4 2001/11/14 10:22:30 urabe Exp $ */
 /*
     program "send_raw_old/send_mon_old.c"   1/24/94 - 1/25/94,5/25/94 urabe
                                     6/15/94 - 6/16/94
@@ -11,6 +11,7 @@
                                   2000.4.17 deleted definition of usleep()
                                   2000.4.24 strerror()
                           2000.9.7 multiple resend-request by MEISEI < 1/30/97
+                                  2001.11.14 strerror()
 */
 
 #include <stdio.h>
@@ -21,6 +22,7 @@
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <sys/time.h>
+#include <time.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
@@ -94,7 +96,7 @@ err_sys(ptr)
   {
   perror(ptr);
   write_log(logfile,ptr);
-  if(strerror(errno)) write_log(strerror(errno));
+  if(strerror(errno)) write_log(logfile,strerror(errno));
   write_log(logfile,"end");
   close(sock);
   exit(1);

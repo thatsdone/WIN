@@ -14,6 +14,7 @@
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <sys/time.h>
+#include <time.h>
 
 #define DEBUG     0
 #define DEBUG1    0

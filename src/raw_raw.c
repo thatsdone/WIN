@@ -1,4 +1,4 @@
-/* $Id: raw_raw.c,v 1.2 2000/04/30 10:05:23 urabe Exp $ */
+/* $Id: raw_raw.c,v 1.3 2001/11/14 10:22:30 urabe Exp $ */
 /* "raw_raw.c"    97.8.5 urabe */
 /*                  modified from raw_100.c */
 /*                  98.4.17 FreeBSD */
@@ -6,7 +6,7 @@
 /*                  99.4.19 byte-order-free */
 /*                  2000.3.21 c_save=shr->c; bug fixed */
 /* 2000.4.24 with -g, shift 1Hz SR data by 4 bits rightward for GTA-45 LP chs */
-/* 2000.4.24 strerror() */
+/* 2000.4.24/2001.11.14 strerror() */
 
 #include <stdio.h>
 #include <signal.h>
@@ -16,6 +16,7 @@
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <sys/time.h>
+#include <time.h>
 #include <sys/types.h>
 #include <errno.h>
 
@@ -75,7 +76,7 @@ err_sys(ptr)
   {
   perror(ptr);
   write_log(logfile,ptr);
-  if(strerror(errno)) write_log(strerror(errno));
+  if(strerror(errno)) write_log(logfile,strerror(errno));
   ctrlc();
   }
 

@@ -1,4 +1,4 @@
-/* $Id: pmon.c,v 1.7 2001/05/31 04:05:30 urabe Exp $ */
+/* $Id: pmon.c,v 1.8 2001/11/14 10:22:29 urabe Exp $ */
 /************************************************************************
 *************************************************************************
 **  program "pmon.c" for NEWS/SPARC                             *********
@@ -58,6 +58,7 @@
 #include  <sys/types.h>
 #include  <sys/file.h>
 #include  <sys/time.h>
+#include  <time.h>
 #include  <fcntl.h>
 #include  <sys/ioctl.h>
 #include  <ctype.h>

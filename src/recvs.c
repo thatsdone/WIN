@@ -1,8 +1,8 @@
-/* $Id: recvs.c,v 1.1 2000/04/30 10:05:23 urabe Exp $ */
+/* $Id: recvs.c,v 1.2 2001/11/14 10:22:30 urabe Exp $ */
 /* "recvs.c"    receive sync frames      2000.3.14       urabe */
 /* 2000.3.21 */
 /* 2000.4.17 */
-/* 2000.4.24 strerror() */
+/* 2000.4.24/2001.11.14 strerror() */
 
 #include <stdio.h>
 #include <signal.h>
@@ -12,6 +12,7 @@
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <sys/time.h>
+#include <time.h>
 #include <unistd.h>
 #include <stropts.h>
 #include <fcntl.h>
@@ -78,7 +79,7 @@ err_sys(ptr)
   {
   perror(ptr);
   write_log(logfile,ptr);
-  if(strerror(errno)) write_log(strerror(errno));
+  if(strerror(errno)) write_log(logfile,strerror(errno));
   ctrlc();
   }
 

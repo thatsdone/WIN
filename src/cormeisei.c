@@ -1,4 +1,4 @@
-/* $Id: cormeisei.c,v 1.2 2000/04/30 10:05:22 urabe Exp $ */
+/* $Id: cormeisei.c,v 1.3 2001/11/14 10:22:29 urabe Exp $ */
 /* "cormeisei.c"    June'97 Ide changed from*/
 /* "raw_raw.c"      3/4/96 urabe */
 /*                  revised on 5/20/96 */
@@ -15,7 +15,7 @@
 /*                  99.2.4    moved signal(HUP) to read_chfile() by urabe */
 /*                  99.4.19   byte-order-free by urabe */
 /*                  2000.4.17 deleted definition of usleep() */
-/*                  2000.4.24 strerror() */
+/*                  2000.4.24/2001.11.14 strerror() */
 
 #include <stdio.h>
 #include <signal.h>
@@ -25,6 +25,7 @@
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <sys/time.h>
+#include <time.h>
 #include <sys/types.h>
 #include <unistd.h>
 #include <errno.h>
@@ -100,7 +101,7 @@ char *ptr;
 {
   perror(ptr);
   write_log(logfile,ptr);
-  if(strerror(errno)) write_log(strerror(errno));
+  if(strerror(errno)) write_log(logfile,strerror(errno));
   ctrlc();
 }
 

@@ -1,4 +1,4 @@
-/* $Id: recvt.c,v 1.5 2001/03/09 06:34:56 urabe Exp $ */
+/* $Id: recvt.c,v 1.6 2001/11/14 10:22:30 urabe Exp $ */
 /* "recvt.c"      4/10/93 - 6/2/93,7/2/93,1/25/94    urabe */
 /*                2/3/93,5/25/94,6/16/94 */
 /*                1/6/95 bug in adj_time fixed (tm[0]--) */
@@ -26,6 +26,7 @@
 /*                2000.4.26 host control, statistics, -a, -m, -p options */
 /*                2001.2.20 wincpy() improved */
 /*                2001.3.9 debugged for sh->r */
+/*                2001.11.14 strerror() */
 
 #include <stdio.h>
 #include <signal.h>
@@ -35,6 +36,7 @@
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <sys/time.h>
+#include <time.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
@@ -300,7 +302,7 @@ err_sys(ptr)
   {
   perror(ptr);
   write_log(logfile,ptr);
-  if(strerror(errno)) write_log(strerror(errno));
+  if(strerror(errno)) write_log(logfile,strerror(errno));
   ctrlc();
   }
 

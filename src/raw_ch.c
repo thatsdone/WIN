@@ -1,9 +1,9 @@
-/* $Id: raw_ch.c,v 1.1 2000/04/30 10:05:23 urabe Exp $ */
+/* $Id: raw_ch.c,v 1.2 2001/11/14 10:22:29 urabe Exp $ */
 /* "raw_ch.c"    99.12.8 urabe */
 /*                  modified from raw_raw.c */
 /*                  byte-order-free */
 /*                  2000.3.21 c_save=shr->c; bug fixed */
-/*                  2000.4.24 strerror() */
+/*                  2000.4.24/2001.11.14 strerror() */
 
 #include <stdio.h>
 #include <signal.h>
@@ -13,6 +13,7 @@
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <sys/time.h>
+#include <time.h>
 #include <sys/types.h>
 #include <errno.h>
 
@@ -72,7 +73,7 @@ err_sys(ptr)
   {
   perror(ptr);
   write_log(logfile,ptr);
-  if(strerror(errno)) write_log(strerror(errno));
+  if(strerror(errno)) write_log(logfile,strerror(errno));
   ctrlc();
   }
 

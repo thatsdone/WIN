@@ -1,4 +1,4 @@
-/*  $Id: order2.c,v 1.1 2000/05/26 08:29:49 uehira Exp $  */
+/*  $Id: order2.c,v 1.2 2001/11/14 10:22:29 urabe Exp $  */
 /*  program "order.c" 1/26/94 - 2/7/94, 6/14/94 urabe */
 /*                              1/6/95 bug in adj_time(tm[0]--) fixed */
 /*                              3/17/95 write_log() */
@@ -19,6 +19,7 @@
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <sys/time.h>
+#include <time.h>
 
 #define SWAPL(a) a=(((a)<<24)|((a)<<8)&0xff0000|((a)>>8)&0xff00|((a)>>24)&0xff)
 

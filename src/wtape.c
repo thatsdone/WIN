@@ -1,4 +1,4 @@
-/* $Id: wtape.c,v 1.3 2001/06/23 01:04:22 uehira Exp $ */
+/* $Id: wtape.c,v 1.4 2001/11/14 10:22:30 urabe Exp $ */
 /*
   program "wtape.c"
   8/23/89 - 8/8/90, 6/27/91, 12/24/91, 2/29/92  urabe
@@ -22,6 +22,7 @@
 #include  <sys/ioctl.h>
 #include  <sys/stat.h>
 #include  <sys/time.h>
+#include  <time.h>
 #include  <sys/mtio.h>
 #include  <unistd.h>
 
@@ -45,7 +46,7 @@
   int  wait_min;
   char param_name[FILENAME_MAX];
   char *progname;
-  static char rcsid[]="$Id: wtape.c,v 1.3 2001/06/23 01:04:22 uehira Exp $";
+  static char rcsid[]="$Id: wtape.c,v 1.4 2001/11/14 10:22:30 urabe Exp $";
 
 switch_sig()
   {

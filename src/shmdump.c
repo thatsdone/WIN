@@ -1,4 +1,4 @@
-/* $Id: shmdump.c,v 1.3 2000/05/01 04:19:43 urabe Exp $ */
+/* $Id: shmdump.c,v 1.4 2001/11/14 10:22:30 urabe Exp $ */
 /*  program "shmdump.c" 6/14/94 urabe */
 /*  revised 5/29/96 */
 /*  Little Endian (uehira) 8/27/96 */
@@ -17,6 +17,7 @@
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <sys/time.h>
+#include <time.h>
 #include <unistd.h>
 #include <errno.h>
 

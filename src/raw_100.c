@@ -1,4 +1,4 @@
-/* $Id: raw_100.c,v 1.2 2000/04/30 10:05:23 urabe Exp $ */
+/* $Id: raw_100.c,v 1.3 2001/11/14 10:22:29 urabe Exp $ */
 /* "raw_100.c"    97.6.23 - 6.30 urabe */
 /*                  modified from raw_raw.c */
 /*                  97.8.4 bug fixed (output empty block) */
@@ -6,7 +6,7 @@
 /*                  99.2.4 moved signal(HUP) to read_chfile() by urabe */
 /*                  99.12.10 byte-order-free */
 /*                  2000.3.21 c_save=shr->c; bug fixed */
-/*                  2000.4.24 strerror() */
+/*                  2000.4.24/2001.11.14 strerror() */
 
 #include <stdio.h>
 #include <signal.h>
@@ -16,6 +16,7 @@
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <sys/time.h>
+#include <time.h>
 #include <sys/types.h>
 #include <errno.h>
 
@@ -79,7 +80,7 @@ err_sys(ptr)
   {
   perror(ptr);
   write_log(logfile,ptr);
-  if(strerror(errno)) write_log(strerror(errno));
+  if(strerror(errno)) write_log(logfile,strerror(errno));
   ctrlc();
   }
 

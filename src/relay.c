@@ -1,4 +1,4 @@
-/* $Id: relay.c,v 1.2 2000/04/30 10:05:23 urabe Exp $ */
+/* $Id: relay.c,v 1.3 2001/11/14 10:22:30 urabe Exp $ */
 /* "relay.c"      5/23/94-5/25/94,6/15/94-6/16/94,6/23/94,3/16/95 urabe */
 /*                3/26/95 check_packet_no; port# */
 /*                5/24/96 added processing of "host table full" */
@@ -8,7 +8,7 @@
 /*                6/23/97 SNDBUF/RCVBUF=65535 */ 
 /*                97.9.3               &50000 */ 
 /*                98.6.30 FreeBSD */ 
-/*                2000.4.24 strerror() */
+/*                2000.4.24/2001.11.14 strerror() */
 
 #include <stdio.h>
 #include <signal.h>
@@ -18,6 +18,7 @@
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <sys/time.h>
+#include <time.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
@@ -91,7 +92,7 @@ err_sys(ptr)
   {
   perror(ptr);
   write_log(logfile,ptr);
-  if(strerror(errno)) write_log(strerror(errno));
+  if(strerror(errno)) write_log(logfile,strerror(errno));
   close(sock_in);
   close(sock_out);
   ctrlc();

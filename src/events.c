@@ -1,4 +1,4 @@
-/* $Id: events.c,v 1.4 2001/02/13 01:31:07 urabe Exp $ */
+/* $Id: events.c,v 1.5 2001/11/14 10:22:29 urabe Exp $ */
 /****************************************************************************
 *****************************************************************************
 **     program "events.c" for NEWS                                  *********
@@ -70,6 +70,7 @@ sso     /dat/etc/sso.station    cut-jc3
 #include  <dirent.h>
 #include  <sys/file.h>
 #include  <sys/time.h>
+#include  <time.h>
 #include  <sys/param.h>
 #include  <sys/mount.h>
 

@@ -1,9 +1,10 @@
-/* $Id: sends.c,v 1.2 2000/12/20 11:17:43 urabe Exp $ */
+/* $Id: sends.c,v 1.3 2001/11/14 10:22:30 urabe Exp $ */
 /*   program "sends"   2000.3.20 urabe                   */
 /*   2000.3.21 */
 /*   2000.4.17 */
 /*   2000.4.24 strerror() */
 /*   2000.12.20 option -i fixed */
+/*   2001.11.14 strerror() */
 
 #include <stdio.h>
 #include <signal.h>
@@ -89,7 +90,7 @@ err_sys(ptr)
   {
   perror(ptr);
   write_log(logfile,ptr);
-  if(strerror(errno)) write_log(strerror(errno));
+  if(strerror(errno)) write_log(logfile,strerror(errno));
   write_log(logfile,"end");
   close(sock);
   exit(1);

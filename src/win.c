@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.16 2001/08/22 10:05:06 urabe Exp $
+   $Id: win.c,v 1.17 2001/11/14 10:22:30 urabe Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -110,11 +110,9 @@ LOCAL
 #include <string.h>
 
 #if defined(SYSTEMV)
-#include <time.h>
 #define atanh(x)  (0.5*log((1.0+x)/(1.0-x)))
 #else
 #include <stdlib.h>
-#include <sys/time.h>
 #endif
 #include <sys/types.h>
 #include <sys/uio.h>
@@ -122,6 +120,7 @@ LOCAL
 #include <dirent.h>   /* opendir(), readdir() */
 #include <sys/file.h>
 #include <sys/time.h>
+#include <time.h>
 #include <sys/ioctl.h>
 #include <fcntl.h>
 #include <math.h>

@@ -1,4 +1,4 @@
-/* $Id: recvnmx.c,v 1.13 2002/03/24 15:35:47 urabe Exp $ */
+/* $Id: recvnmx.c,v 1.14 2002/07/05 09:06:57 urabe Exp $ */
 /* "recvnmx.c"    2001.7.18-19 modified from recvt.c and nmx2raw.c  urabe */
 /*                2001.8.18 */
 /*                2001.10.5 workaround for hangup */
@@ -7,6 +7,7 @@
 /*                2002.2.20 allow SR of only 20/100/200Hz */
 /*                2002.3.3  read ch_map file on HUP */
 /*                2002.3.5  eobsize on -B option */
+/*                2002.7.5  added Trident and changed format of ch file */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -51,8 +52,11 @@
 
 char *progname,logfile[256],chmapfile[1024];
 struct ip_mreq stMreq;
-unsigned short station,chmap[MAXCH];
+unsigned short station,chmap[65536];
 int use_chmap;
+char *model[32]={"HRD","ORION","RM3","RM4","LYNX","CYGNUS","CALLISTO","CARINA",
+    "008","TRIDENT","010","011","012","013","014","015","016","017","018","019",
+    "020","021","022","023","024","025","026","027","028","029","030","031"};
 struct Shm {
   unsigned long p;    /* write point */
   unsigned long pl;   /* write limit */
@@ -65,7 +69,7 @@ struct Nmx_Packet {
   time_t tim;
   struct tm *t;
   int subsec;
-  char *model;
+  int model;
   int serno;
   int oldest;
   int seq;
@@ -279,8 +283,6 @@ parse_one_packet(unsigned char *inbuf,int len,struct Nmx_Packet *pk)
 #define SIGNATURE 0x7ABCDE0F
 #define MES_DATA 1
   int srtab[32]={0,1,2,5,10,20,40,50,80,100,125,200,250,500,1000,25,120};
-  char *model[32]={"HRD","ORION","RM3","RM4","LYNX","CYGNUS","CALLISTO",
-    "CARINA"};
   unsigned char *ptr,b,*ptr_lim;
   int nb,cnt,sr,i,oldest,signature,mestype,length;
   nb=cnt=0;
@@ -308,8 +310,7 @@ parse_one_packet(unsigned char *inbuf,int len,struct Nmx_Packet *pk)
       else if(cnt==6) pk->subsec+=(b<<8);
       else if(cnt==7) pk->serno=b;
       else if(cnt==8) {
-        pk->model=model[(b>>3)];
-        if(pk->model==NULL) pk->model="?";
+        pk->model=(b>>3);
         pk->serno+=((b&0x7)<<8);
       }
       else if(cnt==9) pk->seq=b;
@@ -380,7 +381,7 @@ proc_soh(struct Nmx_Packet *pk)
   int i,j;
   sprintf(tb,"%02X %02d/%02d/%02d %02d:%02d:%02d %s#%d p#%d",
     pk->ptype,pk->t->tm_year%100,pk->t->tm_mon+1,pk->t->tm_mday,pk->t->tm_hour,
-    pk->t->tm_min,pk->t->tm_sec,pk->model,pk->serno,pk->seq);
+    pk->t->tm_min,pk->t->tm_sec,model[pk->model],pk->serno,pk->seq);
 #if SOH
   write_log(logfile,tb);
 #endif
@@ -426,10 +427,10 @@ proc_soh(struct Nmx_Packet *pk)
 ch2idx(int *rbuf[],struct Nmx_Packet *pk,int winch)
 {
   char tb[256];
-  static int s[MAXCH],c[MAXCH],n_idx;
+  static int m[MAXCH],s[MAXCH],c[MAXCH],n_idx;
   int i,bufsize;
   for(i=0;i<n_idx;i++){
-    if(pk->serno==s[i] && pk->ch==c[i]) break;
+    if(pk->model==m[i] && pk->serno==s[i] && pk->ch==c[i]) break;
   }
   if(i==n_idx){
     if(n_idx==MAXCH){
@@ -440,10 +441,12 @@ ch2idx(int *rbuf[],struct Nmx_Packet *pk,int winch)
       fprintf(stderr,"malloc failed. n_idx=%d\n",n_idx);
       return -1;
       }
+    m[i]=pk->model;
     s[i]=pk->serno;
     c[i]=pk->ch;
     n_idx++;
-    sprintf(tb,"registered serno=%d ch=%d idx=%d",pk->serno,pk->ch,i);
+    sprintf(tb,"registered model=%d(%s) serno=%d ch=%d idx=%d",
+      pk->model,model[pk->model],pk->serno,pk->ch,i);
     if(winch>=0) sprintf(tb+strlen(tb)," winch=%04X",winch);
     write_log(logfile,tb);
   }
@@ -452,18 +455,31 @@ ch2idx(int *rbuf[],struct Nmx_Packet *pk,int winch)
 
 read_ch_map()  
 {
-  char tb[256];
+  char tb[256],mdl[256];
   FILE *fp;
-  int i,j,k;
+  int i,j,k,serno,ch;
   /* read channel map file */
   if(*chmapfile){
     if((fp=fopen(chmapfile,"r"))!=NULL) {
       k=0;
-      for(i=0;i<MAXCH;i++) chmap[i]=0xffff;
+      for(i=0;i<65536;i++) chmap[i]=0xffff;
       while(fgets(tb,256,fp)) {
         if(*tb=='#') continue;
-        sscanf(tb,"%d%x",&i,&j);
-        chmap[i]=j;
+        sscanf(tb,"%s%d%x",mdl,&serno,&ch);
+        if(serno>2047) {
+          sprintf(tb,"S/N '%d' illegal !",serno);
+          write_log(logfile,tb);
+          fprintf(stderr,"%s\n",tb);
+          exit(1);
+        }
+        for(i=0;i<32;i++) if(strcmp(mdl,model[i])==0) break;
+        if(i==32) {
+          sprintf(tb,"model '%s' not registered !",mdl);
+          write_log(logfile,tb);
+          fprintf(stderr,"%s\n",tb);
+          exit(1);
+        }
+        chmap[(i<<11)|serno]=ch;
         k++;
       }
     fclose(fp);
@@ -528,7 +544,7 @@ main(argc,argv)
       case 'v':   /* verbose */
         verbose=1;
         break;
-      case 'B':   /* verbose */
+      case 'B':   /* eobsize */
         eobsize=1;
         break;
       default:
@@ -601,15 +617,15 @@ main(argc,argv)
     printf(" bpp=%d\n",pk.bpp);
 #endif
     if(use_chmap) {
-      if(chmap[pk.serno]==0xffff) winch=(-1); /* do not use the ch */
-      else winch=chmap[pk.serno]+pk.ch;
+      if(chmap[(pk.model<<11)+pk.serno]==0xffff) winch=(-1); /* do not use the ch */
+      else winch=chmap[(pk.model<<11)+pk.serno]+pk.ch;
     }
-    else winch=(pk.serno<<5)+pk.ch;
+    else winch=((pk.model&0x3)<<14)+(pk.serno<<3)+pk.ch;
     if(verbose)
  printf("%s:%d>%02X %02d/%02d/%02d %02d:%02d:%02d.%04d %s#%d p#%d %dHz ch%d x0=%d %04X\n",
         inet_ntoa(from_addr.sin_addr),ntohs(from_addr.sin_port),
         pk.ptype,pk.t->tm_year%100,pk.t->tm_mon+1,pk.t->tm_mday,pk.t->tm_hour,
-        pk.t->tm_min,pk.t->tm_sec,pk.subsec,pk.model,pk.serno,pk.seq,
+        pk.t->tm_min,pk.t->tm_sec,pk.subsec,model[pk.model],pk.serno,pk.seq,
         pk.sr,pk.ch,pk.first,winch);
     if((pk.ptype&0x0f)==1 && winch>=0 && (pk.sr==100||pk.sr==20||pk.sr==200)){
          /* compressed data packet */

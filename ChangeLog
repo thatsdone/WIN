@@ -1,6 +1,14 @@
- $Id: ChangeLog,v 1.85 2004/12/15 06:39:45 urabe Exp $
+ $Id: ChangeLog,v 1.86 2004/12/28 01:58:09 urabe Exp $
 
-2004-11-17 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
+2004-12-28 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
+	* win.c : contribution from Hi-net
+		#define HINET_EXTENTION_1 1  /* roll over the monitor window */
+		#define HINET_EXTENTION_2 1  /* search */
+		#define HINET_EXTENTION_3 1  /* paste-up in the monitor window */
+		#define HINET_WIN32   0      /* Hi-net WIN32 format */
+	* Version 1.1.51 released.
+
+2004-12-15 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
 	* wdisk : bug fixed. : use tm_min[i] instead of last_min
 	* Version 1.1.50 released.
 

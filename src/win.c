@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.32 2004/09/08 06:50:53 urabe Exp $
+   $Id: win.c,v 1.33 2004/12/28 01:58:09 urabe Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -12,8 +12,16 @@
 
    98.7.2 yo2000
 */
+#define HINET_EXTENTION_1 1  /* roll over the monitor window */
+#define HINET_EXTENTION_2 1  /* search */
+#define HINET_EXTENTION_3 1  /* paste-up in the monitor window */
+#define HINET_WIN32   0      /* Hi-net WIN32 format */
+#if ! HINET_WIN32
 #define NAME_PRG      "win"
-#define WIN_VERSION   "2004.9.8"
+#else
+#define NAME_PRG      "win32"
+#endif
+#define WIN_VERSION   "2004.10.22(Hi-net)"
 #define DEBUG_AP      0   /* for debugging auto-pick */
 /* 5:sr, 4:ch, 3:sec, 2:find_pick, 1:all */
 /************ HOW TO COMPILE THE PROGRAM **************************
@@ -239,9 +247,17 @@ LOCAL
 #define HP          (PI/2.0)
 #define WHITE       0x00
 #define MAX_SHORT    32000
-#define MEMORY_LIMIT (1000000*8) /* pixels for one bitmap */
+#if HINET_WIN32
+ #define MEMORY_LIMIT (1000000*8*10) /* pixels for one bitmap */
+#else
+ #define MEMORY_LIMIT (1000000*8) /* pixels for one bitmap */
+#endif
 #define WIDTH_TEXT   8
-#define HEIGHT_TEXT  16
+#if HINET_WIN32
+  #define HEIGHT_TEXT 14
+#else
+  #define HEIGHT_TEXT  16
+#endif
 #define CODE_START   32
 #define N_BM        100   /* size of text buffer (chars) */
 #define WB          (WIDTH_TEXT*5)    /* width of a box */
@@ -254,7 +270,11 @@ LOCAL
 #define SR_LOW       1  /* lower limit of sampling rate */
 #define N_CH_NAME    0x10000 /* maximum n of name channels */
                              /* 16 bit channel field */
-#define NAMLEN       80
+#if HINET_WIN32
+  #define NAMLEN       256
+#else
+  #define NAMLEN       80
+#endif
 #define STNLEN       11 /* (length of station code)+1 */
 #define CMPLEN       7  /* (length of component code)+1 */
 #define WIDTH_INFO_C 18
@@ -782,6 +802,7 @@ LOCAL
   struct Fnl {
     char stn[STNLEN],pol[5];
     double delta,azim,emerg,incid,pt,pe,pomc,st,se,somc,amp,mag;
+    int idx;
     };
   struct Hypo {
     int valid,tm[5],tm_c[7],ndata,ellipse;
@@ -1170,6 +1191,20 @@ make_sec_table()
       emalloc("ft.ptr");
   /* get the number of sec blocks and make sec pointers */
 reset_blockmode:
+#if HINET_WIN32
+    lseek(ft.fd,(off_t)4,0);  /* BOF */
+    ft.len=ptr=size_max=i=ii=0;
+    ptr+=4;
+    while(read(ft.fd,c,1))
+      {
+      read(ft.fd,(char *)ft.ptr[ft.len].time,6);
+      lseek(ft.fd,(off_t)5,1);
+      read(ft.fd,c,4);
+      size=(c[0]<<24)+(c[1]<<16)+(c[2]<<8)+c[3];
+      if(size==0) break;
+      else if((size+16)>size_max) size_max=size+16;
+      size+=16;
+#else
     lseek(ft.fd,(off_t)0,0);  /* BOF */
     ft.len=ptr=size_max=i=ii=0;
     while(read(ft.fd,c,4))
@@ -1178,6 +1213,7 @@ reset_blockmode:
       if(size==0) break;
       else if(size>size_max) size_max=size;
       read(ft.fd,(char *)ft.ptr[ft.len].time,6);
+#endif
       bcd_dec(tm,ft.ptr[ft.len].time);
       if(sec_block && ft.ptr[ft.len].time[5]==0){
         if(i>=2 && i==ii){
@@ -1228,8 +1264,14 @@ reset_blockmode:
         {
         if(j==ft.len) break;
         ptr=ft.ptr[j].offset+10;  /* locate to the first second */
+#if HINET_WIN32
+	ptr+=6;
+#endif
         while(ptr<ft.ptr[j].offset+ft.ptr[j].size)
           {
+#if HINET_WIN32
+	  ptr+=2;
+#endif
           lseek(ft.fd,(off_t)ptr,0);
 #if OLD_FORMAT
           read(ft.fd,c,4);
@@ -1376,6 +1418,9 @@ read_one_sec(ptr,sys_ch,abuf,spike)
     }
   ddp=ft.secbuf+ft.ptr[ptr].size;
   dp=ft.secbuf+10;
+#if HINET_WIN32
+  dp+=6;
+#endif
 #if OLD_FORMAT
   while(1)
     {
@@ -1427,6 +1472,9 @@ read_one_sec(ptr,sys_ch,abuf,spike)
 #else  /* from "#if OLD_FORMAT" */
   while(1)
     {
+#if HINET_WIN32
+    dp+=2;
+#endif
     gh[0]=dp[0];
     gh[1]=dp[1];
     gh[2]=dp[2];
@@ -1566,6 +1614,9 @@ read_one_sec_mon(ptr,sys_ch,abuf,ppsm)
     ft.ptr_secbuf=ptr;
     }
   dp=ft.secbuf+10;
+#if HINET_WIN32
+  dp+=6;
+#endif
   ddp=ft.secbuf+ft.ptr[ptr].size;
 
 #if OLD_FORMAT
@@ -1699,6 +1750,9 @@ read_one_sec_mon(ptr,sys_ch,abuf,ppsm)
       return 0; /* bad header */
     }
 #else  /* from "#if OLD_FORMAT" */
+#if HINET_WIN32
+    dp+=2;
+#endif
   gh[0]=dp[0];
   gh[1]=dp[1];
   gh[2]=dp[2];
@@ -1727,8 +1781,14 @@ read_one_sec_mon(ptr,sys_ch,abuf,ppsm)
   if((gh[1]+(((long)gh[0])<<8))!=sys_ch)
     {
     dp=ft.secbuf+10;
+#if HINET_WIN32
+    dp+=6;
+#endif
     while(1)
       {
+#if HINET_WIN32
+      dp+=2;
+#endif
       gh[0]=dp[0];
       gh[1]=dp[1];
       gh[2]=dp[2];
@@ -1939,7 +1999,7 @@ init_process(argc,argv,args)
   float north,east,stcp,stcs,dm1,dm2,sens,to,h,g,adc;
   double alat,along,x,y;
   struct {float x,y;} md;
-  char text_buf[LINELEN],fname[NAMLEN],fname1[NAMLEN],name[STNLEN],unit[7],
+  char text_buf[LINELEN],text_buf2[LINELEN],text_buf3[LINELEN],fname[NAMLEN],fname1[NAMLEN],name[STNLEN],unit[7],
     dpath[NAMLEN],comp[CMPLEN],*ptr,fname2[NAMLEN],sname[STNLEN],c,*cp,
     fname00[NAMLEN],fname01[NAMLEN],fname02[NAMLEN],(*stations)[STNLEN];
   union Swp {
@@ -2311,6 +2371,46 @@ just_map:
   if(map_only || use_default_chfile) fp=open_file(fname,"channel table");
   else
     {
+#if HINET_WIN32
+      /* for Hi-net Channels table */
+      text_buf[0]='\0';
+      text_buf2[0]='\0';
+      text_buf3[0]='\0';
+      /* find directory name */
+      if(strlen(ft.data_file)>23) {
+	strncpy(text_buf2,ft.data_file,(int)(strlen(ft.data_file)-23));
+	text_buf2[strlen(ft.data_file)-23]='\0';
+      }
+      /* find win32file name */
+      if(ptr=strrchr(ft.data_file,'/')){
+	ptr++;
+	strncpy(text_buf3,ptr,19);
+	text_buf3[19]='\0';
+      } else {
+	strncpy(text_buf3,ft.data_file,19);
+	text_buf3[19]='\0';
+      }
+      sprintf(text_buf,"%sU%s.ch",text_buf2,text_buf3);
+#if 0
+      fprintf(stderr,"rslt:%s\n",text_buf);
+      fprintf(stderr,"rslt:%s\n",text_buf2);
+      fprintf(stderr,"rslt:%s\n",text_buf3);
+#endif
+      if((fp=fopen(text_buf,"r"))==NULL)
+	{
+	  sprintf(text_buf,"%s.ch",ft.data_file);
+	  if((fp=fopen(text_buf,"r"))==NULL)
+	    {
+	      sprintf(text_buf,"%s.CH",ft.data_file);
+	      if((fp=fopen(text_buf,"r"))==NULL)
+		fp=open_file(fname,"channel table");
+	      else strcpy(fname,text_buf);
+	    }
+	  else strcpy(fname,text_buf);
+	}
+      else strcpy(fname,text_buf);
+#else
+
     sprintf(text_buf,"%s.ch",ft.data_file);
     if((fp=fopen(text_buf,"r"))==NULL)
       {
@@ -2320,6 +2420,7 @@ just_map:
       else strcpy(fname,text_buf);
       }
     else strcpy(fname,text_buf);
+#endif
     }
   if(fp!=NULL)
     {
@@ -4685,6 +4786,10 @@ main(argc,argv)
 
 bg: if(map_only) goto skip_mon;
   else if(just_hypo) goto skip_mon_just_hypo;
+#if 0 /* HINET_EXTENTION_3 */
+  load_data_prep(MSE_BUTNL);
+  /*get_delta();*/
+#endif
 /* define bitmap info */
   height_mon=ft.n_ch*pixels_per_trace;
   width_info=WIDTH_INFO;
@@ -4805,6 +4910,9 @@ bg: if(map_only) goto skip_mon;
     ft.n_mon=i_mon;
     ft.len=ft.n_mon*ft.len_mon;
     }
+#if HINET_EXTENTION_3
+  if(load_data_prep(MSE_BUTNL)) replot_mon(0);
+#endif
 bg1:if(flag_save) close(ft.fd_save);
   if((x_zero_max=ft.len*PIXELS_PER_SEC_MON-width_win_mon)<0) x_zero_max=0;
   if((y_zero_max=height_mon-height_win_mon)<0) y_zero_max=0;
@@ -5298,10 +5406,12 @@ plot_zoom(izoom,leng,pt,put)
       if(put)
         {
         if(!strcmp(fmt,"B4"))    /* 4-byte binary */
-          {
-          if(!fwrite(buf,4,sr,fp)) goto write_error;
-          }
-        if(!strcmp(fmt,"A4"))    /* 4-byte big-endian (32 bit PCM audio) */
+          for(j=0;j<sr;j++)
+            {
+            ll=buf[j];
+            if(!fwrite(&ll,4,1,fp)) goto write_error;
+            }
+        else if(!strcmp(fmt,"A4"))    /* 4-byte big-endian (32 bit PCM audio) */
           for(j=0;j<sr;j++)
             {
             ll=buf[j];
@@ -5367,7 +5477,7 @@ plot_zoom(izoom,leng,pt,put)
           }
         else
           {
-          fprintf(stderr,"unknown data format '%s'\007\n");
+          fprintf(stderr,"unknown data format '%s'\007\n",fmt);
           break;
           }
         }
@@ -5434,8 +5544,10 @@ proc_main()
   {
   static struct Pick_Time pt;
   int xx,yy,x,y,i,j,k,kk,ring_bell,plot_flag,xshift,yshift;
+  int find_wchid,ret;
   static int pos_zoom;
   char textbuf[LINELEN],textbuf1[LINELEN],tbuf[20],unit[10];
+  char cmdbuf[LINELEN];
 
   xx=x_zero;
   yy=y_zero;
@@ -5904,6 +6016,13 @@ proc_main()
           break;
         case RFSH:
           raise_ttysw(0);
+#if HINET_EXTENTION_3
+	  if (event.mse_code==MSE_BUTNR&&flag_hypo==1) {
+	    put_reverse(&dpy,x_func(RFSH),0,WB,MARGIN);
+	    replot_mon(1);
+	    put_reverse(&dpy,x_func(RFSH),0,WB,MARGIN);
+	  }
+#endif
           refresh(1);
           ring_bell=0;
           break;
@@ -5959,6 +6078,9 @@ proc_main()
             plot_flag=1;
             ring_bell=0;
             }
+#if HINET_EXTENTION_3
+          replot_mon(1);
+#endif
           put_reverse(&dpy,x_func(LOAD),0,WB,MARGIN);
           break;
         case UNLD:
@@ -6055,6 +6177,26 @@ proc_main()
           else yshift=height_win_mon/SHIFT;
           switch(event.mse_code)
             {
+#if HINET_EXTENTION_1
+            case MSE_BUTNL:
+              if((yy-=yshift)<0) {
+		/* yy=0; */
+		bell();
+		yy = y_zero_max;
+	      }
+              break;
+            case MSE_BUTNM: 
+	      bell();
+	      yy = 0;
+	      break;
+            case MSE_BUTNR:
+              if((yy+=yshift)>y_zero_max) {
+		/* yy=y_zero_max; */
+		bell();
+		yy = 0 ;
+	      }
+              break;
+#else
             case MSE_BUTNL:
               if((yy-=yshift)<0) yy=0;
               break;
@@ -6062,6 +6204,7 @@ proc_main()
             case MSE_BUTNR:
               if((yy+=yshift)>y_zero_max) yy=y_zero_max;
               break;
+#endif
             }
           break;
         case LR:
@@ -6073,7 +6216,56 @@ proc_main()
             case MSE_BUTNL:
               if((xx-=xshift)<0) xx=0;
               break;
-            case MSE_BUTNM: break;
+            case MSE_BUTNM: 
+#if HINET_EXTENTION_2
+		fflush(stdin);
+		raise_ttysw(1);
+		while (1) {
+		  find_wchid=-1;
+		  fprintf(stderr,"Please Input Station Chnannel ID ...>");
+		  fgets(cmdbuf,LINELEN,stdin);
+		  cmdbuf[strlen(cmdbuf)-1]='\0';
+		  ret=sscanf(cmdbuf,"%x",&find_wchid);
+		  if(ret!=1) {
+		    /*fprintf(stderr,":%s:",cmdbuf);*/
+		    for(i=0;i<ft.n_ch;i++){
+		      /*fprintf(stderr,"%s:%s:",ft.stn[i].name,cmdbuf);*/
+		      if(strcmp(ft.stn[i].name,cmdbuf)==0) {
+			find_wchid=ft.idx2ch[i];
+			break;
+		      }
+		    }
+		    if(find_wchid>0) break ;
+		    else fprintf(stderr,"Cannot Find  %s....\n",cmdbuf);
+		    continue ;
+		  }
+		  if(find_wchid<0) {
+		    fprintf(stderr,"Channel ID  Select Mode End.\n");
+		    break ;
+		  }
+		  if(find_wchid<=0||find_wchid>=0xffff) {
+                    fprintf(stderr,"Channel ID  Rang is 0x0001 --> 0xffff\n");
+		    continue ;  
+		  } else {
+		    break;
+		  }
+		}
+		if(find_wchid>0){
+		  if(ft.ch2idx[find_wchid]<0) {
+		    fprintf(stderr,"Cannot Find Channel ID: %04x....\n",find_wchid);
+		    yy=0;
+		  } else {
+		    yy=ft.idx2pos[ft.ch2idx[find_wchid]]*pixels_per_trace;
+		    if(yy<0) yy=0;
+		    if(yy>y_zero_max) yy=y_zero_max;
+		  }
+		} else {
+		  /*yy=0;*/
+		}
+		raise_ttysw(0);
+		refresh(0);
+#endif
+		break ;
             case MSE_BUTNR:
               if((xx+=xshift)>x_zero_max) xx=x_zero_max;
               break;
@@ -6842,7 +7034,439 @@ get_calc()  /* get calculated arrival times for all stations */
        tm_ot[0],tm_ot[1],tm_ot[2],tm_ot[3],tm_ot[4],sec_ot,ft.hypoall.alat,
        ft.hypoall.along,ft.hypoall.dep,ft.hypoall.mag);
 }
+#if HINET_EXTENTION_3
+load_data_prep(btn) /* return=1 means success */
+  int btn;  /* MSE_BUTNL, MSE_BUTNM or MSE_BUTNR */
+  {
+  FILE *fp,*fq;
+  struct dirent *dir_ent;
+  DIR *dir_ptr;
+  int re,ii,i,j,k1,k2,k3,k4,k5,find_file,tm_begin[6],tm[6],sec_max,sockfd;
+  float k6;
+  time_t lsec_begin;
+  char text_buf[LINELEN],*ptr,name1[NAMLEN],name2[NAMLEN],pickfile[NAMLEN],
+    name_low[NAMLEN],name_high[NAMLEN],filename[NAMLEN],
+    namebuf[NAMLEN],namebuf1[NAMLEN],diagbuf[50],userbuf[50];
+  char **picks_list;
+  *name_low=(*name_high)=0;
+  if(*ft.save_file) find_file=0;  /* pick file name already fixed */
+  else find_file=1;               /* search file name here */
+  if(btn==MSE_BUTNM) find_file=1; /* discard present pick file name */
+                                  /* and search again */
+  else if(btn==MSE_BUTNR && find_file==0) /* search the "next" pick file */
+    {
+    strcpy(name_low,ft.save_file);
+    find_file=1;
+    }
 
+  if(find_file) /* search in a directory */
+    {
+    /* get time range */
+    i=ft.len-1;
+    sprintf(name1,"%02x%02x%02x%1c%02x%02x%02x",ft.ptr[0].time[0],
+      ft.ptr[0].time[1],ft.ptr[0].time[2],dot,ft.ptr[0].time[3],
+      ft.ptr[0].time[4],ft.ptr[0].time[5]);
+    sprintf(name2,"%02x%02x%02x%1c%02x%02x%02x",ft.ptr[i].time[0],
+      ft.ptr[i].time[1],ft.ptr[i].time[2],dot,ft.ptr[i].time[3],
+      ft.ptr[i].time[4],ft.ptr[i].time[5]);
+
+    re=0;
+    if(*ft.pick_server) /* try pick file server */
+      {
+      if((ptr=strrchr(ft.data_file,'/'))==NULL) ptr=ft.data_file;
+      else ptr++;
+      if((sockfd=open_sock(ft.pick_server,ft.pick_server_port))!=-1)
+        {
+        fprintf(stderr,"connected to pick file server %s - ",ft.pick_server);
+        fp=fdopen(sockfd,"r+");
+        while(fgets(text_buf,LINELEN,fp)) if(strncmp(text_buf,"PICKS OK",8)==0)
+          {
+          re=1;
+          rewind(fp);
+          break;
+          }
+        if(re && (re=fprintf(fp,"%s %s %s %s\n",name1,name2,ptr,ft.hypo_dir))>0)
+          {
+          fflush(fp);
+          rewind(fp);
+          fprintf(stderr,"OK\n");
+          while(fgets(text_buf,LINELEN,fp))
+            {
+            sscanf(text_buf,"%s",pickfile);
+            /* find the earliest (but later than "name_low") pick file */
+            if(*name_low && strncmp2(pickfile,name_low,17)<=0) continue;
+            if(*name_high && strncmp2(pickfile,name_high,17)>=0) continue;
+            strcpy(name_high,pickfile);
+            }
+          }
+        close(sockfd);
+        if(*name_high) strcpy(ft.save_file,name_high);
+        else if(re) {fprintf(stderr,"NG\n");return 0;}
+        }
+      }
+    if(re==0) /* search pick directory */
+      { 
+      if((dir_ptr=opendir(ft.hypo_dir))==NULL)
+        {
+        fprintf(stderr,"directory '%s' not open\007\007\n",ft.hypo_dir);
+        return 0;
+        }
+      while((dir_ent=readdir(dir_ptr))!=NULL)
+        {
+        if(*dir_ent->d_name=='.') continue; /* skip "." & ".." */
+      /* pick file name must be in the time range of data file */
+        if(strncmp2(dir_ent->d_name,name1,13)<0 ||
+          strncmp2(dir_ent->d_name,name2,13)>0) continue;
+      /* read the first line */
+        sprintf(filename,"%s/%s",ft.hypo_dir,dir_ent->d_name);
+        if((fp=fopen(filename,"r"))==NULL) continue;
+        *text_buf=0;
+        fgets(text_buf,LINELEN,fp);
+        fclose(fp);
+      /* first line must be "#p [data file name] ..." */
+        if((ptr=strrchr(ft.data_file,'/'))==NULL) ptr=ft.data_file;
+        else ptr++;
+        sscanf(text_buf,"%s%s",filename,namebuf);
+        strcpy(namebuf1,namebuf);
+        if(namebuf[6]=='.') namebuf1[6]='_';
+        else if(namebuf[6]=='_') namebuf1[6]='.';
+        if(strcmp(filename,"#p") ||
+          (strcmp(namebuf,ptr) && strcmp(namebuf1,ptr))) continue;
+      /* find the earliest (but later than "name_low") pick file */
+        if(*name_low && strncmp2(dir_ent->d_name,name_low,17)<=0) continue;
+        if(*name_high && strncmp2(dir_ent->d_name,name_high,17)>=0) continue;
+        strcpy(name_high,dir_ent->d_name);
+        }
+      closedir(dir_ptr);
+      if(*name_high) strcpy(ft.save_file,name_high);
+      else return 0;
+      }
+    }
+  /* file name fixed */
+  sprintf(filename,"%s/%s",ft.hypo_dir,ft.save_file);
+  if((fp=fopen(filename,"r"))==NULL) return 0;
+  if(fgets(text_buf,LINELEN,fp)==NULL)
+    {
+    fclose(fp);
+    return 0;
+    }
+  /* picks */
+  *diagbuf=(*userbuf)=0;
+  sscanf(text_buf+3,"%s %s %s",namebuf,diagbuf,userbuf);
+  if(strcmp(diagbuf,".")==0) *diagbuf=0;
+  if(just_hypo)
+    {
+    ft.pick=(struct Pick_Time (*)[4])
+      malloc(sizeof(struct Pick_Time)*4*ft.n_ch);
+    for(i=0;i<ft.n_ch;i++) for(j=0;j<4;j++) ft.pick[i][j].valid=0;
+    }
+  /*cancel_picks(NULL,-1);*/    /* cancel all picks */
+  set_diagnos(diagbuf,userbuf);
+  /* read picks */
+  flag_hypo=flag_mech=sec_max=0;
+  for(ii=0;;ii++)
+    {
+    *text_buf=0;
+    if(fgets(text_buf,LINELEN,fp)==NULL || strncmp(text_buf,"#p",2)) break;
+    if(ii==0)
+      {
+      if(strlen(text_buf)<25) /* for compatibility to old format */
+        /* new format has time of beginning of data */
+        {
+        sscanf(text_buf+3,"%d%d%d%d%d%d",&tm_begin[0],&tm_begin[1],&tm_begin[2],
+          &tm_begin[3],&tm_begin[4],&tm_begin[5]);
+        if(!just_hypo)
+          {
+          bcd_dec(tm,ft.ptr[0].time);
+          if(time_cmp(tm,tm_begin,6))
+            {
+            *ft.save_file=0;
+            fclose(fp);
+            return 0; /* incorrect time */
+            }
+          }
+        continue;
+        }
+      else if(just_hypo)
+        {
+        fprintf(stderr,"time offset : 'FileName - %d sec'\n",just_hypo_offset);
+        sscanf(ft.data_file+strlen(ft.data_file)-13,"%2d%2d%2d.%2d%2d%2d",
+          &tm_begin[0],&tm_begin[1],&tm_begin[2],
+          &tm_begin[3],&tm_begin[4],&tm_begin[5]);
+        lsec2time(time2lsec(tm_begin)-just_hypo_offset,tm_begin);
+        }
+      }
+    sscanf(text_buf+3,"%x%d%d%d%d%d%d%e",&i,&j,&k1,&k2,&k3,&k4,&k5,&k6);
+    /* 2001.6.7. if data file exists, don't accept out-of-range picks */
+    if(!just_hypo && (k1<0 || k1>=ft.len || k3<0 || k3>=ft.len))
+      {
+      fprintf(stderr,"out-of-range pick ignored - %s",text_buf);
+      continue;
+      }
+    ft.pick[ft.ch2idx[i]][j].valid=0;
+    ft.pick[ft.ch2idx[i]][j].sec1 =k1;
+    ft.pick[ft.ch2idx[i]][j].msec1=k2;
+    ft.pick[ft.ch2idx[i]][j].sec2 =k3;
+    ft.pick[ft.ch2idx[i]][j].msec2=k4;
+    ft.pick[ft.ch2idx[i]][j].polarity=k5;
+    if(j==MD) *(float *)&ft.pick[ft.ch2idx[i]][j].valid=k6;
+    if(k3>sec_max) sec_max=k3;
+    /*if(!just_hypo) put_mark(j,ft.idx2pos[ft.ch2idx[i]],1);*/
+    }
+  fprintf(stderr,"loaded from pick file '%s'\n",filename);
+  if(just_hypo)
+    {
+    ft.len=sec_max+1;
+    if((ft.ptr=(struct File_Ptr *)malloc(sizeof(*(ft.ptr))*ft.len))==0)
+      emalloc("ft.ptr");
+    lsec_begin=time2lsec(tm_begin);
+    for(i=0;i<ft.len;i++)
+      {
+      dec_bcd(ft.ptr[i].time,tm_begin);
+      lsec2time(++lsec_begin,tm_begin);
+      }
+    return 1;
+    }
+  /* read seis */
+  if(strncmp(text_buf,"#s",2)==0)
+    {
+    fq=fopen(ft.seis_file,"w+");
+    do
+      {
+      fprintf(fq,"%s",text_buf+3);
+      *text_buf=0;
+      if(fgets(text_buf,LINELEN,fp)==NULL) break;
+      } while(strncmp(text_buf,"#s",2)==0);
+    fclose(fq);
+    }
+  /* read final */
+  if(strncmp(text_buf,"#f",2)==0)
+    {
+    fq=fopen(ft.finl_file,"w+");
+    do
+      {
+      fprintf(fq,"%s",text_buf+3);
+      *text_buf=0;
+      if(fgets(text_buf,LINELEN,fp)==NULL) break;
+      } while(strncmp(text_buf,"#f",2)==0);
+    fclose(fq);
+    read_final(ft.finl_file,&ft.hypo);
+    /*flag_hypo=1;*/
+    get_delta();
+    }
+  /* read mecha */
+  if(strncmp(text_buf,"#m",2)==0)
+    {
+    fq=fopen(ft.mech_file,"w+");
+    do
+      {
+      fprintf(fq,"%s",text_buf+3);
+      *text_buf=0;
+      if(fgets(text_buf,LINELEN,fp)==NULL) break;
+      } while(strncmp(text_buf,"#m",2)==0);
+    fclose(fq);
+    flag_mech=1;
+    }
+  fclose(fp);
+  flag_change=0;
+  if(!ft.hypo.valid) return 0;
+  return 1;
+  }
+replot_mon(int replot_locate)
+{
+  int xx,yy,i,j,k,base_sec,mon_len,i_mon,c,mc;
+  char textbuf[LINELEN],tbuf[20];
+  unsigned char *buf_mon,*ptr;
+  short i2p;
+/* define bitmap info */
+  /* define_bm(&info,BM_MEM,width_info,height_info,0); */
+  put_white(&info,0,0,width_info,height_info);
+
+/* define bitmap zoom */
+  /*define_bm(&zoom,BaM_MEM,WIDTH_INFO_ZOOM+1,height_zoom,0);*/
+  n_zoom=0;
+  put_white(&zoom,0,0,WIDTH_INFO_ZOOM+1,height_zoom);
+  /* make zoom info format */
+#if 1
+  put_fram(&zoom,0,0,WIDTH_INFO_ZOOM+1,height_zoom);
+  put_fram(&zoom,0,1,WIDTH_INFO_ZOOM+1,height_zoom-1);
+  put_black(&zoom,X_Z_CHN,Y_Z_CHN,W_Z_CHN+1,PIXELS_PER_LINE+1);
+  put_fram(&zoom,X_Z_POL,Y_Z_POL,W_Z_POL+1,PIXELS_PER_LINE+1);
+  put_fram(&zoom,X_Z_SCL,Y_Z_SCL,W_Z_SCL+1,PIXELS_PER_LINE+1);
+  put_fram(&zoom,X_Z_TSC,Y_Z_TSC,W_Z_TSC+1,PIXELS_PER_LINE+1);
+  put_fram(&zoom,X_Z_SFT,Y_Z_SFT,W_Z_SFT+1,PIXELS_PER_LINE+1);
+  put_fram(&zoom,X_Z_FLT,Y_Z_FLT,W_Z_FLT+1,PIXELS_PER_LINE+1);
+  put_fram(&zoom,X_Z_GET,Y_Z_GET,W_Z_GET+1,PIXELS_PER_LINE+1);
+  put_fram(&zoom,X_Z_PUT,Y_Z_PUT,W_Z_PUT+1,PIXELS_PER_LINE+1);
+  put_fram(&zoom,X_Z_CLS,Y_Z_CLS,W_Z_CLS+1,PIXELS_PER_LINE+1);
+  put_bitblt(&arrows_scale,0,0,32,16,&zoom,X_Z_SCL+X_Z_ARR,Y_Z_SCL+Y_Z_ARR,BF_SDO);
+  put_bitblt(&arrows_leng,0,0,32,16,&zoom,X_Z_TSC+X_Z_ARR,Y_Z_TSC+Y_Z_ARR,BF_SDO);
+  put_bitblt(&arrows_lr_zoom,0,0,32,16,&zoom,X_Z_SFT+X_Z_ARR,
+    Y_Z_SFT+Y_Z_ARR,BF_SDO);
+  put_text(&zoom,X_Z_POL+(W_Z_POL-WIDTH_TEXT*3)/2,Y_Z_POL+Y_Z_OFS,"+/-",BF_SDO);
+  put_text(&zoom,X_Z_FLT+WIDTH_TEXT,Y_Z_FLT+Y_Z_OFS,"   NO FILTER     ",BF_SDO);
+  put_text(&zoom,X_Z_GET+(W_Z_GET-WIDTH_TEXT*3)/2,Y_Z_GET+Y_Z_OFS,"GET",BF_SDO);
+  put_text(&zoom,X_Z_PUT+(W_Z_PUT-WIDTH_TEXT*3)/2,Y_Z_PUT+Y_Z_OFS,"PUT",BF_SDO);
+  put_text(&zoom,X_Z_CLS+(W_Z_CLS-WIDTH_TEXT*3)/2,Y_Z_CLS+Y_Z_OFS,"CLS",BF_SDO);
+#endif
+  get_delta();
+  /*flag_hypo=1;*/
+  /* print info lines */
+  yy=k=0;
+  for(j=0;j<ft.n_ch;j++)
+    {
+    sprintf(textbuf,"%04X",ft.idx2ch[ft.pos2idx[j]]);
+    for(i=0;i<WIDTH_INFO_C-4;i++) textbuf[4+i]=' ';
+    sprintf(tbuf,"%d",ft.stn[ft.pos2idx[j]].scale);
+    if(strlen(tbuf)==1) strcpy(textbuf+WIDTH_INFO_C-1,tbuf);
+    else strcpy(textbuf+WIDTH_INFO_C-2,tbuf);
+    sprintf(tbuf,"%s-%s",ft.stn[ft.pos2idx[j]].name,ft.stn[ft.pos2idx[j]].comp);
+    if(!(j==0 || strcmp(ft.stn[ft.pos2idx[j]].name,
+        ft.stn[ft.pos2idx[j-1]].name)))
+      for(i=0;i<strlen(ft.stn[ft.pos2idx[j]].name)+1;i++) tbuf[i]=' ';
+    if(WIDTH_INFO_C-5-1>=strlen(tbuf))
+      for(i=0;i<strlen(tbuf);i++) textbuf[5+i]=tbuf[i];
+    else for(i=0;i<strlen(tbuf);i++) textbuf[4+i]=tbuf[i]; 
+    if(j>0 && ft.stn[ft.pos2idx[j]].rflag!=ft.stn[ft.pos2idx[j-1]].rflag) k^=1;
+    if(k) put_text(&info,0,yy,textbuf,BF_SI);
+    else put_text(&info,0,yy,textbuf,BF_S);
+    yy+=pixels_per_trace;
+    }
+
+  /* make mon */
+  /*ft.len_mon=(MEMORY_LIMIT/height_mon)/PIXELS_PER_SEC_MON;
+    if((ft.w_mon=ft.len_mon*PIXELS_PER_SEC_MON)>MAX_SHORT)
+    {
+    ft.len_mon=MAX_SHORT/PIXELS_PER_SEC_MON;
+    ft.w_mon=ft.len_mon*PIXELS_PER_SEC_MON;
+      }
+    ft.n_mon=(ft.len-1)/ft.len_mon+1;*/   /* n of bitmaps */
+  fprintf(stderr,"%d sec x %d chs (%d bitmap(s))\n",ft.len,ft.n_ch,ft.n_mon);
+  /*if(background && flag_save!=2) goto bg1;
+    if((mon=(lBitmap *)malloc(sizeof(lBitmap)*ft.n_mon))==0) emalloc("mon");*/
+  base_sec=0;
+  width_mon_max=0;
+  for(i_mon=0;i_mon<ft.n_mon;i_mon++)
+    {
+    if((mon_len=ft.len-base_sec)>ft.len_mon) mon_len=ft.len_mon;
+    if((width_mon=mon_len*PIXELS_PER_SEC_MON)>width_mon_max)
+      width_mon_max=width_mon;
+    if((buf_mon=(unsigned char *)malloc(p2w(width_mon)*height_mon*2))
+      ==NULL) break;
+    for(i=0;i<p2w(width_mon)*height_mon*2;i++) buf_mon[i]=0x00;
+    fprintf(stderr,"map #%d/%d : %d sec x %d chs (%d x %d)",
+      i_mon+1,ft.n_mon,mon_len,ft.n_ch,width_mon,height_mon);
+    fprintf(stderr,"   %d bytes\n",p2w(width_mon)*height_mon*2);
+    /* plot mon */
+    plot_mon(base_sec,mon_len,p2w(width_mon)*2,buf_mon);
+    define_bm(&mon[i_mon],BM_MEM,p2w(width_mon)*16,height_mon,buf_mon);
+    base_sec+=mon_len;
+    }
+  if(i_mon<ft.n_mon)
+    {
+    fprintf(stderr,"*** Data truncated at %d sec ***\n",base_sec);
+    ft.n_mon=i_mon;
+    ft.len=ft.n_mon*ft.len_mon;
+    }
+  /* plot mark for P,S,etc */
+  for(i=0;i<ft.n_ch;i++){
+    for(j=0;j<4;j++){
+      if(ft.pick[i][j].valid)
+        {
+	  put_mark(j,ft.idx2pos[i],1);
+        }
+    }
+  }
+  if(replot_locate) locate(0,0);
+  get_calc();
+  return 0;
+}
+get_delta()  /* get calculated delta  for all stations */
+{
+  int iz,i,j,k,tm_p[7],tm_s[7],tm_ot[7],tm_base[6],b,kk,ll;
+  time_t lsec_bs;
+  double sec,sec_ot,a;
+  FILE *fp;
+  char prog[NAMLEN],stan[NAMLEN],text_buf[LINELEN];
+  read_parameter(PARAM_HYPO,prog);
+  read_parameter(PARAM_STRUCT,stan);
+  /* write seis file */
+  fp=fopen(ft.seis_file2,"w+");
+  output_all(fp);
+  fclose(fp);
+  /* make init file */
+  fp=fopen(ft.init_file2,"w+");
+  fprintf(fp,"%10.4f%10.4f%8.2f\n",ft.hypo.alat,ft.hypo.along,ft.hypo.dep);
+  fprintf(fp,"  5.0       5.0       5.0\n");
+  /* above two lines are dummy */
+  fprintf(fp,"%d %d %d %d %d %.3f %.5f %.5f %.3f %.1f\n",
+	  ft.hypo.tm[0],ft.hypo.tm[1],ft.hypo.tm[2],ft.hypo.tm[3],ft.hypo.tm[4],
+	  ft.hypo.se,ft.hypo.alat,ft.hypo.along,ft.hypo.dep,ft.hypo.mag);
+  fclose(fp);
+  /* run hypo program */
+  sprintf(text_buf,"%s %s %s %s %s %s > /dev/null",
+	  prog,stan,ft.seis_file2,ft.finl_file2,ft.rept_file2,ft.init_file2);
+  system(text_buf);
+  read_final(ft.finl_file2,&ft.hypoall);
+  bcd_dec(tm_base,ft.ptr[0].time);
+  lsec_bs=time2lsec(tm_base);
+  adj_sec(ft.hypoall.tm,&ft.hypoall.se,tm_ot,&sec_ot);
+  /* sort by delta */
+  for(i=0;i<ft.hypoall.ndata;i++){ /* station loop */
+    a=ft.hypoall.fnl[i].delta;
+    b=ft.hypoall.fnl[i].idx;
+    j=i-1;
+    while(j>=0&&ft.hypoall.fnl[j].delta>a){
+      ft.hypoall.fnl[j+1].delta=ft.hypoall.fnl[j].delta;
+      ft.hypoall.fnl[j+1].idx=ft.hypoall.fnl[j].idx;
+      j--;
+    }
+    ft.hypoall.fnl[j+1].delta=a;
+    ft.hypoall.fnl[j+1].idx=b;
+  }
+#if 0
+  for(i=0;i<ft.hypoall.ndata;i++){ /* station loop */
+    fprintf(stderr,"%10s %4d %7.1f\n",
+	    ft.hypoall.fnl[ft.hypoall.fnl[i].idx].stn,ft.hypoall.fnl[i].idx,ft.hypoall.fnl[i].delta);
+  }
+#endif
+  for(j=0;j<ft.n_ch;j++) {
+    ft.idx2pos[j]=-1;
+  }
+  /* determined pos of plot_mon*/
+  k=0;kk=0;
+  for(i=0;i<ft.hypoall.ndata;i++){ /* station loop */
+    while(1){
+      ll=0;
+      for(j=0;j<ft.n_ch;j++) {
+        if(ft.idx2pos[j]>=0) continue;
+        if(strcmp(ft.hypoall.fnl[ft.hypoall.fnl[i].idx].stn,ft.stn[j].name)==0){
+          /*fprintf(stderr,"%10s pos %d idx %d \n", ft.hypoall.fnl[ft.hypoall.fnl[i].idx].stn,k,j);*/
+          if(ll==0||ft.stn[j].order>ft.stn[kk].order) kk=j;
+          ll ++;
+        }
+      }
+      if(ll==0) break;
+      ft.idx2pos[kk]=k;
+      ft.pos2idx[k]=kk;
+      k++;
+    }
+  }
+  /* no station infomation */
+  for(j=0;j<ft.n_ch;j++) {
+    if(ft.idx2pos[j]<0) {
+      ft.idx2pos[j]=k;
+      ft.pos2idx[k]=j;
+      k++;
+    }
+  }  
+  fprintf(stderr,
+	  "calculated delta for '%02d %02d %02d %02d %02d %02.3f %.5f %.5f %.3f %.1f'\n",
+	  tm_ot[0],tm_ot[1],tm_ot[2],tm_ot[3],tm_ot[4],sec_ot,ft.hypoall.alat,
+	  ft.hypoall.along,ft.hypoall.dep,ft.hypoall.mag);
+  return 0;
+}
+#endif
 locate(flag,hint)
   int flag; /* 1:output on display */
   int hint; /* 1:use present hypocenter as the initial value */
@@ -9382,6 +10006,7 @@ load_data(btn) /* return=1 means success */
     flag_mech=1;
     }
   fclose(fp);
+  fprintf(stderr,"loaded from pick file end '%s'\n",filename);
   flag_change=0;
   return 1;
   }
@@ -9583,6 +10208,7 @@ read_final(char *final_file,struct Hypo *hypo)
     hypo->fnl[i].azim *=PI/180.0;
     hypo->fnl[i].emerg*=PI/180.0;
     hypo->fnl[i].incid*=PI/180.0;
+    hypo->fnl[i].idx=i;
     }
   if(fgets(textbuf,LINELEN,fp)==NULL) return 1;
   sscanf(textbuf,"%lf%lf",&hypo->pomc_rms,&hypo->somc_rms);

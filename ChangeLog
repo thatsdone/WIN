@@ -1,4 +1,8 @@
-$Id: ChangeLog,v 1.62 2004/08/09 01:42:04 urabe Exp $
+$Id: ChangeLog,v 1.63 2004/08/10 04:56:46 urabe Exp $
+
+2004-08-10 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
+	* man/recvt.1 : improved description of ctlfile
+	* Version 1.1.35 released.
 
 2004-08-09 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
 	* recvt : fixed a bug introduced in 2002.5.23

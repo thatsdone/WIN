@@ -1,4 +1,4 @@
-/* $Id: setexb.c,v 1.4 2002/01/13 06:57:51 uehira Exp $ */
+/* $Id: setexb.c,v 1.5 2002/01/23 06:06:13 uehira Exp $ */
 /* program "setexb.c"
 	2/27/90, 3/8/93,1/17/94,5/27/94  urabe
         2001.6.22  add options '-p' and '-?'  uehira */
@@ -17,21 +17,20 @@
 
 #define         N_EXABYTE	8
 #define         DEFAULT_PARAM_FILE  "wtape.prm"
-#ifndef         FILENAME_MAX
-#define         FILENAME_MAX 1024
-#endif
+#define         WIN_FILENAME_MAX 1024
 
 	int exb_status[N_EXABYTE],n_exb;
 	char exb_name[N_EXABYTE][20],
-	  raw_dir[FILENAME_MAX],raw_dir1[FILENAME_MAX],
-	  param_name[FILENAME_MAX];
+	  raw_dir[WIN_FILENAME_MAX],raw_dir1[WIN_FILENAME_MAX],
+	  param_name[WIN_FILENAME_MAX];
 
 read_param(f_param,textbuf)
         FILE *f_param;
         unsigned char *textbuf;
         {
         do      {
-                if(fgets(textbuf,(FILENAME_MAX<<1)+32,f_param)==NULL) return 1;
+                if(fgets(textbuf,(WIN_FILENAME_MAX<<1)+32,f_param)==NULL)
+		  return 1;
                 } while(*textbuf=='#');
         return 0;
         }
@@ -40,7 +39,7 @@ read_units(file)
         char *file;
         {
         FILE *fp;
-        char tb[FILENAME_MAX],tb1[FILENAME_MAX+50];
+        char tb[WIN_FILENAME_MAX],tb1[WIN_FILENAME_MAX+50];
         int i;
         for(i=0;i<n_exb;i++) exb_status[i]=0;
         sprintf(tb,"%s/%s",raw_dir1,file);
@@ -62,7 +61,7 @@ write_units(file)
         char *file;
         {
         FILE *fp;
-        char tb[FILENAME_MAX];
+        char tb[WIN_FILENAME_MAX];
         int i;
         sprintf(tb,"%s/%s",raw_dir1,file);
         fp=fopen(tb,"w+");
@@ -72,7 +71,7 @@ write_units(file)
 
 init_param()
         {
-	char tb[(FILENAME_MAX<<1)+32],*ptr;
+	char tb[(WIN_FILENAME_MAX<<1)+32],*ptr;
         FILE *fp;
 
         if((fp=fopen(param_name,"r"))==NULL)

@@ -1,5 +1,5 @@
 /*
- * $Id: insert_trg.c,v 1.2 2002/01/13 06:57:50 uehira Exp $
+ * $Id: insert_trg.c,v 1.3 2002/01/23 06:06:13 uehira Exp $
  * Insert sorted timeout data to event data.
  *
  *------------ sample of parameter file ------------
@@ -37,25 +37,21 @@
 #define TMP_ADD_NAME   "insert_trg.add"
 #define DEFAULT_WAIT_MIN  POST_MIN   /* minute */
 
-#ifndef FILENAME_MAX
-#define FILENAME_MAX 1024
-#endif
-#ifndef BUFSIZ
-#define BUFSIZ 1024
-#endif
+#define WIN_FILENAME_MAX 1024
+#define BUF_SIZE 1024
 
 char *progname;
-static char rcsid[]="$Id: insert_trg.c,v 1.2 2002/01/13 06:57:50 uehira Exp $";
+static char rcsid[]="$Id: insert_trg.c,v 1.3 2002/01/23 06:06:13 uehira Exp $";
 
 struct Cnt_file {
-  char  trg_dir[FILENAME_MAX];    /* trg data directory */
-  char  junk_dir[FILENAME_MAX];   /* time-out data directory */
-  char  tmp_dir[FILENAME_MAX];    /* temporary directory */
-  char  trg_latst[FILENAME_MAX];  /* trg LATEST */ 
-  char  trg_oldst[FILENAME_MAX];  /* trg OLDEST */
-  char  junk_latst[FILENAME_MAX]; /* time-out LATEST */
-  char  junk_oldst[FILENAME_MAX]; /* time-out OLDEST */
-  char  junk_used[FILENAME_MAX];  /* time-out USED */
+  char  trg_dir[WIN_FILENAME_MAX];    /* trg data directory */
+  char  junk_dir[WIN_FILENAME_MAX];   /* time-out data directory */
+  char  tmp_dir[WIN_FILENAME_MAX];    /* temporary directory */
+  char  trg_latst[WIN_FILENAME_MAX];  /* trg LATEST */ 
+  char  trg_oldst[WIN_FILENAME_MAX];  /* trg OLDEST */
+  char  junk_latst[WIN_FILENAME_MAX]; /* time-out LATEST */
+  char  junk_oldst[WIN_FILENAME_MAX]; /* time-out OLDEST */
+  char  junk_used[WIN_FILENAME_MAX];  /* time-out USED */
   int   wait_min;       /* wait time[min.](>=POST_MIN) from timeout LATEST */
 };
 
@@ -97,7 +93,7 @@ static int
 read_param(char filename[], struct Cnt_file *Cnt_file)
 {
   FILE  *fp;
-  char  buf[BUFSIZ],out[BUFSIZ];
+  char  buf[BUF_SIZE],out[BUF_SIZE];
   int   status,count;
 
   if(NULL==(fp=fopen(filename,"r"))){
@@ -107,7 +103,7 @@ read_param(char filename[], struct Cnt_file *Cnt_file)
   count=0;
   status=1;
   Cnt_file->wait_min=DEFAULT_WAIT_MIN;
-  while(fgets(buf,BUFSIZ,fp)!=NULL){
+  while(fgets(buf,BUF_SIZE,fp)!=NULL){
     if(buf[0]=='#') continue;  /* skip comment line */
     if(sscanf(buf,"%s",out)<1) break;
     if(count==0) strcpy(Cnt_file->trg_dir,out);
@@ -157,10 +153,10 @@ do_insert(int tim[], struct Cnt_file *cnt)
   int  scan_tim_old[WIN_TIME_LEN],scan_tim_yng[WIN_TIME_LEN];
   int  /* tim_trg_oldest[WIN_TIME_LEN], */tim_trg[WIN_TIME_LEN];
   int  tim_trg_start[WIN_TIME_LEN],tim_trg_end[WIN_TIME_LEN];
-  char  data_name[FILENAME_MAX];
-  char  outname[FILENAME_MAX],chname[FILENAME_MAX];
-  char  addname[FILENAME_MAX];
-  char  cmdbuf[FILENAME_MAX];
+  char  data_name[WIN_FILENAME_MAX];
+  char  outname[WIN_FILENAME_MAX],chname[WIN_FILENAME_MAX];
+  char  addname[WIN_FILENAME_MAX];
+  char  cmdbuf[WIN_FILENAME_MAX];
   int  j;
 
   sprintf(data_name,"%s/%02d%02d%02d%02d.%02d",

@@ -1,4 +1,4 @@
-/* $Id: win_system.c,v 1.3 2002/01/13 06:57:52 uehira Exp $ */
+/* $Id: win_system.c,v 1.4 2002/01/23 06:06:13 uehira Exp $ */
 /* win system utility functions */
 
 #ifdef HAVE_CONFIG_H
@@ -11,9 +11,7 @@
 #include "win_system.h"
 #include "subst_func.h"
 
-#ifndef BUFSIZ
-#define BUFSIZ 1024
-#endif
+#define BUF_SIZE 1024
 
 unsigned long
 mklong(unsigned char *ptr)
@@ -340,11 +338,11 @@ WIN_ch
 get_chlist_chfile(FILE *fp, WIN_ch sysch[])
 {
   WIN_ch chnum;
-  char tbuf[BUFSIZ];
+  char tbuf[BUF_SIZE];
   int  i;
 
   chnum=0;
-  while(fgets(tbuf,BUFSIZ,fp)!=NULL){
+  while(fgets(tbuf,BUF_SIZE,fp)!=NULL){
     if(tbuf[0]=='#') continue;  /* skip comment line */
     if(sscanf(tbuf,"%x",&i)<1) continue;  /* skip blank line */
     sysch[chnum++]=(WIN_ch)i;

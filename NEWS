@@ -2,8 +2,12 @@ WIN package NEWS
   History of user-visible changes.
   17 Jan. 2002
 
+Version 1.0.1   (23 January, 2002)
+
+* Don't use 'BUFSIZ' and 'FILENAME_MAX' system macros.
+
 Version 1.0.0   (17 January, 2002)
 
 (Changes before Versions 1.0.0 were never recorded.  Sorry.)
 
-$Id: NEWS,v 1.1 2002/01/17 11:26:13 uehira Exp $
+$Id: NEWS,v 1.2 2002/01/23 06:06:13 uehira Exp $

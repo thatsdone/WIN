@@ -1,4 +1,4 @@
-/* $Id: wtape.c,v 1.5 2002/01/13 06:57:52 uehira Exp $ */
+/* $Id: wtape.c,v 1.6 2002/01/23 06:06:14 uehira Exp $ */
 /*
   program "wtape.c"
   8/23/89 - 8/8/90, 6/27/91, 12/24/91, 2/29/92  urabe
@@ -48,21 +48,20 @@
 #define   N_EXABYTE 8
 #define   DEFAULT_WAIT_MIN  0
 #define   DEFAULT_PARAM_FILE  "wtape.prm"
-#ifndef   FILENAME_MAX
-#define   FILENAME_MAX 1024
-#endif
+#define   WIN_FILENAME_MAX 1024
 
   unsigned char buf[SIZE_MAX];
   int init_flag,wfm,new_tape,switch_req,fd_exb,exb_status[N_EXABYTE],
     exb_busy,n_exb;
-  char name_buf[FILENAME_MAX],name_start[NAMLEN],exb_name[N_EXABYTE][20],
-    file_done[FILENAME_MAX],raw_dir[FILENAME_MAX],raw_dir1[FILENAME_MAX],
-    log_file[FILENAME_MAX],raw_oldest[20],raw_latest[20];
+  char name_buf[WIN_FILENAME_MAX],name_start[NAMLEN],exb_name[N_EXABYTE][20],
+    file_done[WIN_FILENAME_MAX],raw_dir[WIN_FILENAME_MAX],
+    raw_dir1[WIN_FILENAME_MAX],
+    log_file[WIN_FILENAME_MAX],raw_oldest[20],raw_latest[20];
   unsigned long exb_total;  /* in KB */
   int  wait_min;
-  char param_name[FILENAME_MAX];
+  char param_name[WIN_FILENAME_MAX];
   char *progname;
-  static char rcsid[]="$Id: wtape.c,v 1.5 2002/01/13 06:57:52 uehira Exp $";
+  static char rcsid[]="$Id: wtape.c,v 1.6 2002/01/23 06:06:14 uehira Exp $";
 
 switch_sig()
   {
@@ -138,14 +137,14 @@ read_param(f_param,textbuf)
   unsigned char *textbuf;
   {
   do      {
-    if(fgets(textbuf,(FILENAME_MAX<<1)+32,f_param)==NULL) return 1;
+    if(fgets(textbuf,(WIN_FILENAME_MAX<<1)+32,f_param)==NULL) return 1;
     } while(*textbuf=='#');
   return 0;
   }
 
 init_param()
   {
-  char tb[(FILENAME_MAX<<1)+32],*ptr;
+  char tb[(WIN_FILENAME_MAX<<1)+32],*ptr;
   FILE *fp;
 
   if((fp=fopen(param_name,"r"))==NULL)
@@ -332,7 +331,7 @@ rmemo(f,c)
     char *f,*c;
     {
     FILE *fp;
-    char tbuf[FILENAME_MAX];
+    char tbuf[WIN_FILENAME_MAX];
     sprintf(tbuf,"%s/%s",raw_dir,f);
     while((fp=fopen(tbuf,"r"))==NULL)
     {
@@ -347,7 +346,7 @@ wmemo(f,c)
     char *f,*c;
     {
     FILE *fp;
-    char tbuf[FILENAME_MAX];
+    char tbuf[WIN_FILENAME_MAX];
     sprintf(tbuf,"%s/%s",raw_dir1,f);
     fp=fopen(tbuf,"w+");
     fprintf(fp,"%s\n",c);
@@ -380,7 +379,7 @@ read_units(file)
   char *file;
   {
   FILE *fp;
-  char tb[FILENAME_MAX],tb1[FILENAME_MAX];
+  char tb[WIN_FILENAME_MAX],tb1[WIN_FILENAME_MAX];
   int i;
   for(i=0;i<n_exb;i++) exb_status[i]=0;
   sprintf(tb,"%s/%s",raw_dir1,file);
@@ -402,7 +401,7 @@ write_units(file)
   char *file;
   {
   FILE *fp;
-  char tb[FILENAME_MAX];
+  char tb[WIN_FILENAME_MAX];
   int i;
   sprintf(tb,"%s/%s",raw_dir1,file);
   fp=fopen(tb,"w+");

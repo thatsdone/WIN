@@ -1,5 +1,5 @@
 /*
- * $Id: insert_raw.c,v 1.2 2002/01/13 06:57:50 uehira Exp $
+ * $Id: insert_raw.c,v 1.3 2002/01/23 06:06:13 uehira Exp $
  * Insert sorted timeout data to raw data.
  *
  *------------ sample of parameter file ------------
@@ -31,25 +31,21 @@
 #define TMP_ADD_NAME   "insert_raw.add"
 #define DEFAULT_WAIT_MIN   0  /* minute */
 
-#ifndef FILENAME_MAX
-#define FILENAME_MAX 1024
-#endif
-#ifndef BUFSIZ
-#define BUFSIZ 1024
-#endif
+#define WIN_FILENAME_MAX 1024
+#define BUF_SIZE 1024
 
 char *progname;
-static char rcsid[]="$Id: insert_raw.c,v 1.2 2002/01/13 06:57:50 uehira Exp $";
+static char rcsid[]="$Id: insert_raw.c,v 1.3 2002/01/23 06:06:13 uehira Exp $";
 
 struct Cnt_file {
-  char  raw_dir[FILENAME_MAX];    /* raw data directory */
-  char  junk_dir[FILENAME_MAX];   /* time-out data directory */
-  char  tmp_dir[FILENAME_MAX];    /* temporary directory */
-  char  raw_latst[FILENAME_MAX];  /* raw LATEST */ 
-  char  raw_oldst[FILENAME_MAX];  /* raw OLDEST */
-  char  junk_latst[FILENAME_MAX]; /* time-out LATEST */
-  char  junk_oldst[FILENAME_MAX]; /* time-out OLDEST */
-  char  junk_used[FILENAME_MAX];  /* time-out USED */
+  char  raw_dir[WIN_FILENAME_MAX];    /* raw data directory */
+  char  junk_dir[WIN_FILENAME_MAX];   /* time-out data directory */
+  char  tmp_dir[WIN_FILENAME_MAX];    /* temporary directory */
+  char  raw_latst[WIN_FILENAME_MAX];  /* raw LATEST */ 
+  char  raw_oldst[WIN_FILENAME_MAX];  /* raw OLDEST */
+  char  junk_latst[WIN_FILENAME_MAX]; /* time-out LATEST */
+  char  junk_oldst[WIN_FILENAME_MAX]; /* time-out OLDEST */
+  char  junk_used[WIN_FILENAME_MAX];  /* time-out USED */
   int   wait_min;                 /* wait time(min.) from raw LATEST */
 };
 
@@ -91,7 +87,7 @@ static int
 read_param(char filename[], struct Cnt_file *Cnt_file)
 {
   FILE  *fp;
-  char  buf[BUFSIZ],out[BUFSIZ];
+  char  buf[BUF_SIZE],out[BUF_SIZE];
   int   status,count;
 
   if(NULL==(fp=fopen(filename,"r"))){
@@ -101,7 +97,7 @@ read_param(char filename[], struct Cnt_file *Cnt_file)
   count=0;
   status=1;
   Cnt_file->wait_min=DEFAULT_WAIT_MIN;
-  while(fgets(buf,BUFSIZ,fp)!=NULL){
+  while(fgets(buf,BUF_SIZE,fp)!=NULL){
     if(buf[0]=='#') continue;  /* skip comment line */
     if(sscanf(buf,"%s",out)<1) break;
     if(count==0) strcpy(Cnt_file->raw_dir,out);
@@ -137,10 +133,10 @@ do_insert(int tim[], struct Cnt_file *cnt)
   unsigned char  *ptrd;
   int  dtime[WIN_TIME_LEN],drtime[WIN_TIME_LEN],dtime_tmp[WIN_TIME_LEN];
   int  tim_raw_latest[5],tim_raw_oldest[5];
-  char  data_name[FILENAME_MAX];
-  char  outname[FILENAME_MAX];
-  char  addname[FILENAME_MAX];
-  char  cmdbuf[FILENAME_MAX];
+  char  data_name[WIN_FILENAME_MAX];
+  char  outname[WIN_FILENAME_MAX];
+  char  addname[WIN_FILENAME_MAX];
+  char  cmdbuf[WIN_FILENAME_MAX];
   int  wait_flag;
   int  i=0,j;
 

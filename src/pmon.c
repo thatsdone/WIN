@@ -1,4 +1,3 @@
-/* $Id: pmon.c,v 1.2 2000/04/30 10:05:22 urabe Exp $ */
 /************************************************************************
 *************************************************************************
 **  program "pmon.c" for NEWS/SPARC                             *********
@@ -33,6 +32,9 @@
 **  99.2.4    put signal(HUP) in hangup()                       *********
 **  99.4.20   byte-order-free / LONGNAME - 8(stn)+2(cmp)        *********
 **  99.9.13   bugs in "LONGNAME block" fixed                    *********
+**  2000.7.3  overflow bug in line[] fixed                      *********
+**            zone names in "off" line not to duplicate         *********
+**            not abort one-min file even when no ch found to use *******
 **                                                              *********
 **  font files ("font16", "font24" and "font32") are            *********
 **  not necessary                                               *********
@@ -67,6 +69,7 @@
 #define TIME_TOO_LOW  10.0
 #define STNLEN        11   /* (length of station code)+1 */
 #define CMPLEN        7    /* (length of component code)+1 */
+#define LEN           1024
 
 #define X_BASE        136
 #define Y_BASE        216
@@ -199,8 +202,8 @@ long long_max[M_CH][SR_MON],long_min[M_CH][SR_MON];
 short idx[65536];
 unsigned char frame[HEIGHT_LBP][WIDTH_LBP],zone[M_CH][20],
   file_trig[80],param_file[80],buf[LENGTH],file_zone[80],
-  font24[SIZE_FONT24],font32[SIZE_FONT32],last_line[400],
-  temp_done[80],line[400],latest[80],ch_file[80],time_text[20],
+  font24[SIZE_FONT24],font32[SIZE_FONT32],last_line[LEN],
+  temp_done[80],line[LEN],latest[80],ch_file[80],time_text[20],
   file_trig_lock[80],idx2[65536];
 double dt=1.0/(double)SR_MON,time_on,time_off,time_lta,time_lta_off,
   time_sta,a_sta,b_sta,a_lta,b_lta,a_lta_off,b_lta_off;
@@ -232,19 +235,19 @@ struct
 strncmp2(s1,s2,i)
 char *s1,*s2;             
 int i; 
-{
+  {
   if(*s1=='0' && *s2=='9') return 1;
   else if(*s1=='9' && *s2=='0') return -1;
   else return strncmp(s1,s2,i);
-}
+  }
 
 strcmp2(s1,s2)        
 char *s1,*s2;
-{
+  {
   if(*s1=='0' && *s2=='9') return 1;
   else if(*s1=='9' && *s2=='0') return -1;
   else return strcmp(s1,s2);
-}
+  }
 
 mklong(ptr)
   unsigned char *ptr;
@@ -549,7 +552,7 @@ cptm(dst,src)
 confirm_off(ch,sec,i)
   int ch,sec,i;
   {
-  int ii,j,tm[6],z;
+  int ii,j,tm[6],z,jj;
   static char prev_off[15];
   tbl[ch].status=0;
 
@@ -586,7 +589,11 @@ confirm_off(ch,sec,i)
           strncpy(prev_off,time_text,13);
           sprintf(line,"%13.13s off,",time_text);
           for(ii=1;ii<cnt_zone;ii++)
+            {
+            for(jj=1;jj<ii;jj++) if(i_zone[ii]==i_zone[jj]) break;
+            if(jj<ii) continue; 
             sprintf(line+strlen(line)," %.7s",zone[i_zone[ii]]);
+            }
           sprintf(line+strlen(line),"\n");
           if(not_yet==0) write_file(file_trig,line);
           }
@@ -611,10 +618,10 @@ read_one_sec(sec)
     0x00000000,0x01000000,0x02000000,0x03000000,
     0xfc000000,0xfd000000,0xfe000000,0xff000000};
 
-  if((ret=read(fd,buf,4))<4) return 0;
+  if((ret=read(fd,buf,4))<4) return -1;
   size=mklong(buf);
-  if(size<0 || size>LENGTH) return 0;
-  if((ret=read(fd,buf+4,size-4))<size-4) return 0;
+  if(size<0 || size>LENGTH) return -1;
+  if((ret=read(fd,buf+4,size-4))<size-4) return -1;
   ptr=buf+9;
   ptr_lim=buf+size;
   *sec=(((*ptr)>>4)&0x0f)*10+((*ptr)&0x0f);
@@ -710,7 +717,7 @@ plot_wave(xbase,ybase)
     }
 
   /* plot loop */
-  while(read_one_sec(&tim[5]))
+  while(read_one_sec(&tim[5])>=0)
     {
     for(i=0;i<SR_MON;i++)
       {
@@ -1423,7 +1430,9 @@ retry:
       if(m_limit) printf("%02d%02d%02d %02d%02d",
               tim[0],tim[1],tim[2],tim[3],tim[4]);
       fflush(stdout);
+
       plot_wave(x_base,y_base); /* one minute data */
+
       close(fd);
       if(m_limit==0){
         fp=fopen(temp_done,"w+");

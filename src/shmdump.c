@@ -18,6 +18,7 @@
 /*  2003.5.31 filtering option -L -H -B -R (tsuru) */
 /*  2003.6.1 bug fix (-f) mode */
 /*  2003.6.4 output filtering info to stderr (tsuru) */
+/*  2003.7.24 -x (hexadecimal dump) and -f (file output) */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -665,7 +666,8 @@ main(argc,argv)
     } un;
   int i,j,k,c_save_in,shp_in,shmid_in,size_in,shp,c_save,wtow,c,out,all,mon,
     ch,sr,gs,size,chsel,nch,search,seconds,tbufp,bufsize,zero,nsec,aa,bb,end,
-    eobsize,eobsize_count,size2,tout,abuf[4096],bufsize_in,rawdump,quiet;
+    eobsize,eobsize_count,size2,tout,abuf[4096],bufsize_in,rawdump,quiet,
+    hexdump;
   unsigned long tow,wsize,time_end,time_now;
   unsigned int packet_id;
   unsigned char *ptr,tbuf[256],*ptr_lim,*buf,chlist[65536/8],*ptw,tms[6],
@@ -676,7 +678,7 @@ main(argc,argv)
   extern int optind;
   extern char *optarg;
   FILE *fplist,*fp;
-  char *tmpdir;
+  char *tmpdir,fname[1024];
   static unsigned int mask[8]={0x80,0x40,0x20,0x10,0x08,0x04,0x02,0x01};
 #define setch(a) (chlist[a>>3]|=mask[a&0x07])
 #define testch(a) (chlist[a>>3]&mask[a&0x07])
@@ -694,14 +696,16 @@ main(argc,argv)
   if(progname=strrchr(argv[0],'/')) progname++;
   else progname=argv[0];
   sprintf(tb,
-    " usage : '%s (-amoqrtwz) (-s [s]) (-f [chfile]/-) [shm_key]/- 
+    " usage : '%s (-amoqrtwxz) (-s [s]) (-f [chfile]/-) [shm_key]/- 
           (-L [fp]:[fs]:[ap]:[as] -H [fp]:[fs]:[ap]:[as] -B [fl]:[fh]:[fs]:[ap]:[as]) 
           (-R [freq]) ([ch] ...)'",
       progname);
-  search=out=all=seconds=win=zero=mon=tout=rawdump=quiet=0;
+  search=out=all=seconds=win=zero=mon=tout=rawdump=quiet=
+    hexdump=0;
   fplist=stdout;
+  *fname=0;
 
-  while((c=getopt(argc,argv,"amoqrs:twf:zL:H:B:R:"))!=EOF)
+  while((c=getopt(argc,argv,"amoqrs:twf:xzL:H:B:R:"))!=EOF)
     {
     switch(c)
       {
@@ -731,6 +735,11 @@ main(argc,argv)
         fpout=stdout;
         fplist=stderr;
         break;
+      case 'x':   /* hexadecimal dump mode */
+        hexdump=1;
+        fpout=stdout;
+        fplist=stderr;
+        break;
       case 'z':   /* read from the beginning of the SHM buffer */
         zero=1;
         break;
@@ -742,22 +751,8 @@ main(argc,argv)
       case 's':   /* period in sec */
         seconds=atoi(optarg);
         break;
-      case 'f':   /* channel file */
-        if(*optarg=='-') fp=stdin;
-        else if((fp=fopen(optarg,"r"))==0) err_sys(outfile);
-        nch=0;
-        for(i=0;i<65536/8;i++) chlist[i]=0;
-        while(fgets(tbuf,100,fp))
-          {
-          if(*tbuf=='#' || sscanf(tbuf,"%x",&chsel)<0) continue;
-          chsel&=0xffff;
-          setch(chsel);
-          chindex[chsel]=nch;
-          fprintf(stderr,"%d: %04X\n", chindex[chsel], chsel); 
-          nch++;
-          }
-        fclose(fp);
-        if(nch) search=1;
+      case 'f':   /* file name */
+        strcpy(fname,optarg);
         break;
       case 'L':   /* LowPass */
         filter_flag=1;
@@ -793,7 +788,30 @@ main(argc,argv)
     exit(1);
     }
 
-  if(rawdump) search=all=win=out=tout=mon=0;
+  if(rawdump || hexdump) search=all=win=out=tout=mon=0;
+
+  if(*fname)
+    {
+    if(!rawdump && !hexdump) /* channel list file */
+      {
+      if(*fname=='-') fp=stdin;
+      else if((fp=fopen(fname,"r"))==0) err_sys(outfile);
+      nch=0;
+      for(i=0;i<65536/8;i++) chlist[i]=0;
+      while(fgets(tbuf,100,fp))
+        {
+        if(*tbuf=='#' || sscanf(tbuf,"%x",&chsel)<0) continue;
+        chsel&=0xffff;
+        setch(chsel);
+        chindex[chsel]=nch;
+        fprintf(stderr,"%d: %04X\n", chindex[chsel], chsel);
+        nch++;
+        }
+      fclose(fp);
+      if(nch) search=1;
+      }
+    }
+
   if(quiet) fplist=fopen("/dev/null","a");
 
   if(strcmp(argv[1+optind],"-"))
@@ -1061,7 +1079,20 @@ last_out:     if((wsize=ptw-buf)>10)
       sprintf(tbuf+strlen(tbuf),"...\n");
       fputs(tbuf,fplist);
       }
-    if(rawdump) {fwrite(ptr_save,1,ptr_lim-ptr_save,fpout);fflush(fpout);}
+    if(rawdump)
+      {
+      if(*fname) fpout=fopen(fname,"a");
+      fwrite(ptr_save,1,ptr_lim-ptr_save,fpout);
+      if(*fname) fclose(fpout);
+      else fflush(fpout);
+      }
+    else if(hexdump)
+      {
+      if(*fname) fpout=fopen(fname,"a");
+      for(ptr=ptr_save;ptr<ptr_lim;ptr++) fprintf(fpout,"%02X",*ptr);
+      fprintf(fpout,"\n");
+      if(*fname) fclose(fpout);
+      }
     time(&time_now);
     if(end || (seconds && (time_now>time_end || nsec>=seconds))) ctrlc();
     }

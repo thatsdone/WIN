@@ -1,4 +1,7 @@
-$Id: ChangeLog,v 1.44 2003/07/24 02:14:14 urabe Exp $
+$Id: ChangeLog,v 1.45 2003/07/25 01:56:41 urabe Exp $
+
+2003-07-25 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
+	* shmdump.c : -x (hexadecimal dump) and -f (file output)
 
 2003-07-24 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
 	* wadd2.c : "mv" -> "cp;rm" for cygwin

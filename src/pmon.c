@@ -1,4 +1,4 @@
-/* $Id: pmon.c,v 1.5 2001/01/24 08:46:20 urabe Exp $ */
+/* $Id: pmon.c,v 1.6 2001/01/31 01:30:36 urabe Exp $ */
 /************************************************************************
 *************************************************************************
 **  program "pmon.c" for NEWS/SPARC                             *********
@@ -37,6 +37,8 @@
 **            not abort one-min file even when no ch found to use *******
 **  2001.1.22 check_path                                        *********
 **  2001.1.23 leave RAS files                                   *********
+**  2001.1.29 call conv program with arguments                  *********
+**                            "[infile] [outdir] [basename]"    *********
 **                                                              *********
 **  font files ("font16", "font24" and "font32") are            *********
 **  not necessary                                               *********
@@ -1012,9 +1014,9 @@ wmemo(f,c,outdir)
   fclose(fp);
   }
 
-insatsu(tb1,tb2,tb3,path_spool,printer,count,count_max,gifout)
-  unsigned char *tb1,*tb2,*tb3,*path_spool,*printer;
-  int count,count_max,gifout;
+insatsu(tb1,tb2,tb3,path_spool,printer,count,count_max,convert)
+  unsigned char *tb1,*tb2,*tb3,*path_spool,*printer,*convert;
+  int count,count_max;
   {
   struct rasterfile {
     int ras_magic;    /* magic number */
@@ -1087,9 +1089,9 @@ insatsu(tb1,tb2,tb3,path_spool,printer,count,count_max,gifout)
   if(count_max<0 || req_print) unlink(filename);
   else
     {
-    if(gifout)
+    if(*convert)
       {
-      sprintf(tb,"convert %s %s/%s.gif",filename,path_spool,timename);
+      sprintf(tb,"%s %s %s %s",convert,filename,path_spool,timename);
       if(m_limit) printf("%s\n",tb);
       system(tb);
       unlink(filename);
@@ -1163,8 +1165,8 @@ main(argc,argv)
   {
   FILE *f_param,*fp;
   int i,j,k,maxlen,ret,m_count,x_base,y_base,y,ch,tm[6],minutep,hourp,
-    count,count_max,gif;
-  char *ptr,textbuf[500],textbuf1[500],fn1[200],fn2[100],
+    count,count_max;
+  char *ptr,textbuf[500],textbuf1[500],fn1[200],fn2[100],conv[100],
     fn3[100],path_font[80],path_temp[80],path_mon[80],area[20],
     timebuf1[80],timebuf2[80],printer[40],name[STNLEN],comp[CMPLEN],
     path_mon1[80];
@@ -1217,13 +1219,18 @@ main(argc,argv)
     *ptr=0;
     sscanf(textbuf,"%s",path_temp);
     check_path(path_temp,DIR_W);
-    if(ptr[strlen(ptr+1)]=='g'||ptr[strlen(ptr+1)]=='G')
+    sscanf(ptr+1,"%s",textbuf1);
+    if((ptr=strchr(textbuf1,':'))==0)
       {
-      gif=1;
-      ptr[strlen(ptr+1)]=0;
+      sscanf(textbuf1,"%d",&count_max);
+      *conv=0;
       }
-    else gif=0;
-    sscanf(ptr+1,"%d",&count_max);
+    else
+      {
+      *ptr=0;
+      sscanf(textbuf1,"%d",&count_max);
+      sscanf(ptr+1,"%s",conv); /* path of conversion program */
+      }
     }
   read_param(f_param,textbuf);  /* (4) channel table file */
   sscanf(textbuf,"%s",ch_file);
@@ -1577,7 +1584,7 @@ retry:
         fclose(fp);
         if(strlen(timebuf1)>=11 && strcmp2(timebuf1,timebuf2)>=0) break;
         }
-      if(req_print) insatsu(fn1,fn2,fn3,path_temp,printer,count,count_max,gif);
+      if(req_print) insatsu(fn1,fn2,fn3,path_temp,printer,count,count_max,conv);
       sleep(15);
       }
     sprintf(textbuf,"%s/%s",path_mon,timebuf2);
@@ -1608,18 +1615,18 @@ retry:
     x_base+=SR_MON*60;
     if(++m_count==m_limit)
       {
-      insatsu(fn1,fn2,fn3,path_temp,printer,count,count_max,gif);
+      insatsu(fn1,fn2,fn3,path_temp,printer,count,count_max,conv);
       owari();
       }
     else if(m_count%min_per_sheet==0)
       {
-      insatsu(fn1,fn2,fn3,path_temp,printer,count,count_max,gif);
+      insatsu(fn1,fn2,fn3,path_temp,printer,count,count_max,conv);
       x_base=X_BASE-28*max_ch_flag;
       y_base=Y_BASE;
       }
     else
       {
-      if(req_print) insatsu(fn1,fn2,fn3,path_temp,printer,count,count_max,gif);
+      if(req_print) insatsu(fn1,fn2,fn3,path_temp,printer,count,count_max,conv);
       if(m_count%MIN_PER_LINE==0)
         {
         x_base=X_BASE-28*max_ch_flag;

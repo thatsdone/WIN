@@ -34,6 +34,8 @@
 /*                2002.3.2 wincpy2() discard duplicated data (TS+CH) */
 /*                2002.3.2 option -B ; write blksize at EOB */
 /*                2002.3.18 host control debugged */
+/*                2002.5.3 N_PACKET 64->128, 'no request resend' log */
+/*                2002.5.3 maximize RCVBUF size */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -71,7 +73,7 @@
 #define DEBUG2    0
 #define BELL      0
 #define MAXMESG   32768
-#define N_PACKET  64    /* N of old packets to be requested */  
+#define N_PACKET  128   /* N of old packets to be requested */  
 #define N_HOST    100   /* max N of hosts */  
 
 unsigned char rbuf[MAXMESG],ch_table[65536];
@@ -417,18 +419,27 @@ check_pno(from_addr,pn,pn_f,sock,fromlen,n) /* returns -1 if duplicated */
   else /* check packet no */
     {
     pn_1=(j+1)&0xff;
-    if(pn!=pn_1 && ((pn-pn_1)&0xff)<N_PACKET) do
-      { /* send request-resend packet(s) */
-      pnc=pn_1;
-      sendto(sock,&pnc,1,0,(struct sockaddr *)from_addr,fromlen);
-      sprintf(tb,"request resend %s:%d #%d",
-        inet_ntoa(from_addr->sin_addr),ntohs(from_addr->sin_port),pn_1);
-      write_log(logfile,tb);
+    if(pn!=pn_1)
+      {
+      if(((pn-pn_1)&0xff)<N_PACKET) do
+        { /* send request-resend packet(s) */
+        pnc=pn_1;
+        sendto(sock,&pnc,1,0,(struct sockaddr *)from_addr,fromlen);
+        sprintf(tb,"request resend %s:%d #%d",
+          inet_ntoa(from_addr->sin_addr),ntohs(from_addr->sin_port),pn_1);
+        write_log(logfile,tb);
 #if DEBUG1
-      printf("<%d ",pn_1);
+        printf("<%d ",pn_1);
 #endif
-      ht[i].nos[pn_1>>3]&=~mask[pn_1&0x07]; /* reset bit for the packet no */
-      } while((pn_1=(++pn_1&0xff))!=pn);
+        ht[i].nos[pn_1>>3]&=~mask[pn_1&0x07]; /* reset bit for the packet no */
+        } while((pn_1=(++pn_1&0xff))!=pn);
+      else
+        {
+        sprintf(tb,"no request resend %s:%d #%d-#%d",
+          inet_ntoa(from_addr->sin_addr),ntohs(from_addr->sin_port),pn_1,pn);
+        write_log(logfile,tb);
+        }
+      }
     }
   if(pn!=pn_f && ht[i].nos[pn_f>>3]&mask[pn_f&0x07])
     {   /* if the resent packet is duplicated, return with -1 */
@@ -653,13 +664,16 @@ main(argc,argv)
   write_log(logfile,tb);
 
   if((sock=socket(AF_INET,SOCK_DGRAM,0))<0) err_sys("socket");
-  i=65535;
-  if(setsockopt(sock,SOL_SOCKET,SO_RCVBUF,(char *)&i,sizeof(i))<0)
+  for(j=256;j>=16;j-=4)
     {
-    i=50000;
-    if(setsockopt(sock,SOL_SOCKET,SO_RCVBUF,(char *)&i,sizeof(i))<0)
-      err_sys("SO_RCVBUF setsockopt error\n");
+    i=j*1024;
+    if(setsockopt(sock,SOL_SOCKET,SO_RCVBUF,(char *)&i,sizeof(i))>=0)
+      break;
     }
+  if(j<16) err_sys("SO_RCVBUF setsockopt error\n");
+  sprintf(tb,"RCVBUF size=%d",j*1024);
+  write_log(logfile,tb);
+
   memset((char *)&to_addr,0,sizeof(to_addr));
   to_addr.sin_family=AF_INET;
   to_addr.sin_addr.s_addr=htonl(INADDR_ANY);

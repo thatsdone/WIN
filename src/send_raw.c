@@ -1,4 +1,4 @@
-/* $Id: send_raw.c,v 1.10 2002/05/02 10:50:13 urabe Exp $ */
+/* $Id: send_raw.c,v 1.11 2002/05/07 00:04:57 urabe Exp $ */
 /*
     program "send_raw/send_mon.c"   1/24/94 - 1/25/94,5/25/94 urabe
                                     6/15/94 - 6/16/94
@@ -36,6 +36,7 @@
                                   2002.3.2  eobsize(auto)
                2002.5.2  improved send interval control (slptime/atm)
                2002.5.2  i<1000 -> 1000000
+               2002.5.3  NBUF 128->250
 */
 
 #ifdef HAVE_CONFIG_H
@@ -75,7 +76,7 @@
 #define MTU       1500 /* (max of UDP data size) = IP_MTU - 28 */
 #define RSIZE   (MTU-28)
 #define SR_MON      5
-#define NBUF      128
+#define NBUF      250
 #define SLPLIMIT  100
 
 /*

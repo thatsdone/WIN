@@ -1,4 +1,4 @@
-/* $Id: rtape.c,v 1.2 2000/04/30 10:05:23 urabe Exp $ */
+/* $Id: rtape.c,v 1.3 2000/05/10 06:51:42 urabe Exp $ */
 /*
   program "rtape.c"
   9/16/89 - 11/06/90, 6/26/91, 10/30/91, 6/26/92  urabe
@@ -9,6 +9,7 @@
   98.6.30  FreeBSD
   98.9.8   Multi-block sec
   99.4.19  byte-order-free
+  2000.5.10 deleted size=<0x3c000 limit
 */
 
 #include  <stdio.h>
@@ -429,7 +430,7 @@ read_exb()
       {
       blocking=1;
       size=mklong(buf);
-      if(size<0 || size>0x3c000) continue;
+      if(size<0) continue;
       if(bcd_dec(dec,(char *)buf+4)==0) continue;
 #if DEBUG
       printf("(%d/%d)",re,size);

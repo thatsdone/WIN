@@ -1,4 +1,4 @@
-/* $Id: recvnmx.c,v 1.15 2002/08/09 03:50:59 urabe Exp $ */
+/* $Id: recvnmx.c,v 1.16 2005/04/14 09:10:12 urabe Exp $ */
 /* "recvnmx.c"    2001.7.18-19 modified from recvt.c and nmx2raw.c  urabe */
 /*                2001.8.18 */
 /*                2001.10.5 workaround for hangup */
@@ -9,6 +9,7 @@
 /*                2002.3.5  eobsize on -B option */
 /*                2002.7.5  Trident */
 /*                2002.8.9  process re-tx packets properly */
+/*                2005.4.14 NP format */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -50,6 +51,7 @@
 #define BELL      0
 #define MAXMESG   2048
 #define NB        60    /* max n of bundles */
+#define NB2       7     /* max n of bundles for NP */
 #define MAXSR     200
 #define BUFSIZE   ((16*NB+MAXSR+1)*4)
 #define MAXCH     1024
@@ -58,8 +60,9 @@ char *progname,logfile[256],chmapfile[1024];
 struct ip_mreq stMreq;
 unsigned short station,chmap[65536];
 int use_chmap;
-char *model[32]={"HRD","ORION","RM3","RM4","LYNX","CYGNUS","CALLISTO","CARINA",
-    "008","TRIDENT","010","011","012","013","014","015","016","017","018","019",
+char *model[32]={"HRD","ORION","RM3","RM4","LYNX","CYGNUS","EUROPA","CARINA",
+    "TimeServer","TRIDENT","JANUS","TAURUS",
+    "012","013","014","015","016","017","018","019",
     "020","021","022","023","024","025","026","027","028","029","030","031"};
 struct Shm {
   unsigned long p;    /* write point */
@@ -69,6 +72,7 @@ struct Shm {
   unsigned char d[1]; /* data buffer */
 };
 struct Nmx_Packet {
+  int npformat;
   int ptype;
   time_t tim;
   struct tm *t;
@@ -77,13 +81,21 @@ struct Nmx_Packet {
   int serno;
   unsigned int oldest;
   unsigned int seq;
+  double lat,lon;
+  int alt;
+  int ns;
   int sr;
   int ch;
   int first;
+  int last;
   struct {
     int bundle_type;
     union {char c[16];char cc[4][4];unsigned char uc[4][4];} u;
   } b[NB];
+  struct {
+    unsigned int bundle_type;
+    union {char c[60];char cc[15][4];unsigned char uc[15][4];} u;
+  } b2[NB];
   int crc_calculated;
   int crc_given;
   int bpp;
@@ -282,6 +294,103 @@ int write_shm(int ch,int sr,time_t tim,int *buf,struct Shm *shm,int eobsize,int 
   return uni;
 }
 
+unsigned long mklong(ptr)
+  unsigned char *ptr;
+  {
+  unsigned long a;
+  a=((ptr[0]<<24)&0xff000000)+((ptr[1]<<16)&0xff0000)+
+    ((ptr[2]<<8)&0xff00)+(ptr[3]&0xff);
+  return a;
+  }
+
+unsigned short mkshort(ptr)
+  unsigned char *ptr;
+  {
+  unsigned short a;
+  a=((ptr[0]<<8)&0xff00)+(ptr[1]&0xff);
+  return a;
+  }
+
+parse_one_packet_np(unsigned char *inbuf,int len,struct Nmx_Packet *pk)
+{
+#define SIGNATURE_NP 0x4E50
+#define TAURUS 0xE80B
+  unsigned short signature,size;
+  unsigned short mdl;
+  unsigned char *ptr;
+  unsigned long long t,thigh,tlow;
+  int x1,x2,x3,x5,ch,i,j;
+  ptr=inbuf;
+  signature=mkshort(ptr);
+  if(signature!=SIGNATURE_NP) return -1;
+  ptr+=2;
+  size=mkshort(ptr);
+  if(size!=len) return -1;
+  ptr+=2;
+  pk->seq=mklong(ptr);
+  ptr+=8;
+  thigh=mklong(ptr);
+  ptr+=4;
+  tlow=mklong(ptr);
+  ptr+=4;
+  t=tlow+(thigh<<32);
+  pk->tim=t/(unsigned long long)1000000000;
+  pk->t=localtime(&pk->tim);
+  pk->subsec=(t%(unsigned long long)1000000000)/100000;
+  pk->lat=0.000001*(double)((long)mklong(ptr));
+  ptr+=4;
+  pk->lon=0.000001*(double)((long)mklong(ptr));
+  ptr+=4;
+  pk->alt=(short)mkshort(ptr);
+  ptr+=2;
+  mdl=(short)mkshort(ptr);
+  if(mdl!=TAURUS) return -1;
+  pk->model=11;
+  ptr+=2;
+  pk->serno=mkshort(ptr);
+  ptr+=2;
+  ch=(*ptr);
+  if(ch==151) pk->ch=0;
+  else if(ch==153) pk->ch=1;
+  else if(ch==155) pk->ch=2;
+  else return -1;
+  ptr+=1;
+  ptr+=2;
+  size=mkshort(ptr); /* payload size */
+  pk->bpp=(size-14)/64;
+  ptr+=2;
+  x1=mkshort(ptr); /* payload chid */
+  ptr+=2;
+  x2=mkshort(ptr);
+  ptr+=2;
+  x3=mkshort(ptr);
+  ptr+=2;
+  pk->ns=mkshort(ptr);
+  ptr+=2;
+  x5=mkshort(ptr);
+  ptr+=2;
+  pk->sr=mkshort(ptr);
+  ptr+=2;
+  for(i=0;i<pk->bpp;i++)
+    {
+    pk->b2[i].bundle_type=mklong(ptr);
+    ptr+=4;
+    for(j=0;j<60;j++) pk->b2[i].u.c[j]=(*ptr++);
+    if(i==0)
+      {
+      pk->first=mklong(pk->b2[i].u.uc[0]);
+      pk->last=mklong(pk->b2[i].u.uc[1]);
+      }
+    }
+/* printf("size=%d seq=%d tim=%lu.%04lu lat=%f lon=%f alt=%d\n",
+size,pk->seq,pk->tim,pk->subsec,pk->lat,pk->lon,pk->alt);
+printf("model=%d serno=%d ch=%d size=%d ns=%d sr=%d bpp=%d first=%d last=%d\n",
+model,pk->serno,pk->ch,size,pk->ns,pk->sr,pk->bpp,pk->first,pk->last);
+*/
+  pk->ptype=1; /* assumed */
+  return pk->bpp;
+}
+
 parse_one_packet(unsigned char *inbuf,int len,struct Nmx_Packet *pk)
 {
 #define SIGNATURE 0x7ABCDE0F
@@ -343,6 +452,50 @@ parse_one_packet(unsigned char *inbuf,int len,struct Nmx_Packet *pk)
   }
   return pk->bpp=nb-1;
 }
+
+int bundle2fix_np(struct Nmx_Packet *pk,int *dbuf)
+  {
+#define GPB 15 /* groups/bundle */
+  int n,i,j,k,difsize[GPB],data,flag,diff0;
+  long diff4;
+  short diff2;
+  n=flag=0;
+/* don't use the first difference (why?) -> diff0 */
+  dbuf[n++]=data=pk->first;
+  for(k=0;k<pk->bpp;k++)
+    {
+  /*printf("bundle_type=%08X\n",pk->b2[k].bundle_type);*/
+    for(i=0;i<GPB;i++)
+      {
+      difsize[i]=((pk->b2[k].bundle_type)>>((GPB-1-i)*2))&0x3;
+      if(difsize[i]==0) continue;
+      else if(difsize[i]==1)
+        {
+        for(j=0;j<4;j++)
+          {
+          if(flag==0) {diff0=pk->b2[k].u.cc[i][j];flag=1;}
+          else dbuf[n++]=data=data+pk->b2[k].u.cc[i][j];
+          }
+        }
+      else if(difsize[i]==2)
+        {
+        diff2=mkshort(pk->b2[k].u.uc[i]);
+        if(flag==0) {diff0=diff2;flag=1;}
+        else dbuf[n++]=data=data+diff2;
+        diff2=mkshort(pk->b2[k].u.uc[i]+2);
+        dbuf[n++]=data=data+diff2;
+        }
+      else if(difsize[i]==3)
+        {
+        diff4=mklong(pk->b2[k].u.uc[i]);
+        if(flag==0) {diff0=diff4;flag=1;}
+        else dbuf[n++]=data=data+diff4;
+        }
+      }
+    }
+/*printf("n=%d first=%d last=%d\n",n,dbuf[0],dbuf[n-1]);*/
+  return n;
+  }
 
 int bundle2fix(struct Nmx_Packet *pk,int *dbuf)
 {
@@ -453,6 +606,11 @@ ch2idx(int *rbuf[],struct Nmx_Packet *pk,int winch)
       pk->model,model[pk->model],pk->serno,pk->ch,i);
     if(winch>=0) sprintf(tb+strlen(tb)," winch=%04X",winch);
     write_log(logfile,tb);
+    if(pk->npformat)
+      {
+      sprintf(tb,"NP : GPS POS = %fN %fE %dm",pk->lat,pk->lon,pk->alt);
+      write_log(logfile,tb);
+      }
   }
   return i;
 }
@@ -533,13 +691,15 @@ main(argc,argv)
   if(progname=strrchr(argv[0],'/')) progname++;
   else progname=argv[0];
   sprintf(tb,
-    " usage : '%s (-c [ch_map]) (-i [interface]) (-m [mcast_group]) (-vB) \\\n\
+    " usage : '%s (-c [ch_map]) (-i [interface]) (-m [mcast_group]) (-vBn) \\\n\
          (-d [fragdir]) [port] [shm_key] [shm_size(KB)] ([log file])'",progname);
 
-  station=verbose=use_chmap=eobsize=0;
+  station=verbose=use_chmap=eobsize=pk.npformat=0;
   *interface=(*mcastgroup)=(*chmapfile)=(*fragdir)=0;
-  while((c=getopt(argc,argv,"c:d:i:m:vB"))!=EOF) {
-    switch(c) {
+  while((c=getopt(argc,argv,"c:d:i:m:nvB"))!=EOF)
+    {
+    switch(c)
+      {
       case 'c':   /* channel map file */
         strcpy(chmapfile,optarg);
         break;
@@ -552,6 +712,9 @@ main(argc,argv)
       case 'm':   /* multicast group (multicast IP address) */
         strcpy(mcastgroup,optarg);
         break;
+      case 'n':   /* NP format */
+        pk.npformat=1;
+        break;
       case 'v':   /* verbose */
         verbose=1;
         break;
@@ -562,13 +725,14 @@ main(argc,argv)
         fprintf(stderr," option -%c unknown\n",c);
         fprintf(stderr,"%s\n",tb);
         exit(1);
+      }
     }
-  }
   optind--;
-  if(argc<4+optind) {
+  if(argc<4+optind)
+    {
     fprintf(stderr,"%s\n",tb);
     exit(1);
-  }
+    }
   to_port=atoi(argv[1+optind]);
   shm_key=atoi(argv[2+optind]);
   size_shm=atoi(argv[3+optind])*1000;
@@ -589,13 +753,14 @@ main(argc,argv)
   to_addr.sin_port=htons(to_port);
   if(bind(sock,(struct sockaddr *)&to_addr,sizeof(to_addr))<0) err_sys("bind");
 
-  if(*mcastgroup){
+  if(*mcastgroup)
+    {
     stMreq.imr_multiaddr.s_addr=inet_addr(mcastgroup);
     if(*interface) stMreq.imr_interface.s_addr=inet_addr(interface);
     else stMreq.imr_interface.s_addr=INADDR_ANY;
     if(setsockopt(sock,IPPROTO_IP,IP_ADD_MEMBERSHIP,(char *)&stMreq,
       sizeof(stMreq))<0) err_sys("IP_ADD_MEMBERSHIP setsockopt error\n");
-  }
+    }
   signal(SIGTERM,(void *)ctrlc);
   signal(SIGINT,(void *)ctrlc);
   signal(SIGPIPE,(void *)ctrlc);
@@ -621,22 +786,39 @@ main(argc,argv)
     else closedir(dir_ptr);
     }
 
-  while(1){
+  while(1)
+    {
     fromlen=sizeof(from_addr);
     n=recvfrom(sock,pbuf,MAXMESG,0,(struct sockaddr *)&from_addr,&fromlen);
-    if(parse_one_packet(pbuf,n,&pk)<0) continue;
+    if(pk.npformat)
+      {
+      if(parse_one_packet_np(pbuf,n,&pk)<0) continue;
 #if DEBUG5
-    p=pbuf;
-    printf("%d ",n);
-    for(i=0;i<16;i++) printf("%02X",*p++);
-    printf(" ");
-    for(i=0;i<17;i++) printf("%02X",*p++);
-    printf(" bpp=%d\n",pk.bpp);
+      p=pbuf;
+      printf("%d ",n);
+      for(i=0;i<16;i++) printf("%02X",*p++);
+      printf(" ");
+      for(i=0;i<17;i++) printf("%02X",*p++);
+      printf("\n");
 #endif
-    if(use_chmap) {
+      }
+    else
+      {
+      if(parse_one_packet(pbuf,n,&pk)<0) continue;
+#if DEBUG5
+      p=pbuf;
+      printf("%d ",n);
+      for(i=0;i<16;i++) printf("%02X",*p++);
+      printf(" ");
+      for(i=0;i<17;i++) printf("%02X",*p++);
+      printf(" bpp=%d\n",pk.bpp);
+#endif
+      }
+    if(use_chmap)
+      {
       if(chmap[(pk.model<<11)+pk.serno]==0xffff) winch=(-1); /* do not use the ch */
       else winch=chmap[(pk.model<<11)+pk.serno]+pk.ch;
-    }
+      }
     else winch=((pk.model&0x3)<<14)+(pk.serno<<3)+pk.ch;
     if(verbose)
  printf("%s:%d>%02X %02d/%02d/%02d %02d:%02d:%02d.%04d %s#%d p#%d %dHz ch%d x0=%d %04X\n",
@@ -644,7 +826,8 @@ main(argc,argv)
         pk.ptype,pk.t->tm_year%100,pk.t->tm_mon+1,pk.t->tm_mday,pk.t->tm_hour,
         pk.t->tm_min,pk.t->tm_sec,pk.subsec,model[pk.model],pk.serno,pk.seq,
         pk.sr,pk.ch,pk.first,winch);
-    if((pk.ptype&0x0f)==1 && winch>=0 && (pk.sr==100||pk.sr==20||pk.sr==200)){
+    if((pk.ptype&0x0f)==1 && winch>=0 && pk.sr>=10 && pk.sr<=MAXSR)
+      {
          /* compressed data packet */
       idx=ch2idx(rbuf,&pk,winch);
       rbuf_ptr=(pk.subsec*pk.sr+5000)/10000;
@@ -708,7 +891,8 @@ main(argc,argv)
           }
         }
 
-      n=bundle2fix(&pk,rbuf[idx]+rbuf_ptr);
+      if(pk.npformat) n=bundle2fix_np(&pk,rbuf[idx]+rbuf_ptr);
+      else n=bundle2fix(&pk,rbuf[idx]+rbuf_ptr);
 
       j=0;
       if(pk.seq!=seq_rbuf[idx]+1)
@@ -769,9 +953,10 @@ main(argc,argv)
       for(ptr=rbuf[idx]+rbuf_ptr,i=0;i<n;i++) printf("%d ",*ptr++);
       printf("\n");
 #endif
-      for(i=j*pk.sr;i+pk.sr<rbuf_ptr+n;i+=pk.sr){
+      for(i=j*pk.sr;i+pk.sr<rbuf_ptr+n;i+=pk.sr)
+        {
         nn=write_shm(winch,pk.sr,pk.tim+j++,rbuf[idx]+i,shm,eobsize,pl);
-      }
+        }
       for(k=i;k<rbuf_ptr+n;k++) rbuf[idx][k-i]=rbuf[idx][k]; 
       seq_rbuf[idx]=pk.seq;
       tim_rbuf[idx]=pk.tim;
@@ -780,9 +965,10 @@ main(argc,argv)
       printf("n=%d i=%d rbuf_ptr=%d fsize_rbuf[idx]=%d\n",
         n,i,rbuf_ptr,fsize_rbuf[idx]);
 #endif
-    }
-    else if((pk.ptype&0x0f)==2){ /* status packet */
+      }
+    else if((pk.ptype&0x0f)==2)
+      { /* status packet */
       proc_soh(&pk);
+      }
     }
   }
-}

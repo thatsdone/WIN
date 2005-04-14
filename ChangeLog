@@ -1,4 +1,9 @@
- $Id: ChangeLog,v 1.105 2005/03/18 14:34:42 uehira Exp $
+ $Id: ChangeLog,v 1.106 2005/04/14 09:10:12 urabe Exp $
+
+2005-04-14 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
+	* recvnmx, recvnmx.1 : -n (NP packet) added.
+	* raw_shift.1 : bug fixed.
+	* Version 1.1.61 released.
 
 2005-03-18 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* insert_raw.c, insert_trg.c, wdiskts.c, raw_time.c

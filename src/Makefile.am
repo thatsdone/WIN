@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.31 2005/03/18 14:34:42 uehira Exp $
+# $Id: Makefile.am,v 1.32 2005/04/25 16:30:41 uehira Exp $
 #
 
 if SUNOS4
@@ -40,7 +40,7 @@ GC_CHECK_INCLUDE =
 GC_CHECK_LIB =
 endif
 
-ONLINE_SO=recvt send_raw recvstatus recvstatus2 send_raw_old relay\
+ONLINE_SO=recvt send_raw recvstatus recvstatus2 recvstatus3 send_raw_old relay\
 	recvnmx $(ONL_SOL2) $(IPV6_PGM)
 TAPE_USER_MATH=pmon elist events
 ONLINE_MATH=ecore ecore2 raw_time
@@ -97,6 +97,7 @@ install-exec-hook:
 	(rm -f @bindir@/raw_timed; cd @bindir@ && @LN_S@ raw_time raw_timed)
 	(rm -f @bindir@/raw_rawd; cd @bindir@ && @LN_S@ raw_raw raw_rawd)
 	(rm -f @bindir@/wdisktsd; cd @bindir@ && @LN_S@ wdiskts wdisktsd)
+	(rm -f @bindir@/recvstatus3d; cd @bindir@ && @LN_S@ recvstatus3 recvstatus3d)
 
 win_SOURCES = win.c $(SUBFUNC_H)
 win_CFLAGS = @X_CFLAGS@ $(AM_CFLAGS)
@@ -274,3 +275,6 @@ recvs_LDADD = @LIBNSL@ @LIBSOCKET@
 
 raw_time_SOURCES = raw_time.c $(SUBFUNC_H) $(DAEMON_MODE) $(WIN_LOG) $(WIN_UTIL) $(GC_CHECK_INCLUDE)
 raw_time_LDADD = -lm @LIBSHMGET@ $(GC_CHECK_LIB)
+
+recvstatus3_SOURCES = recvstatus3.c $(SUBFUNC_H) $(DAEMON_MODE) $(WIN_LOG) udpu.h udp_accept.c
+recvstatus3_LDADD = @LIBNSL@ @LIBSOCKET@

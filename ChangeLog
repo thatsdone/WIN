@@ -1,5 +1,10 @@
- $Id: ChangeLog,v 1.107 2005/04/20 07:59:32 uehira Exp $
+ $Id: ChangeLog,v 1.108 2005/04/25 16:30:41 uehira Exp $
 
+2005-04-26 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* added 'recvstatus3'. receive A8/A9 packets from Daramark
+	  LS-8000SH of LS8TEL14/16 firmware
+	* Version 1.1.63 released.
+	  
 2005-04-20 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* win.1, pickfile.1, pick2pick.1 : updated.
 	* Version 1.1.62 released.

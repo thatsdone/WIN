@@ -1,0 +1,54 @@
+.TH recvstatus3 1W "2005.4.26" "WIN SYSTEM" "WIN SYSTEM"
+.SH 名称
+recvstatus3 - 白山WIN_UDP動作/設定ステータスパケットの受信(LS8TEL)
+.SH 形式
+recvstatus3 [\-\fBD\fR]
+.I port
+.I dirname
+[
+.I logfile
+]
+.LP
+recvstatus3d
+.I port
+.I dirname
+[
+.I logfile
+]
+.LP
+.SH 解説
+recvstatus3 は、白山工業製データロガーLS-8000SH(ファームウェア：
+LS8TEL16, LS8TEL14)から送信される、設定ステータスパケット(パケット種類
+A8)と動作ステータスパケット(パケット種類A9)をUDPポート
+.I \ port
+で受信し、ディレクトリ
+.I \ dirname
+の下にファイルとして出力します。保存されるデータは、パケットデータの部
+分のみで、A8の場合53バイト、A9の場合64バイトのバイナリです。
+.LP
+.I dirname
+以下には、LS8_XXXX (XXXXはロガーアドレス)が無ければ作られ、更に、A8パ
+ケットの場合はSTS、A9パケットの場合は STM というディレクトリが無ければ
+作成され、その下にファイルとして保存されます。ファイル名は、パケットデー
+タ中の時刻フィールドの内容と同じになります。
+.LP
+recvstatus3d は daemon モードで起動します。
+.LP
+ログファイル名
+.I logfile
+を指定すると、ここに動作ログがとられ、
+指定しないとログ情報は標準出力に
+送られます(ただし、daemon モードで動い
+ている時は syslogd(8) に送られます)。ログファイルは書き込みのたび毎に
+オープン／クローズされます。
+.LP
+recvstatus3 はパケットの再送要求を行いません。
+recvstatus3 は引数なしで起動すると簡単な使用法を表示します。
+.SH オプション
+.IP \fB\-D 5
+daemon mode で起動します。
+.SH ソース
+.TP
+`recvstatus3.c'
+.SH 関連事項
+recvstatus2(1W)

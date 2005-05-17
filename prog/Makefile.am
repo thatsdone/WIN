@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.14 2005/01/24 10:33:44 tsuru Exp $
+# $Id: Makefile.am,v 1.15 2005/05/17 15:27:53 uehira Exp $
 #
 #  Makefile.am in prog subdirectory.
 #
@@ -13,7 +13,8 @@ WIN_SH_PROG =  _bj _bj1 _bj2 _cont _find _joint _kill _mon _monit _stop \
 	picks_settle pp ppj printmon ras2gif ras2lips2a ras2lips2b ras2png \
 	ras2rpdl2a ras2rpdl2b recvstatus_filter renlog rt seis setRT stc \
 	stlist sumup tape tapelist trg trgstat w2h w2hh wex \
-	wt wtB ck_wdisk.sh insert_raw2 update_ch clean_nmx wintosac.sh
+	wt wtB ck_wdisk.sh insert_raw2 update_ch clean_nmx wintosac.sh \
+	mkpicknoise
 
 # other shell script
 WIN_SHELL_PROG = w2m.in

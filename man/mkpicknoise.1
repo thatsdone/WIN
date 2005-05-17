@@ -1,0 +1,27 @@
+.TH mkpicknoise 1W "2005.5.18" "WIN SYSTEM" "WIN SYSTEM"
+.SH 名称
+mkpicknoise - NOISE ラベルの付いた pickfile の整合性を取る
+.SH 形式
+mkpicknoise
+.I pickfile
+.I pickfile
+.I ...
+.LP
+.SH 解説
+mkpicknoise は、
+.I pickfile
+に NOISE ラベルが付いているかどうかを調べ、 NOISE ラベルが付いていた場
+合、その
+.I pickfile
+の整合性を調べます。つまり、読み取り値や震源などの情報があった場合、こ
+れらの情報を削除し、同じ
+.I pickfile
+に上書きします。NOISE ラベルが付いていないものや、整合性の取れているも
+のについては何も行いません。
+.SH オプション
+なし
+.SH ソース
+.TP
+`mkpicknoise'
+.SH 関連事項
+pickfile(1W)

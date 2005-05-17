@@ -1,8 +1,8 @@
-/* $Id: recvstatus3.c,v 1.1 2005/04/25 16:30:42 uehira Exp $ */
+/* $Id: recvstatus3.c,v 1.2 2005/05/17 15:27:54 uehira Exp $ */
 
 /* 
  * recvstatus3 :
- *   receive A8/A9 packets from Daramark LS-8000SH of LS8TEL14/16 firmware
+ *   receive A8/A9 packets from Datamark LS-8000SH of LS8TEL14/16 firmware
  */
 
 /*
@@ -47,8 +47,8 @@
 #define LS8_PHDER_LEN  5     /* LS8000SH packet header length */
 #define LS8_PID        4     /* position of packet ID (A1, A8 or A9) */
 
-#define LS8_A8_DLEN   53    /* A8 packet: LS8000SH setting data length */
-#define LS8_A9_DLEN   64    /* A9 packet: LS8000SH status data length */
+#define LS8_A8_DLEN   53     /* A8 packet: LS8000SH setting data length */
+#define LS8_A9_DLEN   64     /* A9 packet: LS8000SH status data length */
 
 #define LS8_A89_TIME    0    /* A8, A9: time */
 #define LS8_A89_ADDR    6    /* A8, A9: logger address. i.e. 1st channel ID */
@@ -60,7 +60,7 @@
 #define PATHMAX      1024
 
 static char rcsid[] =
-  "$Id: recvstatus3.c,v 1.1 2005/04/25 16:30:42 uehira Exp $";
+  "$Id: recvstatus3.c,v 1.2 2005/05/17 15:27:54 uehira Exp $";
 
 char *progname, *logfile;
 int  daemon_mode, syslog_mode;
@@ -95,7 +95,6 @@ main(int argc, char *argv[])
   char host_[NI_MAXHOST];  /* host address */
   char port_[NI_MAXSERV];  /* port No. */
 #endif
-
 
   if (progname = strrchr(argv[0], '/'))
     progname++;
@@ -266,10 +265,11 @@ main(int argc, char *argv[])
   }  /* for (;;) (main loop) */
 }
 
-/* check dir exists or not. If does't, make it */
+/* check dir exists or not. If doesn't, make it.
+ * return : 1: make dir, 0: dir already exists, -1: error */
 static int
 dir_check(char *path)
-     /* return : 1: make dir, 0: dir already exists, -1: error */
+
 {
   struct stat sb;
 

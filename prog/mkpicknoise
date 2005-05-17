@@ -1,0 +1,35 @@
+#! /bin/sh
+#
+# $Id: mkpicknoise,v 1.1 2005/05/17 15:27:53 uehira Exp $
+#
+
+tempfoo=`basename $0`
+
+if [ $# -lt 1 ]; then
+    echo "usage: ${tempfoo} pickfile pickfile ..."
+    exit 1
+fi
+
+TMPFILE=`mktemp /tmp/${tempfoo}.XXXXXX` || exit 1
+
+while [ $# -gt 0 ]; do
+    #echo $1
+    label=`head -n 1 $1 | awk '{print $3}'`
+    #echo ${label}
+    case ${label} in
+    [Nn][Oo][Ii][Ss][Ee])
+	# echo $1
+	linenum=`wc $1 | awk '{print $1}'`
+	#echo ${linenum}
+	if [ ${linenum} -gt 2 ]; then
+	    #echo ${linenum}
+	    echo replace $1
+	    head -n 2 $1 > ${TMPFILE}
+	    cp ${TMPFILE} $1 || exit 1
+	fi
+    esac
+    shift
+done
+
+rm -f ${TMPFILE}
+exit 0

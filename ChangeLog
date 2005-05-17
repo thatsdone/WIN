@@ -1,5 +1,10 @@
- $Id: ChangeLog,v 1.108 2005/04/25 16:30:41 uehira Exp $
+ $Id: ChangeLog,v 1.109 2005/05/17 15:27:53 uehira Exp $
 
+2005-05-18 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* recvstatus3.c : don't compile IPv4 only environment.
+	* added 'mkpicknoise'
+	* Version 1.1.64 released.
+	  
 2005-04-26 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* added 'recvstatus3'. receive A8/A9 packets from Daramark
 	  LS-8000SH of LS8TEL14/16 firmware

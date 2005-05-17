@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.32 2005/04/25 16:30:41 uehira Exp $
+# $Id: Makefile.am,v 1.33 2005/05/17 15:27:53 uehira Exp $
 #
 
 if SUNOS4
@@ -27,7 +27,7 @@ OFFLINE_X=win win32
 endif
 
 if IPV6
-IPV6_PGM = relaym
+IPV6_PGM = relaym recvstatus3
 else
 IPV6_PGM =
 endif
@@ -40,7 +40,7 @@ GC_CHECK_INCLUDE =
 GC_CHECK_LIB =
 endif
 
-ONLINE_SO=recvt send_raw recvstatus recvstatus2 recvstatus3 send_raw_old relay\
+ONLINE_SO=recvt send_raw recvstatus recvstatus2 send_raw_old relay\
 	recvnmx $(ONL_SOL2) $(IPV6_PGM)
 TAPE_USER_MATH=pmon elist events
 ONLINE_MATH=ecore ecore2 raw_time

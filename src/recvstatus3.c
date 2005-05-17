@@ -1,4 +1,4 @@
-/* $Id: recvstatus3.c,v 1.3 2005/05/17 16:05:17 uehira Exp $ */
+/* $Id: recvstatus3.c,v 1.4 2005/05/17 16:06:13 uehira Exp $ */
 
 /* 
  * recvstatus3 :
@@ -7,6 +7,7 @@
 
 /*
  * 2005-04-26  Initial version.
+ * 2005-05-18  close security hall.
  */
 
 #ifdef HAVE_CONFIG_H
@@ -60,7 +61,7 @@
 #define PATHMAX      1024
 
 static char rcsid[] =
-  "$Id: recvstatus3.c,v 1.3 2005/05/17 16:05:17 uehira Exp $";
+  "$Id: recvstatus3.c,v 1.4 2005/05/17 16:06:13 uehira Exp $";
 
 char *progname, *logfile;
 int  daemon_mode, syslog_mode;

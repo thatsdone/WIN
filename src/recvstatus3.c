@@ -1,4 +1,4 @@
-/* $Id: recvstatus3.c,v 1.4 2005/05/17 16:06:13 uehira Exp $ */
+/* $Id: recvstatus3.c,v 1.5 2005/05/17 16:09:59 uehira Exp $ */
 
 /* 
  * recvstatus3 :
@@ -61,7 +61,7 @@
 #define PATHMAX      1024
 
 static char rcsid[] =
-  "$Id: recvstatus3.c,v 1.4 2005/05/17 16:06:13 uehira Exp $";
+  "$Id: recvstatus3.c,v 1.5 2005/05/17 16:09:59 uehira Exp $";
 
 char *progname, *logfile;
 int  daemon_mode, syslog_mode;
@@ -127,7 +127,7 @@ main(int argc, char *argv[])
   dirtop = argv[1];
   (void)snprintf(dirname, sizeof(dirname), "%s/LS8000SH_XXXXXX", dirtop);
   if ((ptname = mkdtemp(dirname)) == NULL) {
-    (void)fprintf(stderr, "%s: %s\n", strerror(errno), ptname);
+    (void)fprintf(stderr, "%s: %s\n", strerror(errno), dirname);
     usage();
   }
   /*  (void)fprintf(stderr, "%s\n", ptname); */

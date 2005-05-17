@@ -1,7 +1,8 @@
- $Id: ChangeLog,v 1.109 2005/05/17 15:27:53 uehira Exp $
+ $Id: ChangeLog,v 1.110 2005/05/17 16:05:17 uehira Exp $
 
 2005-05-18 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* recvstatus3.c : don't compile IPv4 only environment.
+	                : close security hall.
 	* added 'mkpicknoise'
 	* Version 1.1.64 released.
 	  

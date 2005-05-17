@@ -1,4 +1,4 @@
-/* $Id: recvstatus3.c,v 1.2 2005/05/17 15:27:54 uehira Exp $ */
+/* $Id: recvstatus3.c,v 1.3 2005/05/17 16:05:17 uehira Exp $ */
 
 /* 
  * recvstatus3 :
@@ -60,7 +60,7 @@
 #define PATHMAX      1024
 
 static char rcsid[] =
-  "$Id: recvstatus3.c,v 1.2 2005/05/17 15:27:54 uehira Exp $";
+  "$Id: recvstatus3.c,v 1.3 2005/05/17 16:05:17 uehira Exp $";
 
 char *progname, *logfile;
 int  daemon_mode, syslog_mode;
@@ -85,7 +85,7 @@ main(int argc, char *argv[])
   fd_set  rset;
   FILE  *fp;
   int  sockbuf;
-  char  *dirtop, dirname[PATHMAX], filename[PATHMAX];
+  char  *dirtop, dirname[PATHMAX], filename[PATHMAX], *ptname;
   size_t  dsize;
   char  msg[MAXMSG];
   unsigned char  rbuf[MAXMSG], *ptr;
@@ -124,12 +124,13 @@ main(int argc, char *argv[])
 
   /* check make directory */
   dirtop = argv[1];
-  (void)snprintf(dirname, sizeof(dirname), "%s/LS8000SH_000000", dirtop);
-  if (mkdir(dirname, S_IRWXU | S_IRWXG | S_IRWXO) < 0) {
-    (void)fprintf(stderr, "%s: %s\n", strerror(errno), dirname);
+  (void)snprintf(dirname, sizeof(dirname), "%s/LS8000SH_XXXXXX", dirtop);
+  if ((ptname = mkdtemp(dirname)) == NULL) {
+    (void)fprintf(stderr, "%s: %s\n", strerror(errno), ptname);
     usage();
   }
-  (void)rmdir(dirname);
+  /*  (void)fprintf(stderr, "%s\n", ptname); */
+  (void)rmdir(ptname);
 
   /* input port: number or service name */
   input_port = argv[0];

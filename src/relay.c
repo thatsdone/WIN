@@ -1,4 +1,4 @@
-/* $Id: relay.c,v 1.14 2005/02/20 13:56:18 urabe Exp $ */
+/* $Id: relay.c,v 1.15 2005/05/18 04:47:27 urabe Exp $ */
 /* "relay.c"      5/23/94-5/25/94,6/15/94-6/16/94,6/23/94,3/16/95 urabe */
 /*                3/26/95 check_packet_no; port# */
 /*                5/24/96 added processing of "host table full" */
@@ -25,6 +25,7 @@
 /*                2004.11.16 maximize size of receive socket buffer (-b) */
 /*                2004.11.26 some systems (exp. Linux), select(2) changes timeout value */
 /*                2005.2.20 added fclose() in read_chfile() */
+/*                2005.5.18 -N for don't change (and ignore) packet numbers */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -294,13 +295,14 @@ read_chfile()
   signal(SIGHUP,(void *)read_chfile);
   }
 
-check_pno(from_addr,pn,pn_f,sock,fromlen,n,nr) /* returns -1 if duplicated */
+check_pno(from_addr,pn,pn_f,sock,fromlen,n,nr,nopno) /* returns -1 if duplicated */
   struct sockaddr_in *from_addr;  /* sender address */
   unsigned int pn,pn_f;           /* present and former packet Nos. */
   int sock;                       /* socket */
   int fromlen;                    /* length of from_addr */
   int n;                          /* size of packet */
   int nr;                         /* no resend request if 1 */
+  int nopno;                      /* don't check pno */
   {
   int i,j;
   int host_;  /* 32-bit-long host address in network byte-order */
@@ -328,6 +330,7 @@ check_pno(from_addr,pn,pn_f,sock,fromlen,n,nr) /* returns -1 if duplicated */
       return -1;
       }
     }
+  if(nopno) return 0;
   for(i=0;i<N_HOST;i++)
     {
     if(ht[i].host==0) break;
@@ -417,7 +420,7 @@ main(argc,argv)
   {
   struct timeval timeout,tv1,tv2;
   double idletime;
-  int c,i,j,re,fromlen,n,bufno,bufno_f,pts,ttl,delay,noreq,sockbuf;
+  int c,i,j,re,fromlen,n,bufno,bufno_f,pts,ttl,delay,noreq,sockbuf,nopno;
   struct sockaddr_in to_addr,from_addr;
   unsigned short to_port;
   struct hostent *h;
@@ -440,20 +443,20 @@ main(argc,argv)
 
   if (daemon_mode)
     sprintf(tb,
-    " usage : '%s (-nr) (-b [sbuf(KB)]) (-d [delay_ms]) (-f [host_file]) (-g [mcast_group]) (-i [interface]) (-h [len(s)]) (-s [sinterface]) (-p [src port]) (-t [ttl]) [in_port] [host] [host_port] ([log file])'\n",
+    " usage : '%s (-Nnr) (-b [sbuf(KB)]) (-d [delay_ms]) (-f [host_file]) (-g [mcast_group]) (-i [interface]) (-h [len(s)]) (-s [sinterface]) (-p [src port]) (-t [ttl]) [in_port] [host] [host_port] ([log file])'\n",
 	    progname);
   else
     sprintf(tb,
-    " usage : '%s (-nrD) (-b [sbuf(KB)]) (-d [delay_ms]) (-f [host_file]) (-g [mcast_group]) (-i [interface]) (-h [len(s)]) (-s [sinterface]) (-p [src port]) (-t [ttl]) [in_port] [host] [host_port] ([log file])'\n",
+    " usage : '%s (-NnrD) (-b [sbuf(KB)]) (-d [delay_ms]) (-f [host_file]) (-g [mcast_group]) (-i [interface]) (-h [len(s)]) (-s [sinterface]) (-p [src port]) (-t [ttl]) [in_port] [host] [host_port] ([log file])'\n",
 	    progname);
 
 
   *chfile=(*interface)=(*mcastgroup)=(*sinterface)=0;
   ttl=1;
-  no_pinfo=src_port=delay=noreq=negate_channel=0;
+  no_pinfo=src_port=delay=noreq=negate_channel=nopno=0;
   sockbuf=256;
 
-  while((c=getopt(argc,argv,"b:Dd:f:g:i:np:rs:t:T:"))!=EOF)
+  while((c=getopt(argc,argv,"b:Dd:f:g:i:Nnp:rs:t:T:"))!=EOF)
     {
     switch(c)
       {
@@ -474,6 +477,9 @@ main(argc,argv)
         break;
       case 'i':   /* interface (ordinary IP address) which receive mcast */
         strcpy(interface,optarg);
+        break;
+      case 'N':   /* no pno */
+        nopno=no_pinfo=noreq=1;
         break;
       case 'n':   /* supress info on abnormal packets */
         no_pinfo=1;
@@ -605,6 +611,7 @@ main(argc,argv)
   if(bind(sock_out,(struct sockaddr *)&from_addr,sizeof(from_addr))<0)
     err_sys("bind_out");
 
+  if(nopno) write_log(logfile,"packet numbers pass through");
   if(noreq) write_log(logfile,"resend request disabled");
   signal(SIGTERM,(void *)ctrlc);
   signal(SIGINT,(void *)ctrlc);
@@ -632,7 +639,7 @@ main(argc,argv)
 #endif
 
       if(check_pno(&from_addr,sbuf[bufno][0],sbuf[bufno][1],sock_in,fromlen,
-          psize[bufno],noreq)<0) continue;
+          psize[bufno],noreq,nopno)<0) continue;
       if(delay>0 && idletime>0.5) usleep(delay*1000);
       }
     else /* read from stdin */
@@ -642,7 +649,7 @@ main(argc,argv)
       psize[bufno]=strlen(sbuf[bufno]+2)+2;
       }
 
-    sbuf[bufno][0]=sbuf[bufno][1]=no;
+    if(!nopno) sbuf[bufno][0]=sbuf[bufno][1]=no;
     re=sendto(sock_out,sbuf[bufno],psize[bufno],0,
 	      (const struct sockaddr *)&to_addr,sizeof(to_addr));
 #if DEBUG

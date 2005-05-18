@@ -1,8 +1,8 @@
-.TH relay 1W "2004.11.16" "WIN SYSTEM" "WIN SYSTEM"
+.TH relay 1W "2005.5.18" "WIN SYSTEM" "WIN SYSTEM"
 .SH 名称
 relay, relayd - win 形式データのIP上の中継
 .SH 形式
-relay [\-\fBnrD\fR] [\-\fBb\fI bufsiz\fR] [\-\fBd\fI\ delay\fR] 
+relay [\-\fBNnrD\fR] [\-\fBb\fI bufsiz\fR] [\-\fBd\fI\ delay\fR] 
 [\-\fBf\fI ctlfile\fR] [\-\fBg\fI\ group\fR]
 [\-\fBi\fI\ interface\fR] [\-\fBp\fI\ src_port\fR] [\-\fBs\fI\ sinterface\fR] 
 [\-\fBt\fI\ ttl\fR]
@@ -13,7 +13,7 @@ relay [\-\fBnrD\fR] [\-\fBb\fI bufsiz\fR] [\-\fBd\fI\ delay\fR]
 .I logfile
 ]
 .LP
-relayd [\-\fBnr\fR] [\-\fBb\fI bufsiz\fR] [\-\fBd\fI\ delay\fR] 
+relayd [\-\fBNnr\fR] [\-\fBb\fI bufsiz\fR] [\-\fBd\fI\ delay\fR] 
 [\-\fBf\fI ctlfile\fR] [\-\fBg\fI\ group\fR] 
 [\-\fBi\fI\ interface\fR] [\-\fBp\fI\ src_port\fR] [\-\fBs\fI\ sinterface\fR] 
 [\-\fBt\fI\ ttl\fR]
@@ -122,6 +122,9 @@ IPマルチキャストアドレス宛のパケットを受信する
 ネットワークインターフェースを、そのインターフェースのIPアドレス
 .I interface
 で指定します。
+.IP "\fB\-N" 5
+受信パケットのパケット番号を検査しません。パケット番号フィールド
+(先頭の２バイト)は書き換えられず、つまり受信パケットがそのまま中継されます。
 .IP "\fB\-n" 5
 拒否すべき送り元アドレスからのパケットや重複して受信した再送パケット
 についての情報をログに報告しません。

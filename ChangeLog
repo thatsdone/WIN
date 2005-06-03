@@ -1,4 +1,8 @@
- $Id: ChangeLog,v 1.111 2005/05/18 04:47:27 urabe Exp $
+ $Id: ChangeLog,v 1.112 2005/06/03 04:00:31 uehira Exp $
+
+2005-06-03 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* hypomhc.c : bug fixed. (by T. Takeda)
+	* Version 1.1.65 released.
 
 2005-05-18 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
 	* relay.c,relay.1 : -N for passing through packet numbers

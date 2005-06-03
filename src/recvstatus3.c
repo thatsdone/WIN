@@ -1,4 +1,4 @@
-/* $Id: recvstatus3.c,v 1.5 2005/05/17 16:09:59 uehira Exp $ */
+/* $Id: recvstatus3.c,v 1.6 2005/06/03 04:00:32 uehira Exp $ */
 
 /* 
  * recvstatus3 :
@@ -61,7 +61,7 @@
 #define PATHMAX      1024
 
 static char rcsid[] =
-  "$Id: recvstatus3.c,v 1.5 2005/05/17 16:09:59 uehira Exp $";
+  "$Id: recvstatus3.c,v 1.6 2005/06/03 04:00:32 uehira Exp $";
 
 char *progname, *logfile;
 int  daemon_mode, syslog_mode;
@@ -145,8 +145,7 @@ main(int argc, char *argv[])
       exit(1);
     }
     (void)fclose(fp);
-  }
-  else {
+  } else {
     logfile = NULL;
     if (daemon_mode)
       syslog_mode = 1;

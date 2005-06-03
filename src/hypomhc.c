@@ -1,5 +1,5 @@
 /*
-  $Id: hypomhc.c,v 1.5 2003/06/09 11:52:46 uehira Exp $
+  $Id: hypomhc.c,v 1.6 2005/06/03 04:00:32 uehira Exp $
    hypomhc.c    : main program for hypocenter location
      original version was made on March 13, 1984 and
      modified by N.H. on Feb. 8, 1985, May 8, 1985.
@@ -31,7 +31,7 @@
      NUMBER OF CHARACTERS IN A STATION NAME IS CHANGED TO 6 FROM 2
                                              2/8/1985 N.H.
 */
-#define    DEBUG   0
+/*  #define    DEBUG   0 */
 #define    DEBUGS  0
 
 #define    CHK_RSLT 0
@@ -1111,10 +1111,23 @@ main(argc, argv)
 		,xm1[0],xm1[1],xm1[2],i,calc[i].sc[2]);*/
 /*         printf("rr=%lf  xm1[2]=%lf  sc=%lf\n",
                 rr,xm1[2],calc[i].sc[2]);*/
-	 if (smode && calc[i].flag)
+	 if (smode && calc[i].flag) {  /* special station */
 	   travel(rr,xm1[2],calc[i].sc[2],&np1,ang1,trv1,bng1,&strc1);
-	 else
+	   if(np1==0){
+	     fprintf(fp_21,
+		     " *** RAY PATH TO %d-STATION IS NOT FOUND ***\n", i);
+	     judg=10;
+	     goto end_NLINV;
+	   }
+	 } else {
 	   travel(rr,xm1[2],calc[i].sc[2],&np,ang,trv,bng,&strc);
+	   if(np==0){
+	     fprintf(fp_21,
+		     " *** RAY PATH TO %d-STATION IS NOT FOUND ***\n", i);
+	     judg=10;
+	     goto end_NLINV;
+	   }
+	 }
 #if DEBUGS
 	 if (smode && calc[i].flag) {
 	   printf("np1=%d\n",np1);
@@ -1127,18 +1140,6 @@ main(argc, argv)
 	     printf("%d ang=%lf trv=%lf bng=%lf\n",j,ang[j],trv[j],bng[j]);
 	 }
 #endif
-         if(np==0){
-            fprintf(fp_21,
-                    " *** RAY PATH TO %d-STATION IS NOT FOUND ***\n", i);
-            judg=10;
-            goto end_NLINV;
-         }
-         if(smode && np1==0){
-            fprintf(fp_21,
-                    " *** RAY PATH TO %d-STATION IS NOT FOUND ***\n", i);
-            judg=10;
-            goto end_NLINV;
-         }
          calc[i].tpt=1.0e5;
 
 	 if (smode && calc[i].flag) {

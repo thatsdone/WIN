@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.33 2005/05/17 15:27:53 uehira Exp $
+# $Id: Makefile.am,v 1.34 2005/06/09 16:50:38 uehira Exp $
 #
 
 if SUNOS4
@@ -52,7 +52,7 @@ OFFLINE_F77=hypomh
 OFFLINE_USER=$(OFFLINE_X) $(OFFLINE_F77) wed wck wadd $(OFFLINE_MATH) wchch pick2tseis \
              wch pick2finalb pick2final finalb2final final2finalb finalb2seis \
              wform wintowin $(OFFLINE_USER_MATH) winadd wck_wdisk wadd2 \
-             win2raw wchasn
+             win2raw wchasn ls8tel16_win
 TAPE_USER=rtape fromtape wdisk wdiskts ras2rpdl ras2lips file_older raw2mon \
           $(TAPE_USER_MATH)
 ONLINE=order raw_mon wtape setexb timeout raw_raw raw_100 cormeisei shmdump \
@@ -276,5 +276,8 @@ recvs_LDADD = @LIBNSL@ @LIBSOCKET@
 raw_time_SOURCES = raw_time.c $(SUBFUNC_H) $(DAEMON_MODE) $(WIN_LOG) $(WIN_UTIL) $(GC_CHECK_INCLUDE)
 raw_time_LDADD = -lm @LIBSHMGET@ $(GC_CHECK_LIB)
 
-recvstatus3_SOURCES = recvstatus3.c $(SUBFUNC_H) $(DAEMON_MODE) $(WIN_LOG) udpu.h udp_accept.c
+recvstatus3_SOURCES = recvstatus3.c $(SUBFUNC_H) $(DAEMON_MODE) $(WIN_LOG) udpu.h udp_accept.c ls8tel.h
 recvstatus3_LDADD = @LIBNSL@ @LIBSOCKET@
+
+ls8tel16_win_SOURCES = ls8tel16_win.c $(WIN_UTIL) $(SUBFUNC_H) $(GC_CHECK_INCLUDE) ls8tel.h ls8tel.c
+ls8tel16_win_LDADD = $(GC_CHECK_LIB)

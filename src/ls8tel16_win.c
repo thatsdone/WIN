@@ -1,4 +1,4 @@
-/* $Id */
+/* $Id: ls8tel16_win.c,v 1.2 2005/06/10 14:34:25 uehira Exp $ */
 
 /*
  * Copyright (c) 2005
@@ -10,7 +10,7 @@
 /*
  * Datamark LS-8000SH of LS8TEL16 utility
  *  Convert LS8TEL16 winformat to normal winformat.
- *  Don't input normal winformat.
+ *  Don't input normal winformat data.
  */
 
 #ifdef HAVE_CONFIG_H
@@ -23,12 +23,16 @@
 #include <unistd.h>
 #include <errno.h>
 
+#ifdef GC_MEMORY_LEAK_TEST
+#include "gc_leak_detector.h"
+#endif
 #include "ls8tel.h"
 #include "win_system.h"
 #include "subst_func.h"
 
 static const char  rcsid[] =
-   "$Id: ls8tel16_win.c,v 1.1 2005/06/09 16:50:38 uehira Exp $";
+   "$Id: ls8tel16_win.c,v 1.2 2005/06/10 14:34:25 uehira Exp $";
+
 static char  *progname;
 
 static void usage(void);
@@ -45,13 +49,24 @@ main(int argc, char *argv[])
   int            dtime[WIN_TIME_LEN];
   long           ch, sr;
   static long    fixbuf[HEADER_4B];
-  int            i;
+  int            i, c;
 
   /* get program name */
   if ((progname = strrchr(argv[0], '/')) == NULL)
     progname = argv[0];
   else
     progname++;
+
+  while ((c = getopt(argc, argv, "h")) != -1) {
+    switch (c) {
+    case 'h':
+    default:
+      usage();
+      /* NOTREACHED */
+    }
+  }
+  argc -= optind;
+  argv += optind;
 
   /*** 1sec data loop ***/
   while ((dsize = read_onesec_win(stdin, &dbuf)) != 0) {
@@ -80,8 +95,10 @@ main(int argc, char *argv[])
     
     /* channel loop */
     do {
-      if ((gsize = ls8tel16_fix(ptr, fixbuf, &ch, &sr)) == 0)
+      if ((gsize = ls8tel16_fix(ptr, fixbuf, &ch, &sr)) == 0) {
+	(void)fprintf(stderr, "This data is not LS8TEL format.\n");
 	exit(1);
+      }
       ptw += winform(fixbuf, ptw, sr, (unsigned short)ch);
       if (ptw > ptw_limit) {
 	(void)fprintf(stderr, "Buffer overrun!\n");
@@ -101,6 +118,9 @@ main(int argc, char *argv[])
     (void)fwrite(obuf, wsize, 1, stdout);
   } /* while ((dsize = read_onesec_win(stdin, &dbuf)) != 0) */
 
+#ifdef GC_MEMORY_LEAK_TEST
+  CHECK_LEAKS();
+#endif
   exit(0);
 }
 
@@ -109,7 +129,7 @@ usage(void)
 {
 
   (void)fprintf(stderr, "%s\n", rcsid);
-  (void)fprintf(stderr, "Usage : %s < [in_file] >[out_file]\n",
+  (void)fprintf(stderr, "Usage : %s < [LS8TEL16 file] > [out_file]\n",
 		progname);
   exit(1);
 }

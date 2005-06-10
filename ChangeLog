@@ -1,4 +1,9 @@
- $Id: ChangeLog,v 1.112 2005/06/03 04:00:31 uehira Exp $
+ $Id: ChangeLog,v 1.113 2005/06/10 14:34:25 uehira Exp $
+
+2005-06-10 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* added Daramark LS-8000SH (LS8TEL14/16 firmware) data utility
+	  ls8tel16_win, ls8tel16_raw
+	* Version 1.1.66 released.
 
 2005-06-03 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* hypomhc.c : bug fixed. (by T. Takeda)

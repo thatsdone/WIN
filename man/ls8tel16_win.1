@@ -1,0 +1,23 @@
+.TH ls8tel16_win 1W "2005.6.10" "WIN SYSTEM" "WIN SYSTEM"
+.SH 名称
+ls8tel16_win - 白山WIN(LS8TEL16) の通常 win 形式データへの変換
+.SH 形式
+ls8tel16_win
+.SH 解説
+ls8tel16_win は、標準入力から白山工業社製データロガーLS-8000SH(ファー
+ムウェア：LS8TEL16)で作成された白山win 形式のデータを読み込み、標準出
+力に通常の win 形式を出力します。入力データの全チャネルが出力されます。
+.LP
+共有メモリ上の白山win 形式データを変換する時は、ls8tel16_raw(1W)が使え
+ます。
+.SH 注意
+LS8TEL14、LS8TEL16 で作られたデータ以外に適用すると出力データが壊れま
+す。
+.SH オプション
+.IP \fB\-h 5
+使用方法を出力して終了します。
+.SH ソース
+.TP
+`ls8tel16_win.c'
+.SH 関連事項
+ls8tel16_raw(1W), winformat(1W), order(1W), recvt(1W)

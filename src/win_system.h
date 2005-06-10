@@ -1,4 +1,4 @@
-/* $Id: win_system.h,v 1.6 2005/03/17 06:59:09 uehira Exp $ */
+/* $Id: win_system.h,v 1.7 2005/06/10 14:52:09 uehira Exp $ */
 
 #ifndef _WIN_SYSTEM_H_
 #define _WIN_SYSTEM_H_
@@ -7,6 +7,7 @@
 #include "config.h"
 #endif
 
+#include <stdio.h>
 #include <stdlib.h>
 
 typedef unsigned long  WIN_blocksize;

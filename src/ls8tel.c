@@ -1,4 +1,4 @@
-/* $Id: ls8tel.c,v 1.1 2005/06/09 16:50:38 uehira Exp $ */
+/* $Id: ls8tel.c,v 1.2 2005/06/10 14:52:09 uehira Exp $ */
 
 /*
  * Copyright (c) 2005
@@ -14,8 +14,6 @@
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
-
-#include <stdio.h>
 
 #include "win_system.h"
 #include "ls8tel.h"
@@ -122,7 +120,6 @@ ls8tel16_fix(unsigned char *ptr, long *abuf, long *sys_ch, long *sr)
     }
     break;
   default:
-    (void)fprintf(stderr, "This data is not LS8TEL format.\n");
     return (0); /* bad header */
   }
 

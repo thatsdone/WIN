@@ -1,4 +1,4 @@
-/* $Id: raw_clip.c,v 1.1.2.1 2005/06/13 09:23:45 uehira Exp $ */
+/* $Id: raw_clip.c,v 1.1.2.2 2005/06/13 09:40:18 uehira Exp $ */
 
 /* raw_clip.c -- clip waveform data */
 
@@ -54,7 +54,7 @@
 #define DEBUG       0
 
 static char rcsid[] =
-  "$Id: raw_clip.c,v 1.1.2.1 2005/06/13 09:23:45 uehira Exp $";
+  "$Id: raw_clip.c,v 1.1.2.2 2005/06/13 09:40:18 uehira Exp $";
 
 char *progname, *logfile;
 int  daemon_mode, syslog_mode;
@@ -126,7 +126,6 @@ main(int argc, char *argv[])
   
   min = -1 << bits_shift;
   max = (1 << bits_shift) -1 ;
-  printf("bit = %d min = %d max = %d\n", bits_shift + 1, min, max);
 
   /* channel file */
   rest = 1;
@@ -186,6 +185,9 @@ main(int argc, char *argv[])
   (void)snprintf(tb, sizeof(tb),
 		 "start in_key=%d id=%d out_key=%d id=%d size=%d",
 		 inkey, shmid_in, outkey, shmid_out, size_shm);
+  write_log(tb);
+  (void)snprintf(tb, sizeof(tb),
+		 "%d bit: %d -- %d", bits_shift + 1, min, max);
   write_log(tb);
 
   /* set signal handler */

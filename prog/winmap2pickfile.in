@@ -1,0 +1,241 @@
+#! @PERL@
+
+#
+# $Id: winmap2pickfile.in,v 1.1.2.1 2005/06/13 09:23:44 uehira Exp $
+# final2pickfile
+#  2004.6.14	Initial version  Uehira Kenji
+#
+#  usage: winmap2pick pick_dir
+#
+
+$ORIGIN_W = 3600;  # in sec. Seek -$ORIGIN_W < $origin < $ORIGIN_W
+
+$DELTA_ORG = 1;
+$DELTA_LAT = 0.0001;
+$DELTA_LON = 0.0001;
+$DELTA_DEP = 1.0;
+$DELTA_MAG = 0.2;
+
+$CENTURY = 70;			# 1970 -- 2069
+
+use Time::Local;
+
+$subdir_flag = 0;
+$twodir_flag = 0;
+
+die "usage: winmap2pick pickdir\n"
+    if $#ARGV<0;
+
+$_ = $pickdir = $ARGV[0];
+if (/\/$/) {
+    $subdir_flag = 1;
+}
+
+#print "$subdir_flag\n";
+
+$dirname_save = '';
+
+$FLAG = 0;
+while (<STDIN>) {
+    next if /^#/;
+    next if /^$/;
+    
+    if ($FLAG) {
+	print STDERR " Not found\n";
+    }
+    else {
+	print STDERR "\n";
+    }
+
+    chop;
+
+    print STDERR;
+    @fld = split ' ';
+
+    ($yr, $mon, $day) = split '/', $fld[1];
+    ($hr, $min, $sec) = split /:/, $fld[2];
+    $sec = int $sec;
+    $lat = $fld[3];
+    $lon = $fld[4];
+    $dep = $fld[5];
+    $mag = $fld[6];
+    #
+    chop $lat;
+    chop $lon;
+    chop $dep;
+    chop $dep;
+    substr($mag, 0, 1) = "";
+
+    $dirname = $pickdir;
+    if ($subdir_flag) {
+	$dirname = sprintf "%s%02d%02d", $pickdir, $yr, $mon;
+    }
+    #print STDOUT "$dirname\n";
+
+    $yr += 100 if $yr < $CENTURY;
+    $origin = timegm($sec, $min, $hr, $day, $mon - 1, $yr);
+    die "make time error!\n" if $origin < 0;
+    $origin_max = $origin + $ORIGIN_W;
+    $origin_min = $origin - $ORIGIN_W;
+
+    if ($subdir_flag) {
+	$twodir_flag = 0;
+	($max_sec, $max_min, $max_hour, $max_mday, $max_mon, $max_year,
+	 $max_wday, $max_yday, $max_isdst) =  gmtime($origin_max);
+	($min_sec, $min_min, $min_hour, $min_mday, $min_mon, $min_year,
+	 $min_wday, $min_yday, $min_isdst) =  gmtime($origin_min);
+
+	if (($yr != $max_year) || ($mon != $max_mon + 1)) {
+	    $twodir_flag = 1;
+	    $max_year -= 100 if $max_year >= 100;
+	    $twodir = sprintf "%s%02d%02d", $pickdir, $max_year, $max_mon + 1;
+	    #print STDERR "BBB $twodir\n";
+	}
+	elsif  (($yr != $min_year) || ($mon != $min_mon + 1)) {
+	    $twodir_flag = 1;
+	    $min_year -= 100 if $min_year >= 100;
+	    $twodir = sprintf "%s%02d%02d", $pickdir, $min_year, $min_mon + 1;
+	    #print STDERR "CCC $twodir\n";
+	}
+    }   
+
+    #print STDERR "$yr-$mon-$day $hr:$min:$sec($origin) $lat $lon D=$dep M$mag\n";
+
+    ###### get pickfile list
+    #print "save = $dirname_save\n";
+    if ($dirname ne $dirname_save) {
+	opendir DIR, $dirname or die "Cannot open $dirname: $!";
+	@files = grep !/^\./, readdir DIR;
+	closedir DIR;
+	$dirname_save = $dirname;
+    }
+
+    #### pickfile loop
+    $FLAG = 1;
+    for ($i = 0; $i <= $#files; $i++) {
+	$pickfile = sprintf "%s/%s", $dirname, $files[$i];
+	# print "$pickfile\n";
+	$pyr = substr($files[$i], 0, 2);
+	$pmon = substr($files[$i], 2, 2);
+	$pday = substr($files[$i], 4, 2);
+	$phr = substr($files[$i], 7, 2);
+	$pmin = substr($files[$i], 9, 2);
+	$psec = substr($files[$i], 11, 2);
+	# print "$pyr $pmon $pday $phr $pmin $psec\n";
+	$p_origin = timegm($psec, $pmin, $phr, $pday, $pmon - 1, $pyr);
+
+	next if $p_origin < $origin_min;
+	next if $p_origin > $origin_max;
+
+	#print "$pickfile\n";
+	open PICK, $pickfile or die "Cannot open $pickfile: $!";
+	$fflag = 1;
+	while (<PICK>) {
+	    if (/^#f/) {
+		$fflag = 0;
+		last;
+	    }
+	}
+	close PICK;
+	next if $fflag;
+	#print "$pickfile\n";
+
+	chop;
+	$fld1[1] = substr($_, 2, 4);
+	$fld1[2] = substr($_, 6, 3);
+	$fld1[3] = substr($_, 9, 3);
+	$fld1[4] = substr($_, 12, 6);
+	$fld1[5] = substr($_, 18, 3);
+	$fld1[6] = substr($_, 21, 8);
+	$fld1[7] = substr($_, 29, 11);
+	$fld1[8] = substr($_, 40, 11);
+	$fld1[9] = substr($_, 51, 8);
+	$fld1[10] = substr($_, 59, 6);
+
+	#print STDERR "\n@fld1\n";
+
+	next if $DELTA_MAG < abs ($fld1[10] - $mag);
+	next if $DELTA_DEP < abs ($fld1[9] - $dep);
+	next if $DELTA_LON < abs ($fld1[8] - $lon);
+	next if $DELTA_LAT < abs ($fld1[7] - $lat);
+
+	$fld1[1] += 100 if $fld1[1] < $CENTURY;
+	$pf_origin = timegm(0, $fld1[5], $fld1[4], $fld1[3],
+			    $fld1[2] - 1, $fld1[1]);
+	$pf_origin += $fld1[6];
+	next if $DELTA_ORG < abs ($pf_origin - $origin);
+
+	#print STDERR "@fld1\n";
+	print "$pickfile\n";
+	$FLAG = 0;
+	last;
+    }
+
+
+    #### two dir mode ################################################
+    if ($FLAG && $twodir_flag) {
+	opendir DIR, $twodir or die "Cannot open $twodir: $!";
+	@files2 = grep !/^\./, readdir DIR;
+	closedir DIR;
+	for ($i = 0; $i <= $#files2; $i++) {
+	    $pickfile2 = sprintf "%s/%s", $twodir, $files2[$i];
+	    ### print STDERR "$pickfile2\n";
+	    $pyr = substr($files2[$i], 0, 2);
+	    $pmon = substr($files2[$i], 2, 2);
+	    $pday = substr($files2[$i], 4, 2);
+	    $phr = substr($files2[$i], 7, 2);
+	    $pmin = substr($files2[$i], 9, 2);
+	    $psec = substr($files2[$i], 11, 2);
+	    # print "$pyr $pmon $pday $phr $pmin $psec\n";
+	    $p_origin = timegm($psec, $pmin, $phr, $pday, $pmon - 1, $pyr);
+	    
+	    next if $p_origin < $origin_min;
+	    next if $p_origin > $origin_max;
+	    
+	    #print "$pickfile2\n";
+	    open PICK, $pickfile2 or die "Cannot open $pickfile2: $!";
+	    $fflag = 1;
+	    while (<PICK>) {
+		if (/^#f/) {
+		    $fflag = 0;
+		    last;
+		}
+	    }
+	    close PICK;
+	    next if $fflag;
+	    #print "$pickfile2\n";
+	    
+	    chop;
+	    $fld1[1] = substr($_, 2, 4);
+	    $fld1[2] = substr($_, 6, 3);
+	    $fld1[3] = substr($_, 9, 3);
+	    $fld1[4] = substr($_, 12, 6);
+	    $fld1[5] = substr($_, 18, 3);
+	    $fld1[6] = substr($_, 21, 8);
+	    $fld1[7] = substr($_, 29, 11);
+	    $fld1[8] = substr($_, 40, 11);
+	    $fld1[9] = substr($_, 51, 8);
+	    $fld1[10] = substr($_, 59, 6);
+	    
+	    #print STDERR "\n@fld1\n";
+	    
+	    next if $DELTA_MAG < abs ($fld1[10] - $mag);
+	    next if $DELTA_DEP < abs ($fld1[9] - $dep);
+	    next if $DELTA_LON < abs ($fld1[8] - $lon);
+	    next if $DELTA_LAT < abs ($fld1[7] - $lat);
+	    
+	    $fld1[1] += 100 if $fld1[1] < $CENTURY;
+	    $pf_origin = timegm(0, $fld1[5], $fld1[4], $fld1[3],
+				$fld1[2] - 1, $fld1[1]);
+	    $pf_origin += $fld1[6];
+	    next if $DELTA_ORG < abs ($pf_origin - $origin);
+	    
+	    #print STDERR "@fld1\n";
+	    print "$pickfile2\n";
+	    $FLAG = 0;
+	    last;
+	}
+    }
+}
+
+print STDERR "\n";

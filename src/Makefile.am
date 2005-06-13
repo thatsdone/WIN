@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.35 2005/06/10 14:34:25 uehira Exp $
+# $Id: Makefile.am,v 1.35.2.1 2005/06/13 09:23:44 uehira Exp $
 #
 
 if SUNOS4
@@ -57,6 +57,7 @@ TAPE_USER=rtape fromtape wdisk wdiskts ras2rpdl ras2lips file_older raw2mon \
           $(TAPE_USER_MATH)
 ONLINE=order raw_mon wtape setexb timeout raw_raw raw_100 cormeisei shmdump \
        raw_ch extraw insert_raw insert_trg find_picks raw_shift ls8tel16_raw\
+       raw_clip \
        $(ONLINE_SO) $(ONLINE_MATH) $(ONL_FREEBSD)
 
 ONL_OPT_=robot
@@ -98,6 +99,7 @@ install-exec-hook:
 	(rm -f @bindir@/raw_rawd; cd @bindir@ && @LN_S@ raw_raw raw_rawd)
 	(rm -f @bindir@/wdisktsd; cd @bindir@ && @LN_S@ wdiskts wdisktsd)
 	(rm -f @bindir@/recvstatus3d; cd @bindir@ && @LN_S@ recvstatus3 recvstatus3d)
+	(rm -f @bindir@/raw_clipd; cd @bindir@ && @LN_S@ raw_clip raw_clipd)
 	(rm -f @bindir@/ls8tel16_rawd; cd @bindir@ && @LN_S@ ls8tel16_raw ls8tel16_rawd)
 
 win_SOURCES = win.c $(SUBFUNC_H)
@@ -279,6 +281,9 @@ raw_time_LDADD = -lm @LIBSHMGET@ $(GC_CHECK_LIB)
 
 recvstatus3_SOURCES = recvstatus3.c $(SUBFUNC_H) $(DAEMON_MODE) $(WIN_LOG) udpu.h udp_accept.c ls8tel.h
 recvstatus3_LDADD = @LIBNSL@ @LIBSOCKET@
+
+raw_clip_SOURCES = raw_clip.c $(SUBFUNC_H) $(DAEMON_MODE) $(WIN_LOG) $(WIN_UTIL) $(GC_CHECK_INCLUDE)
+raw_clip_LDADD = @LIBSHMGET@ $(GC_CHECK_LIB)
 
 ls8tel16_win_SOURCES = ls8tel16_win.c $(WIN_UTIL) $(SUBFUNC_H) $(GC_CHECK_INCLUDE) ls8tel.h ls8tel.c
 ls8tel16_win_LDADD = $(GC_CHECK_LIB)

@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.38 2005/01/12 08:47:37 uehira Exp $
+   $Id: win.c,v 1.38.2.1 2005/06/13 09:23:45 uehira Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -339,6 +339,8 @@ LOCAL
 #define PARAM_FINAL   14 /* directory for other hypos */
 #define PARAM_DPI     15 /* dot/inch of hardcopy printer */
 #define PARAM_TEMP    16 /* temporary working directory */
+#define PARAM_SSTRUCT 17 /* special structure */
+#define PARAM_SSTA    18 /* special staion */
 
 #define X_Z_CHN       0
 #define Y_Z_CHN       (PIXELS_PER_LINE*0)
@@ -6998,8 +7000,17 @@ get_calc()  /* get calculated arrival times for all stations */
   double sec,sec_ot;
   FILE *fp;
   char prog[NAMLEN],stan[NAMLEN],text_buf[LINELEN];
+  char sstr[NAMLEN], ssta[NAMLEN];
+  int  smode;
   read_parameter(PARAM_HYPO,prog);
   read_parameter(PARAM_STRUCT,stan);
+  smode=0;
+  smode+=read_parameter(PARAM_SSTRUCT,sstr);
+  smode+=read_parameter(PARAM_SSTA,ssta);
+  if(smode==2)
+    smode=1;
+  else
+    smode=0;
   /* write seis file */
   fp=fopen(ft.seis_file2,"w+");
   output_all(fp);
@@ -7014,8 +7025,13 @@ get_calc()  /* get calculated arrival times for all stations */
     ft.hypo.se,ft.hypo.alat,ft.hypo.along,ft.hypo.dep,ft.hypo.mag);
   fclose(fp);
   /* run hypo program */
-  sprintf(text_buf,"%s %s %s %s %s %s > /dev/null",
-    prog,stan,ft.seis_file2,ft.finl_file2,ft.rept_file2,ft.init_file2);
+  if(smode)
+    sprintf(text_buf,"%s -c %s -s %s %s %s %s %s %s > /dev/null",
+	    prog,ssta,sstr,stan,
+	    ft.seis_file2,ft.finl_file2,ft.rept_file2,ft.init_file2);
+  else
+    sprintf(text_buf,"%s %s %s %s %s %s > /dev/null",
+	    prog,stan,ft.seis_file2,ft.finl_file2,ft.rept_file2,ft.init_file2);
   system(text_buf);
   read_final(ft.finl_file2,&ft.hypoall);
   bcd_dec(tm_base,ft.ptr[0].time);
@@ -7428,8 +7444,17 @@ get_delta()  /* get calculated delta  for all stations */
   double sec,sec_ot,a;
   FILE *fp;
   char prog[NAMLEN],stan[NAMLEN],text_buf[LINELEN];
+  char sstr[NAMLEN], ssta[NAMLEN];
+  int  smode;
   read_parameter(PARAM_HYPO,prog);
   read_parameter(PARAM_STRUCT,stan);
+  smode=0;
+  smode+=read_parameter(PARAM_SSTRUCT,sstr);
+  smode+=read_parameter(PARAM_SSTA,ssta);
+  if(smode==2)
+    smode=1;
+  else
+    smode=0;
   /* write seis file */
   fp=fopen(ft.seis_file2,"w+");
   output_all(fp);
@@ -7444,8 +7469,13 @@ get_delta()  /* get calculated delta  for all stations */
 	  ft.hypo.se,ft.hypo.alat,ft.hypo.along,ft.hypo.dep,ft.hypo.mag);
   fclose(fp);
   /* run hypo program */
-  sprintf(text_buf,"%s %s %s %s %s %s > /dev/null",
-	  prog,stan,ft.seis_file2,ft.finl_file2,ft.rept_file2,ft.init_file2);
+  if(smode)
+    sprintf(text_buf,"%s -c %s -s %s %s %s %s %s %s > /dev/null",
+	    prog,ssta,sstr,stan,
+	    ft.seis_file2,ft.finl_file2,ft.rept_file2,ft.init_file2);
+  else
+    sprintf(text_buf,"%s %s %s %s %s %s > /dev/null",
+	    prog,stan,ft.seis_file2,ft.finl_file2,ft.rept_file2,ft.init_file2);
   system(text_buf);
   read_final(ft.finl_file2,&ft.hypoall);
   bcd_dec(tm_base,ft.ptr[0].time);
@@ -7514,8 +7544,17 @@ locate(flag,hint)
   FILE *fp;
   float init_lat,init_lon;
   char prog[NAMLEN],stan[NAMLEN],text_buf[LINELEN],*ptr;
+  char sstr[NAMLEN], ssta[NAMLEN];
+  int  smode;
   read_parameter(PARAM_HYPO,prog);
   read_parameter(PARAM_STRUCT,stan);
+  smode=0;
+  smode+=read_parameter(PARAM_SSTRUCT,sstr);
+  smode+=read_parameter(PARAM_SSTA,ssta);
+  if(smode==2)
+    smode=1;
+  else
+    smode=0;
   /* write and read seis file */
   fp=fopen(ft.seis_file,"w+");
   output_pick(fp);
@@ -7554,8 +7593,13 @@ locate(flag,hint)
     }
   fclose(fp);
   /* run hypo program */
-  sprintf(text_buf,"%s %s %s %s %s %s",prog,stan,ft.seis_file,ft.finl_file,
-    ft.rept_file,ft.init_file);
+  if(smode)
+    sprintf(text_buf,"%s -c %s -s %s %s %s %s %s %s",
+	    prog,ssta,sstr,stan,ft.seis_file,ft.finl_file,
+	    ft.rept_file,ft.init_file);
+  else
+    sprintf(text_buf,"%s %s %s %s %s %s",prog,stan,ft.seis_file,ft.finl_file,
+	    ft.rept_file,ft.init_file);
   if(flag==0) strcat(text_buf," > /dev/null");
   system(text_buf);
   bell();

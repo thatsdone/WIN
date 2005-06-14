@@ -1,4 +1,4 @@
-/* $Id: ls8tel_STS.c,v 1.1.2.2 2005/06/14 10:18:15 uehira Exp $ */
+/* $Id: ls8tel_STS.c,v 1.1.2.3 2005/06/14 10:47:20 uehira Exp $ */
 
 /*
  * Copyright (c) 2005 -
@@ -8,7 +8,7 @@
  */
 
 /*
- * This program read setting file(s) and print setting infomation.
+ * This program read setting file(s) and print setting information.
  */
 
 /*
@@ -23,9 +23,8 @@
 
 static char  *progname;
 static char  rcsid[] =
-   "$Id: ls8tel_STS.c,v 1.1.2.2 2005/06/14 10:18:15 uehira Exp $";
+   "$Id: ls8tel_STS.c,v 1.1.2.3 2005/06/14 10:47:20 uehira Exp $";
 
-static void usage(void);
 int main(int, char *[]);
 
 int
@@ -85,13 +84,4 @@ main(int argc, char *argv[])
     }
     (void)printf("\n");
   }
-}
-
-static void
-usage(void)
-{
-
-  (void)printf("%s\n", rcsid);
-  (void)printf("usage: %s ([status] [status] ...)\n", progname);
-  exit(1);
 }

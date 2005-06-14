@@ -1,4 +1,4 @@
-/* $Id: ls8tel_STM.c,v 1.1 2005/06/14 09:25:34 uehira Exp $ */
+/* $Id: ls8tel_STM.c,v 1.2 2005/06/14 10:41:02 uehira Exp $ */
 
 /*
  * Copyright (c) 2002 -
@@ -8,7 +8,7 @@
  */
 
 /*
- * This program read status file(s) and print time calibration infomation.
+ * This program read status file(s) and print time calibration information.
  */
 
 /*
@@ -23,9 +23,8 @@
 
 static char  *progname;
 static char  rcsid[] =
-   "$Id: ls8tel_STM.c,v 1.1 2005/06/14 09:25:34 uehira Exp $";
+   "$Id: ls8tel_STM.c,v 1.2 2005/06/14 10:41:02 uehira Exp $";
 
-static void usage(void);
 int main(int, char *[]);
 
 int
@@ -91,13 +90,4 @@ main(int argc, char *argv[])
     else
       (void)printf("\n");
   }
-}
-
-static void
-usage(void)
-{
-
-  (void)printf("%s\n", rcsid);
-  (void)printf("usage: %s ([status] [status] ...)\n", progname);
-  exit(1);
 }

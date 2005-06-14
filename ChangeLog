@@ -1,4 +1,9 @@
- $Id: ChangeLog,v 1.113 2005/06/10 14:34:25 uehira Exp $
+ $Id: ChangeLog,v 1.114 2005/06/14 09:25:34 uehira Exp $
+
+2005-06-14 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* added Daramark LS-8000SH (LS8TEL14/16 firmware) data utility
+	  ls8tel_STM, ls8tel_STS
+	* Version 1.1.67 released.
 
 2005-06-10 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* added Daramark LS-8000SH (LS8TEL14/16 firmware) data utility

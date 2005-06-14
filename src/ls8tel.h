@@ -1,4 +1,4 @@
-/* $Id: ls8tel.h,v 1.1 2005/06/09 16:50:38 uehira Exp $ */
+/* $Id: ls8tel.h,v 1.2 2005/06/14 09:25:34 uehira Exp $ */
 
 /*
  * Copyright (c) 2005
@@ -37,6 +37,10 @@
 #define LS8_AMP_MAX  32767
 #define LS8_AMP_MIN  -32768
 
+static int A8_speed[] = {1200, 2400, 4800, 9600, 19200};
+static int A8_sampling[] = {200, 100};
+static unsigned char A8_gain_mask = 0x7F;
+static int A8_gain[] = {0, 2, 10, 30, 100, 300, 900};
 
 WIN_blocksize ls8tel16_fix(unsigned char *, long *, long *, long *);
 

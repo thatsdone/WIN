@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.25 2005/06/10 14:34:25 uehira Exp $
+# $Id: Makefile.am,v 1.26 2005/06/14 09:25:34 uehira Exp $
 #
 #  Makefile.am in man subdirectory.
 #
@@ -15,7 +15,7 @@ WIN_MAN = _bj.1 _update.1 automan.1 autopick.1 cormeisei.1 dat.1 dewin.1 \
 	wed.1 wex.1 win.1 win2fix.1 winform.1 winformat.1 wtape.1 wtime.1 \
 	win2raw.1 shmx.1 wintowin.1 wintosac.1 wchasn.1 clean_nmx.1 winadd.1 \
 	pick2pick.1 relaym.1 raw_time.1 recvstatus3.1 mkpicknoise.1 \
-	ls8tel16_win.1 ls8tel16_raw.1
+	ls8tel16_win.1 ls8tel16_raw.1 ls8tel_STM.1 ls8tel_STS.1
 
 man_MANS = $(WIN_MAN)
 

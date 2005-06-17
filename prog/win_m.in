@@ -1,14 +1,14 @@
 #! @WISH@
 
 #
-# $Id: win_m.in,v 1.4 2005/06/17 02:17:18 uehira Exp $
+# $Id: win_m.in,v 1.5 2005/06/17 11:11:33 uehira Exp $
 #  win_m : ＷＩＮのピックマネージャー
 #
 #    Uehira Kenji (Original 96.2.29)
 #      Special thank to Fujie Gou
 #
 
-set VERSION      "2004.3.4"
+set VERSION      "2005.6.17"
 
 set INIT_PRM        "./win_m.prm"
 set WM_GEO          "-10+0"

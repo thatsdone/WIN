@@ -1,4 +1,4 @@
- $Id: ChangeLog,v 1.113.2.3 2005/06/17 02:55:48 uehira Exp $
+ $Id: ChangeLog,v 1.113.2.4 2005/06/17 03:01:17 uehira Exp $
 
 2005-06-17 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* win_m : bug fixed.
@@ -8,6 +8,7 @@
 	* added Daramark LS-8000SH (LS8TEL14/16 firmware) data utility
 	  ls8tel_STM, ls8tel_STS
 	* Version 1.1.67 released.
+
 2005-06-10 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* added Daramark LS-8000SH (LS8TEL14/16 firmware) data utility
 	  ls8tel16_win, ls8tel16_raw

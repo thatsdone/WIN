@@ -1,7 +1,7 @@
 #! @WISH@
 
 #
-# $Id: win_m.in,v 1.3 2004/03/04 09:49:05 uehira Exp $
+# $Id: win_m.in,v 1.4 2005/06/17 02:17:18 uehira Exp $
 #  win_m : ＷＩＮのピックマネージャー
 #
 #    Uehira Kenji (Original 96.2.29)
@@ -305,8 +305,11 @@ proc latest {} {
 
 	# set windir from WINDIR env
 	set windir [exec printenv WINDIR]
-	if {$windir==""} {
-	    set windir /dat
+#	if {$windir==""} {
+#	    set windir /dat
+#	}
+	if [info exists env(WINDIR)] {
+		$env(WINDIR)="/dat"
 	}
 	set rawname [exec cat $windir/raw/LATEST]
 	set datafile $windir/raw/$rawname

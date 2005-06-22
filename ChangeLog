@@ -1,4 +1,8 @@
- $Id: ChangeLog,v 1.115 2005/06/17 02:17:18 uehira Exp $
+ $Id: ChangeLog,v 1.116 2005/06/22 03:14:55 uehira Exp $
+
+2005-06-22 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* relaym : MF relay.c
+	  -N for passing through packet numbers
 
 2005-06-17 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* win_m : bug fixed.

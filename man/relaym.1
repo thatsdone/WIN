@@ -3,7 +3,7 @@
 relaym, relaymd - win 形式データのIP上の複数の宛先への中継
 .SH 形式
 .\" relaym [\-\fBDnr\fR] [\-\fBb\fI bufsiz\fR] [\-\fBd\fI\ delay\fR] [\-\fBf\fI ctlfile\fR]
-relaym [\-\fBDnr\fR] [\-\fBb\fI bufsiz\fR] [\-\fBf\fI ctlfile\fR]
+relaym [\-\fBDNnr\fR] [\-\fBb\fI bufsiz\fR] [\-\fBf\fI ctlfile\fR]
 .I inport
 .I paramfile
 [
@@ -11,7 +11,7 @@ relaym [\-\fBDnr\fR] [\-\fBb\fI bufsiz\fR] [\-\fBf\fI ctlfile\fR]
 ]
 .LP
 .\" relaymd [\-\fBnr\fR] [\-\fBb\fI bufsiz\fR] [\-\fBd\fI\ delay\fR] [\-\fBf\fI ctlfile\fR]
-relaymd [\-\fBnr\fR] [\-\fBb\fI bufsiz\fR] [\-\fBf\fI ctlfile\fR]
+relaymd [\-\fBNnr\fR] [\-\fBb\fI bufsiz\fR] [\-\fBf\fI ctlfile\fR]
 .I inport
 .I paramfile
 [
@@ -103,6 +103,9 @@ daemon モードで起動します。
 当てはまるルールがあったらそれが適用されます。最後まで当てはまるルールが
 なかったらそのパケットを受け入れます(つまり最後にはかならず "+" の行が
 あるのと同じ)。
+.IP "\fB\-N" 5
+受信パケットのパケット番号を検査しません。パケット番号フィールド
+(先頭の２バイト)は書き換えられず、つまり受信パケットがそのまま中継されます。
 .IP "\fB\-n" 5
 拒否すべき送り元アドレスからのパケットや重複して受信した再送パケット
 についての情報をログに報告しません。

@@ -1,6 +1,10 @@
-/* $Id: relaym.c,v 1.7 2005/03/17 06:59:09 uehira Exp $ */
+/* $Id: relaym.c,v 1.7.2.1 2005/06/22 03:19:02 uehira Exp $ */
 
-/* 2004/11/26 MF relay.c: 
+/*
+ * 2005-06-22 MF relay.c:
+ *   - -N for don't change (and ignore) packet numbers
+ *
+ * 2004-11-26 MF relay.c:
  *   - check_pno() and read_chfile() brought from relay.c
  *   - with host contol but without channel control (-f)
  *   - write host statistics on HUP signal
@@ -54,7 +58,7 @@
 #define MAXMSG       1025
 
 static char rcsid[] =
-  "$Id: relaym.c,v 1.7 2005/03/17 06:59:09 uehira Exp $";
+  "$Id: relaym.c,v 1.7.2.1 2005/06/22 03:19:02 uehira Exp $";
 
 /* destination host info. */
 struct hostinfo {
@@ -99,7 +103,7 @@ struct {
 static void usage(void);
 static struct hostinfo * read_param(const char *, int *);
 static int check_pno(struct sockaddr *, unsigned int, unsigned int,
-		     int, socklen_t, int, int);
+		     int, socklen_t, int, int, int);
 static void read_chfile(void);
 
 int main(int, char *[]);
@@ -122,7 +126,7 @@ main(int argc, char *argv[])
   int  bufno, bufno_f;
   int  destnum;
   int  c;
-  int  delay, noreq, sockbuf;
+  int  delay, noreq, sockbuf, nopno;
   char  msg[MAXMSG];
   FILE  *fp;
   int   i, j;
@@ -138,10 +142,10 @@ main(int argc, char *argv[])
     daemon_mode = 1;
 
   chfile[0] = '\0';
-  delay = noreq = no_pinfo = negate_channel = 0;
+  delay = noreq = no_pinfo = negate_channel = nopno = 0;
   sockbuf = 256;  /* default socket buffer size in KB */
 
-  while ((c = getopt(argc, argv, "b:Dd:f:nr")) != -1)
+  while ((c = getopt(argc, argv, "b:Dd:f:Nnr")) != -1)
     switch (c) {
     case 'b':           /* preferred socket buffer size (KB) */
       sockbuf=atoi(optarg);
@@ -152,8 +156,11 @@ main(int argc, char *argv[])
     case 'd':           /* delay time in msec */
       delay = atoi(optarg);
       break;
-    case 'f':   /* host control file */
+    case 'f':           /* host control file */
       strcpy(chfile, optarg);
+      break;
+    case 'N':           /* no pno */
+      nopno = no_pinfo = noreq = 1;
       break;
     case 'n':           /* supress info on abnormal packets */
       no_pinfo=1;
@@ -225,6 +232,8 @@ main(int argc, char *argv[])
       maxsoc1 = hinf->sock;
   }
 
+  if (nopno)
+    write_log("packet numbers pass through");
   if (noreq)
     write_log("resend request disabled");
 
@@ -283,7 +292,7 @@ main(int argc, char *argv[])
       /* check packet sequence number */
       if (check_pno(sa, (unsigned int)sbuf[bufno][0],
 		    (unsigned int)sbuf[bufno][1],
-		    ct->soc, fromlen, psize[bufno], noreq) < 0)
+		    ct->soc, fromlen, psize[bufno], noreq, nopno) < 0)
 	continue;
       
       /* delay */
@@ -293,7 +302,8 @@ main(int argc, char *argv[])
       /* send data */
       for (hinf = hinf_top; hinf != NULL; hinf = hinf->next) {
 	/*  printf("sq[hinf->ID]: sq[%d] = %d\n", hinf->ID, sq[hinf->ID]); */
-	sbuf[bufno][0] = sbuf[bufno][1] = sq[hinf->ID];
+	if (!nopno)
+	  sbuf[bufno][0] = sbuf[bufno][1] = sq[hinf->ID];
 	if (sendto(hinf->sock, sbuf[bufno],
 		   psize[bufno], 0, hinf->sa, hinf->salen) < 0)
 	  err_sys("main: sendto");
@@ -368,12 +378,12 @@ usage(void)
   if (daemon_mode)
     (void)fprintf(stderr,
 		  /*  "  %s (-nr) (-b [sbuf(KB)]) (-d [delay_ms]) (-f [host_file]) [in_port] [param] (logfile)\n", */
-		  "  %s (-nr) (-b [sbuf(KB)]) (-f [host_file]) [in_port] [param] (logfile)\n",
+		  "  %s (-Nnr) (-b [sbuf(KB)]) (-f [host_file]) [in_port] [param] (logfile)\n",
 		  progname);
   else
     (void)fprintf(stderr,
 		  /*  "  %s (-Dnr) (-b [sbuf(KB)]) (-d [delay_ms]) (-f [host_file]) [in_port] [param] (logfile)\n", */
-		  "  %s (-Dnr) (-b [sbuf(KB)]) (-f [host_file]) [in_port] [param] (logfile)\n",
+		  "  %s (-DNnr) (-b [sbuf(KB)]) (-f [host_file]) [in_port] [param] (logfile)\n",
 		  progname);
   exit(1);
 }
@@ -424,13 +434,14 @@ read_param(const char *prm, int *hostnum)
  */
 static int
 check_pno(struct sockaddr *from_addr, unsigned int pn, unsigned int pn_f,
-	  int sock, socklen_t fromlen, int n, int nr)
+	  int sock, socklen_t fromlen, int n, int nr, int nopno)
      /* struct sockaddr_in *from_addr;  sender address */
      /* unsigned int pn,pn_f;           present and former packet Nos. */
      /* int sock;                       socket */
      /* int fromlen;                    length of from_addr */
      /* int n;                          size of packet */
      /* int nr;                         no resend request if 1 */
+     /* int nopno;                      don't check pno */
 {
   int i, j;
   char host_[NI_MAXHOST];  /* host address */
@@ -461,6 +472,10 @@ check_pno(struct sockaddr *from_addr, unsigned int pn, unsigned int pn_f,
       return (-1);
     }
   }
+
+  if (nopno)
+    return (0);
+
   /*  printf("%s:%s\n", host_, port_); */
   for (i = 0; i < N_HOST; i++) {
     if (ht[i].host[0] == '\0')

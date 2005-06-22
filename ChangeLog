@@ -1,4 +1,4 @@
- $Id: ChangeLog,v 1.113.2.5 2005/06/17 11:13:39 uehira Exp $
+ $Id: ChangeLog,v 1.113.2.6 2005/06/22 03:19:01 uehira Exp $
 
 2005-06-17 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* win_m : bug fixed.
@@ -8,6 +8,19 @@
 	* added Daramark LS-8000SH (LS8TEL14/16 firmware) data utility
 	  ls8tel_STM, ls8tel_STS
 	* Version 1.1.67 released.
+
+2005-06-17 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* win_m : bug fixed.
+	* Version 1.1.68 released.
+
+2005-06-14 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* added Daramark LS-8000SH (LS8TEL14/16 firmware) data utility
+	  ls8tel_STM, ls8tel_STS
+	* Version 1.1.67 released.
+
+2005-06-22 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* relaym : MF relay.c
+	  -N for passing through packet numbers
 
 2005-06-17 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* win_m : bug fixed.

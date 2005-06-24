@@ -1,9 +1,10 @@
-/* $Id: recvs.c,v 1.5 2002/02/20 02:13:01 urabe Exp $ */
+/* $Id: recvs.c,v 1.5.2.1 2005/06/24 11:27:36 uehira Exp $ */
 /* "recvs.c"    receive sync frames      2000.3.14       urabe */
 /* 2000.3.21 */
 /* 2000.4.17 */
 /* 2000.4.24/2001.11.14 strerror() */
 /* 2001.11.14 ntohs() */
+/*                2005.6.24 don't change optarg's content (-o) */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -360,6 +361,7 @@ main(argc,argv)
   struct hostent *h;
   unsigned short host_port;
   unsigned char host_name[100];
+  char tb2[256];
 
   if(progname=strrchr(argv[0],'/')) progname++;
   else progname=argv[0];
@@ -383,13 +385,14 @@ main(argc,argv)
         aurora=1;
         break;
       case 'p':   /* host:port */
-        if((ptr=(unsigned char *)index(optarg,':'))==NULL)
+        strcpy(tb2,optarg);
+        if((ptr=(unsigned char *)index(tb2,':'))==NULL)
           {
           fprintf(stderr,"Illegal host:port\n");
           exit(-1);
           }
         *ptr=0;
-        strcpy(host_name,optarg);
+        strcpy(host_name,tb2);
         host_port=atoi(ptr+1);
         break;
       case 's':   /* send request resend packets to line */

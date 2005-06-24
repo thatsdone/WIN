@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.38.2.1 2005/06/13 09:23:45 uehira Exp $
+   $Id: win.c,v 1.38.2.2 2005/06/24 11:27:36 uehira Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -21,7 +21,7 @@
 #else
 #define NAME_PRG      "win32"
 #endif
-#define WIN_VERSION   "2005.1.4(+Hi-net)"
+#define WIN_VERSION   "2005.6.24(+Hi-net)"
 #define DEBUG_AP      0   /* for debugging auto-pick */
 /* 5:sr, 4:ch, 3:sec, 2:find_pick, 1:all */
 /************ HOW TO COMPILE THE PROGRAM **************************
@@ -4558,12 +4558,13 @@ main(argc,argv)
         auto_flag_hint=1;
         break;
       case 's':   /* specify find_picks server & port */
-        if(ptr=(unsigned char *)strchr(optarg,':'))
+        strcpy(tbuf,optarg);
+        if(ptr=(unsigned char *)strchr(tbuf,':'))
           {
           *ptr=0;
           ft.pick_server_port=atoi(ptr+1);
           }
-        strcpy(ft.pick_server,optarg);
+        strcpy(ft.pick_server,tbuf);
         break;
       case 't':   /* use temporary data file in temp dir */
         copy_file=1;

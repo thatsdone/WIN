@@ -1,4 +1,4 @@
-/* $Id: recvt.c,v 1.27 2005/02/20 13:56:17 urabe Exp $ */
+/* $Id: recvt.c,v 1.27.2.1 2005/06/24 11:27:36 uehira Exp $ */
 /* "recvt.c"      4/10/93 - 6/2/93,7/2/93,1/25/94    urabe */
 /*                2/3/93,5/25/94,6/16/94 */
 /*                1/6/95 bug in adj_time fixed (tm[0]--) */
@@ -48,6 +48,7 @@
 /*                2004.11.15 corrected byte-order of port no. in log */
 /*                2005.2.17 option -o [source host]:[port] for send request */
 /*                2005.2.20 option -f [ch_file] for additional ch files */
+/*                2005.6.24 don't change optarg's content (-o) */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -690,7 +691,7 @@ main(argc,argv)
     unsigned long c;    /* counter */
     unsigned char d[1];   /* data buffer */
     } *sh;
-  char tb[256];
+  char tb[256],tb2[256];
   struct ip_mreq stMreq;
   char mcastgroup[256]; /* multicast address */
   char interface[256]; /* multicast interface */
@@ -768,7 +769,8 @@ main(argc,argv)
         no_pinfo=1;
         break;
       case 'o':   /* host and port for request */
-       if(ptr=(unsigned char *)strchr(optarg,':'))
+        strcpy(tb2,optarg);
+        if(ptr=(unsigned char *)strchr(tb2,':'))
           {
           *ptr=0;
           host_port=atoi(ptr+1);
@@ -779,7 +781,7 @@ main(argc,argv)
           fprintf(stderr,"%s\n",tb);
           exit(1);
           }
-        strcpy(host_name,optarg);
+        strcpy(host_name,tb2);
         break;
       case 'p':   /* time limit after RT in minutes */
         post=atoi(optarg);

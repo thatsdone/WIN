@@ -1,7 +1,8 @@
- $Id: ChangeLog,v 1.113.2.8 2005/06/25 10:36:53 uehira Exp $
+ $Id: ChangeLog,v 1.113.2.9 2005/06/25 12:12:55 uehira Exp $
 
 2005-06-25 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* ls8tel16_raw.c : bug fixed.
+	* ls8tel_STM.c : bug fixed.
 	* configure.in: added AC_C_CHAR_UNSIGNED
 	* Version 1.1.70 released.
 

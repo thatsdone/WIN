@@ -1,9 +1,9 @@
 dnl ------------------------------------------------------------------------- 
-dnl $Id: configure.in,v 1.82.2.4 2005/06/24 11:27:36 uehira Exp $
+dnl $Id: configure.in,v 1.82.2.5 2005/06/25 10:36:53 uehira Exp $
 dnl -------------------------------------------------------------------------
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT(src/win.c)
-AM_INIT_AUTOMAKE(WIN_pkg, 1.1.69)
+AM_INIT_AUTOMAKE(WIN_pkg, 1.1.70)
 AM_CONFIG_HEADER(config.h)
 AC_ARG_PROGRAM
 AC_CANONICAL_TARGET
@@ -82,6 +82,7 @@ AC_STRUCT_TM
 dnl AC_STRUCT_TIMEZONE
 AC_TYPE_UID_T
 AC_C_BIGENDIAN
+AC_C_CHAR_UNSIGNED
 
 AC_MSG_CHECKING(for tm.tm_gmtoff)
 AC_EGREP_CPP(tm_gmtoff, [#include <time.h>],

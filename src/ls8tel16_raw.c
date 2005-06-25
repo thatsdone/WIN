@@ -1,4 +1,4 @@
-/* $Id: ls8tel16_raw.c,v 1.2 2005/06/25 08:47:42 uehira Exp $ */
+/* $Id: ls8tel16_raw.c,v 1.3 2005/06/25 11:14:02 uehira Exp $ */
 
 /*
  * Copyright (c) 2005
@@ -58,7 +58,7 @@
 /*  #define DEBUG       0 */
 
 static char rcsid[] =
-  "$Id: ls8tel16_raw.c,v 1.2 2005/06/25 08:47:42 uehira Exp $";
+  "$Id: ls8tel16_raw.c,v 1.3 2005/06/25 11:14:02 uehira Exp $";
 
 char *progname, *logfile;
 int  daemon_mode, syslog_mode;
@@ -144,7 +144,7 @@ main(int argc, char *argv[])
  
   /* log file */
   if (argc > 4) {
-    logfile = argv[5];
+    logfile = argv[4];
     /* check logfile can open */
     if ((fp_log = fopen(logfile, "a")) == NULL) {
       (void)fprintf(stderr, "logfile '%s': %s\n", logfile, strerror(errno));

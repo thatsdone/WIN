@@ -1,4 +1,4 @@
-/* $Id: ls8tel_STM.c,v 1.2 2005/06/14 10:41:02 uehira Exp $ */
+/* $Id: ls8tel_STM.c,v 1.3 2005/06/25 12:09:26 uehira Exp $ */
 
 /*
  * Copyright (c) 2002 -
@@ -23,7 +23,7 @@
 
 static char  *progname;
 static char  rcsid[] =
-   "$Id: ls8tel_STM.c,v 1.2 2005/06/14 10:41:02 uehira Exp $";
+   "$Id: ls8tel_STM.c,v 1.3 2005/06/25 12:09:26 uehira Exp $";
 
 int main(int, char *[]);
 
@@ -32,7 +32,7 @@ main(int argc, char *argv[])
 {
   FILE  *fp;
   static unsigned char  buf[LS8_A9_DLEN];
-  static char  *ptr;
+  static unsigned char  *ptr;
   short  err;
   int    i, sum;
 

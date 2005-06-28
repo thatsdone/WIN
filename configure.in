@@ -1,5 +1,5 @@
 dnl ------------------------------------------------------------------------- 
-dnl $Id: configure.in,v 1.87 2005/06/25 10:26:59 uehira Exp $
+dnl $Id: configure.in,v 1.88 2005/06/28 09:34:02 tsuru Exp $
 dnl -------------------------------------------------------------------------
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT(src/win.c)
@@ -261,6 +261,7 @@ AC_OUTPUT([Makefile src/Makefile man/Makefile etc/Makefile pick/Makefile
 	prog/shmx
 	prog/shmz
 	prog/winsimu
+	prog/shmck
 	prog/ch2mf
 	prog/ee_manager
 	prog/final2mf

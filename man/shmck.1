@@ -1,0 +1,45 @@
+.TH shmck 1W "2002.8.12" "WIN SYSTEM" "WIN SYSTEM" 
+.SH 名称 
+shmck - WINシステム用モニターツール 
+.SH 形式
+shmck
+.I ch ch ... 
+.LP
+.SH 解説
+shmck は、shmdump -tq で出力されるデータを
+入力とし、チャネルID
+.I \ ch
+にリストされているチャネルをX画面上に表示します。
+チャネルは、表示したい16進数のチャネル番号です。
+.LP
+shmck は引数なしで起動すると簡単な使用法を表示します。
+.SH オプション
+.IP "\fB\-m\fISEC" 5
+1トレースに表示す時間を秒で指定します．デフォルトは10秒です． 
+.IP "\fB\-n\fINLINE" 5
+1チャネルあたり表示するトレース数．デフォルトは6です
+.IP "\fB\-y\fIPIXEL" 5
+1チャネルあたりに確保するピクセル数．デフォルトは12です．
+.IP "\fB\-w\fICLIPLEBEL" 5
+クリップレベルを指定します．デフォルトは+-yLSBです.
+.IP "\fB\-l\fILTA" 5
+オフセット分を引く場合に何秒のデータを平均して引くかを指定します．デフォルトは1秒です．
+.IP "\fB\-p" 5
+標準入力を標準出力へ出力します．
+.IP "\fB\-x\fIWIDTH" 5
+1トレースのX方向のピクセル数. デフォルトは800です．
+.IP "\fB\-c\fICOLOR" 5
+標準では白でプロット,-c1で赤で表示,-c3で赤，水色，黄色の順で表示します．
+.IP "\fB\-f\fISHMDUMP.OUT" 5
+ファイルSHMDUMP.OUTからデータを読み込んで表示する．
+.IP "\fB\-t\fITABLE" 5
+WINのチャネルデーブルを読み込みます．観測点名および成分名を表示するようになります．
+.IP "\fB\-H\fIHOSTNAME" 5
+TCP接続時のオプション：HOSTNAMEに接続します．
+.IP "\fB\-P\fIPORT" 5
+TCP接続時のオプション：PORT番号に接続します．
+.SH ソース 
+.TP
+`shmck'
+.SH 関連事項
+shmdump(1W)

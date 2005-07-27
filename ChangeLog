@@ -1,4 +1,8 @@
- $Id: ChangeLog,v 1.119 2005/06/25 12:09:25 uehira Exp $
+ $Id: ChangeLog,v 1.120 2005/07/27 00:22:50 urabe Exp $
+
+2005-07-27 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
+	* win.c : bug in plot_mon() fixed.
+	* Version 1.1.71 released.
 
 2005-06-25 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* ls8tel16_raw.c : bug fixed.

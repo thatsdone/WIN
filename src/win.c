@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.38.2.2 2005/06/24 11:27:36 uehira Exp $
+   $Id: win.c,v 1.38.2.3 2005/07/27 06:19:39 uehira Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -21,7 +21,7 @@
 #else
 #define NAME_PRG      "win32"
 #endif
-#define WIN_VERSION   "2005.6.24(+Hi-net)"
+#define WIN_VERSION   "2005.7.27(+Hi-net)"
 #define DEBUG_AP      0   /* for debugging auto-pick */
 /* 5:sr, 4:ch, 3:sec, 2:find_pick, 1:all */
 /************ HOW TO COMPILE THE PROGRAM **************************
@@ -4307,11 +4307,11 @@ plot_mon(base_sec,mon_len,wmb,buf_mon)
           {
           y=ppt_half;
           y_min=(-(((*ptr++)-ofs)>>ft.stn[j].scale));
-          if(y_min>y)     y_min=yy+y-1;
+          if(y_min>=y)     y_min=yy+y-1;
           else if(y_min<(-y)) y_min=yy-y;
           else        y_min+=yy;
           y_max=(-(((*ptr++)-ofs)>>ft.stn[j].scale));
-          if(y_max>y)     y_max=yy+y-1;
+          if(y_max>=y)     y_max=yy+y-1;
           else if(y_max<(-y)) y_max=yy-y;
           else        y_max+=yy;
           y=bit_mask[x&0x7];

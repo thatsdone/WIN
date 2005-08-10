@@ -1,4 +1,4 @@
-/* $Id: pmon.c,v 1.13 2002/09/12 00:24:22 urabe Exp $ */
+/* $Id: pmon.c,v 1.14 2005/08/10 09:32:42 urabe Exp $ */
 /************************************************************************
 *************************************************************************
 **  program "pmon.c" for NEWS/SPARC                             *********
@@ -45,6 +45,7 @@
 **  2002.3.19 delete illegal USED file                          *********
 **  2002.3.24 cancel offset (-o)                                *********
 **  2002.9.12 delay time (-d)                                   *********
+**  2005.8.10 bug in strcmp2()/strncmp2() fixed : 0-6 > 7-9     *********
 **                                                              *********
 **  font files ("font16", "font24" and "font32") are            *********
 **  not necessary                                               *********
@@ -301,16 +302,16 @@ strncmp2(s1,s2,i)
 char *s1,*s2;             
 int i; 
   {
-  if(*s1=='0' && *s2=='9') return 1;
-  else if(*s1=='9' && *s2=='0') return -1;
+  if((*s1>='0' && *s1<='5') && (*s2<='9' && *s2>='6')) return 1;
+  else if((*s1<='9' && *s1>='7') && (*s2>='0' && *s2<='6')) return -1;
   else return strncmp(s1,s2,i);
   }
 
 strcmp2(s1,s2)        
 char *s1,*s2;
   {
-  if(*s1=='0' && *s2=='9') return 1;
-  else if(*s1=='9' && *s2=='0') return -1;
+  if((*s1>='0' && *s1<='5') && (*s2<='9' && *s2>='6')) return 1;
+  else if((*s1<='9' && *s1>='7') && (*s2>='0' && *s2<='6')) return -1;
   else return strcmp(s1,s2);
   }
 

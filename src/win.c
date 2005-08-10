@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.40 2005/07/27 00:22:50 urabe Exp $
+   $Id: win.c,v 1.41 2005/08/10 09:32:42 urabe Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -21,7 +21,7 @@
 #else
 #define NAME_PRG      "win32"
 #endif
-#define WIN_VERSION   "2005.7.27(+Hi-net)"
+#define WIN_VERSION   "2005.8.10(+Hi-net)"
 #define DEBUG_AP      0   /* for debugging auto-pick */
 /* 5:sr, 4:ch, 3:sec, 2:find_pick, 1:all */
 /************ HOW TO COMPILE THE PROGRAM **************************
@@ -964,8 +964,8 @@ strncmp2(s1,s2,i)
 char *s1,*s2;             
 int i; 
 {
-  if(*s1=='0' && *s2=='9') return 1;
-  else if(*s1=='9' && *s2=='0') return -1;
+  if((*s1>='0' && *s1<='5') && (*s2<='9' && *s2>='6')) return 1;
+  else if((*s1<='9' && *s1>='7') && (*s2>='0' && *s2<='6')) return -1;
   else return strncmp(s1,s2,i);
 }
 

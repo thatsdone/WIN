@@ -1,4 +1,4 @@
-/* $Id: rtape.c,v 1.8 2005/03/15 06:23:20 urabe Exp $ */
+/* $Id: rtape.c,v 1.9 2005/08/10 09:32:42 urabe Exp $ */
 /*
   program "rtape.c"
   9/16/89 - 11/06/90, 6/26/91, 10/30/91, 6/26/92  urabe
@@ -15,6 +15,7 @@
   2004.9.5 stopped restriction of N of chs for selection
   2005.3.15 introduced blpersec (blocks/sec) factor
             MAXSIZE : 1M -> 2M, TRY_LIMIT : 10 -> 16
+  2005.8.10 bug in strcmp2() fixed : 0-6 > 7-9
 */
 
 #ifdef HAVE_CONFIG_H
@@ -83,8 +84,8 @@
 strcmp2(s1,s2)        
 char *s1,*s2;
 {
-  if(*s1=='0' && *s2=='9') return 1;
-  else if(*s1=='9' && *s2=='0') return -1;
+  if((*s1>='0' && *s1<='5') && (*s2<='9' && *s2>='6')) return 1;
+  else if((*s1<='9' && *s1>='7') && (*s2>='0' && *s2<='6')) return -1;
   else return strcmp(s1,s2);
 }
 

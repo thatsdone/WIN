@@ -1,4 +1,9 @@
 /* $Log: find_picks.c,v $
+/* Revision 1.3  2005/08/10 09:32:42  urabe
+/* * win.c/events.c/fromtape.c/pmon.c/rtape.c/wdisk.c/wdiskts.c/wtape.c/
+/*   find_picks.c : bug in strcmp2()/strncmp2() fixed : 0-6 > 7-9
+/* * Version 1.1.72 released.
+/*
 /* Revision 1.2  2002/01/13 06:57:50  uehira
 /* join 'autoconf branch' to 'main branch'
 /*
@@ -12,6 +17,7 @@
 /* find_picks */
 /* search for pick files in pick dir */
 /* from win.c            2000.7.31 urabe */
+/* 2005.8.10 urabe bug in strncmp2() fixed : 0-6 > 7-9 */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -30,8 +36,8 @@ strncmp2(s1,s2,i)
 char *s1,*s2;             
 int i; 
 {
-  if(*s1=='0' && *s2=='9') return 1;
-  else if(*s1=='9' && *s2=='0') return -1;
+  if((*s1>='0' && *s1<='5') && (*s2<='9' && *s2>='6')) return 1;
+  else if((*s1<='9' && *s1>='7') && (*s2>='0' && *s2<='6')) return -1;
   else return strncmp(s1,s2,i);
 }
 

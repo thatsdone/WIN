@@ -1,4 +1,9 @@
- $Id: ChangeLog,v 1.120 2005/07/27 00:22:50 urabe Exp $
+ $Id: ChangeLog,v 1.121 2005/08/10 09:32:42 urabe Exp $
+
+2005-08-10 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
+	* win.c/events.c/fromtape.c/pmon.c/rtape.c/wdisk.c/wdiskts.c/wtape.c/
+	  find_picks.c : bug in strcmp2()/strncmp2() fixed : 0-6 > 7-9
+	* Version 1.1.72 released.
 
 2005-07-27 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
 	* win.c : bug in plot_mon() fixed.

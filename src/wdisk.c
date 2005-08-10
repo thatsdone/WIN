@@ -1,4 +1,4 @@
-/* $Id: wdisk.c,v 1.16 2004/12/15 06:39:45 urabe Exp $ */
+/* $Id: wdisk.c,v 1.17 2005/08/10 09:32:42 urabe Exp $ */
 /*
   program "wdisk.c"   4/16/93-5/13/93,7/2/93,7/5/94  urabe
                       1/6/95 bug in adj_time fixed (tm[0]--)
@@ -18,6 +18,7 @@
                       2004.9.4 added option -s (uehira)
                       2004.10.4 daemon mode (-D) (uehira)
                       2004.12.15 bug fixed. - use tm_min[i] instead of last_min
+                      2005.8.10 bug in strcmp2() fixed : 0-6 > 7-9
 */
 
 #ifdef HAVE_CONFIG_H
@@ -312,8 +313,8 @@ switch_file(tm)
 strcmp2(s1,s2)
 char *s1,*s2;
 {
-  if(*s1=='0' && *s2=='9') return 1;
-  else if(*s1=='9' && *s2=='0') return -1;
+  if((*s1>='0' && *s1<='5') && (*s2<='9' && *s2>='6')) return 1;
+  else if((*s1<='9' && *s1>='7') && (*s2>='0' && *s2<='6')) return -1;
   else return strcmp(s1,s2);
 }
 

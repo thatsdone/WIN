@@ -1,4 +1,5 @@
-/* $Id: wdiskts.c,v 1.5 2005/03/18 14:34:42 uehira Exp $ */
+/* $Id: wdiskts.c,v 1.6 2005/08/10 09:32:42 urabe Exp $ */
+/* 2005.8.10 urabe bug in strcmp2() fixed : 0-6 > 7-9 */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -585,8 +586,8 @@ switch_file(tm)
 strcmp2(s1,s2)
 char *s1,*s2;
 {
-  if(*s1=='0' && *s2=='9') return 1;
-  else if(*s1=='9' && *s2=='0') return -1;
+  if((*s1>='0' && *s1<='5') && (*s2<='9' && *s2>='6')) return 1;
+  else if((*s1<='9' && *s1>='7') && (*s2>='0' && *s2<='6')) return -1;
   else return strcmp(s1,s2);
 }
 

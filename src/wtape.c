@@ -1,4 +1,4 @@
-/* $Id: wtape.c,v 1.11 2004/01/29 02:31:36 urabe Exp $ */
+/* $Id: wtape.c,v 1.11.2.1 2005/08/11 02:26:54 uehira Exp $ */
 /*
   program "wtape.c"
   8/23/89 - 8/8/90, 6/27/91, 12/24/91, 2/29/92  urabe
@@ -14,6 +14,7 @@
   2004.1.20 avoid N*64*1024 byte block
             SIZE_MAX  1000000->2000000
   2004.1.29 avoid odd byte block size
+  2005.8.10 bug in strcmp2()/strncmp2() fixed : 0-6 > 7-9
 */
 
 #ifdef HAVE_CONFIG_H
@@ -64,7 +65,7 @@
   int  wait_min;
   char param_name[WIN_FILENAME_MAX];
   char *progname;
-  static char rcsid[]="$Id: wtape.c,v 1.11 2004/01/29 02:31:36 urabe Exp $";
+  static char rcsid[]="$Id: wtape.c,v 1.11.2.1 2005/08/11 02:26:54 uehira Exp $";
 
 switch_sig()
   {
@@ -76,16 +77,16 @@ strncmp2(s1,s2,i)
 char *s1,*s2;             
 int i; 
 {
-  if(*s1=='0' && *s2=='9') return 1;
-  else if(*s1=='9' && *s2=='0') return -1;
+  if((*s1>='0' && *s1<='5') && (*s2<='9' && *s2>='6')) return 1;
+  else if((*s1<='9' && *s1>='7') && (*s2>='0' && *s2<='6')) return -1;
   else return strncmp(s1,s2,i);
 }
 
 strcmp2(s1,s2)        
 char *s1,*s2;
 {
-  if(*s1=='0' && *s2=='9') return 1;
-  else if(*s1=='9' && *s2=='0') return -1;
+  if((*s1>='0' && *s1<='5') && (*s2<='9' && *s2>='6')) return 1;
+  else if((*s1<='9' && *s1>='7') && (*s2>='0' && *s2<='6')) return -1;
   else return strcmp(s1,s2);
 }
 

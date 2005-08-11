@@ -1,4 +1,4 @@
-/* $Id: fromtape.c,v 1.6 2005/03/15 06:23:20 urabe Exp $ */
+/* $Id: fromtape.c,v 1.6.2.1 2005/08/11 02:26:52 uehira Exp $ */
 /*
   program "fromtape.c"
   12/10/90 - 12/13/90, 9/19/91, 10/30/91, 6/19/92  urabe
@@ -12,6 +12,7 @@
   2002.4.30 MAXSIZE 500K->1M, SIZE_WBUF 50K->300K
   2005.3.15 introduced blpersec (blocks/sec) factor
             MAXSIZE : 1M -> 2M, TRY_LIMIT : 10 -> 16, SIZE_WBUF 300K->600K
+  2005.8.10 bug in strcmp2() fixed : 0-6 > 7-9
 */
 
 #ifdef HAVE_CONFIG_H
@@ -88,8 +89,8 @@
 strcmp2(s1,s2)        
 char *s1,*s2;
 {
-  if(*s1=='0' && *s2=='9') return 1;
-  else if(*s1=='9' && *s2=='0') return -1;
+  if((*s1>='0' && *s1<='5') && (*s2<='9' && *s2>='6')) return 1;
+  else if((*s1<='9' && *s1>='7') && (*s2>='0' && *s2<='6')) return -1;
   else return strcmp(s1,s2);
 }
 

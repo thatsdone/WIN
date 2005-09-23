@@ -1,4 +1,4 @@
-/* $Id: send_raw.c,v 1.22 2005/03/12 03:05:59 uehira Exp $ */
+/* $Id: send_raw.c,v 1.23 2005/09/23 21:39:37 urabe Exp $ */
 /*
     program "send_raw/send_mon.c"   1/24/94 - 1/25/94,5/25/94 urabe
                                     6/15/94 - 6/16/94
@@ -45,6 +45,7 @@
 	       2004.11.26 some systems (exp. Linux), select(2) changes timeout value
 	       2005.2.18 option -f for use and write list of requested chs
                2005.2.20 added fclose() in read_chfile()
+               2005.9.24 don't resend packet more than once
 */
 
 #ifdef HAVE_CONFIG_H
@@ -245,6 +246,7 @@ get_packet(bufno,no)
   while(i!=bufno && psize[i]>0)
     {
     if(sbuf[i][0]==no) return i;
+    else if(sbuf[i][1]==no) return -2; /* already resent */
     if(--i<0) i=nbuf-1;
     }
   return -1;  /* not found */

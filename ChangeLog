@@ -1,4 +1,10 @@
- $Id: ChangeLog,v 1.121 2005/08/10 09:32:42 urabe Exp $
+ $Id: ChangeLog,v 1.122 2005/09/25 23:23:04 urabe Exp $
+
+2005-09-26 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
+	* send_raw.c : don't resend packet more than once (for broadcast)
+	* recvt.c : introduced delayed resend-request (-y)
+		host:port pair is acceptable in  ctlfile
+	* Version 1.1.73 released.
 
 2005-08-10 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
 	* win.c/events.c/fromtape.c/pmon.c/rtape.c/wdisk.c/wdiskts.c/wtape.c/

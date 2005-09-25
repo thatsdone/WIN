@@ -1,4 +1,4 @@
-.TH send_raw 1W "2005.2.14" "WIN SYSTEM" "WIN SYSTEM"
+.TH send_raw 1W "2005.9.26" "WIN SYSTEM" "WIN SYSTEM"
 .SH 名称
 send_raw, send_mon, sendt_raw, sendt_mon, send_rawd, send_mond, sendt_rawd, sendt_mond - IPによる win 形式データの送信
 .SH 形式
@@ -102,7 +102,10 @@ send_raw, send_mon, sendt_raw, sendt_mon プロセスは
 空白またはタブで区切られた以降の項目は無視されます。また先頭
 が '#' である行も無視されます。
 .SH ネットワーク上の形式と再送プロトコル
-recvt(1W)を参照してください。
+recvt(1W)を参照してください。なお、send_raw, send_mon, sendt_raw, sendt_mon は
+１つのパケットに対する再送要求に対してはただ一度だけ再送します。
+これはブロードキャストアドレス等宛の送信の場合に、１つの消失パケットに
+対して複数の再送要求が来ることがあるためです。
 .SH オプション
 .IP \fB\-1 5
 １パケットに複数秒分のデータを詰め込むことをしません。データ量が

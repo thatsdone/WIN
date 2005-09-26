@@ -1,6 +1,11 @@
 /* $Log: find_picks.c,v $
-/* Revision 1.2.2.1  2005/08/11 02:26:52  uehira
-/* MFH
+/* Revision 1.2.2.2  2005/09/26 03:07:50  uehira
+/* MFH: WIN_pkg-1.1.73
+/*
+/* Revision 1.3  2005/08/10 09:32:42  urabe
+/* * win.c/events.c/fromtape.c/pmon.c/rtape.c/wdisk.c/wdiskts.c/wtape.c/
+/*   find_picks.c : bug in strcmp2()/strncmp2() fixed : 0-6 > 7-9
+/* * Version 1.1.72 released.
 /*
 /* Revision 1.2  2002/01/13 06:57:50  uehira
 /* join 'autoconf branch' to 'main branch'

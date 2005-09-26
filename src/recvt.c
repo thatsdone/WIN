@@ -1,4 +1,4 @@
-/* $Id: recvt.c,v 1.27.2.1 2005/06/24 11:27:36 uehira Exp $ */
+/* $Id: recvt.c,v 1.27.2.2 2005/09/26 03:07:50 uehira Exp $ */
 /* "recvt.c"      4/10/93 - 6/2/93,7/2/93,1/25/94    urabe */
 /*                2/3/93,5/25/94,6/16/94 */
 /*                1/6/95 bug in adj_time fixed (tm[0]--) */
@@ -49,6 +49,8 @@
 /*                2005.2.17 option -o [source host]:[port] for send request */
 /*                2005.2.20 option -f [ch_file] for additional ch files */
 /*                2005.6.24 don't change optarg's content (-o) */
+/*                2005.9.25 allow disorder of arriving packets */
+/*                2005.9.25 host(:port) in control file */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -87,22 +89,26 @@
 #define DEBUG1    0
 #define DEBUG2    0
 #define DEBUG3    0     /* -o */
+#define DEBUG4    0     /* -y */
 #define BELL      0
 #define MAXMESG   32768
-#define N_PACKET  128   /* N of old packets to be requested */  
+#define N_PACKET  64    /* N of old packets to be requested */  
 #define N_HOST    100   /* max N of hosts */  
-#define N_HIST    10    /*  length of packet history */
-#define N_CHFILE  30    /*  length of packet history */
+#define N_HIST    10    /* default length of packet history */
+#define N_CHFILE  30    /* N of channel files */
+#define N_PNOS    62    /* length of packet nos. history >=2 */
 
 unsigned char rbuf[MAXMESG],ch_table[65536];
 char *progname,logfile[256],chfile[N_CHFILE][256];
-int n_ch,negate_channel,hostlist[N_HOST][2],n_host,no_pinfo,n_chfile;
+int n_ch,negate_channel,hostlist[N_HOST][3],n_host,no_pinfo,n_chfile;
 int  daemon_mode, syslog_mode;
 
 struct {
     int host;
     int port;
-    int no;
+    int ppnos;	/* pointer for pnos */
+    unsigned int pnos[N_PNOS];
+    int nosf[4]; /* 4 segments x 64 */
     unsigned char nos[256/8];
     unsigned int n_bytes;
     unsigned int n_packets;
@@ -251,7 +257,7 @@ read_chfile()
   {
   FILE *fp;
   int i,j,k,ii,i_chfile;
-  char tbuf[1024],host_name[80],tb[256];
+  char tbuf[1024],host_name[80],tb[256],*ptr;
   struct hostent *h;
   static time_t ltime,ltime_p;
 
@@ -290,6 +296,15 @@ read_chfile()
             {
             if(sscanf(tbuf+1,"%s",host_name)>0) /* hostname */
               {
+              if((ptr=strchr(host_name,':'))==0)
+                {
+                hostlist[ii][2]=0;
+                }
+              else
+                {
+                *ptr=0;
+                hostlist[ii][2]=atoi(ptr+1);
+                }
               if(!(h=gethostbyname(host_name)))
                 {
                 sprintf(tb,"host '%s' not resolved",host_name);
@@ -299,9 +314,10 @@ read_chfile()
               memcpy((char *)&hostlist[ii][1],h->h_addr,4);
               if(*tbuf=='+') sprintf(tb,"allow");
               else sprintf(tb,"deny");
-              sprintf(tb+strlen(tb)," from host %d.%d.%d.%d",
+              sprintf(tb+strlen(tb)," from host %d.%d.%d.%d:%d",
  ((unsigned char *)&hostlist[ii][1])[0],((unsigned char *)&hostlist[ii][1])[1],
- ((unsigned char *)&hostlist[ii][1])[2],((unsigned char *)&hostlist[ii][1])[3]);
+ ((unsigned char *)&hostlist[ii][1])[2],((unsigned char *)&hostlist[ii][1])[3],
+                hostlist[ii][2]);
               write_log(logfile,tb);
               }
             }
@@ -405,15 +421,16 @@ read_chfile()
   signal(SIGHUP,(void *)read_chfile);
   }
 
-check_pno(from_addr,pn,pn_f,sock,fromlen,n,nr) /* returns -1 if duplicated */
+check_pno(from_addr,pn,pn_f,sock,fromlen,n,nr,req_delay) /* returns -1 if dup */
   struct sockaddr_in *from_addr;  /* sender address */
   unsigned int pn,pn_f;           /* present and former packet Nos. */
   int sock;                       /* socket */
   int fromlen;                    /* length of from_addr */
   int n;                          /* size of packet */
   int nr;                         /* no resend request if 1 */
+  int req_delay;                  /* packet count for delayed resend-request */
   {
-  int i,j;
+  int i,j,k,seg,ppnos_prev,ppnos_now,pn_prev,pn_now,dup;
   int host_;  /* 32-bit-long host address in network byte-order */
   int port_;  /* port No. in network byte-order */
   unsigned int pn_1;
@@ -421,14 +438,19 @@ check_pno(from_addr,pn,pn_f,sock,fromlen,n,nr) /* returns -1 if duplicated */
   unsigned char pnc;
   char tb[256];
 
+#if DEBUG4
+  printf("%d(%d)",pn,pn_f);
+#endif
   j=(-1);
+  dup=0;
   host_=from_addr->sin_addr.s_addr;
   port_=from_addr->sin_port;
   for(i=0;i<n_host;i++)
     {
-  struct hostent *h;
-    if(hostlist[i][0]==1 && (hostlist[i][1]==0 || hostlist[i][1]==host_)) break;
-    if(hostlist[i][0]==(-1) && (hostlist[i][1]==0 || hostlist[i][1]==host_))
+    if(hostlist[i][0]==1 && (hostlist[i][1]==0 || (hostlist[i][1]==host_
+      && (hostlist[i][2]==0 || hostlist[i][2]==ntohs(port_))))) break;
+    if(hostlist[i][0]==(-1) && (hostlist[i][1]==0 || (hostlist[i][1]==host_
+      && (hostlist[i][2]==0 || hostlist[i][2]==ntohs(port_)))))
       {
       if(!no_pinfo)
         {
@@ -445,9 +467,21 @@ check_pno(from_addr,pn,pn_f,sock,fromlen,n,nr) /* returns -1 if duplicated */
     if(ht[i].host==0) break;
     if(ht[i].host==host_ && ht[i].port==port_)
       {
-      j=ht[i].no;
-      ht[i].no=pn;
+      j=1;
+      ht[i].pnos[ht[i].ppnos]=pn;
+      if(++ht[i].ppnos==N_PNOS) ht[i].ppnos=0;
+      if((seg=(pn>>6)+2)>3) seg-=4;
+      if(ht[i].nosf[seg]) /* if 1, not cleared yet */
+        {
+        for(k=(seg<<3);k<(seg<<3)+8;k++) ht[i].nos[k]=0; /* clear bits */
+        ht[i].nosf[seg]=0; /* cleared */
+#if DEBUG4
+        printf("clr%d ",seg);
+#endif
+        }
+      if(ht[i].nos[pn>>3]&mask[pn&0x07]) dup=1 ; /* bit was already 1 */
       ht[i].nos[pn>>3]|=mask[pn&0x07]; /* set bit for the packet no */
+      ht[i].nosf[pn>>6]=1; /* filling the segment */
       ht[i].n_bytes+=n;
       ht[i].n_packets++;
       break;
@@ -463,8 +497,12 @@ check_pno(from_addr,pn,pn_f,sock,fromlen,n,nr) /* returns -1 if duplicated */
     {
     ht[i].host=host_;
     ht[i].port=port_;
-    ht[i].no=pn;
+    ht[i].pnos[(ht[i].ppnos=0)]=pn;
+    for(k=1;k<N_PNOS;k++) ht[i].pnos[0]=(-1);
+    ht[i].ppnos++;
+    for(k=0;k<32;k++) ht[i].nos[k]=0; /* clear all bits for pnos */
     ht[i].nos[pn>>3]|=mask[pn&0x07]; /* set bit for the packet no */
+    ht[i].nosf[pn>>6]=1;
     sprintf(tb,"registered host %d.%d.%d.%d:%d (%d)",
       ((unsigned char *)&host_)[0],((unsigned char *)&host_)[1],
       ((unsigned char *)&host_)[2],((unsigned char *)&host_)[3],ntohs(port_),i);
@@ -474,37 +512,79 @@ check_pno(from_addr,pn,pn_f,sock,fromlen,n,nr) /* returns -1 if duplicated */
     }
   else /* check packet no */
     {
-    pn_1=(j+1)&0xff;
-    if(!nr && (pn!=pn_1))
+    if((ppnos_prev=ht[i].ppnos-2-req_delay)<0) ppnos_prev+=N_PNOS;
+    if((ppnos_now=ht[i].ppnos-1-req_delay)<0) ppnos_now+=N_PNOS;
+    pn_prev=ht[i].pnos[ppnos_prev];
+    pn_now=ht[i].pnos[ppnos_now];
+    if(pn_prev>=0 && pn_now>=0)
       {
-      if(((pn-pn_1)&0xff)<N_PACKET) do
-        { /* send request-resend packet(s) */
-        pnc=pn_1;
-        sendto(sock,&pnc,1,0,(struct sockaddr *)from_addr,fromlen);
-        sprintf(tb,"request resend %s:%d #%d",
-          inet_ntoa(from_addr->sin_addr),ntohs(from_addr->sin_port),pn_1);
-        write_log(logfile,tb);
-#if DEBUG1
-        printf("<%d ",pn_1);
+#if DEBUG4
+      printf("(%d>%d)",pn_prev,pn_now);
 #endif
-        ht[i].nos[pn_1>>3]&=~mask[pn_1&0x07]; /* reset bit for the packet no */
-        } while((pn_1=(++pn_1&0xff))!=pn);
-      else
+      pn_1=(pn_prev+1)&0xff; /* expected */
+      if(!nr && (pn_now!=pn_1))
         {
-        sprintf(tb,"no request resend %s:%d #%d-#%d",
-          inet_ntoa(from_addr->sin_addr),ntohs(from_addr->sin_port),pn_1,pn);
-        write_log(logfile,tb);
+        if(((pn_now-pn_1)&0xff)<N_PACKET) do
+          { /* send request-resend packet(s) */
+          if(!(ht[i].nos[pn_1>>3]&mask[pn_1&0x07]))
+            {
+            pnc=pn_1;
+            sendto(sock,&pnc,1,0,(struct sockaddr *)from_addr,fromlen);
+            sprintf(tb,"request resend %s:%d #%d",
+              inet_ntoa(from_addr->sin_addr),ntohs(from_addr->sin_port),pn_1);
+            write_log(logfile,tb);
+#if DEBUG1
+            printf("<%d ",pn_1);
+#endif
+            }
+#if DEBUG4
+          else
+            {
+            sprintf(tb,"dropped but already received %s:%d #%d",
+              inet_ntoa(from_addr->sin_addr),ntohs(from_addr->sin_port),pn_1);
+            write_log(logfile,tb);
+            }
+#endif
+          } while((pn_1=(++pn_1&0xff))!=pn_now);
+        else
+          {
+          if(((pn_now-pn_1)&0xff)>192 && !dup)
+            {
+#if DEBUG4
+            sprintf(tb,"inverted order but OK %s:%d #%d",
+              inet_ntoa(from_addr->sin_addr),ntohs(from_addr->sin_port),pn_now);
+            write_log(logfile,tb);
+#endif
+            }
+          else
+            {
+            sprintf(tb,"no request resend %s:%d #%d-#%d",
+              inet_ntoa(from_addr->sin_addr),ntohs(from_addr->sin_port),pn_1,
+              (pn_now-1)&0xff);
+            write_log(logfile,tb);
+            }
+          }
         }
       }
     }
-  if(pn!=pn_f && ht[i].nos[pn_f>>3]&mask[pn_f&0x07])
-    {   /* if the resent packet is duplicated, return with -1 */
-    if(!no_pinfo)
+  if(pn!=pn_f)
+    {
+    if(ht[i].nos[pn_f>>3]&mask[pn_f&0x07])
+      {   /* if the resent packet is duplicated, return with -1 */
+      if(!no_pinfo)
+        {
+        sprintf(tb,"discard duplicated resent packet #%d for #%d",pn,pn_f);
+        write_log(logfile,tb);
+        }
+      return -1;
+      }
+#if DEBUG4
+    else if(!no_pinfo)
       {
-      sprintf(tb,"discard duplicated resent packet #%d for #%d",pn,pn_f);
+      sprintf(tb,"received resent packet #%d for #%d",pn,pn_f);
       write_log(logfile,tb);
       }
-    return -1;
+#endif
     }
   return 0;
   }
@@ -679,7 +759,7 @@ main(argc,argv)
   unsigned long uni;
   unsigned char *ptr,tm[6],*ptr_size,*ptr_size2,host_name[1024];
   int i,j,k,size,fromlen,n,re,nlen,sock,nn,all,pre,post,c,mon,pl,eobsize,
-    sbuf,noreq,no_ts,no_pno;
+    sbuf,noreq,no_ts,no_pno,req_delay;
   struct sockaddr_in to_addr,from_addr,host_addr;
   unsigned short to_port,host_port;
   extern int optind;
@@ -717,7 +797,7 @@ main(argc,argv)
     sprintf(tb,
 	    " usage : '%s (-AaBDnMNr) (-d [len(s)]) (-m [pre(m)]) (-p [post(m)]) \\\n\
               (-i [interface]) (-g [mcast_group]) (-s sbuf(KB)) \\\n\
-              (-o [src_host]:[src_port]) (-f [ch file]) \\\n\
+              (-o [src_host]:[src_port]) (-f [ch file]) (-y [req_delay])\\\n\
               [port] [shm_key] [shm_size(KB)] ([ctl file]/- ([log file]))'",
 	    progname);
 
@@ -727,7 +807,8 @@ main(argc,argv)
   sbuf=256;
   chhist.n=N_HIST;
   n_chfile=1;
-  while((c=getopt(argc,argv,"AaBDd:f:g:i:m:MNno:p:rs:"))!=EOF)
+  req_delay=0;
+  while((c=getopt(argc,argv,"AaBDd:f:g:i:m:MNno:p:rs:y:"))!=EOF)
     {
     switch(c)
       {
@@ -792,6 +873,15 @@ main(argc,argv)
       case 's':   /* preferred socket buffer size (KB) */
         sbuf=atoi(optarg);
         break;
+      case 'y':   /* packet count for delayed resend-request */
+        req_delay=atoi(optarg);
+        if(req_delay>N_PNOS-2 || req_delay<0)
+          {
+          fprintf(stderr," resend-request delay < %d !\n",N_PNOS-1);
+          fprintf(stderr,"%s\n",tb);
+          exit(1);
+          }
+        break;
       default:
         fprintf(stderr," option -%c unknown\n",c);
         fprintf(stderr,"%s\n",tb);
@@ -855,7 +945,8 @@ main(argc,argv)
      umask(022);
    }
 
-  sprintf(tb,"n_hist=%d size=%d",chhist.n,65536*chhist.n*sizeof(time_t));
+  sprintf(tb,"n_hist=%d size=%d req_delay=%d",chhist.n,
+    65536*chhist.n*sizeof(time_t),req_delay);
   write_log(logfile,tb);
 
   /* shared memory */
@@ -972,7 +1063,7 @@ main(argc,argv)
       if(no_pno) memcpy(ptr,rbuf,nn=n);
       else
         {
-        if(check_pno(&from_addr,rbuf[0],rbuf[1],sock,fromlen,n,noreq)<0) continue;
+        if(check_pno(&from_addr,rbuf[0],rbuf[1],sock,fromlen,n,noreq,req_delay)<0) continue;
         memcpy(ptr,rbuf+2,nn=n-2);
         }
       ptr+=nn;
@@ -1010,7 +1101,7 @@ main(argc,argv)
       continue;
       }
 
-    if(check_pno(&from_addr,rbuf[0],rbuf[1],sock,fromlen,n,noreq)<0) continue;
+    if(check_pno(&from_addr,rbuf[0],rbuf[1],sock,fromlen,n,noreq,req_delay)<0) continue;
 
   /* check packet ID */
     if(rbuf[2]<0xA0)

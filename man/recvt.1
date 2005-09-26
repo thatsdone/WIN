@@ -1,4 +1,4 @@
-.TH recvt 1W "2005.2.20" "WIN SYSTEM" "WIN SYSTEM"
+.TH recvt 1W "2005.9.26" "WIN SYSTEM" "WIN SYSTEM"
 .UC 4
 .SH 名称
 recvt, recvtd - IPによる win 形式データの受信
@@ -8,7 +8,7 @@ recvt, recvtd - IPによる win 形式データの受信
 recvt [\-\fBAaDBnMNr\fR] [\-\fBd\fI pkts\fR] [\-\fBf\fI chfile\fR]
 [\-\fBg\fI group\fR]
 [\-\fBi\fI interface\fR] [\-\fBm\fI before\fR] [\-\fBo\fI src_host:src_port\fR]
-[\-\fBp\fI after\fR] [\-\fBs\fI bufsiz\fR]
+[\-\fBp\fI after\fR] [\-\fBs\fI bufsiz\fR] [\-\fBy\fI req_delay\fR]
 .I port
 .I shmkey
 .I shmsize
@@ -21,7 +21,7 @@ recvt [\-\fBAaDBnMNr\fR] [\-\fBd\fI pkts\fR] [\-\fBf\fI chfile\fR]
 recvtd [\-\fBAaBnMNr\fR] [\-\fBd\fI pkts\fR] [\-\fBf\fI chfile\fR]
 [\-\fBg\fI group\fR]
 [\-\fBi\fI interface\fR] [\-\fBm\fI before\fR] [\-\fBo\fI src_host:src_port\fR]
-[\-\fBp\fI after\fR] [\-\fBs\fI bufsiz\fR]
+[\-\fBp\fI after\fR] [\-\fBs\fI bufsiz\fR] [\-\fBy\fI req_delay\fR]
 .I port
 .I shmkey
 .I shmsize
@@ -75,13 +75,14 @@ recvtd は daemon モードで起動します。recvt でオプション
 ホスト制御行は、
 .nf
 
-       -host   パケットがhostからであれば捨てる
-       +host   パケットがhostからであれば受け入れる
-       +       パケットを受け入れる
-       -       パケットを捨てる
+       -host[:port]   パケットがhost[:port]からであれば捨てる
+       +host[:port]   パケットがhost[:port]からであれば受け入れる
+       +              パケットを受け入れる
+       -              パケットを捨てる
 
 .fi
-の形式で書かれたルールです。
+の形式で書かれたルールです。ホスト名のあとに:で区切ってポート番号を
+書いた場合は、ホストとポートの組が一致した場合にのみ有効になります。
 ホスト制御については、パケットごとにルールを上から当てはめていき、
 当てはまるルールがあったらそれが適用されます。最後まで当てはまるルールが
 なかったらそのパケットを受け入れます(つまり最後にはかならず "+" の行が
@@ -387,6 +388,15 @@ DVB衛星配信ボードによる受信のような一方通行の伝送路の場合には、
 .I bufsiz
 KBにします。ただしこれはシステムで許される値の範囲でなければ
 なりません。デフォルトは256KBです。
+.IP "\fB\-y \fIreq_delay" 5
+再送要求するタイミングを
+.I req_delay
+パケット分だけ遅らせます。これにより、伝送中にパケット順が
+入れ替わってパケット番号が不連続になっても、
+.I req_delay
+パケットだけ待つことによって追い越されたパケットが到着すれば、
+それに対する再送要求を出さなくてもすむことがあります。
+最大60までの値が指定できます。
 .SH 制御ファイルの設定例
 次の２通りの場合は、いずれもホスト goodhost からのすべてのチャネルを受け入れ、
 それ以外のホストからのデータは捨てます。

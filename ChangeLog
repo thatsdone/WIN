@@ -1,4 +1,8 @@
- $Id: ChangeLog,v 1.122 2005/09/25 23:23:04 urabe Exp $
+ $Id: ChangeLog,v 1.123 2005/12/19 08:22:32 urabe Exp $
+
+2005-12-19 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
+        * win.c : fixed a bug in picking S (line#3803)
+	* Version 1.1.74 released.
 
 2005-09-26 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
 	* send_raw.c : don't resend packet more than once (for broadcast)

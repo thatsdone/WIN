@@ -1,4 +1,7 @@
 /* $Log: find_picks.c,v $
+/* Revision 1.2.2.3  2005/12/20 10:34:47  uehira
+/* MFC
+/*
 /* Revision 1.2.2.2  2005/09/26 03:07:50  uehira
 /* MFH: WIN_pkg-1.1.73
 /*

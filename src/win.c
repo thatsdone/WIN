@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.38.2.4 2005/08/11 02:26:53 uehira Exp $
+   $Id: win.c,v 1.38.2.5 2005/12/20 10:34:47 uehira Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -21,7 +21,7 @@
 #else
 #define NAME_PRG      "win32"
 #endif
-#define WIN_VERSION   "2005.8.10(+Hi-net)"
+#define WIN_VERSION   "2005.12.19(+Hi-net)"
 #define DEBUG_AP      0   /* for debugging auto-pick */
 /* 5:sr, 4:ch, 3:sec, 2:find_pick, 1:all */
 /************ HOW TO COMPILE THE PROGRAM **************************
@@ -3802,7 +3802,7 @@ fprintf(stderr,"%2d.%03d - %2d.%03d\n",pt1.sec1,pt1.msec1,pt1.sec2,pt1.msec2);
     pt_ss=ft.pick[idx][S];
     if(ft.pick[idx][P].valid &&
         ((double)pt_ss.sec1+(double)pt_ss.msec1*0.001 <
-         (double)ft.pick[idx][P].sec2+(double)ft.pick[idx][P].msec2*0.001));
+         (double)ft.pick[idx][P].sec2+(double)ft.pick[idx][P].msec2*0.001))
       {
       pt_ss.sec1=ft.pick[idx][P].sec2;
       pt_ss.msec1=ft.pick[idx][P].msec2;

@@ -1,6 +1,6 @@
 #! @WISH@
 #
-# $Id: shmz.in,v 1.4 2004/09/23 09:11:30 tsuru Exp $
+# $Id: shmz.in,v 1.4.2.1 2006/01/18 04:55:48 uehira Exp $
 # shmz
 # 2004.04.28- (C) Hiroshi TSURUOKA / All Rights Reserved.
 #
@@ -9,8 +9,9 @@
 #         0.9.3      09/20 add socket connection
 #         1.0.0      09/20 
 #         1.1        09/23     flexible chs & filter option etc.
+#         1.2   2006/01/17 sprintf -> format
 #
-set version 1.1
+set version 1.2
 
 # NR f77 -> tcl
 # 2002/08/12 Hiroshi TSURUOKA
@@ -401,26 +402,41 @@ while {![eof $fp]} {
 	    #		set ny [expr $mm%$nline]
 	    if { $freq2 > 0 } {
 		if { $order == 1 } { 
-		    if { $nx == 0 } {
-			for { set xx 0 } { $xx < $nsec } { incr xx } {
-			    set deletetag($j) sprintf("line%02d%02d%02d",$xx,$ny,$j)
-			    eval .v($j).canvas($j) delete $deletetag($j)
-			}
-		    }
+                  if { $nline > 1 } {
+                    if { $nx == 0 } {
+                        for { set xx 0 } { $xx < $nsec } { incr xx } {
+                            set deletetag($j) [format "line%02d%02d%02d" $xx $ny $j]
+                            eval .v($j).canvas($j) delete $deletetag($j)
+                        }
+                    }
+                  } else {
+                    if { $nx == 0 } {
+                        for { set xx 0 } { $xx < [expr $nsec/2] } { incr xx } {
+                            set deletetag($j) [format "line%02d%02d%02d" $xx $ny $j]
+                            eval .v($j).canvas($j) delete $deletetag($j)
+                        }
+                    }
+                    if { $nx == [expr $nsec/2] } {
+                        for { set xx [expr $nsec/2] } { $xx < $nsec } { incr xx } {
+                            set deletetag($j) [format "line%02d%02d%02d" $xx $ny $j]
+                            eval .v($j).canvas($j) delete $deletetag($j)
+                        }
+                    }
+                  }
 		}
-		set linetag($j) sprintf("line%02d",$j)
+		set linetag($j) [format "line%02d" $j]
 		eval .v($j).canvas($j) delete $linetag($j)
 		eval .v($j).canvas($j) create line [expr $wx*($nx+1)] [expr -$wy+$wy*($ny+1.0+$wdy)] [expr $wx*($nx+1)] [expr $wy+$wy*($ny+1.0+$wdy)] -fill blue -width 1 -tags $linetag($j)
 		#			eval .v($j).canvas($j) create bitmap [expr $wx*($nx+1)] [expr $wy*($ny+1.0+$wdy)] -bitmap hourglass -foreground $color -tags $linetag($j)
 		set chtime($j) [format "%02d:%02d" $mi $sc]
 		set chtimehhmm($j) [format "%02d:%02d" $hr $mi]
-		set tag($j) sprintf("line%02d%02d%02d",$nx,$ny,$j)
+		set tag($j) [format "line%02d%02d%02d" $nx $ny $j]
 		eval .v($j).canvas($j) delete $tag($j)
 		eval .v($j).canvas($j) create line $g($j) -fill blue -tags $tag($j) -width 1
 		eval .v($j).canvas($j) itemconfigure $tag0($j) -fill $color
 		set tag0($j) $tag($j)
 		if { $mm%$min==0 } {
-		    set texttag($j) sprintf("text%02d",$ny)
+		    set texttag($j) [format "text%02d" $ny]
 		    eval .v($j).canvas0 delete $texttag($j)
 		    eval .v($j).canvas0 create text 25 [expr $wy*($ny+1.0+$wdy)] -fill white -text $chtimehhmm($j) -anchor center -tags $texttag($j)
 		}

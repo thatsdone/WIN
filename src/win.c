@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.42 2005/12/19 08:22:32 urabe Exp $
+   $Id: win.c,v 1.43 2006/01/19 06:10:09 nakagawa Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -21,7 +21,7 @@
 #else
 #define NAME_PRG      "win32"
 #endif
-#define WIN_VERSION   "2005.12.19(+Hi-net)"
+#define WIN_VERSION   "2006.01.19(+Hi-net)"
 #define DEBUG_AP      0   /* for debugging auto-pick */
 /* 5:sr, 4:ch, 3:sec, 2:find_pick, 1:all */
 /************ HOW TO COMPILE THE PROGRAM **************************
@@ -6230,11 +6230,11 @@ proc_main()
 		fflush(stdin);
 		raise_ttysw(1);
 		while (1) {
-		  find_wchid=-1;
+		  find_wchid=-1; ret=0;
 		  fprintf(stderr,"Please Input Station Chnannel ID ...>");
 		  fgets(cmdbuf,LINELEN,stdin);
 		  cmdbuf[strlen(cmdbuf)-1]='\0';
-		  ret=sscanf(cmdbuf,"%x",&find_wchid);
+		  if(cmdbuf[0]=='#') ret=sscanf(cmdbuf+1,"%x",&find_wchid);
 		  if(ret!=1) {
 		    /*fprintf(stderr,":%s:",cmdbuf);*/
 		    for(i=0;i<ft.n_ch;i++){

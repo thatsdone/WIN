@@ -1,4 +1,8 @@
- $Id: ChangeLog,v 1.113.2.14 2005/12/20 10:34:46 uehira Exp $
+ $Id: ChangeLog,v 1.113.2.15 2006/01/19 07:12:44 uehira Exp $
+
+2006-01-19  Shigeki Nakagawa  <nakagawa@eri.u-tokyo.ac.jp>
+	* src/win.c: fixed a bug in searching channel (line#6237)
+	* Version 1.1.75 released.
 
 2005-12-19 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
         * win.c : fixed a bug in picking S (line#3803)

@@ -1,4 +1,7 @@
 /* $Log: find_picks.c,v $
+/* Revision 1.2.2.4  2006/01/19 07:12:44  uehira
+/* MFC
+/*
 /* Revision 1.2.2.3  2005/12/20 10:34:47  uehira
 /* MFC
 /*

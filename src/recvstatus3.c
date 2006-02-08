@@ -1,4 +1,4 @@
-/* $Id: recvstatus3.c,v 1.7 2005/06/09 16:50:38 uehira Exp $ */
+/* $Id: recvstatus3.c,v 1.8 2006/02/08 15:33:35 uehira Exp $ */
 
 /* 
  * recvstatus3 :
@@ -50,7 +50,7 @@
 #define PATHMAX      1024
 
 static char rcsid[] =
-  "$Id: recvstatus3.c,v 1.7 2005/06/09 16:50:38 uehira Exp $";
+  "$Id: recvstatus3.c,v 1.8 2006/02/08 15:33:35 uehira Exp $";
 
 char *progname, *logfile;
 int  daemon_mode, syslog_mode;
@@ -114,6 +114,7 @@ main(int argc, char *argv[])
 
   /* check make directory */
   dirtop = argv[1];
+#if HAVE_MKDTEMP
   (void)snprintf(dirname, sizeof(dirname), "%s/LS8000SH_XXXXXX", dirtop);
   if ((ptname = mkdtemp(dirname)) == NULL) {
     (void)fprintf(stderr, "%s: %s\n", strerror(errno), dirname);
@@ -121,6 +122,16 @@ main(int argc, char *argv[])
   }
   /*  (void)fprintf(stderr, "%s\n", ptname); */
   (void)rmdir(ptname);
+#else
+  (void)fprintf(stderr, "Warning: This program is not safe. Be careful.\n");
+  (void)snprintf(dirname, sizeof(dirname),
+		 "%s/LS8000SH_%u", dirtop, (unsigned int)getpid());
+  if (mkdir(dirname, 0755)) {
+    (void)fprintf(stderr, "%s: %s\n", strerror(errno), dirname);
+    usage();
+  }
+  (void)rmdir(dirname);
+#endif
 
   /* input port: number or service name */
   input_port = argv[0];

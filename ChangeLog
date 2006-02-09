@@ -1,4 +1,8 @@
- $Id: ChangeLog,v 1.113.2.15 2006/01/19 07:12:44 uehira Exp $
+ $Id: ChangeLog,v 1.113.2.16 2006/02/09 02:43:50 uehira Exp $
+
+2006-02-09  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* check mkdtemp(3)
+	* Version 1.1.76 released.
 
 2006-01-19  Shigeki Nakagawa  <nakagawa@eri.u-tokyo.ac.jp>
 	* src/win.c: fixed a bug in searching channel (line#6237)

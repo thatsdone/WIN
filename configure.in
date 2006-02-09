@@ -1,9 +1,9 @@
 dnl ------------------------------------------------------------------------- 
-dnl $Id: configure.in,v 1.82.2.11 2006/01/19 07:12:44 uehira Exp $
+dnl $Id: configure.in,v 1.82.2.12 2006/02/09 02:43:50 uehira Exp $
 dnl -------------------------------------------------------------------------
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT(src/win.c)
-AM_INIT_AUTOMAKE(WIN_pkg, 1.1.75)
+AM_INIT_AUTOMAKE(WIN_pkg, 1.1.76-SEVO)
 AM_CONFIG_HEADER(config.h)
 AC_ARG_PROGRAM
 AC_CANONICAL_TARGET
@@ -105,7 +105,7 @@ dnl Checks for library functions.
 AC_PROG_GCC_TRADITIONAL
 AC_FUNC_MEMCMP
 AC_TYPE_SIGNAL
-AC_CHECK_FUNCS(mktime timelocal select socket strerror strtol snprintf statfs)
+AC_CHECK_FUNCS(mktime timelocal select socket strerror strtol snprintf statfs mkdtemp)
 
 dnl -------------------------------------------------------------------------
 dnl check for ipv6 option (from http://www.itojun.org)

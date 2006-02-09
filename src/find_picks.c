@@ -1,12 +1,6 @@
 /* $Log: find_picks.c,v $
-/* Revision 1.2.2.4  2006/01/19 07:12:44  uehira
+/* Revision 1.2.2.5  2006/02/09 02:43:50  uehira
 /* MFC
-/*
-/* Revision 1.2.2.3  2005/12/20 10:34:47  uehira
-/* MFC
-/*
-/* Revision 1.2.2.2  2005/09/26 03:07:50  uehira
-/* MFH: WIN_pkg-1.1.73
 /*
 /* Revision 1.3  2005/08/10 09:32:42  urabe
 /* * win.c/events.c/fromtape.c/pmon.c/rtape.c/wdisk.c/wdiskts.c/wtape.c/

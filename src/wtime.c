@@ -1,17 +1,9 @@
-/* $Log: wtime.c,v $
-/* Revision 1.2  2002/01/13 06:57:52  uehira
-/* join 'autoconf branch' to 'main branch'
+/* $Id: wtime.c,v 1.3 2006/03/18 11:22:16 uehira Exp $ */
+
 /*
-/* Revision 1.1.2.1  2001/11/02 11:43:41  uehira
-/* change and add files for automake-1.5 & autoconf-2.13.
-/*
-/* Revision 1.1  2000/08/10 07:40:57  urabe
-/* find_picks : pick file searching server for win
-/* wtime      : time shift tool for WIN format file
-/*
-program "wtime.c"
-"wchch" shifts time of a win format data file
-2000.7.30   urabe
+  program "wtime.c"
+  "wchch" shifts time of a win format data file
+  2000.7.30   urabe
 */
 
 #ifdef HAVE_CONFIG_H

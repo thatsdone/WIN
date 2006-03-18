@@ -1,4 +1,8 @@
- $Id: ChangeLog,v 1.125 2006/02/08 15:33:35 uehira Exp $
+ $Id: ChangeLog,v 1.126 2006/03/18 11:22:16 uehira Exp $
+
+2006-03-18  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* win2raw: added new mode in '-m' option.
+	* Version 1.1.77 released.
 
 2006-02-09  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* check mkdtemp(3)

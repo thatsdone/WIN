@@ -1,22 +1,5 @@
-/* $Log: find_picks.c,v $
-/* Revision 1.2.2.5  2006/02/09 02:43:50  uehira
-/* MFC
-/*
-/* Revision 1.3  2005/08/10 09:32:42  urabe
-/* * win.c/events.c/fromtape.c/pmon.c/rtape.c/wdisk.c/wdiskts.c/wtape.c/
-/*   find_picks.c : bug in strcmp2()/strncmp2() fixed : 0-6 > 7-9
-/* * Version 1.1.72 released.
-/*
-/* Revision 1.2  2002/01/13 06:57:50  uehira
-/* join 'autoconf branch' to 'main branch'
-/*
-/* Revision 1.1.2.1  2001/11/02 11:43:36  uehira
-/* change and add files for automake-1.5 & autoconf-2.13.
-/*
-/* Revision 1.1  2000/08/10 07:40:57  urabe
-/* find_picks : pick file searching server for win
-/* wtime      : time shift tool for WIN format file
-/* */
+/* $Id: find_picks.c,v 1.2.2.6 2006/03/18 11:29:21 uehira Exp $
+
 /* find_picks */
 /* search for pick files in pick dir */
 /* from win.c            2000.7.31 urabe */

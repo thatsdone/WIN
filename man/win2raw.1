@@ -1,8 +1,8 @@
-.TH win2raw 1W "2002.7.23" "WIN SYSTEM" "WIN SYSTEM"
+.TH win2raw 1W "2006.3.18" "WIN SYSTEM" "WIN SYSTEM"
 .SH 名称
 win2raw - win 形式ファイルの1分ファイルへの分割
 .SH 形式
-win2raw [ \-uv ] [ \-m h|d ]
+win2raw [ \-uv ] [ \-m h|h1|d ]
 .I dirname
 [
 .I file
@@ -29,8 +29,10 @@ win2raw は引数なしで起動すると簡単な使用法を表示します。
 \-m \fImode
 分割モードをセットします。
 .nf
-h: 1時間ファイルに分割 (YYMMDD.hh 形式)
-d: 1日ファイルに分割 (YYMMDD 形式)
+h : 1時間ファイルに分割 (YYMMDD.hh 形式)
+h1: 1時間ファイルに分割 (YYMMDDhh 形式)
+    wdisk60(1W) の書き出し形式と同じです。
+d : 1日ファイルに分割 (YYMMDD 形式)
 .fi
 .TP
 \-u

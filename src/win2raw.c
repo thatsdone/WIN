@@ -1,5 +1,5 @@
 /*
- * $Id: win2raw.c,v 1.5 2004/09/13 10:10:37 uehira Exp $
+ * $Id: win2raw.c,v 1.5.2.1 2006/03/18 11:29:22 uehira Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -16,7 +16,7 @@
 #include "subst_func.h"
 
 static const char  rcsid[] =
-   "$Id: win2raw.c,v 1.5 2004/09/13 10:10:37 uehira Exp $";
+   "$Id: win2raw.c,v 1.5.2.1 2006/03/18 11:29:22 uehira Exp $";
 static char  *progname;
 
 static void usage(void);
@@ -27,14 +27,15 @@ int main(int, char *[]);
 /*
  * Divide win file into
  *  mode 5: 1 minute file (YYMMDDhh.mm)
- *  mode 4: 1 hour file   (YYMMDD.hh)
+ *  mode 4: submode 0: 1 hour file   (YYMMDD.hh)
+ *  mode 4: submode 1: 1 hour file   (YYMMDDhh)
  *  mode 3: 1 day file    (YYMMDD)
  */
 int
 main(int argc, char *argv[])
 {
   FILE  *fpin, *fpraw = NULL;
-  int  c, uflag = 0, vflag = 0, mode = 5;
+  int  c, uflag = 0, vflag = 0, mode = 5, submode = 0;
   char  *rawdir, fullname[NAMELEN];
   unsigned char  *dbuf = NULL;
   WIN_blocksize  dsize;
@@ -53,8 +54,14 @@ main(int argc, char *argv[])
     case 'm':  /* set mode */
       if (optarg[0] == 'm')      /* minute mode (default) */
 	mode = 5;
-      else if (optarg[0] == 'h') /* hour mode */
+      else if (strcmp(optarg, "h") == 0) {  /* hour mode (YYMMDD.hh) */
 	mode = 4;
+	submode = 0;
+      }
+      else if (strcmp(optarg, "h1") == 0) {  /* hour mode (YYMMDDhh) */
+	mode = 4;
+	submode = 1;
+      }
       else if (optarg[0] == 'd') /* day mode */
 	mode = 3;
       else {
@@ -93,6 +100,7 @@ main(int argc, char *argv[])
   if(vflag) {
     (void)printf("ourdir: %s\n", rawdir);
     (void)printf("mode = %d\n", mode);
+    (void)printf("submode = %d\n", submode);
   }
 
   /* init array */
@@ -122,9 +130,16 @@ main(int argc, char *argv[])
 	  (void)fprintf(stderr, "Buffer Overrun!\n");
 	  exit(1);
 	}
-      } else if (mode == 4) {
+      } else if ((mode == 4) && (submode == 0)) {
 	if (snprintf(fullname, sizeof(fullname),
 		     "%s/%02d%02d%02d.%02d", rawdir, dtime[0], dtime[1],
+		     dtime[2], dtime[3]) >= sizeof(fullname)) {
+	  (void)fprintf(stderr, "Buffer Overrun!\n");
+	  exit(1);
+	}
+      } else if ((mode == 4) && (submode == 1)) {
+	if (snprintf(fullname, sizeof(fullname),
+		     "%s/%02d%02d%02d%02d", rawdir, dtime[0], dtime[1],
 		     dtime[2], dtime[3]) >= sizeof(fullname)) {
 	  (void)fprintf(stderr, "Buffer Overrun!\n");
 	  exit(1);
@@ -190,9 +205,10 @@ usage(void)
   (void)fprintf(stderr, "%s\n", rcsid);
   (void)fprintf(stderr, "Usage : %s [options] rawdir [data]\n", progname);
   (void)fprintf(stderr, "   options: -u    : unlink input data file\n");
-  (void)fprintf(stderr, "            -m [h|d]    : set mode\n");
-  (void)fprintf(stderr, "                h: 1 hour file (YYMMDD.hh)\n");
-  (void)fprintf(stderr, "                d: 1 day file (YYMMDD)\n");
+  (void)fprintf(stderr, "            -m [h|h1|d]    : set mode\n");
+  (void)fprintf(stderr, "                h : 1 hour file (YYMMDD.hh)\n");
+  (void)fprintf(stderr, "                h1: 1 hour file (YYMMDDhh)\n");
+  (void)fprintf(stderr, "                d : 1 day file (YYMMDD)\n");
   (void)fprintf(stderr, "            -v    : verbose mode\n");
   (void)fprintf(stderr, "            -h    : print this message\n");
   exit(1);

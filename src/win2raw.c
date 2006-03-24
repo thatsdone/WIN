@@ -1,5 +1,5 @@
 /*
- * $Id: win2raw.c,v 1.6 2006/03/18 11:22:16 uehira Exp $
+ * $Id: win2raw.c,v 1.7 2006/03/24 15:57:29 uehira Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -16,7 +16,7 @@
 #include "subst_func.h"
 
 static const char  rcsid[] =
-   "$Id: win2raw.c,v 1.6 2006/03/18 11:22:16 uehira Exp $";
+   "$Id: win2raw.c,v 1.7 2006/03/24 15:57:29 uehira Exp $";
 static char  *progname;
 
 static void usage(void);
@@ -174,7 +174,11 @@ main(int argc, char *argv[])
     }
   } /* while ((dsize = read_onesec_win(fpin, &dbuf)) != 0) */
 
-  if(fclose(fpraw)) {
+  /* close final output file */
+  if (fpraw == NULL) {
+    (void)fprintf(stderr, "No data was processed.\n");
+    exit(1);
+  } else if (fclose(fpraw)) {
     (void)fprintf(stderr, "%s: %s\n", strerror(errno), fullname);
     exit(1);
   }

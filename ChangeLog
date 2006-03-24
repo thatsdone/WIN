@@ -1,4 +1,8 @@
- $Id: ChangeLog,v 1.126 2006/03/18 11:22:16 uehira Exp $
+ $Id: ChangeLog,v 1.127 2006/03/24 15:57:29 uehira Exp $
+
+2006-03-25  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* win2raw: check data was processed or not. (by T. UEMURA)
+	* Version 1.1.78 released.
 
 2006-03-18  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* win2raw: added new mode in '-m' option.

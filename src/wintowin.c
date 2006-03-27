@@ -34,7 +34,7 @@
 /* #define SR 4096 */
 #define SR 200
 
-/* $Id: wintowin.c,v 1.4 2004/10/15 12:41:23 tsuru Exp $ */
+/* $Id: wintowin.c,v 1.5 2006/03/27 11:00:44 tsuru Exp $ */
 /* winform.c  4/30/91,99.4.19   urabe */
 /* winform converts fixed-sample-size-data into win's format */
 /* winform returns the length in bytes of output data */
@@ -143,7 +143,7 @@ int tokenize(char *command_string, char *tokenlist[], size_t maxtoken)
     return tokencount;
 }
 
-#define MAXTOKEN SR
+#define MAXTOKEN (SR + 2)
 char *tokens[MAXTOKEN];
 
 main(argc, argv)

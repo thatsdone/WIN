@@ -1,4 +1,4 @@
-/* $Id: pick2finalb_SEVO.c,v 1.1.2.1 2006/04/04 07:47:24 uehira Exp $ */
+/* $Id: pick2finalb_SEVO.c,v 1.1.2.2 2006/04/04 08:11:09 uehira Exp $ */
 /* pick2finalb.c */
 /* 8/22/91, 5/22/92, 7/9/92, 8/19/92, 5/25/93, 6/1/93 urabe */
 /* 97.10.3 FreeBSD */
@@ -170,14 +170,14 @@ main()
 	fgets(buf,255,fp); fgets(buf,255,fp); fgets(buf,255,fp);
 	fgets(buf,255,fp);
 	sscanf(buf+3,"%d", &stnum);
-	sscanf(buf+25,"%d", &stsnum);
-	sscanf(buf+43,"%f", &inide);
+	sscanf(buf+27,"%d", &stsnum);
+	sscanf(buf+48,"%f", &inide);
 	for (i=1; i<=stnum; i++)
 	  fgets(buf,255,fp);
 	fgets(buf,255,fp);
 	sscanf(buf+3,"%f%f", &prms,&srms);
-	/*  fprintf(stderr, "%s: prms=%lf, stnum=%d, srms=%lf, inide=%lf\n", */
-	/*  		fname, prms, stnum, srms, inide); */
+	/*  fprintf(stderr, "%s: prms=%lf, stnum=%d, stsnum=%d, srms=%lf, inide=%lf\n", */
+	/*  		fname, prms, stnum, stsnum, srms, inide); */
 	if (strncmp(owner,"auto",4) != 0)
 	  fwrite(&d,sizeof(d),1,stdout);
 	else if (prms<=1.0 && stnum>=5 && stsnum>= 1 && srms<=5.0 && inide<=5.0)

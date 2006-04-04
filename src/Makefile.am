@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.35.2.2 2005/06/14 10:18:15 uehira Exp $
+# $Id: Makefile.am,v 1.35.2.3 2006/04/04 07:47:23 uehira Exp $
 #
 
 if SUNOS4
@@ -50,7 +50,7 @@ OFFLINE_MATH=dewin select_stations hypomhc wintosac
 OFFLINE_F77=hypomh
 
 OFFLINE_USER=$(OFFLINE_X) $(OFFLINE_F77) wed wck wadd $(OFFLINE_MATH) wchch pick2tseis \
-             wch pick2finalb pick2final finalb2final final2finalb finalb2seis \
+             wch pick2finalb pick2finalb_SEVO pick2final finalb2final final2finalb finalb2seis \
              wform wintowin $(OFFLINE_USER_MATH) winadd wck_wdisk wadd2 \
              win2raw wchasn ls8tel16_win ls8tel_STM ls8tel_STS
 TAPE_USER=rtape fromtape wdisk wdiskts ras2rpdl ras2lips file_older raw2mon \
@@ -139,6 +139,8 @@ pick2tseis_SOURCES = pick2tseis.c $(SUBFUNC_H)
 wch_SOURCES = wch.c $(SUBFUNC_H)
 
 pick2finalb_SOURCES = pick2finalb.c $(SUBFUNC_H)
+
+pick2finalb_SEVO_SOURCES = pick2finalb_SEVO.c $(SUBFUNC_H)
 
 pick2final_SOURCES = pick2final.c $(SUBFUNC_H)
 

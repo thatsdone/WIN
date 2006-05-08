@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.36 2005/06/14 09:25:34 uehira Exp $
+# $Id: Makefile.am,v 1.37 2006/05/08 04:02:30 uehira Exp $
 #
 
 if SUNOS4
@@ -69,8 +69,11 @@ SUBFUNC_H = subst_func.h
 DAEMON_MODE = daemon_mode.h daemon_mode.c
 WIN_LOG = win_log.h win_log.c win_externs.h
 UDP_UTILITY = udpu.h udp_accept.c udp_dest.c
+TCP_UTILITY = tcpu.h tcp_connect.c
 
 bin_PROGRAMS = $(OFFLINE_USER) $(TAPE_USER) $(ONLINE)
+libexec_PROGRAMS = winrawsrvd
+noinst_PROGRAMS = winrawcli_test
 
 install-exec-hook:
 	(rm -f @bindir@/send_mon; cd @bindir@ && @LN_S@ send_raw send_mon)
@@ -291,3 +294,7 @@ ls8tel_STM_LDADD = $(GC_CHECK_LIB)
 
 ls8tel_STS_SOURCES = ls8tel_STS.c $(WIN_UTIL) $(SUBFUNC_H) $(GC_CHECK_INCLUDE) ls8tel.h ls8tel.c
 ls8tel_STS_LDADD = $(GC_CHECK_LIB)
+
+winrawsrvd_SOURCES = winrawsrv.c $(DAEMON_MODE) $(WIN_LOG) winraw_bp.h
+
+winrawcli_test_SOURCES = winrawcli_test.c $(DAEMON_MODE) $(WIN_LOG) $(TCP_UTILITY) winraw_bp.h

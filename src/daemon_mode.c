@@ -1,4 +1,4 @@
-/* $Id: daemon_mode.c,v 1.2 2004/10/26 14:42:01 uehira Exp $ */
+/* $Id: daemon_mode.c,v 1.3 2006/05/08 04:02:30 uehira Exp $ */
 
 /*-
  * Daemon mode utility
@@ -52,6 +52,14 @@ daemon_init(const char *pname, int facility, int use_syslog)
 
   for (i = 0; i < MAXFD; ++i)
     (void)close(i);
+
+  if (use_syslog)
+    openlog(pname, LOG_PID, facility);
+}
+
+void
+daemon_inetd(const char *pname, int facility, int use_syslog)
+{
 
   if (use_syslog)
     openlog(pname, LOG_PID, facility);

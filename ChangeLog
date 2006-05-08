@@ -1,5 +1,12 @@
- $Id: ChangeLog,v 1.128 2006/03/28 13:20:05 uehira Exp $
+ $Id: ChangeLog,v 1.129 2006/05/08 04:02:29 uehira Exp $
 
+2006-05-08  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* udp_dest.c : bug fixed.
+	* imported experimental codes
+	  winrawsrvd : raw data server started by inetd.
+	  winrawcli_test : test code of raw data client.
+	* Version 1.1.79 released.
+	
 2006-03-27  Tsuruoka Hiroshi <tsuru@eri.u-tokyo.ac.jp>
 	* wintowin: BUG FIX (appealed by T. UEMURA)
 	* Version 1.1.78 released.

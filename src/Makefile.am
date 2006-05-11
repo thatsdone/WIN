@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.35.2.4 2006/05/08 04:15:29 uehira Exp $
+# $Id: Makefile.am,v 1.35.2.5 2006/05/11 10:05:57 uehira Exp $
 #
 
 if SUNOS4
@@ -46,7 +46,7 @@ TAPE_USER_MATH=pmon elist events
 ONLINE_MATH=ecore ecore2 raw_time
 OFFLINE_USER_MATH=wtime
 #OFFLINE_MATH=dewin select_stations
-OFFLINE_MATH=dewin select_stations hypomhc wintosac
+OFFLINE_MATH=dewin select_stations hypomhc hypomhc2 wintosac
 OFFLINE_F77=hypomh
 
 OFFLINE_USER=$(OFFLINE_X) $(OFFLINE_F77) wed wck wadd $(OFFLINE_MATH) wchch pick2tseis \
@@ -305,3 +305,6 @@ ls8tel_STS_LDADD = $(GC_CHECK_LIB)
 winrawsrvd_SOURCES = winrawsrv.c $(DAEMON_MODE) $(WIN_LOG) winraw_bp.h
 
 winrawcli_test_SOURCES = winrawcli_test.c $(DAEMON_MODE) $(WIN_LOG) $(TCP_UTILITY) winraw_bp.h
+
+hypomhc2_SOURCES = hypomhc2.c $(SUBFUNC_H)
+hypomhc2_LDADD = -lm

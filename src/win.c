@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.38.2.6 2006/01/19 07:12:44 uehira Exp $
+   $Id: win.c,v 1.38.2.7 2006/05/11 10:11:53 uehira Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -23,6 +23,7 @@
 #endif
 #define WIN_VERSION   "2006.01.19(+Hi-net)"
 #define DEBUG_AP      0   /* for debugging auto-pick */
+#define DEBUG_X       1   /* for debugging just hypo mode */
 /* 5:sr, 4:ch, 3:sec, 2:find_pick, 1:all */
 /************ HOW TO COMPILE THE PROGRAM **************************
 NEWS-OS 4.x    : cc win.c -O -lm -lX11 -o win
@@ -9991,6 +9992,9 @@ load_data(btn) /* return=1 means success */
     {
     *text_buf=0;
     if(fgets(text_buf,LINELEN,fp)==NULL || strncmp(text_buf,"#p",2)) break;
+#if DEBUG_X 
+    fprintf(stderr, "SS0 %d-->%s", ii, text_buf);
+#endif
     if(ii==0)
       {
       if(strlen(text_buf)<25) /* for compatibility to old format */
@@ -10019,7 +10023,12 @@ load_data(btn) /* return=1 means success */
         lsec2time(time2lsec(tm_begin)-just_hypo_offset,tm_begin);
         }
       }
+#if DEBUG_X
+    if (sscanf(text_buf+3,"%x%d%d%d%d%d%d%e",&i,&j,&k1,&k2,&k3,&k4,&k5,&k6)<7)
+      fprintf(stderr, "SS1 : %s", text_buf);
+#else
     sscanf(text_buf+3,"%x%d%d%d%d%d%d%e",&i,&j,&k1,&k2,&k3,&k4,&k5,&k6);
+#endif
     /* 2001.6.7. if data file exists, don't accept out-of-range picks */
     if(!just_hypo && (k1<0 || k1>=ft.len || k3<0 || k3>=ft.len))
       {

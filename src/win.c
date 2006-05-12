@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.38.2.7 2006/05/11 10:11:53 uehira Exp $
+   $Id: win.c,v 1.38.2.8 2006/05/12 10:29:41 uehira Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -7570,6 +7570,9 @@ locate(flag,hint)
     if(strlen(text_buf)>60)
       {
       sscanf(text_buf,"%*s%*s%*s%*s%*s%*s%*s%*s%f%f",&init_lat,&init_lon);
+      fprintf(stderr, "init hypo: %f %f\n",init_lat,init_lon);
+      if ((init_lat==0.0) && (init_lon==0.0))
+	continue;
       init_lat+=0.0001;
       init_lon+=0.0001;
       break;

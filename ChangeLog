@@ -1,4 +1,13 @@
- $Id: ChangeLog,v 1.129 2006/05/08 04:02:29 uehira Exp $
+ $Id: ChangeLog,v 1.130 2006/08/29 01:53:46 nakagawa Exp $
+
+2006-08-29  Shigeki Nakagawa  <nakagawa@eri.u-tokyo.ac.jp>
+	* src/win.c: fixed a bug in locate (by Uehira-san).
+	             fixed a bug reading pickfile.
+	             add Expert mode option.
+	              -za autpk/evdet has no effect w/o shift-key
+	              -zc not display calculated travel-times
+	              -zac both above
+	* Version 1.1.80 released.
 
 2006-05-08  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* udp_dest.c : bug fixed.

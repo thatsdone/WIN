@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.37 2006/05/08 04:02:30 uehira Exp $
+# $Id: Makefile.am,v 1.38 2006/08/29 01:53:03 nakagawa Exp $
 #
 
 if SUNOS4
@@ -72,8 +72,10 @@ UDP_UTILITY = udpu.h udp_accept.c udp_dest.c
 TCP_UTILITY = tcpu.h tcp_connect.c
 
 bin_PROGRAMS = $(OFFLINE_USER) $(TAPE_USER) $(ONLINE)
+if IPV6
 libexec_PROGRAMS = winrawsrvd
 noinst_PROGRAMS = winrawcli_test
+endif
 
 install-exec-hook:
 	(rm -f @bindir@/send_mon; cd @bindir@ && @LN_S@ send_raw send_mon)
@@ -296,5 +298,7 @@ ls8tel_STS_SOURCES = ls8tel_STS.c $(WIN_UTIL) $(SUBFUNC_H) $(GC_CHECK_INCLUDE) l
 ls8tel_STS_LDADD = $(GC_CHECK_LIB)
 
 winrawsrvd_SOURCES = winrawsrv.c $(DAEMON_MODE) $(WIN_LOG) winraw_bp.h
+winrawsrvd_LDADD = @LIBNSL@ @LIBSOCKET@
 
 winrawcli_test_SOURCES = winrawcli_test.c $(DAEMON_MODE) $(WIN_LOG) $(TCP_UTILITY) winraw_bp.h
+winrawcli_test_LDADD = @LIBNSL@ @LIBSOCKET@

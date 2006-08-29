@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.43 2006/01/19 06:10:09 nakagawa Exp $
+   $Id: win.c,v 1.44 2006/08/29 01:52:27 nakagawa Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -21,7 +21,7 @@
 #else
 #define NAME_PRG      "win32"
 #endif
-#define WIN_VERSION   "2006.01.19(+Hi-net)"
+#define WIN_VERSION   "2006.08.29(+Hi-net)"
 #define DEBUG_AP      0   /* for debugging auto-pick */
 /* 5:sr, 4:ch, 3:sec, 2:find_pick, 1:all */
 /************ HOW TO COMPILE THE PROGRAM **************************
@@ -952,7 +952,7 @@ LOCAL
     first_map_others,map_update,com_diag1,map_all,map_period_save,
     com_diag2,mecha_mode,hypo_use_ratio,map_f1x,map_f1y,map_f2x,map_f2y,
     map_n_find,map_line,fit_height,read_hypo,map_interval,mon_offset,
-    just_hypo,just_hypo_offset,list_on_map,phypo_format,sec_block;
+    just_hypo,just_hypo_offset,list_on_map,phypo_format,sec_block,autpk_but_off,calc_line_off;
   float init_lat_init,init_lon_init,init_late_init,init_lone_init;
   char mec_hemi[10],diagnos[50],apbuf[20],monbuf[20],mapbuf[20],
     map_period_unit,dot;
@@ -1979,6 +1979,9 @@ print_usage()
   fprintf(stderr,"                  t    - copy data-file to local\n");
   fprintf(stderr,"                  w    - write bitmap (.sv) file\n");
   fprintf(stderr,"                  x [pick file] - just calculate hypocenter\n");
+  fprintf(stderr,"                  z [mode] - Expert mode\n");
+  fprintf(stderr,"                     a     - AUTPK/EVDET Button OFF\n");
+  fprintf(stderr,"                     c     - CALC. LINE OFF\n");
   fprintf(stderr,"                  B    - don't use bitmap (.sv) file\n");
   fprintf(stderr,"                  C [color] - set color of cursor\n");
   fprintf(stderr,"                  S    - don't assume second blocks\n");
@@ -4502,14 +4505,14 @@ main(argc,argv)
     ft.pick_server_port=atoi(ptr);
   else ft.pick_server_port=PICK_SERVER_PORT;
   sprintf(ft.param_file,"%s.prm",NAME_PRG);
-  background=map_only=mc=bye=auto_flag=auto_flag_hint=not_save=0;
+  background=map_only=mc=bye=auto_flag=auto_flag_hint=not_save=autpk_but_off=calc_line_off=0;
   copy_file=got_hup=ft.ch_exclusive=0;
   mon_offset=just_hypo=just_hypo_offset=0;
   flag_save=sec_block=1;
   *ft.final_opt=0;
   dot='.';
   *chstr=0;
-  while((c=getopt(argc,argv,"abcd:e:fhi:mnop:qrs:twx:BC:S_"))!=EOF)
+  while((c=getopt(argc,argv,"abcd:e:fhi:mnop:qrs:twx:z:BC:S_"))!=EOF)
     {
     switch(c)
       {
@@ -4573,6 +4576,10 @@ main(argc,argv)
       case 'x':   /* just calculate hypocenter */
         strcpy(ft.save_file,optarg);
         just_hypo=background=bye=1;
+        break;
+      case 'z':   /* auto-pick and event-detect button on */
+	if(strchr(optarg,'a')) autpk_but_off=1;
+	if(strchr(optarg,'c')) calc_line_off=1;
         break;
       case 'B':   /* don't use MON bitmap */
         flag_save=0;
@@ -5602,7 +5609,9 @@ proc_main()
     else if(y<YBASE_MON) /* function(2) area */
       {
       if(x>x_time_file && x<x_time_file+WIDTH_TEXT*17)
-        strcpy(textbuf1,"    AUTO-PICK    ");
+        if(!autpk_but_off||(autpk_but_off&&(event.mse_key==MSE_SHIFT))){
+          strcpy(textbuf1,"    AUTO-PICK    ");
+        }
       }
     else if(y<YBASE_MON+height_mon)
       {
@@ -6129,9 +6138,11 @@ proc_main()
       {
       if(x_time_file<=x && x<=x_time_file+WIDTH_TEXT*17)
         {
-        strcpy(apbuf," DOING AUTO-PICK ");
-        put_text(&dpy,x_time_file,Y_TIME,apbuf,BF_S);
-        if(auto_pick(0)) ring_bell=0;
+          if(!autpk_but_off||(autpk_but_off&&(event.mse_key==MSE_SHIFT))){
+            strcpy(apbuf," DOING AUTO-PICK ");
+            put_text(&dpy,x_time_file,Y_TIME,apbuf,BF_S);
+            if(auto_pick(0)) ring_bell=0;
+          }
         }
       if(com_diag1<=x && x<=com_diag2)
         {
@@ -6300,16 +6311,20 @@ proc_main()
           ring_bell=0;
           break;
         case EVDET:
-          strcpy(apbuf,"EVDET & AUTO-PICK");
-          put_text(&dpy,x_time_file,Y_TIME,apbuf,BF_S);
-          put_reverse(&dpy,x_func(EVDET),HEIGHT_FUNC,WB,MARGIN);
-          if(auto_pick(1)) ring_bell=0;
+          if(!autpk_but_off||(autpk_but_off&&(event.mse_key==MSE_SHIFT))){
+            strcpy(apbuf,"EVDET & AUTO-PICK");
+            put_text(&dpy,x_time_file,Y_TIME,apbuf,BF_S);
+            put_reverse(&dpy,x_func(EVDET),HEIGHT_FUNC,WB,MARGIN);
+            if(auto_pick(1)) ring_bell=0;
+          }
           break;
         case AUTPK:
-          strcpy(apbuf," AUTOPICK W/HINT ");
-          put_text(&dpy,x_time_file,Y_TIME,apbuf,BF_S);
-          put_reverse(&dpy,x_func(AUTPK),HEIGHT_FUNC,WB,MARGIN);
-          if(auto_pick_hint(0)) ring_bell=0;
+          if(!autpk_but_off||(autpk_but_off&&(event.mse_key==MSE_SHIFT))){
+            strcpy(apbuf," AUTOPICK W/HINT ");
+            put_text(&dpy,x_time_file,Y_TIME,apbuf,BF_S);
+            put_reverse(&dpy,x_func(AUTPK),HEIGHT_FUNC,WB,MARGIN);
+            if(auto_pick_hint(0)) ring_bell=0;
+          }
           break;
         }
       }
@@ -6741,6 +6756,7 @@ put_mark_zoom(idx,izoom,pt,mode)
   struct Pick_Time *pt;
   {
   int x,y,i,xshift;
+  if(calc_line_off&&(mode==1)) return;
   if(zoom_win[izoom].sec<=pt->sec2 &&
       zoom_win[izoom].sec+zoom_win[izoom].length>pt->sec1)
     {
@@ -7212,6 +7228,8 @@ load_data_prep(btn) /* return=1 means success */
       fprintf(stderr,"out-of-range pick ignored - %s",text_buf);
       continue;
       }
+    if(ft.ch2idx[i]<0) continue;
+    if(j>MD) continue;
     ft.pick[ft.ch2idx[i]][j].valid=0;
     ft.pick[ft.ch2idx[i]][j].sec1 =k1;
     ft.pick[ft.ch2idx[i]][j].msec1=k2;
@@ -7419,7 +7437,7 @@ reorder(){
       k++;
     }
   }
-  fprintf(stderr,"re-order by channel tbl.\n");
+  fprintf(stderr,"re-order by default.\n");
   return 0;
 }
 get_delta()  /* get calculated delta  for all stations */
@@ -7530,6 +7548,7 @@ locate(flag,hint)
     if(strlen(text_buf)>60)
       {
       sscanf(text_buf,"%*s%*s%*s%*s%*s%*s%*s%*s%f%f",&init_lat,&init_lon);
+      if((init_lat==0.0)&&(init_lon==0.0)) continue;
       init_lat+=0.0001;
       init_lon+=0.0001;
       break;
@@ -9982,6 +10001,8 @@ load_data(btn) /* return=1 means success */
       fprintf(stderr,"out-of-range pick ignored - %s",text_buf);
       continue;
       }
+    if(ft.ch2idx[i]<0) continue;
+    if(j>MD) continue;
     ft.pick[ft.ch2idx[i]][j].valid=1;
     ft.pick[ft.ch2idx[i]][j].sec1 =k1;
     ft.pick[ft.ch2idx[i]][j].msec1=k2;

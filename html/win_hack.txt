@@ -1,13 +1,21 @@
 win パッケージの autoconf，automake 対応化
 
 ●開発に必要なソフト
-・autoconf-2.13
+・autoconf-2.53
 ・automake-1.5  (1.4では make への対応が必要)
 ・gmake  (私が使っているのは，gmake-3.79.1)
   gmake は必須では無いが，開発の時はgmakeを使う方が非常に楽である．
 
   FreeBSD の場合，cvsup 等で ports を最新状態にしてこれらのソフトをイ
 ンストールするのが一番楽．
+
+(中川追記:060829)
+植平さんによるとautomakeとautoconfにはバージョンに以下の依存関係がある。
+1) automake14 - autoconf-2.13
+2) automake15 - autoconf-2.53
+3) automake19 - autoconf-2.59
+ちなみに、上記2)の組合せを用いているとの事。
+(中川追記ここまで:060829)
 
 ●automake で必要になるファイル達
 ・シェルスクリプト
@@ -92,7 +100,7 @@ AM_INIT_AUTOMAKE(WIN_pkg, 1.0)
 ルする．ある関数が無い時の代替関数は，subst_func.h で設定する．
 
 ━━━━━ここから━━━━━
-/* $Id: win_hack.txt,v 1.3 2003/04/29 02:26:14 uehira Exp $ */
+/* $Id: win_hack.txt,v 1.3.2.1 2006/08/31 09:51:46 uehira Exp $ */
 
 ....
 

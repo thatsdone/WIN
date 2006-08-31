@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.35.2.5 2006/05/11 10:05:57 uehira Exp $
+# $Id: Makefile.am,v 1.35.2.6 2006/08/31 09:51:46 uehira Exp $
 #
 
 if SUNOS4
@@ -50,7 +50,8 @@ OFFLINE_MATH=dewin select_stations hypomhc hypomhc2 wintosac
 OFFLINE_F77=hypomh
 
 OFFLINE_USER=$(OFFLINE_X) $(OFFLINE_F77) wed wck wadd $(OFFLINE_MATH) wchch pick2tseis \
-             wch pick2finalb pick2finalb_SEVO pick2final finalb2final final2finalb finalb2seis \
+             wch pick2finalb pick2final finalb2final final2finalb finalb2seis \
+             pick2finalb_SEVO \
              wform wintowin $(OFFLINE_USER_MATH) winadd wck_wdisk wadd2 \
              win2raw wchasn ls8tel16_win ls8tel_STM ls8tel_STS
 TAPE_USER=rtape fromtape wdisk wdiskts ras2rpdl ras2lips file_older raw2mon \
@@ -73,8 +74,10 @@ UDP_UTILITY = udpu.h udp_accept.c udp_dest.c
 TCP_UTILITY = tcpu.h tcp_connect.c
 
 bin_PROGRAMS = $(OFFLINE_USER) $(TAPE_USER) $(ONLINE)
+if IPV6
 libexec_PROGRAMS = winrawsrvd
 noinst_PROGRAMS = winrawcli_test
+endif
 
 install-exec-hook:
 	(rm -f @bindir@/send_mon; cd @bindir@ && @LN_S@ send_raw send_mon)
@@ -303,8 +306,10 @@ ls8tel_STS_SOURCES = ls8tel_STS.c $(WIN_UTIL) $(SUBFUNC_H) $(GC_CHECK_INCLUDE) l
 ls8tel_STS_LDADD = $(GC_CHECK_LIB)
 
 winrawsrvd_SOURCES = winrawsrv.c $(DAEMON_MODE) $(WIN_LOG) winraw_bp.h
+winrawsrvd_LDADD = @LIBNSL@ @LIBSOCKET@
 
 winrawcli_test_SOURCES = winrawcli_test.c $(DAEMON_MODE) $(WIN_LOG) $(TCP_UTILITY) winraw_bp.h
+winrawcli_test_LDADD = @LIBNSL@ @LIBSOCKET@
 
 hypomhc2_SOURCES = hypomhc2.c $(SUBFUNC_H)
 hypomhc2_LDADD = -lm

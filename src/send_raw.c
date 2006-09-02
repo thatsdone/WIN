@@ -1,4 +1,4 @@
-/* $Id: send_raw.c,v 1.22.2.1 2005/09/26 03:07:50 uehira Exp $ */
+/* $Id: send_raw.c,v 1.22.2.2 2006/09/02 01:52:33 uehira Exp $ */
 /*
     program "send_raw/send_mon.c"   1/24/94 - 1/25/94,5/25/94 urabe
                                     6/15/94 - 6/16/94
@@ -46,6 +46,7 @@
 	       2005.2.18 option -f for use and write list of requested chs
                2005.2.20 added fclose() in read_chfile()
                2005.9.24 don't resend packet more than once
+               2006.9.2 no resend mode (-R)
 */
 
 #ifdef HAVE_CONFIG_H
@@ -100,7 +101,7 @@
 */
 
 int sock,raw,tow,all,psize[NBUF],n_ch,negate_channel,mtu,nbuf,slptime,
-    n_bytes,n_packets;
+    n_bytes,n_packets,no_resend;
 unsigned char *sbuf[NBUF],ch_table[65536],rbuf[RSIZE],ch_req[65536],
     ch_req_tmp[65536],pbuf[RSIZE];
      /* sbuf[NBUF][mtu-28+8] ; +8 for overrun by "size" and "time" */
@@ -364,7 +365,7 @@ recv_pkts(sock,to_addr,no,bufno,standby,seq_exp,n_seq_exp,time_req,req_timo)
       for(k=0;k<20;k++) fprintf(stderr,"%02X",rbuf[k]);
       fprintf(stderr,"\n");
 #endif
-      if(len==1 && (bufno_f=get_packet(*bufno,no_f=(*rbuf)))>=0)
+      if(!no_resend && len==1 && (bufno_f=get_packet(*bufno,no_f=(*rbuf)))>=0)
         { /* resend request packet */
         memcpy(sbuf[*bufno],sbuf[bufno_f],psize[*bufno]=psize[bufno_f]);
         sbuf[*bufno][0]=*no;    /* packet no. */
@@ -506,12 +507,12 @@ main(argc,argv)
 
   if (daemon_mode)
     sprintf(tbuf,
-	    " usage : '%s (-1amrt) (-b [mtu]) (-f [req_file]) (-h [h])\\\n\
+	    " usage : '%s (-1amRrt) (-b [mtu]) (-f [req_file]) (-h [h])\\\n\
    (-i [interface]) (-s [s]) (-p [src_port]) (-w [key]) (-T [ttl])\\\n\
    [shmkey] [dest] [port] ([chfile]/- ([logfile]))'",progname);
   else
     sprintf(tbuf,
-	    " usage : '%s (-1aDmrt) (-b [mtu]) (-f [req_file]) (-h [h])\\\n\
+	    " usage : '%s (-1aDmRrt) (-b [mtu]) (-f [req_file]) (-h [h])\\\n\
    (-i [interface]) (-s [s]) (-p [src_port]) (-w [key]) (-T [ttl])\\\n\
    [shmkey] [dest] [port] ([chfile]/- ([logfile]))'",progname);
 
@@ -523,7 +524,7 @@ main(argc,argv)
   standby=0;
   src_port=0;
   single=0;
-  while((c=getopt(argc,argv,"1ab:Df:h:i:mp:rs:tw:T:"))!=EOF)
+  while((c=getopt(argc,argv,"1ab:Df:h:i:mp:Rrs:tw:T:"))!=EOF)
     {
     switch(c)
       {
@@ -559,6 +560,9 @@ main(argc,argv)
         break;
       case 'p':   /* source port */
         src_port=atoi(optarg);
+        break;
+      case 'R':   /* no resend mode */
+        no_resend=1;
         break;
       case 'r':   /* "raw" mode */
         raw=1;

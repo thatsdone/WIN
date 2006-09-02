@@ -1,4 +1,7 @@
- $Id: ChangeLog,v 1.130 2006/08/29 01:53:46 nakagawa Exp $
+ $Id: ChangeLog,v 1.131 2006/09/02 01:27:16 urabe Exp $
+
+2006-09-2  Urabe Taku <urabe@eri.u-tokyo.ac.jp>
+	* src/send_raw.c: added 'no resend' mode (-R)
 
 2006-08-29  Shigeki Nakagawa  <nakagawa@eri.u-tokyo.ac.jp>
 	* src/win.c: fixed a bug in locate (by Uehira-san).

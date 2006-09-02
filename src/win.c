@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.44 2006/08/29 01:52:27 nakagawa Exp $
+   $Id: win.c,v 1.45 2006/09/02 01:27:16 urabe Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -9966,6 +9966,7 @@ load_data(btn) /* return=1 means success */
     {
     *text_buf=0;
     if(fgets(text_buf,LINELEN,fp)==NULL || strncmp(text_buf,"#p",2)) break;
+fprintf(stderr,"SS0 %d-->%s", ii, text_buf);
     if(ii==0)
       {
       if(strlen(text_buf)<25) /* for compatibility to old format */

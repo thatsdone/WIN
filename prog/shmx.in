@@ -1,6 +1,6 @@
 #! @WISH@
 #
-# $Id: shmx.in,v 1.9 2006/01/17 08:09:57 tsuru Exp $
+# $Id: shmx.in,v 1.10 2006/09/05 10:55:17 tsuru Exp $
 # shmx 
 # 2002.06.28- (C) Hiroshi TSURUOKA / All Rights Reserved.
 #
@@ -32,8 +32,9 @@
 #         1.12 2004/09/19 add socket connection
 #         1.13      09/23     flexible chs & filter option etc.
 #         1.14 2006/01/17 sprintf -> format
+#         1.15      09/05 circle hosei option
 #
-set version 1.14
+set version 1.15
 
 # NR f77 -> tcl
 # 2002/08/12 Hiroshi TSURUOKA
@@ -67,6 +68,7 @@ if { $argc < 1 } {
     puts "shmx <-mMIN> <-nNLINE> <-yPIXEL> <-wCLIPLEVEL> <-p> <-o>"
     puts "     <-xWIDTH> <-cNCOLOR> <-fSHMDUMP> <-tTABLE> <-qQUICK>"
     puts "     <-Hhostname> <-Pportno> <-Ffilter> <-Rsample> <-Kshmid>"
+    puts "     <-eHOSEI"
     puts "     channel1 channel2 ..."
     exit
 }
@@ -94,6 +96,8 @@ set order 1
 set chs ""
 set shmid 11
 set option ""
+set xhosei 1.0
+set hosei 0
 
 for { set j 0 } { $j < $argc } { incr j } {
     set tmpargv [lindex $argv $j]
@@ -131,6 +135,9 @@ for { set j 0 } { $j < $argc } { incr j } {
 	set LTA2 [expr 1.0/$LTA]
 	set LTA1 [expr 1.0-$LTA2]
 	set offset 1
+    } elseif { $optflag == "-e" } {
+	set xhosei [string range $tmpargv 2 [string length $tmpargv]]
+	set hosei 1
     } elseif { $optflag == "-H" } {
 	set host [string range $tmpargv 2 [string length $tmpargv]]
 	set shmdump "socket"
@@ -444,7 +451,16 @@ while {![eof $fp]} {
 	    }
 	    if { $yy > $ymax } { set yy $ymax; }
 	    if { $yy < [expr -$ymax] } { set yy [expr -$ymax]; }
-	    set gy [expr -$yy/$div + $wy*($ny+1.0+$wdy)]
+            if { $hosei } {
+              set rrr [expr 4.0*$wy/$xhosei]
+              set theta [expr ($yy/$div)/$rrr]
+              set sx [expr $rrr*(1.0-cos($theta))]
+              set sy [expr $rrr*(sin($theta))]
+              set gx [expr $gx+$sx]
+              set gy [expr -$sy + $wy*($ny+1.0+$wdy)]
+            } else {
+	      set gy [expr -$yy/$div + $wy*($ny+1.0+$wdy)]
+            }
 	    if { $freq2 == 1 } {
 		set g($j) [concat $g($j) $gx $gy]
 	    }
@@ -462,7 +478,16 @@ while {![eof $fp]} {
 		if { $yy > $ymax } { set yy $ymax; }
 		if { $yy < [expr -$ymax] } { set yy [expr -$ymax]; }
 		#                	set gy [expr -$wy*$yy/$ymax + $wy*($ny+1.0+$wdy)]
-		set gy [expr -$yy/$div + $wy*($ny+1.0+$wdy)]
+                if { $hosei } {
+                  set rrr [expr 4.0*$wy/$xhosei]
+                  set theta [expr ($yy/$div)/$rrr]
+                  set sx [expr $rrr*(1.0-cos($theta))]
+                  set sy [expr $rrr*(sin($theta))]
+                  set gx [expr $gx+$sx]
+		  set gy [expr -$sy + $wy*($ny+1.0+$wdy)]
+                } else {
+		  set gy [expr -$yy/$div + $wy*($ny+1.0+$wdy)]
+                }
 		set g($j) [concat $g($j) $gx $gy]
 	    }
 	    if { $freq2 > 0 } {

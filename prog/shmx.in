@@ -1,6 +1,6 @@
 #! @WISH@
 #
-# $Id: shmx.in,v 1.10 2006/09/05 10:55:17 tsuru Exp $
+# $Id: shmx.in,v 1.11 2006/09/12 12:09:24 tsuru Exp $
 # shmx 
 # 2002.06.28- (C) Hiroshi TSURUOKA / All Rights Reserved.
 #
@@ -32,7 +32,7 @@
 #         1.12 2004/09/19 add socket connection
 #         1.13      09/23     flexible chs & filter option etc.
 #         1.14 2006/01/17 sprintf -> format
-#         1.15      09/05 circle hosei option
+#         1.15      09/05 drum plot
 #
 set version 1.15
 
@@ -98,6 +98,7 @@ set shmid 11
 set option ""
 set xhosei 1.0
 set hosei 0
+set theta0 0.5
 
 for { set j 0 } { $j < $argc } { incr j } {
     set tmpargv [lindex $argv $j]
@@ -165,6 +166,11 @@ for { set j 0 } { $j < $argc } { incr j } {
 
 if { $maxch > 20 } {
     set maxch 20
+}
+
+if { $hosei } {
+        set clip [expr  (64.0/$xhosei*1.0)]
+        set lsb [expr $clip*$wy2]
 }
 
 if { $table == 1 } {
@@ -452,8 +458,10 @@ while {![eof $fp]} {
 	    if { $yy > $ymax } { set yy $ymax; }
 	    if { $yy < [expr -$ymax] } { set yy [expr -$ymax]; }
             if { $hosei } {
-              set rrr [expr 4.0*$wy/$xhosei]
+              set rrr [expr $clip*$wy2]
               set theta [expr ($yy/$div)/$rrr]
+              if { $theta > $theta0 } { set theta $theta0 }
+              if { $theta < -$theta0 } { set theta -$theta0 }
               set sx [expr $rrr*(1.0-cos($theta))]
               set sy [expr $rrr*(sin($theta))]
               set gx [expr $gx+$sx]
@@ -479,8 +487,10 @@ while {![eof $fp]} {
 		if { $yy < [expr -$ymax] } { set yy [expr -$ymax]; }
 		#                	set gy [expr -$wy*$yy/$ymax + $wy*($ny+1.0+$wdy)]
                 if { $hosei } {
-                  set rrr [expr 4.0*$wy/$xhosei]
+                  set rrr [expr $clip*$wy2]
                   set theta [expr ($yy/$div)/$rrr]
+                  if { $theta > $theta0 } { set theta $theta0 }
+                  if { $theta < -$theta0 } { set theta -$theta0 }
                   set sx [expr $rrr*(1.0-cos($theta))]
                   set sy [expr $rrr*(sin($theta))]
                   set gx [expr $gx+$sx]

@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.38 2006/08/29 01:53:03 nakagawa Exp $
+# $Id: Makefile.am,v 1.38.2.1 2006/09/12 15:05:55 uehira Exp $
 #
 
 if SUNOS4
@@ -71,11 +71,14 @@ WIN_LOG = win_log.h win_log.c win_externs.h
 UDP_UTILITY = udpu.h udp_accept.c udp_dest.c
 TCP_UTILITY = tcpu.h tcp_connect.c
 
+WINSYSTEM_LIB = libwinsystem.a
+
 bin_PROGRAMS = $(OFFLINE_USER) $(TAPE_USER) $(ONLINE)
 if IPV6
 libexec_PROGRAMS = winrawsrvd
 noinst_PROGRAMS = winrawcli_test
 endif
+lib_LIBRARIES = $(WINSYSTEM_LIB)
 
 install-exec-hook:
 	(rm -f @bindir@/send_mon; cd @bindir@ && @LN_S@ send_raw send_mon)
@@ -104,6 +107,8 @@ install-exec-hook:
 	(rm -f @bindir@/wdisktsd; cd @bindir@ && @LN_S@ wdiskts wdisktsd)
 	(rm -f @bindir@/recvstatus3d; cd @bindir@ && @LN_S@ recvstatus3 recvstatus3d)
 	(rm -f @bindir@/ls8tel16_rawd; cd @bindir@ && @LN_S@ ls8tel16_raw ls8tel16_rawd)
+
+libwinsystem_a_SOURCES = $(WIN_UTIL) $(DAEMON_MODE) $(WIN_LOG) $(UDP_UTILITY) $(TCP_UTILITY)
 
 win_SOURCES = win.c $(SUBFUNC_H)
 win_CFLAGS = @X_CFLAGS@ $(AM_CFLAGS)
@@ -285,8 +290,8 @@ raw_time_LDADD = -lm @LIBSHMGET@ $(GC_CHECK_LIB)
 recvstatus3_SOURCES = recvstatus3.c $(SUBFUNC_H) $(DAEMON_MODE) $(WIN_LOG) udpu.h udp_accept.c ls8tel.h
 recvstatus3_LDADD = @LIBNSL@ @LIBSOCKET@
 
-ls8tel16_win_SOURCES = ls8tel16_win.c $(WIN_UTIL) $(SUBFUNC_H) $(GC_CHECK_INCLUDE) ls8tel.h ls8tel.c
-ls8tel16_win_LDADD = $(GC_CHECK_LIB)
+ls8tel16_win_SOURCES = ls8tel16_win.c win_system.h $(SUBFUNC_H) $(GC_CHECK_INCLUDE) ls8tel.h ls8tel.c
+ls8tel16_win_LDADD = $(WINSYSTEM_LIB) $(GC_CHECK_LIB)
 
 ls8tel16_raw_SOURCES = ls8tel16_raw.c ls8tel.h ls8tel.c $(SUBFUNC_H) $(DAEMON_MODE) $(WIN_LOG) $(WIN_UTIL) $(GC_CHECK_INCLUDE)
 ls8tel16_raw_LDADD = @LIBSHMGET@ $(GC_CHECK_LIB)

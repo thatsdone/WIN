@@ -1,5 +1,5 @@
 dnl ------------------------------------------------------------------------- 
-dnl $Id: configure.in,v 1.98 2006/08/29 01:55:40 nakagawa Exp $
+dnl $Id: configure.in,v 1.98.2.1 2006/09/12 15:05:55 uehira Exp $
 dnl -------------------------------------------------------------------------
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT(src/win.c)
@@ -25,6 +25,9 @@ dnl Checks for programs.
 AC_PROG_CC
 AC_PROG_LN_S
 AC_PROG_F77
+AC_PROG_AWK
+AC_PROG_INSTALL
+AC_PROG_RANLIB
 
 dnl Checks for libraries.
 AC_CHECK_LIB(nsl, gethostbyname,

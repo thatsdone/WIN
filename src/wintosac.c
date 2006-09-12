@@ -48,7 +48,6 @@ long julday(int mm, int id, int iyyy)
 }
 
 #undef IGREG
-/* (C) Copr. 1986-92 Numerical Recipes Software 1+5-5i. */
 
 int tokenize(char *command_string, char *tokenlist[], size_t maxtoken)
 {
@@ -101,7 +100,8 @@ char *argv[];
     char cbuf[4096];
     char kstnm[8], kevnm[16], kdum[24][8];
     int buf[MAXTOKEN];
-    float data[1440000];
+#define DATAMAX 1440000
+    float data[DATAMAX];
     float begin = 0.0;
     int out = 0;
     int outd = 0;
@@ -211,7 +211,7 @@ char *argv[];
 	}
 	if (yr < 100)
 	    yr = 2000 + yr;
-	jul = julday(mo, dy, yr);
+	jul = julday(mo, dy, yr) - julday(1, 1, yr) +1;
 	nsec = 3600 * hr + 60 * mi + sc;
 	if (n == 0) {
 	    idt = 0;
@@ -224,7 +224,6 @@ char *argv[];
 		    sprintf(sacfile, "%02d%02d%02d%02d%02d_%04X.s", yr % 100, mo, dy, hr, mi, id[0]);
 		}
 	    }
-
 	    idum[0]=yr;
 	    idum[1]=jul;
 	    idum[2]=hr;

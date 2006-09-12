@@ -1,6 +1,6 @@
 #! @WISH@
 #
-# $Id: shmz.in,v 1.4.2.2 2006/09/08 01:14:36 uehira Exp $
+# $Id: shmz.in,v 1.4.2.3 2006/09/12 15:10:58 uehira Exp $
 # shmz
 # 2004.04.28- (C) Hiroshi TSURUOKA / All Rights Reserved.
 #
@@ -10,7 +10,7 @@
 #         1.0.0      09/20 
 #         1.1        09/23     flexible chs & filter option etc.
 #         1.2   2006/01/17 sprintf -> format
-#         1.3        09/05 circle hosei
+#         1.3        09/05 drum plot
 #
 set version 1.3
 
@@ -78,6 +78,7 @@ set shmid 11
 set option ""
 set xhosei 1.0
 set hosei 0
+set theta0 0.5
 
 for { set j 0 } { $j < $argc } { incr j } {
     set tmpargv [lindex $argv $j]
@@ -151,6 +152,12 @@ for { set j 0 } { $j < $argc } { incr j } {
 #if { $maxch > 20 } {
 #    set maxch 20
 #}
+
+if { $hosei } {
+        set clip [expr  (64.0/$xhosei)*1.0]
+	set lsb [expr $clip*$wy2]
+}
+
 
 if { $table == 1 } {
     set ft [open $ftable r]
@@ -351,7 +358,9 @@ while {![eof $fp]} {
 	    set gx [expr $wx*$nx]
 	    #	    set div [expr pow(2.0,$gain($j))]
 	    #	    set ymax [expr $clip*$wy2*$div]
-	    set ymax [expr ($clip*$wy2)/($MUL($tmpch)/$DIV)]
+#	    set ymax [expr ($clip*$wy2)/($MUL($tmpch)/$DIV)]
+#	    set ymax [expr ($clip*$wy2)*($MUL($tmpch)/$DIV)]
+	    set ymax [expr 0.5*($clip*$wy2)*$DIV]
 	    #####
 	    #            puts "$ymax $clip $wy2 $div $gain($j)"
 	    set y $ylast($j)
@@ -365,8 +374,10 @@ while {![eof $fp]} {
 	    #	    set gy [expr -$yy/$div + $wy*($ny+1.0+$wdy)]
 	    #            set div [expr 0.5e-6]
             if { $hosei } {
-                set rrr [expr 4.0*$wy/$xhosei]
-                set theta [expr ($yy*$MUL($tmpch)/$DIV)/$rrr]
+                set rrr [expr $clip*$wy2]
+                set theta [expr $yy*($MUL($tmpch)/$DIV)/$rrr]
+                if { $theta > $theta0 } { set theta $theta0 }
+                if { $theta < -$theta0 } { set theta -$theta0 }
                 set sx [expr $rrr*(1.0-cos($theta))]
                 set sy [expr $rrr*(sin($theta))]
                 set gx [expr $gx+$sx]
@@ -394,8 +405,10 @@ while {![eof $fp]} {
 		#                	set gy [expr -$wy*$yy/$ymax + $wy*($ny+1.0+$wdy)]
 		#                set div [expr 0.5e-6]
                 if { $hosei } {
-                  set rrr [expr 4.0*$wy/$xhosei]
-                  set theta [expr ($yy*$MUL($tmpch)/$DIV)/$rrr]
+                  set rrr [expr $clip*$wy2]
+                  set theta [expr $yy*($MUL($tmpch)/$DIV)/$rrr]
+                  if { $theta > $theta0 } { set theta $theta0 }
+                  if { $theta < -$theta0 } { set theta -$theta0 }
                   set sx [expr $rrr*(1.0-cos($theta))]
                   set sy [expr $rrr*(sin($theta))]
                   set gx [expr $gx+$sx]

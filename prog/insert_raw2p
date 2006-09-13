@@ -1,0 +1,99 @@
+#!/bin/sh
+# insert_raw2p : perl version of insert_raw2
+#   datej.pl is required.
+# 2006.9.13 tsuru
+#
+## insert_raw.prm
+#/dat/raw        # raw data dir
+#/dat/raw_late   # time-out data dir
+#/dat/tmp        # temporary dir
+#3               # wait min. from raw LATEST
+#/dat/mon        # mon data dir
+#
+# read prm file
+cleanup(){
+rm -rf $tmpdir1; exit
+}
+
+if [ ! -f "$1" ]
+then
+  echo insert_raw2 [paramfile]
+  exit
+fi
+rawdir=`grep -v '^#' $1|head -1|awk '{print $1}'`
+latedir=`grep -v '^#' $1|tail +2|head -1|awk '{print $1}'`
+tmpdir=`grep -v '^#' $1|tail +3|head -1|awk '{print $1}'`
+waitmin=`grep -v '^#' $1|tail +4|head -1|awk '{print $1}'`
+mondir=`grep -v '^#' $1|tail +5|head -1|awk '{print $1}'`
+#echo $rawdir $latedir $tmpdir $waitmin $mondir
+#
+if [ ! -d $rawdir ]
+then
+  echo $rawdir : no directory !
+  exit
+fi
+if [ "$mondir" -a ! -d "$mondir" ]
+then
+  echo $mondir : no directory !
+  exit
+fi
+if [ ! -d $latedir ]
+then
+  echo $latedir : no directory !
+  exit
+fi
+if [ ! -d $tmpdir ]
+then
+  echo $tmpdir : no directory !
+  exit
+fi
+if [ -s $latedir/USED ]
+then
+  latest1=`cat $latedir/USED`
+  latest1=`datej.pl +1 "$latest1"`
+else
+  latest=`cat $rawdir/LATEST`
+  latest1=`datej.pl  -"$waitmin" "$latest"`
+fi
+#echo $latest $latest1
+#
+trap cleanup 2 15
+tmpdir1=$tmpdir/insert_raw2.$$
+mkdir $tmpdir1
+#
+# start
+#
+while true
+do
+  if [ -s "$latedir/$latest1" ]
+  then
+#    echo $latedir/$latest1
+    cat $latedir/$latest1 | wdisk - $tmpdir1 0 > /dev/null 2>&1
+    (cd $tmpdir1;ls -1 [0-9]*)|
+    while read file
+    do
+      if [ ! -f "$rawdir/$file" ]
+      then
+        touch $rawdir/$file
+      fi
+#      echo wadd2 $rawdir/$file $tmpdir1/$file
+      wadd2 $rawdir/$file $tmpdir1/$file
+       if [ "$mondir" ]
+       then
+         raw2mon < $rawdir/$file >$mondir/$file
+       fi
+    done
+    rm -f $tmpdir1/*
+  fi
+  echo $latest1 > $latedir/USED
+  latest1=`datej.pl +1 "$latest1"`
+  latest=`cat $rawdir/LATEST`
+  latest2=`datej.pl -"$waitmin" "$latest"`
+  while [ "$latest1" \> "$latest2" ]
+  do
+#    echo sleep
+    sleep 20
+    latest=`cat $rawdir/LATEST`
+    latest2=`datej.pl -"$waitmin" "$latest"`
+  done
+done

@@ -32,9 +32,9 @@
 #include "subst_func.h"
 
 /* #define SR 4096 */
-#define SR 200
+#define SR 250
 
-/* $Id: wintowin.c,v 1.5 2006/03/27 11:00:44 tsuru Exp $ */
+/* $Id: wintowin.c,v 1.6 2006/09/13 01:38:44 tsuru Exp $ */
 /* winform.c  4/30/91,99.4.19   urabe */
 /* winform converts fixed-sample-size-data into win's format */
 /* winform returns the length in bytes of output data */
@@ -143,7 +143,7 @@ int tokenize(char *command_string, char *tokenlist[], size_t maxtoken)
     return tokencount;
 }
 
-#define MAXTOKEN (SR + 2)
+#define MAXTOKEN SR
 char *tokens[MAXTOKEN];
 
 main(argc, argv)
@@ -151,10 +151,10 @@ int argc;
 char *argv[];
 {
 #define MAXCH 1000
-    static unsigned char outbuf[MAXCH][4 + 4 * SR], tt[6], cbuf;
+    static unsigned char **outbuf, tt[6], cbuf;
     static long inbuf[SR];
     char buf[4096];
-    int sr, ch, size, chsize[MAXCH], t[6], i, j, ntoken, nch;
+    int sr, ch, size, *chsize, t[6], i, j, k, ntoken, nch;
     int c;
 
     key_t shmkey_out;
@@ -168,17 +168,26 @@ char *argv[];
     int shmid_out, shm_size = 0;
     unsigned char *ptw;
     unsigned long ltime;
+    int tmst = 0;
+    int mdim = MAXCH;
 
     extern int optind;
     extern char *optarg;
 
-    while ((c = getopt(argc, argv, "hk:s:")) != EOF) {
+    while ((c = getopt(argc, argv, "hk:s:tm:")) != EOF) {
 	switch (c) {
 	case 'h':
 	    fprintf(stderr, "usage: wintowin <[in_file] >[out_file]\n");
 	    fprintf(stderr, "          or\n");
 	    fprintf(stderr, "       wintowin [shm_key] [shm_size] \n");
 	    exit(1);
+	    break;
+	case 't':
+            tmst = 1;
+            break;
+	case 'm':
+	    mdim = atoi(optarg);
+	    fprintf(stderr, "m=%d\n", mdim);
 	    break;
 /*
 	case 'k':
@@ -215,6 +224,18 @@ char *argv[];
 	ptw = shm_out->d;
     }
 
+/*
+    outbuf= (char **)malloc(sizeof(char *) * (mdim));
+    for (k = 0; k < mdim; k++) {
+        outbuf[k] = (char *)malloc(sizeof(char) * (4+4*SR));
+    }
+ */
+    outbuf= malloc(sizeof(char *) * (mdim));
+    for (k = 0; k < mdim; k++) {
+        outbuf[k] = malloc(sizeof(char) * (4+4*SR));
+    }
+    chsize=(int *)malloc(sizeof(int) * mdim);
+
     while (fgets(buf, 2048, stdin) != NULL) {
 	sscanf(buf, "%2x %2x %2x %2x %2x %2x %d", &t[0], &t[1], &t[2], &t[3], &t[4], &t[5], &nch);
 	for (i = 0; i < 6; i++)
@@ -246,17 +267,17 @@ char *argv[];
 		fwrite(outbuf[j], chsize[j], 1, stdout);
 	    fflush(stdout);
 	} else {
-/*
-            size=size+4;
- */
+            if ( tmst ) {
+               size=size+4;
+            }
 	    cbuf = size >> 24; memcpy(ptw, &cbuf, 1); ptw++;
 	    cbuf = size >> 16; memcpy(ptw, &cbuf, 1); ptw++;
 	    cbuf = size >> 8; memcpy(ptw, &cbuf, 1); ptw++;
 	    cbuf = size; memcpy(ptw, &cbuf, 1); ptw++;
-/*
+            if ( tmst ) {
             time(&ltime);
             memcpy(ptw,&ltime, 4); ptw +=4;
- */
+            }
 	    memcpy(ptw, tt, 6); ptw += 6;
 	    for (j = 0; j < nch; j++) {
 		memcpy(ptw, outbuf[j], chsize[j]);

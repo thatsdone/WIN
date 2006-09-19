@@ -1,6 +1,10 @@
- $Id: ChangeLog,v 1.131 2006/09/02 01:27:16 urabe Exp $
+ $Id: ChangeLog,v 1.132 2006/09/19 23:17:00 urabe Exp $
 
-2006-09-2  Urabe Taku <urabe@eri.u-tokyo.ac.jp>
+2006-09-20  Urabe Taku <urabe@eri.u-tokyo.ac.jp>
+	* src/wed.c: changed mklong() for byte-order-free.
+	* src/relay.c: deleted mklong() (not used).
+
+2006-09-02  Urabe Taku <urabe@eri.u-tokyo.ac.jp>
 	* src/send_raw.c: added 'no resend' mode (-R)
 
 2006-08-29  Shigeki Nakagawa  <nakagawa@eri.u-tokyo.ac.jp>

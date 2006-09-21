@@ -1,4 +1,7 @@
- $Id: ChangeLog,v 1.132 2006/09/19 23:17:00 urabe Exp $
+ $Id: ChangeLog,v 1.133 2006/09/21 02:19:38 urabe Exp $
+
+2006-09-21  Urabe Taku <urabe@eri.u-tokyo.ac.jp>
+	* src/wed.c: put back mklong() and added comment.
 
 2006-09-20  Urabe Taku <urabe@eri.u-tokyo.ac.jp>
 	* src/wed.c: changed mklong() for byte-order-free.

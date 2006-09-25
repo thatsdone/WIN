@@ -1,4 +1,4 @@
-/* $Id: raw_ch.c,v 1.4 2005/02/20 13:56:17 urabe Exp $ */
+/* $Id: raw_ch.c,v 1.4.4.1 2006/09/25 15:00:57 uehira Exp $ */
 /* "raw_ch.c"    99.12.8 urabe */
 /*                  modified from raw_raw.c */
 /*                  byte-order-free */
@@ -32,67 +32,16 @@
 #include <sys/types.h>
 #include <errno.h>
 
+#include "winlib.h"
 #include "subst_func.h"
 
 #define DEBUG       0
 #define BELL        0
 
 int ch_table[65536];
-char *progname,logfile[256],chfile[256];
+char *progname,*logfile,chfile[256];
 int n_ch,negate_channel;
-
-mklong(ptr)
-  unsigned char *ptr;
-  {
-  unsigned long a;
-  a=((ptr[0]<<24)&0xff000000)+((ptr[1]<<16)&0xff0000)+
-    ((ptr[2]<<8)&0xff00)+(ptr[3]&0xff);
-  return a;
-  }
-
-get_time(rt)
-  int *rt;
-  {
-  struct tm *nt;
-  unsigned long ltime;
-  time(&ltime);
-  nt=localtime(&ltime);
-  rt[0]=nt->tm_year%100;
-  rt[1]=nt->tm_mon+1;
-  rt[2]=nt->tm_mday;
-  rt[3]=nt->tm_hour;
-  rt[4]=nt->tm_min;
-  rt[5]=nt->tm_sec;
-  }
-
-write_log(logfil,ptr)
-  char *logfil;
-  char *ptr;
-  {
-  FILE *fp;
-  int tm[6];
-  if(*logfil) fp=fopen(logfil,"a");
-  else fp=stdout;
-  get_time(tm);
-  fprintf(fp,"%02d%02d%02d.%02d%02d%02d %s %s\n",
-    tm[0],tm[1],tm[2],tm[3],tm[4],tm[5],progname,ptr);
-  if(*logfil) fclose(fp);
-  }
-
-ctrlc()
-  {
-  write_log(logfile,"end");
-  exit(0);
-  }
-
-err_sys(ptr)
-  char *ptr;
-  {
-  perror(ptr);
-  write_log(logfile,ptr);
-  if(strerror(errno)) write_log(logfile,strerror(errno));
-  ctrlc();
-  }
+int syslog_mode=0, exit_status;
 
 read_chfile()
   {
@@ -127,7 +76,7 @@ read_chfile()
       n_ch=j;
       if(negate_channel) sprintf(tbuf,"%d channels exclusively",n_ch);
       else sprintf(tbuf,"%d channels set",n_ch);
-      write_log(logfile,tbuf);
+      write_log(tbuf);
       fclose(fp);
       }
     else
@@ -136,8 +85,8 @@ read_chfile()
       fprintf(stderr,"ch_file '%s' not open\n",chfile);
 #endif
       sprintf(tbuf,"channel list file '%s' not open",chfile);
-      write_log(logfile,tbuf);
-      write_log(logfile,"end");
+      write_log(tbuf);
+      write_log("end");
       exit(1);
       }
     }
@@ -145,7 +94,7 @@ read_chfile()
     {
     for(i=0;i<65536;i++) ch_table[i]=i;
     n_ch=i;
-    write_log(logfile,"all channels");
+    write_log("all channels");
     }
   signal(SIGHUP,(void *)read_chfile);
   }
@@ -173,6 +122,7 @@ main(argc,argv)
 
   if(progname=strrchr(argv[0],'/')) progname++;
   else progname=argv[0];
+  exit_status=0;
   if(argc<4)
     {
     fprintf(stderr,
@@ -186,7 +136,7 @@ main(argc,argv)
   rawkey=atoi(argv[1]);
   monkey=atoi(argv[2]);
   size_shm=atoi(argv[3])*1000;
-  *chfile=(*logfile)=0;
+  *chfile=0;
   if(argc>4)
     {
     if(strcmp("-",argv[4])==0) *chfile=0;
@@ -204,7 +154,8 @@ main(argc,argv)
         }
       }
     }    
-  if(argc>5) strcpy(logfile,argv[5]);
+  if(argc>5) logfile=argv[5];
+  else logfile=NULL;
     
   read_chfile();
 
@@ -221,10 +172,10 @@ main(argc,argv)
 
   sprintf(tb,"start in_key=%d id=%d out_key=%d id=%d size=%d",
     rawkey,shmid_raw,monkey,shmid_mon,size_shm);
-  write_log(logfile,tb);
+  write_log(tb);
 
-  signal(SIGTERM,(void *)ctrlc);
-  signal(SIGINT,(void *)ctrlc);
+  signal(SIGTERM,(void *)end_program);
+  signal(SIGINT,(void *)end_program);
 
 reset:
   /* initialize buffer */
@@ -255,10 +206,10 @@ reset:
       if(tow!=1)
         {
         sprintf(tb,"with TOW (diff=%ds)",i);
-        write_log(logfile,tb);
+        write_log(tb);
         if(tow==0)
           {
-          write_log(logfile,"reset");
+          write_log("reset");
           goto reset;
           }
         tow=1;
@@ -271,10 +222,10 @@ reset:
       }
     else if(tow!=0)
       {
-      write_log(logfile,"without TOW");
+      write_log("without TOW");
       if(tow==1)
         {
-        write_log(logfile,"reset");
+        write_log("reset");
         goto reset;
         }
       tow=0;
@@ -331,7 +282,7 @@ reset:
     while(ptr==shr->d+shr->p) sleep(1);
     if(shr->c<c_save || mklong(ptr_save)!=size)
       {
-      write_log(logfile,"reset");
+      write_log("reset");
       goto reset;
       }
     }

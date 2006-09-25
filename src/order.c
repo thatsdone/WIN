@@ -1,4 +1,4 @@
-/* $Id: order.c,v 1.11 2004/10/26 14:42:01 uehira Exp $ */
+/* $Id: order.c,v 1.11.4.1 2006/09/25 15:00:57 uehira Exp $ */
 /*  program "order.c" 1/26/94 - 2/7/94, 6/14/94 urabe */
 /*                              1/6/95 bug in adj_time(tm[0]--) fixed */
 /*                              3/17/95 write_log() */
@@ -45,6 +45,7 @@
 #include <syslog.h>
 
 #include "daemon_mode.h"
+#include "winlib.h"
 #include "subst_func.h"
 
 #define SWAPL(a) a=(((a)<<24)|((a)<<8)&0xff0000|((a)>>8)&0xff00|((a)>>24)&0xff)
@@ -53,8 +54,8 @@
 
 #define NAMELEN  1025
 
-char *progname,logfile[NAMELEN];
-int  daemon_mode, syslog_mode;
+char *progname,*logfile;
+int  daemon_mode, syslog_mode, exit_status;
 
 struct Shm {
   unsigned long p;    /* write point */
@@ -63,67 +64,6 @@ struct Shm {
   unsigned long c;    /* counter */
   unsigned char d[1]; /* data buffer */
 };
-
-mklong(ptr)
-  unsigned char *ptr;
-  {   
-  unsigned long a;
-  a=((ptr[0]<<24)&0xff000000)+((ptr[1]<<16)&0xff0000)+
-    ((ptr[2]<<8)&0xff00)+(ptr[3]&0xff);
-  return a;
-  }   
-
-get_time(rt)
-     int *rt;
-{
-  struct tm *nt;
-  unsigned long ltime;
-  time(&ltime);
-  nt=localtime(&ltime);
-  rt[0]=nt->tm_year%100;
-  rt[1]=nt->tm_mon+1;
-  rt[2]=nt->tm_mday;
-  rt[3]=nt->tm_hour;
-  rt[4]=nt->tm_min;
-  rt[5]=nt->tm_sec;
-}
-
-bcd_dec(dest,sour)
-  unsigned char *sour;
-  int *dest;
-  {
-  static int b2d[]={
-     0, 1, 2, 3, 4, 5, 6, 7, 8, 9,-1,-1,-1,-1,-1,-1,  /* 0x00 - 0x0F */
-    10,11,12,13,14,15,16,17,18,19,-1,-1,-1,-1,-1,-1,
-    20,21,22,23,24,25,26,27,28,29,-1,-1,-1,-1,-1,-1,
-    30,31,32,33,34,35,36,37,38,39,-1,-1,-1,-1,-1,-1,
-    40,41,42,43,44,45,46,47,48,49,-1,-1,-1,-1,-1,-1,
-    50,51,52,53,54,55,56,57,58,59,-1,-1,-1,-1,-1,-1,
-    60,61,62,63,64,65,66,67,68,69,-1,-1,-1,-1,-1,-1,
-    70,71,72,73,74,75,76,77,78,79,-1,-1,-1,-1,-1,-1,
-    80,81,82,83,84,85,86,87,88,89,-1,-1,-1,-1,-1,-1,
-    90,91,92,93,94,95,96,97,98,99,-1,-1,-1,-1,-1,-1,  /* 0x90 - 0x9F */
-    -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
-    -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
-    -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
-    -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
-    -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
-    -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1};
-  int i;
-  i=b2d[sour[0]];
-  if(i>=0 && i<=99) dest[0]=i; else return 0;
-  i=b2d[sour[1]];
-  if(i>=1 && i<=12) dest[1]=i; else return 0;
-  i=b2d[sour[2]];
-  if(i>=1 && i<=31) dest[2]=i; else return 0;
-  i=b2d[sour[3]];
-  if(i>=0 && i<=23) dest[3]=i; else return 0;
-  i=b2d[sour[4]];
-  if(i>=0 && i<=59) dest[4]=i; else return 0;
-  i=b2d[sour[5]];
-  if(i>=0 && i<=60) dest[5]=i; else return 0;
-  return 1;
-  }
 
 t_bcd(t,ptr)
      time_t t;
@@ -217,48 +157,6 @@ check_time(ptr)
   return 0;
   }
 
-write_log(logfil,ptr)
-  char *logfil;
-  char *ptr;
-{
-  FILE *fp;
-  int tm[6];
-
-  if (syslog_mode)
-    syslog(LOG_NOTICE, "%s", ptr);
-  else
-    {
-      if(*logfil) fp=fopen(logfil,"a");
-      else fp=stdout;
-      get_time(tm);
-      fprintf(fp,"%02d%02d%02d.%02d%02d%02d %s %s\n",
-	      tm[0],tm[1],tm[2],tm[3],tm[4],tm[5],progname,ptr);
-      if(*logfil) fclose(fp);
-    }
-}
-
-ctrlc()
-{
-  write_log(logfile,"end");
-  if (syslog_mode)
-    closelog();
-  exit(0);
-}
-
-err_sys(ptr)
-  char *ptr;
-{
-  if (syslog_mode)
-    syslog(LOG_NOTICE, "%s", ptr);
-  else
-    {
-      perror(ptr);
-      write_log(logfile,ptr);
-    }
-  if(strerror(errno)) write_log(logfile,strerror(errno));
-  ctrlc();
-}
-
 advance(shm,shp,c_save,size,t,shp_busy_save)
   struct Shm *shm;
   unsigned int *shp,*size,*c_save,*shp_busy_save;
@@ -302,6 +200,7 @@ main(argc,argv)
   else progname=argv[0];
 
   daemon_mode = syslog_mode = 0;
+  exit_status = EXIT_SUCCESS;
   if(strcmp(progname,"orderd")==0) daemon_mode=1;
 
   if(daemon_mode)
@@ -360,7 +259,7 @@ main(argc,argv)
   shm_key_out=atoi(argv[2+optind]);
   size=atoi(argv[3+optind])*1000;
   n_sec=atoi(argv[4+optind]);
-  if(argc>5+optind) strcpy(logfile,argv[5+optind]);
+  if(argc>5+optind) logfile=argv[5+optind];
   else
     {
       *logfile=0;
@@ -379,13 +278,13 @@ main(argc,argv)
   if((shm_in=(struct Shm *)shmat(shmid_in,(char *)0,0))==(struct Shm *)-1)
     err_sys("shmat");
   sprintf(tbuf,"in : shm_key_in=%d id=%d",shm_key_in,shmid_in);
-  write_log(logfile,tbuf);
+  write_log(tbuf);
    
   if((shmid_out=shmget(shm_key_out,size,IPC_CREAT|0666))<0) err_sys("shmget");
   if((shm_out=(struct Shm *)shmat(shmid_out,(char *)0,0))==(struct Shm *)-1)
     err_sys("shmat");
   sprintf(tbuf,"out: shm_key_out=%d id=%d size=%d",shm_key_out,shmid_out,size);
-  write_log(logfile,tbuf);
+  write_log(tbuf);
 
   /* initialize buffer */
 
@@ -400,15 +299,15 @@ main(argc,argv)
       err_sys("shmat");
     sprintf(tbuf,"late: shm_key_late=%d id=%d size=%d",
           shm_key_late,shmid_late,sizej);
-    write_log(logfile,tbuf);
+    write_log(tbuf);
     shm_late->p=shm_late->c=0;
     shm_late->pl=(sizej-sizeof(*shm_late))/10*9;
     shm_late->r=(-1);
   }
  
-  signal(SIGPIPE,(void *)ctrlc);
-  signal(SIGINT,(void *)ctrlc);
-  signal(SIGTERM,(void *)ctrlc);
+  signal(SIGPIPE,(void *)end_program);
+  signal(SIGINT,(void *)end_program);
+  signal(SIGTERM,(void *)end_program);
 
 reset:
   while(shm_in->r==(-1)) sleep(1);
@@ -430,7 +329,7 @@ reset:
   eobsize_in_count=eobsize_in;
   sprintf(tbuf,"eobsize_in=%d, eobsize_out=%d, sysclk=%d sysclk_org=%d",
     eobsize_in,eobsize_out,sysclk,sysclk_org);
-  write_log(logfile,tbuf);
+  write_log(tbuf);
 
   if(sysclk) /* system clock mode */
     {
@@ -481,7 +380,7 @@ reset:
           ptr=shm_in->d+shp+8;
           sprintf(tbuf,"reset %02X%02X%02X.%02X%02X%02X:%02X%02X",
             ptr[0],ptr[1],ptr[2],ptr[3],ptr[4],ptr[5],ptr[6],ptr[7]);
-          write_log(logfile,tbuf);
+          write_log(tbuf);
           sleep(1);
           goto reset;
           }
@@ -636,7 +535,7 @@ reset:
         ptr=shm_in->d+shp+8;
         sprintf(tbuf,"reset %02X%02X%02X.%02X%02X%02X:%02X%02X",
           ptr[0],ptr[1],ptr[2],ptr[3],ptr[4],ptr[5],ptr[6],ptr[7]);
-        write_log(logfile,tbuf);
+        write_log(tbuf);
         goto reset;
       }
     } while(sec>0);
@@ -675,7 +574,7 @@ reset:
 "passing %02X%02X%02X.%02X%02X%02X:%02X%02X(out=%02d%02d%02d.%02d%02d%02d)",
           ptr[0],ptr[1],ptr[2],ptr[3],ptr[4],ptr[5],ptr[6],ptr[7],
           tm_out[0],tm_out[1],tm_out[2],tm_out[3],tm_out[4],tm_out[5]);
-        write_log(logfile,tbuf);
+        write_log(tbuf);
       }
       while((sec_1=advance(shm_in,&shp_in,&c_save_in,&size_in,&t_bottom,NULL))<=0){
         if(late && shp_in==shp_busy_save) shp_busy_save=(-1);
@@ -688,7 +587,7 @@ reset:
           ptr=shm_in->d+shp_in+8;
           sprintf(tbuf,"reset %02X%02X%02X.%02X%02X%02X:%02X%02X",
             ptr[0],ptr[1],ptr[2],ptr[3],ptr[4],ptr[5],ptr[6],ptr[7]);
-          write_log(logfile,tbuf);
+          write_log(tbuf);
           goto reset;
         }
       }

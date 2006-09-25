@@ -1,4 +1,4 @@
-/* $Id: raw_mon.c,v 1.6 2005/02/20 13:56:17 urabe Exp $ */
+/* $Id: raw_mon.c,v 1.6.4.1 2006/09/25 15:00:57 uehira Exp $ */
 /* "raw_mon.c"      7/2/93,6/17/94,6/28/94    urabe */
 /*                  3/17/95 write_log(), 4/17/95 MAX_SR safety */
 /*                  usleep -> sleep */
@@ -45,6 +45,7 @@
 #include <syslog.h>
 
 #include "daemon_mode.h"
+#include "winlib.h"
 #include "subst_func.h"
 
 #define DEBUG       0
@@ -54,61 +55,10 @@
 
 long buf_raw[MAX_SR],buf_mon[SR_MON][2];
 unsigned char ch_table[65536];
-char *progname,logfile[256],chfile[256];
+char *progname,*logfile,chfile[256];
 int n_ch,negate_channel;
 int  daemon_mode, syslog_mode;
-
-mklong(ptr)
-  unsigned char *ptr;
-  {
-  unsigned long a;
-  a=((ptr[0]<<24)&0xff000000)+((ptr[1]<<16)&0xff0000)+
-    ((ptr[2]<<8)&0xff00)+(ptr[3]&0xff);
-  return a;
-  }
-
-get_time(rt)
-  int *rt;
-  {
-  struct tm *nt;
-  unsigned long ltime;
-  time(&ltime);
-  nt=localtime(&ltime);
-  rt[0]=nt->tm_year%100;
-  rt[1]=nt->tm_mon+1;
-  rt[2]=nt->tm_mday;
-  rt[3]=nt->tm_hour;
-  rt[4]=nt->tm_min;
-  rt[5]=nt->tm_sec;
-  }
-
-write_log(logfil,ptr)
-  char *logfil;
-  char *ptr;
-  {
-  FILE *fp;
-  int tm[6];
-
-  if (syslog_mode)
-    syslog(LOG_NOTICE, "%s", ptr);
-  else
-    {
-      if(*logfil) fp=fopen(logfil,"a");
-      else fp=stdout;
-      get_time(tm);
-      fprintf(fp,"%02d%02d%02d.%02d%02d%02d %s %s\n",
-	      tm[0],tm[1],tm[2],tm[3],tm[4],tm[5],progname,ptr);
-      if(*logfil) fclose(fp);
-    }
-  }
-
-ctrlc()
-  {
-  write_log(logfile,"end");
-  if (syslog_mode)
-    closelog();
-  exit(0);
-  }
+int  exit_status;
 
 get_mon(gm_sr,gm_raw,gm_mon)
   int gm_sr,*gm_raw,(*gm_mon)[2];
@@ -190,94 +140,6 @@ unsigned char *compress_mon(peaks,ptr)
   return ptr;
   }
 
-win2fix(ptr,abuf,sys_ch,sr) /* returns group size in bytes */
-  unsigned char *ptr; /* input */
-  register long *abuf;/* output */
-  long *sys_ch;       /* sys_ch */
-  long *sr;           /* sr */
-  {
-  int b_size,g_size;
-  register int i,s_rate;
-  register unsigned char *dp;
-  unsigned int gh;
-  short shreg;
-  int inreg;
-
-  dp=ptr;
-  gh=((dp[0]<<24)&0xff000000)+((dp[1]<<16)&0xff0000)+
-    ((dp[2]<<8)&0xff00)+(dp[3]&0xff);
-  dp+=4;
-  *sr=s_rate=gh&0xfff;
-  if(s_rate>MAX_SR) return 0;
-  if(b_size=(gh>>12)&0xf) g_size=b_size*(s_rate-1)+8;
-  else g_size=(s_rate>>1)+8;
-  *sys_ch=(gh>>16)&0xffff;
-
-  /* read group */
-  abuf[0]=((dp[0]<<24)&0xff000000)+((dp[1]<<16)&0xff0000)+
-    ((dp[2]<<8)&0xff00)+(dp[3]&0xff);
-  dp+=4;
-  if(s_rate==1) return g_size;  /* normal return */
-  switch(b_size)
-    {
-    case 0:
-      for(i=1;i<s_rate;i+=2)
-        {
-        abuf[i]=abuf[i-1]+((*(char *)dp)>>4);
-        abuf[i+1]=abuf[i]+(((char)(*(dp++)<<4))>>4);
-        }
-      break;
-    case 1:
-      for(i=1;i<s_rate;i++)
-        abuf[i]=abuf[i-1]+(*(char *)(dp++));
-      break;
-    case 2:
-      for(i=1;i<s_rate;i++)
-        {
-        shreg=((dp[0]<<8)&0xff00)+(dp[1]&0xff);
-        dp+=2;
-        abuf[i]=abuf[i-1]+shreg;
-        }
-      break;
-    case 3:
-      for(i=1;i<s_rate;i++)
-        {
-        inreg=((dp[0]<<24)&0xff000000)+((dp[1]<<16)&0xff0000)+
-          ((dp[2]<<8)&0xff00);
-        dp+=3;
-        abuf[i]=abuf[i-1]+(inreg>>8);
-        }
-      break;
-    case 4:
-      for(i=1;i<s_rate;i++)
-        {
-        inreg=((dp[0]<<24)&0xff000000)+((dp[1]<<16)&0xff0000)+
-          ((dp[2]<<8)&0xff00)+(dp[3]&0xff);
-        dp+=4;
-        abuf[i]=abuf[i-1]+inreg;
-        }
-      break;
-    default:
-      return 0; /* bad header */
-    }
-  return g_size;  /* normal return */
-  }
-
-err_sys(ptr)
-     char *ptr;
-{
-
-  if (syslog_mode)
-    syslog(LOG_NOTICE, "%s", ptr);
-  else
-    {
-      perror(ptr);
-      write_log(logfile,ptr);
-    }
-  if(strerror(errno)) write_log(logfile,strerror(errno));
-  ctrlc();
-  }
-
 read_chfile()
   {
   FILE *fp;
@@ -324,7 +186,7 @@ read_chfile()
       n_ch=j;
       if(negate_channel) sprintf(tbuf,"-%d channels",n_ch);
       else sprintf(tbuf,"%d channels",n_ch);
-      write_log(logfile,tbuf);
+      write_log(tbuf);
       fclose(fp);
       }
     else
@@ -333,8 +195,8 @@ read_chfile()
       fprintf(stderr,"ch_file '%s' not open\n",chfile);
 #endif
       sprintf(tbuf,"channel list file '%s' not open",chfile);
-      write_log(logfile,tbuf);
-      write_log(logfile,"end");
+      write_log(tbuf);
+      write_log("end");
       exit(1);
       }
     }
@@ -342,7 +204,7 @@ read_chfile()
     {
     for(i=0;i<65536;i++) ch_table[i]=1;
     n_ch=i;
-    write_log(logfile,"all channels");
+    write_log("all channels");
     }
   signal(SIGHUP,(void *)read_chfile);
   }
@@ -370,6 +232,8 @@ main(argc,argv)
   else progname=argv[0];
 
   daemon_mode = syslog_mode = 0;
+  exit_status = EXIT_SUCCESS;
+
   if(strcmp(progname,"raw_mond")==0) daemon_mode=1;
 
   if(argc<4)
@@ -400,7 +264,7 @@ main(argc,argv)
         }
       }
     }    
-  if(argc>5) strcpy(logfile,argv[5]);
+  if(argc>5) logfile=argv[5];
   else
     {
       *logfile=0;
@@ -428,10 +292,10 @@ main(argc,argv)
 
   sprintf(tb,"start raw_key=%d id=%d mon_key=%d id=%d size=%d",
     rawkey,shmid_raw,monkey,shmid_mon,size_shm);
-  write_log(logfile,tb);
+  write_log(tb);
 
-  signal(SIGTERM,(void *)ctrlc);
-  signal(SIGINT,(void *)ctrlc);
+  signal(SIGTERM,(void *)end_program);
+  signal(SIGINT,(void *)end_program);
 
 reset:
   /* initialize buffer */
@@ -459,12 +323,13 @@ reset:
 
     do    /* loop for ch's */
       {
-      if((re=win2fix(ptr,buf_raw,&ch,&sr))==0)
+      re=win2fix(ptr,buf_raw,(long *)&ch,(long *)&sr);
+      if((re==0) || (sr>MAX_SR))
         {
         sprintf(tb,"%02X%02X%02X%02X%02X%02X%02X%02X",
           ptr[0],ptr[1],ptr[2],ptr[3],ptr[4],ptr[5],ptr[6],ptr[7]);
         strcat(tb," ?");
-        write_log(logfile,tb);
+        write_log(tb);
         break;
         }
       if(ch_table[ch])
@@ -499,7 +364,7 @@ reset:
     while(ptr==shr->d+shr->p) usleep(100000);
     if(shr->c<c_save || mklong(ptr_save)!=size)
       {
-      write_log(logfile,"reset");
+      write_log("reset");
       goto reset;
       }
     }

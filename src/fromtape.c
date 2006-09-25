@@ -1,4 +1,4 @@
-/* $Id: fromtape.c,v 1.7 2005/08/10 09:32:42 urabe Exp $ */
+/* $Id: fromtape.c,v 1.7.2.1 2006/09/25 15:00:57 uehira Exp $ */
 /*
   program "fromtape.c"
   12/10/90 - 12/13/90, 9/19/91, 10/30/91, 6/19/92  urabe
@@ -28,6 +28,7 @@
 #include  <sys/stat.h>
 #include  <sys/mtio.h>
 
+#include "winlib.h"
 #include "subst_func.h"
 
 #define   DEBUG1    0
@@ -93,165 +94,6 @@ char *s1,*s2;
   else if((*s1<='9' && *s1>='7') && (*s2>='0' && *s2<='6')) return -1;
   else return strcmp(s1,s2);
 }
-
-mklong(ptr)
-  unsigned char *ptr;
-  {
-  unsigned long a;  
-  a=((ptr[0]<<24)&0xff000000)+((ptr[1]<<16)&0xff0000)+
-    ((ptr[2]<<8)&0xff00)+(ptr[3]&0xff);
-  return a;
-  }
-
-adj_time(tm)
-  int *tm;
-  {
-  if(tm[5]==60)
-    {
-    tm[5]=0;
-    if(++tm[4]==60)
-      {
-      tm[4]=0;
-      if(++tm[3]==24)
-        {
-        tm[3]=0;
-        tm[2]++;
-        switch(tm[1])
-          {
-          case 2:
-            if(tm[0]%4==0)  /* leap year */
-              {
-              if(tm[2]==30)
-                {
-                tm[2]=1;
-                tm[1]++;
-                }
-              break;
-              }
-            else
-              {
-              if(tm[2]==29)
-                {
-                tm[2]=1;
-                tm[1]++;
-                }
-              break;
-              }
-          case 4:
-          case 6:
-          case 9:
-          case 11:
-            if(tm[2]==31)
-              {
-              tm[2]=1;
-              tm[1]++;
-              }
-            break;
-          default:
-            if(tm[2]==32)
-              {
-              tm[2]=1;
-              tm[1]++;
-              }
-            break;
-          }
-        if(tm[1]==13)
-          {
-          tm[1]=1;
-          if(++tm[0]==100) tm[0]=0;
-          }
-        }
-      }
-    }
-  else if(tm[5]==-1)
-    {
-    tm[5]=59;
-    if(--tm[4]==-1)
-      {
-      tm[4]=59;
-      if(--tm[3]==-1)
-        {
-        tm[3]=23;
-        if(--tm[2]==0)
-          {
-          switch(--tm[1])
-            {
-            case 2:
-              if(tm[0]%4==0)
-                tm[2]=29;else tm[2]=28;
-              break;
-            case 4:
-            case 6:
-            case 9:
-            case 11:
-              tm[2]=30;
-              break;
-            default:
-              tm[2]=31;
-              break;
-            }
-          if(tm[1]==0)
-            {
-            tm[1]=12;
-            if(--tm[0]==-1) tm[0]=99;
-            }
-          }
-        }
-      }
-    }
-  }
-
-bcd_dec(dest,sour)
-  unsigned char *sour;
-  int *dest;
-  {
-  static int b2d[]={
-     0, 1, 2, 3, 4, 5, 6, 7, 8, 9,-1,-1,-1,-1,-1,-1,  /* 0x00 - 0x0F */  
-    10,11,12,13,14,15,16,17,18,19,-1,-1,-1,-1,-1,-1,
-    20,21,22,23,24,25,26,27,28,29,-1,-1,-1,-1,-1,-1,
-    30,31,32,33,34,35,36,37,38,39,-1,-1,-1,-1,-1,-1,
-    40,41,42,43,44,45,46,47,48,49,-1,-1,-1,-1,-1,-1,
-    50,51,52,53,54,55,56,57,58,59,-1,-1,-1,-1,-1,-1,
-    60,61,62,63,64,65,66,67,68,69,-1,-1,-1,-1,-1,-1,
-    70,71,72,73,74,75,76,77,78,79,-1,-1,-1,-1,-1,-1,
-    80,81,82,83,84,85,86,87,88,89,-1,-1,-1,-1,-1,-1,
-    90,91,92,93,94,95,96,97,98,99,-1,-1,-1,-1,-1,-1,  /* 0x90 - 0x9F */
-    -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
-    -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
-    -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
-    -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
-    -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
-    -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1};
-  int i;
-  i=b2d[sour[0]];
-  if(i>=0 && i<=99) dest[0]=i; else return 0;
-  i=b2d[sour[1]];
-  if(i>=1 && i<=12) dest[1]=i; else return 0;
-  i=b2d[sour[2]];
-  if(i>=1 && i<=31) dest[2]=i; else return 0;
-  i=b2d[sour[3]];
-  if(i>=0 && i<=23) dest[3]=i; else return 0;
-  i=b2d[sour[4]];
-  if(i>=0 && i<=59) dest[4]=i; else return 0;
-  i=b2d[sour[5]];
-  if(i>=0 && i<=60) dest[5]=i; else return 0;
-  return 1;
-  }
-
-time_cmp(t1,t2,i)
-  int *t1,*t2,i;  
-  {
-  int cntr;
-  cntr=0;
-  if(t1[cntr]<70 && t2[cntr]>70) return 1;
-  if(t1[cntr]>70 && t2[cntr]<70) return -1;
-  for(;cntr<i;cntr++)
-    {
-    if(t1[cntr]>t2[cntr]) return 1;
-    if(t1[cntr]<t2[cntr]) return -1;
-    } 
-  return 0;  
-  }
 
 end_process(value)
   int value;
@@ -492,79 +334,6 @@ unsigned char *compress_mon(peaks,ptr)
   return ptr;
   }
 
-win2fix(ptr,abuf,sys_ch,sr) /* returns group size in bytes */
-  unsigned char *ptr; /* input */
-  register long *abuf;/* output */
-  long *sys_ch;       /* sys_ch */
-  long *sr;           /* sr */
-  {
-  int b_size,g_size;
-  register int i,s_rate;
-  register unsigned char *dp;
-  unsigned int gh;
-  short shreg;
-  int inreg;
-
-  dp=ptr;
-  gh=((dp[0]<<24)&0xff000000)+((dp[1]<<16)&0xff0000)+
-    ((dp[2]<<8)&0xff00)+(dp[3]&0xff);
-  dp+=4;
-  *sr=s_rate=gh&0xfff;
-/*  if(s_rate>MAX_SR) return 0;*/
-  if(b_size=(gh>>12)&0xf) g_size=b_size*(s_rate-1)+8;
-  else g_size=(s_rate>>1)+8;
-  *sys_ch=(gh>>16)&0xffff;
-
-  /* read group */
-  abuf[0]=((dp[0]<<24)&0xff000000)+((dp[1]<<16)&0xff0000)+
-    ((dp[2]<<8)&0xff00)+(dp[3]&0xff);
-  dp+=4;
-  if(s_rate==1) return g_size;  /* normal return */
-  switch(b_size)
-    {
-    case 0:
-      for(i=1;i<s_rate;i+=2)
-        {
-        abuf[i]=abuf[i-1]+((*(char *)dp)>>4);
-        abuf[i+1]=abuf[i]+(((char)(*(dp++)<<4))>>4);
-        }
-      break;
-    case 1:
-      for(i=1;i<s_rate;i++)
-        abuf[i]=abuf[i-1]+(*(char *)(dp++));
-      break;
-    case 2:
-      for(i=1;i<s_rate;i++)
-        {
-        shreg=((dp[0]<<8)&0xff00)+(dp[1]&0xff);
-        dp+=2;
-        abuf[i]=abuf[i-1]+shreg;
-        }
-      break;
-    case 3:
-      for(i=1;i<s_rate;i++)
-        {
-        inreg=((dp[0]<<24)&0xff000000)+((dp[1]<<16)&0xff0000)+
-          ((dp[2]<<8)&0xff00);
-        dp+=3;
-        abuf[i]=abuf[i-1]+(inreg>>8);
-        }
-      break;
-    case 4:
-      for(i=1;i<s_rate;i++)
-        {
-        inreg=((dp[0]<<24)&0xff000000)+((dp[1]<<16)&0xff0000)+
-          ((dp[2]<<8)&0xff00)+(dp[3]&0xff);
-        dp+=4;
-        abuf[i]=abuf[i-1]+inreg;
-        }
-      break;
-    default:
-      return 0; /* bad header */
-    }
-  return g_size;  /* normal return */
-  }
-
 make_mon(ptr,ptw) /* for one minute */
   unsigned char *ptr,*ptw;
   {
@@ -581,7 +350,7 @@ make_mon(ptr,ptw) /* for one minute */
 
   do    /* loop for chs */
     {
-    ptr+=win2fix(ptr,buf_raw,&ch,&sr);
+    ptr+=win2fix(ptr,buf_raw,(long *)&ch,(long *)&sr);
     *ptw++=ch>>8;
     *ptw++=ch;
     get_mon(sr,buf_raw,buf_mon);  /* get mon data from raw */

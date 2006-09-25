@@ -1,4 +1,4 @@
-/* $Id: elist.c,v 1.9 2002/01/13 06:57:50 uehira Exp $ */
+/* $Id: elist.c,v 1.9.4.1 2006/09/25 15:00:56 uehira Exp $ */
 /* program elist.c    2/5/91 - 2/25/91 ,  4/16/92, 4/22/92  urabe */
 /*                      6/10/92, 8/18/92, 10/25/92, 6/8/93, 1/5/94  */
 /*      4/21/94,12/5/94,6/2/95 bug in dat_dir fixed */
@@ -23,6 +23,7 @@
 #include <ctype.h>
 #include <pwd.h>
 
+#include "winlib.h"
 #include "subst_func.h"
 
 #define   NAMLEN    128
@@ -34,118 +35,6 @@
 #else
 #define   TAIL    "tail -r"
 #endif
-
-adj_time(tm)
-  int *tm;
-  {
-  if(tm[5]==60)
-    {
-    tm[5]=0;
-    if(++tm[4]==60)
-      {
-      tm[4]=0;
-      if(++tm[3]==24)
-        {
-        tm[3]=0;
-        tm[2]++;
-        switch(tm[1])
-          {
-          case 2:
-            if(tm[0]%4)
-              {
-              if(tm[2]==29)
-                {
-                tm[2]=1;
-                tm[1]++;
-                }
-              break;
-              }
-            else
-              {
-              if(tm[2]==30)
-                {
-                tm[2]=1;
-                tm[1]++;
-                }
-              break;
-              }
-          case 4:
-          case 6:
-          case 9:
-          case 11:
-            if(tm[2]==31)
-              {
-              tm[2]=1;
-              tm[1]++;
-              }
-            break;
-          default:
-            if(tm[2]==32)
-              {
-              tm[2]=1;
-              tm[1]++;
-              }
-            break;
-          }
-        if(tm[1]==13)
-          {
-          tm[1]=1;
-          if(++tm[0]==100) tm[0]=0;
-          }
-        }
-      }
-    }
-  else if(tm[5]==-1)
-    {
-    tm[5]=59;
-    if(--tm[4]==-1)
-      {
-      tm[4]=59;
-      if(--tm[3]==-1)
-        {
-        tm[3]=23;
-        if(--tm[2]==0)
-          {
-          switch(--tm[1])
-            {
-            case 2:
-              if(tm[0]%4) tm[2]=28;else tm[2]=29;
-              break;
-            case 4:
-            case 6:
-            case 9:
-            case 11:  
-              tm[2]=30;
-              break;
-            default:
-              tm[2]=31;  
-              break;
-            }
-          if(tm[1]==0)
-            {  
-            tm[1]=12;
-            if(--tm[0]==-1) tm[0]=99;
-            }
-          }
-        }
-      }
-    }
-  }
-
-time_cmp(t1,t2,i)
-  int *t1,*t2,i;
-  {
-  int cntr;
-  cntr=0;
-  if(t1[cntr]<70 && t2[cntr]>70) return 1;
-  if(t1[cntr]>70 && t2[cntr]<70) return -1;
-  for(;cntr<i;cntr++)
-    {
-    if(t1[cntr]>t2[cntr]) return 1;
-    if(t1[cntr]<t2[cntr]) return -1;
-    }
-  return 0;
-  }
 
 char *getname(name,id)
   char *name;

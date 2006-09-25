@@ -1,4 +1,4 @@
-/* $Id: pmon.c,v 1.14 2005/08/10 09:32:42 urabe Exp $ */
+/* $Id: pmon.c,v 1.14.2.1 2006/09/25 15:00:57 uehira Exp $ */
 /************************************************************************
 *************************************************************************
 **  program "pmon.c" for NEWS/SPARC                             *********
@@ -60,6 +60,7 @@
 #endif
 
 #include  <stdio.h>
+#include  <stdlib.h>
 #include  <string.h>
 #include  <math.h>
 #include  <signal.h>
@@ -83,6 +84,7 @@
 #include  <sys/ioctl.h>
 #include  <ctype.h>
 
+#include "winlib.h"
 #include "subst_func.h"
 
 #define LONGNAME      1
@@ -241,7 +243,8 @@ unsigned char frame[HEIGHT_LBP][WIDTH_LBP],zone[M_CH][20],
   file_trig_lock[WIN_FILENAME_MAX],idx2[65536];
 double dt=1.0/(double)SR_MON,time_on,time_off,time_lta,time_lta_off,
   time_sta,a_sta,b_sta,a_lta,b_lta,a_lta_off,b_lta_off;
-char *progname,logfile[256];
+char *progname,*logfile;
+int  syslog_mode = 0, exit_status;
 struct
   {
   int ch;
@@ -269,35 +272,6 @@ struct
   double zero_acc; /* accumulator for offset calculation */
   } tbl[M_CH];
 
-get_time(rt)
-  int *rt;
-  {
-  struct tm *nt;
-  unsigned long ltime;
-  time(&ltime);
-  nt=localtime(&ltime);
-  rt[0]=nt->tm_year%100;
-  rt[1]=nt->tm_mon+1;
-  rt[2]=nt->tm_mday;
-  rt[3]=nt->tm_hour;
-  rt[4]=nt->tm_min;
-  rt[5]=nt->tm_sec;
-  }
-
-write_log(logfil,ptr)
-  char *logfil;
-  char *ptr;
-  {
-  FILE *fp;
-  int tm[6];
-  if(*logfil) fp=fopen(logfil,"a");
-  else fp=stdout;
-  get_time(tm);
-  fprintf(fp,"%02d%02d%02d.%02d%02d%02d %s %s\n",
-    tm[0],tm[1],tm[2],tm[3],tm[4],tm[5],progname,ptr);
-  if(*logfil) fclose(fp);
-  }
-
 strncmp2(s1,s2,i)
 char *s1,*s2;             
 int i; 
@@ -314,15 +288,6 @@ char *s1,*s2;
   else if((*s1<='9' && *s1>='7') && (*s2>='0' && *s2<='6')) return -1;
   else return strcmp(s1,s2);
   }
-
-mklong(ptr)
-  unsigned char *ptr;
-  {   
-  unsigned long a;
-  a=((ptr[0]<<24)&0xff000000)+((ptr[1]<<16)&0xff0000)+
-    ((ptr[2]<<8)&0xff00)+(ptr[3]&0xff);
-  return a;
-  }   
 
 mkfont(y,ii,buf_font,width,jj,k,buf_font16,width16)
   int y,ii,k,width,jj,width16;
@@ -414,113 +379,15 @@ write_file(fname,text)
   while((fp=fopen(fname,"a"))==NULL)
     {
     sprintf(tb,"'%s' not open (%d)",fname,getpid());
-    write_log(logfile,tb);
+    write_log(tb);
     sleep(60);
     }
   fputs(text,fp);
   while(fclose(fp)==EOF)
     {
     sprintf(tb,"'%s' not close (%d)",fname,getpid());
-    write_log(logfile,tb);
+    write_log(tb);
     sleep(60);
-    }
-  }
-
-adj_time(tm)
-  int *tm;
-  {
-  if(tm[5]==60)
-    {
-    tm[5]=0;
-    if(++tm[4]==60)
-      {
-      tm[4]=0;
-      if(++tm[3]==24)
-        {
-        tm[3]=0;
-        tm[2]++;
-        switch(tm[1])
-          {
-          case 2:
-            if(tm[0]%4==0)
-              {
-              if(tm[2]==30)
-                {
-                tm[2]=1;
-                tm[1]++;
-                }
-              break;
-              }
-            else
-              {
-              if(tm[2]==29)
-                {
-                tm[2]=1;
-                tm[1]++;
-                }
-              break;
-              }
-          case 4:
-          case 6:
-          case 9:
-          case 11:
-            if(tm[2]==31)
-              {
-              tm[2]=1;
-              tm[1]++;
-              }
-            break;
-          default:
-            if(tm[2]==32)
-              {
-              tm[2]=1;
-              tm[1]++;
-              }
-            break;
-          }
-        if(tm[1]==13)
-          {
-          tm[1]=1;
-          if(++tm[0]==100) tm[0]=0;
-          }
-        }
-      }
-    }
-  else if(tm[5]==-1)
-    {
-    tm[5]=59;
-    if(--tm[4]==-1)
-      {
-      tm[4]=59;
-      if(--tm[3]==-1)
-        {
-        tm[3]=23;
-        if(--tm[2]==0)
-          {
-          switch(--tm[1])
-            {
-            case 2:
-              if(tm[0]%4==0)
-                tm[2]=29;else tm[2]=28;
-              break;
-            case 4:
-            case 6:
-            case 9:
-            case 11:
-              tm[2]=30;
-              break;
-            default:
-              tm[2]=31;
-              break;
-            }
-          if(tm[1]==0)
-            {
-            tm[1]=12;
-            if(--tm[0]==-1) tm[0]=99;
-            }
-          }
-        }
-      }
     }
   }
 
@@ -663,7 +530,7 @@ find_oldest(path,oldst,latst) /* returns N of files */
   if((dir_ptr=opendir(path))==NULL)
     {
     sprintf(tb,"directory '%s' not open",path);
-    write_log(logfile,tb);
+    write_log(tb);
     owari();
     }
   i=0;
@@ -849,7 +716,7 @@ plot_wave(xbase,ybase)
           if(tim[5]==0 && i==0 && m_limit==0 && !tbl[ch].alive)
             {
             sprintf(tb,"'%s' present (pmon)",tbl[ch].name);
-            write_log(logfile,tb);
+            write_log(tb);
             tbl[ch].alive=1;
             }
         /* plot data */
@@ -870,7 +737,7 @@ plot_wave(xbase,ybase)
             m_limit==0 && tbl[ch].alive)
           {
           sprintf(tb,"'%s' absent (pmon)",tbl[ch].name);
-          write_log(logfile,tb);
+          write_log(tb);
           tbl[ch].alive=0;
           }
         yy+=pixels_per_trace;
@@ -995,7 +862,7 @@ hangup()
 owari()
   {
   close(fd);
-  write_log(logfile,"end");
+  write_log("end");
   if(made_lock_file) unlink(file_trig_lock);
   exit(0);
   }
@@ -1016,7 +883,7 @@ check_path(path,idx)
     if((dir_ptr=opendir(path))==NULL)
       {
       sprintf(tb2,"directory not open '%s'",path);
-      write_log(logfile,tb2);
+      write_log(tb2);
       owari();
       }
     else closedir(dir_ptr);
@@ -1026,7 +893,7 @@ check_path(path,idx)
       if((fp=fopen(tb,"w+"))==NULL)
         {
         sprintf(tb2,"directory not R/W '%s'",path);
-        write_log(logfile,tb2);
+        write_log(tb2);
         owari();
         }
       else
@@ -1041,7 +908,7 @@ check_path(path,idx)
     if((fp=fopen(path,"r"))==NULL)
       {
       sprintf(tb2,"file not readable '%s'",path);
-      write_log(logfile,tb2);
+      write_log(tb2);
       owari();
       }
     else fclose(fp);
@@ -1051,7 +918,7 @@ check_path(path,idx)
     if((fp=fopen(path,"r+"))==NULL)
       {
       sprintf(tb2,"file not R/W '%s'",path);
-      write_log(logfile,tb2);
+      write_log(tb2);
       owari();
       }
     else fclose(fp);
@@ -1264,7 +1131,8 @@ main(argc,argv)
   sprintf(tb," usage : '%s (-d [dly min]) (-o) (-l [log file]) [param file] ([YYMMDD] [hhmm] [length(min)])\n",
     progname);
   offset=wait_min=0;
-  *logfile=0;
+  /* *logfile=0; */
+  exit_status = EXIT_SUCCESS;
   while((c=getopt(argc,argv,"d:ol:"))!=EOF)
     {
     switch(c)
@@ -1276,7 +1144,7 @@ main(argc,argv)
         offset=1;
         break;
       case 'l':   /* logfile */
-        strcpy(logfile,optarg);
+        logfile=optarg;
         break;
       default:
         fprintf(stderr," option -%c unknown\n",c);
@@ -1291,14 +1159,14 @@ main(argc,argv)
     exit(1);
     }
 
-  write_log(logfile,"start");
+  write_log("start");
   strcpy(param_file,argv[1+optind]);
 
   /* open parameter file */ 
   if((f_param=fopen(param_file,"r"))==NULL)
     {
     sprintf(tb,"'%s' not open",param_file);
-    write_log(logfile,tb);
+    write_log(tb);
     owari();
     }
   read_param(f_param,fn1);      /* (1) footnote */
@@ -1381,11 +1249,11 @@ retry:
     if((fp=fopen(temp_done,"r"))==NULL) /* read USED file for when to start */
       {
       sprintf(tb,"'%s' not found.  Use '%s' instead.",temp_done,latest);
-      write_log(logfile,tb);
+      write_log(tb);
       while((fp=fopen(latest,"r"))==NULL)
         {
         sprintf(tb,"'%s' not found. Waiting ...",latest);
-        write_log(logfile,tb);
+        write_log(tb);
         sleep(60);
         }
       }
@@ -1394,7 +1262,7 @@ retry:
       fclose(fp);
       unlink(temp_done);
       sprintf(tb,"'%s' illegal -  deleted.",temp_done);
-      write_log(logfile,tb);
+      write_log(tb);
       sleep(60);
       goto retry;
       }
@@ -1429,7 +1297,7 @@ retry:
         {
         sprintf(tb,"Can't run because lock file '%s' is valid for PID#%d.",
           file_trig_lock,i);
-        write_log(logfile,tb);
+        write_log(tb);
         owari();
         }
       unlink(file_trig_lock);
@@ -1484,7 +1352,7 @@ retry:
       while((f_param=fopen(param_file,"r"))==NULL)
         {
         sprintf(tb,"'%s' file not found (%d)",param_file,getpid());
-        write_log(logfile,tb);
+        write_log(tb);
         sleep(60);
         }
       for(i=0;i<9;i++) read_param(f_param,textbuf);
@@ -1529,7 +1397,7 @@ retry:
           while((fp=fopen(ch_file,"r"))==NULL)
             {
             sprintf(tb,"'%s' file not found (%d)",param_file,getpid());
-            write_log(logfile,tb);
+            write_log(tb);
             sleep(60);
             }
           while((ret=read_param(fp,textbuf1))==0)
@@ -1546,7 +1414,7 @@ retry:
           if(ret)   /* channel not found in file */
             {
             sprintf(tb,"'%s-%s' not found",tbl[i].name,tbl[i].comp);
-            write_log(logfile,tb);
+            write_log(tb);
             tbl[i].use=0;
             tbl[i].name[0]='*';
             continue;
@@ -1554,7 +1422,7 @@ retry:
           while((fp=fopen(file_zone,"r"))==NULL)
             {
             sprintf(tb,"'%s' file not found (%d)",param_file,getpid());
-            write_log(logfile,tb);
+            write_log(tb);
             sleep(60);
             }
           while(ptr=fgets(textbuf,500,fp))
@@ -1582,7 +1450,7 @@ retry:
                 else
                   {
                   sprintf(tb,"too many zones for station '%s'",tbl[i].name);
-                  write_log(logfile,tb);
+                  write_log(tb);
                   }
                 }
               }
@@ -1593,7 +1461,7 @@ retry:
             if(tbl[i].n_zone==0)
               {
               sprintf(tb,"zone for '%s' not found %d",tbl[i].name,i);
-              write_log(logfile,tb);
+              write_log(tb);
               tbl[i].ratio=0.0;
               }
             else

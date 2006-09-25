@@ -1,4 +1,4 @@
-/* $Id: wadd.c,v 1.6 2003/02/27 02:08:57 urabe Exp $ */
+/* $Id: wadd.c,v 1.6.4.1 2006/09/25 15:00:58 uehira Exp $ */
 /* program "wadd.c"
   "wadd" puts two win data files together
   7/24/91 - 7/25/91, 4/20/94,6/27/94-6/28/94,7/12/94   urabe
@@ -20,6 +20,7 @@
 #include  <stdio.h>
 #include  <string.h>
 
+#include "winlib.h"
 #include "subst_func.h"
 
 #define   DEBUG   0
@@ -28,29 +29,14 @@
 #define   TEMPNAME  "wadd.tmp"
 #define SWAPL(a) a=(((a)<<24)|((a)<<8)&0xff0000|((a)>>8)&0xff00|((a)>>24)&0xff)
 
-bcd_dec(dest,sour)
-  char *sour;
-  int *dest;
-  {
-  int cntr;
-  for(cntr=0;cntr<6;cntr++)
-    dest[cntr]=((sour[cntr]>>4)&0xf)*10+(sour[cntr]&0xf);
-  }
-
-time_cmp(t1,t2,i)
-  int *t1,*t2,i;  
-  {
-  int cntr;
-  cntr=0;
-  if(t1[cntr]<70 && t2[cntr]>70) return 1;
-  if(t1[cntr]>70 && t2[cntr]<70) return -1;
-  for(;cntr<i;cntr++)
-    {
-    if(t1[cntr]>t2[cntr]) return 1;
-    if(t1[cntr]<t2[cntr]) return -1;
-    } 
-  return 0;  
-  }
+/* bcd_dec(dest,sour) */
+/*   char *sour; */
+/*   int *dest; */
+/*   { */
+/*   int cntr; */
+/*   for(cntr=0;cntr<6;cntr++) */
+/*     dest[cntr]=((sour[cntr]>>4)&0xf)*10+(sour[cntr]&0xf); */
+/*   } */
 
 get_sysch(buf,sys_ch)
   unsigned char *buf;
@@ -76,15 +62,6 @@ get_sysch(buf,sys_ch)
     ptr+=gsize;
     } while(ptr<ptr_lim);
   return i;
-  }
-
-mklong(ptr)       
-  unsigned char *ptr;
-  {
-  unsigned long a;
-  a=((ptr[0]<<24)&0xff000000)+((ptr[1]<<16)&0xff0000)+
-    ((ptr[2]<<8)&0xff00)+(ptr[3]&0xff);
-  return a;       
   }
 
 read_data(ptr,fp)

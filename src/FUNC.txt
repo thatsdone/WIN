@@ -1,0 +1,150 @@
+***** mklong
+cormeisei.c
+dewin.c
+ecore.c
+ecore2.c
+extraw.c
+fromtape.c
+insert_raw.c
+insert_trg.c
+ls8tel16_raw.c
+order.c
+pmon.c
+raw2mon.c
+raw_100.c
+raw_ch.c
+raw_mon.c
+raw_raw.c
+raw_shift.c
+raw_time.c
+recvnmx.c
+recvs.c
+recvt.c
+recvts.c
+relay.c
+rtape.c
+send_raw.c
+send_raw_old.c
+sends.c
+shmdump.c
+wadd.c
+wadd2.c
+wch.c
+wchch.c
+wdisk.c
+wdiskts.c
+wed.c   -----> mklong bug??????
+win_system.c
+winadd.c
+wtape.c
+wtime.c
+
+***** winform
+cormeisei.c
+ecore.c
+ecore2.c
+ls8tel16_raw.c
+ls8tel16_win.c
+raw_100.c
+raw_shift.c
+raw_time.c
+recvnmx.c
+wform.c
+/*winform.c*/
+wintowin.c
+wtime.c
+
+***** bcd_dec
+dewin.c  ---> different definition.
+ecore.c  ---> different definition.
+fromtape.c
+insert_raw.c
+insert_trg.c
+ls8tel16_win.c
+order.c
+recvt.c
+recvts.c
+rtape.c
+shmdump.c  ====> bcd_dec2
+wadd.c  ---> different definition.
+wadd2.c ---> different definition.
+wchasn.c
+wck_wdisk.c
+wdisk.c
+wdiskts.c
+wed.c  ---> different definition.
+win.c  ---> different definition.
+win2raw.c
+winadd.c
+
+***** mkshort
+ecore.c
+ecore2.c
+recvnmx.c
+recvt.c
+send_raw.c
+send_raw_old.c
+
+***** adj_time_m
+adj_time_m.c
+dewin.c
+insert_raw.c
+insert_trg.c
+
+**** adj_time
+dewin.c
+ecore.c
+elist.c
+events.c
+final2finalb.c
+fromtape.c
+pick2finalb.c
+pmon.c
+rtape.c
+wed.c
+wtape.c   ====> adj_time_wtape
+
+***** win2fix  (many imcompatible pointer type!!!  int <==> long)
+cormeisei.c
+dewin.c   ----> another high sampling rate version
+ecore2.c
+fromtape.c
+raw2mon.c
+raw_100.c
+raw_mon.c
+raw_shift.c
+raw_time.c
+shmdump.c
+wtime.c
+
+***** time_cmp
+dewin.c
+ecore.c
+elist.c
+events.c
+fromtape.c
+insert_raw.c
+insert_trg.c
+rtape.c
+wadd.c
+wadd2.c
+wdiskts.c
+wed.c
+win.c    ====> time_cmp_win 70 --> 25
+win2raw.c
+winadd.c
+
+***** filter by M.SAITO
+dewin.c
+ecore.c
+ecore2.c
+filter.c
+shmdump.c
+win.c
+
+****** bcd_dec
+wdiskts.c
+win.c
+winadd.c
+
+

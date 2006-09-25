@@ -1,4 +1,4 @@
-/* $Id: extraw.c,v 1.3 2002/01/13 06:57:50 uehira Exp $ */
+/* $Id: extraw.c,v 1.3.4.1 2006/09/25 15:00:56 uehira Exp $ */
 /* "extraw.c"    2000.3.17 urabe */
 /* 2000.4.24/2001.11.14 strerror() */
 
@@ -28,65 +28,14 @@
 #include <sys/types.h>
 #include <errno.h>
 
+#include "winlib.h"
 #include "subst_func.h"
 
 #define DEBUG       0
 #define BELL        0
 
-char *progname,logfile[256];
-
-mklong(ptr)
-  unsigned char *ptr;
-  {
-  unsigned long a;
-  a=((ptr[0]<<24)&0xff000000)+((ptr[1]<<16)&0xff0000)+
-    ((ptr[2]<<8)&0xff00)+(ptr[3]&0xff);
-  return a;
-  }
-
-get_time(rt)
-  int *rt;
-  {
-  struct tm *nt;
-  unsigned long ltime;
-  time(&ltime);
-  nt=localtime(&ltime);
-  rt[0]=nt->tm_year%100;
-  rt[1]=nt->tm_mon+1;
-  rt[2]=nt->tm_mday;
-  rt[3]=nt->tm_hour;
-  rt[4]=nt->tm_min;
-  rt[5]=nt->tm_sec;
-  }
-
-write_log(logfil,ptr)
-  char *logfil;
-  char *ptr;
-  {
-  FILE *fp;
-  int tm[6];
-  if(*logfil) fp=fopen(logfil,"a");
-  else fp=stdout;
-  get_time(tm);
-  fprintf(fp,"%02d%02d%02d.%02d%02d%02d %s %s\n",
-    tm[0],tm[1],tm[2],tm[3],tm[4],tm[5],progname,ptr);
-  if(*logfil) fclose(fp);
-  }
-
-ctrlc()
-  {
-  write_log(logfile,"end");
-  exit(0);
-  }
-
-err_sys(ptr)
-  char *ptr;
-  {
-  perror(ptr);
-  write_log(logfile,ptr);
-  if(strerror(errno)) write_log(logfile,strerror(errno));
-  ctrlc();
-  }
+char *progname,*logfile;
+int syslog_mode = 0; exit_status;
 
 main(argc,argv)
   int argc;
@@ -109,6 +58,8 @@ main(argc,argv)
 
   if(progname=strrchr(argv[0],'/')) progname++;
   else progname=argv[0];
+  exit_status = EXIT_SUCCESS;
+
   if(argc<6)
     {
     fprintf(stderr,
@@ -123,8 +74,8 @@ main(argc,argv)
   size_shdat=atoi(argv[3])*1000;
   ctlkey=atoi(argv[4]);
   size_shctl=atoi(argv[5])*1000;
-  *logfile=0;
-  if(argc>6) strcpy(logfile,argv[6]);
+  if(argc>6) logfile=argv[6];
+  else   logfile=NULL;
     
   /* in shared memory */
   if((shmid_in=shmget(inkey,0,0))<0) err_sys("shmget in");
@@ -145,10 +96,10 @@ main(argc,argv)
 
   sprintf(tb,"start in_key=%d id=%d dat_key=%d id=%d size=%d ctl_key=%d id=%d size=%d ",
     inkey,shmid_in,datkey,shmid_dat,size_shdat,ctlkey,shmid_ctl,size_shctl);
-  write_log(logfile,tb);
+  write_log(tb);
 
-  signal(SIGTERM,(void *)ctrlc);
-  signal(SIGINT,(void *)ctrlc);
+  signal(SIGTERM,(void *)end_program);
+  signal(SIGINT,(void *)end_program);
 
 reset:
   /* initialize buffer */
@@ -235,7 +186,7 @@ reset:
     while(ptr==shin->d+shin->p) sleep(1);
     if(shin->c<c_save || mklong(ptr_save)!=size)
       {
-      write_log(logfile,"reset");
+      write_log("reset");
       goto reset;
       }
     }

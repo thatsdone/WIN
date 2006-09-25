@@ -1,4 +1,4 @@
-/* $Id: wch.c,v 1.8 2005/02/20 13:56:18 urabe Exp $ */
+/* $Id: wch.c,v 1.8.4.1 2006/09/25 15:00:59 uehira Exp $ */
 /*
 program "wch.c"
 "wch" edits a win format data file by channles
@@ -19,6 +19,7 @@ program "wch.c"
 #include  <stdio.h>
 #include  <signal.h>
 
+#include "winlib.h"
 #include "subst_func.h"
 
 #define   DEBUG   0
@@ -82,15 +83,6 @@ read_chfile(chfile)
     fprintf(stderr,"all channels\n");
     return i;
     }
-  }
-
-mklong(ptr)       
-  unsigned char *ptr;
-  {
-  unsigned long a;
-  a=((ptr[0]<<24)&0xff000000)+((ptr[1]<<16)&0xff0000)+
-    ((ptr[2]<<8)&0xff00)+(ptr[3]&0xff);
-  return a;       
   }
 
 read_data()

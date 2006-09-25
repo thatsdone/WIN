@@ -1,4 +1,4 @@
-/* $Id: wadd2.c,v 1.4 2003/07/24 02:14:14 urabe Exp $ */
+/* $Id: wadd2.c,v 1.4.4.1 2006/09/25 15:00:59 uehira Exp $ */
 /* program "wadd2.c"
   "wadd" puts two win data files together
   7/24/91 - 7/25/91, 4/20/94,6/27/94-6/28/94,7/12/94   urabe
@@ -23,44 +23,21 @@
 #include  <string.h>
 
 #include "subst_func.h"
+#include "winlib.h"
 
 #define   DEBUG   0
 #define   MAXSIZE   1000000
 #define   NAMLEN    1024
 #define   TEMPNAME  "wadd2.tmp"
 
-bcd_dec(dest,sour)
-  char *sour;
-  int *dest;
-  {
-  int cntr;
-  for(cntr=0;cntr<6;cntr++)
-    dest[cntr]=((sour[cntr]>>4)&0xf)*10+(sour[cntr]&0xf);
-  }
-
-time_cmp(t1,t2,i)
-  int *t1,*t2,i;  
-  {
-  int cntr;
-  cntr=0;
-  if(t1[cntr]<70 && t2[cntr]>70) return 1;
-  if(t1[cntr]>70 && t2[cntr]<70) return -1;
-  for(;cntr<i;cntr++)
-    {
-    if(t1[cntr]>t2[cntr]) return 1;
-    if(t1[cntr]<t2[cntr]) return -1;
-    } 
-  return 0;  
-  }
-
-mklong(ptr)       
-  unsigned char *ptr;
-  {
-  unsigned long a;
-  a=((ptr[0]<<24)&0xff000000)+((ptr[1]<<16)&0xff0000)+
-    ((ptr[2]<<8)&0xff00)+(ptr[3]&0xff);
-  return a;       
-  }
+/* bcd_dec(dest,sour) */
+/*   char *sour; */
+/*   int *dest; */
+/*   { */
+/*   int cntr; */
+/*   for(cntr=0;cntr<6;cntr++) */
+/*     dest[cntr]=((sour[cntr]>>4)&0xf)*10+(sour[cntr]&0xf); */
+/*   } */
 
 read_data(ptr,fp)
   FILE *fp;

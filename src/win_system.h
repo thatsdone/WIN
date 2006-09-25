@@ -1,4 +1,4 @@
-/* $Id: win_system.h,v 1.7 2005/06/10 14:52:09 uehira Exp $ */
+/* $Id: win_system.h,v 1.7.4.1 2006/09/25 15:01:00 uehira Exp $ */
 
 #ifndef _WIN_SYSTEM_H_
 #define _WIN_SYSTEM_H_
@@ -10,9 +10,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-typedef unsigned long  WIN_blocksize;
-typedef unsigned short WIN_ch;
-typedef unsigned long  WIN_sr;
+#include "winlib.h"
+
+/* typedef unsigned long  WIN_blocksize; */
+/* typedef unsigned short WIN_ch; */
+/* typedef unsigned long  WIN_sr; */
 
 #define WIN_BLOCKSIZE_LEN  (sizeof(WIN_blocksize))  /* byte */
 #define WIN_TIME_LEN       6  /* byte */
@@ -25,8 +27,8 @@ typedef unsigned long  WIN_sr;
 #define WIN_STACOMP_LEN     7   /* (length of component code)+1 */
 
 /* High sampling rate format */
-#define  HEADER_4B    4096     /* SR<2^12  (   1 Hz --    4095 Hz) */
-#define  HEADER_5B    1048576  /* SR<2^20  (4096 Hz -- 1048575 Hz) */
+/* #define  HEADER_4B    4096     /\* SR<2^12  (   1 Hz --    4095 Hz) *\/ */
+/* #define  HEADER_5B    1048576  /\* SR<2^20  (4096 Hz -- 1048575 Hz) *\/ */
 
 /* 'events' process makes the following files */
 #define EVENTS_OLDEST  "OLDEST"
@@ -109,11 +111,10 @@ struct Shm {
 };
 
 
-unsigned long  mklong(unsigned char *ptr);
-void  adj_time(int tm[]);
-void  adj_time_m(int tm[]);
-int  bcd_dec(int dest[], unsigned char *sour);
-int  time_cmp(int *t1, int *t2, int i);
+/* void  adj_time(int tm[]); */
+/* void  adj_time_m(int tm[]); */
+/* int  bcd_dec(int dest[], unsigned char *sour); */
+/* int  time_cmp(int *t1, int *t2, int i); */
 void rmemo5(char f[], int c[]);
 void rmemo6(char f[], int c[]);
 int  wmemo5(char name[], int tm[]);
@@ -132,7 +133,7 @@ int **imatrix(int, int);
 WIN_blocksize read_onesec_win(FILE *, unsigned char **);
 WIN_blocksize win_get_chhdr(unsigned char *, WIN_ch *, WIN_sr *);
 
-int win2fix(unsigned char *, long *, long *, long *);
-int winform(long *, unsigned char *, int, unsigned short);
+/* int win2fix(unsigned char *, long *, long *, long *); */
+/* int winform(long *, unsigned char *, int, unsigned short); */
 
 #endif  /*_WIN_SYSTEM_H_ */

@@ -1,4 +1,4 @@
-/* $Id: raw2mon.c,v 1.4 2002/04/30 01:31:08 urabe Exp $ */
+/* $Id: raw2mon.c,v 1.4.4.1 2006/09/25 15:00:57 uehira Exp $ */
 /*
   program "raw2mon.c"
   6/3/93,6/17/94,8/17/95 urabe
@@ -20,6 +20,7 @@
 #include  <sys/ioctl.h>
 #include  <sys/stat.h>
 
+#include "winlib.h"
 #include "subst_func.h"
 
 #define   MAXSIZE   1000000
@@ -29,15 +30,6 @@
 
   unsigned char wbuf[SIZE_WBUF],buf[MAXSIZE];
   long buf_raw[MAX_SR],buf_mon[SR_MON][2];
-
-mklong(ptr)
-  unsigned char *ptr;
-  {
-  unsigned long a;
-  a=((ptr[0]<<24)&0xff000000)+((ptr[1]<<16)&0xff0000)+
-    ((ptr[2]<<8)&0xff00)+(ptr[3]&0xff);
-  return a;
-  }
 
 get_mon(gm_sr,gm_raw,gm_mon)
   int gm_sr,*gm_raw,(*gm_mon)[2];
@@ -119,79 +111,6 @@ unsigned char *compress_mon(peaks,ptr)
   return ptr;
   }
 
-win2fix(ptr,abuf,sys_ch,sr) /* returns group size in bytes */
-  unsigned char *ptr; /* input */
-  register long *abuf;/* output */
-  long *sys_ch;       /* sys_ch */
-  long *sr;           /* sr */
-  {
-  int b_size,g_size;
-  register int i,s_rate;
-  register unsigned char *dp;
-  unsigned int gh;
-  short shreg;
-  int inreg;
-
-  dp=ptr;
-  gh=((dp[0]<<24)&0xff000000)+((dp[1]<<16)&0xff0000)+
-    ((dp[2]<<8)&0xff00)+(dp[3]&0xff);
-  dp+=4;
-  *sr=s_rate=gh&0xfff;
-  if(s_rate>MAX_SR) return 0;
-  if(b_size=(gh>>12)&0xf) g_size=b_size*(s_rate-1)+8;
-  else g_size=(s_rate>>1)+8;
-  *sys_ch=(gh>>16)&0xffff;
-
-  /* read group */
-  abuf[0]=((dp[0]<<24)&0xff000000)+((dp[1]<<16)&0xff0000)+
-    ((dp[2]<<8)&0xff00)+(dp[3]&0xff);
-  dp+=4;
-  if(s_rate==1) return g_size;  /* normal return */
-  switch(b_size)
-    {
-    case 0:
-      for(i=1;i<s_rate;i+=2)
-        {
-        abuf[i]=abuf[i-1]+((*(char *)dp)>>4);
-        abuf[i+1]=abuf[i]+(((char)(*(dp++)<<4))>>4);
-        }
-      break;
-    case 1:
-      for(i=1;i<s_rate;i++)
-        abuf[i]=abuf[i-1]+(*(char *)(dp++));
-      break;
-    case 2:
-      for(i=1;i<s_rate;i++)
-        {
-        shreg=((dp[0]<<8)&0xff00)+(dp[1]&0xff);
-        dp+=2;
-        abuf[i]=abuf[i-1]+shreg;
-        }
-      break;
-    case 3:
-      for(i=1;i<s_rate;i++)
-        {
-        inreg=((dp[0]<<24)&0xff000000)+((dp[1]<<16)&0xff0000)+
-          ((dp[2]<<8)&0xff00);
-        dp+=3;
-        abuf[i]=abuf[i-1]+(inreg>>8);
-        }
-      break;
-    case 4:
-      for(i=1;i<s_rate;i++)
-        {
-        inreg=((dp[0]<<24)&0xff000000)+((dp[1]<<16)&0xff0000)+
-          ((dp[2]<<8)&0xff00)+(dp[3]&0xff);
-        dp+=4;
-        abuf[i]=abuf[i-1]+inreg;
-        }
-      break;
-    default:
-      return 0; /* bad header */
-    }
-  return g_size;  /* normal return */
-  }
-
 make_mon(ptr,ptw) /* for one minute */
   unsigned char *ptr,*ptw;
   {
@@ -207,7 +126,8 @@ make_mon(ptr,ptw) /* for one minute */
   for(i=0;i<6;i++) *ptw++=(*ptr++); /* YMDhms (6) */
   do    /* loop for ch's */
     {
-    if((re=win2fix(ptr,buf_raw,&ch,&sr))==0) break;
+    if((re=win2fix(ptr,buf_raw,(long *)&ch,(long *)&sr))==0) break;
+    if (sr > MAX_SR) break;
     ptr+=re;
     get_mon(sr,buf_raw,buf_mon); /* get mon data from raw */
     *ptw++=ch>>8;

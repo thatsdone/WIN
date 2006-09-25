@@ -1,4 +1,4 @@
-/* $Id: winadd.c,v 1.4 2003/11/03 12:20:59 uehira Exp $ */
+/* $Id: winadd.c,v 1.4.4.1 2006/09/25 15:01:00 uehira Exp $ */
 
 /*
  * winadd.c  (Uehira Kenji)
@@ -37,6 +37,7 @@
 
 #include <memory.h>
 
+#include "winlib.h"
 #include "win_system.h"
 #include "subst_func.h"
 
@@ -51,7 +52,7 @@ typedef struct data_index  INDX;
 
 /* global variables */
 static const char rcsid[] =
-   "$Id: winadd.c,v 1.4 2003/11/03 12:20:59 uehira Exp $";
+   "$Id: winadd.c,v 1.4.4.1 2006/09/25 15:01:00 uehira Exp $";
 static int  dummy_flag, verbose_flag;
 
 /* prototypes */
@@ -70,7 +71,6 @@ static void win_file_read(char *, WIN_ch **, int *, int *,
 static int time_cmpq(const void *, const void *);
 static void time2bcd(time_t, unsigned char *);
 static time_t bcd2time(unsigned char *);
-static void dec_bcd(unsigned char *, unsigned int *);
 static void memory_error(void);
 static void usage(void);
 int main(int, char *[]);
@@ -140,15 +140,6 @@ memory_error(void)
 
   (void)fputs("Cannot allocate memory!\n", stderr);
   exit(1);
-}
-
-static void
-dec_bcd(unsigned char *dest, unsigned int *sour)
-{
-  int  cntr;
-
-  for (cntr = 0; cntr < 6; cntr++)
-    dest[cntr] = (((sour[cntr] / 10) << 4) & 0xf0) | (sour[cntr] % 10 & 0xf);
 }
 
 static time_t

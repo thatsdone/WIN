@@ -1,4 +1,4 @@
-/* $Id: raw_time.c,v 1.4 2005/03/18 14:34:42 uehira Exp $ */
+/* $Id: raw_time.c,v 1.4.4.1 2006/09/25 15:00:58 uehira Exp $ */
 
 /* raw_time.c -- online version of wtime(1W) */
 
@@ -46,6 +46,7 @@
 #include "daemon_mode.h"
 #include "subst_func.h"
 #include "win_log.h"
+#include "winlib.h"
 #include "win_system.h"
 
 
@@ -53,7 +54,7 @@
 
 
 static char rcsid[] =
-  "$Id: raw_time.c,v 1.4 2005/03/18 14:34:42 uehira Exp $";
+  "$Id: raw_time.c,v 1.4.4.1 2006/09/25 15:00:58 uehira Exp $";
 
 char *progname, *logfile;
 int  daemon_mode, syslog_mode;

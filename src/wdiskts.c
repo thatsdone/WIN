@@ -1,4 +1,4 @@
-/* $Id: wdiskts.c,v 1.6 2005/08/10 09:32:42 urabe Exp $ */
+/* $Id: wdiskts.c,v 1.6.2.1 2006/09/25 15:00:59 uehira Exp $ */
 /* 2005.8.10 urabe bug in strcmp2() fixed : 0-6 > 7-9 */
 
 #ifdef HAVE_CONFIG_H
@@ -36,6 +36,7 @@
 #include "gc_leak_detector.h"
 #endif
 #include "daemon_mode.h"
+#include "winlib.h"
 #include "subst_func.h"
 
 /*  #define   DEBUG   0 */
@@ -50,225 +51,13 @@
 #define FREE(a)         (void)free((void *)(a))
 
 char tbuf[256],latest[20],oldest[20],busy[20],outdir[80];
-char *progname,logfile[256];
+char *progname,*logfile;
 int count,count_max,mode;
 FILE *fd;
 static unsigned char  *datbuf,*sortbuf,*datbuf_tmp;
 unsigned long  dat_num,sort_num,array_num_datbuf;
 jmp_buf  mx;
-int  daemon_mode, syslog_mode;
-
-mklong(ptr)
-  unsigned char *ptr;
-  {   
-  unsigned long a;
-  a=((ptr[0]<<24)&0xff000000)+((ptr[1]<<16)&0xff0000)+
-    ((ptr[2]<<8)&0xff00)+(ptr[3]&0xff);
-  return a;
-  }   
-        
-write_log(logfil,ptr)
-     char *logfil;
-     char *ptr;
-{
-   FILE *fp;
-   int tm[6];
-
-   if (syslog_mode)
-     {
-       syslog(LOG_NOTICE, "%s", ptr);
-     }
-   else
-     {
-       if(*logfil) fp=fopen(logfil,"a");
-       else fp=stdout;
-       get_time(tm);
-       fprintf(fp,"%02d%02d%02d.%02d%02d%02d %s %s\n",
-	       tm[0],tm[1],tm[2],tm[3],tm[4],tm[5],progname,ptr);
-       if(*logfil) fclose(fp);
-     }
-}
-
-ctrlc()
-{
-   if(fd!=NULL) fclose(fd);
-   write_log(logfile,"end");
-   if (syslog_mode)
-     closelog();
-   exit(0);
-}
-
-err_sys(ptr)
-     char *ptr;
-{
-
-  if (syslog_mode)
-    {
-      syslog(LOG_NOTICE, "%s", ptr);
-    }
-  else
-    {
-      perror(ptr);
-      write_log(logfile,ptr);
-    }
-  if(strerror(errno)) write_log(logfile,strerror(errno));
-  ctrlc();
-}
-
-adj_time_m(tm)
-     int *tm;
-{
-   if(tm[4]==60){
-      tm[4]=0;
-      if(++tm[3]==24){
-	 tm[3]=0;
-	 tm[2]++;
-	 switch(tm[1]){
-	  case 2:
-	    if(tm[0]%4==0){
-	       if(tm[2]==30){
-		  tm[2]=1;
-		  tm[1]++;
-	       }
-	       break;
-            }
-	    else{
-	       if(tm[2]==29){
-		  tm[2]=1;
-		  tm[1]++;
-	       }
-	       break;
-            }
-	  case 4:
-	  case 6:
-	  case 9:
-	  case 11:
-	    if(tm[2]==31){
-	       tm[2]=1;
-	       tm[1]++;
-            }
-	    break;
-	  default:
-	    if(tm[2]==32){
-	       tm[2]=1;
-	       tm[1]++;
-            }
-	    break;
-	 }
-	 if(tm[1]==13){
-	    tm[1]=1;
-	    if(++tm[0]==100) tm[0]=0;
-	 }
-      }
-   }
-   else if(tm[4]==-1){
-      tm[4]=59;
-      if(--tm[3]==-1){
-	 tm[3]=23;
-	 if(--tm[2]==0){
-	    switch(--tm[1]){
-	     case 2:
-	       if(tm[0]%4==0)
-		 tm[2]=29;
-	       else tm[2]=28;
-	       break;
-	     case 4:
-	     case 6:
-	     case 9:
-	     case 11:
-	       tm[2]=30;
-	       break;
-	     default:
-	       tm[2]=31;
-	       break;
-	    }
-	    if(tm[1]==0){
-	       tm[1]=12;
-	       if(--tm[0]==-1) tm[0]=99;
-	    }
-	 }
-      }
-   }
-}
-
-time_cmp(t1,t2,i)
-  int *t1,*t2,i;  
-  {
-  int cntr;
-  cntr=0;
-  if(t1[cntr]<70 && t2[cntr]>70) return 1;
-  if(t1[cntr]>70 && t2[cntr]<70) return -1;
-  for(;cntr<i;cntr++)
-    {
-    if(t1[cntr]>t2[cntr]) return 1;
-    if(t1[cntr]<t2[cntr]) return -1;
-    } 
-  return 0;  
-  }
-
-get_time(rt)
-     int *rt;
-{
-   struct tm *nt;
-   long ltime;
-   time(&ltime);
-   nt=localtime(&ltime);
-   rt[0]=nt->tm_year%100;
-   rt[1]=nt->tm_mon+1;
-   rt[2]=nt->tm_mday;
-   rt[3]=nt->tm_hour;
-   rt[4]=nt->tm_min;
-   rt[5]=nt->tm_sec;
-}
-
-static int
-bcd_dec(dest,sour)
-     unsigned char *sour;
-     int *dest;
-{
-  static int b2d[]={
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 9,-1,-1,-1,-1,-1,-1,  /* 0x00 - 0x0F */
-    10,11,12,13,14,15,16,17,18,19,-1,-1,-1,-1,-1,-1,
-    20,21,22,23,24,25,26,27,28,29,-1,-1,-1,-1,-1,-1,
-    30,31,32,33,34,35,36,37,38,39,-1,-1,-1,-1,-1,-1,
-    40,41,42,43,44,45,46,47,48,49,-1,-1,-1,-1,-1,-1,
-    50,51,52,53,54,55,56,57,58,59,-1,-1,-1,-1,-1,-1,
-    60,61,62,63,64,65,66,67,68,69,-1,-1,-1,-1,-1,-1,
-    70,71,72,73,74,75,76,77,78,79,-1,-1,-1,-1,-1,-1,
-    80,81,82,83,84,85,86,87,88,89,-1,-1,-1,-1,-1,-1,
-    90,91,92,93,94,95,96,97,98,99,-1,-1,-1,-1,-1,-1,  /* 0x90 - 0x9F */
-    -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
-    -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
-    -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
-    -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
-    -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
-    -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1};
-  int i;
-
-  i=b2d[sour[0]];
-  if(i>=0 && i<=99) dest[0]=i; else return 0;
-  i=b2d[sour[1]];
-  if(i>=1 && i<=12) dest[1]=i; else return 0;
-  i=b2d[sour[2]];
-  if(i>=1 && i<=31) dest[2]=i; else return 0;
-  i=b2d[sour[3]];
-  if(i>=0 && i<=23) dest[3]=i; else return 0;
-  i=b2d[sour[4]];
-  if(i>=0 && i<=59) dest[4]=i; else return 0;
-  i=b2d[sour[5]];
-  if(i>=0 && i<=60) dest[5]=i; else return 0;
-  return 1;
-}
-
-static void
-dec_bcd(dest,sour)
-     unsigned int *sour;
-     unsigned char *dest;
-{
-   int cntr;
-   for(cntr=0;cntr<6;cntr++)
-      dest[cntr]=(((sour[cntr]/10)<<4)&0xf0)|(sour[cntr]%10&0xf);
-}
+int  daemon_mode, syslog_mode, exit_status;
 
 static time_t
 bcd2time(bcd)
@@ -500,7 +289,7 @@ end_2:
    FREE(indx);
 end_1:
    FREE(tim_list); FREE(ch_list);
-   /*if(status==1) write_log(logfile,"realloc");*/
+   /*if(status==1) write_log("realloc");*/
    return(status);
    }
 
@@ -514,21 +303,21 @@ switch_file(tm)
       if(datbuf!=NULL) {
 	if((sortbuf=MALLOC(unsigned char,dat_num))==NULL){
 	  FREE(datbuf);
-	  write_log(logfile,"malloc sort");
+	  write_log("malloc sort");
 	  longjmp(mx,-1);  /* jump to reset */
 	}
 	/* sort *datbuf and output to *sortbuf */
 	if(sort_buf()){
 	  FREE(datbuf);
 	  FREE(sortbuf);
-	  write_log(logfile,"sortbuf");
+	  write_log("sortbuf");
 	  longjmp(mx,-1);  /* jump to reset */
 	}
 	/* write to disk */
 	if(fwrite(sortbuf,1,sort_num,fd)!=sort_num){
 	  FREE(datbuf);
 	  FREE(sortbuf);
-	  write_log(logfile,"fwrite");
+	  write_log("fwrite");
 	  longjmp(mx,-1);  /* jump to reset */
 	}
         FREE(datbuf);
@@ -644,6 +433,7 @@ main(argc,argv)
    else progname=argv[0];
 
    daemon_mode = syslog_mode = 0;
+   exit_status = EXIT_SUCCESS;
    if(strcmp(progname,"wdiskts60")==0) mode=60;
    else if(strcmp(progname,"wdiskts60d")==0) {mode=60;daemon_mode=1;}
    else if(strcmp(progname,"wdiskts")==0) mode=1;
@@ -665,7 +455,7 @@ main(argc,argv)
    fprintf(fp,"%d\n",count_max);
    fclose(fp);
    
-   if(argc>4) strcpy(logfile,argv[4]);
+   if(argc>4) logfile=argv[4];
    else
      {
        *logfile=0;
@@ -685,10 +475,10 @@ main(argc,argv)
      err_sys("shmat");
    
    sprintf(tbuf,"start, shm_key=%d sh=%d",shmkey,shm);
-   write_log(logfile,tbuf);
+   write_log(tbuf);
    
-   signal(SIGTERM,(void *)ctrlc);
-   signal(SIGINT,(void *)ctrlc);
+   signal(SIGTERM,(void *)end_program);
+   signal(SIGINT,(void *)end_program);
    
    setjmp(mx);
  reset:
@@ -711,7 +501,7 @@ main(argc,argv)
 	"system clock %02d%02d%02d.%02d%02d%02d->%02d%02d%02d.%02d%02d%02d",
 	tm_save[0],tm_save[1],tm_save[2],tm_save[3],tm_save[4],tm_save[5],
 	tm[0],tm[1],tm[2],tm[3],tm[4],tm[5]);
-	write_log(logfile,tbuf);
+	write_log(tbuf);
 	goto reset;
       }
       else if(i==1){
@@ -729,7 +519,7 @@ main(argc,argv)
 	printf("shm->c=%d c_save=%d\n",shm->c,c_save);
 #endif
 	if(shm->c<c_save){  /* check counter before output */
-	  write_log(logfile,"reset");
+	  write_log("reset");
 	  goto reset;
 	}
 	c_save=shm->c;
@@ -739,7 +529,7 @@ main(argc,argv)
 	  datbuf_tmp=REALLOC(unsigned char,datbuf,array_num_datbuf);
 	  if(datbuf_tmp==NULL){ 
 	    FREE(datbuf);
-	    write_log(logfile,"realloc");
+	    write_log("realloc");
 	    goto reset;
 	  }
 	  datbuf = datbuf_tmp;

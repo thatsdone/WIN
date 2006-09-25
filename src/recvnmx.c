@@ -1,4 +1,4 @@
-/* $Id: recvnmx.c,v 1.16 2005/04/14 09:10:12 urabe Exp $ */
+/* $Id: recvnmx.c,v 1.16.4.1 2006/09/25 15:00:58 uehira Exp $ */
 /* "recvnmx.c"    2001.7.18-19 modified from recvt.c and nmx2raw.c  urabe */
 /*                2001.8.18 */
 /*                2001.10.5 workaround for hangup */
@@ -40,6 +40,7 @@
 #include <netdb.h>
 #include <errno.h>
 
+#include "winlib.h"
 #include "subst_func.h"
 
 #define DEBUG     0
@@ -56,7 +57,8 @@
 #define BUFSIZE   ((16*NB+MAXSR+1)*4)
 #define MAXCH     1024
 
-char *progname,logfile[256],chmapfile[1024];
+char *progname,*logfile,chmapfile[1024];
+int  syslog_mode = 0, exit_status;
 struct ip_mreq stMreq;
 unsigned short station,chmap[65536];
 int use_chmap;
@@ -112,140 +114,8 @@ static unsigned char d2b[]={
     0x80,0x81,0x82,0x83,0x84,0x85,0x86,0x87,0x88,0x89,
     0x90,0x91,0x92,0x93,0x94,0x95,0x96,0x97,0x98,0x99};
 
-get_time(rt)
-  int *rt;
-  {
-  struct tm *nt;
-  unsigned long ltime;
-  time(&ltime);
-  nt=localtime(&ltime);
-  rt[0]=nt->tm_year%100;
-  rt[1]=nt->tm_mon+1;
-  rt[2]=nt->tm_mday;
-  rt[3]=nt->tm_hour;
-  rt[4]=nt->tm_min;
-  rt[5]=nt->tm_sec;
-  }
-
-write_log(logfil,ptr)
-  char *logfil;
-  char *ptr;
-  {
-  FILE *fp;
-  int tm[6];
-  if(*logfil) fp=fopen(logfil,"a");
-  else fp=stdout;
-  get_time(tm);
-  fprintf(fp,"%02d%02d%02d.%02d%02d%02d %s %s\n",
-    tm[0],tm[1],tm[2],tm[3],tm[4],tm[5],progname,ptr);
-  if(*logfil) fclose(fp);
-  }
-
-ctrlc()
-  {
-  write_log(logfile,"end");
-  exit(0);
-  }
-
-err_sys(ptr)
-  char *ptr;
-  {
-  perror(ptr);
-  write_log(logfile,ptr);
-  if(strerror(errno)) write_log(logfile,strerror(errno));
-  ctrlc();
-  }
-
-/* winform.c  4/30/91,99.4.19   urabe */
-/* winform converts fixed-sample-size-data into win's format */
-/* winform returns the length in bytes of output data */
-
-winform(inbuf,outbuf,sr,sys_ch)
-  long *inbuf;      /* input data array for one sec*/
-  unsigned char *outbuf;  /* output data array for one sec */
-  int sr;         /* n of data (i.e. sampling rate) */
-  unsigned short sys_ch;  /* 16 bit long channel ID number */
-  {
-  int dmin,dmax,aa,bb,br,i,byte_leng;
-  long *ptr;
-  unsigned char *buf;
-
-  /* differentiate and obtain min and max */
-  ptr=inbuf;
-  bb=(*ptr++);
-  dmax=dmin=0;
-  for(i=1;i<sr;i++)
-    {
-    aa=(*ptr);
-    *ptr++=br=aa-bb;
-    bb=aa;
-    if(br>dmax) dmax=br;
-    else if(br<dmin) dmin=br;
-    }
-
-  /* determine sample size */
-  if(((dmin&0xfffffff8)==0xfffffff8 || (dmin&0xfffffff8)==0) &&
-    ((dmax&0xfffffff8)==0xfffffff8 || (dmax&0xfffffff8)==0)) byte_leng=0;
-  else if(((dmin&0xffffff80)==0xffffff80 || (dmin&0xffffff80)==0) &&
-    ((dmax&0xffffff80)==0xffffff80 || (dmax&0xffffff80)==0)) byte_leng=1;
-  else if(((dmin&0xffff8000)==0xffff8000 || (dmin&0xffff8000)==0) &&
-    ((dmax&0xffff8000)==0xffff8000 || (dmax&0xffff8000)==0)) byte_leng=2;
-  else if(((dmin&0xff800000)==0xff800000 || (dmin&0xff800000)==0) &&
-    ((dmax&0xff800000)==0xff800000 || (dmax&0xff800000)==0)) byte_leng=3;
-  else byte_leng=4;
-  /* make a 4 byte long header */
-  buf=outbuf;
-  *buf++=(sys_ch>>8)&0xff;
-  *buf++=sys_ch&0xff;
-  *buf++=(byte_leng<<4)|(sr>>8);
-  *buf++=sr&0xff;
-
-  /* first sample is always 4 byte long */
-  *buf++=inbuf[0]>>24;
-  *buf++=inbuf[0]>>16;
-  *buf++=inbuf[0]>>8;
-  *buf++=inbuf[0];
-  /* second and after */
-  switch(byte_leng)
-    {
-    case 0:
-      for(i=1;i<sr-1;i+=2)
-        *buf++=(inbuf[i]<<4)|(inbuf[i+1]&0xf);
-      if(i==sr-1) *buf++=(inbuf[i]<<4);
-      break;
-    case 1:
-      for(i=1;i<sr;i++)
-        *buf++=inbuf[i];
-      break;
-    case 2:
-      for(i=1;i<sr;i++)
-        {
-        *buf++=inbuf[i]>>8;
-        *buf++=inbuf[i];
-        }
-      break;
-    case 3:
-      for(i=1;i<sr;i++)
-        {
-        *buf++=inbuf[i]>>16;
-        *buf++=inbuf[i]>>8;
-        *buf++=inbuf[i];
-        }
-      break;
-    case 4:
-      for(i=1;i<sr;i++)
-        {
-        *buf++=inbuf[i]>>24;
-        *buf++=inbuf[i]>>16;
-        *buf++=inbuf[i]>>8;
-        *buf++=inbuf[i];
-        }
-      break;
-    }
-  return (int)(buf-outbuf);
-  }
-
-int write_shm(int ch,int sr,time_t tim,int *buf,struct Shm *shm,int eobsize,int pl)
+int
+write_shm(int ch,int sr,time_t tim,int *buf,struct Shm *shm,int eobsize,int pl)
 {
   struct tm *t;
   unsigned char *ptw,*ptw_save,*ptw_save2;
@@ -293,23 +163,6 @@ int write_shm(int ch,int sr,time_t tim,int *buf,struct Shm *shm,int eobsize,int 
   shm->c++;
   return uni;
 }
-
-unsigned long mklong(ptr)
-  unsigned char *ptr;
-  {
-  unsigned long a;
-  a=((ptr[0]<<24)&0xff000000)+((ptr[1]<<16)&0xff0000)+
-    ((ptr[2]<<8)&0xff00)+(ptr[3]&0xff);
-  return a;
-  }
-
-unsigned short mkshort(ptr)
-  unsigned char *ptr;
-  {
-  unsigned short a;
-  a=((ptr[0]<<8)&0xff00)+(ptr[1]&0xff);
-  return a;
-  }
 
 parse_one_packet_np(unsigned char *inbuf,int len,struct Nmx_Packet *pk)
 {
@@ -540,7 +393,7 @@ proc_soh(struct Nmx_Packet *pk)
     pk->ptype,pk->t->tm_year%100,pk->t->tm_mon+1,pk->t->tm_mday,pk->t->tm_hour,
     pk->t->tm_min,pk->t->tm_sec,model[pk->model],pk->serno,pk->seq);
 #if SOH
-  write_log(logfile,tb);
+  write_log(tb);
 #endif
   for(i=0;i<pk->bpp;i++){ /* decode time */
     tim=pk->b[i].u.uc[0][0]+(pk->b[i].u.uc[0][1]<<8)+
@@ -575,7 +428,7 @@ proc_soh(struct Nmx_Packet *pk)
           sprintf(tb+strlen(tb),"%02X",(unsigned char)pk->b[i].u.c[j]);
     }
 #if SOH
-    write_log(logfile,tb);
+    write_log(tb);
 #endif
   }
   return 0;
@@ -605,11 +458,11 @@ ch2idx(int *rbuf[],struct Nmx_Packet *pk,int winch)
     sprintf(tb,"registered model=%d(%s) serno=%d ch=%d idx=%d",
       pk->model,model[pk->model],pk->serno,pk->ch,i);
     if(winch>=0) sprintf(tb+strlen(tb)," winch=%04X",winch);
-    write_log(logfile,tb);
+    write_log(tb);
     if(pk->npformat)
       {
       sprintf(tb,"NP : GPS POS = %fN %fE %dm",pk->lat,pk->lon,pk->alt);
-      write_log(logfile,tb);
+      write_log(tb);
       }
   }
   return i;
@@ -630,14 +483,14 @@ read_ch_map()
         sscanf(tb,"%s%d%x",mdl,&serno,&ch);
         if(serno>2047) {
           sprintf(tb,"S/N '%d' illegal !",serno);
-          write_log(logfile,tb);
+          write_log(tb);
           fprintf(stderr,"%s\n",tb);
           exit(1);
         }
         for(i=0;i<32;i++) if(strcmp(mdl,model[i])==0) break;
         if(i==32) {
           sprintf(tb,"model '%s' not registered !",mdl);
-          write_log(logfile,tb);
+          write_log(tb);
           fprintf(stderr,"%s\n",tb);
           exit(1);
         }
@@ -647,11 +500,11 @@ read_ch_map()
     fclose(fp);
     use_chmap=1;
     sprintf(tb,"%d lines read from ch_map file '%s'",k,chmapfile);
-    write_log(logfile,tb);
+    write_log(tb);
     }
     else{
       sprintf(tb,"ch_map file '%s' not open !",chmapfile);
-      write_log(logfile,tb);
+      write_log(tb);
       fprintf(stderr,"channel map file '%s' not open!\n",chmapfile);
       exit(1);
     }
@@ -690,6 +543,7 @@ main(argc,argv)
 
   if(progname=strrchr(argv[0],'/')) progname++;
   else progname=argv[0];
+  exit_status = EXIT_SUCCESS;
   sprintf(tb,
     " usage : '%s (-c [ch_map]) (-i [interface]) (-m [mcast_group]) (-vBn) \\\n\
          (-d [fragdir]) [port] [shm_key] [shm_size(KB)] ([log file])'",progname);
@@ -736,8 +590,8 @@ main(argc,argv)
   to_port=atoi(argv[1+optind]);
   shm_key=atoi(argv[2+optind]);
   size_shm=atoi(argv[3+optind])*1000;
-  *logfile=0;
-  if(argc>4+optind) strcpy(logfile,argv[4+optind]);
+  if(argc>4+optind) logfile=argv[4+optind];
+  else logfile=NULL;
 
   if((sock=socket(AF_INET,SOCK_DGRAM,0))<0) err_sys("socket");
   i=65535;
@@ -761,9 +615,9 @@ main(argc,argv)
     if(setsockopt(sock,IPPROTO_IP,IP_ADD_MEMBERSHIP,(char *)&stMreq,
       sizeof(stMreq))<0) err_sys("IP_ADD_MEMBERSHIP setsockopt error\n");
     }
-  signal(SIGTERM,(void *)ctrlc);
-  signal(SIGINT,(void *)ctrlc);
-  signal(SIGPIPE,(void *)ctrlc);
+  signal(SIGTERM,(void *)end_program);
+  signal(SIGINT,(void *)end_program);
+  signal(SIGPIPE,(void *)end_program);
 
   /* out shared memory */
   if((shmid=shmget(shm_key,size_shm,IPC_CREAT|0666))<0) err_sys("shmget");
@@ -771,7 +625,7 @@ main(argc,argv)
     err_sys("shmat");
 
   sprintf(tb,"start out_key=%d id=%d size=%d",shm_key,shmid,size_shm);
-  write_log(logfile,tb);
+  write_log(tb);
 
   /* initialize buffer */
   shm->p=shm->c=0;
@@ -860,14 +714,14 @@ main(argc,argv)
             if((fp=fopen(name,"w+"))==NULL)
               {
               sprintf(tb,"file %s not open for write",name);
-              write_log(logfile,tb);
+              write_log(tb);
               }
             else
               {
               if(fwrite(rbuf[idx],4,fsize_rbuf[idx],fp)<fsize_rbuf[idx])
                 {
                 sprintf(tb,"file %s write failed",name);
-                write_log(logfile,tb);
+                write_log(tb);
                 }
               fclose(fp);
               }
@@ -879,7 +733,7 @@ main(argc,argv)
               {
               sprintf(tb,"file %s size=%d inconsistent (%d)",
                 name,nr,pk.sr-fsize_rbuf[idx]);
-              write_log(logfile,tb);
+              write_log(tb);
               }
             fclose(fp);
             unlink(name);
@@ -919,14 +773,14 @@ main(argc,argv)
             if((fp=fopen(name,"w+"))==NULL)
               {
               sprintf(tb,"file %s not open for write",name);
-              write_log(logfile,tb);
+              write_log(tb);
               }
             else
               {
               if(fwrite(rbuf[idx]+rbuf_ptr,4,pk.sr-rbuf_ptr,fp)<pk.sr-rbuf_ptr)
                 {
                 sprintf(tb,"file %s write failed",name);
-                write_log(logfile,tb);
+                write_log(tb);
                 }
               fclose(fp);
               j=1; /* skip the first sec */
@@ -938,7 +792,7 @@ main(argc,argv)
             if(nr!=rbuf_ptr && nr!=rbuf_ptr+1)
               {
               sprintf(tb,"file %s size=%d inconsistent (%d)",name,nr,rbuf_ptr);
-              write_log(logfile,tb);
+              write_log(tb);
               }
             fclose(fp);
             unlink(name);

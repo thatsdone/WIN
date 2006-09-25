@@ -1,5 +1,5 @@
 /*
- * $Id: wck_wdisk.c,v 1.1 2002/05/03 10:49:49 uehira Exp $
+ * $Id: wck_wdisk.c,v 1.1.4.1 2006/09/25 15:00:59 uehira Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -10,11 +10,12 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "winlib.h"
 #include "win_system.h"
 #include "subst_func.h"
 
 static const char  rcsid[] =
-   "$Id: wck_wdisk.c,v 1.1 2002/05/03 10:49:49 uehira Exp $";
+   "$Id: wck_wdisk.c,v 1.1.4.1 2006/09/25 15:00:59 uehira Exp $";
 char  *progname;
 
 static void usage();

@@ -1,4 +1,4 @@
-/* $Id: recvt.c,v 1.29 2005/09/25 23:23:05 urabe Exp $ */
+/* $Id: recvt.c,v 1.29.2.1 2006/09/25 15:00:58 uehira Exp $ */
 /* "recvt.c"      4/10/93 - 6/2/93,7/2/93,1/25/94    urabe */
 /*                2/3/93,5/25/94,6/16/94 */
 /*                1/6/95 bug in adj_time fixed (tm[0]--) */
@@ -82,6 +82,7 @@
 #include <syslog.h>
 
 #include "daemon_mode.h"
+#include "winlib.h"
 #include "subst_func.h"
 
 #define DEBUG     0
@@ -99,9 +100,9 @@
 #define N_PNOS    62    /* length of packet nos. history >=2 */
 
 unsigned char rbuf[MAXMESG],ch_table[65536];
-char *progname,logfile[256],chfile[N_CHFILE][256];
+char *progname,*logfile,chfile[N_CHFILE][256];
 int n_ch,negate_channel,hostlist[N_HOST][3],n_host,no_pinfo,n_chfile;
-int  daemon_mode, syslog_mode;
+int  daemon_mode, syslog_mode, exit_status;
 
 struct {
     int host;
@@ -113,75 +114,6 @@ struct {
     unsigned int n_bytes;
     unsigned int n_packets;
     } ht[N_HOST];
-
-mklong(ptr)
-  unsigned char *ptr;
-  {
-  unsigned long a;
-  a=((ptr[0]<<24)&0xff000000)+((ptr[1]<<16)&0xff0000)+
-    ((ptr[2]<<8)&0xff00)+(ptr[3]&0xff);
-  return a;
-  }
-
-mkshort(ptr)
-  unsigned char *ptr;
-  {
-  unsigned short a;
-  a=((ptr[0]<<8)&0xff00)+(ptr[1]&0xff);
-  return a;
-  }
-
-get_time(rt)
-  int *rt;
-  {
-  struct tm *nt;
-  time_t ltime;
-  time(&ltime);
-  nt=localtime(&ltime);
-  rt[0]=nt->tm_year%100;
-  rt[1]=nt->tm_mon+1;
-  rt[2]=nt->tm_mday;
-  rt[3]=nt->tm_hour;
-  rt[4]=nt->tm_min;
-  rt[5]=nt->tm_sec;
-  }
-
-bcd_dec(dest,sour)
-  unsigned char *sour;
-  int *dest;
-  {
-  static int b2d[]={
-     0, 1, 2, 3, 4, 5, 6, 7, 8, 9,-1,-1,-1,-1,-1,-1,  /* 0x00 - 0x0F */  
-    10,11,12,13,14,15,16,17,18,19,-1,-1,-1,-1,-1,-1,
-    20,21,22,23,24,25,26,27,28,29,-1,-1,-1,-1,-1,-1,
-    30,31,32,33,34,35,36,37,38,39,-1,-1,-1,-1,-1,-1,
-    40,41,42,43,44,45,46,47,48,49,-1,-1,-1,-1,-1,-1,
-    50,51,52,53,54,55,56,57,58,59,-1,-1,-1,-1,-1,-1,
-    60,61,62,63,64,65,66,67,68,69,-1,-1,-1,-1,-1,-1,
-    70,71,72,73,74,75,76,77,78,79,-1,-1,-1,-1,-1,-1,
-    80,81,82,83,84,85,86,87,88,89,-1,-1,-1,-1,-1,-1,
-    90,91,92,93,94,95,96,97,98,99,-1,-1,-1,-1,-1,-1,  /* 0x90 - 0x9F */
-    -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
-    -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
-    -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
-    -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
-    -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
-    -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1};
-  int i;
-  i=b2d[sour[0]];
-  if(i>=0 && i<=99) dest[0]=i; else return 0;
-  i=b2d[sour[1]];
-  if(i>=1 && i<=12) dest[1]=i; else return 0;
-  i=b2d[sour[2]];
-  if(i>=1 && i<=31) dest[2]=i; else return 0;
-  i=b2d[sour[3]];
-  if(i>=0 && i<=23) dest[3]=i; else return 0;
-  i=b2d[sour[4]];
-  if(i>=0 && i<=59) dest[4]=i; else return 0;
-  i=b2d[sour[5]];
-  if(i>=0 && i<=60) dest[5]=i; else return 0;
-  return 1;
-  }
 
 time_t check_ts(ptr,pre,post)
   char *ptr;
@@ -209,49 +141,6 @@ time_t check_ts(ptr,pre,post)
 #endif
   return 0;
   }
-
-write_log(logfil,ptr)
-  char *logfil;
-  char *ptr;
-  {
-  FILE *fp;
-  int tm[6];
-
-  if (syslog_mode)
-    syslog(LOG_NOTICE, "%s", ptr);
-  else
-    {
-      if(*logfil) fp=fopen(logfil,"a");
-      else fp=stdout;
-      get_time(tm);
-      fprintf(fp,"%02d%02d%02d.%02d%02d%02d %s %s\n",
-	      tm[0],tm[1],tm[2],tm[3],tm[4],tm[5],progname,ptr);
-      if(*logfil) fclose(fp);
-    }
-  }
-
-ctrlc()
-  {
-  write_log(logfile,"end");
-  if (syslog_mode)
-    closelog();
-  exit(0);
-  }
-
-err_sys(ptr)
-  char *ptr;
-{
-  
-  if (syslog_mode)
-    syslog(LOG_NOTICE, "%s", ptr);
-  else
-    {
-      perror(ptr);
-      write_log(logfile,ptr);
-    }
-  if(strerror(errno)) write_log(logfile,strerror(errno));
-  ctrlc();
-}
 
 read_chfile()
   {
@@ -289,8 +178,8 @@ read_chfile()
           if(tbuf[1]=='\r' || tbuf[1]=='\n' || tbuf[1]==' ' || tbuf[1]=='\t')
             {
             hostlist[ii][1]=0;                  /* any host */
-            if(*tbuf=='+') write_log(logfile,"allow from the rest");
-            else write_log(logfile,"deny from the rest");
+            if(*tbuf=='+') write_log("allow from the rest");
+            else write_log("deny from the rest");
             }
           else
             {
@@ -308,7 +197,7 @@ read_chfile()
               if(!(h=gethostbyname(host_name)))
                 {
                 sprintf(tb,"host '%s' not resolved",host_name);
-                write_log(logfile,tb);
+                write_log(tb);
                 continue;
                 }
               memcpy((char *)&hostlist[ii][1],h->h_addr,4);
@@ -318,13 +207,13 @@ read_chfile()
  ((unsigned char *)&hostlist[ii][1])[0],((unsigned char *)&hostlist[ii][1])[1],
  ((unsigned char *)&hostlist[ii][1])[2],((unsigned char *)&hostlist[ii][1])[3],
                 hostlist[ii][2]);
-              write_log(logfile,tb);
+              write_log(tb);
               }
             }
           if(++ii==N_HOST)
             {
             n_host=ii;
-            write_log(logfile,"host control table full"); 
+            write_log("host control table full"); 
             }
           }
         else
@@ -343,7 +232,7 @@ read_chfile()
 #endif
       if(ii>0 && n_host==0) n_host=ii;
       sprintf(tb,"%d host rules",n_host);
-      write_log(logfile,tb);
+      write_log(tb);
       fclose(fp);
       }
     else
@@ -352,8 +241,8 @@ read_chfile()
       fprintf(stderr,"ch_file '%s' not open\n",chfile[0]);
 #endif
       sprintf(tb,"channel list file '%s' not open",chfile[0]);
-      write_log(logfile,tb);
-      write_log(logfile,"end");
+      write_log(tb);
+      write_log("end");
       exit(1);
       }
     }
@@ -388,7 +277,7 @@ read_chfile()
       fprintf(stderr,"ch_file '%s' not open\n",chfile[i_chfile]);
 #endif
       sprintf(tb,"channel list file '%s' not open",chfile[i_chfile]);
-      write_log(logfile,tb);
+      write_log(tb);
       }
     }
 
@@ -396,7 +285,7 @@ read_chfile()
   for(i=0;i<65536;i++) if(ch_table[i]==1) n_ch++;
   if(n_ch==65536) sprintf(tb,"all channels");
   else sprintf(tb,"%d (-%d) channels",n_ch,65536-n_ch);
-  write_log(logfile,tb);
+  write_log(tb);
 
   time(&ltime);
   j=ltime-ltime_p;
@@ -404,7 +293,7 @@ read_chfile()
   if(ht[0].host)
     {
     sprintf(tb,"statistics in %d s (pkts, B, pkts/s, B/s)",j);
-    write_log(logfile,tb);
+    write_log(tb);
     }
   for(i=0;i<N_HOST;i++) /* print statistics for hosts */
     {
@@ -414,7 +303,7 @@ read_chfile()
       ((unsigned char *)&ht[i].host)[2],((unsigned char *)&ht[i].host)[3],
       ntohs(ht[i].port),ht[i].n_packets,ht[i].n_bytes,(ht[i].n_packets+k)/j,
       (ht[i].n_bytes+k)/j);
-    write_log(logfile,tb);
+    write_log(tb);
     ht[i].n_packets=ht[i].n_bytes=0;
     }
   ltime_p=ltime;
@@ -457,7 +346,7 @@ check_pno(from_addr,pn,pn_f,sock,fromlen,n,nr,req_delay) /* returns -1 if dup */
         sprintf(tb,"deny packet from host %d.%d.%d.%d:%d",
           ((unsigned char *)&host_)[0],((unsigned char *)&host_)[1],
           ((unsigned char *)&host_)[2],((unsigned char *)&host_)[3],ntohs(port_));
-        write_log(logfile,tb);
+        write_log(tb);
         }
       return -1;
       }
@@ -490,7 +379,7 @@ check_pno(from_addr,pn,pn_f,sock,fromlen,n,nr,req_delay) /* returns -1 if dup */
   if(i==N_HOST)   /* table is full */
     {
     for(i=0;i<N_HOST;i++) ht[i].host=0;
-    write_log(logfile,"host table full - flushed.");
+    write_log("host table full - flushed.");
     i=0;
     }
   if(j<0)
@@ -506,7 +395,7 @@ check_pno(from_addr,pn,pn_f,sock,fromlen,n,nr,req_delay) /* returns -1 if dup */
     sprintf(tb,"registered host %d.%d.%d.%d:%d (%d)",
       ((unsigned char *)&host_)[0],((unsigned char *)&host_)[1],
       ((unsigned char *)&host_)[2],((unsigned char *)&host_)[3],ntohs(port_),i);
-    write_log(logfile,tb);
+    write_log(tb);
     ht[i].n_bytes=n;
     ht[i].n_packets=1;
     }
@@ -532,7 +421,7 @@ check_pno(from_addr,pn,pn_f,sock,fromlen,n,nr,req_delay) /* returns -1 if dup */
             sendto(sock,&pnc,1,0,(struct sockaddr *)from_addr,fromlen);
             sprintf(tb,"request resend %s:%d #%d",
               inet_ntoa(from_addr->sin_addr),ntohs(from_addr->sin_port),pn_1);
-            write_log(logfile,tb);
+            write_log(tb);
 #if DEBUG1
             printf("<%d ",pn_1);
 #endif
@@ -542,7 +431,7 @@ check_pno(from_addr,pn,pn_f,sock,fromlen,n,nr,req_delay) /* returns -1 if dup */
             {
             sprintf(tb,"dropped but already received %s:%d #%d",
               inet_ntoa(from_addr->sin_addr),ntohs(from_addr->sin_port),pn_1);
-            write_log(logfile,tb);
+            write_log(tb);
             }
 #endif
           } while((pn_1=(++pn_1&0xff))!=pn_now);
@@ -553,7 +442,7 @@ check_pno(from_addr,pn,pn_f,sock,fromlen,n,nr,req_delay) /* returns -1 if dup */
 #if DEBUG4
             sprintf(tb,"inverted order but OK %s:%d #%d",
               inet_ntoa(from_addr->sin_addr),ntohs(from_addr->sin_port),pn_now);
-            write_log(logfile,tb);
+            write_log(tb);
 #endif
             }
           else
@@ -561,7 +450,7 @@ check_pno(from_addr,pn,pn_f,sock,fromlen,n,nr,req_delay) /* returns -1 if dup */
             sprintf(tb,"no request resend %s:%d #%d-#%d",
               inet_ntoa(from_addr->sin_addr),ntohs(from_addr->sin_port),pn_1,
               (pn_now-1)&0xff);
-            write_log(logfile,tb);
+            write_log(tb);
             }
           }
         }
@@ -574,7 +463,7 @@ check_pno(from_addr,pn,pn_f,sock,fromlen,n,nr,req_delay) /* returns -1 if dup */
       if(!no_pinfo)
         {
         sprintf(tb,"discard duplicated resent packet #%d for #%d",pn,pn_f);
-        write_log(logfile,tb);
+        write_log(tb);
         }
       return -1;
       }
@@ -582,7 +471,7 @@ check_pno(from_addr,pn,pn_f,sock,fromlen,n,nr,req_delay) /* returns -1 if dup */
     else if(!no_pinfo)
       {
       sprintf(tb,"received resent packet #%d for #%d",pn,pn_f);
-      write_log(logfile,tb);
+      write_log(tb);
       }
 #endif
     }
@@ -627,7 +516,7 @@ wincpy2(ptw,ts,ptr,size,mon,chhist,from_addr)
             ptr[0],ptr[1],ptr[2],ptr[3],ptr[4],ptr[5],ptr[6],ptr[7],
             size,sr,ss,gs,ptr_lim-ptr,
             inet_ntoa(from_addr->sin_addr),ntohs(from_addr->sin_port));
-          write_log(logfile,tb);
+          write_log(tb);
           }
         return n;
         }
@@ -653,7 +542,7 @@ wincpy2(ptw,ts,ptr,size,mon,chhist,from_addr)
             ptr[0],ptr[1],ptr[2],ptr[3],ptr[4],ptr[5],ptr[6],ptr[7],
             size,sr,gs,ptr_lim-ptr,
             inet_ntoa(from_addr->sin_addr),ntohs(from_addr->sin_port));
-          write_log(logfile,tb);
+          write_log(tb);
           }
         return n;
         }
@@ -784,6 +673,8 @@ main(argc,argv)
   else progname=argv[0];
 
   daemon_mode = syslog_mode = 0;
+  exit_status = EXIT_SUCCESS;
+
   if(strcmp(progname,"recvtd")==0) daemon_mode=1;
 
   if(strcmp(progname,"recvtd")==0)
@@ -919,10 +810,10 @@ main(argc,argv)
     }
   if(n_chfile==1 && (*chfile[0])==0) n_chfile=0;
 
-  if(argc>5+optind) strcpy(logfile,argv[5+optind]);
+  if(argc>5+optind) logfile=argv[5+optind];
   else
     {
-      *logfile=0;
+      logfile=NULL;
       if (daemon_mode)
 	syslog_mode = 1;
     }
@@ -947,7 +838,7 @@ main(argc,argv)
 
   sprintf(tb,"n_hist=%d size=%d req_delay=%d",chhist.n,
     65536*chhist.n*sizeof(time_t),req_delay);
-  write_log(logfile,tb);
+  write_log(tb);
 
   /* shared memory */
   if((shmid=shmget(shm_key,size,IPC_CREAT|0666))<0) err_sys("shmget");
@@ -961,10 +852,10 @@ main(argc,argv)
   sh->r=(-1);
 
   sprintf(tb,"start shm_key=%d id=%d size=%d",shm_key,shmid,size);
-  write_log(logfile,tb);
-  if(all) write_log(logfile,"accept >=A1 packets");
+  write_log(tb);
+  if(all) write_log("accept >=A1 packets");
   sprintf(tb,"TS window %ds - +%ds",pre,post);
-  write_log(logfile,tb);
+  write_log(tb);
 
   if((sock=socket(AF_INET,SOCK_DGRAM,0))<0) err_sys("socket");
   for(j=sbuf;j>=16;j-=4)
@@ -975,7 +866,7 @@ main(argc,argv)
     }
   if(j<16) err_sys("SO_RCVBUF setsockopt error\n");
   sprintf(tb,"RCVBUF size=%d",j*1024);
-  write_log(logfile,tb);
+  write_log(tb);
 
   memset((char *)&to_addr,0,sizeof(to_addr));
   to_addr.sin_family=AF_INET;
@@ -1007,22 +898,22 @@ main(argc,argv)
       }
     if(j<16) err_sys("SO_SNDBUF setsockopt error\n");
     sprintf(tb,"SNDBUF size=%d",j*1024);
-    write_log(logfile,tb);
+    write_log(tb);
     }
 
-  if(noreq) write_log(logfile,"resend request disabled");
-  if(no_ts) write_log(logfile,"time-stamps not interpreted");
-  if(no_pno) write_log(logfile,"packet numbers not interpreted");
+  if(noreq) write_log("resend request disabled");
+  if(no_ts) write_log("time-stamps not interpreted");
+  if(no_pno) write_log("packet numbers not interpreted");
   if(*host_name)
     {
     sprintf(tb,"send channel list to %s:%d",
       inet_ntoa(host_addr.sin_addr),ntohs(host_addr.sin_port));
-    write_log(logfile,tb);
+    write_log(tb);
     }
 
-  signal(SIGTERM,(void *)ctrlc);
-  signal(SIGINT,(void *)ctrlc);
-  signal(SIGPIPE,(void *)ctrlc);
+  signal(SIGTERM,(void *)end_program);
+  signal(SIGINT,(void *)end_program);
+  signal(SIGPIPE,(void *)end_program);
 
   for(i=0;i<6;i++) tm[i]=(-1);
   ptr=ptr_size=sh->d+sh->p;
@@ -1154,7 +1045,7 @@ main(argc,argv)
               rbuf[0],rbuf[1],rbuf[2],rbuf[3],rbuf[4],rbuf[5],rbuf[6],rbuf[7],
               rbuf[8],rbuf[9],rbuf[10],rbuf[11],rbuf[12],rbuf[13],rbuf[14],
               rbuf[15],inet_ntoa(from_addr.sin_addr),ntohs(from_addr.sin_port));
-            write_log(logfile,tb);
+            write_log(tb);
             }
           for(i=0;i<6;i++) tm[i]=(-1);
           continue;
@@ -1199,7 +1090,7 @@ sprintf(tb,"ill blk n=%d(%02X%02X) %02X%02X%02X.%02X%02X%02X:%02X%02X%02X%02X%02
               rbuf[j+12],rbuf[j+13],rbuf[j+14],rbuf[j+15],
               inet_ntoa(from_addr.sin_addr),ntohs(from_addr.sin_port),
               rbuf[0],rbuf[1],j);
-            write_log(logfile,tb);
+            write_log(tb);
             }
           for(i=0;i<6;i++) tm[i]=(-1);
           break;
@@ -1261,7 +1152,7 @@ sprintf(tb,"ill blk n=%d(%02X%02X) %02X%02X%02X.%02X%02X%02X:%02X%02X%02X%02X%02
                 rbuf[j+6],rbuf[j+7],rbuf[j+8],rbuf[j+9],rbuf[j+10],rbuf[j+11],
                 rbuf[j+12],rbuf[j+13],
                 inet_ntoa(from_addr.sin_addr),ntohs(from_addr.sin_port));
-              write_log(logfile,tb);
+              write_log(tb);
               }
             for(i=0;i<6;i++) tm[i]=(-1);
             }
@@ -1296,7 +1187,7 @@ sprintf(tb,"ill blk n=%d(%02X%02X) %02X%02X%02X.%02X%02X%02X:%02X%02X%02X%02X%02
             rbuf[8],rbuf[9],rbuf[10],rbuf[11],rbuf[12],rbuf[13],rbuf[14],
             rbuf[15],rbuf[16],inet_ntoa(from_addr.sin_addr),
             ntohs(from_addr.sin_port));
-          write_log(logfile,tb);
+          write_log(tb);
           }
         for(i=0;i<6;i++) tm[i]=(-1);
         continue;

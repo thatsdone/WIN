@@ -1,4 +1,4 @@
-/* $Id: send_raw_old.c,v 1.9 2005/02/20 13:56:18 urabe Exp $ */
+/* $Id: send_raw_old.c,v 1.9.4.1 2006/09/25 15:00:58 uehira Exp $ */
 /*
     program "send_raw_old/send_mon_old.c"   1/24/94 - 1/25/94,5/25/94 urabe
                                     6/15/94 - 6/16/94
@@ -45,6 +45,7 @@
 #include <unistd.h>
 #include <errno.h>
 
+#include "winlib.h"
 #include "subst_func.h"
 
 #define DEBUG     0
@@ -54,71 +55,8 @@
 
 int sock,raw,mon,tow,psize[BUFNO],n_ch;
 unsigned char sbuf[BUFNO][MAXMESG],ch_table[65536],rbuf[MAXMESG];
-char *progname,logfile[256],chfile[256];
-
-mklong(ptr)
-  unsigned char *ptr;
-  {
-  unsigned long a;
-  a=((ptr[0]<<24)&0xff000000)+((ptr[1]<<16)&0xff0000)+
-    ((ptr[2]<<8)&0xff00)+(ptr[3]&0xff);
-  return a;
-  }
-
-mkshort(ptr)
-  unsigned char *ptr;
-  {
-  unsigned short a;
-  a=((ptr[0]<<8)&0xff00)+(ptr[1]&0xff);
-  return a;
-  }
-
-get_time(rt)
-  int *rt;
-  {
-  struct tm *nt;
-  unsigned long ltime;
-  time(&ltime);
-  nt=localtime(&ltime);
-  rt[0]=nt->tm_year%100;
-  rt[1]=nt->tm_mon+1;
-  rt[2]=nt->tm_mday;
-  rt[3]=nt->tm_hour;
-  rt[4]=nt->tm_min;
-  rt[5]=nt->tm_sec;
-  }
-
-write_log(logfil,ptr)
-  char *logfil;
-  char *ptr;
-  {
-  FILE *fp;
-  int tm[6];
-  if(*logfil) fp=fopen(logfil,"a");
-  else fp=stdout;
-  get_time(tm);
-  fprintf(fp,"%02d%02d%02d.%02d%02d%02d %s %s\n",
-    tm[0],tm[1],tm[2],tm[3],tm[4],tm[5],progname,ptr);
-  if(*logfil) fclose(fp);
-  }
-
-ctrlc()
-  {
-  write_log(logfile,"end");
-  close(sock);
-  exit(0);
-  }
-
-err_sys(ptr)
-  char *ptr;
-  {
-  perror(ptr);
-  write_log(logfile,ptr);
-  if(strerror(errno)) write_log(logfile,strerror(errno));
-  write_log(logfile,"end");
-  close(sock);
-  exit(1);
-  }
+char *progname,*logfile,chfile[256];
+int  syslog_mode=0, exit_status;
 
 get_packet(bufno,no)
   int bufno;  /* present(next) bufno */
@@ -167,7 +105,7 @@ read_chfile()
 #endif
       n_ch=j;
       sprintf(tbuf,"%d channels",n_ch);
-      write_log(logfile,tbuf);
+      write_log(tbuf);
       fclose(fp);
       }
     else
@@ -176,8 +114,8 @@ read_chfile()
       fprintf(stderr,"ch_file '%s' not open\n",chfile);
 #endif
       sprintf(tbuf,"channel list file '%s' not open",chfile);
-      write_log(logfile,tbuf);
-      write_log(logfile,"end");
+      write_log(tbuf);
+      write_log("end");
       close(sock);
       exit(1);
       }
@@ -186,7 +124,7 @@ read_chfile()
     {
     for(i=0;i<65536;i++) ch_table[i]=1;
     n_ch=i;
-    write_log(logfile,"all channels");
+    write_log("all channels");
     }
   signal(SIGHUP,(void *)read_chfile);
   }
@@ -221,6 +159,8 @@ main(argc,argv)
   if(progname=strrchr(argv[0],'/')) progname++;
   else progname=argv[0];
 
+  exit_status = EXIT_SUCCESS;
+
   raw=mon=tow=0;
   if(strcmp(progname,"send_raw_old")==0) raw=1;
   else if(strcmp(progname,"send_mon_old")==0) mon=1;
@@ -239,10 +179,11 @@ main(argc,argv)
   shm_key=atoi(argv[1]);
   strcpy(host_name,argv[2]);
   host_port=atoi(argv[3]);
-  *chfile=(*logfile)=0;
+  *chfile=0;
   if(argc>4) strcpy(chfile,argv[4]);
   if(strcmp("-",chfile)==0) *chfile=0;
-  if(argc>5) strcpy(logfile,argv[5]);
+  if(argc>5) logfile=argv[5];
+  else logfile=NULL;
     
   read_chfile();
 
@@ -252,7 +193,7 @@ main(argc,argv)
     err_sys("shmat");
 
   sprintf(tbuf,"start shm_key=%d id=%d",shm_key,shmid);
-  write_log(logfile,tbuf);
+  write_log(tbuf);
 
   /* destination host/port */
   if(!(h=gethostbyname(host_name))) err_sys("can't find host");
@@ -275,9 +216,9 @@ main(argc,argv)
   if(bind(sock,(struct sockaddr *)&from_addr,sizeof(from_addr))<0)
     err_sys("bind");
 
-  signal(SIGPIPE,(void *)ctrlc);
-  signal(SIGINT,(void *)ctrlc);
-  signal(SIGTERM,(void *)ctrlc);
+  signal(SIGPIPE,(void *)end_program);
+  signal(SIGINT,(void *)end_program);
+  signal(SIGTERM,(void *)end_program);
   for(i=0;i<BUFNO;i++) psize[i]=(-1);
   no=bufno=0;
 
@@ -294,7 +235,7 @@ reset:
     while(shm->p==shp) usleep(200000);
     if(shm->c<c_save || mklong(ptr_save)!=size)
       {   /* previous block has been destroyed */
-      write_log(logfile,"reset");
+      write_log("reset");
       goto reset;
       }
     c_save=shm->c;
@@ -434,7 +375,7 @@ reset:
 		    (const struct sockaddr *)&to_addr,sizeof(to_addr));
           sprintf(tbuf,"resend to %s:%d #%d as #%d, %d B",
             inet_ntoa(to_addr.sin_addr),ntohs(to_addr.sin_port),no_f,no,re);
-          write_log(logfile,tbuf);
+          write_log(tbuf);
           if(++bufno==BUFNO) bufno=0;
           no++;
           }

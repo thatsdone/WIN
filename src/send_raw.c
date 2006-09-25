@@ -1,4 +1,4 @@
-/* $Id: send_raw.c,v 1.24 2006/09/02 01:27:16 urabe Exp $ */
+/* $Id: send_raw.c,v 1.24.2.1 2006/09/25 15:00:58 uehira Exp $ */
 /*
     program "send_raw/send_mon.c"   1/24/94 - 1/25/94,5/25/94 urabe
                                     6/15/94 - 6/16/94
@@ -80,6 +80,7 @@
 #include <syslog.h>
 
 #include "daemon_mode.h"
+#include "winlib.h"
 #include "subst_func.h"
 
 #define DEBUG0      0
@@ -105,8 +106,8 @@ int sock,raw,tow,all,psize[NBUF],n_ch,negate_channel,mtu,nbuf,slptime,
 unsigned char *sbuf[NBUF],ch_table[65536],rbuf[RSIZE],ch_req[65536],
     ch_req_tmp[65536],pbuf[RSIZE];
      /* sbuf[NBUF][mtu-28+8] ; +8 for overrun by "size" and "time" */
-char *progname,logfile[1024],chfile[1024],file_req[1024];
-int  daemon_mode, syslog_mode;
+char *progname,*logfile,chfile[1024],file_req[1024];
+int  daemon_mode, syslog_mode, exit_status;
 
 static int b2d[]={
      0, 1, 2, 3, 4, 5, 6, 7, 8, 9,0,0,0,0,0,0,  /* 0x00 - 0x0F */
@@ -131,23 +132,6 @@ static unsigned char d2b[]={
     0x80,0x81,0x82,0x83,0x84,0x85,0x86,0x87,0x88,0x89,
     0x90,0x91,0x92,0x93,0x94,0x95,0x96,0x97,0x98,0x99};
 
-mklong(ptr)       
-  unsigned char *ptr;
-  {
-  unsigned long a;
-  a=((ptr[0]<<24)&0xff000000)+((ptr[1]<<16)&0xff0000)+
-    ((ptr[2]<<8)&0xff00)+(ptr[3]&0xff);
-  return a;       
-  }
-
-mkshort(ptr)
-  unsigned char *ptr;
-  {
-  unsigned short a;
-  a=((ptr[0]<<8)&0xff00)+(ptr[1]&0xff);
-  return a;
-  }
-
 shift_sec(tm_bcd,sec)
   unsigned char *tm_bcd;
   int sec;
@@ -171,71 +155,6 @@ shift_sec(tm_bcd,sec)
   tm_bcd[3]=d2b[nt->tm_hour];
   tm_bcd[4]=d2b[nt->tm_min];
   tm_bcd[5]=d2b[nt->tm_sec];
-  }
-
-get_time(rt)
-  int *rt;
-  {
-  struct tm *nt;
-  time_t ltime;
-  time(&ltime);
-  nt=localtime(&ltime);
-  rt[0]=nt->tm_year%100;
-  rt[1]=nt->tm_mon+1;
-  rt[2]=nt->tm_mday;
-  rt[3]=nt->tm_hour;
-  rt[4]=nt->tm_min;
-  rt[5]=nt->tm_sec;
-  }
-
-write_log(logfil,ptr)
-  char *logfil;
-  char *ptr;
-  {
-  FILE *fp;
-  int tm[6];
-
-  if (syslog_mode)
-    {
-      syslog(LOG_NOTICE, "%s", ptr);
-    }
-  else
-    {
-      if(*logfil) fp=fopen(logfil,"a");
-      else fp=stdout;
-      get_time(tm);
-      fprintf(fp,"%02d%02d%02d.%02d%02d%02d %s %s\n",
-	      tm[0],tm[1],tm[2],tm[3],tm[4],tm[5],progname,ptr);
-      if(*logfil) fclose(fp);
-    }
-  }
-
-ctrlc()
-  {
-  write_log(logfile,"end");
-  close(sock);
-  if (syslog_mode)
-    closelog();
-  exit(0);
-  }
-
-err_sys(ptr)
-  char *ptr;
-{
-
-  if (syslog_mode)
-    syslog(LOG_NOTICE, "%s", ptr);
-  else
-    {
-      perror(ptr);
-      write_log(logfile,ptr);
-    }
-  if(strerror(errno)) write_log(logfile,strerror(errno));
-  write_log(logfile,"end");
-  close(sock);
-  if (syslog_mode)
-    closelog();
-  exit(1);
   }
 
 get_packet(bufno,no)
@@ -301,7 +220,7 @@ read_chfile()
       n_ch=j;
       if(negate_channel) sprintf(tbuf,"-%d channels",n_ch);
       else sprintf(tbuf,"%d channels",n_ch);
-      write_log(logfile,tbuf);
+      write_log(tbuf);
       fclose(fp);
       }
     else
@@ -310,8 +229,8 @@ read_chfile()
       fprintf(stderr,"ch_file '%s' not open\n",chfile);
 #endif
       sprintf(tbuf,"channel list file '%s' not open",chfile);
-      write_log(logfile,tbuf);
-      write_log(logfile,"end");
+      write_log(tbuf);
+      write_log("end");
       close(sock);
       exit(1);
       }
@@ -320,10 +239,10 @@ read_chfile()
     {
     memset(ch_table,1,65536);
     n_ch=i;
-    write_log(logfile,"all channels");
+    write_log("all channels");
     }
   sprintf(tbuf,"slptime=%d (LIMIT=%d)",slptime,SLPLIMIT);
-  write_log(logfile,tbuf);
+  write_log(tbuf);
 
   time(&ltime);
   j=ltime-ltime_p;
@@ -332,7 +251,7 @@ read_chfile()
     {
     sprintf(tbuf,"%d pkts %d B in %d s ( %d pkts/s %d B/s ) ",
       n_packets,n_bytes,j,(n_packets+k)/j,(n_bytes+k)/j);
-    write_log(logfile,tbuf);
+    write_log(tbuf);
     n_packets=n_bytes=0;
     }
   ltime_p=ltime;
@@ -384,7 +303,7 @@ recv_pkts(sock,to_addr,no,bufno,standby,seq_exp,n_seq_exp,time_req,req_timo)
         sprintf(tbuf,"resend for %s:%d #%d as #%d, %d B",
           inet_ntoa(from_addr.sin_addr),ntohs(from_addr.sin_port),
           no_f,*no,re);
-        write_log(logfile,tbuf);
+        write_log(tbuf);
         if(++(*bufno)==nbuf) *bufno=0;
         (*no)++;
         }
@@ -452,7 +371,7 @@ recv_pkts(sock,to_addr,no,bufno,standby,seq_exp,n_seq_exp,time_req,req_timo)
           sprintf(tbuf,"req < %s:%d (%d) > %s",
             inet_ntoa(from_addr.sin_addr),ntohs(from_addr.sin_port),
             n_ch_req,file_req);
-          write_log(logfile,tbuf);
+          write_log(tbuf);
           }
         }
       }
@@ -494,6 +413,7 @@ main(argc,argv)
 
   tow=all=hours_shift=sec_shift=0;
   daemon_mode = syslog_mode =0;
+  exit_status = EXIT_SUCCESS;
 
   if(strcmp(progname,"send_raw")==0) raw=1;
   else if(strcmp(progname,"send_rawd")==0) {raw=1;daemon_mode=1;}
@@ -613,10 +533,10 @@ main(argc,argv)
         }
       }
     }    
-  if(argc>5+optind) strcpy(logfile,argv[5+optind]);
+  if(argc>5+optind) logfile=argv[5+optind];
   else
     {
-      *logfile=0;
+      logfile=NULL;
       if (daemon_mode)
 	syslog_mode = 1;
     }
@@ -631,12 +551,12 @@ main(argc,argv)
   if(hours_shift!=0)
     {
     sprintf(tbuf,"hours shift = %d",hours_shift);
-    write_log(logfile,tbuf);
+    write_log(tbuf);
     }
   if(sec_shift!=0)
     {
     sprintf(tbuf,"secs shift = %d",sec_shift);
-    write_log(logfile,tbuf);
+    write_log(tbuf);
     }
 
   /* shared memory */
@@ -645,7 +565,7 @@ main(argc,argv)
     err_sys("shmat");
 
   sprintf(tbuf,"start shm_key=%d id=%d",shm_key,shmid);
-  write_log(logfile,tbuf);
+  write_log(tbuf);
 
   if(shw_key>0)
     {
@@ -653,7 +573,7 @@ main(argc,argv)
     if((shw=(struct Shm *)shmat(shwid,(char *)0,0))==(struct Shm *)-1)
       err_sys("shmat(watch)");
     sprintf(tbuf,"start shm_key=%d id=%d for standby watch",shw_key,shwid);
-    write_log(logfile,tbuf);
+    write_log(tbuf);
     }
 
   /* destination host/port */
@@ -672,7 +592,7 @@ main(argc,argv)
     }
   if(j<16) err_sys("SO_SNDBUF setsockopt error\n");
   sprintf(tbuf,"SNDBUF size=%d",j*1024);
-  write_log(logfile,tbuf);
+  write_log(tbuf);
   if(*file_req)
     {
     for(j=256;j>=16;j-=4)
@@ -683,7 +603,7 @@ main(argc,argv)
       }
     if(j<16) err_sys("SO_RCVBUF setsockopt error\n");
     sprintf(tbuf,"RCVBUF size=%d",j*1024);
-    write_log(logfile,tbuf);
+    write_log(tbuf);
     }
   if(setsockopt(sock,SOL_SOCKET,SO_BROADCAST,(char *)&i,sizeof(i))<0)
     err_sys("SO_BROADCAST setsockopt error\n");
@@ -707,20 +627,20 @@ main(argc,argv)
   if(src_port)
     {
     sprintf(tbuf,"src_port=%d",src_port);
-    write_log(logfile,tbuf);
+    write_log(tbuf);
     }
   if(bind(sock,(struct sockaddr *)&from_addr,sizeof(from_addr))<0)
     err_sys("bind");
 
-  signal(SIGPIPE,(void *)ctrlc);
-  signal(SIGINT,(void *)ctrlc);
-  signal(SIGTERM,(void *)ctrlc);
+  signal(SIGPIPE,(void *)end_program);
+  signal(SIGINT,(void *)end_program);
+  signal(SIGTERM,(void *)end_program);
   for(i=0;i<NBUF;i++)
     { /* allocate buffers */
     psize[i]=(-1);
     if((sbuf[i]=(unsigned char *)malloc(mtu-28+8))==NULL){
       sprintf(tbuf,"malloc failed. nbuf=%d\n",i);
-      write_log(logfile,tbuf);
+      write_log(tbuf);
       break;
       }
     }
@@ -737,7 +657,7 @@ reset:
     watch=time(NULL);
     standby=1;
     sprintf(tbuf,"watching shm_key=%d - enter standby",shw_key);
-    write_log(logfile,tbuf);
+    write_log(tbuf);
     sleep(1);
     }
   c_save=shm->c;
@@ -748,7 +668,7 @@ reset:
   else eobsize=0;
   eobsize_count=eobsize;
   sprintf(tbuf,"eobsize=%d",eobsize);
-  write_log(logfile,tbuf);
+  write_log(tbuf);
   seq_exp=1;
   n_seq_exp=0;
   req_timo=0;
@@ -774,7 +694,7 @@ reset:
     i=shm->c-c_save;
     if(!(i<1000000 && i>=0) || mklong(ptr_save)!=size)
       {   /* previous block has been destroyed */
-      write_log(logfile,"reset");
+      write_log("reset");
       goto reset;
       }
     c_save=shm->c;
@@ -789,7 +709,7 @@ reset:
             {
             standby=0;
             sprintf(tbuf,"shm_key=%d stopped - begin sending",shw_key);
-            write_log(logfile,tbuf);
+            write_log(tbuf);
             }
           watch=time(NULL);
           c_save_w=shw->c;
@@ -801,7 +721,7 @@ reset:
         c_save_w=shw->c;
         watch=time(NULL);
         sprintf(tbuf,"shm_key=%d working - enter standby",shw_key);
-        write_log(logfile,tbuf);
+        write_log(tbuf);
         }
       }
 
@@ -920,7 +840,7 @@ send_packet:
             {
             memset(ch_req,0,65536);
             req_timo=1;
-            write_log(logfile,"request timeout");
+            write_log("request timeout");
             }
           ptw=pbuf;
           for(k=2;k<8;k++) ptw[3+k]=ptw_size[k]; /* copy TS */

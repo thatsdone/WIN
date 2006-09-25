@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.46 2006/09/02 01:45:39 uehira Exp $
+   $Id: win.c,v 1.46.2.1 2006/09/25 15:00:59 uehira Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -158,6 +158,7 @@ LOCAL
 #include <X11/Xutil.h>
 #include <X11/cursorfont.h>
 
+#include "winlib.h"
 #include "subst_func.h"
 
   typedef XPoint lPoint;    /* short ! */
@@ -983,7 +984,8 @@ xgetorigin(d,w,x,y,wi,h,de,ro,pa)
   XTranslateCoordinates(d,*pa,*ro,xx,yy,x,y,&child);
   }
 
-char *get_time(rt,addsec)
+static
+char *get_time_win(rt,addsec)
   struct YMDhms *rt;
   int addsec;
   {
@@ -2100,7 +2102,7 @@ init_process(argc,argv,args)
     func_map2[OTHRS]="UPDAT";
 
     i=strlen(ft.hypo_dir);
-    get_time(&tm,0);
+    get_time_win(&tm,0);
     if(ft.hypo_dir[i-1]=='/') while(1)
       {
       sprintf(ft.hypo_dir+i,"%02d%02d",tm.ye,tm.mo);
@@ -2170,13 +2172,13 @@ init_process(argc,argv,args)
         {
         c=(*fname2);
         for(i=0;i<strlen(fname2);i++) if(fname2[i+1]!=c) break;
-        get_time(&tm,-(60*60*24)*i);
+        get_time_win(&tm,-(60*60*24)*i);
         sprintf(text_buf,"%02d%02d%02d%1c%s",tm.ye,tm.mo,tm.da,c,fname2+i+1);
         strcpy(fname2,text_buf);
         }
       else if(fname2[2]=='.' || fname2[2]=='_') /* YYMM abbreviated */
         {
-        get_time(&tm,0);
+        get_time_win(&tm,0);
         sprintf(text_buf,"%02d%02d%s",tm.ye,tm.mo,fname2);
         strcpy(fname2,text_buf);
         }
@@ -7203,7 +7205,7 @@ load_data_prep(btn) /* return=1 means success */
         if(!just_hypo)
           {
           bcd_dec(tm,ft.ptr[0].time);
-          if(time_cmp(tm,tm_begin,6))
+          if(time_cmp_win(tm,tm_begin,6))
             {
             *ft.save_file=0;
             fclose(fp);
@@ -7631,7 +7633,7 @@ output_all(fp)
   char stn[20];
   bcd_dec(tm_base,ft.ptr[0].time);
   fprintf(fp,"%02d/%02d/%02d %02d:%02d                   %14s\n",
-    tm_base[0],tm_base[1],tm_base[2],tm_base[3],tm_base[4],get_time(0,0));
+    tm_base[0],tm_base[1],tm_base[2],tm_base[3],tm_base[4],get_time_win(0,0));
   *stn=0;
   for(i=0;i<ft.n_ch;i++) /* i : pos */
     {
@@ -7693,7 +7695,7 @@ output_pick(fp)
       lsec_base=time2lsec(tm_base);
       fprintf(fp,"%02d/%02d/%02d %02d:%02d",tm_base[0],tm_base[1],tm_base[2],
         tm_base[3],tm_base[4]);
-      fprintf(fp,"                   %14s\n",get_time(0,0));
+      fprintf(fp,"                   %14s\n",get_time_win(0,0));
       init=0;
       }
     fprintf(fp,"%-10s ",ft.stn[pos[j]].name);
@@ -8706,11 +8708,11 @@ is_a_file:  fread(textbuf,1,20,fp);
 
       if(first_map_others || map_update)
         {
-        get_time(&sel.time2,0);
+        get_time_win(&sel.time2,0);
         if(map_interval) map_period=map_period_save;
         if(map_period_unit=='h') i=map_period*3600;
         else i=map_period*(3600*24);
-        if(map_period) get_time(&sel.time1,-i);
+        if(map_period) get_time_win(&sel.time1,-i);
         }
       fp_othrs=open_file(ft.othrs_file,"hypocenters");
       read_hypo=0;
@@ -9976,7 +9978,7 @@ load_data(btn) /* return=1 means success */
         if(!just_hypo)
           {
           bcd_dec(tm,ft.ptr[0].time);
-          if(time_cmp(tm,tm_begin,6))
+          if(time_cmp_win(tm,tm_begin,6))
             {
             *ft.save_file=0;
             fclose(fp);
@@ -10912,8 +10914,8 @@ plot_psup(idx)
   for(i=0;i<ft.len;i++)
     {
     bcd_dec(tm,ft.ptr[i].time);
-    cp1=time_cmp(tm,tm1,6);
-    cp2=time_cmp(tm,tm2,6);
+    cp1=time_cmp_win(tm,tm1,6);
+    cp2=time_cmp_win(tm,tm2,6);
     if(cp1<0) continue;
     if(cp2>0) break;
   /* obtain plot position (time) xzero */
@@ -11353,360 +11355,6 @@ form2(s,d)
   return 1;
   }
 
-/*
-+   BUTTERWORTH LOW PASS FILTER COEFFICIENT
-+
-+   ARGUMENTS
-+   H : FILTER COEFFICIENTS
-+   M : ORDER OF FILTER  (M=(N+1)/2)
-+   GN  : GAIN FACTOR
-+   N : ORDER OF BUTTERWORTH FUNCTION
-+   FP  : PASS BAND FREQUENCY  (NON-DIMENSIONAL)
-+   FS  : STOP BAND FREQUENCY
-+   AP  : MAX. ATTENUATION IN PASS BAND
-+   AS  : MIN. ATTENUATION IN STOP BAND
-+
-+   M. SAITO  (17/XII/75)
-*/
-butlop(h,m,gn,n,fp,fs,ap,as)
-  double *h,fp,fs,ap,as,*gn;
-  int *m,*n;
-  {
-  double wp,ws,tp,ts,pa,sa,cc,c,dp,g,fj,c2,sj,tj,a;
-  int k,j;
-  if(fabs(fp)<fabs(fs)) wp=fabs(fp)*PI;
-  else wp=fabs(fs)*PI;
-  if(fabs(fp)>fabs(fs)) ws=fabs(fp)*PI;
-  else ws=fabs(fs)*PI;
-  if(wp==0.0 || wp==ws || ws>=HP)
-    {
-    fprintf(stderr,"? (butlop) invalid input : fp=%14.6e fs=%14.6e ?\n",fp,fs);
-    return 1;
-    }
-/****  DETERMINE N & C */
-  tp=tan(wp);
-  ts=tan(ws);
-  if(fabs(ap)<fabs(as)) pa=fabs(ap);
-  else pa=fabs(as);
-  if(fabs(ap)>fabs(as)) sa=fabs(ap);
-  else sa=fabs(as);
-  if(pa==0.0) pa=0.5;
-  if(sa==0.0) sa=5.0;
-  if((*n=(int)(fabs(log(pa/sa)/log(tp/ts))+0.5))<2) *n=2;
-  cc=exp(log(pa*sa)/(double)(*n))/(tp*ts);
-  c=sqrt(cc);
-
-  dp=HP/(double)(*n);
-  *m=(*n)/2;
-  k=(*m)*4;
-  g=fj=1.0;
-  c2=2.0*(1.0-c)*(1.0+c);
-
-  for(j=0;j<k;j+=4)
-    {
-    sj=pow(cos(dp*fj),2.0);
-    tj=sin(dp*fj);
-    fj=fj+2.0;
-    a=1.0/(pow(c+tj,2.0)+sj);
-    g=g*a;
-    h[j  ]=2.0;
-    h[j+1]=1.0;
-    h[j+2]=c2*a;
-    h[j+3]=(pow(c-tj,2.0)+sj)*a;
-    }
-/****  EXIT */
-  *gn=g;
-  if(*n%2==0) return 0;
-/****  FOR ODD N */
-  *m=(*m)+1;
-  *gn=g/(1.0+c);
-  h[k  ]=1.0;
-  h[k+1]=0.0;
-  h[k+2]=(1.0-c)/(1.0+c);
-  h[k+3]=0.0;
-  return 0;
-  }
-
-/*
-+   BUTTERWORTH HIGH PASS FILTER COEFFICIENT
-+
-+   ARGUMENTS
-+   H : FILTER COEFFICIENTS
-+   M : ORDER OF FILTER  (M=(N+1)/2)
-+   GN  : GAIN FACTOR
-+   N : ORDER OF BUTTERWORTH FUNCTION
-+   FP  : PASS BAND FREQUENCY  (NON-DIMENSIONAL)
-+   FS  : STOP BAND FREQUENCY
-+   AP  : MAX. ATTENUATION IN PASS BAND
-+   AS  : MIN. ATTENUATION IN STOP BAND
-+
-+   M. SAITO  (7/I/76)
-*/
-buthip(h,m,gn,n,fp,fs,ap,as)
-  double *h,fp,fs,ap,as,*gn;
-  int *m,*n;
-  {
-  double wp,ws,tp,ts,pa,sa,cc,c,dp,g,fj,c2,sj,tj,a;
-  int k,j;
-  if(fabs(fp)>fabs(fs)) wp=fabs(fp)*PI;
-  else wp=fabs(fs)*PI;
-  if(fabs(fp)<fabs(fs)) ws=fabs(fp)*PI;
-  else ws=fabs(fs)*PI;
-  if(wp==0.0 || wp==ws || wp>=HP)
-    {
-    fprintf(stderr,"? (buthip) invalid input : fp=%14.6e fs=%14.6e ?\n",fp,fs);
-    return 1;
-    }
-/****  DETERMINE N & C */
-  tp=tan(wp);
-  ts=tan(ws);
-  if(fabs(ap)<fabs(as)) pa=fabs(ap);
-  else pa=fabs(as);
-  if(fabs(ap)>fabs(as)) sa=fabs(ap);
-  else sa=fabs(as);
-  if(pa==0.0) pa=0.5;
-  if(sa==0.0) sa=5.0;
-  if((*n=(int)(fabs(log(sa/pa)/log(tp/ts))+0.5))<2) *n=2;
-  cc=exp(log(pa*sa)/(double)(*n))*(tp*ts);
-  c=sqrt(cc);
-
-  dp=HP/(double)(*n);
-  *m=(*n)/2;
-  k=(*m)*4;
-  g=fj=1.0;
-  c2=(-2.0)*(1.0-c)*(1.0+c);
-
-  for(j=0;j<k;j+=4)
-    {
-    sj=pow(cos(dp*fj),2.0);
-    tj=sin(dp*fj);
-    fj=fj+2.0;
-    a=1.0/(pow(c+tj,2.0)+sj);
-    g=g*a;
-    h[j  ]=(-2.0);
-    h[j+1]=1.0;
-    h[j+2]=c2*a;
-    h[j+3]=(pow(c-tj,2.0)+sj)*a;
-    }
-/****  EXIT */
-  *gn=g;
-  if(*n%2==0) return 0;
-/****  FOR ODD N */
-  *m=(*m)+1;
-  *gn=g/(c+1.0);
-  h[k  ]=(-1.0);
-  h[k+1]=0.0;
-  h[k+2]=(c-1.0)/(c+1.0);
-  h[k+3]=0.0;
-  return 0;
-  }
-
-/*
-+   BUTTERWORTH BAND PASS FILTER COEFFICIENT
-+
-+   ARGUMENTS
-+   H : FILTER COEFFICIENTS
-+   M : ORDER OF FILTER
-+   GN  : GAIN FACTOR
-+   N : ORDER OF BUTTERWORTH FUNCTION
-+   FL  : LOW  FREQUENCY CUT-OFF  (NON-DIMENSIONAL)
-+   FH  : HIGH FREQUENCY CUT-OFF
-+   FS  : STOP BAND FREQUENCY
-+   AP  : MAX. ATTENUATION IN PASS BAND
-+   AS  : MIN. ATTENUATION IN STOP BAND
-+
-+   M. SAITO  (7/I/76)
-*/
-butpas(h,m,gn,n,fl,fh,fs,ap,as)
-  double *h,fl,fh,fs,ap,as,*gn;
-  int *m,*n;
-  {
-  double wl,wh,ws,clh,op,ww,ts,os,pa,sa,cc,c,dp,g,fj,rr,tt,
-    re,ri,a,wpc,wmc;
-  int k,l,j,i;
-  struct {
-    double r;
-    double c;
-    } oj,aa,cq,r[2];
-  if(fabs(fl)<fabs(fh)) wl=fabs(fl)*PI;
-  else wl=fabs(fh)*PI;
-  if(fabs(fl)>fabs(fh)) wh=fabs(fl)*PI;
-  else wh=fabs(fh)*PI;
-  ws=fabs(fs)*PI;
-  if(wl==0.0 || wl==wh || wh>=HP || ws==0.0 || ws>=HP ||
-      (ws-wl)*(ws-wh)<=0.0)
-    {
-    fprintf(stderr,"? (butpas) invalid input : fl=%14.6e fh=%14.6e fs=%14.6e ?\n",
-      fl,fh,fs);
-    *m=0;
-    *gn=1.0;
-    return 1;
-    }
-/****  DETERMINE N & C */
-  clh=1.0/(cos(wl)*cos(wh));
-  op=sin(wh-wl)*clh;
-  ww=tan(wl)*tan(wh);
-  ts=tan(ws);
-  os=fabs(ts-ww/ts);
-  if(fabs(ap)<fabs(as)) pa=fabs(ap);
-  else pa=fabs(as);
-  if(fabs(ap)>fabs(as)) sa=fabs(ap);
-  else sa=fabs(as);
-  if(pa==0.0) pa=0.5;
-  if(sa==0.0) sa=5.0;
-  if((*n=(int)(fabs(log(pa/sa)/log(op/os))+0.5))<2) *n=2;
-  cc=exp(log(pa*sa)/(double)(*n))/(op*os);
-  c=sqrt(cc);
-  ww=ww*cc;
-
-  dp=HP/(double)(*n);
-  k=(*n)/2;
-  *m=k*2;
-  l=0;
-  g=fj=1.0;
-
-  for(j=0;j<k;j++)
-    {
-    oj.r=cos(dp*fj)*0.5;
-    oj.c=sin(dp*fj)*0.5;
-    fj=fj+2.0;
-    aa.r=oj.r*oj.r-oj.c*oj.c+ww;
-    aa.c=2.0*oj.r*oj.c;
-    rr=sqrt(aa.r*aa.r+aa.c*aa.c);
-    tt=atan(aa.c/aa.r);
-    cq.r=sqrt(rr)*cos(tt/2.0);
-    cq.c=sqrt(rr)*sin(tt/2.0);
-    r[0].r=oj.r+cq.r;
-    r[0].c=oj.c+cq.c;
-    r[1].r=oj.r-cq.r;
-    r[1].c=oj.c-cq.c;
-    g=g*cc;
-
-    for(i=0;i<2;i++)
-      {
-      re=r[i].r*r[i].r;
-      ri=r[i].c;
-      a=1.0/((c+ri)*(c+ri)+re);
-      g=g*a;
-      h[l  ]=0.0;
-      h[l+1]=(-1.0);
-      h[l+2]=2.0*((ri-c)*(ri+c)+re)*a;
-      h[l+3]=((ri-c)*(ri-c)+re)*a;
-      l=l+4;
-      }
-    }
-/****  EXIT */
-  *gn=g;
-  if(*n==(*m)) return 0;
-/****  FOR ODD N */
-  *m=(*m)+1;
-  wpc=  cc *cos(wh-wl)*clh;
-  wmc=(-cc)*cos(wh+wl)*clh;
-  a=1.0/(wpc+c);
-  *gn=g*c*a;
-  h[l  ]=0.0;
-  h[l+1]=(-1.0);
-  h[l+2]=2.0*wmc*a;
-  h[l+3]=(wpc-c)*a;
-  return 0;
-  }
-
-/*
-+   RECURSIVE FILTERING : F(Z) = (1+A*Z+AA*Z**2)/(1+B*Z+BB*Z**2)
-+
-+   ARGUMENTS
-+   X : INPUT TIME SERIES
-+   Y : OUTPUT TIME SERIES  (MAY BE EQUIVALENT TO X)
-+   N : LENGTH OF X & Y
-+   H : FILTER COEFFICIENTS ; H(1)=A, H(2)=AA, H(3)=B, H(4)=BB
-+   NML : >0 ; FOR NORMAL  DIRECTION FILTERING
-+       <0 ; FOR REVERSE DIRECTION FILTERING
-+   uv  : past data and results saved
-+
-+   M. SAITO  (6/XII/75)
-*/
-recfil(x,y,n,h,nml,uv)
-  int n,nml;
-  double *x,*y,*h,*uv;
-  {
-  int i,j,jd;
-  double a,aa,b,bb,u1,u2,u3,v1,v2,v3;
-  if(n<=0)
-    {
-    fprintf(stderr,"? (recfil) invalid input : n=%d ?\n",n);
-    return 1;
-    }
-  if(nml>=0)
-    {
-    j=0;
-    jd=1;
-    }
-  else
-    {
-    j=n-1;
-    jd=(-1);
-    }
-  a =h[0];
-  aa=h[1];
-  b =h[2];
-  bb=h[3];
-  u1=uv[0];
-  u2=uv[1];
-  v1=uv[2];
-  v2=uv[3];
-/****  FILTERING */
-  for(i=0;i<n;i++)
-    {
-    u3=u2;
-    u2=u1;
-    u1=x[j];
-    v3=v2;
-    v2=v1;
-    v1=u1+a*u2+aa*u3-b*v2-bb*v3;
-    y[j]=v1;
-    j+=jd;
-    }
-  uv[0]=u1;
-  uv[1]=u2;
-  uv[2]=v1;
-  uv[3]=v2;
-  return 0;
-  }
-
-/*
-+   RECURSIVE FILTERING IN SERIES
-+
-+   ARGUMENTS
-+   X : INPUT TIME SERIES
-+   Y : OUTPUT TIME SERIES  (MAY BE EQUIVALENT TO X)
-+   N : LENGTH OF X & Y
-+   H : COEFFICIENTS OF FILTER
-+   M : ORDER OF FILTER
-+   NML : >0 ; FOR NORMAL  DIRECTION FILTERING
-+       <0 ;   REVERSE DIRECTION FILTERING
-+   uv  : past data and results saved
-+
-+   SUBROUTINE REQUIRED : RECFIL
-+
-+   M. SAITO  (6/XII/75)
-*/
-tandem(x,y,n,h,m,nml,uv)
-  double *x,*y,*h,*uv;
-  int n,m,nml;
-  {
-  int i;
-  if(n<=0 || m<=0)
-    {
-    fprintf(stderr,"? (tandem) invalid input : n=%d m=%d ?\n",n,m);
-    return 1;
-    }
-/****  1-ST CALL */
-  recfil(x,y,n,h,nml,uv);
-/****  2-ND AND AFTER */
-  if(m>1) for(i=1;i<m;i++) recfil(y,y,n,&h[i*4],nml,&uv[i*4]);
-  return 0;
-  }
-
 /*  this program was translated from HYPOMH(HIRATA and MATSU'URA) */
 /*  PLTXY TRANSFORMS (X,Y) TO (ALAT,ALONG) IF IND.EQ.1  */
 /*  PLTXY TRANSFORMS (ALAT,ALONG) TO (X,Y) IF IND.EQ.0  */
@@ -12007,7 +11655,7 @@ long2time(tm,tl)
   if(tm->ye>99) tm->ye-=100;
   }
 
-time_cmp(t1,t2,i)
+time_cmp_win(t1,t2,i)
   int *t1,*t2,i;  
   {
   int cntr;
@@ -12022,6 +11670,7 @@ time_cmp(t1,t2,i)
   return 0;  
   }
 
+/*
 bcd_dec(dest,sour)
   unsigned char *sour;
   unsigned int *dest;
@@ -12031,16 +11680,7 @@ bcd_dec(dest,sour)
     dest[cntr]=((sour[cntr]>>4)&0xf)*10+(sour[cntr]&0xf);
   return 0;
   }
-
-dec_bcd(dest,sour)
-  unsigned int *sour;
-  unsigned char *dest;
-  {
-  int cntr;
-  for(cntr=0;cntr<6;cntr++)
-    dest[cntr]=(((sour[cntr]/10)<<4)&0xf0)|(sour[cntr]%10&0xf);
-  return 0;
-  }
+*/
 
 fill(buffer,count,data)
   int *buffer,count,data;
@@ -12064,9 +11704,9 @@ writelog(mes)
   if(ft.fp_log==NULL)
     {
     ft.fp_log=fopen(ft.log_file,"a+");
-    fprintf(ft.fp_log,"%s %s\n",get_time(0,0),mes);
+    fprintf(ft.fp_log,"%s %s\n",get_time_win(0,0),mes);
     fclose(ft.fp_log);
     ft.fp_log=NULL;
     }
-  else fprintf(ft.fp_log,"%s %s\n",get_time(0,0),mes);
+  else fprintf(ft.fp_log,"%s %s\n",get_time_win(0,0),mes);
   }

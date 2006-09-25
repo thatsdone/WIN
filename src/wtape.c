@@ -1,4 +1,4 @@
-/* $Id: wtape.c,v 1.12 2005/08/10 09:32:43 urabe Exp $ */
+/* $Id: wtape.c,v 1.12.2.1 2006/09/25 15:01:01 uehira Exp $ */
 /*
   program "wtape.c"
   8/23/89 - 8/8/90, 6/27/91, 12/24/91, 2/29/92  urabe
@@ -44,6 +44,7 @@
 #include  <sys/mtio.h>
 #include  <unistd.h>
 
+#include "winlib.h"
 #include "subst_func.h"
 
 #define   DEBUGFLAG 1
@@ -65,7 +66,7 @@
   int  wait_min;
   char param_name[WIN_FILENAME_MAX];
   char *progname;
-  static char rcsid[]="$Id: wtape.c,v 1.12 2005/08/10 09:32:43 urabe Exp $";
+  static char rcsid[]="$Id: wtape.c,v 1.12.2.1 2006/09/25 15:01:01 uehira Exp $";
 
 switch_sig()
   {
@@ -211,7 +212,8 @@ write_rsv(tm)
   fclose(fp);
   }
 
-adj_time(tm)
+static
+adj_time_wtape(tm)
   int *tm;
   {
   if(tm[4]==60)
@@ -454,15 +456,6 @@ switch_unit(unit)
     }
   }
 
-mklong(ptr)       
-  unsigned char *ptr;
-  {
-  unsigned long a;
-  a=((ptr[0]<<24)&0xff000000)+((ptr[1]<<16)&0xff0000)+
-    ((ptr[2]<<8)&0xff00)+(ptr[3]&0xff);
-  return a;       
-  }
-
 usage()
 {
 
@@ -549,7 +542,7 @@ main(argc,argv)
   while(1)
     {
     tm[4]++;
-    adj_time(tm);
+    adj_time_wtape(tm);
     sprintf(name_start,"%02d%02d%02d%02d.%02d",
         tm[0],tm[1],tm[2],tm[3],tm[4]);
     rmemo("OLDEST",raw_oldest);
@@ -561,7 +554,7 @@ main(argc,argv)
 	for(k=0;k<wait_min;++k)
 	  {
 	    tm1[4]--;
-	    adj_time(tm1);
+	    adj_time_wtape(tm1);
 	  }
 	sprintf(raw_latest,"%02d%02d%02d%02d.%02d",
 		tm1[0],tm1[1],tm1[2],tm1[3],tm1[4]);
@@ -573,7 +566,7 @@ main(argc,argv)
       sscanf(name_start,"%2d%2d%2d%2d.%2d",
         &tm[0],&tm[1],&tm[2],&tm[3],&tm[4]);
 /*      tm[4]++;
-      adj_time(tm);
+      adj_time_wtape(tm);
 */      sprintf(name_start,"%02d%02d%02d%02d.%02d",
         tm[0],tm[1],tm[2],tm[3],tm[4]);
 #if DEBUGFLAG
@@ -603,7 +596,7 @@ main(argc,argv)
 	      for(k=0;k<wait_min;++k)
 		{
 		  tm1[4]--;
-		  adj_time(tm1);
+		  adj_time_wtape(tm1);
 		}
 	      sprintf(raw_latest,"%02d%02d%02d%02d.%02d",
 		      tm1[0],tm1[1],tm1[2],tm1[3],tm1[4]);

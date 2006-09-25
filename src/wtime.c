@@ -1,4 +1,4 @@
-/* $Id: wtime.c,v 1.3 2006/03/18 11:22:16 uehira Exp $ */
+/* $Id: wtime.c,v 1.3.2.1 2006/09/25 15:01:01 uehira Exp $ */
 
 /*
   program "wtime.c"
@@ -27,6 +27,7 @@
 
 #include  <math.h>
 
+#include "winlib.h"
 #include "subst_func.h"
 
 #define   DEBUG   0
@@ -61,15 +62,6 @@ static unsigned char d2b[]={
 
 wabort() {exit(0);}
 
-mklong(ptr)
-  unsigned char *ptr;
-  {
-  unsigned long a;
-  a=((ptr[0]<<24)&0xff000000)+((ptr[1]<<16)&0xff0000)+
-    ((ptr[2]<<8)&0xff00)+(ptr[3]&0xff);
-  return a;
-  }
-
 read_data()
   {
   static unsigned int size;
@@ -92,168 +84,6 @@ read_data()
   rbuf[3]=re;
   re=fread(rbuf+4,1,re-4,stdin);
   return re;
-  }
-
-win2fix(ptr,abuf,sys_ch,sr) /* returns group size in bytes */
-  unsigned char *ptr; /* input */
-  register long *abuf;/* output */
-  long *sys_ch;       /* sys_ch */
-  long *sr;           /* sr */
-  {
-  int b_size,g_size;
-  register int i,s_rate;
-  register unsigned char *dp;
-  unsigned int gh;
-  short shreg;
-  int inreg;
-
-  dp=ptr;
-  gh=((dp[0]<<24)&0xff000000)+((dp[1]<<16)&0xff0000)+
-    ((dp[2]<<8)&0xff00)+(dp[3]&0xff);
-  dp+=4;
-  *sr=s_rate=gh&0xfff;
-/*  if(s_rate>MAX_SR) return 0;*/
-  if(b_size=(gh>>12)&0xf) g_size=b_size*(s_rate-1)+8;
-  else g_size=(s_rate>>1)+8;
-  *sys_ch=(gh>>16)&0xffff;
-
-  /* read group */
-  abuf[0]=((dp[0]<<24)&0xff000000)+((dp[1]<<16)&0xff0000)+
-    ((dp[2]<<8)&0xff00)+(dp[3]&0xff);
-  dp+=4;
-  if(s_rate==1) return g_size;  /* normal return */
-  switch(b_size)
-    {
-    case 0:
-      for(i=1;i<s_rate;i+=2)
-        {
-        abuf[i]=abuf[i-1]+((*(char *)dp)>>4);
-        abuf[i+1]=abuf[i]+(((char)(*(dp++)<<4))>>4);
-        }
-      break;
-    case 1:
-      for(i=1;i<s_rate;i++)
-        abuf[i]=abuf[i-1]+(*(char *)(dp++));
-      break;
-    case 2:
-      for(i=1;i<s_rate;i++)
-        {
-        shreg=((dp[0]<<8)&0xff00)+(dp[1]&0xff);
-        dp+=2;
-        abuf[i]=abuf[i-1]+shreg;
-        }
-      break;
-    case 3:
-      for(i=1;i<s_rate;i++)
-        {
-        inreg=((dp[0]<<24)&0xff000000)+((dp[1]<<16)&0xff0000)+
-          ((dp[2]<<8)&0xff00);
-        dp+=3;
-        abuf[i]=abuf[i-1]+(inreg>>8);
-        }
-      break;
-    case 4:
-      for(i=1;i<s_rate;i++)
-        {
-        inreg=((dp[0]<<24)&0xff000000)+((dp[1]<<16)&0xff0000)+
-          ((dp[2]<<8)&0xff00)+(dp[3]&0xff);
-        dp+=4;
-        abuf[i]=abuf[i-1]+inreg;
-        }
-      break;
-    default:
-      return 0; /* bad header */
-    }
-  return g_size;  /* normal return */
-  }
-
-/* winform.c  4/30/91,99.4.19   urabe */
-/* winform converts fixed-sample-size-data into win's format */
-/* winform returns the length in bytes of output data */
-
-winform(inbuf,outbuf,sr,sys_ch)
-  long *inbuf;      /* input data array for one sec*/
-  unsigned char *outbuf;  /* output data array for one sec */
-  int sr;         /* n of data (i.e. sampling rate) */
-  unsigned short sys_ch;  /* 16 bit long channel ID number */
-  {
-  int dmin,dmax,aa,bb,br,i,byte_leng;
-  long *ptr;
-  unsigned char *buf;
-
-  /* differentiate and obtain min and max */
-  ptr=inbuf;
-  bb=(*ptr++);
-  dmax=dmin=0;
-  for(i=1;i<sr;i++)
-    {
-    aa=(*ptr);
-    *ptr++=br=aa-bb;
-    bb=aa;
-    if(br>dmax) dmax=br;
-    else if(br<dmin) dmin=br;
-    }
-
-  /* determine sample size */
-  if(((dmin&0xfffffff8)==0xfffffff8 || (dmin&0xfffffff8)==0) &&
-    ((dmax&0xfffffff8)==0xfffffff8 || (dmax&0xfffffff8)==0)) byte_leng=0;
-  else if(((dmin&0xffffff80)==0xffffff80 || (dmin&0xffffff80)==0) &&
-    ((dmax&0xffffff80)==0xffffff80 || (dmax&0xffffff80)==0)) byte_leng=1;
-  else if(((dmin&0xffff8000)==0xffff8000 || (dmin&0xffff8000)==0) &&
-    ((dmax&0xffff8000)==0xffff8000 || (dmax&0xffff8000)==0)) byte_leng=2;
-  else if(((dmin&0xff800000)==0xff800000 || (dmin&0xff800000)==0) &&
-    ((dmax&0xff800000)==0xff800000 || (dmax&0xff800000)==0)) byte_leng=3;
-  else byte_leng=4;
-  /* make a 4 byte long header */
-  buf=outbuf;
-  *buf++=(sys_ch>>8)&0xff;
-  *buf++=sys_ch&0xff;
-  *buf++=(byte_leng<<4)|(sr>>8);
-  *buf++=sr&0xff;
-
-  /* first sample is always 4 byte long */
-  *buf++=inbuf[0]>>24;
-  *buf++=inbuf[0]>>16;
-  *buf++=inbuf[0]>>8;
-  *buf++=inbuf[0];
-  /* second and after */
-  switch(byte_leng)
-    {
-    case 0:
-      for(i=1;i<sr-1;i+=2)
-        *buf++=(inbuf[i]<<4)|(inbuf[i+1]&0xf);
-      if(i==sr-1) *buf++=(inbuf[i]<<4);
-      break;
-    case 1:
-      for(i=1;i<sr;i++)
-        *buf++=inbuf[i];
-      break;
-    case 2:
-      for(i=1;i<sr;i++)
-        {
-        *buf++=inbuf[i]>>8;
-        *buf++=inbuf[i];
-        }
-      break;
-    case 3:
-      for(i=1;i<sr;i++)
-        {
-        *buf++=inbuf[i]>>16;
-        *buf++=inbuf[i]>>8;
-        *buf++=inbuf[i];
-        }
-      break;
-    case 4:
-      for(i=1;i<sr;i++)
-        {
-        *buf++=inbuf[i]>>24;
-        *buf++=inbuf[i]>>16;
-        *buf++=inbuf[i]>>8;
-        *buf++=inbuf[i];
-        }
-      break;
-    }
-  return (int)(buf-outbuf);
   }
 
 shift_sec(tm_bcd,sec)
@@ -300,7 +130,7 @@ chloop(old_buf,new_buf)
   new_size=10;
   do
     {
-    ptr1+=win2fix(ptr1,fixbuf1,&ch,&sr); /* returns group size in bytes */
+    ptr1+=win2fix(ptr1,fixbuf1,(long *)&ch,(long *)&sr); /* returns group size in bytes */
     if(!sbuf[ch]) sbuf[ch]=(long *)malloc(4*sr);
     if(ltime!=ltime_ch[ch]+1) for(i=0;i<sr;i++) sbuf[ch][i]=fixbuf1[0]; 
     sr_shift=(ms_add*sr+500)/1000;

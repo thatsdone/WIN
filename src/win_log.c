@@ -1,4 +1,4 @@
-/* $Id: win_log.c,v 1.2 2004/11/30 14:16:30 uehira Exp $ */
+/* $Id: win_log.c,v 1.2.4.1 2006/09/25 15:01:00 uehira Exp $ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -8,24 +8,12 @@
 #include <stdlib.h>
 #include <errno.h>
 
-#if TIME_WITH_SYS_TIME
-#include <sys/time.h>
-#include <time.h>
-#else  /* !TIME_WITH_SYS_TIME */
-#if HAVE_SYS_TIME_H
-#include <sys/time.h>
-#else  /* !HAVE_SYS_TIME_H */
-#include <time.h>
-#endif  /* !HAVE_SYS_TIME_H */
-#endif  /* !TIME_WITH_SYS_TIME */
-
 #include <syslog.h>
 
 #include "win_externs.h"
+#include "winlib.h"
 #include "win_log.h"
 #include "subst_func.h"
-
-static void get_time(int []);
 
 void
 write_log(char *ptr)
@@ -77,20 +65,4 @@ end_program(void)
     closelog();
   /*  printf("%d\n", status); */
   exit(exit_status);
-}
-
-static void
-get_time(int rt[])
-{
-  struct tm  *nt;
-  time_t  ltime;
-
-  (void)time(&ltime);
-  nt = localtime(&ltime);
-  rt[0] = nt->tm_year % 100;
-  rt[1] = nt->tm_mon + 1;
-  rt[2] = nt->tm_mday;
-  rt[3] = nt->tm_hour;
-  rt[4] = nt->tm_min;
-  rt[5] = nt->tm_sec;  
 }

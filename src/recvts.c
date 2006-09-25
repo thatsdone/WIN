@@ -33,6 +33,7 @@
 #endif  /* !HAVE_SYS_TIME_H */
 #endif  /* !TIME_WITH_SYS_TIME */
 
+#include "winlib.h"
 #include "subst_func.h"
 
 #define DEBUG     0
@@ -49,87 +50,7 @@ extern int errno;
 unsigned char rbuf[MAXMESG],ch_table[65536];
 char tb[256],*progname,logfile[256],chfile[256];
 int n_ch,negate_channel;
-
-get_time(rt)
-  int *rt;
-  {
-  struct tm *nt;
-  unsigned long ltime;
-  time(&ltime);
-  nt=localtime(&ltime);
-  rt[0]=nt->tm_year%100;
-  rt[1]=nt->tm_mon+1;
-  rt[2]=nt->tm_mday;
-  rt[3]=nt->tm_hour;
-  rt[4]=nt->tm_min;
-  rt[5]=nt->tm_sec;
-  }
-
-bcd_dec(dest,sour)
-  unsigned char *sour;
-  int *dest;
-  {
-  static int b2d[]={
-     0, 1, 2, 3, 4, 5, 6, 7, 8, 9,-1,-1,-1,-1,-1,-1,  /* 0x00 - 0x0F */
-    10,11,12,13,14,15,16,17,18,19,-1,-1,-1,-1,-1,-1,
-    20,21,22,23,24,25,26,27,28,29,-1,-1,-1,-1,-1,-1,
-    30,31,32,33,34,35,36,37,38,39,-1,-1,-1,-1,-1,-1,
-    40,41,42,43,44,45,46,47,48,49,-1,-1,-1,-1,-1,-1,
-    50,51,52,53,54,55,56,57,58,59,-1,-1,-1,-1,-1,-1,
-    60,61,62,63,64,65,66,67,68,69,-1,-1,-1,-1,-1,-1,
-    70,71,72,73,74,75,76,77,78,79,-1,-1,-1,-1,-1,-1,
-    80,81,82,83,84,85,86,87,88,89,-1,-1,-1,-1,-1,-1,
-    90,91,92,93,94,95,96,97,98,99,-1,-1,-1,-1,-1,-1,  /* 0x90 - 0x9F */
-    -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
-    -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
-    -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
-    -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
-    -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
-    -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1};
-  int i;
-  i=b2d[sour[0]];
-  if(i>=0 && i<=99) dest[0]=i; else return 0;
-  i=b2d[sour[1]];
-  if(i>=1 && i<=12) dest[1]=i; else return 0;
-  i=b2d[sour[2]];
-  if(i>=1 && i<=31) dest[2]=i; else return 0;
-  i=b2d[sour[3]];
-  if(i>=0 && i<=23) dest[3]=i; else return 0;
-  i=b2d[sour[4]];
-  if(i>=0 && i<=59) dest[4]=i; else return 0;
-  i=b2d[sour[5]];
-  if(i>=0 && i<=60) dest[5]=i; else return 0;
-  return 1;
-  }
-
-write_log(logfil,ptr)
-  char *logfil;
-  char *ptr;
-  {
-  FILE *fp;
-  int tm[6];
-  if(*logfil) fp=fopen(logfil,"a");
-  else fp=stdout;
-  get_time(tm);
-  fprintf(fp,"%02d%02d%02d.%02d%02d%02d %s %s\n",
-    tm[0],tm[1],tm[2],tm[3],tm[4],tm[5],progname,ptr);
-  if(*logfil) fclose(fp);
-  }
-
-ctrlc()
-  {
-  write_log(logfile,"end");
-  exit(0);
-  }
-
-err_sys(ptr)
-  char *ptr;
-  {
-  perror(ptr);
-  write_log(logfile,ptr);
-  if(errno<sys_nerr) write_log(logfile,sys_errlist[errno]);
-  ctrlc();
-  }
+int syslog_mode = 0, exit_status;
 
 read_chfile()
   {
@@ -178,7 +99,7 @@ read_chfile()
       n_ch=j;
       if(negate_channel) sprintf(tbuf,"-%d channels",n_ch);
       else sprintf(tbuf,"%d channels",n_ch);
-      write_log(logfile,tbuf);
+      write_log(tbuf);
       fclose(fp);
       }
     else
@@ -187,8 +108,8 @@ read_chfile()
       fprintf(stderr,"ch_file '%s' not open\n",chfile);
 #endif
       sprintf(tbuf,"channel list file '%s' not open",chfile);
-      write_log(logfile,tbuf);
-      write_log(logfile,"end");
+      write_log(tbuf);
+      write_log("end");
       exit(1);
       }
     }
@@ -196,18 +117,9 @@ read_chfile()
     {
     for(i=0;i<65536;i++) ch_table[i]=1;
     n_ch=i;
-    write_log(logfile,"all channels");
+    write_log("all channels");
     }
   signal(SIGHUP,(void *)read_chfile);
-  }
-
-mklong(ptr)
-  unsigned char *ptr;
-  {
-  unsigned long a;
-  a=((ptr[0]<<24)&0xff000000)+((ptr[1]<<16)&0xff0000)+
-    ((ptr[2]<<8)&0xff00)+(ptr[3]&0xff);
-  return a;
   }
 
 wincpy(ptw,ptr,size)
@@ -238,7 +150,7 @@ wincpy(ptw,ptr,size)
 "ill ch hdr %02X%02X%02X%02X %02X%02X%02X%02X psiz=%d sr=%d ss=%d gs=%d rest=%d",
         ptr[0],ptr[1],ptr[2],ptr[3],ptr[4],ptr[5],ptr[6],ptr[7],
         size,sr,ss,gs,ptr_lim-ptr);
-      write_log(logfile,tb);
+      write_log(tb);
 #endif
       return n;
       }
@@ -347,6 +259,8 @@ main(argc,argv)
 
   if(progname=strrchr(argv[0],'/')) progname++;
   else progname=argv[0];
+  exit_status = EXIT_SUCCESS;
+
   sprintf(tb,
 " usage : '%s (-m [pre(m)]) (-p [post(m)]) [shm_key] [shm_size(KB)] ([ch file]/- ([log file]))'\n",
       progname);
@@ -410,12 +324,12 @@ main(argc,argv)
   sh->p=sh->r=(-1);
 
   sprintf(tb,"start shm_key=%d id=%d size=%d",shm_key,shmid,size);
-  write_log(logfile,tb);
+  write_log(tb);
 
   if((fd=open("/dev/brhdlc0",0))<0) err_sys("open /dev/brhdlc0");
 
-  signal(SIGTERM,(void *)ctrlc);
-  signal(SIGINT,(void *)ctrlc);
+  signal(SIGTERM,(void *)end_program);
+  signal(SIGINT,(void *)end_program);
 
   for(i=0;i<6;i++) tm[i]=(-1);
   ptr=ptr_size=sh->d;
@@ -474,7 +388,7 @@ main(argc,argv)
 #if DEBUG2
           sprintf(tb,"illegal time %02X%02X%02X.%02X%02X%02X in ch %02X%02X",
             rbuf[1],rbuf[2],rbuf[3],rbuf[4],rbuf[5],rbuf[6],rbuf[7],rbuf[8]);
-          write_log(logfile,tb);
+          write_log(tb);
 #endif
           for(i=0;i<6;i++) tm[i]=(-1);
           continue;

@@ -1,4 +1,4 @@
-/* $Id: sends.c,v 1.6 2004/11/26 14:09:45 uehira Exp $ */
+/* $Id: sends.c,v 1.6.4.1 2006/09/25 15:00:58 uehira Exp $ */
 /*   program "sends"   2000.3.20 urabe                   */
 /*   2000.3.21 */
 /*   2000.4.17 */
@@ -44,6 +44,7 @@
 #include "/opt/AURAacs/syncuser.h"
 #endif
 
+#include "winlib.h"
 #include "subst_func.h"
 
 #define DEBUG       0
@@ -56,15 +57,6 @@
 int sock,psize[BUFNO];
 unsigned char sbuf[BUFNO][MAXMESG],rbuf[MAXMESG];
 char *progname,logfile[256];
-
-mklong(ptr)       
-  unsigned char *ptr;
-  {
-  unsigned long a;
-  a=((ptr[0]<<24)&0xff000000)+((ptr[1]<<16)&0xff0000)+
-    ((ptr[2]<<8)&0xff00)+(ptr[3]&0xff);
-  return a;       
-  }
 
 get_time(rt)
   int *rt;

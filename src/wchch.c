@@ -1,4 +1,4 @@
-/* $Id: wchch.c,v 1.5 2005/02/20 13:56:18 urabe Exp $ */
+/* $Id: wchch.c,v 1.5.4.1 2006/09/25 15:00:59 uehira Exp $ */
 /*
 program "wchch.c"
 "wchch" changes channel no. in a win format data file
@@ -83,15 +83,6 @@ get_one_record()
 #if DEBUG1
   fprintf(stderr," : done\n");
 #endif
-  }
-
-mklong(ptr)
-  unsigned char *ptr;
-  {
-  unsigned long a;
-  a=((ptr[0]<<24)&0xff000000)+((ptr[1]<<16)&0xff0000)+
-    ((ptr[2]<<8)&0xff00)+(ptr[3]&0xff);
-  return a;
   }
 
 read_data()

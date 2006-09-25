@@ -1,4 +1,4 @@
-/* $Id: ls8tel16_raw.c,v 1.3 2005/06/25 11:14:02 uehira Exp $ */
+/* $Id: ls8tel16_raw.c,v 1.3.2.1 2006/09/25 15:00:57 uehira Exp $ */
 
 /*
  * Copyright (c) 2005
@@ -49,6 +49,7 @@
 #include "daemon_mode.h"
 #include "subst_func.h"
 #include "win_log.h"
+#include "winlib.h"
 #include "win_system.h"
 #include "ls8tel.h"
 
@@ -58,7 +59,7 @@
 /*  #define DEBUG       0 */
 
 static char rcsid[] =
-  "$Id: ls8tel16_raw.c,v 1.3 2005/06/25 11:14:02 uehira Exp $";
+  "$Id: ls8tel16_raw.c,v 1.3.2.1 2006/09/25 15:00:57 uehira Exp $";
 
 char *progname, *logfile;
 int  daemon_mode, syslog_mode;

@@ -1,4 +1,4 @@
-/* $Id: cormeisei.c,v 1.6 2005/02/20 13:56:17 urabe Exp $ */
+/* $Id: cormeisei.c,v 1.6.4.1 2006/09/25 15:00:56 uehira Exp $ */
 /* "cormeisei.c"    June'97 Ide changed from*/
 /* "raw_raw.c"      3/4/96 urabe */
 /*                  revised on 5/20/96 */
@@ -46,6 +46,7 @@
 #include <unistd.h>
 #include <errno.h>
 
+#include "winlib.h"
 #include "subst_func.h"
 
 #define DEBUG     0
@@ -67,61 +68,9 @@
 #define TDLYL     1.35
 
 short ch_tableh[65536], ch_tablel[65536];
-char *progname,logfile[256],chfile[256];
+char *progname,*logfile,chfile[256];
 int n_chh, ch_orderh[CH_TOTAL], n_chl, ch_orderl[CH_TOTAL];
-
-mklong(ptr)
-  unsigned char *ptr;
-  {
-  unsigned long a;
-  a=((ptr[0]<<24)&0xff000000)+((ptr[1]<<16)&0xff0000)+
-    ((ptr[2]<<8)&0xff00)+(ptr[3]&0xff);
-  return a;
-  }
-
-get_time(rt)
-int *rt;
-{
-  struct tm *nt;
-  unsigned long ltime;
-  time(&ltime);
-  nt=localtime(&ltime);
-  rt[0]=nt->tm_year%100;
-  rt[1]=nt->tm_mon+1;
-  rt[2]=nt->tm_mday;
-  rt[3]=nt->tm_hour;
-  rt[4]=nt->tm_min;
-  rt[5]=nt->tm_sec;
-}
-
-write_log(logfil,ptr)
-char *logfil;
-char *ptr;
-{
-  FILE *fp;
-  int tm[6];
-  if(*logfil) fp=fopen(logfil,"a");
-  else fp=stdout;
-  get_time(tm);
-  fprintf(fp,"%02d%02d%02d.%02d%02d%02d %s %s\n",
-    tm[0],tm[1],tm[2],tm[3],tm[4],tm[5],progname,ptr);
-  if(*logfil) fclose(fp);
-}
-
-ctrlc()
-{
-  write_log(logfile,"end");
-  exit(0);
-}
-
-err_sys(ptr)
-char *ptr;
-{
-  perror(ptr);
-  write_log(logfile,ptr);
-  if(strerror(errno)) write_log(logfile,strerror(errno));
-  ctrlc();
-}
+int syslog_mode=0, exit_status=0;
 
 read_chfile()
 {
@@ -164,181 +113,19 @@ char tbuf[256];
     n_chh=jh;
     n_chl=jl;
     sprintf(tbuf,"100Hz %d channels  20Hz %d channels",n_chh,n_chl);
-    write_log(logfile,tbuf);
+    write_log(tbuf);
     fclose(fp);
   } else {
 #if DEBUG
     fprintf(stderr,"ch_file '%s' not open\n",chfile);
 #endif
     sprintf(tbuf,"channel list file '%s' not open",chfile);
-    write_log(logfile,tbuf);
-    write_log(logfile,"end");
+    write_log(tbuf);
+    write_log("end");
     exit(1);
   }
   signal(SIGHUP,(void *)read_chfile);
 }
-
-/* winform.c  4/30/91   urabe */
-/* winform converts fixed-sample-size-data into win's format */
-/* winform returns the length in bytes of output data */
-
-winform(inbuf,outbuf,sr,sys_ch)
-  long *inbuf;      /* input data array for one sec*/
-  unsigned char *outbuf;  /* output data array for one sec */
-  int sr;         /* n of data (i.e. sampling rate) */
-  unsigned short sys_ch;  /* 16 bit long channel ID number */
-  {
-  int dmin,dmax,aa,bb,br,i,byte_leng;
-  long *ptr;
-  unsigned char *buf;
-
-  /* differentiate and obtain min and max */
-  ptr=inbuf;
-  bb=(*ptr++);
-  dmax=dmin=0;
-  for(i=1;i<sr;i++)
-    {
-    aa=(*ptr);
-    *ptr++=br=aa-bb;
-    bb=aa;
-    if(br>dmax) dmax=br;
-    else if(br<dmin) dmin=br;
-    }
-
-  /* determine sample size */
-  if(((dmin&0xfffffff8)==0xfffffff8 || (dmin&0xfffffff8)==0) &&
-    ((dmax&0xfffffff8)==0xfffffff8 || (dmax&0xfffffff8)==0)) byte_leng=0;
-  else if(((dmin&0xffffff80)==0xffffff80 || (dmin&0xffffff80)==0) &&
-    ((dmax&0xffffff80)==0xffffff80 || (dmax&0xffffff80)==0)) byte_leng=1;
-  else if(((dmin&0xffff8000)==0xffff8000 || (dmin&0xffff8000)==0) &&
-    ((dmax&0xffff8000)==0xffff8000 || (dmax&0xffff8000)==0)) byte_leng=2;
-  else if(((dmin&0xff800000)==0xff800000 || (dmin&0xff800000)==0) &&
-    ((dmax&0xff800000)==0xff800000 || (dmax&0xff800000)==0)) byte_leng=3;
-  else byte_leng=4;
-  /* make a 4 byte long header */
-  buf=outbuf;
-  *buf++=(sys_ch>>8)&0xff;
-  *buf++=sys_ch&0xff;
-  *buf++=(byte_leng<<4)|(sr>>8);
-  *buf++=sr&0xff;
-
-  /* first sample is always 4 byte long */
-  *buf++=inbuf[0]>>24;
-  *buf++=inbuf[0]>>16;
-  *buf++=inbuf[0]>>8;
-  *buf++=inbuf[0];
-  /* second and after */
-  switch(byte_leng)
-    {
-    case 0:
-      for(i=1;i<sr-1;i+=2)
-        *buf++=(inbuf[i]<<4)|(inbuf[i+1]&0xf);
-      if(i==sr-1) *buf++=(inbuf[i]<<4);
-      break;
-    case 1:
-      for(i=1;i<sr;i++)
-        *buf++=inbuf[i];
-      break;
-    case 2:
-      for(i=1;i<sr;i++)
-        {
-        *buf++=inbuf[i]>>8;
-        *buf++=inbuf[i];
-        }
-      break;
-    case 3:
-      for(i=1;i<sr;i++)
-        {
-        *buf++=inbuf[i]>>16;
-        *buf++=inbuf[i]>>8;
-        *buf++=inbuf[i];
-        }
-      break;
-    case 4:
-      for(i=1;i<sr;i++)
-        {
-        *buf++=inbuf[i]>>24;
-        *buf++=inbuf[i]>>16;
-        *buf++=inbuf[i]>>8;
-        *buf++=inbuf[i];
-        }
-      break;
-    }
-  return (int)(buf-outbuf);
-  }
-
-win2fix(ptr,abuf,sys_ch,sr) /* returns group size in bytes */
-  unsigned char *ptr; /* input */
-  register long *abuf;/* output */
-  long *sys_ch;       /* sys_ch */
-  long *sr;           /* sr */
-  {
-  int b_size,g_size;
-  register int i,s_rate;
-  register unsigned char *dp;
-  unsigned int gh;
-  short shreg;
-  int inreg;
-
-  dp=ptr;
-  gh=((dp[0]<<24)&0xff000000)+((dp[1]<<16)&0xff0000)+
-    ((dp[2]<<8)&0xff00)+(dp[3]&0xff);
-  dp+=4;
-  *sr=s_rate=gh&0xfff;
-/*  if(s_rate>MAX_SR) return 0;*/
-  if(b_size=(gh>>12)&0xf) g_size=b_size*(s_rate-1)+8;
-  else g_size=(s_rate>>1)+8;
-  *sys_ch=(gh>>16)&0xffff;
-
-  /* read group */
-  abuf[0]=((dp[0]<<24)&0xff000000)+((dp[1]<<16)&0xff0000)+
-    ((dp[2]<<8)&0xff00)+(dp[3]&0xff);
-  dp+=4;
-  if(s_rate==1) return g_size;  /* normal return */
-  switch(b_size)
-    {
-    case 0:
-      for(i=1;i<s_rate;i+=2)
-        {
-        abuf[i]=abuf[i-1]+((*(char *)dp)>>4);
-        abuf[i+1]=abuf[i]+(((char)(*(dp++)<<4))>>4);
-        }
-      break;
-    case 1:
-      for(i=1;i<s_rate;i++)
-        abuf[i]=abuf[i-1]+(*(char *)(dp++));
-      break;
-    case 2:
-      for(i=1;i<s_rate;i++)
-        {
-        shreg=((dp[0]<<8)&0xff00)+(dp[1]&0xff);
-        dp+=2;
-        abuf[i]=abuf[i-1]+shreg;
-        }
-      break;
-    case 3:
-      for(i=1;i<s_rate;i++)
-        {
-        inreg=((dp[0]<<24)&0xff000000)+((dp[1]<<16)&0xff0000)+
-          ((dp[2]<<8)&0xff00);
-        dp+=3;
-        abuf[i]=abuf[i-1]+(inreg>>8);
-        }
-      break;
-    case 4:
-      for(i=1;i<s_rate;i++)
-        {
-        inreg=((dp[0]<<24)&0xff000000)+((dp[1]<<16)&0xff0000)+
-          ((dp[2]<<8)&0xff00)+(dp[3]&0xff);
-        dp+=4;
-        abuf[i]=abuf[i-1]+inreg;
-        }
-      break;
-    default:
-      return 0; /* bad header */
-    }
-  return g_size;  /* normal return */
-  }
 
 main(argc,argv)
 int argc;
@@ -422,7 +209,8 @@ char *argv[];
   monkey=atoi(argv[2]);
   size_shm=atoi(argv[3])*1000;
   strcpy(chfile,argv[4]);
-  if(argc>5) strcpy(logfile,argv[5]);
+  if(argc>5) logfile=argv[5];
+  else logfile=NULL;
     
   read_chfile();
 
@@ -438,10 +226,10 @@ char *argv[];
 
   sprintf(tb,"start in_key=%d id=%d out_key=%d id=%d size=%d",
     rawkey,shmid_raw,monkey,shmid_mon,size_shm);
-  write_log(logfile,tb);
+  write_log(tb);
 
-  signal(SIGTERM,(void *)ctrlc);
-  signal(SIGINT,(void *)ctrlc);
+  signal(SIGTERM,(void *)end_program);
+  signal(SIGINT,(void *)end_program);
 
 reset:
   /* initialize buffer */
@@ -666,13 +454,13 @@ reset:
       ch=(gh>>16)&0xffff;
       sr=gh&0xfff;
       if((ich=ch_tableh[ch])>=0 && sr==100){
-        gs=win2fix(ptr,dath[idx12][ich],&ch,&sr);
+        gs=win2fix(ptr,dath[idx12][ich],(long *)&ch,(long *)&sr);
         ch_flagh[iddx12][ich]=1;
 #if DEBUG
         fprintf(stderr,"+");
 #endif
       } else if((ich=ch_tablel[ch])>=0 && sr==20){
-        gs=win2fix(ptr,datl[idx12][ich],&ch,&sr);
+        gs=win2fix(ptr,datl[idx12][ich],(long *)&ch,(long *)&sr);
         ch_flagl[iddx12][ich]=1;
 #if DEBUG
         fprintf(stderr,"+");
@@ -715,7 +503,7 @@ reset:
     if((ptr=ptr_lim)>shr->d+shr->pl) ptr=shr->d;
     while(ptr==shr->d+shr->p) usleep(100000);
     if(mklong(ptr_save)!=size) {
-      write_log(logfile,"reset");
+      write_log("reset");
       goto reset;
     }
   }

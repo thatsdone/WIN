@@ -1,4 +1,4 @@
-/* $Id: raw_raw.c,v 1.9 2005/03/07 09:40:35 uehira Exp $ */
+/* $Id: raw_raw.c,v 1.9.4.1 2006/09/25 15:00:58 uehira Exp $ */
 /* "raw_raw.c"    97.8.5 urabe */
 /*                  modified from raw_100.c */
 /*                  98.4.17 FreeBSD */
@@ -42,79 +42,17 @@
 #include <unistd.h>
 
 #include "daemon_mode.h"
+#include "winlib.h"
 #include "subst_func.h"
 
 #define DEBUG       0
 #define BELL        0
 
 unsigned char ch_table[65536];
-char *progname,logfile[256],chfile[256];
+char *progname,*logfile,chfile[254];
 int n_ch,negate_channel;
 int  daemon_mode, syslog_mode;
-
-mklong(ptr)
-  unsigned char *ptr;
-  {
-  unsigned long a;
-  a=((ptr[0]<<24)&0xff000000)+((ptr[1]<<16)&0xff0000)+
-    ((ptr[2]<<8)&0xff00)+(ptr[3]&0xff);
-  return a;
-  }
-
-get_time(rt)
-  int *rt;
-  {
-  struct tm *nt;
-  unsigned long ltime;
-  time(&ltime);
-  nt=localtime(&ltime);
-  rt[0]=nt->tm_year%100;
-  rt[1]=nt->tm_mon+1;
-  rt[2]=nt->tm_mday;
-  rt[3]=nt->tm_hour;
-  rt[4]=nt->tm_min;
-  rt[5]=nt->tm_sec;
-  }
-
-write_log(logfil,ptr)
-  char *logfil;
-  char *ptr;
-  {
-  FILE *fp;
-  int tm[6];
-
-  if (syslog_mode)
-    syslog(LOG_NOTICE, "%s", ptr);
-  else
-    {
-      if(*logfil) fp=fopen(logfil,"a");
-      else fp=stdout;
-      get_time(tm);
-      fprintf(fp,"%02d%02d%02d.%02d%02d%02d %s %s\n",
-	      tm[0],tm[1],tm[2],tm[3],tm[4],tm[5],progname,ptr);
-      if(*logfil) fclose(fp);
-    }
-  }
-
-ctrlc()
-  {
-  write_log(logfile,"end");
-  exit(0);
-  }
-
-err_sys(ptr)
-  char *ptr;
-  {
-  if (syslog_mode)
-    syslog(LOG_NOTICE, "%s", ptr);
-  else
-    {
-      perror(ptr);
-      write_log(logfile,ptr);
-    }
-  if(strerror(errno)) write_log(logfile,strerror(errno));
-  ctrlc();
-  }
+int  exit_status;
 
 read_chfile()
   {
@@ -162,7 +100,7 @@ read_chfile()
       n_ch=j;
       if(negate_channel) sprintf(tbuf,"-%d channels",n_ch);
       else sprintf(tbuf,"%d channels",n_ch);
-      write_log(logfile,tbuf);
+      write_log(tbuf);
       fclose(fp);
       }
     else
@@ -171,8 +109,8 @@ read_chfile()
       fprintf(stderr,"ch_file '%s' not open\n",chfile);
 #endif
       sprintf(tbuf,"channel list file '%s' not open",chfile);
-      write_log(logfile,tbuf);
-      write_log(logfile,"end");
+      write_log(tbuf);
+      write_log("end");
       exit(1);
       }
     }
@@ -180,7 +118,7 @@ read_chfile()
     {
     for(i=0;i<65536;i++) ch_table[i]=1;
     n_ch=i;
-    write_log(logfile,"all channels");
+    write_log("all channels");
     }
   signal(SIGHUP,(void *)read_chfile);
   }
@@ -214,6 +152,7 @@ main(argc,argv)
   else progname=argv[0];
 
   daemon_mode = syslog_mode = 0;
+  exit_status = EXIT_SUCCESS;
   if(strcmp(progname,"raw_rawd")==0) daemon_mode=1;
 
   if(strcmp(progname,"raw_rawd")==0)
@@ -253,7 +192,8 @@ main(argc,argv)
   rawkey=atoi(argv[1+optind]);
   monkey=atoi(argv[2+optind]);
   size_shm=atoi(argv[3+optind])*1000;
-  *chfile=(*logfile)=0;
+  logfile=NULL;
+  *chfile=0;
   if(argc>4+optind)
     {
     if(strcmp("-",argv[4+optind])==0) *chfile=0;
@@ -271,10 +211,10 @@ main(argc,argv)
         }
       }
     }    
-  if(argc>5+optind) strcpy(logfile,argv[5+optind]);
+  if(argc>5+optind) logfile=argv[5+optind];
   else
     {
-      *logfile=0;
+      logfile=NULL;
       if (daemon_mode)
 	syslog_mode = 1;
     }
@@ -305,16 +245,16 @@ main(argc,argv)
 
   sprintf(tb,"start in_key=%d id=%d out_key=%d id=%d size=%d",
     rawkey,shmid_raw,monkey,shmid_mon,size_shm);
-  write_log(logfile,tb);
+  write_log(tb);
 
   if(shift45)
     {
     sprintf(tb,"shift 1Hz data by 4 bits right for GTA-45");
-    write_log(logfile,tb);
+    write_log(tb);
     }
 
-  signal(SIGTERM,(void *)ctrlc);
-  signal(SIGINT,(void *)ctrlc);
+  signal(SIGTERM,(void *)end_program);
+  signal(SIGINT,(void *)end_program);
 
 reset:
   while(shr->r==(-1)) sleep(1);
@@ -326,7 +266,7 @@ reset:
   else eobsize_in=0;
   eobsize_in_count=eobsize_in;
   sprintf(tb,"eobsize_in=%d, eobsize_out=%d",eobsize_in,eobsize_out);
-  write_log(logfile,tb);
+  write_log(tb);
 
   while(1)
     {
@@ -355,10 +295,10 @@ reset:
       if(tow!=1)
         {
         sprintf(tb,"with TOW (diff=%ds)",i);
-        write_log(logfile,tb);
+        write_log(tb);
         if(tow==0)
           {
-          write_log(logfile,"reset");
+          write_log("reset");
           goto reset;
           }
         tow=1;
@@ -371,10 +311,10 @@ reset:
       }
     else if(tow!=0)
       {
-      write_log(logfile,"without TOW");
+      write_log("without TOW");
       if(tow==1)
         {
-        write_log(logfile,"reset");
+        write_log("reset");
         goto reset;
         }
       tow=0;
@@ -444,7 +384,7 @@ reset:
     i=shr->c-c_save;
     if(!(i<1000000 && i>=0) || mklong(ptr_save)!=size)
       {
-      write_log(logfile,"reset");
+      write_log("reset");
       goto reset;
       }
     }

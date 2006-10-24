@@ -1,4 +1,7 @@
- $Id: ChangeLog,v 1.133 2006/09/21 02:19:38 urabe Exp $
+ $Id: ChangeLog,v 1.134 2006/10/24 01:50:50 urabe Exp $
+
+2006-10-24  Urabe Taku <urabe@eri.u-tokyo.ac.jp>
+        * src/win.c: fixed a bug in set_geometry() for resize or OPEN.
 
 2006-09-21  Urabe Taku <urabe@eri.u-tokyo.ac.jp>
 	* src/wed.c: put back mklong() and added comment.

@@ -1,4 +1,4 @@
-/* $Id: cormeisei.c,v 1.6 2005/02/20 13:56:17 urabe Exp $ */
+/* $Id: cormeisei.c,v 1.7 2007/01/15 23:08:00 urabe Exp $ */
 /* "cormeisei.c"    June'97 Ide changed from*/
 /* "raw_raw.c"      3/4/96 urabe */
 /*                  revised on 5/20/96 */
@@ -18,6 +18,7 @@
 /*                  2000.4.24/2001.11.14 strerror() */
 /*                  2002.5.31 MAX_SEC_SIZE 500000 -> 1000000 */
 /*                  2005.2.20 added fclose() in read_chfile() */
+/*                  2007.1.15 MAX_SEC_SIZE 1000000 -> 5000000 */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -54,7 +55,7 @@
 #define CH_TOTAL  200  /* max N of meisei chs */
 #endif
 #ifndef MAX_SEC_SIZE
-#define MAX_SEC_SIZE  1000000  /* max size of one sec data in bytes */
+#define MAX_SEC_SIZE  5000000  /* max size of one sec data in bytes */
 #endif
 
 #define XPM       30

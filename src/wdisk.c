@@ -1,4 +1,4 @@
-/* $Id: wdisk.c,v 1.17 2005/08/10 09:32:42 urabe Exp $ */
+/* $Id: wdisk.c,v 1.18 2007/01/15 23:08:00 urabe Exp $ */
 /*
   program "wdisk.c"   4/16/93-5/13/93,7/2/93,7/5/94  urabe
                       1/6/95 bug in adj_time fixed (tm[0]--)
@@ -19,6 +19,9 @@
                       2004.10.4 daemon mode (-D) (uehira)
                       2004.12.15 bug fixed. - use tm_min[i] instead of last_min
                       2005.8.10 bug in strcmp2() fixed : 0-6 > 7-9
+                      2006.12.5 use double in calculating space_raw
+                      2007.1.15 i<1000000 -> 5000000,
+                                BUFSZ 500000->1000000, BUFLIM 1000000->5000000
 */
 
 #ifdef HAVE_CONFIG_H
@@ -241,7 +244,7 @@ switch_file(tm)
 
      for (;;) {
        freeb = check_space(outdir, &fsbsize);
-       space_raw = ((long)count_max << 20) / fsbsize;
+       space_raw =(long)((1048576.0*(double)count_max) / (double)fsbsize);
        count = find_oldest(outdir,oldst);
 #if DEBUG
        printf("freeb, space_raw: %d %d (%d)\n",
@@ -367,8 +370,8 @@ main(argc,argv)
      int argc;
      char **argv;
 {
-#define BUFSZ 500000
-#define BUFLIM 1000000
+#define BUFSZ 1000000
+#define BUFLIM 5000000
    FILE *fp;
    int i,j,shmid,shid,tm[6],tm_last[6],eobsize,eobsize_count,bufsiz;
    unsigned long shp,shp_save,size,c_save,size2;
@@ -566,7 +569,7 @@ main(argc,argv)
         if((shp+=size)>shm->pl) shp=shp_save=0;
         while(shm->p==shp) sleep(1);
         i=shm->c-c_save;
-        if(!(i<1000000 && i>=0) || mklong(ptr_save)!=size){
+        if(!(i<5000000 && i>=0) || mklong(ptr_save)!=size){
   	 write_log(logfile,"reset");
   	 goto reset;
         }

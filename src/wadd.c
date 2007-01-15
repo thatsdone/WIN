@@ -1,4 +1,4 @@
-/* $Id: wadd.c,v 1.6 2003/02/27 02:08:57 urabe Exp $ */
+/* $Id: wadd.c,v 1.7 2007/01/15 23:08:00 urabe Exp $ */
 /* program "wadd.c"
   "wadd" puts two win data files together
   7/24/91 - 7/25/91, 4/20/94,6/27/94-6/28/94,7/12/94   urabe
@@ -11,6 +11,7 @@
   2002.1.7  fix bug in pattern file (Uehira)
   2002.4.30 MAXSIZE 300K->1M
   2003.1.22 eliminate blank line from ch file
+  2007.1.15 MAXSIZE 1M->5M
 */
 
 #ifdef HAVE_CONFIG_H
@@ -23,7 +24,7 @@
 #include "subst_func.h"
 
 #define   DEBUG   0
-#define   MAXSIZE   1000000
+#define   MAXSIZE   5000000
 #define   NAMLEN    256
 #define   TEMPNAME  "wadd.tmp"
 #define SWAPL(a) a=(((a)<<24)|((a)<<8)&0xff0000|((a)>>8)&0xff00|((a)>>24)&0xff)

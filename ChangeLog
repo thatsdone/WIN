@@ -1,6 +1,7 @@
- $Id: ChangeLog,v 1.135 2007/01/15 23:07:59 urabe Exp $
+ $Id: ChangeLog,v 1.136 2007/01/15 23:19:30 urabe Exp $
 
 2007-01-16  Urabe Taku <urabe@eri.u-tokyo.ac.jp>
+	* Version 1.1.82 released.
         * src/wdisk.c: 2007.1.15 i<1000000 -> 5000000,
                        BUFSZ 500000->1000000, BUFLIM 1000000->5000000
         * src/cormeisei.c: MAX_SEC_SIZE 1000000 -> 5000000

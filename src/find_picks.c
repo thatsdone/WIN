@@ -1,4 +1,4 @@
-/* $Id: find_picks.c,v 1.2.2.6 2006/03/18 11:29:21 uehira Exp $
+/* $Id: find_picks.c,v 1.2.2.7 2007/06/16 08:42:04 uehira Exp $ */
 
 /* find_picks */
 /* search for pick files in pick dir */

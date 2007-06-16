@@ -1,6 +1,30 @@
- $Id: ChangeLog,v 1.113.2.24 2006/09/02 01:52:32 uehira Exp $
+ $Id: ChangeLog,v 1.113.2.25 2007/06/16 08:42:03 uehira Exp $
 
-2006-09-2  Urabe Taku <urabe@eri.u-tokyo.ac.jp>
+2007-06-16  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 1.1.83 released.
+	* src/hypomhc.c : bug fixed in smode
+
+2007-01-16  Urabe Taku <urabe@eri.u-tokyo.ac.jp>
+	* Version 1.1.82 released.
+        * src/wdisk.c: 2007.1.15 i<1000000 -> 5000000,
+                       BUFSZ 500000->1000000, BUFLIM 1000000->5000000
+        * src/cormeisei.c: MAX_SEC_SIZE 1000000 -> 5000000
+        * src/wadd2.c: MAXSIZE 1M->5M
+        * src/wadd.c: MAXSIZE 1M->5M
+        * src/raw2mon.c: MAXSIZE 1M->5M, SIZE_WBUF 300K->1M
+        * src/pmon.c: 'ch_file not found' message fixed
+
+2006-10-24  Urabe Taku <urabe@eri.u-tokyo.ac.jp>
+        * src/win.c: fixed a bug in set_geometry() for resize or OPEN.
+
+2006-09-21  Urabe Taku <urabe@eri.u-tokyo.ac.jp>
+	* src/wed.c: put back mklong() and added comment.
+
+2006-09-20  Urabe Taku <urabe@eri.u-tokyo.ac.jp>
+	* src/wed.c: changed mklong() for byte-order-free.
+	* src/relay.c: deleted mklong() (not used).
+
+2006-09-02  Urabe Taku <urabe@eri.u-tokyo.ac.jp>
 	* src/send_raw.c: added 'no resend' mode (-R)
 
 2006-08-29  Shigeki Nakagawa  <nakagawa@eri.u-tokyo.ac.jp>

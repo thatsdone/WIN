@@ -1,0 +1,121 @@
+# @PERL@
+
+$dif = $ARGV[0];
+$TM0 = $ARGV[1];
+
+$_ = $TM0;
+($yr,$mo,$dy,$hr,$mi) = /(\d\d)(\d\d)(\d\d)(\d\d).(\d\d)/;
+$yr = 2000 + $yr;
+
+#print "$TM0\n";
+@tm = &chgtime($yr,$mo,$dy,$hr,$mi,$sc,$dif,'mi');
+#print "$tm[0] $tm[1] $tm[2] $tm[3] $tm[4] $tm[5]\n";
+
+$TM = sprintf("%02d%02d%02d%02d.%02d",$tm[0]%100,$tm[1],$tm[2],$tm[3],$tm[4]);
+print "$TM\n";
+
+
+### END
+
+sub chgtime {
+  local($jyr,$jmo,$jdy,$jhr,$jmi,$jsc,$dif,$flag) = @_;
+  local($jul);
+  local(@tm);
+  if ( $flag eq 'sc' ) {
+    $jsc = $jsc + $dif;
+  } elsif ( $flag eq 'mi' ) {
+    $jmi = $jmi + $dif;
+  } elsif ( $flag eq 'hr') {
+    $jhr = $jhr + $dif;
+  } elsif ( $flag eq 'dy' ) {
+    $jdy = $jdy + $dif;
+  } elsif ( $flag eq 'mo' ) {
+    $jmo = $jmo + $dif;
+  }
+  while ( $jsc >= 60 ) {
+    $jsc = $jsc - 60; $jmi = $jmi + 1;
+  }
+  while ( $jsc < 0 ) {
+    $jsc = $jsc + 60; $jmi = $jmi - 1;
+  }
+  while ( $jmi >= 60 ) {
+    $jmi = $jmi - 60; $jhr = $jhr + 1;
+  }
+  while ( $jmi < 0 ) {
+    $jmi = $jmi + 60; $jhr = $jhr - 1;
+  }
+  while ( $jhr >= 24 ) {
+    $jhr = $jhr - 24; $jdy = $jdy + 1;
+  }
+  while ( $jhr < 0 ) {
+    $jhr = $jhr + 24; $jdy = $jdy - 1;
+  }
+  $jul = &julday($jmo,$jdy,$jyr);
+  @mdy = &caldat($jul);
+  
+  $tm[0] = $mdy[2];
+  $tm[1] = $mdy[0];
+  $tm[2] = $mdy[1];
+  $tm[3] = $jhr;
+  $tm[4] = $jmi;
+  $tm[5] = $jsc;
+  $tm[0]=sprintf("%04d",$tm[0]);
+  $tm[1]=sprintf("%02d",$tm[1]);
+  $tm[2]=sprintf("%02d",$tm[2]);
+  $tm[3]=sprintf("%02d",$tm[3]);
+  $tm[4]=sprintf("%02d",$tm[4]);
+  $tm[5]=sprintf("%02d",$tm[5]);
+  return @tm;
+}
+
+# NR f77 -> perl
+# 1997/07/11 H. TSURUOKA
+sub julday{
+  local($mm, $id, $iyyy) = @_;
+  local($igreg, $jy, $jm, $ja, $julday);
+  $igreg=15+31*(10+12*1582);
+  if ($iyyy==0) {print "there is no year zero.\n";}
+  if ($iyyy<0) {$iyyy=$iyyy+1;}
+  if ($mm>2) {
+    $jy=$iyyy;
+    $jm=$mm+1;
+  } else {
+    $jy=$iyyy-1;
+    $jm=$mm+13;
+  }
+  $julday=int(365.25*$jy)+int(30.6001*$jm)+$id+1720995;
+  if ($id+31*(mm+12*$iyyy)>=$igreg) {
+    $ja=int(0.01*$jy);
+    $julday=$julday+2-$ja+int(0.25*$ja);
+  }
+  return $julday;
+}
+
+sub caldat{
+  local($julian) = @_;
+  local($mm, $id, $iyyy);
+  local($jalpha, $ja, $jb, $jc, $jd, $je);
+  local(@mdy);
+  $mdy[3] = ($julian+1) % 7;
+  $igreg=2299161;
+  if($julian>=$igreg){
+    $jalpha=int((($julian-1867216)-0.25)/36524.25);
+    $ja=$julian+1+$jalpha-int(0.25*$jalpha);
+  } else {
+    $ja=$julian;
+  }
+  $jb=$ja+1524;
+  $jc=int(6680.+(($jb-2439870)-122.1)/365.25);
+  $jd=365*$jc+int(0.25*$jc);
+  $je=int(($jb-$jd)/30.6001);
+  $id=$jb-$jd-int(30.6001*$je);
+  $mm=$je-1;
+  if($mm>12){$mm=$mm-12;}
+  $iyyy=$jc-4715;
+  if($mm>2){$iyyy=$iyyy-1;}
+  if($iyyy<=0){$iyyy=$iyyy-1;}
+  $mdy[0] = $mm;
+  $mdy[1] = $id;
+  $mdy[2] = $iyyy;
+  return @mdy;
+}

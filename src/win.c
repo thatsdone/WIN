@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.38.2.9 2006/08/31 09:51:46 uehira Exp $
+   $Id: win.c,v 1.38.2.10 2007/06/16 08:42:05 uehira Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -21,7 +21,7 @@
 #else
 #define NAME_PRG      "win32"
 #endif
-#define WIN_VERSION   "2006.08.29(+Hi-net)"
+#define WIN_VERSION   "2006.10.24(+Hi-net)"
 #define DEBUG_AP      0   /* for debugging auto-pick */
 /* 5:sr, 4:ch, 3:sec, 2:find_pick, 1:all */
 /************ HOW TO COMPILE THE PROGRAM **************************
@@ -4463,7 +4463,7 @@ set_geometry()
 /* window position & size */
   x_win_mon=WIDTH_INFO;
   y_win_mon=MARGIN+HEIGHT_FUNC;
-  if((n_zoom_max=(height_dpy-1-MARGIN)/HEIGHT_ZOOM)>N_ZOOM_MAX)
+  if((n_zoom_max=(height_dpy-1-MARGIN-HEIGHT_FUNC)/HEIGHT_ZOOM)>N_ZOOM_MAX)
     n_zoom_max=N_ZOOM_MAX;
   while(n_zoom>n_zoom_max) close_zoom(n_zoom-1);
   height_win_mon=height_dpy-1-MARGIN-HEIGHT_FUNC-n_zoom*HEIGHT_ZOOM;

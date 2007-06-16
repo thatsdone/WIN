@@ -1,4 +1,4 @@
-/* $Id: wed.c,v 1.5 2003/10/29 14:44:12 urabe Exp $ */
+/* $Id: wed.c,v 1.5.2.1 2007/06/16 08:42:05 uehira Exp $ */
 /* program "wed.c"
 	"wed" edits a win format data file by time range and channles
 	6/26/91,7/13/92,3/11/93,4/20/94,8/5/94,12/8/94   urabe
@@ -9,6 +9,7 @@
         2000.4.17   wabort
         2002.8.5    ignore illegal lines in ch file
         2003.10.29 exit()->exit(0)
+        2006.9.21 added comment on mklong()
 */
 
 #ifdef HAVE_CONFIG_H
@@ -189,6 +190,9 @@ get_one_record()
 #endif
 }
 
+/* This mklong() is not byte-order-free, but
+there is no broblem because read_data()
+changes endian if necessary. */ 
 mklong(ptr)
      unsigned char *ptr;
 {

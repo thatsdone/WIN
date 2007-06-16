@@ -1,4 +1,4 @@
-/* $Id: relay.c,v 1.15 2005/05/18 04:47:27 urabe Exp $ */
+/* $Id: relay.c,v 1.15.2.1 2007/06/16 08:42:05 uehira Exp $ */
 /* "relay.c"      5/23/94-5/25/94,6/15/94-6/16/94,6/23/94,3/16/95 urabe */
 /*                3/26/95 check_packet_no; port# */
 /*                5/24/96 added processing of "host table full" */
@@ -26,6 +26,7 @@
 /*                2004.11.26 some systems (exp. Linux), select(2) changes timeout value */
 /*                2005.2.20 added fclose() in read_chfile() */
 /*                2005.5.18 -N for don't change (and ignore) packet numbers */
+/*                2006.9.20 deleted mklong() */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -82,19 +83,6 @@ struct {
     unsigned int n_bytes;
     unsigned int n_packets;
     } ht[N_HOST];
-
-mklong(ptr)
-  unsigned char *ptr;
-  {
-  unsigned char *ptr1;
-  unsigned long a;
-  ptr1=(unsigned char *)&a;
-  *ptr1++=(*ptr++);
-  *ptr1++=(*ptr++);
-  *ptr1++=(*ptr++);
-  *ptr1  =(*ptr);
-  return a;
-  }
 
 get_time(rt)
   int *rt;

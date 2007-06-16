@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.15.2.2 2005/06/29 09:49:45 uehira Exp $
+# $Id: Makefile.am,v 1.15.2.3 2007/06/16 08:42:04 uehira Exp $
 #
 #  Makefile.am in prog subdirectory.
 #
@@ -13,7 +13,7 @@ WIN_SH_PROG =  _bj _bj1 _bj2 _cont _find _joint _kill _mon _monit _stop \
 	picks_settle pp ppj printmon ras2gif ras2lips2a ras2lips2b ras2png \
 	ras2rpdl2a ras2rpdl2b recvstatus_filter renlog rt seis setRT stc \
 	stlist sumup tape tapelist trg trgstat w2h w2hh wex \
-	wt wtB ck_wdisk.sh insert_raw2 update_ch clean_nmx wintosac.sh \
+	wt wtB ck_wdisk.sh insert_raw2 insert_raw2p update_ch clean_nmx wintosac.sh \
 	mkpicknoise
 
 # other shell script
@@ -25,8 +25,8 @@ WIN_WISH_PROG = win_m.in shmx.in shmz.in winsimu.in shmck.in
 WIN_WISH_BIN = win_m shmx shmz winsimu shmck
 
 # perl script
-WIN_PERL_PROG = ch2mf.in ee_manager.in final2mf.in wincd.in pick2pick.in winmap2pickfile.in
-WIN_PERL_BIN = ch2mf ee_manager final2mf wincd pick2pick winmap2pickfile
+WIN_PERL_PROG = ch2mf.in ee_manager.in final2mf.in wincd.in pick2pick.in datej.pl.in winmap2pickfile.in
+WIN_PERL_BIN = ch2mf ee_manager final2mf wincd pick2pick datej.pl winmap2pickfile
 
 # destination files
 EXTRA_DIST = $(WIN_SH_PROG) $(WIN_SHELL_PROG) $(WIN_WISH_PROG) $(WIN_PERL_PROG)

@@ -1,5 +1,5 @@
 /*-
-  $Id: hypomhc.c,v 1.6.2.1 2006/05/10 05:28:13 uehira Exp $
+  $Id: hypomhc.c,v 1.6.2.2 2007/06/16 07:54:57 uehira Exp $
    hypomhc.c    : main program for hypocenter location
      original version was made on March 13, 1984 and
      modified by N.H. on Feb. 8, 1985, May 8, 1985.
@@ -890,7 +890,7 @@ main(argc, argv)
     memory_error();
   for (i = 0; i < na; ++i) {
     fgets(txtbuf, LINELEN, fp_13);
-    strncpy(sta[i].sa1, txtbuf, 10);
+    sscanf(txtbuf, "%10s", sta[i].sa1);
     sta[i].sa1[10] = '\0';
     strncpy(sta[i].pola1, txtbuf + 11, 1);
     sta[i].pola1[1] = '\0';
@@ -921,7 +921,7 @@ main(argc, argv)
     sta[i].flag = 0;
     if (smode) {
       for (j = 0; j < sstanum; ++j)
-	if (strncmp(sta[i].sa1, ssta[j], strlen(ssta[j])) == 0)
+	if (strcmp(sta[i].sa1, ssta[j]) == 0)
 	  sta[i].flag = 1;
     }
 #if DEBUGS
@@ -1127,8 +1127,8 @@ line200:
     where(&strc, xm1[2], &ln);
     if (smode)
       where(&strc1, xm1[2], &ln1);
-#if DEBUGS
-    printf("depth=%lf where=%d where1=%d\n", xm1[2], ln, ln1);
+#if DEBUGS > 0
+    fprintf(fp_21, "depth=%lf where=%d where1=%d\n", xm1[2], ln, ln1);
 #endif
     for (i = 0; i < nd; ++i) {
       xx = xm1[0] - calc[i].sc[0];

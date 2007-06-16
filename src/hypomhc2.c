@@ -1,5 +1,5 @@
 /*-
-  $Id: hypomhc2.c,v 1.1.2.1 2006/05/11 10:05:57 uehira Exp $
+  $Id: hypomhc2.c,v 1.1.2.2 2007/06/16 07:54:58 uehira Exp $
    hypomhc.c    : main program for hypocenter location
      original version was made on March 13, 1984 and
      modified by N.H. on Feb. 8, 1985, May 8, 1985.
@@ -564,7 +564,7 @@ main(argc, argv)
   double	  xm0    [3], ex0[3];
   int		  ll      , lm, jm, judg;
   double	  ccp   , al2, alp, vxm[3], xm1[3], as;
-  int		  jj      , ln, np, nps, np1;
+  int		  jj      , ln, ln1, np, nps, np1;
   double         *ang, *trv, *bng;
   double         *angs, *trvs, *bngs;
   double         *ang1, *trv1, *bng1;
@@ -939,7 +939,7 @@ main(argc, argv)
     memory_error();
   for (i = 0; i < na; ++i) {
     fgets(txtbuf, LINELEN, fp_13);
-    strncpy(sta[i].sa1, txtbuf, 10);
+    sscanf(txtbuf, "%10s", sta[i].sa1);
     sta[i].sa1[10] = '\0';
     strncpy(sta[i].pola1, txtbuf + 11, 1);
     sta[i].pola1[1] = '\0';
@@ -970,7 +970,7 @@ main(argc, argv)
     sta[i].flag = 0;
     if (smode) {
       for (j = 0; j < sstanum; ++j)
-	if (strncmp(sta[i].sa1, ssta[j], strlen(ssta[j])) == 0)
+	if (strcmp(sta[i].sa1, ssta[j]) == 0)
 	  sta[i].flag = 1;
     }
 #if DEBUGS
@@ -1189,9 +1189,9 @@ line150:
 line200:
     where(&strc, xm1[2], &ln);
     if (smode)
-      where(&strc1, xm1[2], &ln);
-#if DEBUGS >1
-    fprintf(fp_21, "depth=%lf where=%d\n", xm1[2], ln);
+      where(&strc1, xm1[2], &ln1);
+#if DEBUGS > 0
+    fprintf(fp_21, "depth=%lf where=%d where1=%d\n", xm1[2], ln, ln1);
 #endif
 
     for (i = 0; i < nd; ++i) {
@@ -1229,7 +1229,8 @@ line200:
 	  goto end_NLINV;
 	}
       }
-#if DEBUGS >1
+#if DEBUGS > 1
+/*  #if DEBUGS == 0 */
       if (smode && calc[i].flag) {
 	printf("np1=%d\n", np1);
 	for (j = 0; j < np1; ++j)
@@ -1286,7 +1287,7 @@ line200:
       sns = sin(calc[i].tags);
       cns = cos(calc[i].tags);
       if (smode && calc[i].flag)
-	vre = strc1.vlg[ln] * (xm1[2] + strc1.v[ln]);
+	vre = strc1.vlg[ln1] * (xm1[2] + strc1.v[ln1]);
       else {
 	vre = strc.vlg[ln] * (xm1[2] + strc.v[ln]);     /* P wave */
 	vres = strcs.vlg[ln] * (xm1[2] + strcs.v[ln]);  /* S wave */

@@ -142,7 +142,7 @@ filter.c
 shmdump.c
 win.c
 
-****** bcd_dec
+****** dec_bcd
 wdiskts.c
 win.c
 winadd.c

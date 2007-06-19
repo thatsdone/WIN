@@ -1,4 +1,4 @@
-/* $Id: wtape.c,v 1.12.2.1 2006/09/25 15:01:01 uehira Exp $ */
+/* $Id: wtape.c,v 1.12.2.2 2007/06/19 11:23:55 uehira Exp $ */
 /*
   program "wtape.c"
   8/23/89 - 8/8/90, 6/27/91, 12/24/91, 2/29/92  urabe
@@ -66,7 +66,7 @@
   int  wait_min;
   char param_name[WIN_FILENAME_MAX];
   char *progname;
-  static char rcsid[]="$Id: wtape.c,v 1.12.2.1 2006/09/25 15:01:01 uehira Exp $";
+  static char rcsid[]="$Id: wtape.c,v 1.12.2.2 2007/06/19 11:23:55 uehira Exp $";
 
 switch_sig()
   {
@@ -90,13 +90,6 @@ char *s1,*s2;
   else if((*s1<='9' && *s1>='7') && (*s2>='0' && *s2<='6')) return -1;
   else return strcmp(s1,s2);
 }
-
-err_sys(ptr)
-  char *ptr;
-  {
-  perror(ptr);
-  end_process(1);
-  }
 
 get_unit(unit)    /* get exabyte unit */
   int unit;

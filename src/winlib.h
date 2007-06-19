@@ -1,4 +1,4 @@
-/* $Id: winlib.h,v 1.1.2.1 2006/09/25 15:01:01 uehira Exp $ */
+/* $Id: winlib.h,v 1.1.2.2 2007/06/19 11:19:40 uehira Exp $ */
 
 #ifndef _WIN_LIB_H_
 #define _WIN_LIB_H_
@@ -7,6 +7,7 @@
 #include "config.h"
 #endif
 
+#include "filter.h"
 #include "win_log.h"
 
 typedef unsigned long  WIN_blocksize;
@@ -28,13 +29,5 @@ void adj_time(int []);
 int time_cmp(int *, int *, int);
 int winform(long *, unsigned char *, int, unsigned short);
 int win2fix(unsigned char *, long *, long *, long *);
-
-/* filter.c */
-int butlop(double *, int *, double *, int *, double, double, double, double);
-int buthip(double *, int *, double *, int *, double, double, double, double);
-int butpas(double *, int *, double *, int *, double, double, double, double, double);
-/* static int recfil(double *, double *, int, double *, int, double *); */
-int tandem(double *, double *, int, double *, int, int, double *);
-
 
 #endif  /* !_WIN_LIB_H_*/

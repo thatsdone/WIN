@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.38.2.2 2006/09/25 15:00:56 uehira Exp $
+# $Id: Makefile.am,v 1.38.2.3 2007/06/19 11:19:40 uehira Exp $
 #
 
 if SUNOS4
@@ -71,7 +71,7 @@ WIN_LOG = win_log.h win_log.c win_externs.h
 UDP_UTILITY = udpu.h udp_accept.c udp_dest.c
 TCP_UTILITY = tcpu.h tcp_connect.c
 
-WIN_LIBH=winlib.h
+WIN_LIBH=winlib.h win_log.h filter.h
 WIN_LIBC=winlib.c
 
 WIN_SYSTEM_LIB = libwinsystem.a

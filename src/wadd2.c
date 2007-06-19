@@ -1,4 +1,4 @@
-/* $Id: wadd2.c,v 1.4.4.1 2006/09/25 15:00:59 uehira Exp $ */
+/* $Id: wadd2.c,v 1.4.4.2 2007/06/19 06:08:05 uehira Exp $ */
 /* program "wadd2.c"
   "wadd" puts two win data files together
   7/24/91 - 7/25/91, 4/20/94,6/27/94-6/28/94,7/12/94   urabe
@@ -13,6 +13,7 @@
   2002.5.7  wadd -> wadd2
   2002.5.11 debugged
   2003.7.12 mv -> cp;rm  for cygwin
+  2007.1.15 MAXSIZE 1M->5M
 */
 
 #ifdef HAVE_CONFIG_H
@@ -26,7 +27,7 @@
 #include "winlib.h"
 
 #define   DEBUG   0
-#define   MAXSIZE   1000000
+#define   MAXSIZE   5000000
 #define   NAMLEN    1024
 #define   TEMPNAME  "wadd2.tmp"
 

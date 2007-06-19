@@ -1,4 +1,4 @@
-/* $Id: raw2mon.c,v 1.4.4.1 2006/09/25 15:00:57 uehira Exp $ */
+/* $Id: raw2mon.c,v 1.4.4.2 2007/06/19 06:08:05 uehira Exp $ */
 /*
   program "raw2mon.c"
   6/3/93,6/17/94,8/17/95 urabe
@@ -6,6 +6,7 @@
   99.4.19 byte-order-free
   2000.4.24 skip ch with >MAX_SR
   2002.4.30 MAXSIZE 500K->1M, SIZE_WBUF 50K->300K
+  2007.1.15 MAXSIZE 1M->5M, SIZE_WBUF 300K->1M
 */
 
 #ifdef HAVE_CONFIG_H
@@ -23,8 +24,8 @@
 #include "winlib.h"
 #include "subst_func.h"
 
-#define   MAXSIZE   1000000
-#define   SIZE_WBUF 300000
+#define   MAXSIZE   5000000
+#define   SIZE_WBUF 1000000
 #define   SR_MON    5
 #define   MAX_SR    1024
 

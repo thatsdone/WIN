@@ -1,4 +1,4 @@
-/* $Id: pmon.c,v 1.14.2.1 2006/09/25 15:00:57 uehira Exp $ */
+/* $Id: pmon.c,v 1.14.2.2 2007/06/19 06:08:05 uehira Exp $ */
 /************************************************************************
 *************************************************************************
 **  program "pmon.c" for NEWS/SPARC                             *********
@@ -46,6 +46,7 @@
 **  2002.3.24 cancel offset (-o)                                *********
 **  2002.9.12 delay time (-d)                                   *********
 **  2005.8.10 bug in strcmp2()/strncmp2() fixed : 0-6 > 7-9     *********
+**  2007.1.15 'ch_file not found' message fixed                 *********
 **                                                              *********
 **  font files ("font16", "font24" and "font32") are            *********
 **  not necessary                                               *********
@@ -1396,7 +1397,7 @@ retry:
           /* get sys_ch from channel table file */
           while((fp=fopen(ch_file,"r"))==NULL)
             {
-            sprintf(tb,"'%s' file not found (%d)",param_file,getpid());
+            sprintf(tb,"'%s' file not found (%d)",ch_file,getpid());
             write_log(tb);
             sleep(60);
             }

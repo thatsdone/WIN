@@ -1,4 +1,4 @@
-/* $Id: wed.c,v 1.5.4.1 2006/09/25 15:00:59 uehira Exp $ */
+/* $Id: wed.c,v 1.5.4.2 2007/06/19 06:08:05 uehira Exp $ */
 /* program "wed.c"
 	"wed" edits a win format data file by time range and channles
 	6/26/91,7/13/92,3/11/93,4/20/94,8/5/94,12/8/94   urabe
@@ -9,6 +9,7 @@
         2000.4.17   wabort
         2002.8.5    ignore illegal lines in ch file
         2003.10.29 exit()->exit(0)
+        2006.9.21 added comment on mklong()
 */
 
 #ifdef HAVE_CONFIG_H
@@ -16,6 +17,7 @@
 #endif
 
 #include	<stdio.h>
+#include	<string.h>
 #include	<signal.h>
 
 #include        "winlib.h"
@@ -112,7 +114,8 @@ read_data()
       buf=(unsigned char *)realloc(buf,size=re*2);
       outbuf=(unsigned char *)realloc(outbuf,size=re*2);
    }
-   *(int *)buf=re;
+   /*  *(int *)buf=re; */
+   memcpy(buf, tmpa, 4);
    re=fread(buf+4,1,re-4,stdin);
    return re;
 }

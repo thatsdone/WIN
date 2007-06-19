@@ -1,9 +1,9 @@
 dnl ------------------------------------------------------------------------- 
-dnl $Id: configure.in,v 1.98.2.2 2006/09/25 15:00:56 uehira Exp $
+dnl $Id: configure.in,v 1.98.2.3 2007/06/19 06:08:04 uehira Exp $
 dnl -------------------------------------------------------------------------
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT(src/win.c)
-AM_INIT_AUTOMAKE(WIN_pkg, 1.1.80_LIB)
+AM_INIT_AUTOMAKE(WIN_pkg, 1.1.83_LIB)
 AM_CONFIG_HEADER(config.h)
 AC_ARG_PROGRAM
 AC_CANONICAL_TARGET
@@ -265,6 +265,7 @@ AC_OUTPUT([Makefile src/Makefile man/Makefile etc/Makefile pick/Makefile
 	prog/shmz
 	prog/winsimu
 	prog/shmck
+        prog/datej.pl
 	prog/ch2mf
 	prog/ee_manager
 	prog/final2mf

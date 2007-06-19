@@ -1,5 +1,21 @@
- $Id: ChangeLog,v 1.131.2.1 2006/09/25 15:00:55 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.2 2007/06/19 06:08:04 uehira Exp $
 
+2007-06-19  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* MF Version 1.1.83
+	* Version 1.1.83-LIB
+	* following the Changelog commemts of the HEAD branch
+		* src/hypomhc.c : bug fixed in smode
+
+	        * src/wdisk.c: 2007.1.15 i<1000000 -> 5000000,
+		               BUFSZ 500000->1000000, BUFLIM 1000000->5000000
+		* src/cormeisei.c: MAX_SEC_SIZE 1000000 -> 5000000
+		* src/wadd2.c: MAXSIZE 1M->5M
+		* src/wadd.c: MAXSIZE 1M->5M
+		* src/raw2mon.c: MAXSIZE 1M->5M, SIZE_WBUF 300K->1M
+		* src/pmon.c: 'ch_file not found' message fixed
+
+		* src/win.c: fixed a bug in set_geometry() for resize or OPEN.
+	
 2006-09-25  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* begin BRANCH_LIB branch
 	* make static library

@@ -1,4 +1,4 @@
-/* $Id: winrawsrv.c,v 1.1.2.2 2006/05/08 04:15:31 uehira Exp $ */
+/* $Id: winrawsrv.c,v 1.1.2.3 2007/06/23 07:18:12 uehira Exp $ */
 
 /* winrawsrv.c -- raw data server */
 
@@ -40,13 +40,13 @@
 
 #define DEBUG1       0
 
-#define RAWDIR       "/dat/raw"
+#define RAW_OLDEST   "OLDEST"
 
 #define MAXMSG       1024
 #define FNAMEMAX     1024
 
 static char rcsid[] =
-  "$Id: winrawsrv.c,v 1.1.2.2 2006/05/08 04:15:31 uehira Exp $";
+  "$Id: winrawsrv.c,v 1.1.2.3 2007/06/23 07:18:12 uehira Exp $";
 
 char *progname, *logfile;
 int  daemon_mode, syslog_mode;
@@ -75,7 +75,7 @@ main(int argc, char *argv[])
   FILE  *fp;
   char  MAX[MAXMSG + 1], LATEST[MAXMSG + 1], OLDEST[MAXMSG + 1],
     COUNT[MAXMSG + 1];
-  char  rdirname[FNAMEMAX];
+  char  *rdirname, olfname[FNAMEMAX];
   char  wrbp_buf[WRBP_CLEN], cmd[WRBP_CLEN];
   int             c;
   ssize_t   recvnum;
@@ -89,7 +89,7 @@ main(int argc, char *argv[])
   daemon_mode = syslog_mode = 0;
   logfile = NULL;
 
-  if ((snprintf(fmt, sizeof(fmt), "%%%ds", MAXMSG) > sizeof(fmt)))
+  if (snprintf(fmt, sizeof(fmt), "%%%ds", MAXMSG) > sizeof(fmt))
     err_sys("Buffer overrun\n");
 
   /* read option */
@@ -104,12 +104,14 @@ main(int argc, char *argv[])
   argc -= optind;
   argv += optind;
 
-  /* set raw directory */
-  if (argc > 0)
-    (void)strcpy(rdirname, argv[0]);
-  else
-    (void)sprintf(rdirname, "%s", RAWDIR);
+  /* set raw directory & OLDEST */
+  if (argc < 1)
+    usage();
+  rdirname = argv[0];
+  if (snprintf(olfname, sizeof(olfname), "%s/%s", rdirname, RAW_OLDEST) > sizeof(olfname))
+    err_sys("Buffer overrun\n");
 
+  /*----------------------------------------------------------------------*/
   if (daemon_mode) {  /* daemon mode */
     /* This mode is not supported */
     exit(EXIT_FAILURE);
@@ -160,15 +162,15 @@ main(int argc, char *argv[])
 	break;
       else if (strcmp(cmd, WRBP_STAT) == 0) {    /* STAT */
 	/* OLDEST */
-	if ((fp = fopen("/dat/raw/OLDEST", "r")) == NULL) {
-	  (void)snprintf(msg, sizeof(msg), "/dat/raw/OLDEST: %s",
+	if ((fp = fopen(olfname, "r")) == NULL) {
+	  (void)snprintf(msg, sizeof(msg), "%s: %s", olfname,
 			 (char *)strerror(errno));
 	  write_log(msg);
 	  (void)writen(1, wrbp_buf, WRBP_CLEN);
 	} else {
 	  (void)fscanf(fp, fmt, &OLDEST);
 	  (void)fclose(fp);
-	  (void)snprintf(wrbp_buf, WRBP_CLEN, "/dat/raw/OLDEST: %s", OLDEST);
+	  (void)snprintf(wrbp_buf, WRBP_CLEN, "%s: %s", olfname, OLDEST);
 	  (void)writen(1, wrbp_buf, WRBP_CLEN);
 	}
       }	else if (strcmp(cmd, WRBP_REQ) == 0) {  /* REQ */
@@ -194,7 +196,7 @@ usage(void)
 {
 
   (void)fprintf(stderr, "%s\n", rcsid);
-  (void)fprintf(stderr, "Usage of %s :\n", progname);
+  (void)fprintf(stderr, "Usage : %s rawdir\n", progname);
   exit(1);
 }
 

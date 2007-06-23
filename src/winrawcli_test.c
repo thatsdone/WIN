@@ -1,4 +1,4 @@
-/* $Id: winrawcli_test.c,v 1.1.2.2 2006/05/08 04:15:30 uehira Exp $ */
+/* $Id: winrawcli_test.c,v 1.1.2.3 2007/06/23 07:18:12 uehira Exp $ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -29,7 +29,7 @@
 #define MAXMSG       1025
 
 static char rcsid[] =
-  "$Id: winrawcli_test.c,v 1.1.2.2 2006/05/08 04:15:30 uehira Exp $";
+  "$Id: winrawcli_test.c,v 1.1.2.3 2007/06/23 07:18:12 uehira Exp $";
 
 char *progname, *logfile;
 int  daemon_mode, syslog_mode;
@@ -80,6 +80,8 @@ main(int argc, char *argv[])
   argc -= optind;
   argv += optind;
 
+  if (argc < 2)
+    usage();
 
   /* connect to server */
   memset(&ss, 0, sizeof(ss));   /* need not ? */
@@ -183,6 +185,6 @@ usage(void)
 {
 
   (void)fprintf(stderr, "%s\n", rcsid);
-  (void)fprintf(stderr, "Usage of %s :\n", progname);
+  (void)fprintf(stderr, "Usage : %s hostname port\n", progname);
   exit(1);
 }

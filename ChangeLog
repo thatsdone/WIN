@@ -1,5 +1,9 @@
- $Id: ChangeLog,v 1.131.2.2 2007/06/19 06:08:04 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.3 2007/06/23 07:24:47 uehira Exp $
 
+2007-06-20  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* added src/filter.h
+	* src/wtape.c : remove err_sys() (not used).
+	
 2007-06-19  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* MF Version 1.1.83
 	* Version 1.1.83-LIB

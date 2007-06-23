@@ -1,4 +1,4 @@
-/* $Id: winrawsrv.c,v 1.1.2.4 2007/06/23 09:24:52 uehira Exp $ */
+/* $Id: winrawsrv.c,v 1.1.2.5 2007/06/23 09:31:38 uehira Exp $ */
 
 /* winrawsrv.c -- raw data server */
 
@@ -49,7 +49,7 @@
 #define FNAMEMAX     1024
 
 static char rcsid[] =
-  "$Id: winrawsrv.c,v 1.1.2.4 2007/06/23 09:24:52 uehira Exp $";
+  "$Id: winrawsrv.c,v 1.1.2.5 2007/06/23 09:31:38 uehira Exp $";
 
 char *progname, *logfile;
 int  daemon_mode, syslog_mode;
@@ -218,7 +218,7 @@ main(int argc, char *argv[])
 	  write_log(msg);
 	  (void)snprintf(MAX, sizeof(MAX), "%s", "NONE");
 	} else {
-	  (void)fgets(&MAX, sizeof(MAX),fp);
+	  (void)fgets(MAX, sizeof(MAX),fp);
 	  MAX[strlen(MAX) - 1] = '\0';  /* remove "\n" */
 	  (void)fclose(fp);
 	}

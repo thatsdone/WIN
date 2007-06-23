@@ -1,4 +1,4 @@
-/* $Id: winrawsrv.c,v 1.1.4.1 2007/06/23 07:21:30 uehira Exp $ */
+/* $Id: winrawsrv.c,v 1.1.4.2 2007/06/23 09:36:01 uehira Exp $ */
 
 /* winrawsrv.c -- raw data server */
 
@@ -41,12 +41,15 @@
 #define DEBUG1       0
 
 #define RAW_OLDEST   "OLDEST"
+#define RAW_LATEST   "LATEST"
+#define RAW_COUNT    "COUNT"
+#define RAW_MAX      "MAX"
 
 #define MAXMSG       1024
 #define FNAMEMAX     1024
 
 static char rcsid[] =
-  "$Id: winrawsrv.c,v 1.1.4.1 2007/06/23 07:21:30 uehira Exp $";
+  "$Id: winrawsrv.c,v 1.1.4.2 2007/06/23 09:36:01 uehira Exp $";
 
 char *progname, *logfile;
 int  daemon_mode, syslog_mode;
@@ -73,9 +76,11 @@ main(int argc, char *argv[])
   char  host_[NI_MAXHOST];  /* host address */
   char  port_[NI_MAXSERV];  /* port No. */
   FILE  *fp;
-  char  MAX[MAXMSG + 1], LATEST[MAXMSG + 1], OLDEST[MAXMSG + 1],
-    COUNT[MAXMSG + 1];
-  char  *rdirname, olfname[FNAMEMAX];
+  char  LATEST[MAXMSG + 1], OLDEST[MAXMSG + 1], COUNT[MAXMSG + 1],
+    MAX[MAXMSG + 1];
+  char  *rdirname;
+  char  olfname[FNAMEMAX], lafname[FNAMEMAX], cnfname[FNAMEMAX],
+    mxfname[FNAMEMAX];
   char  wrbp_buf[WRBP_CLEN], cmd[WRBP_CLEN];
   int             c;
   ssize_t   recvnum;
@@ -104,11 +109,26 @@ main(int argc, char *argv[])
   argc -= optind;
   argv += optind;
 
-  /* set raw directory & OLDEST */
+  /* set raw directory */
   if (argc < 1)
     usage();
   rdirname = argv[0];
-  if (snprintf(olfname, sizeof(olfname), "%s/%s", rdirname, RAW_OLDEST) > sizeof(olfname))
+
+  /* OLDEST */
+  if (snprintf(olfname, sizeof(olfname), "%s/%s", rdirname, RAW_OLDEST)
+      > sizeof(olfname))
+    err_sys("Buffer overrun\n");
+  /* LATEST */
+  if (snprintf(lafname, sizeof(lafname), "%s/%s", rdirname, RAW_LATEST)
+      > sizeof(lafname))
+    err_sys("Buffer overrun\n");
+  /* COUNT */
+  if (snprintf(cnfname, sizeof(cnfname), "%s/%s", rdirname, RAW_COUNT)
+      > sizeof(cnfname))
+    err_sys("Buffer overrun\n");
+  /* MAX */
+  if (snprintf(mxfname, sizeof(mxfname), "%s/%s", rdirname, RAW_MAX)
+      > sizeof(mxfname))
     err_sys("Buffer overrun\n");
 
   /*----------------------------------------------------------------------*/
@@ -158,22 +178,56 @@ main(int argc, char *argv[])
       if (sscanf(wrbp_buf, "%s", cmd) < 1)
 	continue;
 
-      if (strcmp(cmd, WRBP_QUIT) == 0)           /* QUIT */
+      if (strcmp(cmd, WRBP_QUIT) == 0)           /*-- QUIT --*/
 	break;
-      else if (strcmp(cmd, WRBP_STAT) == 0) {    /* STAT */
+      else if (strcmp(cmd, WRBP_STAT) == 0) {    /*-- STAT --*/
 	/* OLDEST */
 	if ((fp = fopen(olfname, "r")) == NULL) {
 	  (void)snprintf(msg, sizeof(msg), "%s: %s", olfname,
 			 (char *)strerror(errno));
 	  write_log(msg);
-	  (void)writen(1, wrbp_buf, WRBP_CLEN);
+	  (void)snprintf(OLDEST, sizeof(OLDEST), "%s", "NONE");
 	} else {
 	  (void)fscanf(fp, fmt, &OLDEST);
 	  (void)fclose(fp);
-	  (void)snprintf(wrbp_buf, WRBP_CLEN, "%s: %s", olfname, OLDEST);
-	  (void)writen(1, wrbp_buf, WRBP_CLEN);
 	}
-      }	else if (strcmp(cmd, WRBP_REQ) == 0) {  /* REQ */
+	/* LATEST */
+	if ((fp = fopen(lafname, "r")) == NULL) {
+	  (void)snprintf(msg, sizeof(msg), "%s: %s", lafname,
+			 (char *)strerror(errno));
+	  write_log(msg);
+	  (void)snprintf(LATEST, sizeof(LATEST), "%s", "NONE");
+	} else {
+	  (void)fscanf(fp, fmt, &LATEST);
+	  (void)fclose(fp);
+	}
+	/* COUNT */
+	if ((fp = fopen(cnfname, "r")) == NULL) {
+	  (void)snprintf(msg, sizeof(msg), "%s: %s", cnfname,
+			 (char *)strerror(errno));
+	  write_log(msg);
+	  (void)snprintf(COUNT, sizeof(COUNT), "%s", "NONE");
+	} else {
+	  (void)fscanf(fp, fmt, &COUNT);
+	  (void)fclose(fp);
+	}
+	/* MAX */
+	if ((fp = fopen(mxfname, "r")) == NULL) {
+	  (void)snprintf(msg, sizeof(msg), "%s: %s", mxfname,
+			 (char *)strerror(errno));
+	  write_log(msg);
+	  (void)snprintf(MAX, sizeof(MAX), "%s", "NONE");
+	} else {
+	  (void)fgets(MAX, sizeof(MAX),fp);
+	  MAX[strlen(MAX) - 1] = '\0';  /* remove "\n" */
+	  (void)fclose(fp);
+	}
+	/* reply */
+	(void)snprintf(wrbp_buf, WRBP_CLEN, "%s : %s=%s %s=%s %s=%s %s=%s",
+		       rdirname, RAW_OLDEST, OLDEST, RAW_LATEST, LATEST,
+		       RAW_COUNT, COUNT, RAW_MAX, MAX, strlen(MAX));
+	(void)writen(1, wrbp_buf, WRBP_CLEN);
+      }	else if (strcmp(cmd, WRBP_REQ) == 0) {  /*-- REQ --*/
 	if (do_request(wrbp_buf + strlen(cmd) + 1, rdirname)) {
 	  (void)snprintf(wrbp_buf, WRBP_CLEN, "%s %s", WRBP_SIZE, WRBP_ERR);
 	  (void)writen(1, wrbp_buf, WRBP_CLEN);

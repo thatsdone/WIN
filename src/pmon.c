@@ -1,4 +1,4 @@
-/* $Id: pmon.c,v 1.14.2.2 2007/06/19 06:08:05 uehira Exp $ */
+/* $Id: pmon.c,v 1.14.2.3 2007/08/26 02:38:34 uehira Exp $ */
 /************************************************************************
 *************************************************************************
 **  program "pmon.c" for NEWS/SPARC                             *********
@@ -1132,7 +1132,7 @@ main(argc,argv)
   sprintf(tb," usage : '%s (-d [dly min]) (-o) (-l [log file]) [param file] ([YYMMDD] [hhmm] [length(min)])\n",
     progname);
   offset=wait_min=0;
-  /* *logfile=0; */
+  logfile=NULL;
   exit_status = EXIT_SUCCESS;
   while((c=getopt(argc,argv,"d:ol:"))!=EOF)
     {

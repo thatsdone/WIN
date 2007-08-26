@@ -1,4 +1,4 @@
-/* $Id: wdiskts.c,v 1.6.2.1 2006/09/25 15:00:59 uehira Exp $ */
+/* $Id: wdiskts.c,v 1.6.2.2 2007/08/26 02:38:35 uehira Exp $ */
 /* 2005.8.10 urabe bug in strcmp2() fixed : 0-6 > 7-9 */
 
 #ifdef HAVE_CONFIG_H
@@ -458,7 +458,7 @@ main(argc,argv)
    if(argc>4) logfile=argv[4];
    else
      {
-       *logfile=0;
+       logfile=NULL;
        if (daemon_mode)
 	 syslog_mode = 1;
      }

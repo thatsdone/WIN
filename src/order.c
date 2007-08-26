@@ -1,4 +1,4 @@
-/* $Id: order.c,v 1.11.4.1 2006/09/25 15:00:57 uehira Exp $ */
+/* $Id: order.c,v 1.11.4.2 2007/08/26 02:38:34 uehira Exp $ */
 /*  program "order.c" 1/26/94 - 2/7/94, 6/14/94 urabe */
 /*                              1/6/95 bug in adj_time(tm[0]--) fixed */
 /*                              3/17/95 write_log() */
@@ -262,7 +262,7 @@ main(argc,argv)
   if(argc>5+optind) logfile=argv[5+optind];
   else
     {
-      *logfile=0;
+      logfile=NULL;
       if (daemon_mode)
 	syslog_mode = 1;
     }

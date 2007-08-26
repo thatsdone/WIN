@@ -48,7 +48,7 @@ extern const char *const sys_errlist[];
 extern int errno;
 
 unsigned char rbuf[MAXMESG],ch_table[65536];
-char tb[256],*progname,logfile[256],chfile[256];
+char tb[256],*progname,*logfile,chfile[256];
 int n_ch,negate_channel;
 int syslog_mode = 0, exit_status;
 
@@ -293,7 +293,8 @@ main(argc,argv)
 
   shm_key=atoi(argv[1+optind]);
   size=atoi(argv[2+optind])*1000;
-  *chfile=(*logfile)=0;
+  *chfile=0;
+  logfile=NULL;
   if(argc>3+optind)
     {
     if(strcmp("-",argv[3+optind])==0) *chfile=0;
@@ -311,7 +312,7 @@ main(argc,argv)
         }
       }
     }
-  if(argc>4+optind) strcpy(logfile,argv[4+optind]);
+  if(argc>4+optind) logfile=argv[4+optind];
 
   /* shared memory */
   if((shmid=shmget(shm_key,size,IPC_CREAT|0666))<0) err_sys("shmget");

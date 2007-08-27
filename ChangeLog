@@ -1,8 +1,9 @@
- $Id: ChangeLog,v 1.131.2.4 2007/08/26 02:38:33 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.5 2007/08/27 01:08:15 uehira Exp $
 
 2007-08-26  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
-	* bug fix in logile name initialization.
+	* bug fix in logfile name initialization.
 	  order.c pmon.c raw_mon.c recvts.c wdisk.c wdiskts.c
+	* Version 1.1.84-LIB
 	
 2007-06-20  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* added src/filter.h

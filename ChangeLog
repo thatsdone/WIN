@@ -1,4 +1,8 @@
- $Id: ChangeLog,v 1.113.2.25 2007/06/16 08:42:03 uehira Exp $
+ $Id: ChangeLog,v 1.113.2.26 2007/08/27 09:08:42 uehira Exp $
+
+2007-08-27  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 1.1.84 released.
+	* src/wck_wdisk.c : added -r option.
 
 2007-06-16  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* Version 1.1.83 released.

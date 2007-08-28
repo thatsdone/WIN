@@ -1,5 +1,5 @@
 /*
- * $Id: wck_wdisk.c,v 1.1.4.1 2006/09/25 15:00:59 uehira Exp $
+ * $Id: wck_wdisk.c,v 1.1.4.2 2007/08/28 00:17:02 uehira Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -9,13 +9,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "winlib.h"
 #include "win_system.h"
 #include "subst_func.h"
 
 static const char  rcsid[] =
-   "$Id: wck_wdisk.c,v 1.1.4.1 2006/09/25 15:00:59 uehira Exp $";
+   "$Id: wck_wdisk.c,v 1.1.4.2 2007/08/28 00:17:02 uehira Exp $";
 char  *progname;
 
 static void usage();
@@ -35,6 +36,9 @@ main(int argc, char *argv[])
   WIN_blocksize  mainsize;
   int  chnum, sec, tim[WIN_TIME_LEN], cflag, secsave, lflag;
   char  nsave[WIN_STANAME_LEN];
+  char *rname;
+  int  rflag = 0;
+  int  c;
   int  i, j;
 
   if ((progname = strrchr(argv[0], '/')) == NULL)
@@ -42,23 +46,34 @@ main(int argc, char *argv[])
   else
     progname++;
 
-  if (argc < 2) {
+  while ((c = getopt(argc, argv, "r")) != -1)
+    switch (c) {
+    case 'r':
+      rflag = 1;
+      break;
+    default:
+      usage();
+    }
+  argc -= optind;
+  argv += optind;
+
+  if (argc < 1) {
     usage();
     exit(1);
-  } else if (argc == 2)
+  } else if (argc == 1)
     fp = stdin;
   else
-    if ((fp = fopen(argv[2], "r")) == NULL) {
-      (void)fprintf(stderr, "Cannot open data file: '%s'\n", argv[2]);
-      (void)fprintf(stdout, "Cannot open data file: '%s'\n", argv[2]);
+    if ((fp = fopen(argv[1], "r")) == NULL) {
+      (void)fprintf(stderr, "Cannot open data file: '%s'\n", argv[1]);
+      (void)fprintf(stdout, "Cannot open data file: '%s'\n", argv[1]);
       usage();
       exit(1);
     }
   
   /* read channel table file */
-  if ((chfp = fopen(argv[1], "r")) == NULL) {
-    (void)fprintf(stderr, "Cannot open channel file: '%s'\n", argv[1]);
-    (void)fprintf(stdout, "Cannot open channel file: '%s'\n", argv[1]);
+  if ((chfp = fopen(argv[0], "r")) == NULL) {
+    (void)fprintf(stderr, "Cannot open channel file: '%s'\n", argv[0]);
+    (void)fprintf(stdout, "Cannot open channel file: '%s'\n", argv[0]);
     usage();
     exit(1);
   }
@@ -136,51 +151,73 @@ main(int argc, char *argv[])
   /* header */
   if (fp == stdin)
     (void)printf("Data from STDIN\n");
-  else
-    (void)printf("FILE_NAME :: %s\n", argv[2]);
+  else if (rflag) {
+    if ((rname = strrchr(argv[1], '/')) == NULL)
+      rname = argv[1];
+    else
+      rname++;
+    (void)printf("%s\n", rname);
+  } else
+    (void)printf("FILE_NAME :: %s\n", argv[1]);
 
   /** main results **/
-  nsave[0] = '\0';
-  lflag = 0;
-  for(j = 0; j < chnum; ++j) {
-    if (index[j][MIN] == MIN)  /* skip complete data */
-      continue;
-    else if (index[j][MIN] == 0) {  /* complete lost data */
-      lflag = 1;
-      if (strcmp(nsave, tbl[j].name)) {
-	(void)printf("\n  [%04X:%s %s]", tbl[j].sysch, tbl[j].name, tbl[j].comp);
-	(void)strcpy(nsave, tbl[j].name);
-      } else
-	(void)printf(" - [%04X:%s %s]",
-		     tbl[j].sysch, tbl[j].name, tbl[j].comp);
-    } else {  /* incomplete data */
-      lflag = 1;
-      secsave = MIN;
-      cflag = 0;
-      (void)printf("\n  incomplete  [%04X:%s %s]  ", tbl[j].sysch,
-		   tbl[j].name, tbl[j].comp);
-      for (i = 0; i < MIN; ++i) {
-	if (index[j][i] == 0) {
-	  if (i == (secsave + 1))
-	    cflag = 1;
-	  if (!cflag)
-	    (void)printf("  %d", i);
-	  secsave = i;
-	} else if (cflag) {  /* if (index[j][i] == 0) */
-	  (void)printf("-%d ", secsave);
-	  cflag = 0;
-	}
-      } /* for (i = 0; i < MIN; ++i) */
-      if (cflag)
-	(void)printf("-%d ", secsave);
-      nsave[0] = '\0';
-    }
-  }  /* for(j = 0; j < chnum; ++j) */
-  if (!lflag)
-    (void)printf("\n  No lost packet in this file!\n");
+  if (rflag) {
+    for(j = 0; j < chnum; ++j) {
+      if (index[j][MIN] == MIN) /* skip complete data */
+	continue;
 
-  /* footer */
-  (void)printf("\n ====CHECK END=====\n");
+      (void)printf("# %s %s\n", tbl[j].name, tbl[j].comp);
+      (void)printf("%04X\t", tbl[j].sysch);
+      for (i = 0; i < MIN; ++i) {
+	if (!index[j][i])
+	  (void)printf("%d ", i);
+      }
+      (void)printf("\n");      
+    }  /* for(j = 0; j < chnum; ++j) */
+  } else {  /* if (!rflag) */
+    nsave[0] = '\0';
+    lflag = 0;
+    for(j = 0; j < chnum; ++j) {
+      if (index[j][MIN] == MIN)  /* skip complete data */
+	continue;
+      else if (index[j][MIN] == 0) {  /* complete lost data */
+	lflag = 1;
+	if (strcmp(nsave, tbl[j].name)) {
+	  (void)printf("\n  [%04X:%s %s]", tbl[j].sysch, tbl[j].name, tbl[j].comp);
+	  (void)strcpy(nsave, tbl[j].name);
+	} else
+	  (void)printf(" - [%04X:%s %s]",
+		       tbl[j].sysch, tbl[j].name, tbl[j].comp);
+      } else {  /* incomplete data */
+	lflag = 1;
+	secsave = MIN;
+	cflag = 0;
+	(void)printf("\n  incomplete  [%04X:%s %s]  ", tbl[j].sysch,
+		     tbl[j].name, tbl[j].comp);
+	for (i = 0; i < MIN; ++i) {
+	  if (index[j][i] == 0) {
+	    if (i == (secsave + 1))
+	      cflag = 1;
+	    if (!cflag)
+	      (void)printf("  %d", i);
+	    secsave = i;
+	  } else if (cflag) {  /* if (index[j][i] == 0) */
+	    (void)printf("-%d ", secsave);
+	    cflag = 0;
+	  }
+	} /* for (i = 0; i < MIN; ++i) */
+	if (cflag)
+	  (void)printf("-%d ", secsave);
+	nsave[0] = '\0';
+      }
+    }  /* for(j = 0; j < chnum; ++j) */
+    if (!lflag)
+      (void)printf("\n  No lost packet in this file!\n");
+
+    /* footer */
+    (void)printf("\n ====CHECK END=====\n");
+  }  /* if (!rflag) */
+
 
   exit(0);
 }
@@ -211,5 +248,5 @@ usage()
 {
 
   (void)fprintf(stderr, "%s\n", rcsid);
-  (void)fprintf(stderr, "Usage : %s [chfile] ([file])\n", progname);
+  (void)fprintf(stderr, "Usage : %s [-r] [chfile] ([file])\n", progname);
 }

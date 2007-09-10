@@ -1,4 +1,4 @@
-/* $Id: winrawreq.c,v 1.1.2.1 2007/09/10 09:22:36 uehira Exp $ */
+/* $Id: winrawreq.c,v 1.1.2.2 2007/09/10 09:56:31 uehira Exp $ */
 
 /* winrawreq.c -- raw data request client */
 
@@ -51,7 +51,7 @@
 #define MAXMSG       1025
 
 static char rcsid[] =
-  "$Id: winrawreq.c,v 1.1.2.1 2007/09/10 09:22:36 uehira Exp $";
+  "$Id: winrawreq.c,v 1.1.2.2 2007/09/10 09:56:31 uehira Exp $";
 
 char *progname, *logfile;
 int  daemon_mode, syslog_mode;
@@ -68,6 +68,7 @@ static int8_t ch_indx[CHMAXNUM];
 
 static int  stat_check;   /* stat_check */
 static int  para_mode;   /* parallel mode */
+static int  nflag;   /* nofile output */
 static int  oflag;   /* network output mode */
 static char ohost[NI_MAXHOST], oport[NI_MAXSERV];  /* output host & port */
 static size_t  mtu;
@@ -110,13 +111,17 @@ main(int argc, char *argv[])
   para_mode = 1;
   oflag = 0;
   mtu = MTU;
+  nflag = 0;
 
   /* read option(s) */
-  while ((c = getopt(argc, argv, "b:Do:st")) != -1)
+  while ((c = getopt(argc, argv, "b:Dno:st")) != -1)
     switch (c) {
     case 'b':
       /* maximum size of IP packet in bytes (or MTU) for network output */
       mtu = (size_t)atoi(optarg);
+      break;
+    case 'n':  /* nofile output mode */
+      nflag = 1;
       break;
     case 'D':  /* daemon mode */
       daemon_mode = 1;
@@ -162,12 +167,13 @@ main(int argc, char *argv[])
   else
     write_log("Sequential mode");
 
+  if (!nflag)
+    write_log("Data output to file(s)");
   if (oflag) {
     (void)snprintf(msg, sizeof(msg), "Data output to %s:%s (MTU=%d)",
 		   ohost, oport, mtu);
     write_log(msg);
-  } else
-    write_log("Data output to file(s)");
+  }
 
   /* set filename in which is listed server name */
   srvlist_file = argv[0];
@@ -388,7 +394,8 @@ do_get_data(const char *host, const char *port, const char *fname,
 	if (oflag) {  /* output to network */
 	  if (network_output(rawbuf, rsize))
 	    status = 1;
-	} else {     /* output to file(s) */
+	}
+	if (!nflag) {     /* output to file(s) */
 	  (void)snprintf(outname, sizeof(outname),
 			 "%s-%s-%s", fname, host, port);
 	  (void)snprintf(msg, sizeof(msg), "%d %s", id, outname);
@@ -727,7 +734,7 @@ usage(void)
 
   (void)fprintf(stderr, "%s\n", rcsid);
   (void)fprintf(stderr,
-		"Usage : %s [-st] [-o host:port [-b MTU]] srvlist request [logfile]\n",
+		"Usage : %s [-nst] [-o host:port [-b MTU]] srvlist request [logfile]\n",
 		progname);
   exit(EXIT_FAILURE);
 }

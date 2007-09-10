@@ -1,4 +1,4 @@
-/* $Id: winrawsrv.c,v 1.1.4.2 2007/06/23 09:36:01 uehira Exp $ */
+/* $Id: winrawsrv.c,v 1.1.4.3 2007/09/10 09:22:36 uehira Exp $ */
 
 /* winrawsrv.c -- raw data server */
 
@@ -49,7 +49,7 @@
 #define FNAMEMAX     1024
 
 static char rcsid[] =
-  "$Id: winrawsrv.c,v 1.1.4.2 2007/06/23 09:36:01 uehira Exp $";
+  "$Id: winrawsrv.c,v 1.1.4.3 2007/09/10 09:22:36 uehira Exp $";
 
 char *progname, *logfile;
 int  daemon_mode, syslog_mode;
@@ -163,8 +163,8 @@ main(int argc, char *argv[])
     (void)getnameinfo(sa, fromlen, host_, sizeof(host_),
 		      port_, sizeof(port_), NI_NUMERICHOST | NI_NUMERICSERV);
     (void)snprintf(wrbp_buf, WRBP_CLEN,
-		   "WIN raw_data backup server (version %s) at %s starting.", 
-		   WRBP_VERSION, host_, port_);
+		   "Welcome to WIN raw_data backup server (%s:%s, version %s)",
+		   host_, port_, WRBP_VERSION);
     (void)writen(1, wrbp_buf, WRBP_CLEN);
 
     /********** wait request : main loop ***********/

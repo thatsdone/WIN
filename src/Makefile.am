@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.38.2.3 2007/06/19 11:19:40 uehira Exp $
+# $Id: Makefile.am,v 1.38.2.4 2007/09/10 09:22:36 uehira Exp $
 #
 
 if SUNOS4
@@ -81,7 +81,7 @@ WIN_SYSTEM_LIB2 =
 bin_PROGRAMS = $(OFFLINE_USER) $(TAPE_USER) $(ONLINE)
 if IPV6
 libexec_PROGRAMS = winrawsrvd
-noinst_PROGRAMS = winrawcli_test
+noinst_PROGRAMS = winrawcli_test winrawreq
 endif
 lib_LIBRARIES = $(WIN_SYSTEM_LIB) $(WIN_SYSTEM_LIB2)
 
@@ -326,3 +326,7 @@ winrawsrvd_LDADD = $(WIN_SYSTEM_LIB) @LIBNSL@ @LIBSOCKET@
 
 winrawcli_test_SOURCES = winrawcli_test.c $(WIN_LIBH) $(DAEMON_MODE) $(TCP_UTILITY) winraw_bp.h
 winrawcli_test_LDADD = $(WIN_SYSTEM_LIB) @LIBNSL@ @LIBSOCKET@
+
+winrawreq_SOURCES = winrawreq.c $(WIN_LIBH) $(DAEMON_MODE) $(TCP_UTILITY) $(UDP_UTILITY) winraw_bp.h
+winrawreq_LDADD = $(WIN_SYSTEM_LIB) @LIBNSL@ @LIBSOCKET@
+

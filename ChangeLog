@@ -1,4 +1,9 @@
- $Id: ChangeLog,v 1.131.2.7 2007/09/10 09:22:35 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.8 2007/09/12 01:56:36 uehira Exp $
+
+2007-09-12  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 1.1.87-LIB released.
+	* MF Version 1.1.85.
+	* src/insert_trg.c : bug fixed.
 
 2007-09-10  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* added src/winrawreq.c

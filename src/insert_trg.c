@@ -1,5 +1,5 @@
 /*
- * $Id: insert_trg.c,v 1.6.4.1 2006/09/25 15:00:57 uehira Exp $
+ * $Id: insert_trg.c,v 1.6.4.2 2007/09/12 01:56:36 uehira Exp $
  * Insert sorted timeout data to event data.
  *
  *------------ sample of parameter file ------------
@@ -15,6 +15,7 @@
 
 /*-
  * 2005/3/12   memory leak bug fixed.
+ * 2007/9/12   bug fixed.
  */
 
 #ifdef HAVE_CONFIG_H
@@ -36,7 +37,7 @@
 #include "win_system.h"
 #include "subst_func.h"
 
-#define DEBUG   0
+/*  #define DEBUG   0 */
 #define DEBUG1  0
 
 #define PRE_MIN  30  /* minute */
@@ -49,7 +50,7 @@
 #define BUF_SIZE 1024
 
 char *progname;
-static char rcsid[]="$Id: insert_trg.c,v 1.6.4.1 2006/09/25 15:00:57 uehira Exp $";
+static char rcsid[]="$Id: insert_trg.c,v 1.6.4.2 2007/09/12 01:56:36 uehira Exp $";
 
 struct Cnt_file {
   char  trg_dir[WIN_FILENAME_MAX];    /* trg data directory */
@@ -261,6 +262,7 @@ do_insert(int tim[], struct Cnt_file *cnt)
       end_prog(-1);
     }
     while((dir_ent=readdir(dir_ptr))!=NULL){
+      if(dir_ent->d_namlen!=13) continue;
       if(dir_ent->d_name[0]=='.') continue;
       if(!isdigit(dir_ent->d_name[0])) continue;
       /* skip *.ch file */
@@ -350,7 +352,7 @@ do_insert(int tim[], struct Cnt_file *cnt)
 	  ptw+=sizes;
 	}
 	ptrd+=size;
-	if (ptrd<data+data_num)  /****** double check ? *****/
+	if (ptrd>=data+data_num)  /****** double check ? *****/
 	  break;
 	bcd_dec(dtime,ptrd+WIN_BLOCKSIZE_LEN);
       } /* while(time_cmp(dtime,tim_trg_end,WIN_TIME_LEN)<=0 && ptrd<data+data_num) */

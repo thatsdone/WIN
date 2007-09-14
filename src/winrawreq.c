@@ -1,4 +1,4 @@
-/* $Id: winrawreq.c,v 1.1.2.2 2007/09/10 09:56:31 uehira Exp $ */
+/* $Id: winrawreq.c,v 1.1.2.3 2007/09/14 09:25:14 uehira Exp $ */
 
 /* winrawreq.c -- raw data request client */
 
@@ -8,7 +8,7 @@
  *    uehira@sevo.kyushu-u.ac.jp
  *    Institute of Seismology and Volcanology, Kyushu University.
  *
- *   2007-07-31 -- 2007-09-10  Initial version.
+ *   2007-07-31 -- 2007-09-14  Initial version.
  */
 
 
@@ -51,7 +51,7 @@
 #define MAXMSG       1025
 
 static char rcsid[] =
-  "$Id: winrawreq.c,v 1.1.2.2 2007/09/10 09:56:31 uehira Exp $";
+  "$Id: winrawreq.c,v 1.1.2.3 2007/09/14 09:25:14 uehira Exp $";
 
 char *progname, *logfile;
 int  daemon_mode, syslog_mode;
@@ -86,6 +86,8 @@ static int mk_reqlist(const char *, const int8_t [], struct reqlist *, char *);
 static int do_get_data(const char *, const char *, const char *,
 		       const int8_t [], const int);
 static int network_output(uint8_t *, uint32_t);
+static int reprint_reqfile(const int8_t, const int8_t [],
+			   const char *, const int);
 int main(int, char *[]);
 
 int
@@ -94,6 +96,7 @@ main(int argc, char *argv[])
   static struct reqlist  reql[N_SERV], *reqlp[N_SERV];
   char  rawname[1024];
   int  nreql;
+  int  reprint_flag, unlink_flag;
   pid_t  pid;
   int  status;
   int  i, j;
@@ -112,9 +115,10 @@ main(int argc, char *argv[])
   oflag = 0;
   mtu = MTU;
   nflag = 0;
+  reprint_flag = unlink_flag = 0;
 
   /* read option(s) */
-  while ((c = getopt(argc, argv, "b:Dno:st")) != -1)
+  while ((c = getopt(argc, argv, "b:Dno:rstu")) != -1)
     switch (c) {
     case 'b':
       /* maximum size of IP packet in bytes (or MTU) for network output */
@@ -138,11 +142,17 @@ main(int argc, char *argv[])
 	(void)strncpy(oport, ptr, sizeof(oport));
       }
       break;
+    case 'r':  /* re-print request file */
+      reprint_flag = 1;
+      break;
     case 's':  /* sequential mode */
       para_mode = 0;
       break;
     case 't':  /* STAT check */
       stat_check = 1;
+      break;
+    case 'u':  /* unlink request file after job done */
+      unlink_flag = 1;
       break;
     default:
       usage();
@@ -224,8 +234,7 @@ main(int argc, char *argv[])
       if (pid == -1) {  /* error */
 	(void)snprintf(msg, sizeof(msg), "%s", (char *)strerror(errno));
 	write_log(msg);
-      }
-      else if (pid == 0) {  /* child */
+      } else if (pid == 0) {  /* child */
 	status = do_get_data(srvlist[reqlp[i]->indx].host,
 			     srvlist[reqlp[i]->indx].port,
 			     rawname, reql[reqlp[i]->indx].sec, i);
@@ -235,16 +244,21 @@ main(int argc, char *argv[])
 			 rawname, srvlist[reqlp[i]->indx].host,
 			 srvlist[reqlp[i]->indx].port);
 	  write_log(msg);
-	}
-	else if (status > 0) {
+	} else if (status > 0) {
 	  (void)snprintf(msg, sizeof(msg),
 			 "%s %s:%s request could not finish.",
 			 rawname, srvlist[reqlp[i]->indx].host,
 			 srvlist[reqlp[i]->indx].port);
 	  write_log(msg);
 	}
+
+	/* re-print request file */
+	if (status && reprint_flag)
+	  (void)reprint_reqfile(reqlp[i]->indx, ch_indx, argv[1], i);
+
 	(void)snprintf(msg, sizeof(msg), "%d child ps done", i);
 	write_log(msg);
+
 	exit(0);
       }
     }
@@ -264,22 +278,93 @@ main(int argc, char *argv[])
 		       rawname, srvlist[reqlp[i]->indx].host,
 		       srvlist[reqlp[i]->indx].port);
 	write_log(msg);
-      }
-      else if (status > 0) {
+      } else if (status > 0) {
 	(void)snprintf(msg, sizeof(msg),
 		       "%s %s:%s request could not finish.",
 		       rawname, srvlist[reqlp[i]->indx].host,
 		       srvlist[reqlp[i]->indx].port);
 	write_log(msg);
       }
-    }
+
+      /* re-print request file */
+      if (status && reprint_flag)
+	(void)reprint_reqfile(reqlp[i]->indx, ch_indx, argv[1], i);
+    }  /* for (i = 0; i < nreql; ++i) */
+  }  /* if (para_mode) */
+
+  /* unlink request file */
+  if (unlink_flag) {
+    if (unlink(argv[1]))
+      (void)snprintf(msg, sizeof(msg), "unlink %s : %s",
+		     argv[1], (char *)strerror(errno));
+    else
+      (void)snprintf(msg, sizeof(msg), "unlink %s", argv[1]);
+    write_log(msg);
   }
 
   end_program();
 }
 
 
-/* do get data from server */
+/* re-print request */
+static int
+reprint_reqfile(const int8_t srv_indx, const int8_t chindx[],
+		const char *reqfile, const int id)
+{
+  FILE  *fp, *fpout;
+  char  tbuf[2048], outname[2048];
+  int   ch;
+
+  /* output file name */
+  if (snprintf(outname, sizeof(outname),
+	       "%s.%d.req", reqfile, id) >= sizeof(outname)) {
+    write_log("buffer overrun : re-print request file");
+    return (1);
+  }
+  if ((fpout = fopen(outname, "w")) == NULL) {
+    (void)snprintf(msg, sizeof(msg), "re-print request file '%s' : %s",
+		   outname, strerror(errno));
+    write_log(msg);
+    return (1);
+  }
+  (void)snprintf(msg, sizeof(msg), "%d Re-print request in '%s'",
+		 id, outname);
+  write_log(msg);
+
+  fp = fopen(reqfile, "r");   /* don't check again */
+
+  /*** read parameter file ***/
+  /* raw data name */
+  while (fgets(tbuf, sizeof(tbuf), fp) != NULL) {
+    if (tbuf[0] == '#')   /* skip comment */
+      continue;
+    break;
+  }
+  (void)fprintf(fpout, "# This file was automatically made by %s\n",progname);
+  (void)fprintf(fpout, "%s", tbuf);
+
+  /* channel part */
+  while (fgets(tbuf, sizeof(tbuf), fp) != NULL) {
+    if (tbuf[0] == '#')   /* skip comment */
+      continue;
+
+    (void)sscanf(tbuf, "%x", &ch);
+    if (srv_indx == chindx[ch])
+        (void)fprintf(fpout, "%s", tbuf);
+  }
+
+  (void)fclose(fpout);
+  (void)fclose(fp);
+  
+  return (0);
+}
+
+
+/* Get data from server
+ *  return  0 : normal end
+ *         -1 : cannnot connect to server.
+ *          1 : can connect to server, but error occurred.
+ */
 static int
 do_get_data(const char *host, const char *port, const char *fname,
 	    const int8_t sec[], const int id)
@@ -510,7 +595,7 @@ network_output(uint8_t *rawbuf, uint32_t rsize)
 	else
 	  gs = (sr >> 1) + 8;
 	ptr1 = ptr;
-	ptr +=gs;
+	ptr += gs;
 
 	if (gs + 11 > mss) {
 	  write_log("gs too big, or MTA too small");
@@ -594,8 +679,7 @@ mk_reqlist(const char *fname, const int8_t chindx[],
   int8_t  index;
 
   if ((fp = fopen(fname, "r")) == NULL) {
-    (void)snprintf(msg, sizeof(msg), "request file '%s' : %s",
-		   fname, strerror(errno));
+    (void)snprintf(msg, sizeof(msg), "request file '%s'", fname);
     err_sys(msg);
   }
   
@@ -713,7 +797,7 @@ read_srvlist(void)
   }  /* while (fgets(tbuf, sizeof(tbuf), fp) != NULL) */
   (void)fclose(fp);
 
-  (void)signal(SIGHUP, (void *)read_srvlist);
+  /*  (void)signal(SIGHUP, (void *)read_srvlist); */
 
 #if DEBUG1
   for (i = 0; i < CHMAXNUM; ++i) {
@@ -734,7 +818,7 @@ usage(void)
 
   (void)fprintf(stderr, "%s\n", rcsid);
   (void)fprintf(stderr,
-		"Usage : %s [-nst] [-o host:port [-b MTU]] srvlist request [logfile]\n",
+		"Usage : %s [-nrstu] [-o host:port [-b MTU]] srvlist request [logfile]\n",
 		progname);
   exit(EXIT_FAILURE);
 }

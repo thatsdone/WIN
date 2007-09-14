@@ -1,4 +1,4 @@
-/* $Id: winadd.c,v 1.4.4.1 2006/09/25 15:01:00 uehira Exp $ */
+/* $Id: winadd.c,v 1.4.4.2 2007/09/14 09:25:14 uehira Exp $ */
 
 /*
  * winadd.c  (Uehira Kenji)
@@ -52,7 +52,7 @@ typedef struct data_index  INDX;
 
 /* global variables */
 static const char rcsid[] =
-   "$Id: winadd.c,v 1.4.4.1 2006/09/25 15:01:00 uehira Exp $";
+   "$Id: winadd.c,v 1.4.4.2 2007/09/14 09:25:14 uehira Exp $";
 static int  dummy_flag, verbose_flag;
 
 /* prototypes */
@@ -721,7 +721,7 @@ memory_mode_run(int argcc, char *argvv[])
   unsigned char tt[WIN_TIME_LEN];
 
   if (verbose_flag)
-    (void)fprintf(stderr, "Momory mode\n");
+    (void)fprintf(stderr, "Memory mode\n");
 
   if (NULL == (*time = MALLOC(time_t, TIME_INC)))
     memory_error();

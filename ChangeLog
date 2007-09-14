@@ -1,4 +1,7 @@
- $Id: ChangeLog,v 1.131.2.8 2007/09/12 01:56:36 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.9 2007/09/14 09:25:14 uehira Exp $
+
+2007-09-14  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/winrawreq.c : added -r and -u options.
 
 2007-09-12  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* Version 1.1.87-LIB released.

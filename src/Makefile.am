@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.38.2.5 2007/09/18 07:49:15 uehira Exp $
+# $Id: Makefile.am,v 1.38.2.6 2007/09/18 09:01:20 uehira Exp $
 #
 
 if SUNOS4
@@ -27,7 +27,7 @@ OFFLINE_X=win win32
 endif
 
 if IPV6
-IPV6_PGM = relaym recvstatus3
+IPV6_PGM = relaym recvstatus3 winrawreq rawsrv_info
 else
 IPV6_PGM =
 endif
@@ -81,7 +81,7 @@ WIN_SYSTEM_LIB2 =
 bin_PROGRAMS = $(OFFLINE_USER) $(TAPE_USER) $(ONLINE)
 if IPV6
 libexec_PROGRAMS = winrawsrvd
-noinst_PROGRAMS = winrawcli_test winrawreq rawsrv_info
+noinst_PROGRAMS = winrawcli_test
 endif
 lib_LIBRARIES = $(WIN_SYSTEM_LIB) $(WIN_SYSTEM_LIB2)
 
@@ -321,15 +321,15 @@ ls8tel_STM_LDADD = $(GC_CHECK_LIB)
 ls8tel_STS_SOURCES = ls8tel_STS.c $(SUBFUNC_H) $(GC_CHECK_INCLUDE) ls8tel.h ls8tel.c
 ls8tel_STS_LDADD = $(GC_CHECK_LIB)
 
-winrawsrvd_SOURCES = winrawsrv.c $(WIN_LIBH) $(DAEMON_MODE) winraw_bp.h
+winrawsrvd_SOURCES = winrawsrv.c $(SUBFUNC_H) $(WIN_LIBH) $(DAEMON_MODE) winraw_bp.h
 winrawsrvd_LDADD = $(WIN_SYSTEM_LIB) @LIBNSL@ @LIBSOCKET@
 
-winrawcli_test_SOURCES = winrawcli_test.c $(WIN_LIBH) $(DAEMON_MODE) $(TCP_UTILITY) winraw_bp.h
+winrawcli_test_SOURCES = winrawcli_test.c $(WIN_LIBH) $(DAEMON_MODE) $(TCP_UTILITY) winraw_bp.h $(SUBFUNC_H)
 winrawcli_test_LDADD = $(WIN_SYSTEM_LIB) @LIBNSL@ @LIBSOCKET@
 
-winrawreq_SOURCES = winrawreq.c $(WIN_LIBH) $(DAEMON_MODE) $(TCP_UTILITY) $(UDP_UTILITY) winraw_bp.h
+winrawreq_SOURCES = winrawreq.c $(WIN_LIBH) $(DAEMON_MODE) $(TCP_UTILITY) $(UDP_UTILITY) winraw_bp.h $(SUBFUNC_H)
 winrawreq_LDADD = $(WIN_SYSTEM_LIB) @LIBNSL@ @LIBSOCKET@
 
-rawsrv_info_SOURCES = rawsrv_info.c $(TCP_UTILITY) $(WIN_LIBH) winraw_bp.h
+rawsrv_info_SOURCES = rawsrv_info.c $(TCP_UTILITY) $(WIN_LIBH) winraw_bp.h $(SUBFUNC_H)
 rawsrv_info_LDADD = $(WIN_SYSTEM_LIB) @LIBNSL@ @LIBSOCKET@
 

@@ -1,4 +1,8 @@
- $Id: ChangeLog,v 1.131.2.9 2007/09/14 09:25:14 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.10 2007/09/18 09:01:20 uehira Exp $
+
+2007-09-18  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 1.1.88-LIB released.
+	* src/rawsrv_info.c : added.
 
 2007-09-14  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* src/winrawreq.c : added -r and -u options.

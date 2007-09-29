@@ -24,3 +24,6 @@
 
 /* Define boehm-gc memory leak checking or not */
 #undef GC_MEMORY_LEAK_TEST
+
+/* d_namlen exists as a member of struct DIR or not */
+#undef HAVE_STRUCT_D_NAMELEN

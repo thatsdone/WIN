@@ -1,5 +1,5 @@
 dnl ------------------------------------------------------------------------- 
-dnl $Id: configure.in,v 1.98.2.8 2007/09/18 09:01:20 uehira Exp $
+dnl $Id: configure.in,v 1.98.2.9 2007/09/29 02:20:10 uehira Exp $
 dnl -------------------------------------------------------------------------
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT(src/win.c)
@@ -101,6 +101,17 @@ AC_EGREP_CPP(tm_gmtoff, [#include <time.h>],
 						],
 						AC_MSG_RESULT(no)
 					)
+			]
+		)
+
+AC_MSG_CHECKING(for dir.d_namlen)
+AC_EGREP_CPP(d_namlen, [#include <dirent.h>],
+			[
+			AC_MSG_RESULT(yes)
+			AC_DEFINE(HAVE_STRUCT_D_NAMELEN)
+			],
+			[
+			AC_MSG_RESULT(no)
 			]
 		)
 

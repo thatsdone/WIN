@@ -1,4 +1,7 @@
- $Id: ChangeLog,v 1.131.2.10 2007/09/18 09:01:20 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.11 2007/09/29 02:20:10 uehira Exp $
+
+2007-09-29  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* check d_namlen exists as a member of struct DIR or not.
 
 2007-09-18  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* Version 1.1.88-LIB released.

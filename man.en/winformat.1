@@ -1,0 +1,395 @@
+'\" t
+.TH winformat 1W "1996.5.24" "WIN SYSTEM" "WIN SYSTEM"
+.SH Name
+winformat - Format for multi-channel earthquake waveform data
+.SH Outline
+Win format is a format for multi-channel earthquake waveform data.
+In addition to usual win format, "MON form" that is a win format of 
+special irreversible compression type is available. 
+Refer to raw_mon(1W) for this form.
+Now, usual win format (sometimes called "RAW form" to distinguish 
+from the MON form) is described.
+Win format has specifications such as 
+.IP
+.ti -2
+(1) Variable length second block with time label in 1 second increment,
+.ti -2
+(2) Channel block with header information for each one channel,
+.ti -2
+(3) Dynamically variable sampling rate and sample size
+.LP
+and has the following features.
+.IP
+.ti -2
+(1) Split and integration by channel and time are easy,
+.ti -2
+(2) Different sampling rates and sample sizes can coexist, 
+.ti -2
+(3) The number of channels is actually innumerable,
+.ti -2
+(4) Capacity compression is effective.
+.SH Basic format 
+In win format, all integer values with length exceeding 1 byte are big endians 
+(high-order byte precedes, or high-order byte occupies smaller number address). 
+Negative number is expressed by complement of 2. 
+The minimum unit configuring format is the following 1 channel data block 
+for 1 second with 4 bytes channel header (hereafter 'B' refers to a unit "byte"). 
+
+.ne 4
+.TS
+|c|c|
+|c|c|
+c s.
+_
+Channel header		Data for 1 channel and 1 second
+4B	Variable length 
+_
+Channel block (variable length)
+.TE
+
+.LP
+The size of one channel block can be known by reading channel header. 
+The channel header has the following form:
+
+.ne 5
+.TS
+|c|c|c|
+|c|c|c|
+|c|c|c|
+c s s.
+_
+Channel number	Sample	Sampling
+	Size (B)	Rate (Hz)
+2B	0.5 B	1.5 B
+_
+Channel header (4 B)
+.TE
+
+.LP
+The top 2 bytes among 4 bytes channel header is the inherent number of channel. 
+The number is 0000 - FFFF in 4 digits of hexadecimal number. 
+High-order 4 bits of the last 2 bytes shows sample size 
+of subsequent one second data in byte.
+The available values are 0 - 4. Especially, 0 represents 0.5 byte (4 bits) length. 
+Low-order 12 bits show sampling rate (Hz), 
+and the available values are 1 - 4095. The data block subsequent 
+to this channel header contains data for 1 second of the channel. 
+Among these, the top sample is always 4 bytes long, 
+and the second and subsequent samples contain differential values 
+from the previous sample ("current sample value" - "previous sample value") 
+all in sample size described in channel header. 
+The number of the differential values is (sampling rate - 1).
+
+.ne 6
+.TS
+|c|c|c|c|
+|c|c|c|c|
+|c|c|c|c|
+c s s s.
+_
+Starting	First		Last
+Sample	Differential	...	Differential
+4 B	(*B)		(*B)
+_
+Data block (variable length) 
+(sample size (*B) is specified in channel header)
+.TE
+
+.LP
+When sampling rate is 1 Hz, data block contains only starting 4 bytes 
+sample without differential data. Sample size is 0.5 - 4 bytes, 
+namely 4, 8, 16, 24 or 32 bits long, all of which are shown as complement of 2. 
+When sample size is 0.5 byte and sampling rate is even, unused free space 
+is generated in the low-order 4 bits of the last 1 byte of the data block. 
+.LP
+Sample size as small as possible only for expressing differential data 
+for 1 second of this channel is taken. For example, when differential data 
+for 1 second is within the range of -8 - 7, sample size is 0.5 byte. 
+In the similar way, 1 byte for -128 - 127, 2 bytes for -32768 - 32767 and so on. 
+The reason why differential is taken is to avoid sample size 
+being large due to direct current offset.
+Sample size written in channel header for each second changes dynamically. 
+Thus data will be compressed depending on the content. 
+When gain is appropriately set, it is usual that sample size at 
+normal time is 0.5 - 1 byte. 
+Although it is possible that sampling rate in the same channel 
+fluctuates dynamically, this is not so general. In case of data 
+AD-converted from an analog tape record, fluctuation of sampling rate 
+can be described as it is. However, the program for reading win format 
+may assume that sampling rate of the same channel is constant. 
+.LP
+"Second block" of win format is the above-mentioned one or more channel 
+blocks arranged behind second header in which time is described.
+
+.ne 6
+.TS
+|c|c|c|c|
+|c|c|c|c|
+|c|c|c|c|
+|c|c|c|c|
+c s s s.
+_
+Second header	First channel		Last channel
+year/month/day/hour/minute/second	Block	...	Block
+BCD 1B	each  (for 1 second)		(for 1 second)
+6 B	Variable length		Variable length
+_
+Second block (Variable length)
+.TE
+
+.LP
+This second block is a basic format of win format. 
+Win format can be handled on various media for transmission and save. 
+The format slightly varies depending on media. Hereafter win formats (1) 
+on disk/tape, (2) on UDP packet of IP, (3) on shared memory 
+and (4) on dedicated line are described respectively. 
+.SH (1) win format on disk/tape
+One file of UNIX disk file is made by adding 4 bytes "block size" 
+before each second block and arranging it for the number of seconds. 
+
+.ne 5
+.TS
+|c|c|c|c|c|
+|c|c|c|c|c|
+|c|c|c|c|c|
+c s s s s s.
+_
+Block	Second block		Block	Second block 
+Size		...	Size	
+4B	Variable length		4B	Variable length
+_
+1 file (Variable length)
+.TE
+
+.LP
+Here "block size" represents size of subsequent second block 
+added with 4 (size occupied by "block size") in byte. 
+File size (number of seconds) of win format has no limitation. 
+However, when buffering online continuous data, file is divided 
+in 1 minute increment (wdisk(1W), pmon(1W), events(1W), wtape(1W), etc.). 
+.LP
+An example of program for editing a file of win format is:
+
+.RS
+.TS
+c l c l c.
+wadd(1W)	-	Composition of files 
+wed(1W)	-	Edition with channel and time 
+wck(1W)	-	Inspection of file
+.TE
+.RE
+
+Files can be catenated with cat(1). 
+.LP
+Examples of programs for continuously recording on tape media 
+such as EXABYTE and DAT are wtape(1W) for write and rtape(1W) for read. 
+The format handled by these is basically same as that of disk file. 
+That is to say, one tape mark is inserted for each 10 minutes 
+(between X9 minute 59 second and X0 minute 00 second).
+By the way, since in case of tape data for variable length 1 second 
+is read and written as one record, it is necessary to use 
+a tape system that can handle "variable record length." 
+.SH (2) win format on UDP packet of IP
+A program utilizing the UDP packet for continuously transmitting 
+win format data on the Internet protocol is available. 
+The format of data handled by these on network is shown below: 
+
+.ne 6
+.TS
+|c2|c2|c2|c2|c2|c2|c2|c|
+|c2|c2|c2|c2|c2|c2|c2|c|
+|c2|c2|c2|c2|c2|c2|c2|c|
+|c2|c2|c2|c2|c2|c2|c2|c|
+c s s s s s s s.
+_
+Packet	Packet	Identification	Second	Second		Second	Second
+Number	Number	Code	Block	Block	...	Block	Block
+	(for retransmission) 	'0xA0'	Size of			Size of	
+1B	1B	1B	2B	Variable length		2B	Variable length
+_
+1 packet (Variable length)
+.TE
+
+"Size of second block" includes 2 bytes of itself. 
+The maximum packet size of 1 packet is 1472 bytes (1500 bytes as 
+IP packet size). In order to increase transmission efficiency, 
+packet size is usually generated in this range by packing data 
+so as to make the size as large as possible. 
+Refer to recvt(1W) for protocol.
+Other than this, the following old type format that accommodates 
+only data for 1 second in 1 packet is available.
+
+.ne 6
+.TS
+|c|c|c|
+|c|c|c|
+|c|c|c|
+|c|c|c|
+c s s s.
+_
+Packet	Packet	Second
+Number	Number	Block
+	(for retransmission)	
+1B	1B	Variable length
+_
+1 packet (Variable length)
+.TE
+
+This format is for keeping compatibility with old programs, 
+and can be distinguished with the afore-mentioned new format 
+by checking the value of the third byte. 
+Recvt(1W) can accept both formats. 
+.SH (3) win format on shared memory
+The format for buffering continuous data of win format on 
+shared memory of SYSTEM\ V has a form including "write time": 
+
+.ne 6
+.TS
+|c|c|c|
+|c|c|c|
+|c|c|c|
+c s s.
+_
+Block	Write	Second
+Size	Time	Block
+4B	4B	Variable length
+_
+1 block  (Variable length)
+.TE
+
+and a type not including it:
+
+.ne 6
+.TS
+|c|c|
+|c|c|
+|c|c|
+c s s.
+_
+Block	Second
+Size	Block
+4B	Variable length
+_
+1 block  (Variable length)
+.TE
+
+"Block size" includes 4 bytes of itself. In shared memory segment, 
+data blocks like these are arranged. Refer to recvt(1W) and order(1W) 
+respectively for details.
+.SH (4) win format on dedicated line
+Kanto-Koshin'etsu Observation Network of Earthquake Research Institute 
+is transmitting waveform data from almost all observation points in 
+packet system since 1995. In this system, data provided with time 
+stamp by telemeter instrument of observation point is win-formatted 
+and accommodated in HDLC frame to be transmitted on the dedicated line. 
+The packet received by the center is transferred to work station 
+in the UDP form through Ethernet. 
+Format in the HDLC frame is as shown below: 
+
+.ne 6
+.TS
+|c2|c2|c2|c2|c2|c2|c2|c|
+|c2|c2|c2|c2|c2|c2|c2|c|
+|c2|c2|c2|c2|c2|c2|c2|c|
+|c2|c2|c2|c2|c2|c2|c2|c|
+c s s s s s s s.
+_
+FLAG	Observation point	Packet	Packet	Second	Observation point	FCS	FLAG
+	ID	Number	Number	Block	Status		
+			(for retransmission)				
+1B	1B	1B	1B	Variable length	1B	2B	1B
+_
+1 packet (frame)  (Variable length)
+.TE
+
+.LP
+Second block contains data of 1 through 3 channels. Size of 1 frame 
+does not usually exceed 1024 bytes.
+.SH Handling low speed sampling data 
+As for data having sampling interval of 1 second or more, 
+1 block can accommodate only one sample because data for 1 second 
+corresponds to 1 block in usual win format. However, the size occupied 
+by that data is 4 bytes for channel header and 4 bytes for one sample, 
+total 8 bytes. This means capacity efficiency is very low.
+Thus, in some cases, as for data of 1 second sampling, 60 samples 
+for 1 minute is accommodated in 1 second block (formally) to handle 
+the data as sampling rate 60 Hz data on format. 
+This improves capacity efficiency and makes it convenient 
+to view waveform with win(1W).
+.SH Software parts handling win format
+Some program parts that handle waveform data on each medium or 
+between media are shown in the table below. When these are combined with 
+several pieces of software for detecting and recording events etc, 
+total system including data transmission from observation points 
+to the center, data exchange between the centers, data recording and 
+data processing can be configured easily. When assembling in the existing 
+telemeter system, only if difference of specification of each system is 
+absorbed at operation of transformation to telemeter system 
+\(->IP, all the common software can be utilized.
+
+.TS
+c c c c.
+Medium	Function	Program		Model
+_
+ADC\(->IP	Conversion	adt	PC98
+Telemeter system \(->IP	Conversion	epo2en etc.*	PC98
+Dedicated line \(->IP	Relay	hdlc	PC98
+Dedicated line \(-> Dedicated line	Relay	hdlc	PC98
+_
+IP\(->IP	Relay	relay	WS
+IP\(->Memory	Receiving	recvt	WS
+Memory \(-> Memory	Time sequence sort 	order	WS
+Memory \(-> Memory	Channel selection	raw_raw	WS
+Memory \(->IP	Transmission	send_raw etc.	WS
+Memory \(->Disk	Save	wdisk	WS
+Disk \(->8mm	Save	wtape	WS
+8mm\(-> Disk	Refresh	rtape	WS
+Disk \(->Screen	Measurement	win	WS
+.TE
+.RS
+.IP
+.ti -2
+*Select the model according to format and output interface 
+of \ telemeter system. epo2en is an example. 
+.RE
+.SH Mutual conversion between other format and win format
+.IP
+.ti -3
+(1) Generation of win format 
+.br
+There is C-language function called winform(1W) as a subprogram 
+for creating channel block of win format from the data of 1 channel 
+for 1 second in fixed-length. 
+.IP
+.ti -3
+(2) Conversion from win format file 
+.br
+The methods for cutting out data from win format file in command level are:
+.nf
+   Cutting out a single channel with program dewin(1W), and
+   Cutting out portion displayed on screen with program win(1W)
+.fi
+
+.IP
+.ti -3
+(3) Read and write subroutine for FORTRAN
+.br
+Examples of subroutine for FORTRAN are shown below: 
+.nf
+  open_win_format(iunit,file)
+      open win format file
+  close_win_format(iunit)
+¡¡¡¡¡¡close win format file
+  write_win(iunit,idx,idate,nch,nchan_tbl,nsamplea,ibuf,i_end)
+      write win format file (for 1 second) 
+  read_win(iunit,idx,idate,nch,nchan_tbl,nsamplea,ibuf,i_end)
+      read win format file (for 1 second)
+  read_win_start_time(iunit,idx,idate,i_end)
+      read time in win format file (for 1 second)
+.fi
+Refer to fortran(1W) for these subroutines. 
+.SH Relevant matters
+wdisk(1W), pmon(1W), events(1W), wtape(1W), raw_mon(1W),
+wadd(1W), wed(1W), wck(1W), rtape(1W), recvt(1W), raw_raw(1W),
+recvt(1W), order(1W), winform(1W), dewin(1W),
+win(1W), fortran(1W)

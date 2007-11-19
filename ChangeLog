@@ -1,4 +1,8 @@
- $Id: ChangeLog,v 1.131.2.11 2007/09/29 02:20:10 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.12 2007/11/19 10:11:17 uehira Exp $
+
+2007-11-19  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 1.1.89-LIB released.
+	* recvt_LS7000 : imported from recvt.c.
 
 2007-09-29  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* check d_namlen exists as a member of struct DIR or not.

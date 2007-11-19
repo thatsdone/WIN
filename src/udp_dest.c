@@ -1,4 +1,4 @@
-/* $Id: udp_dest.c,v 1.3 2006/05/08 04:02:30 uehira Exp $ */
+/* $Id: udp_dest.c,v 1.3.2.1 2007/11/19 10:11:18 uehira Exp $ */
 
 /*
  * Copyright (c) 2001-2004
@@ -86,15 +86,19 @@ udp_dest(const char *hostname, const char *port,
     write_log(buf);
     return (-1);
   }
-  
+
   memcpy(saptr, ai->ai_addr, ai->ai_addrlen);
   *lenp = ai->ai_addrlen;
-
-  (void)getnameinfo(ai->ai_addr, ai->ai_addrlen, hbuf, sizeof(hbuf),
+  
+  gai_error = getnameinfo(ai->ai_addr, ai->ai_addrlen, hbuf, sizeof(hbuf),
 		    sbuf, sizeof(sbuf),
 		    NI_DGRAM | NI_NUMERICHOST | NI_NUMERICSERV);
-  (void)snprintf(buf, sizeof(buf),
-		 "dest: host=%s, serv=%s", hbuf, sbuf);
+  if (gai_error)
+    (void)snprintf(buf, sizeof(buf), 
+		   "udp_dest: getnameinfo : %s", gai_strerror(gai_error));
+  else 
+    (void)snprintf(buf, sizeof(buf),
+		   "dest: host=%s, serv=%s", hbuf, sbuf);
   write_log(buf);
   
   return (sockfd);

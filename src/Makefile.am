@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.38.2.6 2007/09/18 09:01:20 uehira Exp $
+# $Id: Makefile.am,v 1.38.2.7 2007/11/19 10:11:18 uehira Exp $
 #
 
 if SUNOS4
@@ -27,7 +27,7 @@ OFFLINE_X=win win32
 endif
 
 if IPV6
-IPV6_PGM = relaym recvstatus3 winrawreq rawsrv_info
+IPV6_PGM = relaym recvstatus3 winrawreq rawsrv_info recvt_LS7000
 else
 IPV6_PGM =
 endif
@@ -112,7 +112,7 @@ install-exec-hook:
 	(rm -f @bindir@/wdisktsd; cd @bindir@ && @LN_S@ wdiskts wdisktsd)
 	(rm -f @bindir@/recvstatus3d; cd @bindir@ && @LN_S@ recvstatus3 recvstatus3d)
 	(rm -f @bindir@/ls8tel16_rawd; cd @bindir@ && @LN_S@ ls8tel16_raw ls8tel16_rawd)
-
+	(rm -f @bindir@/recvt_LS7000d; cd @bindir@ && @LN_S@ recvt_LS7000 recvt_LS7000d)
 libwinsystem_a_SOURCES = $(WIN_LIBH) $(WIN_LIBC) filter.c $(WIN_LOG)
 #libwinsystem2_a_SOURCES = $(WIN_UTIL) $(DAEMON_MODE) $(WIN_LOG) $(UDP_UTILITY) $(TCP_UTILITY)
 
@@ -333,3 +333,5 @@ winrawreq_LDADD = $(WIN_SYSTEM_LIB) @LIBNSL@ @LIBSOCKET@
 rawsrv_info_SOURCES = rawsrv_info.c $(TCP_UTILITY) $(WIN_LIBH) winraw_bp.h $(SUBFUNC_H)
 rawsrv_info_LDADD = $(WIN_SYSTEM_LIB) @LIBNSL@ @LIBSOCKET@
 
+recvt_LS7000_SOURCES = recvt_LS7000.c $(WIN_LIBH) $(SUBFUNC_H) $(DAEMON_MODE) $(UDP_UTILITY)
+recvt_LS7000_LDADD = $(WIN_SYSTEM_LIB) @LIBNSL@ @LIBSOCKET@ @LIBSHMGET@

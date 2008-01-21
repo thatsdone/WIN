@@ -1,0 +1,74 @@
+.TH sends 1W "2000.12.20" "WIN SYSTEM" "WIN SYSTEM"
+.SH NAME
+sends - Transmitting data from shared memory to serial port
+.SH SYNOPSIS
+sends [\-ad] [\-i my_ID] [\-p port] [-b rate]
+.I shmkey
+.I device
+[
+.I logfile
+]
+.LP
+.SH DESCRIPTION
+Recvs transmits WIN format data written (cyclically) in the shared memory segment specified by a key
+.I \ shmkey
+from the serial port of device name device by the HDLC frame. 
+Devices of serial port supported by sends are zsh device (/dev/zsh?) of Solaris and /dev/hdlcdrv/? device of multiport synchronous serial board manufactured by Aurora Technologies Co. on Solaris. 
+.LP
+When log file name
+.I \ logfile
+is specified, operation log is set here. When it is not specified, log information is sent to the standard output. Log file is opened/closed in each write. 
+.LP
+When sends is initiated without argument, brief usage is displayed.
+.SH FORMAT ON SHARED MEMORY
+See recvt(1W). However, sends actually identifies only
+.nf
+
+    (1) Block size of 4 bytes (byte)
+    (2) "Write time" of 4 bytes
+    (3) Data
+
+.fi,
+and anything is allowed as a content of "(3) Data." However, since one block is transmitted as one packet, length of one packet needs to be 1472 bytes or less. 
+.SH DATA FORMAT ON SERIAL LINE 
+Refer to recvs(1W). However, sends actually involves
+.nf
+
+    (1) Transmission station address of 2 bytes
+    (2) Packet number of 1 byte (0 - 255)
+    (3) "Original" packet number of 1 byte (0 - 255)
+    (4) Data
+
+.fi,
+and the content of "(4) Data" is created by copying a data part of block in the shared memory as it is. 
+.SH RESENDING PROTOCOL
+Refer to recvs(1W).
+Sends accepts resending request by serial port transmitting the HDLC data or the specified UDP port, and responds to the resending request going back to the maximum 128 packets in the past. 
+.SH OPTIONS
+.TP
+\-a
+Utilizes multiport synchronous serial port manufactured by Aurora Technologies Co. 
+If this is not specified, the standard serial port of Solaris is used. 
+.TP
+\-d
+Sends all transmission packets two packets each. This is unidirectional line for radio transmission etc. and used for reducing the number of missing data when resending request cannot be used in spite of fast line speed.
+.TP
+\-p
+Accepts resending request packets by the UDP port port.
+In default, it accepts resending request packets from serial line.
+.TP
+\-i
+Sets transmission station address my_ID (0 - 65535) to be set in transmission packet in decimal number. When this is not specified, 0 is used.
+.TP
+\-b
+Sets bit rate rate (bps) of an internal transmission clock of serial line. 
+When this is not specified, an external clock is used.
+.SH SOURCE
+.TP 
+`sends.c'
+.SH SEE ALSO
+At present, sends is not yet checked whether block size in shared memory has length capable of transmission. In order to guarantee it, we recommend using data by recvt(1W) with \-a option.
+.br
+Recvs was tested only by Solaris2.X.
+.SH SEE ALSO
+recvs(1W), recvt(1W), shmdump(1W)

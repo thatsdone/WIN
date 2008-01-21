@@ -1,0 +1,58 @@
+.TH dewin 1W "2001.1.15" "WIN SYSTEM" "WIN SYSTEM"
+.SH NAME
+dewin - Extraction of single channel data from win form file
+.SH SYNOPSIS
+dewin [\-\fBacnh\fR] [\-\fBf\fI filter\fR]
+.I channel
+[
+.I file
+]
+.LP
+.SH DESCRIPTION
+dewin extracts data of hexadecimal channel number
+.I \ channel
+from win form file
+.I \ file,
+and writes to the standard output with internally represented 4-byte integers.
+When
+.I \ file
+is not given, it reads data from the standard input. 
+.LP
+When dewin is initiated without argument, it displays brief usage. 
+.SH OPTIONS
+.IP "\fB\-a" 5
+Writes output form with audio data form of É -law.
+.IP "\fB\-c" 5
+Makes output form text form. Integer values are written with one data per line. 
+.IP "\fB\-f\fI filter\fR" 5
+Filters output data. It gives filter characteristics in file
+.I filter.
+Format of this file is same as that of filter setting file of win(1W), and the filter is set with 5 to 6 items delimited by blank in a line.
+The line beginning with "#" is bypassed. An example is shown below. 
+The parameter set in the second line is used here. 
+Other lines are bypassed assuming that they are comments. 
+.IP
+.nf
+   #bpf fl=5.0 fh=20.0 fs=30.0 ap=0.5 as=5.0
+   hpf fp=1.0 fs=0.5          ap=0.5 as=5.0
+   #lpf fp=0.5 fs=0.8          ap=0.5 as=5.0
+   #bpf fl=8.0 fh=16.0 fs=24.0 ap=0.5 as=5.0
+.fi
+.IP
+There are three types of filters, low pass, high pass and band pass.
+Programs of
+.RS
+.IP
+Saito, Masanori: 1978, Automatic design of recurrent digital filter, Geophysical Exploration, 31, 112-135
+.RE
+.IP
+are used for determining factors and filtering. See this reference for a method of selecting setting parameter.
+.IP "\fB\-n" 5
+When input data has temporal discontinuity (namely one or more seconds are omitted), the omitted portions are bypassed. If this data is not specified, the omitted portions are filled with data of zero value. 
+.IP "\fB\-h" 5
+Displays brief usage. 
+.SH SOURCE
+.TP
+`dewin.c'
+.SH SEE ALSO
+win(1W), wed(1W), wck(1W), wadd(1W), winformat(1W)

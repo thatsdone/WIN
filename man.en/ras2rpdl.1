@@ -1,0 +1,139 @@
+.TH ras2rpdl 1W "1998.5.12" "WIN SYSTEM" "WIN SYSTEM"
+.SH NAME
+ras2rpdl - Filter for converting Sun Raster format image to RPDL language
+.SH SYNOPSIS
+ras2rpdl [
+.I file ] ...
+.LP
+.SH DESCRIPTION
+Ras2rpdl is a filter used to print Sun Raster format images, such as pmon(1W) printouts, by Ricoh RPDL-compatible printer. An image resolution of 400 dpi is assumed.
+The maximum printable image size is 4,516 x 3,136 dots.
+Ras2rpdl loads image data from the standard input and writes the output data in a compressed format to the RPDL printer via the standard output. If
+.I file ...
+is specified, however, data will be loaded from the file.
+When there are more than one file, the print jobs will be processed on a one-file-one-page basis.
+If the printer has a double-side printing capability, the output will be printed on both sides (one file worth of output data on each side).
+.LP
+Ras2rpdl has been tested only on Ricoh SP-10PS proIInw.
+.SH OPTIONS
+.TP 
+None
+.SH SEE ALSO
+pmon(1W), lpf_lbpvf(1W), ras2lips(1W)
+.SH Typical settings for a BSD-derived UNIX system to print two pages on both sides of one sheet
+Assume that in /etc/printcap, a Ricoh RPDL-compatible printer ricoh-ps and a double-side printout entry ricoh are set as follows:
+.IP
+.nf
+ricoh|remote printer (Ricoh PS):\\
+        :sd=/var/spool/ricoh:mx#0:sh:\\
+        :lf=/var/spool/ricoh/log:\\
+        :lp=:rm=ricoh:rp=lpb:
+ricoh2|two-side remote printer:\\
+        :sd=/var/spool/ricoh:\\
+        :lp=/dev/null:mx#0:\\
+        :lf=/var/spool/ricoh/log:\\
+        :if=/home/auto/j2ps:\\
+        :vf=/home/auto/ras2rpdl2:
+.fi
+.LP
+The content of the filter /home/auto/ras2rpdl2 should be as follows:
+.IP
+.nf
+#!/bin/sh
+sf1=/var/spool/ricoh/ras2rpdl2.1
+sf2=/var/spool/ricoh/ras2rpdl2.2
+if [ -f "$sf1" ]
+then
+  cat > $sf2
+  /home/auto/ras2rpdl $sf1 $sf2 | /usr/ucb/lpr -Pricoh >/dev/null 2>&1
+  rm $sf1 $sf2
+else
+  cat > $sf1
+fi
+.fi
+.LP
+Additionally, the content of /home/auto/j2ps goes as follows:
+.IP
+.nf
+#!/bin/sh
+/bin/jtops -v | /usr/ucb/lpr -Pricoh >/dev/null 2>&1
+.fi
+.SH Typical settings for a Solaris 2.X system to print two pages on both sides of one sheet
+Assume that the network remote printer ricoh is already set with the host name being ricoh as follows:
+.IP
+.nf
+lpsystem -t bsd ricoh
+lpadmin -p ricoh -s ricoh -T unknown -I any
+accept ricoh
+enable ricoh
+.fi
+.LP
+First, copy and edit a standard printer interface program.
+.IP
+.nf
+cp /var/spool/lp/model/standard /home/auto/ricoh2
+vi /homr/auto/ricoh2
+.fi
+.LP
+Insert
+.IP
+FILTER=/home/auto/ras2rpdl2
+.LP
+between the two lines. Then, rewrite
+.IP
+.nf
+trap 'cd ${TMPDIR};rm -fr ${TMPPREFIX}*; exit ${exit_code}' 0
+.fi
+.LP
+into
+.IP
+.nf
+trap 'rm -fr ${TMPPREFIX}*; exit ${exit_code}' 0
+.fi
+.LP
+(Otherwise,
+.IP
+an "rm: start directory cannot be opened: no permission given"
+.LP
+error message somehow occurs, making rm impossible!?).
+At this point, the content of /home/auto/ras2rpdl2 goes as follows:
+.IP
+.nf
+#!/bin/sh
+dir=/tmp
+sf1=ricoh2.1
+sf2=ricoh2.2
+#
+cd $dir
+if [ -f "$sf1" ]
+then
+  cat > $sf2
+  /home/auto/ras2rpdl $sf1 $sf2|/usr/bin/lp -d ricoh>/dev/null 2>&1
+  rm $sf1 $sf2
+else
+  cat > $sf1
+fi
+.fi
+.LP
+Then, register ricoh2 printer as follows:
+.IP
+.nf
+lpadmin -p ricoh2 -v /dev/null -I raster -i /home/auto/ricoh2
+accept ricoh2
+enable ricoh2
+.fi
+.LP
+Now every other time
+.IP
+lp -d ricoh2 -T raster [
+.I raster file
+]
+.LP
+prints out (two pages), a sheet will be printed front and back.
+.SH OPTIONS
+.TP 
+None
+.SH SOURCE
+.TP
+`ras2rpdl.c'
+.SH SEE ALSO

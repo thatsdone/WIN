@@ -1,8 +1,8 @@
 '\" t
 .TH winformat 1W "1996.5.24" "WIN SYSTEM" "WIN SYSTEM"
-.SH Name
+.SH NAME
 winformat - Format for multi-channel earthquake waveform data
-.SH Outline
+.SH OUTLINE
 Win format is a format for multi-channel earthquake waveform data.
 In addition to usual win format, "MON form" that is a win format of 
 special irreversible compression type is available. 
@@ -28,7 +28,7 @@ and has the following features.
 (3) The number of channels is actually innumerable,
 .ti -2
 (4) Capacity compression is effective.
-.SH Basic format 
+.SH BASIC FORMAT 
 In win format, all integer values with length exceeding 1 byte are big endians 
 (high-order byte precedes, or high-order byte occupies smaller number address). 
 Negative number is expressed by complement of 2. 
@@ -42,7 +42,7 @@ for 1 second with 4 bytes channel header (hereafter 'B' refers to a unit "byte")
 c s.
 _
 Channel header		Data for 1 channel and 1 second
-4B	Variable length 
+4B	Variable length
 _
 Channel block (variable length)
 .TE
@@ -71,7 +71,7 @@ The number is 0000 - FFFF in 4 digits of hexadecimal number.
 High-order 4 bits of the last 2 bytes shows sample size 
 of subsequent one second data in byte.
 The available values are 0 - 4. Especially, 0 represents 0.5 byte (4 bits) length. 
-Low-order 12 bits show sampling rate (Hz), 
+Low-order 12 bits show sampling rate (Hz),
 and the available values are 1 - 4095. The data block subsequent 
 to this channel header contains data for 1 second of the channel. 
 Among these, the top sample is always 4 bytes long, 
@@ -204,7 +204,7 @@ c s s s s s s s.
 _
 Packet	Packet	Identification	Second	Second		Second	Second
 Number	Number	Code	Block	Block	...	Block	Block
-	(for retransmission) 	'0xA0'	Size of			Size of	
+	(for resend) 	'0xA0'	Size of			Size of	
 1B	1B	1B	2B	Variable length		2B	Variable length
 _
 1 packet (Variable length)
@@ -229,7 +229,7 @@ c s s s.
 _
 Packet	Packet	Second
 Number	Number	Block
-	(for retransmission)	
+	(for resend)	
 1B	1B	Variable length
 _
 1 packet (Variable length)
@@ -271,7 +271,7 @@ Size	Block
 4B	Variable length
 _
 1 block  (Variable length)
-.TE
+.TE.
 
 "Block size" includes 4 bytes of itself. In shared memory segment, 
 data blocks like these are arranged. Refer to recvt(1W) and order(1W) 
@@ -296,7 +296,7 @@ c s s s s s s s.
 _
 FLAG	Observation point	Packet	Packet	Second	Observation point	FCS	FLAG
 	ID	Number	Number	Block	Status		
-			(for retransmission)				
+			(for resend)				
 1B	1B	1B	1B	Variable length	1B	2B	1B
 _
 1 packet (frame)  (Variable length)
@@ -367,7 +367,7 @@ for 1 second in fixed-length.
 The methods for cutting out data from win format file in command level are:
 .nf
    Cutting out a single channel with program dewin(1W), and
-   Cutting out portion displayed on screen with program win(1W)
+   Cutting out portion displayed on screen with program win(1W).
 .fi
 
 .IP
@@ -379,7 +379,7 @@ Examples of subroutine for FORTRAN are shown below:
   open_win_format(iunit,file)
       open win format file
   close_win_format(iunit)
-°°°°°°close win format file
+Å@Å@Å@close win format file
   write_win(iunit,idx,idate,nch,nchan_tbl,nsamplea,ibuf,i_end)
       write win format file (for 1 second) 
   read_win(iunit,idx,idate,nch,nchan_tbl,nsamplea,ibuf,i_end)
@@ -388,7 +388,7 @@ Examples of subroutine for FORTRAN are shown below:
       read time in win format file (for 1 second)
 .fi
 Refer to fortran(1W) for these subroutines. 
-.SH Relevant matters
+.SH SEE ALSO
 wdisk(1W), pmon(1W), events(1W), wtape(1W), raw_mon(1W),
 wadd(1W), wed(1W), wck(1W), rtape(1W), recvt(1W), raw_raw(1W),
 recvt(1W), order(1W), winform(1W), dewin(1W),

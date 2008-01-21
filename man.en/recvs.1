@@ -1,0 +1,99 @@
+.TH recvs 1W "2000.12.20" "WIN SYSTEM" "WIN SYSTEM"
+.SH NAME
+recvs - Receives data with type from serial port
+.SH SYNOPSIS
+recvs [-a] [-s] [-i my_ID] [-p host:port] [-b rate]
+.I device
+.I shmkey
+.I shmsize
+[
+.I logfile
+]
+.LP
+.SH DESCRIPTION
+Recvs receives data in win format with packet type sent to the serial port of a device name device, and writes (cyclically) in the shared memory segment given by a key
+.I \ shmkey
+in format to which a packet type code is still attached. 
+When the shared memory segment having its key does not exist, the shared memory segment of size
+.I \ shmsize
+\ (KB) is created. When the segment already exists but has a size smaller than 
+.I \ shmsize
+\ (KB), an error will occur. 
+Devices having serial port supported by recvs are zsh device (/dev/zsh?) of Solaris and /dev/hdlcdrv/? device of multiport synchronous serial board manufactured by Aurora Technologies Co. on Solaris.
+.LP
+When log file name
+.I \ logfile
+is specified, operation log is set here. When it is not specified, log information is sent to the standard output. Log file is opened/closed in each write.
+.LP
+When recvs is initiated without argument, it displays brief usage. 
+.SH DATA FORMAT ON SERIAL LINE
+Data format with packet type which recvs can receive are as follows (refer to Hakusan Corporation "Data Converter LT8500 Communication Protocol" for details).
+Data are transmitted through the HDLC frame on serial line.
+They are
+.nf
+
+    (1) Transmission station address of 2-byte
+    (2) Packet number (0 - 255) of 1-byte
+    (3) "Original" packet number (0 - 255) of 1-byte
+    (4) Packet identification code of 1-byte
+    (5) Time header of 6-byte (year to second, 1-byte each, BCD format)
+         Last two digits of year (00 - 99), month (01 - 12), day (01 - 31),
+         hour (00 - 23), minute (00 - 59), second (00Å`59)
+    (6) Data (one of win format or multiple channel blocks) 
+
+.fi.
+(1) is a number for identifying transmission station in order of high-order byte and low-order byte. 
+(2) is a number provided to each packet by source, with an increment of 1 (returns to 0 after 255).
+(3) usually has the same value as (2). In case of resent packet, (2) has original packet number of which resending is requested, showing that it is the resent packet. 
+(4) is "A1" (short cycle data), "A2" (long cycle data), "A8" (information on data converter setting), or "A9" (information on data converter action). 
+See "second block" of winformat(1W) for (5) and (6). 
+.SH RESENDING PROTOCOL
+Transmission side enters generated data in the HDLC frame in the above format to send out. Receiving side that is monitoring packet numbers sends the missing packet number to source to request resending of the packet.
+Resending request packet is a packet with data part length of 3-byte containing remote transmission station address (2-byte) and packet number of which resending is desired (total packet size is 8-byte including the above parts (1) through (4)). 
+Source resends the packet of which resending is requested. When sending side is  sends(1W), it accepts resending by going back to usual past maximum 128 packets, and recvs usually requests resending for the maximum 8 missing packets (usually N_PACKET decides this). 
+.br
+Destination of requested resending is serial port receiving the HDLC data and/or specified host//UDP port.
+.SH FORMAT ON SHARED MEMORY
+Data written in shared memory by recvs is of block format for each second, attached with packet type code.
+Configuration of 1 block is as follows:
+.nf
+
+    (1) Block size of 4-byte (byte)
+    (2) "Write time" of 4-byte
+    (3) Packet type code of 1-byte
+    (4) Time header of 6-byte (year to second, 1-byte each, BCD format)
+         Last two digits of year (00 - 99), month (01 - 12), day (01 - 31),
+         hour (00 - 23), minute (00 - 59), second (00Å`59) 
+    (5) Data (one of win format or multiple channel blocks)
+
+.fi
+(2) is shown with the number of seconds counted from zero hour January 1, 1970, and utilized to set time out when order(1W) sorts data in order of time. (3) through (5) are natural copies of (4) through (6) in the above HLDC frame respectively. 
+.br
+Refer to recvt(1W) for total configuration of the shared memory segment and cautions for deciding its size. 
+By the way, recvt(1W) expands one data block on the shared memory only if times of data packet received continuously are same. However, recvs does not do so. Therefore in recvs, data blocks of received packet and those on the shared memory always correspond in one to one basis.
+.SH OPTIONS
+.TP
+\-a
+Utilizes multiport synchronous serial board manufactured by Aurora Technologies Co.
+If this is not specified, the standard serial port of Solaris will be used. 
+.TP
+\-s
+Sends the resending request packet to serial line. 
+.TP
+\-p
+Sends the resending request packet to the UDP port port of host host through network.
+.TP
+\-i
+Sets local station address my_ID (0Å`65535) to be set in the resending request packet with decimal number. If this is not specified, 0 will be used.
+.TP
+\-b
+Sets bit rate rate (bps) of an internal transmission clock of serial line. If this is not specified, an external clock will be used.
+.SH SOURCE
+.TP 
+`recvs.c'
+.SH CAUTIONS
+Sends(1W), sendt_raw(1W) (with -a option), extraw(1W), shmdump(1W), etc. can read data of "with packet type" received and written by recvs in the shared memory. 
+.br
+Recvs has been tested only by Solaris2.X. 
+.SH SEE ALSO
+winformat(1W), recvt(1W), sends(1W), sendt_raw(1W), extraw(1W), shmdump(1W)

@@ -1,0 +1,34 @@
+.TH winadd 1W "2003.11.3" "WIN SYSTEM" "WIN SYSTEM"
+.SH NAME
+winadd - Coupling of win format file
+.SH SYNOPSIS
+winadd [ \-hnv ] 
+.I file file ...
+.LP
+.SH DESCRIPTION
+Winadd couples win format files
+.I file
+to transmit to the standard output. When data of the same channel exists in the same time, the data of
+.I file
+existing before argument is given priority. 
+.LP
+Winadd firstly attempts to read all data in memory. When it is impossible to expand in memory, it reads from a disk. In this case, execution speed may decrease. 
+.LP
+When channel of which start time (the first second) contains no data, winadd inserts dummy data of this channel in this first second. The purpose is to deal with the risk that win(1W) program bypasses channels not contained in the first second thereafter. In addition, it also inserts dummy data in a channel having jumped time. The purpose is to allow win(1W) program to show jumped time on the monitor screen to make it easy to notice. 
+.LP
+When winadd is initiated without argument, brief usage is displayed. 
+.SH OPTIONS
+.TP 
+\-n
+Does not add all dummy data. 
+.TP 
+\-v
+Redundant during execution of command.
+.TP
+\-h
+Displays brief usage.
+.SH SOURCE 
+.TP
+`winadd.c'
+.SH SEE ALSO
+win(1W), wadd(1W), winformat(1W)

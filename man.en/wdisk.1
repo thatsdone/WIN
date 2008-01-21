@@ -1,0 +1,105 @@
+'\" t
+.TH wdisk 1W "2002.5.31" "WIN SYSTEM" "WIN SYSTEM"
+.SH NAME
+wdisk, wdisk60, wdiskd, wdisk60d - Write of win format data in disk file
+.SH SYNOPSIS
+wdisk [\-\fBDns\fR]
+.I shmkey
+.I outdir
+[
+.I nfiles/freespace(-s)
+[
+.I logfile
+]]
+.br
+wdiskd [\-\fBns\fR]
+.I shmkey
+.I outdir
+[
+.I nfiles/freespace(-s)
+[
+.I logfile
+]]
+.br
+wdisk60 [\-\fBDns\fR]
+.I shmkey
+.I outdir
+[
+.I nfiles/freespace(-s)
+[
+.I logfile
+]]
+.br
+wdisk60d [\-\fBns\fR]
+.I shmkey
+.I outdir
+[
+.I nfiles/freespace(-s)
+[
+.I logfile
+]]
+.LP
+.SH DESCRIPTION
+Wdisk, wdisk60, wdiskd, and wdisk60d write win format data aligned in order of time written in shared memory segment of a key
+.I \ shmkey
+in a directory of disk
+.I \ outdir
+as the win format file.
+When '\-' is specified as
+.I \ shmkey,
+input data are read from the standard input instead of from the shared memory. Format of input data in that case is same as that of output file of wdiskts(1W). 
+In wdisk, files are put together to files having a name of 'YYMMDDhh.mm' format for each 1 minute. 
+In wdisk60, files are put together to files having a name of 'YYMMDDhh.mm' format for each 1 hour.
+.I \ nfiles
+is the maximum number of files to be saved. Files of which latest number of files is
+.I \ nfiles
+are always saved, and files older than those are deleted. However, when option
+\fB\-s\fR
+is specified, it means space (MB) to be always secured is specified.
+When
+.I nfiles/freespace
+is not specified, or when '0' is specified, files are not automatically deleted. 
+.LP
+Wdiskd and wdisk60d are initiated in daemon mode. It is the same operation when option
+\fB\-D\fR
+is specified by wdisk and wdisk60. 
+.LP
+When log file name
+.I \ logfile
+is specified, operation log is set here. 
+When it is not specified, log information is sent to the standard output (however, it is sent to syslogd(8) when operation is made in the daemon mode).
+Log file is opened/closed in each write. 
+.LP
+When wdisk, wdisk60, wdiskd, and wdisk60d are initiated without argument, brief usage is displayed. 
+.SH FORMAT ON SHARED MEMORY 
+Refer to order(1W). 
+.SH OPTIONS
+.IP "\fB\-D" 5
+Is initiated in daemon mode. 
+.IP "\fB\-s" 5
+Makes to specify files to be saved not with the number of files but with space to be always secured. It specifies to the third argument in MB.
+.IP "\fB\-n" 5
+Does not create files of BUSY, COUNT, LATEST, and OLDEST except MAX among files showing operation status written in the next section. When this option is specified, programs for viewing these operation statuses such as events(1W), insert_raw(1W), and wtape(1W) cannot be run.
+.SH FILE
+Wdisk, wdisk60, wdiskd, and wdisk60d create the following text files in an output directory
+.I \ outdir,
+and show operation status depending on each content.
+However, when option \fB\-n\fR is specified, only MAX is created. 
+
+.RS
+.TS
+l l.
+BUSY	File name currently being written
+COUNT	The current number of files 
+LATEST	The latest files of which write is completed
+MAX	The number of files to be saved/space to be always secured (MB)
+OLDEST The oldest file name 
+.TE
+.RE
+.LP
+When file MAX is rewritten even in operation of wdisk, wdisk60, wdiskd, or wdisk60d, then "the number of files to be saved/space to be always secured (MB)" changes to new values. 
+.SH SOURCE 
+.TP
+`wdisk.c'
+.SH SEE ALSO
+winformat(1W), order(1W), wtape(1W)

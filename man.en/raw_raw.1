@@ -1,0 +1,75 @@
+.TH raw_raw 1W "2005.3.7" "WIN SYSTEM" "WIN SYSTEM"
+.SH NAME
+raw_raw - Selection of channels from RAW format data
+.SH SYNOPSIS
+raw_raw [\-\fBBDg\fR]
+.I inkey
+.I outkey
+.I shmsize
+[
+.I chfile
+[
+.I logfile
+]]
+.LP
+raw_rawd [\-\fBBg\fR]
+.I inkey
+.I outkey
+.I shmsize
+[
+.I chfile
+[
+.I logfile
+]]
+.LP
+.SH DESCRIPTION
+Raw_raw loads win format data cyclically written in a shared memory segment identified by a key
+.I \ inkey
+and writes the data to another shared memory segment identified by another key
+.I \ outkey.
+If a channel file
+.I \ chfile
+is given, only the data of the channels listed in this file will be written.
+If the channel file name is prefixed with '\-,' however, the data of all the channels other than those listed in this file will be written.
+If
+.I chfile
+is not given or if '\-' is specified as the channel file, all the channel will be written.
+If the share memory segment with the key
+.I \ outkey
+does not exist, a shared memory segment with a size of
+.I \ shmsize
+\ (KB) will be created. If it already exists but has a size smaller than
+.I \ shmsize
+\ (KB), an error will occur.
+The shared memory key is a 32-bit integer.
+.LP
+Raw_rawd is initiated in daemon mode.
+.LP
+When log file name
+.I \ logfile
+is specified, operation log is set here. When it is not specified, log information is sent to the standard output (however, it is sent to syslogd(8) when operation is made in the daemon mode). The log file is opened/closed in each write.
+.LP
+The channel file is a text file that hexadecimally lists channel numbers, one for each line. In each line, only the first item is read, while the subsequent items delimited by blanks or tabs are all bypassed. Any lines starting with '#' are also bypassed.
+When receiving a hang-up signal, the raw_raw process rereads the channel file.
+.LP
+The format in the shared memory
+.I inkey
+can be either one sorted in order of time (Cf. order(1W)) or otherwise (Cf. recvt(1W)). The format in the shared memory
+.I outkey
+will be the same as that of
+.I inkey.
+.LP
+When raw_raw is initiated without argument, brief usage is displayed.
+.LP
+.SH OPTIONS
+.IP "\fB\-g" 5
+Converts only the values of the data of channels with a sampling rate of 1 Hz into 4-bit right shift (i.e., 1/16) values. This conversion is performed for low-speed data for GTA-45U manufactured by Meisei Electric Co., Ltd.
+.IP "\fB\-B" 5
+Uses the "format with blocks ending with a block size" to write data to the output shared memory. For more details on this, refer to recvt(1W) and order(1W).
+.IP "\fB\-D" 5
+Is initiated in the daemon mode.
+.SH SOURCE
+.TP
+`raw_raw.c'
+.SH SEE ALSO
+winformat(1W), order(1W), send_raw(1W)

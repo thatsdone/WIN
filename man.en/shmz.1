@@ -1,0 +1,48 @@
+.TH shmz 1W "2002.8.12" "WIN SYSTEM" "WIN SYSTEM" 
+.SH NAME
+shmz - Monitor tool for WIN system 
+.SH SYNOPSIS
+shmz
+.I ch ch ... 
+.LP
+.SH DESCRIPTION
+shmz makes data transmitted by shmdump -tq to be input, and displays channels listed in a channel ID
+.I \ ch
+on the X screen in the same scale.
+Channel contains channel numbers of hexadecimal desired to be displayed. 
+.LP
+When shmz is initiated without argument, brief usage is displayed. 
+.SH OPTIONS
+.IP "\fB\-t\fICHANNEL_TABLE" 5
+For shmz, always specify channel table by -t. 
+.IP "\fB\-s\fISCALE" 5
+Specifies scale per pixel. Default is 1e-6.
+.IP "\fB\-m\fIMIN" 5
+Specifies time to be displayed in 1 trace in minute. Default is 1 minute.
+.IP "\fB\-n\fINLINE" 5
+The number of traces displayed per channel. Default is 6.
+.IP "\fB\-y\fIPIXEL" 5
+The number of pixels secured per channel. Default is 12.
+.IP "\fB\-w\fICLIPLEBEL" 5
+Specifies clip level. Default is +-yLSB.
+.IP "\fB\-l\fILTA" 5
+Specifies the number of seconds in average for which data are subtracted when subtracting data for offset. Default is 1 second.
+.IP "\fB\-p" 5
+Transmits the standard input to the standard output.
+.IP "\fB\-x\fIWIDTH" 5
+The number of pixels per trace in X-direction. Default is 800.
+.IP "\fB\-c\fICOLOR" 5
+Plots in white in the standard, displays in red in -c1, and displays in order of in red, blue and yellow in -c3.
+.IP "\fB\-f\fISHMDUMP.OUT" 5
+Reads data from file SHMDUMP.OUT to display. 
+.IP "\fB\-t\fITABLE" 5
+Reads channel table of WIN. Observation point names and component names will be displayed.
+.IP "\fB\-H\fIHOSTNAME" 5
+Connects to option: HOSTNAME at the TCP connection.
+.IP "\fB\-P\fIPORT" 5
+Connects to option: PORT number at the TCP connection.
+.SH SOURCE 
+.TP
+`shmz'
+.SH SEE ALSO
+shmdump(1W)

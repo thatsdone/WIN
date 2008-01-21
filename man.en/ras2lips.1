@@ -1,0 +1,25 @@
+.TH ras2lips 1W "1997.12.4" "WIN SYSTEM" "WIN SYSTEM"
+.SH NAME
+ras2lips - Filter for converting Sun Raster format image to LIPS language
+.SH SYNOPSIS
+ras2lips [
+.I file ] ...
+.LP
+.SH DESCRIPTION
+Ras2lips is a filter used to print Sun Raster format images, such as pmon(1W) printouts, to a Canon LIPS IV compatible printer. An image resolution of 400 dpi is assumed.
+The maximum printable image size is 4,516 x 3,136 dots.
+Ras2lips loads image data from the standard input and writes the output data in a compressed format to the LIPS printer via the standard output. If
+.I file ...
+is specified, however, data will be loaded from the file.
+When there are more than one file, the print jobs will be processed on a one-file-one-page basis.
+If the printer has a double-side printing capability, the output will be printed on both sides (output data for one file on each side).
+.LP
+Ras2lips has been tested only on Canon LBP-430 and LBP-450.
+.SH OPTIONS
+.TP 
+None
+.SH SOURCE
+.TP
+`ras2lips.c'
+.SH SEE ALSO
+pmon(1W), lpf_lbpvf(1W), ras2rpdl(1W)

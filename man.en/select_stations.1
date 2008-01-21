@@ -1,0 +1,36 @@
+.TH select_stations 1W "2004.1.29" "WIN SYSTEM" "WIN SYSTEM"
+.SH NAME
+select_stations - Selects observation point of arbitrary zone from file in channel table format
+.SH SYNOPSIS
+select_stations
+.I ch_file
+.I polygon_file
+.LP 
+.SH DESCRIPTION
+Select_stations selects a line (channel) of observation point positioned inside a polygonal zone specified by
+.I \ polygon_file
+from a file of channel table format
+.I \ ch_file,
+and writes in the standard output. However, the channels of which latitude and longitude are omitted in
+.I \ ch_file
+are bypassed. 
+Refer to win(1) for format of channel table file. 
+.br
+Format of
+.I \ polygon_file
+is as follows:
+Coordinates (latitude and longitude in degree are delimited by blank or tab) of vertices of a polygon are arranged in order of clock-wise with one point per line. It is necessary to close the polygon by making the last vertex coincide with the first one. It is allowed that vertices of a polygon are concave. 
+.LP
+Select_stations checks each side of a polygon showing the zone in order of clock-wise, and when a point is found to the right (viewed from start point to end point) of the side closest to the point, it determines the point exists inside the polygon. 
+.LP
+When select_stations is initiated without argument, brief usage is displayed.
+.SH OPTIONS
+.TP 
+None.
+.SH SOURCE 
+.TP
+`select_stations.c'
+.SH SEE ALSO
+win(1W)
+.SH BUG
+Serious bug found in the early program (Nov. 9, 1999 Version) was corrected in Jan. 28, 2004 Version.

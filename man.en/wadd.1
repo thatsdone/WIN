@@ -1,0 +1,58 @@
+.TH wadd 1W "1995.7.14" "WIN SYSTEM" "WIN SYSTEM"
+.SH NAME
+wadd - Binding of two win format files with overlapped time 
+.SH SYNOPSIS
+wadd
+.I mainfile
+.I subfile
+[
+.I outdir
+]
+.LP
+.SH DESCRIPTION
+Wadd adds a win format file
+.I \ subfile
+to a win format file
+.I \ mainfile,
+and enters the result in a directory specified by
+.I \ outdir
+with the same name as
+.I \ mainfile.
+When
+.I \ outdir
+is not specified, the result replaces
+.I \ mainfile.
+Time range of the result file coincides with that of
+.I \ mainfile.
+In
+.I \ subfile,
+data of the same channel number as
+.I \ mainfile
+are bypassed. That is to say, among
+.I \ subfile,
+the part of which time range overlaps with
+.I \ mainfile
+and only of which channel number is different is added to
+.I \ mainfile.
+.LP
+Wadd is the same directory as a win format waveform file, considers a file made by adding '.ch' to waveform file name to be its channel table file, makes the channel table file name by adding '.ch' to result file name, and synthesizes them. If the channel table file is not found, the channel table file of the result is not created.
+.LP
+When 
+.I subfile
+does not contain data of start time (the first second) of
+.I \ mainfile,
+wadd inserts dummy data of channel contained in
+.I \ subfile
+in data for the first second of the result file. The purpose is to deal with the risk that win(1W) program bypasses channels not contained in data for the first second. 
+.LP
+Cat(1) can be utilized to couple two win format files having the same channel configuration and adjacent time range. 
+.LP
+When wadd is initiated without argument, brief usage is displayed. 
+.SH OPTIONS
+.TP 
+None.
+.SH SOURCE 
+.TP
+`wadd.c'
+.SH SEE ALSO
+win(1W), wed(1W), wck(1W), winformat(1W)

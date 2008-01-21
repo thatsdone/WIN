@@ -1,0 +1,18 @@
+.TH automan 1W "1997.11.14" "WIN SYSTEM" "WIN SYSTEM"
+.SH NAME
+automan - Assignment of automatic inspection processing
+.SH SYNOPSIS
+automan
+.LP
+.SH DESCRIPTION
+automan is always executed, and assigns event waveform processing submitted by events(1W) to empty hosts. Submission of processing from events(1W) is performed by allowing a file of zero size with the same name as waveform file to be created (touched) in /dat/auto. File /dat/autos/ORDER is a list on which names of hosts that participate in automatic inspection processing are written with a name per line, and the lines with "#" at the head are skipped. Corresponding to these hosts, /dat/autos has directories having these host names. pmon inspects /dat/auto every several tens of seconds, and when  touched files are found there, it attempts to assign the earliest time file among them to any one of the hosts. pmon checks /dat/autos/ORDER from the top, and submit processing to a firstly found host not in automatic inspection processing. Whether a host is in automatic inspection processing is determined by checking whether a file is contained in directory  /dat/autos/host name, and submission of processing is performed by bringing (doing mv) a file from /dat/auto to the same directory. Subsequent automatic inspection processing is generally performed by allowing autopick(1W) to initiate win(1W) in automatic processing mode.
+.LP
+automan is generally initiated in background from _win(1W). 
+.SH OPTIONS
+.TP 
+None.
+.SH SOURCE
+.TP
+`automan'
+.SH SEE ALSO
+_win(1W), events(1W), autopick(1W), win(1W)

@@ -1,0 +1,17 @@
+.TH lpf_lbpvf 1W "1998.6.18" "WIN SYSTEM" "WIN SYSTEM"
+.SH NAME
+lpf_lbpvf - Printing out Sun Raster format images to SONY NEWS LBP
+.SH SYNOPSIS
+lpf_lbpvf
+.LP
+.SH DESCRIPTION
+lpf_lbpvf prints Sun Raster format images, such as pmon(1W) printouts, to a SONY NEWS peripheral device such as 400 dpi laser beam printer NWP-533. lpf_lbpvf loads data from the standard input and prints them to the /dev/lbp device. If there is any problem with the /dev/lbp device, an error or warning message will be written to the standard error output.
+The maximum printable image size is 4,516 x 3,136 dots.
+.SH OPTIONS
+.TP 
+None
+.SH SOURCE
+.TP
+`lpf_lbpvf.c'
+.SH SEE ALSO
+pmon(1W), ras2lips(1W), ras2rpdl(1W)

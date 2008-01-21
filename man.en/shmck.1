@@ -1,0 +1,44 @@
+.TH shmck 1W "2002.8.12" "WIN SYSTEM" "WIN SYSTEM" 
+.SH NAME
+shmck - Monitor tool for WIN system
+.SH SYNOPSIS
+shmck
+.I ch ch ... 
+.LP
+.SH DESCRIPTION
+Shmck receives data transmitted by shmdump -tq as input, and displays channels listed in a channel ID
+.I \ ch
+on the X screen. 
+Channel is a channel number of hexadecimal number desired to be displayed. 
+.LP
+When shmck is initiated without argument, brief usage is displayed.
+.SH OPTIONS
+.IP "\fB\-m\fISEC" 5
+Specifies time to be displayed in 1 trace in second. Default is 10 seconds.
+.IP "\fB\-n\fINLINE" 5
+Is the number of traces displayed for each 1 channel. Default is 6.
+.IP "\fB\-y\fIPIXEL" 5
+Is the number of pixels secured for each 1 channel. Default is 12.
+.IP "\fB\-w\fICLIPLEBEL" 5
+Specifies clip level. Default is +-yLSB.
+.IP "\fB\-l\fILTA" 5
+Specifies the number of seconds for which data are subtracted in average when data for offset are subtracted. Default is 1 second.
+.IP "\fB\-p" 5
+Transmits the standard input to the standard output.
+.IP "\fB\-x\fIWIDTH" 5
+Is the number of pixels of 1 trace in X-direction. Default is 800.
+.IP "\fB\-c\fICOLOR" 5
+Plots in white for the standard, displays in red for -c1, and displays in order of red, blue and yellow for -c3.
+.IP "\fB\-f\fISHMDUMP.OUT" 5
+Reads data from file SHMDUMP.OUT to display.
+.IP "\fB\-t\fITABLE" 5
+Reads channel table of WIN. Observation point name and component name will be displayed.
+.IP "\fB\-H\fIHOSTNAME" 5
+Connects to option: HOSTNAME at the time of TCP connection. 
+.IP "\fB\-P\fIPORT" 5
+Connects to option: PORT number at the time of TCP connection.
+.SH SOURCE 
+.TP
+`shmck'
+.SH SEE ALSO
+shmdump(1W)

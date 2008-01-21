@@ -1,0 +1,30 @@
+.TH win2fix 1W "1998.6.18" "WIN SYSTEM" "WIN SYSTEM"
+.SH NAME
+win2fix - Converting win format data to 4-byte integer array
+.SH SYNOPSIS
+.nf
+win2fix(ptr,abuf,ch,sr) /* returns group size in bytes */
+  unsigned char *ptr;   /* input data */
+  long *abuf;           /* output data */
+  long *ch;             /* ch : output */
+  long *sr;             /* sr : output */
+.fi
+.SH DESCRIPTION
+.I win2fix
+converts data (the head is 4-byte channel header) for 1 second x 1 channel of a win format entered in buffer
+.I \ ptr
+to 4-byte integer array and enters in
+.I \ abuf.
+Addresses indicated by
+.I \ ch
+and
+.I \ sr
+store 16-bit channel numbers and the number of data, namely sampling rate.
+.LP
+.I win2fix
+Returns size (byte) of channel block including channel header part of input data. 
+.SH SOURCE 
+.TP
+`win2fix.c'
+.SH SEE ALSO
+winformat(1W), winform(1W)

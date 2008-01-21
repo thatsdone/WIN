@@ -1,0 +1,243 @@
+'\" t
+.TH pmon 1W "2002.3.24" "WIN SYSTEM" "WIN SYSTEM"
+.SH NAME
+pmon - Trigger list creation and monitor record printing
+.SH SYNOPSIS
+pmon [\-\fBo\fR] [\-\fBl\fI logfile\fR]
+.I param_file
+.br
+pmon [\-\fBo\fR] [\-\fBl\fI logfile\fR]
+.I param_file
+.I yymmdd
+.I hhmm
+.I length
+.LP
+.SH DESCRIPTION
+Pmon reads MON format data files to write trigger lists to files or output monitor records to the printer.
+MON format data files to be read are minute-by-minute files written by wdisk(1W) or fromtape(1W) and named in "year, month, day, hours, and minutes" format.
+The first format is one normally used for online background operation. The program continues running until signaled to stop.
+
+The second format is used for operation with a data period specified.
+The six digits of
+.I yymmdd
+specify the year, month, and day of the starting date, each specified by two digits.
+Similarly, the four digits of
+.I hhmm
+specify the hours and minutes, each specified by two digits.
+.I length
+specifies the period in minutes.
+.LP
+The manner of operation of pmon must be described in the settings file
+.I paramfile.
+In
+.I paramfile,
+each line contains one specified item, and its meaning depends on its position from the top. In any line other than the first line, only the first item delimited by a space, tab or line feed is read, while the subsequent part of the line is processed as a comment. Only the first line is read in including the line feed. Any lines starting with "#" are bypassed as comment lines. The contents of the respective lines are as follows:
+.IP
+.ti -5
+Line 1: Character string (up to 160 characters) printed on the left bottom of the monitor record printout sheet
+.IP
+.ti -5
+Line 2: Directory of MON format data files. Pmon loads data from this directory. In addition, pmon creates a flag file USED, which contains the "name of the MON file last loaded" in this directory. When a second directory delimited by ":" is specified, however, the flag file USED will be created in this second specified directory.
+When started in the first format, pmon uses the file USED to determine the point to which processing was completed last time and the point from which processing should be resumed this time. In other words, pmon resumes processing from the one minute file immediately subsequent to the one indicated by USED. However, if started in the first format either when the USED file is not found or when the content of the USED file is invalid, pmon will read a file LATEST, located in the MON format data file directory and containing the latest one minute file name, and will resume processing from this file.
+Moreover, if started in the first format, pmon will retrospectively adjust the time for resuming data processing to prevent any "time" shift from falling between printout sheets.
+.IP
+.ti -5
+Line 3: Working directory
+If specified with an integer following a delimiter ":," this directory will be where Sun Raster format print image files are saved in. These files will be named in the "YYHHDD.hhmm-hhmm.ras" format indicating a period of 10 minutes. The files will be deleted in order of time so that as many of the newest ones as specified by this line can be saved ("0" means "no deletion.").
+It must be noted here that files to be counted and deleted include not only those with a file name in the abovementioned format but also all files in the same directory that each have a file name beginning with a number. In this directory, files COUNT, MAX, LATEST, and OLDEST respectively contain the current number of files, the maximum number of files, the latest file name, and the oldest file name. Additionally, any appropriate program can optionally be specified with another ":" delimiter following the abovementioned integer so that Sun Raster format print image files will be transferred to that program.
+This program gets started with the accompaniment of the three arguments, namely, path name, working directory name, and "YYHHDD.hhmm-hhmm" (print image file name albeit with ".ras" extension removed), of a print image file, which will be deleted upon the completion of the transfer operation. For example, if a program "ras2gif" that goes as follows:
+program "ras2gif"
+.RS
+.IP "" -3
+.nf
+#!/bin/sh
+# ras2gif [rasfile] [outdir] [basename]
+PATH=/usr/X11R6/bin
+rasttopnm $1|pbmreduce -threshold -value 0.8 2|ppmtogif>$2/$3.2.gif
+.fi
+.RE
+.IP
+is created to halve the file size by conversion to the GIF format, and if
+.IP
+.nf
+/dat/pmon:1440:/home/auto/ras2gif
+.fi
+.IP
+is specified as the working directory line in the setting file, GIF format files for 10 days will always be saved in /dat/pmon. To create an index page for viewing GIF files thus created on WWW, make_pmon_index(1W) can be used.
+.IP
+.ti -5
+Line 4: Path name of a channel table file to be used
+.IP
+.ti -5
+Line 5: Name of the monitor record output destination printer. Image outputs from pmon are printed in Sun Raster format with a resolution of 400 dpi on size A4 vertical sheets. The printer must be compatible with lpr command to allow processing of -v.
+If specified with a name starting with a non-alphabetic character (e.g., "*"), the printer will fail to print. There are filtering programs such as lpf_lbpvf(1W), ras2rpdl(1W), and ras2lips(1W) for use with systems that do not by default support printing in Sun Raster format.
+.IP
+.ti -5
+Line 6: Specifies how many stages a print page should be divided into. The time axis setting is fixed to 10 minutes per stage. Accordingly, the time per page print job will be 10 minutes multiplied by the number of stages specified by this line.
+.IP
+.ti -5
+Line 7 line: Specifies how many channels should be printed out. A trace with the number of channels specified by this line will be printed per stage.
+A rule of thumb for the relationship between the number of stages per page and the maximum number of printable channels is as follows:
+.RS
+.IP
+.TS
+c c c
+n n n.
+Number of stages	Time (min)/page		Max. number of channels
+1	10	209
+2	20	103
+3	30	67
+6	60	32
+9	90	20
+12	120	14
+.TE
+.RE
+.LP
+The subsequent lines contain parameters for creating trigger lists:
+.IP
+.ti -5
+Line 8: Name of the trigger list file to be printed. When initiated, pmon first reads this file to the end and avoid printing trigger information from any time earlier than the latest time already on the list.
+.IP
+.ti -5
+Line 9: Zone definition file name. In this text file, each line defines one zone. Each line head contains a zone name. Each zone name is followed on the right by one or more names of observation points belonging to that zone, each delimited by a blank, tab, "/," or "+." There is no restriction on the number of zones to be defined.
+An observation point can belong to up to ten zones.
+The "#" at each line head will be ignored.
+.IP
+.ti -5
+Line 10: Specifies at how many observation points out of those belonging to a same zone a trigger should be detected simultaneously to declare a "zone trigger."
+[3]
+.IP
+.ti -5
+Line 11: Time constant (secs) for calculating the short time average (STA) of the amplitude.
+.IP
+.ti -5
+Line 12: Time constant (secs) for calculating the long time average (LTA) of the amplitude.
+.IP
+.ti -5
+Line 13: Time constant (secs) for calculating the LTA of the amplitude of a trigger. This value is set considerably longer than that of Line 12 to prevent premature end of a trigger in an event with large amplitude.
+.IP
+.ti -5
+Line 14: Minimum required length of time (secs) of a series of STA/LTA values exceeding the trigger level, after which a trigger is declared for an observation point. Any length of time shorter than this will be ignored.
+.IP
+.ti -5
+line 15: Minimum required length of time (secs) of a series of STA/LTA values being below the trigger level, after which a trigger is declared for an observation point. If this length of time is unreached, the trigger will be determined to be continuing.
+.IP
+.ti -5
+Line 16: Levels (0 to 3) of output to the trigger list file. The details of each level are as follows:
+.RS
+.LP
+.nf
+0: No output
+1: Whole network?2: Individual zone trigger information also included in output. Output indented by one character.
+3: Observation point trigger information also included in output. Output indented by two characters.
+.fi
+.RE
+.LP
+Line 17 and subsequent lines define parameters for individual observation points. The amount of information for the number of channels set by Line 7 is set on a one-line-for-one channel basis.
+The channels specified here will be printed on monitor records and at the same time used for trigger detection. Null lines will be included in the count of the number of channels set by Line 7, so that blank space for 1 space will be left on monitor records. Each line contains the following sequence of four items, each delimited by a blank or tab. The fifth and subsequent items will be bypassed as comments.
+.IP
+.ti -5
+(1) Observation point code and (2) component name (these must be included in the channel table file specified by Line 4).
+.IP
+.ti -5
+(3) Plot amplitude scale
+Specifies the exponent of the negative power of 2 by which data is divided to be plotted.
+When the scale is 0, one data count corresponds to a pixel of a 400 dpi printer.
+.IP
+.ti -5
+(4) Specifies the STA/LTA ratio value, which is used as the trigger level, with a numerical value with a decimal point. If it is 0.0, the value is not used as the trigger level.
+.LP
+An example of the content of a typical
+.I paramfile
+is as follows:
+.LP
+.nf
+EARTHQUAKE RESEARCH INSTITUTE,  UNIVERSITY OF TOKYO
+#                     /* (1) footnote */
+/dat/mon:/dat/mon1    /* (2) mon data directory */
+/var/tmp              /* (3) temporary work directory */
+/dat/etc/channels.tbl /* (4) channel table file */
+lp                    /* (5) print name or '*' for no print */
+12                    /* (6) rows/sheet (10 min/row) */
+12                    /* (7) N of channels, or traces/row */
+#
+#  EVENT DETECTION PARAMETERS
+#
+/dat/etc/pmon.out  /* ( 8) file for event trigger report */
+/dat/etc/zones.tbl /* ( 9) file fo definition of zones */
+3                  /* (10) minimum number of stations to trigger */
+0.3                /* (11) time const (sec) of STA */
+60.0               /* (12) time const (sec) of LTA */
+1000.0             /* (13) time const (sec) of LTA (during trigger) */
+2.0                /* (14) duration time (sec) for trigger */
+10.0               /* (15) post-event time (sec) to declare end */
+1                  /* (16) trigger report level (0:no - 3:full) */
+#
+#  CHANNEL TABLE
+#
+#  comp sta/lta(0.0 for unuse) 
+#name  scl
+#
+OKY  U  2 1.5
+FCO  U  3 1.5
+MOT  U  3 1.5
+OOZ  U  3 1.5
+UMJ  U  3 1.5
+FUJ  U  3 2.5
+FJZ  U  3 0.0
+KMR  U  3 0.0 
+MTS  U  5 2.5
+FJO  U  3 2.5
+AKY  U  2 2.5
+SRY  U  3 2.5
+.fi
+.LP
+When receiving a hang-up signal, pmon sends and prints the monitor record it has plotted in the memory by then by the printer. This printout is a redundant output that does not affect the contents or intervals of regular print jobs.
+.LP
+An example of zone definition files is as follows:
+.LP
+.nf
+FUJIGAWA   OKY FCO MOT OOZ UMJ KRMT / AKY SRY OYM OWD KIN MHK
+W-KANTO    SIMB FUJ FJZ KMR MTS FJO / HKN ATA OKY FCO
+IZU-PEN    HKN ATA NRY AZRO HAT / SNK OKA J-H
+OSHIMA     SNK OKA J-H KSK / TKO1 TKO2 TKO3 TKO4
+TOKAI      TKO1 TKO2 TKO3 TKO4 SAGR OMZK / SNK OKA J-H
+.fi
+.LP
+An example of trigger list content (when output level = 1) is as follows:
+.LP
+.nf
+971022.123205 on, at W-KANTO
+971022.123300 cont, 1 zone
+971022.123304 off, FUJIGAW NIHONKA IZU-PEN
+971022.125209 on, at ASHIO
+971022.125221 off,
+971022.131301 on, at IZU-PEN
+971022.131400 cont, 2 zones
+971022.131421 off, W-KANTO FUJIGAW N-KANTO S-KANTO NANSHIN ASHIO
+.fi
+.LP
+In this example, a trigger first occurred in the W-KANTO zone at 12:32:05, October 22, 1997. Then, the trigger continued in one zone as of 12:33:00 and ended at 12:33:04. The report shows that the trigger was detected in the W-KANTO and eventually in three zones of FUJIGAWA, NIHONKAI, and IZU-PEN during this event (a zone name characters after the eighth are curtailed). During the second event, another trigger continued in the ASHIO zone from 12:52:09 to 12:52:21. Similarly, the third event shows that yet another trigger first occurred in the IZU-PEN zone between 13:13:01 and 13:14:21, and then in six other zones including W-KANTO by the end.
+.LP
+When pmon is initiated without any argument, brief usage is displayed.
+.LP
+To prevent simultaneous execution of two different pmons that write output to a same trigger list file, each pmon uses a locked file named "output trigger list file name".lock. With this file in the same directory as the trigger list file, pmon fails to start.
+.LP
+Every 10 minutes and only when no triggered channels exist, pmon rereads Line 10 and subsequent lines of the settings file
+.I paramfile
+and updates the settings as appropriate. This allows for changing the trigger-related settings without stopping pmon. It is still recommended to restart the program to ensure safe setting changes.
+.SH MESSAGES
+If started in the second format, pmon writes various messages about the loading of zone definition and MON format data files to the standard output. When started in the first format, pmon does not write these messages. However, pmon writes messages ("XXX absent" and "XXX present") to the standard output if the specified observation point data does not exist in the MON file and if the data is recovered.
+.SH OPTIONS
+.IP \fB\-o 5
+Allows for plotting with offsets removed. The average value of the initial one minute is used as the offset value. Note that, with this option specified, the offset voltage per se cannot be monitored.
+.IP "\fB\-l \fIlogfile" 5
+Writes log messages to the file
+.I logfile.
+If this option is not specified, log messages will be written to the standard output.
+.SH SOURCE
+.TP
+`pmon.c'
+.SH SEE ALSO
+wdisk(1W), events(1W), fromtape(1W), lpf_lbpvf(1W), ras2rpdl(1W),
+ras2lips(1W), make_pmon_index(1W)

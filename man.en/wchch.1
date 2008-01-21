@@ -1,0 +1,23 @@
+.TH wchch 1W "1997.12.4" "WIN SYSTEM" "WIN SYSTEM"
+.SH NAME
+wchch - Filter for changing channel number of win format file
+.SH SYNOPSIS
+wchch
+.I chfile
+.LP
+.SH DESCRIPTION
+Wchch makes win format file given by the standard input to be input. As for channel of which channel numbers before and after change is listed in channel file
+.I \ chfile,
+it changes the channel number as listed, and, as for other channels, it transmits copy to the standard output as they are.
+Channel file is a text file written in hexadecimal number with 1 channel per line in which a pair of channel numbers before and after change is delimited by blank or tab. 
+In each line, only the top two items are read as the channel numbers before and after change, and remaining parts are bypassed. 
+.LP
+When wchch is initiated without argument, brief usage is displayed. 
+.SH OPTIONS
+.TP 
+None.
+.SH SOURCE 
+.TP
+`wchch.c'
+.SH SEE ALSO
+wch(1W), wed(1W), win(1W), wck(1W), wadd(1W), winformat(1W)

@@ -1,0 +1,25 @@
+.TH latest 1W "1997.6.20" "WIN SYSTEM" "WIN SYSTEM"
+.SH NAME
+latest - Using win to view latest one minute file in /dat/raw
+.SH SYNOPSIS
+latest
+[
+.I zone ... ]
+.LP
+.SH DESCRIPTION
+Latest uses win(1W) to open the latest win-formatted minute-by-minute file in /dat/raw as specified by the content of the /dat/raw/LATEST file.
+When given a zone name (
+.I zone ... )
+as an argument, only the channels of the observation points belonging to that zone will be relevant. Though the name of an observation point can be given instead of the zone name, the channels of all the observation points in that zone including that particular observation point will be included.
+.LP
+To obtain a channel number based on a zone name or observation point names, latest uses the channel table file and zone table file specified as win.prm in the current directory. In addition, latest also uses the working directory specified as win.prm to temporarily store waveform files cut out for necessary channels. If win.prm is not found, /dat/etc/channels.tbl, /dat/etc/zones.tbl, and /tmp will be used as appropriate.
+.LP
+Latest is a shell script using wch(1W).
+.SH OPTIONS
+.TP 
+NONE
+.SH SOURCE
+.TP
+`latest'
+.SH SEE ALSO
+wch(1W), wed(1W), win(1W), wck(1W), winformat(1W), wdisk(1W)

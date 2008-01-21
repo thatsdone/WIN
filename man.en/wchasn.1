@@ -1,0 +1,23 @@
+.TH wchasn 1W "2003.8.9" "WIN SYSTEM" "WIN SYSTEM"
+.SH NAME
+wchasn - Filter for forcibly assigning channel number of win format file
+.SH SYNOPSIS
+wchasn
+.I ch
+.LP
+.SH DESCRIPTION
+wchasn makes win format file given by the standard input to be input, assigns channel numbers of hexadecimal number
+.I \ ch
+by incrementing in order where the number of channels contained in one second block, and transmits to the standard output. It is assumed that arrangement of data in second block is same (that is to say, for example, data of vertical movement components, data of north and south components, and data of east and west components are always arranged firstly, secondly and thirdly respectively in a data file).
+.LP
+When wchasn is initiated without argument, brief usage is displayed.
+.SH CAUTION
+If the purpose is to change channel numbers, wchch(1W) should be used. When one does not understand what he should do, this command should not be used. 
+.SH OPTIONS
+.TP 
+None
+.SH SOURCE 
+.TP
+`wchasn.c'
+.SH SEE ALSO
+wchch(1W), wch(1W)

@@ -1,0 +1,170 @@
+.TH intro_win 1W "1995.7.14" "WIN SYSTEM" "WIN SYSTEM"
+.SH 名称
+intro_win - WIN の手引
+.SH 解説
+マニュアルのセクション1Wは、
+WINシステムを構成するコマンドのほとんどについて書かれています。
+セクション1Wに含まれるコマンドを以下にいくつか列挙します。
+
+.RS
+.ti -3
+_bj, _bj1, _bj2 - イベント収録サーバーのデータベース処理
+.ti -3
+_update, _update1, _update2 - イベント収録サーバーのデータベース更新処理
+.ti -3
+automan - 自動検測処理の割り当て
+.ti -3
+autopick - 自動検測処理の実行
+.ti -3
+clean_nmx - ディレクトリ中の古いファイルを削除する
+.ti -3
+cormeisei - GTA-45Uデータのリアルタイム最小位相特性化
+.ti -3
+dat - win システムの共有ディレクトリ形式
+.ti -3
+dewin - win 形式ファイルから単一チャネルのデータの抜き出し
+.ti -3
+ecore - win 形式ファイルから JARRAY データを作る
+.ti -3
+elist - トリガー・検測情報データベースを作る
+.ti -3
+events, eventsrtape - リストに従ったイベント波形の切り出し
+.ti -3
+extraw - データパケットと制御パケットを分離する
+.ti -3
+find_picks - pickファイル検索サーバープログラム
+.ti -3
+fromtape - テープ上の win 形式データからディスク上に分ファイルを作る
+.ti -3
+hypomh - 平田・松浦による震源決定プログラム
+.ti -3
+insert_raw - タイムアウトしたデータを１分ファイルに挿入
+.ti -3
+insert_raw2 - タイムアウトしたデータを１分ファイルに挿入
+.ti -3
+insert_trg - タイムアウトしたデータをイベントファイルに挿入
+.ti -3
+latest - /dat/raw にある最新の１分ファイルを win で見る
+.ti -3
+lpf_lbpvf - Sun Raster形式イメージのSONY NEWS LBPへの印刷
+.ti -3
+ls8tel16_raw - 白山WIN(LS8TEL16) の通常 win 形式データへのオンライン変換
+.ti -3
+ls8tel16_win - 白山WIN(LS8TEL16) の通常 win 形式データへの変換
+.ti -3
+ls8tel_STM - 白山 LS8TEL ファームの動作情報(A9)データの表示
+.ti -3
+ls8tel_STS - 白山 LS8TEL ファームの設定情報(A8)データの表示
+.ti -3
+makefile - win システムのプログラム群コンパイル用 makefile
+.ti -3
+mkpicknoise - NOISE ラベルの付いた pickfile の整合性を取る
+.ti -3
+newym - イベント収録サーバーでの月切り替え処理
+.ti -3
+order, orderd - 共有メモリ中の win 形式データの時間順整列
+.ti -3
+pick2pick - 他の波形ファイル用への pickfile の書換えフィルター
+.ti -3
+pickfile - win の検測情報ファイル
+.ti -3
+pmon - トリガーリストの作成とモニター記録の印刷
+.ti -3
+ras2lips - Sun Raster形式イメージからLIPS言語への変換フィルター
+.ti -3
+ras2rpdl - Sun Raster形式イメージからRPDL言語への変換フィルター
+.ti -3
+raw2mon - RAW 形式データから MON 形式データを作るフィルタ
+.ti -3
+raw_100 - RAW 形式データのサンプリングレートを 100Hz に変更
+.ti -3
+raw_ch - RAW 形式データのチャネル番号を変換
+.ti -3
+raw_mon, raw_mond - RAW 形式データから MON 形式データへの変換
+.ti -3
+raw_raw - RAW 形式データからチャネルを選択
+.ti -3
+raw_shift - RAW 形式データを任意ビット数右シフト
+.ti -3
+raw_time - RAW 形式データの時間ずらしフィルター
+.ti -3
+recvnmx - Nanometrics UDP/IPパケットの受信
+.ti -3
+recvs - シリアルポートから種別つきデータを受信
+.ti -3
+recvstatus - 明星GTA-45Uステータスパケットの受信
+.ti -3
+recvstatus2 - 白山WIN_UDP動作/設定ステータスパケットの受信
+.ti -3
+recvstatus3 - 白山WIN_UDP動作/設定ステータスパケットの受信(LS8TEL)
+.ti -3
+recvt, recvtd - IPによる win 形式データの受信
+.ti -3
+recvts - HDLCボードからの win 形式データの受信
+.ti -3
+relay, relayd - win 形式データのIP上の中継
+.ti -3
+relaym, relaymd - win 形式データのIP上の複数の宛先への中継
+.ti -3
+rtape - テープ上の win 形式データからディスク上にファイルを切り出す
+.ti -3
+select_stations - チャネル表形式のファイルから任意の領域の観測点を選び出す
+.ti -3
+send_raw, send_mon, sendt_raw, sendt_mon, send_rawd, send_mond, sendt_rawd, sendt_mond - IPによる win 形式データの送信
+.ti -3
+send_raw_old, send_mon_old, sendt_raw_old, sendt_mon_old - IPによる win 形式データの送信（旧パケット形式）
+.ti -3
+sends - 共有メモリからシリアルポートへデータを送信
+.ti -3
+shmck - WINシステム用モニターツール 
+.ti -3
+shmdump - 共有メモリ・セグメント上のデータのモニタ
+.ti -3
+shmx - WINシステム用モニターツール 
+.ti -3
+shmz - WINシステム用モニターツール 
+.ti -3
+wadd - 時間の重なった２つの win 形式ファイルの結合
+.ti -3
+wadd2 - 時間の重なった２つの win 形式ファイルの統合
+.ti -3
+wch - win 形式ファイルのチャネルでの選択フィルター
+.ti -3
+wchasn - win 形式ファイルのチャネル番号強制割り当てフィルター
+.ti -3
+wchch - win 形式ファイルのチャネル番号変更フィルター
+.ti -3
+wck - win 形式ファイルの内容の検査
+.ti -3
+wck_wdisk - wdisk で書き込まれた win 形式ファイルの内容の検査
+.ti -3
+wdisk, wdisk60, wdiskd, wdisk60d - win 形式データのディスクファイルへの書き込み
+.ti -3
+wdiskts, wdisktsd - 「書き込み時刻」付 win 形式データのディスクファイルへの書き込み
+.ti -3
+wed - win 形式ファイルの時間範囲とチャネルでの編集
+.ti -3
+wex - win 形式ファイルの地域名による選択フィルター
+.ti -3
+win - 地震波形検測支援プログラム
+.ti -3
+win2fix - win 形式データを４バイト整数配列へ変換
+.ti -3
+win2raw - win 形式ファイルの1分ファイルへの分割
+.ti -3
+winadd - win 形式ファイルの結合
+.ti -3
+winform - win 形式データへの変換
+.ti -3
+winformat - 多チャネル地震波形データ用フォーマット
+.ti -3
+wintosac - WIN テキストフォーマット -> SAC/SAC2000 フォーマット 変換ツール
+.ti -3
+wintowin - WIN テキストフォーマット -> WIN フォーマット 変換ツール
+.ti -3
+wtape - win 形式１分ファイルのテープへの書き込み
+.ti -3
+wtime - win 形式ファイルの時刻ずらしフィルター
+.RE
+.SH 関連項目
+win(1W)

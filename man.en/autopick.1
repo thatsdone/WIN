@@ -1,0 +1,27 @@
+.TH autopick 1W "1997.12.3" "WIN SYSTEM" "WIN SYSTEM"
+.SH NAME
+autopick - Execution of automatic inspection processing
+.SH SYNOPSIS
+autopick [
+.I directory
+]
+.LP
+.SH DESCRIPTION
+autopick is always executed, and performs automatic inspection processing of event waveform assigned by automan(1W). Assignment of processing from automan(1W) is performed by allowing a zero size file with the same name as waveform file to be created in directory /dat/autos/own host name. autopick firstly inspects directory /dat/autos/own host name. If files are found there, it selects a file having the earliest time name among them to perform automatic inspection processing. If not found, it pauses for 20 seconds. Then loop returns to initial condition. Automatic inspection processing is actually performed by attaching win(1W) with initiation option "-abwt" and initiating it in automatic processing mode.
+In addition, the setting file used by win(1W) at this time is not default win.prm but is win.prm.auto. 
+When the called win(1W) is finished, autopick deletes corresponding files of /dat/autos/own host name, additionally writes one line log in /dat/log/autopick.log, and writes processed waveform file name in /dat/trg/USED. 
+.LP
+When
+.I directory
+is given as argument, that directory is used instead of directory /dat (read all "/dat" portions in the above description as \fIdirectory\fR).
+However, the setting file used by win(1W) is \fIdirectory\fR/etc/win.prm.auto instead of win.prm.auto.
+.LP
+autopick is generally initiated from _win(1W) in background. 
+.SH OPTIONS
+.TP 
+None.
+.SH SOURCE 
+.TP
+`autopick'
+.SH SEE ALSO
+_win(1W), automan(1W), win(1W)

@@ -1,0 +1,51 @@
+.TH recvstatus 1W "2002.6.19" "WIN SYSTEM" "WIN SYSTEM"
+.SH NAME
+recvstatus - Receiving Meisei GTA-45U status packet
+.SH SYNOPSIS
+recvstatus
+.I port
+[
+.I logfile
+]
+.LP
+.SH DESCRIPTION
+Recvstatus receives status packet of telemeter instrument GTA-45U manufactured by Meisei Electric Co. transmitted from the GTA-45U HDLC frame packet receiving program hdlc of the DOS base by the UDP port
+.I \ port,
+and writes in file
+.I \ logfile.
+When
+.I \ logfile
+is not given, it writes in the standard output.
+Status information on 1-byte of GTA-45U is added to all the HDLC frames, and hdlc transmits all the information. Recvstatus writes it only when its status byte is changed. 
+An example of form to be written in
+.I \ logfile
+is as follows:
+.LP
+.nf
+020619.093206 recvstatus 192.168.211.16:1031 16 020619 093202 0416 ... 00
+.fi
+.LP
+The above data show, from left, year, month, day, hour, minute and second of log; program name; IP address and port number of host that has sent status; observation point number (lower 1-byte of channel number); time stamp of status (year, month, day, hour, minute and second); channel number; and status byte. Meanings of each bit of status byte are as follows: 
+.LP
+.nf
+ Bit     Meaning
+
+   80     Power failure
+   40     Battery charge down 
+   20     GPS RX error
+   10     GPS INVALID
+   08     Leap second (not used)
+   04     GS CONT error
+   02     INTEL COM A error
+   01     SPAD error
+.fi
+.LP
+When recvstatus is initiated without argument, brief usage is displayed.
+.SH OPTIONS
+.TP
+None.
+.SH SOURCE
+.TP
+`recvstatus.c'
+.SH SEE ALSO
+winformat(1W)

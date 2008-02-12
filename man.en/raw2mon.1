@@ -1,0 +1,19 @@
+.TH raw2mon 1W "1998.6.18" "WIN SYSTEM" "WIN SYSTEM"
+.SH NAME
+raw2mon - Filter for creating MON format data from RAW format data
+.SH SYNOPSIS
+raw2mon
+.LP
+.SH DESCRIPTION
+Raw2mon loads RAW format data from the standard input and converts them into the MON format to write the resulting data to the standard output. The output will contain all the channels of the input data.
+.SH OPTIONS
+.TP 
+None
+.SH TYPICAL USAGE
+.TP 
+raw2mon < /dat/raw/95081711.30 > /dat/mon/95081711.30
+.SH SOURCE
+.TP
+`raw2mon.c'
+.SH SEE ALSO
+raw_mon(1W), wed(1W), wck(1W), winformat(1W)

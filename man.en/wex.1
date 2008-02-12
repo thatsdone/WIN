@@ -1,0 +1,24 @@
+.TH wex 1W "1997.6.20" "WIN SYSTEM" "WIN SYSTEM"
+.SH NAME
+wex - Filter for selecting win format filter by zone name
+.SH SYNOPSIS
+wex
+.I zone ...
+.LP
+.SH DESCRIPTION
+Wex makes a win format file given by the standard input to be input and cuts out only channels of observation points contained in zone name (
+.I zone ...
+) given as argument to send a copy to the standard output.
+Observation point names can be given instead of zone names. However, in such cases, all channels of observation points in the zone including that observation point are transmitted.
+.LP
+In order to obtain a channel number from the zone name or the observation point name, wex utilizes a channel table file and a zone table file specified by win.prm existing in the current directory. When no win.prm is found, it attempts to use /dat/etc/channels.tbl and /dat/etc/zones.tbl respectively. 
+.LP
+Wex is shell script utilizing wch(1W). 
+.SH OPTIONS
+.TP 
+None.
+.SH SOURCE 
+.TP
+`wex'
+.SH SEE ALSO
+wch(1W), wed(1W), win(1W), wck(1W), winformat(1W)

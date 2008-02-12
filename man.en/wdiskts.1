@@ -1,0 +1,73 @@
+'\" t
+.TH wdiskts 1W "2002.5.31" "WIN SYSTEM" "WIN SYSTEM"
+.SH NAME
+wdiskts, wdisktsd - Write of win format data with "written time" in disk file 
+.SH SYNOPSIS
+wdiskts
+.I shmkey
+.I outdir
+[
+.I nfiles
+[
+.I logfile
+]]
+.LP
+wdisktsd
+.I shmkey
+.I outdir
+[
+.I nfiles
+[
+.I logfile
+]]
+.LP
+.SH DESCRIPTION
+Wdiskts writes win format data with "written time" written in the shared memory segment of a key
+.I shmkey
+in a directory
+.I outdir
+of disk as a win format file. Since it reads from the shared memory in memory for each 1 second, it is necessary that the size of shared memory of read side is one that does not allow overwrite for 1 second. 
+When value in minute is changed, it immediately writes in disk, and it aligns packets in order of time during write. In wdiskts, files are put together in files having a name of 'YYMMDDhh.mm' format for each 1 minute. System time is used as a file name. Therefore, when the system time jumps for 1 minute or more, file names may be discontinuous or written file may be overwritten.
+.I \ nfiles
+The maximum number of files to be saved. Files of which latest number of files is
+.I \ nfiles
+are always saved, and files older than those are deleted. 
+When
+.I nfiles
+is not specified, or when '0' is specified, files are not automatically deleted. 
+.LP
+Wdisktsd is initiated in daemon mode.
+.LP
+When a log file name
+.I \ logfile
+is specified, operation log is set here, and when not specified, log information is sent to the standard output (however, it is sent to syslogd(8) when operation is made in the daemon mode).
+Log file is opened/closed in each write.
+.LP
+When wdiskts is initiated without argument, brief usage is displayed. 
+.SH FORMAT ON SHARED MEMORY 
+Refer to recvt(1W).
+Note that
+\fB\-B\fR
+does not support format written by option. 
+.SH FILE
+Wdiskts creates the following text file in an output directory
+.I \ outdir,
+and shows operation status depending on each content.
+
+.RS
+.TS
+l l.
+BUSY	File name currently being written
+COUNT	The current number of files 
+LATEST	The latest files of which write is completed
+MAX	The number of files to be saved
+OLDEST  The oldest file name
+.TE
+.RE
+.LP
+When MAX is rewritten in operation of wdiskts, then "the number of files to be saved" changes to a new value. 
+.SH SOURCE 
+.TP
+`wdiskts.c'
+.SH SEE ALSO
+recvt(1W), order(1W)

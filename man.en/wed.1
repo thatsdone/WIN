@@ -1,0 +1,38 @@
+.TH wed 1W "1995.7.14" "WIN SYSTEM" "WIN SYSTEM"
+.SH NAME
+wed - Time range of win format file and edition in channel
+.SH SYNOPSIS
+wed
+.I date
+.I time
+.I length
+[
+.I chfile
+]
+.LP
+.SH DESCRIPTION
+Wed makes a win format file given by the standard input to be input, and cuts out data for
+.I \ length
+seconds from the time indicated by
+.I \ date
+and
+.I \ time
+to send a copy the standard output. 
+If a channel file
+.I \ chfile
+is specified, only channels listed there are cut out. 
+.I \ date
+is a figure containing two digits each of year, month and day (total 6 digits), and
+.I \ time
+is indicated by two digits each of hour, minute and second (total 6 digits). 
+Channel file is a text file in which channel numbers of hexadecimal number desired to cut out are arranged delimited by blank, tab or line feed. 
+.LP
+When wed is initiated without argument, brief usage is displayed.
+.SH OPTIONS
+.TP 
+None.
+.SH SOURCE 
+.TP
+`wed.c'
+.SH SEE ALSO
+win(1W), wck(1W), wadd(1W), winformat(1W), wch(1W), wex(1W)

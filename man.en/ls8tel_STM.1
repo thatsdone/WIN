@@ -1,0 +1,17 @@
+.TH ls8tel_STM 1W "2005.6.14" "WIN SYSTEM" "WIN SYSTEM"
+.SH NAME
+ls8tel_STM - Displaying operation information data (A9) of Hakusan LS8TEL firmware
+.SH SYNOPSIS
+ls8tel_STM
+.LP
+.SH DESCRIPTION
+ls8tel_STM loads operation information (data main body of A9 packets) of data logger LS-8000SH (firmware: LS8TEL16, LS8TEL14) manufactured by Hakusan Corporation from the standard input and displays some of the information in the standard output.
+.LP
+The displayed information contains times, the logger address, almanac dates, the names of used satellites (8 channels in total. 00 means non-use.), and error information (in milliseconds). If all the used satellites are displayed as 00, it means that time calibration failed and * will be attached. In addition, any error information ending with an error of 5 msec or over (at a sampling interval of 200 Hz) or with an error of 10 msec or over (at a sampling interval of 100 Hz) will be marked with * or **, respectively.
+.SH OPTIONS
+None
+.SH SOURCE
+.TP
+`ls8tel_STM.c'
+.SH SEE ALSO
+recvstatus3(1W), ls8tel_STS(1W)

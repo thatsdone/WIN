@@ -1,0 +1,70 @@
+.\" $Id: raw_time.1,v 1.1.2.2 2008/02/12 06:32:53 uehira Exp $
+.TH raw_time 1W "2005.3.17" "WIN SYSTEM" "WIN SYSTEM"
+.SH NAME
+raw_time - Time staggering filter for RAW format data
+.SH SYNOPSIS
+raw_time [\-\fBBD\fR]
+.I inkey
+.I outkey
+.I shmsize
+.I chfile
+[
+.I logfile
+]
+.LP
+raw_timed [\-\fBB\fR]
+.I inkey
+.I outkey
+.I shmsize
+.I chfile
+[
+.I logfile
+]
+.LP
+.SH DESCRIPTION
+Raw_time reads raw format data cyclically written in shared memory segment of a key
+.I inkey,
+staggers time according to
+.I chfile,
+and writes the results in the shared memory segment given by
+.I outkey.
+When the shared memory segment having the key
+.I outkey
+does not exist, the shared memory segment of size
+.I shmsize
+(KB) is created. When the segment already exists but has a size smaller than
+.I shmsize
+(KB), an error occurs. The shared memory key is a 32-bit integer value. 
+.LP
+Raw_timed is initiated in daemon mode. 
+.LP
+When log file name
+.I logfile
+is specified, operation log is set here. When it is not specified, log information is sent to the standard output (however, it is sent to syslogd(8) when the operation is made in daemon mode). Log file is opened/closed in each write. 
+.LP
+.I chfile
+describes information [1] through [3] extracted from channel table file described in win(1W) (Even if [4] and after exists, they are bypassed. That is to say, it describes hexadecimal channel number, recorded flag, and time staggering amount (in ms with integer value) delimited by space or tab with one data per line. When time staggering amount is positive, time stamp of data is subtracted by the time staggering amount, and when it is negative the data is added with the time staggering amount. The purpose of this operation is to ensure consistency with the fact that field [3] of channel table file represents line delay time.
+Only the channel of which recording flag is not 0 and of which delay time is not 0 is transmitted to
+.I outkey.
+In addition, the line starting with '#' is also bypassed. When raw_time process receives a hang-up signal, it rereads the channel file. 
+.LP
+Format on shared memory
+.I inkey
+must be one arranged in order of time (refer to order(1W)). 
+Format of shared memory
+.I outkey
+will be format "with written time" (refer to recvt(1W)).
+.LP
+When raw_time is initiated without argument, brief usage is displayed.
+.LP
+.SH OPTIONS
+.IP "\fB\-B" 5
+Writes in output shared memory in "format having block size also at the end of block." Refer to recvt(1W) and order(1W) for this.
+.IP "\fB\-D" 5
+Is initiated in daemon mode.
+.LP
+.SH SOURCE
+.TP
+`raw_time.c'
+.SH SEE ALSO
+win(1W), order(1W), recvt(1W), wtime(1W)

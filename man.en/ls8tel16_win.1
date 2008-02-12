@@ -1,0 +1,19 @@
+.TH ls8tel16_win 1W "2005.6.10" "WIN SYSTEM" "WIN SYSTEM"
+.SH NAME
+ls8tel16_win - Conversion of Hakusan WIN(LS8TEL16) format data to normal win format data
+.SH SYNOPSIS
+ls8tel16_win
+.SH DESCRIPTION
+ls8tel16_win loads Hakusan win format data transmitted from Hakusan Corporation's data logger LS-8000SH (firmware: LS8TEL16) and converts them into the normal win format to write them to the standard output. The converted output will contain all the channels of the input data.
+.LP
+When required to convert Hakusan win format data in the shared memory, ls8tel16_raw(1W) can be used.
+.SH CAUTION
+Application to any data other than those created by LS8TEL14 or LS8TEL16 will result in output data corruption.
+.SH OPTIONS
+.IP \fB\-h 5
+Exits itself after printing out the usage.
+.SH SOURCE
+.TP
+`ls8tel16_win.c'
+.SH SEE ALSO
+ls8tel16_raw(1W), winformat(1W), order(1W), recvt(1W)

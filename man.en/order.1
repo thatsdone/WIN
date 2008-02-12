@@ -1,0 +1,144 @@
+.TH order 1W "2002.5.31" "WIN SYSTEM" "WIN SYSTEM"
+.SH NAME
+order, orderd - Sorting of win format data in order of time in shared memory
+.SH SYNOPSIS
+order [\-\fBaBD\fR] [\-\fBl\fI key:size\fR]
+.I inkey
+.I outkey
+.I shmsize
+.I limit
+[
+.I logfile
+]
+.LP
+orderd [\-\fBaB\fR] [\-\fBl\fI key:size\fR]
+.I inkey
+.I outkey
+.I shmsize
+.I limit
+[
+.I logfile
+]
+.LP
+.SH DESCRIPTION
+Order sorts "timestamped" win format data not sorted in order of time written in a shared memory segment identified by a key
+.I \ inkey
+in order of time to write them to another shared memory segment identified by another key
+.I \ outkey.
+If the shared memory with the key
+.I \ outkey
+does not exist, a shared memory segment with a size of
+.I \ shmsize
+\ (KB) will be created. When it already exists but has a size smaller than
+.I \ shmsize
+\ (KB), an error will occur.
+The shared memory key is a 32-bit integer value.
+.LP
+Usually, the recvt(1W) process writes data in the input side shared memory.
+When required to sort data, order collects "the chronologically oldest data from the data written in the input-side shared memory in
+.I \ limit
+seconds from the current time but not yet copied to the output-side shared memory" and copies them to the output-side shared memory. Consequently, of the data packets with the same (data) time label, ones that arrive more than 
+.I \ limit
+seconds later than the one that arrives earliest will be read and dumped without being written out. Therefore, even when its resource is running low, the input-side shared memory must have a minimum capacity left for win format data for
+.I \ limit
+seconds.
+.LP
+On the other hand, the number of seconds of
+.I \ limit
+must be determined with consideration of the real time-to-delay time width that data packets arriving at the input side from different systems can have.
+.LP
+Between the input and output sides of order, there can be a maximum delay time of
+.I \ limit
+seconds. The output data will be also delayed from the real time by at least
+.I \ limit
+seconds.
+.LP
+Orderd is initiated in daemon mode. It is the same operation as when option
+\fB\-D\fR
+is specified by order.
+.LP
+When log file name
+.I \ logfile
+is specified, operation log is set here. When it is not specified, log information is sent to the standard output (however, it is sent to syslogd(8) when operation is made in the daemon mode). The log file is opened/closed in each write.
+.LP
+If order is initiated without argument, brief usage is displayed.
+.SH Format in input-side shared memory
+Refer to recvt(1W). Though it can automatically distinguish and accept both the normal format and the "format with blocks ending with a block size," order requires input data to be in the "format with blocks ending with a block size" when it is running in "absolute time-based mode" to be explained later.
+.SH Format in output-side shared memory
+Data written by order to the shared memory are in block format for each one second.
+Each block is structured as follows (Refer to OPTIONS for the alternative format by \fB\-B\fR):
+
+.nf
+     (1) 4-byte block size (bytes)
+     (2) 6-byte time header (1 byte each for yr, mth, day, hr, min, and sec, BCD format)
+          Last two digits of year (00 to 99), month (01 to 12), day (01 to 31),
+          hour (00 to 23), minute (00 to 59), second (00 to 59)
+     (3) Data for one or more channels at the same time (win format)
+.fi
+
+The shared memory segment has the following structure as a whole:
+.nf
+
+     struct Shm {
+       unsigned long p;         /* write point */
+       unsigned long pl;        /* write limit */
+       unsigned long r;         /* latest */
+       unsigned long c;         /* counter */
+       unsigned char d[SIZE];   /* data buffer */
+       } *sh;
+
+.fi
+p, pl, r, and c are administrative variables, and d is the data area. These are all written by a single write-side process. The corresponding read-side process synchronizes itself with these variables to read the data.
+.TP
+p
+Head position of a write-in-progress block (byte count from the head of d)
+.TP
+pl
+Point beyond which data returns to the head without getting into the new 1 second block (byte count from the head of d). This is located at a 90 percent point of the shared memory segment size. The final 1 second block is written beyond this point but must end without reaching the end of the shared memory segment. Accordingly, the shared memory segment must be of a size at least 10 times larger than the largest 1 second block.
+.TP
+r
+Head position of last-written block (byte count from the head of d)
+.TP
+c
+Integrated value of the counts of blocks written up to now
+.SH OPTIONS
+.IP \fB\-a 5
+Absolute time-based mode. Order synchronizes with the system clock and scans the shared memory to write out only data with a timestamp of
+.I limit
+seconds before every real time. This allows stable sorting operation uninfluenced by input data with an abnormal timestamp. To select this mode, however, the input-side shared memory must be in the backward search compatible "format with blocks ending with a block size."
+.IP \fB\-B 5
+The following format is used to write in the shared memory (format with blocks ending with a block size):
+
+.nf
+     (1) 4-byte block size (bytes)
+     (2) 6-byte time header (1 byte each for yr, mth, day, hr, min, and sec, BCD format)
+          Last two digits of year (00 to 99), month (01 to 12), day (01 to 31),
+          hour (00 to 23), minute (00 to 59), second (00 to 59)
+     (3) Data for one or more channels at the same time (win format)
+     (4) 4-byte block size (bytes)
+
+.fi
+
+
+Alternative format to write in the shared memory (D format):
+          Last two digits of year (00 to 99), month (01 to 12), day (01 to 31),
+          hour (00 to 23), minute (00 to 59), second (00 to 59)
+     (3) Data for 1 or more channel at the same time (win format)
+.fi
+
+This format differs from the default format only in the part of (4). (1) and (4) contain an identical value, which is the size of a single block with (1) to (4) all included. This format is used to allow backward search (from higher to lower addresses). In this format, the variable pl in the shared memory structure indicates the position (4) of the final block written immediately before returning back to the top of the shared memory. The read-side process can use not only pl as the "point beyond which data returns to the head without getting into the new 1 second block" but also as the starting point of backward search (point for returning to the head). Usually, the read-side program automatically determines if the shared memory is in this format.
+.IP \fB\-D 5
+Is initiated in the daemon mode.
+.IP "\fB\-l \fkey:size" 5
+Any data that fails to meet the sorting time limit of
+.I limit
+seconds is written to the shared memory/segment with a size of
+.I size
+KB, and the key
+.I key.
+The data to be written out is in the format with "write time," which is the same format as recvt(1W) writes in.
+.SH SOURCE
+.TP 
+`order.c'
+.SH SEE ALSO
+winformat(1W), recvt(1W)

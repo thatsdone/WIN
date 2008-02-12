@@ -1,0 +1,69 @@
+.TH find_picks 1W "2001.2.7" "WIN SYSTEM" "WIN SYSTEM"
+.SH NAME
+find_picks - Pick file search server program
+.SH SYNOPSIS
+find_picks
+.SH DESCRIPTION
+Find_picks reads time ranges, event waveform file names, and pick file (measurement information file) directory names from the standard input to search for matching pick file names and return the result to the standard output.
+Find_picks works as follows:
+.IP "" 3
+.ti -3
+(1) Find_picks generates the character string "PICKS OK."
+.IP "" 3
+.ti -3
+(2) It reads measurement time ranges (start and end times), event waveform file names, and pick directory names from the standard input. A measurement time range has the start and end times specified respectively in "YYMMDD.hhmmss" format.
+.IP "" 3
+.ti -3
+(3) Find_picks searches pick files and returns one or more pick file names.
+.LP
+A typical execution goes as follows (the line immediately below "PICKS OK" shows the input from the terminal):
+.LP
+.nf
+$find_picks
+PICKS OK
+010207.050000 010207.050059 010207.050012 /dat/picks/man/0102
+010207.050009.970
+010207.050019.100
+$
+.fi
+.LP
+Usually, find_picks is used to answer queries via the network.
+For example, when /etc/inetd.conf contains a settings line that goes like:
+.LP
+.nf
+win-find_picks stream tcp nowait auto /home/auto/find_picks find_picks
+.fi
+.LP
+and /etc/services a setting line that goes like:
+.LP
+.nf
+win-find_picks 7130/tcp   # WIN system find_picks,
+.fi
+.LP
+find_picks uses TCP port 7130 to answer queries from the client (the line immediately below "PICKS OK" shows the input from the terminal).
+.LP
+.nf
+$telnet server 7130
+Trying 192.168.100.100...
+Connected to server.
+Escape character is '^]'.
+PICKS OK
+010207.050000 010207.050059 010207.050012 /dat/picks/man/0102
+010207.050009.970
+010207.050019.100
+Connection closed by foreign host.
+$
+.fi
+.LP
+When obtaining the names of pick files belonging to event waveform files, win(1W) can send queries via TCP/IP to the pick file server associated with find_picks.
+This method works for relatively slow line IP connections. Otherwise, pick files will be searched by the NFS and this can be time-consuming.
+.LP
+The NFS environment does not necessarily guarantee the matching of the pick directory name on the client side with that on the server side. In such a case, some ingenuity may be required.
+.SH OPTIONS
+.TP
+None
+.SH SOURCE
+.TP
+`find_picks.c'
+.SH SEE ALSO
+win(1W)

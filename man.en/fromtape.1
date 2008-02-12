@@ -1,0 +1,86 @@
+.TH fromtape 1W "1995.8.17" "WIN SYSTEM" "WIN SYSTEM"
+.SH NAME
+fromtape - Derivation of minute files on disk from win format data on tape
+.SH SYNOPSIS
+fromtape [ \-f
+.I device
+] [ \-n
+.I count
+[ \-s ]]
+.I start
+.I end
+.I rawdir [
+.I mondir
+]
+.LP
+.SH DESCRIPTION
+Fromtape reads win format data written in by wtape(1W) and uses the same format as the one used by wdisk(1W) to create minute-by-minute RAW format files for a period from a time
+.I \ start
+to another time
+.I \ end
+in a directory
+.I \ rawdir.
+Similarly, if a directory
+.I \ mondir
+is specified, MON format files are created in it.
+.LP
+.I start
+and
+.I \ end
+are in the two-digit year, month, date, hour, and minute 'YYMMDD.hhmm' format.
+The output includes all the way down to the end of the last "minute" specified by
+.I end.
+.LP
+During execution, the latest file name (in 'YYMMDDhh.mm' format) of the file just written is written in the file(s) LATEST in
+.I rawdir
+(and
+.I \ mondir
+).
+.SH OPTIONS
+.TP
+.RI \-f " device"
+Specifies the tape device name. The default is /dev/nrst0.
+The device must be in the no-rewind mode (/dev/nrst*) while closed.
+.TP
+.RI \-n " count"
+Restricts the number(s) of files to be saved in 
+.I rawdir
+(and
+.I \ mondir
+) to the count
+.I \ count,
+respectively. This is performed by deleting the file
+.I \ count
+minutes older than the next-to-be written file when the number of files reaches
+.I \ count.
+Accordingly, any files older than that point will be left in the same directory without getting deleted.
+.TP
+\-s
+Is specified along with \-n to request fromtape for synchronous execution with the program (such as pmon(1W) or ecore(1W)) that reads output files. In this case, fromtape may inspect the file USED in
+.I \ rawdir
+and wait for execution of unused files to avoid deleting them.
+If
+.I mondir
+is also specified, the file USED in
+.I \ mondir
+are used instead.
+Usually, this option does not have to be specified because file reading programs are faster than fromtape.
+.SH TYPICAL USAGE
+.nf
+
+fromtape -f /dev/nrst21 -n 30 950817.1100 950817.1359 /dat/raw1 /dat/mon1
+.LP
+In this example, RAW/MON data for 3 hours will be run while minute-by-minute files for the past 30 minutes is saved. At the same time, trigger detection, monitor record printing, and cutting out of event files can be performed by executing, for example,
+.IP
+.nf
+pmon pmon1.prm 950817 1100 180
+events events1.prm 950817.1100 950817.1359
+.LP.
+.LP
+Meanwhile, when there are already any trigger lists available, eventsrtape(1W) allows for cutting out event files directly from the tape.
+.SH SOURCE
+.TP
+`fromtape.c'
+.SH SEE ALSO
+ecore(1W), pmon(1W), events(1W), eventsrtape(1W),
+wtape(1W), rtape(1W), winformat(1W)

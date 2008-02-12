@@ -1,0 +1,97 @@
+.TH relaym 1W "2004.11.11" "WIN SYSTEM" "WIN SYSTEM"
+.SH NAME
+relaym, relaymd - Relay of win format data to multiple destinations on IP
+.SH SYNOPSIS
+.\" relaym [\-\fBDnr\fR] [\-\fBb\fI bufsiz\fR] [\-\fBd\fI\ delay\fR] [\-\fBf\fI ctlfile\fR]
+relaym [\-\fBDNnr\fR] [\-\fBb\fI bufsiz\fR] [\-\fBf\fI ctlfile\fR]
+.I inport
+.I paramfile
+[
+.I logfile
+]
+.LP
+.\" relaymd [\-\fBnr\fR] [\-\fBb\fI bufsiz\fR] [\-\fBd\fI\ delay\fR] [\-\fBf\fI ctlfile\fR]
+relaymd [\-\fBNnr\fR] [\-\fBb\fI bufsiz\fR] [\-\fBf\fI ctlfile\fR]
+.I inport
+.I paramfile
+[
+.I logfile
+]
+.SH DESCRIPTION
+Relaym receives win format data sent to the UDP port number
+.I \ inport
+of its own host, and transmits to host described in a parameter file
+.I \ paramfile.
+Relaym inspects packet number of received packet, but does not inspect time stamp.
+.LP
+Addresses of both IPv4 and IPv6 can be handled simultaneously.
+.LP
+relaymd is initiated in daemon mode. It is the same operation when option
+\fB\-D\fR
+is specified by relaym. 
+.LP
+When log file name
+.I \ logfile
+is specified, operation log is set here.
+When it is not specified, log information is sent to the standard output (however, it is sent to syslogd(8) when operation is made in the daemon mode). Log file is opened/closed in each write.
+.LP
+When relaym receives the HUP signal, it rereads a control file (if specified, as described later)
+.I \ ctlfile,
+sends it to a log file
+.I \ logfile,
+and writes flow rate information for each source host. It includes
+.br
+.nf
+  number of packets, number of bytes, number of packets per second, number of bytes per second
+.fi
+since startup or the previous time it received the HUP signal.
+.LP
+When relaym is initiated without argument, brief usage is displayed. 
+.SH FORMAT OF PARAMETER FILE
+Parameter file is a text file in which a set of host name (or IP address) and port number (or port name) are arranged with one set per line. The host name and port number must be delimited by blank or tab. Subsequent items are bypassed. In addition, the line starting with '#' is also bypassed. Up to 128 destinations can be specified, and destinations more than that are bypassed.
+.SH FORMAT ON NETWORKS AND RESENDING PROTOCOL
+Refer to recvt(1W).
+Relaym can monitor continuity of packet numbers to recognize up to 100 sources (a set of host and port) as targets to which resending to be requested. If the number of sources exceeds100, recvt once cancels all the data of source table and restarts registration. 
+.SH OPTIONS
+.IP "\fB\-b \fIbufsiz" 5
+Makes receiving socket buffer size 
+.I bufsiz
+KB. However, the value must be within a range allowed by the system. Default is 256KB.
+.IP \fB\-D 5
+is initiated in the daemon mode. 
+.\" .IP "\fB\-d \fIdelay" 5
+.\" When packet arrived 0.5 second or more lately
+.\" after relaying the previous packet, it inserts a delay of
+.\" .I delay
+.\" millisecond before transmitting the packet.
+.IP "\fB\-f \fIctlfile" 5
+enables receiving control by source host specified by a control file
+.I \ ctlfile.
+In
+.I \ ctlfile
+a host control line starting with "+" or "\-" can be written. 
+In each line, only the left-most item delimited by blank or tab is read, and the remaining parts of the line are jumped. The line starting with '#' is presumed to be a comment. 
+.br
+Host control line is a rule written in the format.
+.nf
+
+       -host   packet sent from host to be rejected
+       +host   packet sent from host to be accepted
+       +       accept packet
+       -       reject packet
+
+.fi
+As for host control, the rule is applied to each packet from the top.
+When the applicable rule is found, it is applied. When no applicable rule is found until the last, the packet is accepted (that is to say, the last line is always with "+").
+.IP "\fB\-N" 5
+Does not inspect the packet number of receiving packet. The packet number field (the top 2 bytes) is not rewritten, that is to say, the receiving packet is relayed as it is. 
+.IP "\fB\-n" 5
+Does not report information on packet from source address to be rejected or resent packet received redundantly to the log. 
+.IP "\fB\-r" 5
+Does not transmit resending request packet.
+In case of one-way transmission line like receiving through the DVB satellite delivery board, this can restrict unnecessary packet transmission. 
+.SH SOURCE 
+.TP
+`relaym.c'
+.SH SEE ALSO
+winformat(1W), recvt(1W), send_raw(1W), order(1W), relay(1W)

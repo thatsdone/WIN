@@ -1,0 +1,126 @@
+.TH shmdump 1W "2003.7.25" "WIN SYSTEM" "WIN SYSTEM"
+.SH NAME
+shmdump - Monitoring of data on shared memory segment
+.SH SYNOPSIS
+shmdump [\-\fBamoqrtwxz\fR] [\-\fBs\fI\ sec\fR] [\-\fBf\fI\ file\fR]
+.I shmkey/\-
+[
+.I ch ...
+]
+.SH DESCRIPTION
+Shmdump reads the first part of each block of data cyclically written in the shared memory segment given by a key
+.I \ shmkey
+to dump one by one.
+When "\-" is specified as
+.I \ shmkey,
+data are read from the standard input instead of from the shared memory.
+When a channel list
+.I ch\ ...
+is specified, all the specified channels are dumped in format of 1 channel per line.
+Shmdump can read block formats on the shared memory either with "written time" (refer to recvt(1W)) or without "written time" (refer to order(1W)) by automatically discriminating. Display format is as follows:
+.SH In case of without "written time"
+Firstly block size (byte), then time of time stamp (year to second) in 12 digits, and then the top 8 bytes of the first channel block in hexadecimal number are displayed.
+.SH In case of with "written time"
+Firstly block size (byte), "written time (RT=RealTime)" in year to second in 12 digits, difference (RT-TS) between it and the time of time stamp (TS=TimeStamp) in second, time of time stamp (TS) in year to second in 12 digits, and the top 8 bytes of the first channel block in hexadecimal number are displayed.
+.LP
+When no particular channel is specified in any of the above, information of 1 block (for 1 second) is displayed in one line. When a list of channel is specified, the top time stamp is copied to each line and transmitted even if one second block contains multiple channels. 
+.SH OPTIONS
+.IP "\fB\-a" 5
+Dumps all channels. 
+.IP "\fB\-f \fIfile" 5
+Reads channel list from file
+.I file.
+When "\-" is specified instead of the file name, it reads from the standard input. 
+The list contains channel numbers of hexadecimal number delimited by blank, tab or line feed.
+It is not strongly recommended to give the channel list from the standard input and give data from the standard input even if it may go well by setting both simultaneously because they are read in this order.
+.br
+By the way, when \fB\-r\fP option or \fB\-x\fP option is specified,
+.I file
+can be used for specifying output files. 
+At this time, since
+.I file
+is opened/closed in each write, rotation etc. of files by an external program can be performed. 
+.IP "\fB\-m" 5
+Handles data of the MON format. When data are of the MON format, this must be specified. Refer to raw_mon(1W) for MON format.
+.IP "\fB\-o" 5
+Writes data of the specified channel (when \fB\-a\fP option is specified, all channels) in the standard output keeping the data in WIN format. 
+This time, normal (1 channel per line) dump output is written in the standard error output. 
+.IP "\fB\-q" 5
+Restricts dump output of format with 1 channel per line. Usually it is specified with \fB\-o\fP option or \fB\-t\fP option. 
+.IP "\fB\-r" 5
+Writes in the standard output without conversion. 
+This time normal (1 channel per line) dump output is written in the standard error output. When this option is specified, all options other than \fB\-f\fR, \fB\-q\fR, and \fB\-s\fR are invalid.
+.IP "\fB\-s \fIsec" 5
+Ends after execution for
+.I sec
+seconds. Usually this results in dump of data for about
+.I sec
+seconds.
+When this is not specified, shmdump does not stop until interruption is performed.
+.IP "\fB\-t" 5
+Converts data of the specified channel (when \fB\-a\fP option is specified, all channels) to text format to write in the standard output.
+This time usual (1 channel per line) dump output is written in the standard error output. Format for 1 second is shown below. Data for 1 channel x 1 second per line are written  delimited by blank following second header line. 
+.IP
+.nf
+Year month day hour minute secondÅ@Actual number of channels <new-line>
+Channel number  sampling rate  data  data ....<new-line>
+Channel number  sampling rate  data  data ....<new-line>
+...(repeat for the number of channels)
+.fi
+.IP "\fB\-w" 5
+Writes data of the specified channel (when \fB\-a\fP option is specified, all channels) in a temporary file keeping them in WIN format and then initiate win(1W). The temporary file is created in a directory set by environmental variable TMP, if that does not exist, in directory set by environmental variable TEMP, and if that also does not exist, in the current directory. This option includes \fB\-o\fP option.
+.IP "\fB\-x" 5
+Writes in the standard output without conversion (however displayed by hexadecimal number). This time 1 packet is in one line.
+This time usual (1 channel per line) dump output is written in the standard error output. When this option is specified, all options other than \fB\-f\fR, \fB\-q\fR, and \fB\-s\fR are invalid.
+.IP "\fB\-z" 5
+Reads data from the top of the shared memory segment. If this is not specified, data is read from the latest write part (after its write is finished). 
+.IP "\fB\-{L,H,B}" 5
+Filters output data when -tq is specified using filter characteristics specified by a command line. Filter factor is determined using program of
+.RS
+.IP
+Saito, Masanori: 1978, Automatic Design of Recurrent Digital Filter, Physical Exploration, 31, 112-135
+.RE
+.IP.
+Refer to this reference for how to select setting parameter.
+.IP "\fB\-L fp:fs:ap:as" 5
+Subjects output data when -tq is specified to lowpass.
+.IP "\fB\-H fp:fs:ap:as" 5
+Subjects output data when -tq is specified to highpass.
+.IP "\fB\-B fl:fh:fs:ap:as" 5
+Subjects output data when -tq is specified to bandpass.
+.IP "\fB\-R rate" 5
+Resamples output data when -tq is specified by rate. 
+.SH TYPICAL USAGE
+.nf
+shmdump 11 0200
+  lists only channel 0200 (always if it exists).
+
+shmdump 11 0200 0201 0202
+  lists channels 0200, 0201, and 0202 (always if they exist). 
+
+echo 0200 0201 0202 | shmdump -f - 11
+  Same as the above. It gives channel list from the standard input. 
+
+shmdump -f aso.ch 11
+  lists channels in channel file aso.ch (always if they exist).
+
+shmdump -of aso.ch 11 > aso.dat
+  transmits channel waveforms in channel file aso.ch to aso.dat. 
+
+shmdump -of aso.ch -s 10 11 > aso.dat
+  transmits channel waveforms for about 10 seconds in channel file aso.ch to aso.dat. 
+
+shmdump -wf aso.ch -s 10 11
+  displays channel waveforms for about 10 seconds in channel file aso.ch in win format. 
+
+grep -w HIT /dat/etc/channels.tbl|shmdump -ws 10 -f - 11
+  displays waveform of observation point HIT for about 10 seconds in win format. 
+
+cat 041222.1717|shmdump -tq - 0252
+  transmits channel 0252 from disk file 041222.1717 in text format. 
+.fi
+.SH SOURCE
+.TP
+`shmdump.c'
+.SH SEE ALSO
+winformat(1W), recvt(1W), order(1W), win(1W), raw_mon(1W)

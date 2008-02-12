@@ -1,0 +1,106 @@
+.TH recvt 1W "2005.4.14" "WIN SYSTEM" "WIN SYSTEM"
+.UC 4
+.SH NAME
+recvnmx - Receiving Nanometrics UDP/IP packet
+.SH SYNOPSIS
+.IP
+.ti -7
+renvnmx
+[
+.I \-nvB
+] [
+.I \-c map
+] [
+.I \-d dir
+] [
+.I \-i interface
+] [
+.I \-m group
+]
+.I port
+.I shmkey
+.I shmsize
+[
+.I logfile
+]
+.LP
+.SH DESCRIPTION
+Recvnmx receives data (NMXP or NP packet) of Nanometrics format sent to UDP port number
+.I \ port
+of its own host, converts to WIN format, and writes (cyclically) in shared memory segment given by a key
+.I \ shmkey.
+At present, recvnmx processes only Compressed Data Packet (including packet of Taurus).
+Refer to winformat(1W) for WIN format, and recvt(1W) for format on the shared memory. 
+Channel number of 16-bit in WIN format is generated from a pair of serial number and channel number of Nanometrics device written in NMXP/NP packet (among 16 bits, the high-order 11 bits represent serial number, and the low-order 5 bits channel number). 
+When arbitrary mapping of channel numbers in WIN format is desired, use option
+\fB\-c\fP. 
+When the shared memory segment having a key
+.I \ shmkey
+does not exist, the shared memory segment of size
+.I \ shmsize
+\ (KB) is created. When it already exists but has a size smaller than
+.I \ shmsize
+\ (KB), an error will occur. 
+The UDP port number is a 16-bit integer value, and shared memory key is a 32-bit integer value. 
+.LP
+When log file name
+.I \ logfile
+is specified, operation log is set here. When it is not specified, log information is sent to the standard output. Log file is opened/closed in each write. 
+.LP
+When recvnmx is initiated without argument, brief usage is displayed.
+.SH OPTIONS
+.IP \fB\-B 5
+Makes format of shared memory the format searchable from the backward. Refer to option  \fB\-B\fR of recvt(1W) for this format. 
+.IP "\fB\-c \fImap" 5
+Specifies how to provide channel number in WIN format in a file
+.I map.
+In format of
+.I map,
+serial number of each Nanometrics device is written with decimal number at the head, and head channel numbers in WIN format delimited by blank or tab are written with hexadecimal number to the right of the serial numbers with a data for one device per line respectively. The line starting with '#' is presumed to be comment. Only two items from the head in each line are read, and the items to the right of the two items are bypassed. When Nanometrics device has multiple channels, channel numbers the number of which equals to the number of channels beginning with the head channel number in WIN format are assigned. In the following example, channel numbers 0380, 0381 and 0382 are assigned to channels 1 through 3 of the device having serial number #139 respectively, and 0383 - 0385, 0386 - 038B and 038C - 0391 are assigned to #141, #142 and #143 respectively.
+.nf
+   139 0380  # 3ch
+   141 0383  # 3ch
+   142 0386  # 6ch
+   143 038C  # 6ch
+.fi
+When recvnmx receives the HUP signal, it rereads a file
+.I map.
+.IP "\fB\-d \fIdir" 5
+Temporarily saves odd data in a directory
+.I dir.
+Unit of WIN format packet is second, but unit of Nanometrics format is not second. Therefore if packets have arrived in incorrect order, odd data with length less than 1 second that cannot constitutes second packet remains.
+When this option is specified, this odd data are saved, and when the packet including insufficient parts arrives later, the saved data are read to constitute and transmit correct second packet.
+.br
+Recvnmx deletes used file for odd data existing in
+.I dir,
+and files not used because insufficient parts did not finally arrive remain. Program for periodically deleting these old files is clean_nmx(1W).
+When 
+.IP "\fB\-i \fIinterface" 5
+receives a packet to be transmitted to IP multicast address, it specifies network interface to receive the packet by the IP address
+.I interface
+of its interface.
+.IP "\fB\-m \fIgroup" 5
+Receives packet to be transmitted to the IP multicast address
+.I group.
+.IP \fB\-n 5
+Receives the NP packet and bypasses the NMXP packet. When it does not specify this option, it receives the NMXP packet and bypasses the NP packet. It cannot receive both the NP packet and NMXP packet.
+.IP \fB\-v 5
+Displays information of the received NMXP/NP packets. This is for debugging. 
+.SH TYPICAL EXECUTION
+In the following example, the NMXP packet sent to the UDP port #32000 of multicast address 224.0.1.1 is received from network interface of the IP address to write it in shared memory #1001 (size 1000KB). Log file is /dat/log/recvnmx.log.
+.br
+.IP
+.ti -7
+recvnmx -i 10.0.0.100 -m 224.0.1.1 -c recvnmx.prm 32000 1001 1000
+/dat/log/recvnmx.log
+.SH ABOUT TIME STAMP
+Recvnmx uses localtime(3) function to convert time stamp (the number of seconds from year 1970 January 1 00:00:00 UTC) of the NMXP packet to time stamp (year month day hour minute second of JST) in WIN format. At that time, although leap second is usually not considered, there is no problem for the meantime because leap second seems to be not considered (ignored) in time stamp of the NMXP packet for the Nanometrics device. 
+.SH ABOUT SERIAL NUMBER
+When making serial number of the Nanometrics device correspond to channel number in WIN format using a file
+.I map,
+be careful that types of devices are not distinguished. Since other type of device having the same serial number is not distinguished, it is impossible to allow different types of devices to coexist. 
+.SH SOURCE
+.TP
+`recvnmx.c'
+.SH SEE ALSO
+clean_nmx(1W), winformat(1W), recvt(1W)

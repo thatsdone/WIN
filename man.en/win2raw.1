@@ -1,0 +1,51 @@
+.TH win2raw 1W "2006.3.18" "WIN SYSTEM" "WIN SYSTEM"
+.SH NAME
+win2raw - Splitting of win format file into 1 minute file
+.SH SYNOPSIS
+win2raw [ \-uv ] [ \-m h|h1|d ]
+.I dirname
+[
+.I file
+]
+.LP
+win2raw \-h
+.LP
+.SH DESCRIPTION
+Win2raw splits a win format file 
+.I file
+into a 1 minute file and transmits to
+.I dirname.
+The file name is of 'YYMMDDhh.mm' format same as the file name transmitted by wdisk(1W). By specifying option -m, it is possible to transmit by splitting to one hour file or one day file. 
+.LP
+When
+.I file
+is not given, win2raw reads data from the standard input.
+.LP
+When win2raw is initiated without argument, brief usage is displayed.
+.SH OPTIONS
+.TP 
+\-m \fImode
+Sets split mode. 
+.nf
+h : Split into one hour file (YYMMDD.hh format)
+h1: Split into one hour file (YYMMDDhh format)
+    same as write format of wdisk60(1W)
+d : Split into one day file (YYMMDD format)
+.fi
+.TP
+When data is not from the standard input,
+\-u
+deletes 
+.I file 
+after output. 
+.TP 
+\-v
+Redundant during execution of command. 
+.TP
+\-h
+Displays brief usage. 
+.SH SOURCE 
+.TP
+`win2raw.c'
+.SH SEE ALSO
+wdisk(1W), wed(1W), winformat(1W)

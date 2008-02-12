@@ -1,0 +1,61 @@
+.TH raw_100 1W "1997.6.30" "WIN SYSTEM" "WIN SYSTEM"
+.SH NAME
+raw_100 - Changing sampling rate of RAW format data to 100 Hz
+.SH SYNOPSIS
+raw_100
+.I inkey
+.I outkey
+.I shmsize
+[
+.I chfile
+[
+.I logfile
+]]
+.LP
+.SH DESCRIPTION
+Raw_100 loads win format data written in a shared memory segment identified by a key
+.I \ inkey,
+leaves data of channels with a sampling rate of 100 Hz as are, and 
+linearly interpolates and converts data of channels with a sampling rate not being 100 Hz into ones with a sampling rate of 100 Hz. In either case, raw_100 writes the data to another shared memory segment identified by another key
+.I \ outkey.
+Note, however, that raw_100 writes out data of channels with a sampling rate below 50 Hz as it is, without performing sampling rate conversion.
+The data format in the input-side shared memory can be either a format with "written time" not sorted in order of time or a format sorted in order of time.
+Raw_100 automatically determines which format the data is in, and writes the data in the output-side shared memory without changing the format.
+.LP
+In addition to the abovementioned rules, when a channel file
+.I \ chfile
+is given, only the data of the channels listed in this file will be converted and written while any data of any other channels are not written.
+If the channel file name is prefixed with '\+,' however, only the channels listed in this file will be converted while any other channels are not converted. In whichever case, the data will be written.
+Alternatively, if the channel file name is prefixed with '\-,' the channels listed in this file will not be converted while any other channels are converted. In whichever case, the data will be written.
+If the channel file
+.I chfile
+is not given or if '\-' is specified as the channel file, all the channels will be converted and written.
+.LP
+If the shared memory segment with the key
+.I \ outkey
+does not exist, a shared memory segment with a size of
+.I \ shmsize
+\ (KB) will be created. When it already exists but has a size smaller than
+.I \ shmsize
+\ (KB), an error will occur.
+The shared memory key is a 32-bit integer value.
+.LP
+When log file name
+.I \ logfile
+is specified, operation log is set here. When it is not specified, log information is sent to the standard output. The log file is opened/closed in each write.
+.LP
+When raw_100 is initiated without argument, brief usage is displayed.
+.LP
+When receiving a hang-up signal, the raw_100 process rereads the channel file.
+.SH CHANNEL FILE FORMAT
+The channel file is a text file that hexadecimally lists channel numbers, one for each line. In each line, only the first item is read, while the subsequent items delimited by blanks or tabs are all bypassed. Any lines starting with '#' are also bypassed.
+.SH FORMAT OF SHARED MEMORIES
+Refer to recvt(1W) and order(1W).
+.SH OPTIONS
+.TP 
+None
+.SH SOURCE
+.TP
+`raw_100.c'
+.SH SEE ALSO
+winformat(1W), recvt(1W), order(1W), send_raw(1W), raw_raw(1W)

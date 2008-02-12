@@ -1,0 +1,26 @@
+.TH wintosac 1W "2002.8.12" "WIN SYSTEM" "WIN SYSTEM" 
+.SH NAME
+wintosac - Conversion tool WIN text format -> SAC/SAC2000
+.SH SYNOPSIS
+wintosac
+.I (-l) (-b[BEGIN]) (-t[TABLE]) (-o[OUTPUT]) CHID 
+.LP
+.SH DESCRIPTION
+Wintosac makes data transmitted by shmdump -tq to be input and transmits waveform data of SAC and SAC2000 format. If missing data is found, it is filled with 0. However, this is used for conversion of a single channel.
+.LP
+When wintosac is initiated without argument, brief usage is displayed.
+.SH OPTIONS
+.IP -l
+Transmits in SAC2000 format. Default is transmitted in SAC format. 
+.IP -b[BEGIN]
+Sets SAC header B in BEGIN. 
+.IP -o[SACFILE]
+Although output file name is YYMMDDHHMM_CHID.s as standard, when this option is specified, it transmits with its file name. 
+.IP -t[ChannelTable]
+Reads channel table of WIN. Data is converted to physical quantity according to the channel table. 
+Further, the output file name is YYMMDDHHMM_STN_COMP.s. 
+.SH SOURCE 
+.TP
+`wintosac'
+.SH SEE ALSO
+shmdump(1W)

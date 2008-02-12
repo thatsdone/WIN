@@ -1,4 +1,9 @@
- $Id: ChangeLog,v 1.131.2.12 2007/11/19 10:11:17 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.13 2008/02/12 09:50:24 uehira Exp $
+
+2008-02-12  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 1.1.90-LIB released.
+	* winrawsrv.c : STAT : output file size of raw data described in LATEST.
+	                bump protocol version up to 1.0.
 
 2007-11-19  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* Version 1.1.89-LIB released.

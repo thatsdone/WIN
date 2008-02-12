@@ -1,6 +1,6 @@
-/* $Id: winrawsrv.c,v 1.1.4.3 2007/09/10 09:22:36 uehira Exp $ */
+/* $Id: winrawsrv.c,v 1.1.4.4 2008/02/12 09:50:24 uehira Exp $ */
 
-/* winrawsrv.c -- raw data server */
+/* winrawsrv.c -- raw data request server */
 
 /*
  * Copyright (c) 2006 -
@@ -9,6 +9,8 @@
  *    Institute of Seismology and Volcanology, Kyushu University.
  *
  *   2006-05-02  Initial version.
+ *   2008-02-12  STAT : output file size of raw data described in LATEST.
+ *                    : bump protocol version up to 1.0.   
  */
 
 
@@ -49,7 +51,7 @@
 #define FNAMEMAX     1024
 
 static char rcsid[] =
-  "$Id: winrawsrv.c,v 1.1.4.3 2007/09/10 09:22:36 uehira Exp $";
+  "$Id: winrawsrv.c,v 1.1.4.4 2008/02/12 09:50:24 uehira Exp $";
 
 char *progname, *logfile;
 int  daemon_mode, syslog_mode;
@@ -84,7 +86,10 @@ main(int argc, char *argv[])
   char  wrbp_buf[WRBP_CLEN], cmd[WRBP_CLEN];
   int             c;
   ssize_t   recvnum;
-  
+  struct stat  fi;
+  char   lrawfname[FNAMEMAX];
+  off_t  lasize;  /* raw file size of LATEST */
+
   if (progname = strrchr(argv[0], '/'))
     progname++;
   else
@@ -200,6 +205,18 @@ main(int argc, char *argv[])
 	} else {
 	  (void)fscanf(fp, fmt, &LATEST);
 	  (void)fclose(fp);
+
+	  /* raw file size of LATET */
+	  if (snprintf(lrawfname, sizeof(lrawfname), "%s/%s", rdirname, LATEST)
+	      > sizeof(lrawfname))
+	    write_log("Buffer overrun");
+	  if (stat(lrawfname, &fi)) {
+	    (void)snprintf(msg, sizeof(msg), "%s: stat: %s",
+			   lafname, (char *)strerror(errno));
+	    write_log(msg);
+	    lasize = -1;
+	  } else
+	    lasize = fi.st_size;
 	}
 	/* COUNT */
 	if ((fp = fopen(cnfname, "r")) == NULL) {
@@ -223,9 +240,10 @@ main(int argc, char *argv[])
 	  (void)fclose(fp);
 	}
 	/* reply */
-	(void)snprintf(wrbp_buf, WRBP_CLEN, "%s : %s=%s %s=%s %s=%s %s=%s",
+	(void)snprintf(wrbp_buf, WRBP_CLEN,
+		       "%s : %s=%s %s=%s (%d) %s=%s %s=%s",
 		       rdirname, RAW_OLDEST, OLDEST, RAW_LATEST, LATEST,
-		       RAW_COUNT, COUNT, RAW_MAX, MAX, strlen(MAX));
+		       (int)lasize, RAW_COUNT, COUNT, RAW_MAX, MAX); 
 	(void)writen(1, wrbp_buf, WRBP_CLEN);
       }	else if (strcmp(cmd, WRBP_REQ) == 0) {  /*-- REQ --*/
 	if (do_request(wrbp_buf + strlen(cmd) + 1, rdirname)) {

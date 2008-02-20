@@ -1,4 +1,8 @@
- $Id: ChangeLog,v 1.140 2007/09/29 02:28:15 uehira Exp $
+ $Id: ChangeLog,v 1.141 2008/02/20 02:31:24 urabe Exp $
+
+2008-02-20  Urabe Taku <urabe@eri.u-tokyo.ac.jp>
+	* src/win.c: avoid overflow in getting offset levels for
+	  near 32 bit data (in plot_mon() and plot_zoom()).
 
 2007-09-29  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* check d_namlen exists as a member of struct DIR or not.

@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.47 2006/10/24 01:50:50 urabe Exp $
+   $Id: win.c,v 1.48 2008/02/20 02:31:25 urabe Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -21,7 +21,7 @@
 #else
 #define NAME_PRG      "win32"
 #endif
-#define WIN_VERSION   "2006.10.24(+Hi-net)"
+#define WIN_VERSION   "2008.2.20(+Hi-net)"
 #define DEBUG_AP      0   /* for debugging auto-pick */
 /* 5:sr, 4:ch, 3:sec, 2:find_pick, 1:all */
 /************ HOW TO COMPILE THE PROGRAM **************************
@@ -4282,6 +4282,7 @@ plot_mon(base_sec,mon_len,wmb,buf_mon)
   {
   register long *ptr;
   register int x_byte,y,y_min,y_max,x,yy,ofs;
+  double dy;
   int i,j,kk,xx;
   static unsigned char bit_mask[8]=
     {0x1,0x2,0x4,0x8,0x10,0x20,0x40,0x80};
@@ -4297,10 +4298,10 @@ plot_mon(base_sec,mon_len,wmb,buf_mon)
         {
         if(mon_offset && base_sec==0 && i==0)
           {
-          y=0;
+          dy=0.0;
           ptr=buf;
-          for(kk=0;kk<PIXELS_PER_SEC_MON*2;kk++) y+=(*ptr++);
-          ofs=ft.stn[j].offset=y/kk;
+          for(kk=0;kk<PIXELS_PER_SEC_MON*2;kk++) dy+=(double)(*ptr++);
+          ofs=ft.stn[j].offset=dy/(double)kk;
           }
         else ofs=ft.stn[j].offset;
         ptr=buf;
@@ -5132,7 +5133,7 @@ plot_zoom(izoom,leng,pt,put)
   long ll;
   int xzero,yzero,i,j,k,sr,buf0,i_map,xz,join,start,np,np_last,x,y,xp,ymax,ymin;
   unsigned char tbuf[100],tbuf1[STNLEN+CMPLEN];
-  double uv[MAX_FILT*4],rec[MAX_FILT*4],sd;
+  double uv[MAX_FILT*4],rec[MAX_FILT*4],sd,dk;
   lPoint pts[5];
   if(put)
     {
@@ -5273,9 +5274,10 @@ plot_zoom(izoom,leng,pt,put)
         put_text(&dpy,X_Z_FLT+WIDTH_TEXT,yzero+Y_Z_FLT+Y_Z_OFS,
           zoom_win[izoom].f.tfilt,BF_S);
         /* get zero-level */
-        k=buf0=0;
-        for(j=0;j<sr;j++) k+=buf[j];
-        zoom_win[izoom].zero=(long)((double)k/(double)sr+0.5);
+        buf0=0;
+        dk=0.0;
+        for(j=0;j<sr;j++) dk+=(double)buf[j];
+        zoom_win[izoom].zero=(long)(dk/(double)sr+0.5);
         /* set up filter memory */
         if(zoom_win[izoom].filt>0 && zoom_win[izoom].f.n_filt>0)
           {

@@ -1,4 +1,7 @@
- $Id: ChangeLog,v 1.141 2008/02/20 02:31:24 urabe Exp $
+ $Id: ChangeLog,v 1.142 2008/04/05 12:50:56 urabe Exp $
+
+2008-04-05  Urabe Taku <urabe@eri.u-tokyo.ac.jp>
+	* src/shmdump.c: bug fix : unsigned long wsize -> long wsize
 
 2008-02-20  Urabe Taku <urabe@eri.u-tokyo.ac.jp>
 	* src/win.c: avoid overflow in getting offset levels for

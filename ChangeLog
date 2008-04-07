@@ -1,4 +1,17 @@
- $Id: ChangeLog,v 1.113.2.28 2007/09/29 02:42:00 uehira Exp $
+ $Id: ChangeLog,v 1.113.2.29 2008/04/07 05:51:23 uehira Exp $
+
+2008-04-07  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 1.1.86 released.
+	* configure.in : check Tcl/Tk8.0jp path.
+	* English manuals install to $mandir, and Japanese manuals install
+	  to $mandir/ja.
+
+2008-04-05  Urabe Taku <urabe@eri.u-tokyo.ac.jp>
+	* src/shmdump.c: bug fix : unsigned long wsize -> long wsize
+
+2008-02-20  Urabe Taku <urabe@eri.u-tokyo.ac.jp>
+	* src/win.c: avoid overflow in getting offset levels for
+	  near 32 bit data (in plot_mon() and plot_zoom()).
 
 2007-09-29  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* check d_namlen exists as a member of struct DIR or not.

@@ -1,0 +1,33 @@
+.TH wck_wdisk 1W "2002.5.3" "WIN SYSTEM" "WIN SYSTEM"
+.SH NAME
+wck_wdisk - Inspection of content of win format file written by wdisk 
+.SH SYNOPSIS
+wck_wdisk
+.I chfile
+[
+.I file
+]
+.LP
+.SH DESCRIPTION
+Wck_wdisk displays whether channels listed in a channel file of win
+.I chfile
+exist in the win format file
+.I file
+written by wdisk. Input data corresponds only to the RAW format. It also does not correspond to leap second.
+.LP
+When 
+.I file
+is not given, wck_wdisk reads data from the standard input. Output is always the standard output. 
+.LP
+It may be better to periodically initiate from cron(8) and deliver the result by mail. 
+Refer to sample shell script ck_wdisk.sh. 
+.LP
+When wck_wdisk is initiated without argument, brief usage is displayed.
+.SH OPTIONS
+.TP 
+None.
+.SH SOURCE 
+.TP
+`wck_wdisk.c'
+.SH SEE ALSO
+win(1W), wdisk(1W), winformat(1W)

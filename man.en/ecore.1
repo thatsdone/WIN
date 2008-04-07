@@ -1,0 +1,65 @@
+.TH ecore 1W "1995.7.25" "WIN SYSTEM" "WIN SYSTEM"
+.SH NAME
+ecore - Creates JARRAY data from win form file
+.SH SYNOPSIS
+ecore
+.I start
+.I end
+.I rawdir
+.I chfile
+[
+.I outdir
+]
+.LP
+.SH DESCRIPTION
+ecore extracts channel data specified by channel table file
+.I \ chfile
+in the period from time
+.I start
+to
+.I end
+from continuous win form file for one minute existing in
+.I \ rawdir
+directory, subjects the data to low pass filter, and transmits them to
+.I \ outdir
+as fixed-length file of 2-byte integer thinned at sampling rate 20 Hz.
+When
+.I outdir
+is omitted, the data are transmitted to current directory.
+One output file is made for the specified period, where the data corresponding to the number of channels for each sample interval are arranged in the file (channel multiplexed form).
+Output file name is same as
+.I start.
+.LP
+.I start
+and
+.I \ end
+have form 'YYMMDDhh.mm' where year, month, day, hour and minute have two-digit number respectively.
+Data till the end of ÅgminuteÅh specified by
+.I end
+are transmitted.
+In
+.I chfile,
+one hexadecimal channel number is written in each line, where one item at the head of each line is read, and others are bypassed.
+The line with '#' at the head is bypassed. 
+.LP
+When data to be entered in channel are not found, data '0' is entered. 
+When the value overflows from 2-byte integer, the data are clipped in -32768 or 32767. 
+.LP
+In
+.I rawdir,
+the latest written win form file name ('YYMMDDhh.mm' form) must be written as content of file LATEST. 
+Usually
+.I rawdir
+is output directory of wdisk(1W) or fromtape(1W).
+ecore writes processed win form file name in file USED of
+.I rawdir.
+.LP
+When ecore is initiated without argument, it displays brief usage.
+.SH OPTIONS
+.TP 
+None.
+.SH SOURCE
+.TP
+`ecore.c'
+.SH SEE ALSO
+fromtape(1W), wdisk(1W)

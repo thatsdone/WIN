@@ -1,0 +1,45 @@
+.TH recvstatus3 1W "2005.4.26" "WIN SYSTEM" "WIN SYSTEM"
+.SH NAME
+recvstatus3 - Receiving Hakusan WIN_UDP operation/setting status packet (LS8TEL)
+.SH SYNOPSIS
+recvstatus3 [\-\fBD\fR]
+.I port
+.I dirname
+[
+.I logfile
+]
+.LP
+recvstatus3d
+.I port
+.I dirname
+[
+.I logfile
+]
+.LP
+.SH DESCRIPTION
+Recvstatus3 receives setting status packet (packet type A8) and operation status packet (packet type A9) transmitted from Data Logger LS-8000SH (firmware: LS8TEL16, LS8TEL14) manufactured by Hakusan Corporation by the UDP port
+.I \ port,
+and transmits under a directory
+.I \ dirname
+as a file. Data to be saved is only a packet data part and are binary of 53-byte for A8 and 64-byte for A9. 
+.LP
+Following
+.I dirname,
+LS8_XXXX (XXXX is logger address) is created if it does not exist. Further if a directory called STS in case of A8 packet or a directory called STM in case of A9 packet does not exist, it is created and the data is saved under the directory as a file. Content of the file name is same as the time field in packet data. 
+.LP
+Recvstatus3d is initiated in daemon mode.
+.LP
+When log file name
+.I logfile
+is specified, operation log is set here. When it is not specified, log information is sent to the standard output (however, it is sent to syslogd(8) when the system is operated in daemon mode). Log file is opened/closed in each write. 
+.LP
+Recvstatus3 does not request resending of packet. 
+When recvstatus3 is initiated without argument, brief usage is displayed. 
+.SH OPTIONS
+.IP \fB\-D 5
+Is initiated in daemon mode.
+.SH SOURCE
+.TP
+`recvstatus3.c'
+.SH SEE ALSO
+ls8tel_STM(1W), ls8tel_STS(1W)

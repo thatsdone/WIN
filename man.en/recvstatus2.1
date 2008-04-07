@@ -1,0 +1,36 @@
+.TH recvstatus2 1W "2002.6.19" "WIN SYSTEM" "WIN SYSTEM"
+.SH NAME
+recvstatus2 - Receiving Hakusan WIN_UDP operation/setting status packet
+.SH SYNOPSIS
+recvstatus2 [\-\fBr\fR]
+.I port
+[
+.I logdir
+]
+.LP
+.SH DESCRIPTION
+Recvstatus2 receives operation status packet (packet type A8) and setting status packet (packet type A9) transmitted from Data Converter LS-7000 etc. manufactured by Hakusan Corporation by the UDP port
+.I \ port,
+and transmits to a directory
+.I \ logfile
+as a file.
+When 
+.I \ logdir
+is not given, it writes in the standard output.
+File names generated in
+.I \ logdir
+are "M"+"channel number"+".xml" (for example "M025C.xml") for operation status and "S"+"channel number "+".xml" (for example "S025C.xml") for setting status.
+These files are overwritten at each time of receiving new status. 
+.LP
+It is necessary to set "A0" as output packet type for LS-7000 etc. 
+Recvstatus2 does not request resending of packet. 
+When recvstatus2 is initiated without argument, brief usage is displayed.
+.SH OPTIONS
+In each time when
+.IP \fB\-r 5
+writes status files, it checks in ("ci -l -q") them in the RCS file of the same directory. When the RCS file does not exist, it will be newly created.
+.SH SOURCE
+.TP
+`recvstatus2.c'
+.SH SEE ALSO
+rcs(1), ci(1)

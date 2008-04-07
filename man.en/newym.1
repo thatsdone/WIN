@@ -1,0 +1,36 @@
+.TH newym 1W "2001.2.7" "WIN SYSTEM" "WIN SYSTEM"
+.SH NAME
+newym - Monthly update process in event recording server
+.SH SYNOPSIS
+newym [\fIdat_dir\fR] 
+.LP
+.SH DESCRIPTION
+Newym monthly updates the monthly trigger list and the inspection information file (pick file) directories in the event recording server. Usually, newym is periodically initiated from _bj(1W) or _bj2(1W) (e.g., every several tens of seconds). Actually, however, it works only if initiated on the second or any later day of the new month for which monthly updating is not completed yet. Newym works on below the directories identified by the environment variable DD or argument
+.I dat_dir.
+If both DD and
+.I dat_dir
+are given,
+.I dat_dir
+will be given priority. The process performed by newym goes as explained below. The following example explains a case where a directory /dat is specified and year-and-month updating from 0101 to 0102 occurs:
+.IP "" 3
+.ti -3
+(1) The content of the file /dat/etc/YYMM that maintains the current "year-month" for the recording system is updated from "0101" to "0102."
+.IP "" 3
+.ti -3
+(2) A STOP signal is sent to pmon(1W) and events(1W) to stop them. In the meantime, the part for the new month in /dat/etc/pmon.out.0101 file is transferred to a newly generated file /dat/etc/pmon.out.0102. Then, the symbolic link destination of /dat/etc/pmon.out is changed from /dat/etc/pmon.out.0101 to /dat/etc/pmon.out.0102. Finally, a CONT signal is sent to pmon(1W) and events(1W) to resume them.
+.IP "" 3
+.ti -3
+(3) The pick files for 0102 in the pick file directory /dat/picks/man/0101 are moved to the newly created directory /dat/picks/man/0102.
+.IP "" 3
+.ti -3
+(4) The pick files for 0102 in the pick file directory /dat/picks/auto/0101 are moved to the newly created directory /dat/picks/auto/0102.
+.LP
+When newym uses _stop(1W) and _cont(1W) in step (2) above, the signals will be sent not only to the pmon/events process in the relevant event processing system but also to all the pmon/events processes in progress in that machine. Steps (3) and (4) will be skipped if the directory /dat/picks/man or /dat/picks/man does not exist.
+.SH OPTIONS
+.TP 
+None
+.SH SOURCE
+.TP
+`newym'
+.SH SEE ALSO
+_stop(1W), _cont(1W), events(1W), pmon(1W), _bj(1W), _bj2(1W)

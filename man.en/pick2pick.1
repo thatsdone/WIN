@@ -1,0 +1,25 @@
+.TH pick2pick 1W "2005.4.20" "WIN SYSTEM" "WIN SYSTEM"
+.SH NAME
+pick2pick - Filter for rewriting pickfiles for other waveform files
+.SH SYNOPSIS
+pick2pick 
+.I trgname YY MM DD hh mm ss
+.LP
+.SH DESCRIPTION
+Pick2pick reads win inspection information files (pickfile(1W)) from the standard input and renames waveform files as
+.I trgname
+and sets the start times of the waveform files in the
+.I YY MM DD hh mm ss
+format to write them to the standard output.
+.LP
+Pick2pick only rewrites parts of pickfile(1W) that start with #p. The rest of the file content is written out unchanged.
+.LP
+
+.SH BUGS
+Pick2pick does not perform much of error check. For example, it refers to the start time to check if the beginning of the range of a readout fits in
+.I trgname.
+However, it does not check the end of the range at all.
+.LP
+According to pickfile(1W), the times in the #p lines of a pickfile created using any of the pre-2001.7 versions of win are the numbers of seconds counted from the top of the corresponding waveform file and counted based on the numbers of second blocks actually contained in the waveform file. To ensure that pick2pick exactly executes any pickfile created using any older version of win, the content of the original waveform file must be compared with that of the converted waveform file to check for any missing blocks of any specific seconds.
+.SH SEE ALSO
+pickfile(1W)

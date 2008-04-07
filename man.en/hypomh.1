@@ -1,0 +1,47 @@
+'\" t
+.TH hypomh 1W "2001.2.3" "WIN SYSTEM" "WIN SYSTEM"
+.SH NAME
+hypomh - Hypocenter locating program by Hirata and Matsuura
+.SH SYNOPSIS
+hypomh
+.I stan
+.I seis
+.I final
+.I report
+[
+.I init
+]
+.SH DESCRIPTION
+Explained here is the method of using hypomh called by win(1W) independently outside win. Additionally, pickfile(1W) and win(1W) also provides useful information.
+Arguments are as follows:
+.TP
+.I stan
+Velocity structure file. The same one as used by win can be used. For the format, refer to win(1W).
+.TP
+.I seis
+Data file containing arrival times and observation point coordinates.
+Identical with the part starting with "#s" in a win measurement information file (pick file), albeit with "#s" removed. This file can be created using the filter seis(1W). For the format, refer to pickfile(1W). For example, if
+.br
+ cat /dat/picks/man/9307/930715.152345.123 | seis > tmp
+.br
+contains the data of a multiple number of earthquakes, the data will be processed sequentially. For example,
+.br
+ cat /dat/picks/man/9307/930715* | seis > tmp
+.TP
+.I final
+Result output file. Identical with the part starting with "#f" in a win pick file, albeit with "#f" removed. For the format, refer to pickfile(1W).
+.TP
+.I report
+Calculation status output file. If unnecessary, specify /dev/null.
+.TP
+.I init
+Initial value file. The first line records the latitude (degrees), longitude (degrees) and depth (km) of an initial hypocenter, and the second line the uncertainty of each value.
+These values each contain a decimal point and have a width of 10 digits.
+If this file is not specified, the values specified in the structure file will be used.
+.LP
+The easiest way to view a calculation result on a map is to create a file containing the first line (e.g., " 93  7 22    12  6   2.162   34.76181  140.09901  60.004   2.0") cut out from the result file (\fI final\fR ), write the file name of this file in the 14th line of win.prm, and view using win -m.
+.SH SOURCE
+.TP
+`hypomh.f'
+.SH SEE ALSO
+win(1W), pickfile(1W), seis(1W)

@@ -1,0 +1,145 @@
+'\" t
+.TH raw_mon 1W "2000.12.21" "WIN SYSTEM" "WIN SYSTEM"
+.SH NAME
+raw_mon, raw_mond - Conversion from RAW to MON format data 
+.SH SYNOPSIS
+raw_mon
+.I rawkey
+.I monkey
+.I shmsize
+[
+.I chfile
+[
+.I logfile
+]]
+.LP
+raw_mond
+.I rawkey
+.I monkey
+.I shmsize
+[
+.I chfile
+[
+.I logfile
+]]
+.LP
+.SH DESCRIPTION
+Raw_mon generates MON format data from win-formatted RAW format data sorted in order of time cyclically written in a share memory segment identified by a key
+.I \ rawkey
+and writes the generated data in another share memory segment identified by another key
+.I \ monkey.
+When a channel file
+.I \ chfile
+is given, only the data of the channels listed in it will be written. If the channel file name is prefixed with '\-,' however, the data of all the channels other than the ones listed in that file will be written.
+If
+.I chfile
+is not given or if '\-' is specified as the channel file, all the channel will be written.
+If the share memory segment with the key
+.I \ monkey
+does not exist, a share memory segment with a size of
+.I \ shmsize
+\ (KB) will be created. If it already exists but has a size smaller than
+.I \ shmsize
+\ (KB), an error will occur.
+The shared memory key is a 32-bit integer.
+.LP
+Raw_mond is initiated in daemon mode.
+.LP
+When log file name
+.I \ logfile
+is specified, operation log is set here. When it is not specified, log information is sent to the standard output (however, it is sent to syslogd(8) when operation is made in the daemon mode). The log file is opened/closed in each write.
+.LP
+When raw_mon is initiated without argument, brief usage is displayed.
+.LP
+The channel file is a text file that hexadecimally lists channel numbers, one for each line. In each line, only the first item is read, while the subsequent items delimited by blanks or tabs are all bypassed. Any lines starting with '#' are also bypassed. When receiving a hang-up signal, the raw_mon process rereads the channel file.
+.LP
+For the format of the shared memories, refer to order(1W) and winformat(1W).
+.LP
+The MON format is an irreversible data compression format for saving only the maximum and minimum values in 0.2 second-long intervals. Similarly to ones in the normal win format (RAW format), a second-scale channel block consists of a time header (second header) and channel blocks for the number of channels but has a different internal structure. A channel block consisting of data for one channel/one second has the following format:
+
+.ne 5
+.TS
+|c|c|c|c|c|
+|c|c|c|c|c|
+|c|c|c|c|c|
+c s s s s.
+_
+Channel number	Interval 1	Interval 2		Interval 5
+	Max/min value	Max/min value	...	Max/min value
+2B	Variable length	Variable length		Variable length
+_
+Channel block (variable length)
+.TE
+
+.LP
+The two bytes at the top is for the channel number, followed by variable-length (1-to-7-byte-long) blocks for five intervals (one second), each containing the encoded minimum and maximum values in a 0.2 second interval. The minimum and maximum values in a 0.2 second interval are encoded in the format below. The double vertical lines in the figure stand for byte boundaries.
+In the sequence of bits of each byte, the high-order bit comes to the left end. Multiple byte values are expressed in big-endian order (high-order byte first), and negative values are complements of 2.
+
+(1) When both the minimum and maximum values can be expressed with 7 bits:
+.ne 5
+.TS
+||c|c|c||c|c||
+||c|c|c||c|c||
+||c|c|c||c|c||
+c s s s s.
+_
+High-order 3 bits	High-order 3 bits 	Value	Low-order 4 bits	Low-order 4 bits
+for min value	for max value	00	for min value	 for max value
+3 b	3 b	2 b	4 b	4 b
+_
+Maximum and minimum values in a 0.2 second interval (2 B)
+.TE
+
+(2) When both the minimum and maximum values can be expressed with 11 bits:
+.ne 5
+.TS
+||c|c|c||c||c||
+||c|c|c||c||c||
+||c|c|c||c||c||
+c s s s s.
+_
+High-order 3 bits	High-order 3 bits	Value	Low-order 1B	Low-order1B
+for min value	for max value	01	for min value	for max value
+3 b	3 b	2 b	1 B	1 B
+_
+Maximum and minimum values in a 0.2 second interval (3 B)
+.TE
+
+(3) When both the minimum and maximum values can be expressed with 19 bits:
+.ne 5
+.TS
+||c|c|c||c||c||
+||c|c|c||c||c||
+||c|c|c||c||c||
+c s s s s.
+_
+High-order 3 bits	High-order 3 bits	Value	Low-order 2B	Low-order 2B
+for min value	for max value	10	for min value	for max value
+3 b	3 b	2 b	2 B	2 B
+_
+Maximum and minimum values in a 0.2 second interval (5 B)
+.TE
+
+(4) When both the minimum and maximum values can be expressed with 27 bits:
+.ne 5
+.TS
+||c|c|c||c||c||
+||c|c|c||c||c||
+||c|c|c||c||c||
+c s s s s.
+_
+High-order 3 bits	High-order 3 bits	Value	Low-order 3B	Low-order 3B
+for min value	for max value	11	for min value	for max value
+3 b	3 b	2 b	3 B	3 B
+_
+Maximum and minimum values in a 0.2 second interval (7 B)
+.TE
+
+.SH OPTIONS
+.TP 
+None
+.SH SOURCE
+.TP
+`raw_mon.c'
+.SH SEE ALSO
+winformat(1W), order(1W), raw2mon(1W)

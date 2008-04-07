@@ -1,0 +1,48 @@
+.TH wck 1W "2000.8.14" "WIN SYSTEM" "WIN SYSTEM"
+.SH NAME
+wck - Inspection of content of win format file
+.SH SYNOPSIS
+wck [ \-rmhctu ] [ 
+.I file [
+.I position
+]]
+.LP
+.SH DESCRIPTION
+Wck displays general content of a win format file
+.I file.
+Wck reads
+.I file,
+and, as for each channel that configures data for the head 1 second, it displays channel number (hexadecimal number), sampling rate (Hz), sample size (in byte, however in bit in case of win2 format), and block size (in byte) including channel header. However, when an integer value 
+.I position
+is given, it displays configuration for the (position+1)th second instead of for the first second. In addition, it displays time (year to second), the number of channels contained in one second and occupying size for each second. Finally it displays the number of seconds contained in the file and the file size (in byte). 
+.LP
+When
+.I file
+is not given, or it is "-," wck reads data from the standard input. Output is always the standard output. 
+.LP
+When wck is initiated without argument, brief usage is displayed. 
+.SH OPTIONS
+.TP 
+\-r
+Is specified when input data are in the RAW format. This is default. 
+Wck corresponds to win2 format.
+.TP 
+\-m
+Is specified when input data are in the MON format. 
+.TP 
+\-h
+Is specified when input data are in RAW format for high sampling rate expansion.
+.TP
+\-u
+Displays brief usage. 
+.TP
+\-c
+Is count mode and displays the number of seconds for all channels contained in input. 
+.TP
+\-t
+Is table mode and displays data presence/absence for all spaces (0000 - FFFF) of channel number. Even data for 1 second are found in input file, the file is determined to be "present." One character corresponds to frame for 16 channels (XXX0 - XXXF), and, among them, the number of channels (0 - 16) of which data exist is displayed by a character or a symbol (\- means zero, 1 - 9 mean 1 - 9 as they are, and A - G mean 10 - 16). One line is for 1024 channels, including 64 characters, with total 64 lines. 
+.SH SOURCE 
+.TP
+`wck.c'
+.SH SEE ALSO
+win(1W), wed(1W), wadd(1W), winformat(1W)

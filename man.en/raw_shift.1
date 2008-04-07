@@ -1,0 +1,60 @@
+.TH raw_shift 1W "2002.5.31" "WIN SYSTEM" "WIN SYSTEM"
+.SH NAME
+raw_shift - Right shift of RAW format data by desired numbers of bits
+.SH SYNOPSIS
+raw_shift
+.I inkey
+.I outkey
+.I shmsize
+.I bits
+[
+.I chfile
+[
+.I logfile
+]]
+.LP
+.SH DESCRIPTION
+Raw_shift loads win format data cyclically written in a shared memory segment identified by a key
+.I \ inkey
+and shifts all the samples of all the channels to the right by
+.I \ bits
+bits and writes the data to another shared memory segment identified by another key
+.I \ outkey.
+If a channel file
+.I \ chfile
+is given, however, only the data of the channels listed in this file will be written shifted to the right while the data of any other channels are bypassed.
+If the channel file name is prefixed with '\+,' the channels listed in this file will be written shifted to the right while any other channels are just copied to the output.
+Alternatively, if the channel file name is prefixed with '\-,' the channels listed in this file will be just copied to the output while any other channels are written shifted to the right.
+If the shared memory segment with the key
+.I \ outkey
+does not exist, a shared memory segment with a size of
+.I \ shmsize
+\ (KB) will be created. If it already exists but has a size smaller than
+.I \ shmsize
+\ (KB), an error will occur.
+The shared memory key is a 32-bit integer value.
+.LP
+When log file name
+.I \ logfile
+is specified, operation log is set here. When it is not specified, log information is sent to the standard output. The log file is opened/closed in each write.
+.LP
+The channel file is a text file that hexadecimally lists channel numbers, one for each line. In each line, only the first item is read, while the subsequent items delimited by blanks or tabs are all ignored. Any lines starting with '#' are also ignored.
+When receiving a hang-up signal, the raw_shift process rereads the channel file.
+.LP
+The format in the shared memory
+.I inkey
+can be either a chronologically sorted one (Cf. order(1W)) or otherwise (Cf. recvt(1W)). The format in the shared memory
+.I outkey
+will be the same as that of
+.I inkey.
+.LP
+When raw_shift is initiated without argument, brief usage is displayed.
+.LP
+.SH OPTIONS
+.TP
+None
+.SH SOURCE
+.TP
+`raw_shift.c'
+.SH SEE ALSO
+winformat(1W), order(1W), recvt(1W)

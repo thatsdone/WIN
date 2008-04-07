@@ -1,0 +1,45 @@
+.TH wadd2 1W "2002.5.31" "WIN SYSTEM" "WIN SYSTEM"
+.SH NAME
+wadd2 - Binding of two win format files with overlapped time
+.SH SYNOPSIS
+wadd2
+.I mainfile
+.I subfile
+[
+.I outdir
+]
+.LP
+.SH DESCRIPTION
+Wadd2 binds a win format file
+.I \ mainfile
+and
+a win format file
+.I \ subfile,
+and enters the result in the directory specified by
+.I \ outdir
+with the same name as
+.I \ mainfile.
+When '\-' is specified as
+.I \ outdir,
+the result is written in the standard output. When
+.I \ outdir
+is not specified, the result replaces
+.I \ mainfile.
+When data of the same second and the same channel exist in both files, priority is given to data of
+.I \ mainfile,
+and data of
+.I \ subfile
+is abandoned. In other cases, all the data are bound and transmitted to the result file. 
+Therefore, time range of the result file is between the start time and the end time of either one of two files that has started earlier. 
+.LP
+Cat(1) can be utilized to couple two win format files having the same channel configuration and the adjacent and not overlapped time range (wadd2 can be also utilized). 
+.LP
+When wadd2 is initiated without argument, brief usage is displayed.
+.SH OPTIONS
+.TP 
+None
+.SH SOURCE 
+.TP
+`wadd2.c'
+.SH SEE ALSO
+wadd.c(1W), win(1W), wed(1W), wck(1W), winformat(1W)

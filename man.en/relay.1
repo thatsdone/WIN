@@ -1,0 +1,148 @@
+.TH relay 1W "2005.5.18" "WIN SYSTEM" "WIN SYSTEM"
+.SH NAME
+relay, relayd - relay of win format data on IP
+.SH SYNOPSIS
+relay [\-\fBNnrD\fR] [\-\fBb\fI bufsiz\fR] [\-\fBd\fI\ delay\fR] 
+[\-\fBf\fI ctlfile\fR] [\-\fBg\fI\ group\fR]
+[\-\fBi\fI\ interface\fR] [\-\fBp\fI\ src_port\fR] [\-\fBs\fI\ sinterface\fR] 
+[\-\fBt\fI\ ttl\fR]
+.I inport
+.I dest
+.I outport
+[
+.I logfile
+]
+.LP
+relayd [\-\fBNnr\fR] [\-\fBb\fI bufsiz\fR] [\-\fBd\fI\ delay\fR] 
+[\-\fBf\fI ctlfile\fR] [\-\fBg\fI\ group\fR] 
+[\-\fBi\fI\ interface\fR] [\-\fBp\fI\ src_port\fR] [\-\fBs\fI\ sinterface\fR] 
+[\-\fBt\fI\ ttl\fR]
+.I inport
+.I dest
+.I outport
+[
+.I logfile
+]
+.SH DESCRIPTION
+Relay receives win format data sent to the UDP port number
+.I \ inport
+of its own host and transmits to the UDP port number
+.I \ outport
+of host
+.I \ dest.
+Although relay inspects packet number of received packet, it does not 
+inspect time stamp.
+.LP
+However, when 0 is specified to
+.I \ inport
+it reads data in line unit from the standard input instead of the UDP port. 
+Data of one line including line feed code are transmitted to
+.I \ outport
+as one UDP packet. At that time, a packet number of 2 bytes (1 byte 
+each of "current" packet number and "original" packet number) is added 
+to the head. When the line head characters are ^D(0x04) or end-of-file 
+is detected, relay ends. 
+This operation is utilized for delivery of text data. 
+.LP
+Relayd is initiated in daemon mode. It is the same operation as when option
+\fB\-D\fR
+is specified by relay. 
+.LP
+When log file name
+.I \ logfile
+is specified, operation log is set here. 
+When it is not specified, log information is sent to the standard output 
+(however, it is sent to syslogd(8) when operation is made in the daemon 
+mode). The log file is opened/closed in each write. 
+.LP
+When relay receives the HUP signal, it rereads control file (if specified, 
+as described later)
+.I \ ctlfile
+and send it to log file
+.I \ logfile
+to write flow rate information on each source host. It includes
+.br
+.nf
+  number of packets, number of bytes, number of packets per second, number of bytes per second
+.fi
+since startup or the previous time it received the HUP signal. 
+.LP
+When relay is initiated without argument, brief usage is displayed.
+.SH Format on networks and resend protocol
+Refer to recvt(1W).
+Relay can monitor continuity of packet number to recognize up to 100 
+sources (a set of host and port) as targets to which resend to 
+be requested. If the number of sources exceeds 100, recvt once 
+cancels all the data of source table and restarts registration. 
+.SH OPTIONS
+.IP "\fB\-b \fIbufsiz" 5
+Makes receiving socket buffer size
+.I bufsiz
+KB. However, the value must be within a range allowed by the system. 
+Default is 256KB. 
+.IP \fB\-D 5
+Is initiated in the daemon mode. 
+.IP "\fB\-d \fIdelay" 5
+When a packet arrived 0.5 second or more after relaying the previous 
+packet, it inserts a delay of
+.I delay
+milliseconds. 
+.IP "\fB\-f \fIctlfile" 5
+Enables receiving control by source host specified by control file 
+.I \ ctlfile.
+In
+.I \ ctlfile
+a host control line starting with "+" or "\-"can be written.
+In each line, only the left-most item delimited by blank or tab is read, and 
+the remaining parts of the line are jumped. The line starting with '#' is 
+presumed to be a comment. 
+.br
+Host control line is a rule written in the format.
+.nf
+
+       -host   packet sent from host to be rejected
+       +host   packet sent from host to be accepted
+       +       accept packet
+       -       reject packet
+
+.fi
+As for host control, the rule is applied to each packet from the top. 
+When the applicable rule is found, it is applied. When no applicable rule is 
+found until the last, the packet is accepted (that is to say, the last line 
+is always with "+").
+.IP "\fB\-g \fIgroup" 5
+Receives a packet transmitted to the IP multicast address
+.I group.
+.IP "\fB\-i \fIinterface" 5
+Specifies the network interface that receives the packet sent to the IP 
+multicast address by the IP address of the interface
+.I interface.
+.IP "\fB\-N" 5
+Does not inspect packet number of received packet. Packet number field 
+(the top 2 bytes) is not rewritten, that is to say, the received packet is 
+relayed as it is. 
+.IP "\fB\-n" 5
+Does not report information on packet from source address to be 
+rejected or resent packet received redundantly to the log. 
+.IP "\fB\-p \fIsrc_port" 5
+Makes the UDP port number of the source \fIsrc_port\fR. Usually the 
+specification is not required. 
+.IP "\fB\-r" 5
+Does not transmit resend request packet.
+In case of one-way transmission line like receiving through the DVB 
+satellite delivery board, this can restrict unnecessary packet 
+transmission.
+.IP "\fB\-s \fIsinterface" 5
+When address
+.I dest
+is the IP multicast address, it specifies network interface to which 
+packet is transmitted by the IP address of the interface
+.I sinterface.
+.IP "\fB\-t \fIttl" 5
+When the recepient is the IP multicast address, it makes the value of 
+TTL of transmission packet  \fIttl\fR instead of default 1.
+.SH SOURCE 
+.TP
+`relay.c'
+.SH SEE ALSO 
+winformat(1W), recvt(1W), send_raw(1W), order(1W)

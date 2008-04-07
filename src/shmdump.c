@@ -21,6 +21,7 @@
 /*  2003.7.24 -x (hexadecimal dump) and -f (file output) */
 /*  2003.11.3 splitted sprintf(tb,...) / use time_t */
 /*  2004.10.14 XINETD compile option */
+/*  2008.4.5 bug fix : unsigned long wsize -> long wsize */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -693,7 +694,7 @@ main(argc,argv)
     eobsize,eobsize_count,size2,tout,abuf[4096],bufsize_in,rawdump,quiet,
     hexdump;
   time_t tow,time_end,time_now;
-  unsigned long wsize;
+  long wsize;
   unsigned int packet_id;
   unsigned char *ptr,tbuf[256],*ptr_lim,*buf,chlist[65536/8],*ptw,tms[6],
     tb[256],*ptr1,*ptr_save;

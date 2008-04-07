@@ -1,0 +1,40 @@
+.TH wtime 1W "2000.12.20" "WIN SYSTEM" "WIN SYSTEM"
+.SH NAME
+wtime - Time staggering filter for win format filter
+.SH SYNOPSIS
+wtime
+[
+.I \-h hours
+] [
+.I \-s sec
+]
+.LP
+.SH DESCRIPTION
+Wtime makes win format file given by the standard input to be input and staggers time by the specified amount to write in the standard output. Staggering direction is one by which "specified time is added to time stamp." Therefore, positive time is specified to push time stamp forward, and negative time is specified to push time stamp backward. 
+.LP
+Wtime staggers time of total files. When it is necessary to stagger for each channel, it is necessary to separate by
+.LP
+wch(1W) and connect by wadd(1W). 
+.br
+When wtime is initiated without argument, brief usage is displayed. 
+.SH OPTIONS
+.IP \fB\-h [hours]\fP 5
+Gives time hours to be staggered in hour. Hours must be integer. 
+.IP \fB\-s [sec]\fP 5
+Gives time sec in second. Sec can be real number. 
+When staggering odd second (not integer), dummy data is attached to the head of the first 1 second and latter part of the last 1 second is cut to make up. Therefore the number of seconds of the file is invariable. 
+.LP
+\fB\-h\fP and \fB\-s\fP can be specified simultaneously (it is summed). 
+.SH TYPICAL USAGE
+Time stamp is pushed forward by 9 hours (at the time of UT->JST etc.).
+.IP
+wtime -h 9
+.LP
+Time stamp is pushed backward by 1.234 seconds. 
+.IP
+wtime -s -1.234
+.SH SOURCE 
+.TP
+`wtime.c'
+.SH SEE ALSO
+wch(1W), wadd(1W), winformat(1W)

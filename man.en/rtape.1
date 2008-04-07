@@ -1,0 +1,57 @@
+.TH rtape 1W "2000.12.21" "WIN SYSTEM" "WIN SYSTEM"
+.SH NAME
+rtape - Cutting out a file from win format data on tape onto disk
+.SH SYNOPSIS
+rtape [ \-f
+.I device
+]
+.I schfile
+.I outdir
+[
+.I chfile
+]
+.LP
+.SH DESCRIPTION
+Rtape reads tape of win format data written by wtape(1W) and cuts out data of the channel specified in a channel list file
+.I chfile
+according to a time schedule table file
+.I schfile,
+and generates one or multiple WIN format waveform file in a directory
+.I outdir.
+.LP
+.I schfile
+is a file in which cutting out start time and the number of seconds to be cut out are described with one event per line, including necessary number of events (= the number of lines). The number of events has no limitation. 
+In each line, three items, year/month/day (6 digits), hour/minute/second (6 digits) and the number of seconds of length (integer), are written by delimiting by blank respectively. For example,
+.IP
+.nf
+920724 030830 50
+920724 035750 60
+.fi
+.LP
+creates two files for 50 seconds from July 24, 1992, 3 o'clock, 8 minutes, 30 seconds, and for 60 seconds from July 24, 1992, 3 o'clock, 57 minutes, 50 seconds. Since file name is automatically generated from the head time in the format of "YYMMDD.hhmmss," file names are "920724.030830" and "920724.035750" in the above example.
+.LP
+.I chfile
+is a file in which channel numbers of hexadecimal number delimited by blank or tab are arranged. Note that it is different from the normal WIN channel table format. All items are read as channel numbers, and even if "#" is attached to the line head, it is not presumed to be a comment.
+When
+.I chfile
+is not specified, all the channels contained in tape are cut out. 
+.LP
+When
+.I outdir
+is not specified, output file is created in the current directory.
+.LP
+Rtape calculates the number of file marks contained in tape for each 10 minutes and the number of data blocks for each second until the next specified head time of event, and jumps both in normal and reverse direction if necessary (if possible fast-forward). However, if data block is missing or data for one second are divided into multiple blocks, sometimes miscalculation is caused and positioning to the aimed time on the tape cannot be made. When rtape cannot find the specified time even after attempting positioning 10 times, it gives up cutting out of the event.
+.LP
+When rtape is initiated without argument, it reads data for one second to display the time, and displays brief usage. 
+.LP
+Refer to winformat(1W) and wdisk(1W) for compatibility of format on a tape and OS. 
+.SH OPTIONS
+.TP
+.RI \-f " device"
+Specifies a tape device name. Default is /dev/nrst0. 
+Mode must be one (/dev/nrst*) in which tape is not rewound at the time of close. 
+.SH SOURCE 
+.TP
+`rtape.c'
+.SH SEE ALSO
+winformat(1W), wtape(1W), fromtape(1W)

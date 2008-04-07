@@ -1,0 +1,27 @@
+.TH wch 1W "2002.2.18" "WIN SYSTEM" "WIN SYSTEM"
+.SH NAME
+wch - Selection filter in channel of win format file
+.SH SYNOPSIS
+wch
+.I chfile
+.LP
+.SH DESCRIPTION
+Wch makes a win format file given by the standard input to be input and cuts out only channels listed in a channel file
+.I \ chfile
+to copy in the standard output.
+Channel file is a text file in which channel numbers of hexadecimal number to be desired to cut out are written one number per line. In each line, only the top item delimited by blank or tab is read as a channel number, and remaining parts are bypassed. 
+When '\-' is attached to the head of channel file name, data of all channels other than those listed in the file are written. 
+When two or more data (for 1 second) of the same channel exist in one second block, wch bypasses the second and subsequent data. 
+When
+.I \ chfile
+is '\-,' all channels are written. This mode can be utilized to remove data of the same channel that overlap in one second block.
+.LP
+When wch is initiated without argument, brief usage is displayed. 
+.SH OPTIONS
+.TP 
+None
+.SH SOURCE 
+.TP
+`wch.c'
+.SH SEE ALSO
+wed(1W), win(1W), wck(1W), wadd(1W), winformat(1W)

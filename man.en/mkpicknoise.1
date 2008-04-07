@@ -1,0 +1,24 @@
+.TH mkpicknoise 1W "2005.5.18" "WIN SYSTEM" "WIN SYSTEM"
+.SH NAME
+mkpicknoise - Ensuring consistency of NOISE-labeled pickfiles
+.SH SYNOPSIS
+mkpicknoise
+.I pickfile
+.I pickfile
+.I ...
+.LP
+.SH DESCRIPTION
+Mkpicknoise checks whether
+.I pickfile
+is labeled with NOISE. If NOISE label is found, it checks consistency of its
+.I pickfile.
+In other words, any reading or any hypocenter information included in will be deleted and the rest of the data will be overwritten in the same
+.I pickfile.
+If not NOISE labeled or consistent, it will be left as is.
+.SH OPTIONS
+None
+.SH SOURCE
+.TP
+`mkpicknoise'
+.SH SEE ALSO
+pickfile(1W)

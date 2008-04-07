@@ -1,0 +1,59 @@
+.TH cormeisei 1W "2000.12.21" "WIN SYSTEM" "WIN SYSTEM"
+.SH NAME
+cormeisei - Real time minimum phase characterization of GTA-45U data
+.SH SYNOPSIS
+cormeisei
+.I inkey
+.I outkey
+.I shmsize
+.I chfile
+[
+.I logfile
+]
+.LP
+.SH DESCRIPTION
+cormeisei reads win format data sorted in order of time and cyclically written in shared memory segment of
+.I \ inkey,
+and as for data in channel specified in channel setting file
+.I chfile,
+it converts the data to minimum phase characteristic assuming that the data are linear phase characteristics AD-converted by GTA-45U manufactured by Meisei Electric Co., Ltd., and as for other channels, it writes all data in shared memory segment given by key
+.I \ outkey
+as they are. 
+When shared memory segment having key
+.I \ outkey
+does not exist, shared memory segment of size
+.I \ shmsize
+\ (KB) is created. When the segment already exists, if its size is smaller than
+.I \ shmsize
+\ (KB), an error occurs. 
+Shared memory key is an integer value of 32 bits. 
+.LP
+When log file name
+.I \ logfile
+is specified, action log is set here.
+When the name is not specified, log information is sent to the standard output. Log file is opened and closed in each write action. 
+.LP
+Channel setting file is a text file in which channel numbers of hexadecimal and sampling rate of its channel are sequentially written by delimiting with blank or tab with data for one channel per line. Only two items from the head of each line is read, and items after the position delimited by blank or tab are bypassed. In addition, the lines with the head '#' are also bypassed. Sampling rate that is 20 (Hz) or 100 (Hz) must coincide with that of actual data. 
+When cormeisei process receives hang-up signal, rereads channel setting file. 
+Data layout on shared memory
+.I inkey
+and
+.I outkey
+must be the one sorted in order of time (refer to order(1W)).
+.LP
+Output of cormeisei appears about 12 seconds later than input due to internal processing. 
+.LP
+When cormeisei is initiated without argument, it displays brief usage. 
+.LP
+.SH OPTIONS
+.TP 
+None.
+.SH SOURCE
+.TP
+`cormeisei.c'
+.SH SEE ALSO
+winformat(1W), order(1W)
+.SH AUTHOR
+Tetsu Ide
+.SH REFERENCE
+Ide, Tetsu and Urabe, Takashi: Real time phase correction of acausal seismic wave record using total band pass filter, Technical Report of Earthquake Research Institute, the University of Tokyo, No.3, 20-28, 1998.

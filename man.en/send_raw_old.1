@@ -1,0 +1,86 @@
+.TH send_raw_old 1W "2000.12.22" "WIN SYSTEM" "WIN SYSTEM"
+.SH NAME
+send_raw_old, send_mon_old, sendt_raw_old, sendt_mon_old - Transmission of win format data by IP (old packet format)
+.SH SYNOPSIS
+send_raw_old
+.I shmkey
+.I dest
+.I port
+[
+.I chfile
+[
+.I logfile
+]]
+.br
+send_mon_old
+.I shmkey
+.I dest
+.I port
+[
+.I chfile
+[
+.I logfile
+]]
+.br
+sendt_raw_old
+.I shmkey
+.I dest
+.I port
+[
+.I chfile
+[
+.I logfile
+]]
+.br
+sendt_mon_old
+.I shmkey
+.I dest
+.I port
+[
+.I chfile
+[
+.I logfile
+]]
+.SH DESCRIPTION
+Send_raw_old, send_mon_old, sendt_raw_old, and sendt_mon_old transmit win format data written (cyclically) in the shared memory segment shown by a key
+.I \ shmkey
+to the UDP port number
+.I \ port
+of host
+.I \ dest.
+When channel file
+.I \ chfile
+is given, only the data of channels listed in that file are transmitted. However, when '\-' is attached to the head of channel file name, the data of all channels other than those listed in the file are transmitted. 
+When
+.I chfile
+is not given or '\-' is specified, all the channels are transmitted.
+.LP
+When log file name
+.I \ logfile
+is specified, operation log is set here. 
+When it is not specified, log information is sent to the standard output. The log file is opened/closed in each write. 
+.LP
+Send_raw_old and sendt_raw_old are programs handling the RAW format data, and send_mon_old and sendt_mon_old are those handling the MON format data. Refer to winformat(1W) and raw_mon(1W) for the RAW format and MON format respectively. 
+.LP
+Send_raw_old and send_mon_old, and sendt_raw_old and sendt_mon_old handle different data formats on the shared memory. 
+Send_raw_old and send_mon_old already aligned in order of time handle the format (-> order(1W)) containing no "written time." On the other hand, sendt_raw_old and sendt_mon_old handles the format (-> recvt(1W)) containing "written time" in random order of time. 
+.LP
+When send_raw_old, send_mon_old, sendt_raw_old, and sendt_mon_old are initiated without argument, brief usage is displayed.
+.LP
+When send_raw_old, send_mon_old, sendt_raw_old, and sendt_mon_old processes accept backup signals, they reread channel files.
+.SH FORMAT OF CHANNEL FILE
+Channel file is a text file in which channel numbers of hexadecimal number are arranged with one number per line. Only the head item of each line is read, and items after delimited by blank or tab are bypassed. In addition, the line starting with '#' is also bypassed. 
+.SH Format on network and resending protocol
+Refer to recvt(1W). Here the formats introduced as "old type packet format that accommodates only data for one second per packet" are packet formats of send_raw_old, send_mon_old, sendt_raw_old, and sendt_mon_old. This point is difference from send_raw, send_mon, sendt_raw, and sendt_mon.
+In order to increase transmission efficiency, a packet is generated so that its size is as large as possible within 1472 bytes (within 1500 bytes for IP packet size). 
+.LP
+However, send_raw_old, send_mon_old, sendt_raw_old, and sendt_mon_old accept "multiple resending request packet." These are used only for data transmission to Meteorological Agency, and one resending request packet contains multiple packet numbers to be resent. In this case, length of resending request packet is not normal 1 byte but [requested number of packets] bytes.
+.SH OPTIONS
+.TP 
+None.
+.SH SOURCE 
+.TP
+`send_raw_old.c'
+.SH SEE ALSO
+winformat(1W), recvt(1W), relay(1W), order(1W), raw_raw(1W), send_raw(1W),
+raw_mon(1W)

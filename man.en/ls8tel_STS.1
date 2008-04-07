@@ -1,0 +1,17 @@
+.TH ls8tel_STS 1W "2005.6.14" "WIN SYSTEM" "WIN SYSTEM"
+.SH NAME
+ls8tel_STS - Displaying setting information data (A8) of Hakusan LS8TEL firmware
+.SH SYNOPSIS
+ls8tel_STS
+.LP
+.SH DESCRIPTION
+ls8tel_STS loads the setting information (data main body of A8 packet) of data logger LS-8000SH (firmware: LS8TEL16, LS8TEL14) manufactured by Hakusan Corporation from the standard input and displays some of the information in the standard output.
+.LP
+The displayed information contains times, the firmware name (date), communication speed, sampling frequencies, the logger address, and the gain settings of the all four channels (scale factors).
+.SH OPTIONS
+None
+.SH SOURCE
+.TP
+'ls8tel_STS.c'
+.SH SEE ALSO
+recvstatus3(1W), ls8tel_STM(1W)

@@ -689,6 +689,7 @@ last_out:     if((wsize=ptw-buf)>10)
       if(*fname) fclose(fpout);
       }
     time(&time_now);
-    if(end || (seconds && (time_now>time_end || nsec>=seconds))) ctrlc();
+/*    if(end || (seconds && (time_now>time_end || nsec>=seconds))) ctrlc();*/
+    if(end || (seconds && (time_now>time_end))) ctrlc(); /* 071220 urabe */
     }
   }

@@ -1,4 +1,7 @@
- $Id: ChangeLog,v 1.144 2008/04/07 05:31:44 uehira Exp $
+ $Id: ChangeLog,v 1.145 2008/04/07 09:29:14 urabe Exp $
+
+2008-04-07  Urabe Taku <urabe@eri.u-tokyo.ac.jp>
+	* src/shmdump.c : fixed bug(?) in option -s (071220)
 
 2008-04-07  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* Version 1.1.86 released.

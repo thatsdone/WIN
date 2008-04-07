@@ -1,11 +1,11 @@
 #!/bin/sh
 #
-# $Id: monitor_procs1,v 1.2 2000/04/30 10:10:38 urabe Exp $
+# $Id: monitor_procs1,v 1.2.6.1 2008/04/07 06:52:13 uehira Exp $
 #
 . win.conf
 tmp=/tmp/monitor_procs.$$
 ps agxww|sed 's/ (.*)$//'> $tmp
-cat _win|grep -v '^#'|grep -v '^nice'|sed -n 's/ *&//p'|expand|tr -s " "|
+cat _win|grep -v '^#'|grep -v '^nice'|sed -n 's/ *&.*$//p'|expand|tr -s " "|
 while read procs
 do
   pid=`grep "$procs\$" $tmp|awk '{print $1}'`

@@ -1,4 +1,19 @@
- $Id: ChangeLog,v 1.131.2.13 2008/02/12 09:50:24 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.14 2008/04/07 06:52:12 uehira Exp $
+
+2008-04-07  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 1.1.91-LIB released.
+	* MF Version 1.1.86. (2008-02-20 --- 2008-04-07)
+	* configure.in : check Tcl/Tk8.0jp path.
+	* English manuals install to $mandir, and Japanese manuals install
+	  to $mandir/ja.
+	* man/intro_win.1 : added to dist & install list.
+
+2008-04-05  Urabe Taku <urabe@eri.u-tokyo.ac.jp>
+	* src/shmdump.c: bug fix : unsigned long wsize -> long wsize
+
+2008-02-20  Urabe Taku <urabe@eri.u-tokyo.ac.jp>
+	* src/win.c: avoid overflow in getting offset levels for
+	  near 32 bit data (in plot_mon() and plot_zoom()).
 
 2008-02-12  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* Version 1.1.90-LIB released.

@@ -1,9 +1,9 @@
 #
-# $Id: Makefile.am,v 1.5 2005/02/02 15:36:35 uehira Exp $
+# $Id: Makefile.am,v 1.6 2008/04/07 02:57:53 uehira Exp $
 #
 
 # SUBDIRS = src etc html man pick prog
-SUBDIRS = src prog man etc pick tools
+SUBDIRS = src prog man man.en etc pick tools
 
 EXTRA_DIST = README.Cygwin README.MacOSX
 

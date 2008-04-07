@@ -1,4 +1,10 @@
- $Id: ChangeLog,v 1.142 2008/04/05 12:50:56 urabe Exp $
+ $Id: ChangeLog,v 1.143 2008/04/07 02:57:53 uehira Exp $
+
+2008-04-07  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 1.1.86 released.
+	* configure.in : check Tcl/Tk8.0jp path.
+	* English manuals install to $mandir, and Japanese manuals install
+	  to $mandir/ja.
 
 2008-04-05  Urabe Taku <urabe@eri.u-tokyo.ac.jp>
 	* src/shmdump.c: bug fix : unsigned long wsize -> long wsize

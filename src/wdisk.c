@@ -1,4 +1,4 @@
-/* $Id: wdisk.c,v 1.17.2.3 2007/08/26 02:38:34 uehira Exp $ */
+/* $Id: wdisk.c,v 1.17.2.4 2008/04/14 03:45:33 uehira Exp $ */
 /*
   program "wdisk.c"   4/16/93-5/13/93,7/2/93,7/5/94  urabe
                       1/6/95 bug in adj_time fixed (tm[0]--)
@@ -371,6 +371,7 @@ main(argc,argv)
  reset:
    for(i=0;i<5;i++) tm_last[i]=(-1);
    fd=NULL;
+   eobsize=0;
 
    if(shmkey)
      {

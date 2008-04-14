@@ -1,4 +1,12 @@
- $Id: ChangeLog,v 1.131.2.15 2008/04/07 09:34:22 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.16 2008/04/14 03:45:33 uehira Exp $
+
+2008-04-14  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/win.c, src/hypomhc.c : check FreeBSD OS version.
+	* MFH (2008-04-13 --- 2008-04-14)
+
+2008-04-13  Shigeki Nakagawa  <nakagawa@eri.u-tokyo.ac.jp>
+	* src/wdisk.c (main): bug fix: initialize eobsize=0 
+	                           (reported by M. Sato)
 
 2008-04-07  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* Version 1.1.91-LIB released.

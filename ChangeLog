@@ -1,4 +1,7 @@
- $Id: ChangeLog,v 1.146 2008/04/13 09:03:34 nakagawa Exp $
+ $Id: ChangeLog,v 1.147 2008/04/14 03:37:19 uehira Exp $
+
+2008-04-14  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/win.c, src/hypomhc.c : check FreeBSD OS version.
 
 2008-04-13  Shigeki Nakagawa  <nakagawa@eri.u-tokyo.ac.jp>
 	* src/wdisk.c (main): bug fix: initialize eobsize=0 

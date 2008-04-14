@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.48 2008/02/20 02:31:25 urabe Exp $
+   $Id: win.c,v 1.49 2008/04/14 03:37:19 uehira Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -4491,11 +4491,11 @@ main(argc,argv)
   extern char *optarg;
   lPoint pts[10];
 
-#ifdef __FreeBSD__
+#if (defined(__FreeBSD__) && (__FreeBSD__ < 4))
 #include <floatingpoint.h>
 #endif
 
-#ifdef __FreeBSD__
+#if (defined(__FreeBSD__) && (__FreeBSD__ < 4))
   /* allow divide by zero -- Inf */
   fpsetmask(fpgetmask() & ~(FP_X_DZ|FP_X_INV));
 #endif

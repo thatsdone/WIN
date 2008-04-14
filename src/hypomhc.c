@@ -1,5 +1,5 @@
 /*-
-  $Id: hypomhc.c,v 1.8 2007/06/16 08:07:58 uehira Exp $
+  $Id: hypomhc.c,v 1.9 2008/04/14 03:37:19 uehira Exp $
    hypomhc.c    : main program for hypocenter location
      original version was made on March 13, 1984 and
      modified by N.H. on Feb. 8, 1985, May 8, 1985.
@@ -46,7 +46,7 @@
 #include   <unistd.h>
 #include   <math.h>
 
-#ifdef __FreeBSD__
+#if (defined(__FreeBSD__) && (__FreeBSD__ < 4))
 #include <floatingpoint.h>
 #endif
 
@@ -524,7 +524,7 @@ usage()
 end_hypomhc(status)
   int		  status;
 {
-#ifdef __FreeBSD__
+#if (defined(__FreeBSD__) && (__FreeBSD__ < 4))
   fpresetsticky(FP_X_DZ | FP_X_INV);
   fpsetmask(FP_X_DZ | FP_X_INV);
 #endif
@@ -590,7 +590,7 @@ main(argc, argv)
   int		  sstanum;
   char          **ssta;
 
-#ifdef __FreeBSD__
+#if (defined(__FreeBSD__) && (__FreeBSD__ < 4))
   /* allow divide by zero -- Inf */
   fpsetmask(fpgetmask() & ~(FP_X_DZ | FP_X_INV));
 #endif

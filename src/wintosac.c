@@ -195,10 +195,10 @@ char *argv[];
 
     n = 0;
     ndata = 0;
-    while (fgets(cbuf, 2048, stdin) != NULL) {
+    while (fgets(cbuf, sizeof(cbuf), stdin) != NULL) {
 	sscanf(cbuf, "%d %d %d %d %d %d %d", &yr, &mo, &dy, &hr, &mi, &sc, &nch);
 	for (j = 0; j < nch; j++) {
-	    fgets(cbuf, 2048, stdin);
+	    fgets(cbuf, sizeof(cbuf), stdin);
 	    ntoken = tokenize(cbuf, tokens, MAXTOKEN);
 	    chsel = strtol(tokens[0], 0, 16);
 	    setch(chsel);

@@ -34,7 +34,7 @@
 /* #define SR 4096 */
 #define SR 250
 
-/* $Id: wintowin.c,v 1.6 2006/09/13 01:38:44 tsuru Exp $ */
+/* $Id: wintowin.c,v 1.7 2008/04/17 09:16:33 tsuru Exp $ */
 /* winform.c  4/30/91,99.4.19   urabe */
 /* winform converts fixed-sample-size-data into win's format */
 /* winform returns the length in bytes of output data */
@@ -153,7 +153,7 @@ char *argv[];
 #define MAXCH 1000
     static unsigned char **outbuf, tt[6], cbuf;
     static long inbuf[SR];
-    char buf[4096];
+    char buf[8192];
     int sr, ch, size, *chsize, t[6], i, j, k, ntoken, nch;
     int c;
 
@@ -236,13 +236,13 @@ char *argv[];
     }
     chsize=(int *)malloc(sizeof(int) * mdim);
 
-    while (fgets(buf, 2048, stdin) != NULL) {
+    while (fgets(buf, sizeof(buf), stdin) != NULL) {
 	sscanf(buf, "%2x %2x %2x %2x %2x %2x %d", &t[0], &t[1], &t[2], &t[3], &t[4], &t[5], &nch);
 	for (i = 0; i < 6; i++)
 	    tt[i] = t[i];
 	size = 0;
 	for (j = 0; j < nch; j++) {
-	    fgets(buf, 2048, stdin);
+	    fgets(buf, sizeof(buf), stdin);
 	    ntoken = tokenize(buf, tokens, MAXTOKEN);
 	    sscanf(tokens[0], "%x", &ch);
 	    sr = atoi(tokens[1]);

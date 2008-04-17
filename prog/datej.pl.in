@@ -1,4 +1,4 @@
-# @PERL@
+#! @PERL@
 
 $dif = $ARGV[0];
 $TM0 = $ARGV[1];

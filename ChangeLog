@@ -1,4 +1,10 @@
- $Id: ChangeLog,v 1.147 2008/04/14 03:37:19 uehira Exp $
+ $Id: ChangeLog,v 1.148 2008/04/24 05:14:54 nakagawa Exp $
+
+2008-04-24  Shigeki Nakagawa  <nakagawa@eri.u-tokyo.ac.jp>
+	* Version 1.1.87 released.
+	* src/events.c, src/wdisk.c : add USE_LARGE_FS option.
+           In very large file system (maybe over 8TB) on linux server,
+           use statfs64(2) instead of statfs(2).
 
 2008-04-14  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* src/win.c, src/hypomhc.c : check FreeBSD OS version.

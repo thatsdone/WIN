@@ -1,4 +1,4 @@
-/* $Id: wdisk.c,v 1.19 2008/04/13 09:03:34 nakagawa Exp $ */
+/* $Id: wdisk.c,v 1.20 2008/04/24 05:14:54 nakagawa Exp $ */
 /*
   program "wdisk.c"   4/16/93-5/13/93,7/2/93,7/5/94  urabe
                       1/6/95 bug in adj_time fixed (tm[0]--)
@@ -26,6 +26,11 @@
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
+#endif
+
+#define USE_LARGE_FS 0
+#ifdef USE_LARGE_FS
+#define _LARGEFILE64_SOURCE
 #endif
 
 #include <stdio.h>
@@ -196,14 +201,22 @@ check_space(path,fsbsize)
      char *path;
      long *fsbsize;
 {
+#if USE_LARGE_FS
+  struct statfs64 fsbuf;
+#else
   struct statfs fsbuf;
+#endif
   char  path1[NAMELEN];
 
   if (snprintf(path1, sizeof(path1), "%s/.", path) >= sizeof(path1)) {
     write_log(logfile, "path1[]: buffer overflow");
     ctrlc();
   }
+#if USE_LARGE_FS
+  if (statfs64(path1, &fsbuf) < 0)
+#else
   if (statfs(path1, &fsbuf) < 0)
+#endif
     err_sys("statfs");
 
   *fsbsize = fsbuf.f_bsize;

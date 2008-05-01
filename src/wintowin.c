@@ -61,7 +61,7 @@ char *argv[];
 #define MAXCH 1000
     static unsigned char **outbuf, tt[6], cbuf;
     static long inbuf[SR];
-    char buf[4096];
+    char buf[8192];
     int sr, ch, size, *chsize, t[6], i, j, k, ntoken, nch;
     int c;
 
@@ -144,13 +144,13 @@ char *argv[];
     }
     chsize=(int *)malloc(sizeof(int) * mdim);
 
-    while (fgets(buf, 2048, stdin) != NULL) {
+    while (fgets(buf, sizeof(buf), stdin) != NULL) {
 	sscanf(buf, "%2x %2x %2x %2x %2x %2x %d", &t[0], &t[1], &t[2], &t[3], &t[4], &t[5], &nch);
 	for (i = 0; i < 6; i++)
 	    tt[i] = t[i];
 	size = 0;
 	for (j = 0; j < nch; j++) {
-	    fgets(buf, 2048, stdin);
+	    fgets(buf, sizeof(buf), stdin);
 	    ntoken = tokenize(buf, tokens, MAXTOKEN);
 	    sscanf(tokens[0], "%x", &ch);
 	    sr = atoi(tokens[1]);

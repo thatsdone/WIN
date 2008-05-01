@@ -1,4 +1,4 @@
-/* $Id: events.c,v 1.8.2.1 2006/09/25 15:00:56 uehira Exp $ */
+/* $Id: events.c,v 1.8.2.2 2008/05/01 01:18:51 uehira Exp $ */
 /****************************************************************************
 *****************************************************************************
 **     program "events.c" for NEWS                                  *********
@@ -62,6 +62,11 @@ sso     /dat/etc/sso.station    cut-jc3
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
+#endif
+
+#define USE_LARGE_FS 0
+#ifdef USE_LARGE_FS
+#define _LARGEFILE64_SOURCE
 #endif
 
 #include  <stdio.h>
@@ -297,7 +302,11 @@ check_space(path)
   char *path;
   {
   FILE *fp;
+#if USE_LARGE_FS
+  struct statfs64 fsbuf;
+#else
   struct statfs fsbuf;
+#endif
   int i,dirblocks;
   struct dirent *dir_ent;
   DIR *dir_ptr;
@@ -361,7 +370,11 @@ check_space(path)
       i,path,(dirblocks+1)/2,oldest,oldest2,newest);
 #endif
     closedir(dir_ptr);
+#if USE_LARGE_FS
+    if(statfs64(path1,&fsbuf)<0)
+#else
     if(statfs(path1,&fsbuf)<0)
+#endif
       {
       printf("%s:statfs : %s (%d)",progname,path1,getpid());
       owari();

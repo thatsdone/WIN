@@ -1,4 +1,4 @@
-/* $Id: relay.c,v 1.15.4.1 2006/09/25 15:00:58 uehira Exp $ */
+/* $Id: relay.c,v 1.15.4.2 2008/05/07 09:24:59 uehira Exp $ */
 /* "relay.c"      5/23/94-5/25/94,6/15/94-6/16/94,6/23/94,3/16/95 urabe */
 /*                3/26/95 check_packet_no; port# */
 /*                5/24/96 added processing of "host table full" */
@@ -57,6 +57,7 @@
 #include <syslog.h>
 
 #include "daemon_mode.h"
+#include "winlib.h"
 #include "subst_func.h"
 
 #define DEBUG     0
@@ -72,7 +73,7 @@ unsigned char sbuf[BUFNO][MAXMESG],sbuf_in[MAXMESG],ch_table[65536];
 int psize[BUFNO],psize_in,negate_channel,hostlist[N_HOST][2],n_host,no_pinfo,
     n_ch;
 char *progname,host_name[100],logfile[256],chfile[256];
-int  daemon_mode, syslog_mode;
+int  daemon_mode, syslog_mode, exit_status;
 
 struct {
     int host;
@@ -82,66 +83,6 @@ struct {
     unsigned int n_bytes;
     unsigned int n_packets;
     } ht[N_HOST];
-
-get_time(rt)
-  int *rt;
-  {
-  struct tm *nt;
-  time_t ltime;
-  time(&ltime);
-  nt=localtime(&ltime);
-  rt[0]=nt->tm_year%100;
-  rt[1]=nt->tm_mon+1;
-  rt[2]=nt->tm_mday;
-  rt[3]=nt->tm_hour;
-  rt[4]=nt->tm_min;
-  rt[5]=nt->tm_sec;
-  }
-
-write_log(logfil,ptr)
-  char *logfil;
-  char *ptr;
-  {
-  FILE *fp;
-  int tm[6];
-
-  if (syslog_mode)
-    syslog(LOG_NOTICE, "%s", ptr);
-  else
-    {
-      if(*logfil) fp=fopen(logfil,"a");
-      else fp=stdout;
-      get_time(tm);
-      fprintf(fp,"%02d%02d%02d.%02d%02d%02d %s %s\n",
-	      tm[0],tm[1],tm[2],tm[3],tm[4],tm[5],progname,ptr);
-      if(*logfil) fclose(fp);
-    }
-  }
-
-ctrlc()
-  {
-  write_log(logfile,"end");
-  close(sock_in);
-  close(sock_out);
-  if (syslog_mode)
-    closelog();
-  exit(0);
-  }
-
-err_sys(ptr)
-  char *ptr;
-{
-
-  if (syslog_mode)
-    syslog(LOG_NOTICE, "%s", ptr);
-  else
-    {
-      perror(ptr);
-      write_log(logfile,ptr);
-    }
-  if(strerror(errno)) write_log(logfile,strerror(errno));
-  ctrlc();
-  }
 
 read_chfile()
   {
@@ -179,8 +120,8 @@ read_chfile()
           if(tbuf[1]=='\r' || tbuf[1]=='\n' || tbuf[1]==' ' || tbuf[1]=='\t')
             {
             hostlist[ii][1]=0;                  /* any host */
-            if(*tbuf=='+') write_log(logfile,"allow from the rest");
-            else write_log(logfile,"deny from the rest");
+            if(*tbuf=='+') write_log("allow from the rest");
+            else write_log("deny from the rest");
             }
           else
             {
@@ -189,7 +130,7 @@ read_chfile()
               if(!(h=gethostbyname(host_name)))
                 {
                 sprintf(tb,"host '%s' not resolved",host_name);
-                write_log(logfile,tb);
+                write_log(tb);
                 continue;
                 }
               memcpy((char *)&hostlist[ii][1],h->h_addr,4);
@@ -198,13 +139,13 @@ read_chfile()
               sprintf(tb+strlen(tb)," from host %d.%d.%d.%d",
  ((unsigned char *)&hostlist[ii][1])[0],((unsigned char *)&hostlist[ii][1])[1],
  ((unsigned char *)&hostlist[ii][1])[2],((unsigned char *)&hostlist[ii][1])[3]);
-              write_log(logfile,tb);
+              write_log(tb);
               }
             }
           if(++ii==N_HOST)
             {
             n_host=ii;
-            write_log(logfile,"host control table full"); 
+            write_log("host control table full"); 
             }
           }
         else
@@ -223,7 +164,7 @@ read_chfile()
 #endif
       if(ii>0 && n_host==0) n_host=ii;
       sprintf(tb,"%d host rules",n_host);
-      write_log(logfile,tb);
+      write_log(tb);
       j=0;
       if(negate_channel)
         {
@@ -237,7 +178,7 @@ read_chfile()
         if((n_ch=j)==65536) sprintf(tb,"all channels");
         else sprintf(tb,"%d channels",n_ch=j);
         }
-      write_log(logfile,tb);
+      write_log(tb);
       fclose(fp);
       }
     else
@@ -246,8 +187,8 @@ read_chfile()
       fprintf(stderr,"ch_file '%s' not open\n",chfile);
 #endif
       sprintf(tb,"channel list file '%s' not open",chfile);
-      write_log(logfile,tb);
-      write_log(logfile,"end");
+      write_log(tb);
+      write_log("end");
       exit(1);
       }
     }
@@ -256,7 +197,7 @@ read_chfile()
     for(i=0;i<65536;i++) ch_table[i]=1;
     n_ch=i;
     n_host=0;
-    write_log(logfile,"all channels");
+    write_log("all channels");
     }
 
   time(&ltime);
@@ -265,7 +206,7 @@ read_chfile()
   if(ht[0].host)
     {
     sprintf(tb,"statistics in %d s (pkts, B, pkts/s, B/s)",j);
-    write_log(logfile,tb);
+    write_log(tb);
     }
   for(i=0;i<N_HOST;i++) /* print statistics for hosts */
     {
@@ -275,7 +216,7 @@ read_chfile()
       ((unsigned char *)&ht[i].host)[2],((unsigned char *)&ht[i].host)[3],
       ntohs(ht[i].port),ht[i].n_packets,ht[i].n_bytes,(ht[i].n_packets+k)/j,
       (ht[i].n_bytes+k)/j);
-    write_log(logfile,tb);
+    write_log(tb);
     ht[i].n_packets=ht[i].n_bytes=0;
     }
   ltime_p=ltime;
@@ -312,7 +253,7 @@ check_pno(from_addr,pn,pn_f,sock,fromlen,n,nr,nopno) /* returns -1 if duplicated
         sprintf(tb,"deny packet from host %d.%d.%d.%d:%d",
           ((unsigned char *)&host_)[0],((unsigned char *)&host_)[1],
           ((unsigned char *)&host_)[2],((unsigned char *)&host_)[3],ntohs(port_));
-        write_log(logfile,tb);
+        write_log(tb);
         }
       return -1;
       }
@@ -334,7 +275,7 @@ check_pno(from_addr,pn,pn_f,sock,fromlen,n,nr,nopno) /* returns -1 if duplicated
   if(i==N_HOST)   /* table is full */
     {
     for(i=0;i<N_HOST;i++) ht[i].host=0;
-    write_log(logfile,"host table full - flushed.");
+    write_log("host table full - flushed.");
     i=0;
     }
   if(j<0)
@@ -346,7 +287,7 @@ check_pno(from_addr,pn,pn_f,sock,fromlen,n,nr,nopno) /* returns -1 if duplicated
     sprintf(tb,"registered host %d.%d.%d.%d:%d (%d)",
       ((unsigned char *)&host_)[0],((unsigned char *)&host_)[1],
       ((unsigned char *)&host_)[2],((unsigned char *)&host_)[3],ntohs(port_),i);
-    write_log(logfile,tb);
+    write_log(tb);
     ht[i].n_bytes=n;
     ht[i].n_packets=1;
     }
@@ -361,7 +302,7 @@ check_pno(from_addr,pn,pn_f,sock,fromlen,n,nr,nopno) /* returns -1 if duplicated
         sendto(sock,&pnc,1,0,(struct sockaddr *)from_addr,fromlen);
         sprintf(tb,"request resend %s:%d #%d",
           inet_ntoa(from_addr->sin_addr),ntohs(from_addr->sin_port),pn_1);
-        write_log(logfile,tb);
+        write_log(tb);
 #if DEBUG1
         printf("<%d ",pn_1);
 #endif
@@ -371,7 +312,7 @@ check_pno(from_addr,pn,pn_f,sock,fromlen,n,nr,nopno) /* returns -1 if duplicated
         {
         sprintf(tb,"no request resend %s:%d #%d-#%d",
           inet_ntoa(from_addr->sin_addr),ntohs(from_addr->sin_port),pn_1,pn);
-        write_log(logfile,tb);
+        write_log(tb);
         }
       }
     }
@@ -380,7 +321,7 @@ check_pno(from_addr,pn,pn_f,sock,fromlen,n,nr,nopno) /* returns -1 if duplicated
     if(!no_pinfo)
       {
       sprintf(tb,"discard duplicated resent packet #%d for #%d",pn,pn_f);
-      write_log(logfile,tb);
+      write_log(tb);
       }
     return -1;
     }
@@ -426,6 +367,7 @@ main(argc,argv)
   else progname=argv[0];
 
   daemon_mode = syslog_mode = 0;
+  exit_status = EXIT_SUCCESS;
   if(strcmp(progname,"relayd")==0) daemon_mode=1;
 
   if (daemon_mode)
@@ -522,7 +464,7 @@ main(argc,argv)
 
   sprintf(tb,"start in_port=%d to host '%s' port=%d",
     to_port,host_name,host_port);
-  write_log(logfile,tb);
+  write_log(tb);
 
   if(to_port>0)
     {
@@ -536,7 +478,7 @@ main(argc,argv)
       }
     if(j<16) err_sys("SO_RCVBUF setsockopt error\n");
     sprintf(tb,"RCVBUF size=%d",j*1024);
-    write_log(logfile,tb);
+    write_log(tb);
 
     memset((char *)&to_addr,0,sizeof(to_addr));
     to_addr.sin_family=AF_INET;
@@ -593,16 +535,16 @@ main(argc,argv)
   if(src_port)
     {
     sprintf(tb,"src_port=%d",src_port);
-    write_log(logfile,tb);
+    write_log(tb);
     }
   if(bind(sock_out,(struct sockaddr *)&from_addr,sizeof(from_addr))<0)
     err_sys("bind_out");
 
-  if(nopno) write_log(logfile,"packet numbers pass through");
-  if(noreq) write_log(logfile,"resend request disabled");
-  signal(SIGTERM,(void *)ctrlc);
-  signal(SIGINT,(void *)ctrlc);
-  signal(SIGPIPE,(void *)ctrlc);
+  if(nopno) write_log("packet numbers pass through");
+  if(noreq) write_log("resend request disabled");
+  signal(SIGTERM,(void *)end_program);
+  signal(SIGINT,(void *)end_program);
+  signal(SIGPIPE,(void *)end_program);
   no=0;
   for(i=0;i<BUFNO;i++) psize[i]=2;
   bufno=0;
@@ -631,8 +573,8 @@ main(argc,argv)
       }
     else /* read from stdin */
       {
-      if(fgets(sbuf[bufno]+2,MAXMESG-2,stdin)==NULL) ctrlc();
-      if(sbuf[bufno][2]==0x04) ctrlc();
+      if(fgets(sbuf[bufno]+2,MAXMESG-2,stdin)==NULL) end_program();
+      if(sbuf[bufno][2]==0x04) end_program();
       psize[bufno]=strlen(sbuf[bufno]+2)+2;
       }
 
@@ -667,7 +609,7 @@ main(argc,argv)
 		    (const struct sockaddr *)&to_addr,sizeof(to_addr));
           sprintf(tb,"resend to %s:%d #%d as #%d, %d B",
             inet_ntoa(to_addr.sin_addr),ntohs(to_addr.sin_port),no_f,no,re);
-          write_log(logfile,tb);
+          write_log(tb);
 #if DEBUG
           for(i=0;i<8;i++) fprintf(stderr,"%02X",sbuf[bufno][i]);
           fprintf(stderr," : %d > %d\n",psize[bufno],re);

@@ -1,4 +1,8 @@
- $Id: ChangeLog,v 1.131.2.17 2008/05/01 01:18:50 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.18 2008/05/07 09:24:59 uehira Exp $
+
+2008-05-07  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 1.1.93-LIB released.
+	* src/relay.c : use library (src/win_log.c).
 
 2008-05-01  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* Version 1.1.92-LIB released.

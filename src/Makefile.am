@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.38.2.7 2007/11/19 10:11:18 uehira Exp $
+# $Id: Makefile.am,v 1.38.2.8 2008/05/07 09:24:59 uehira Exp $
 #
 
 if SUNOS4
@@ -274,8 +274,8 @@ recvstatus_LDADD = @LIBNSL@ @LIBSOCKET@
 recvstatus2_SOURCES = recvstatus2.c $(SUBFUNC_H)
 recvstatus2_LDADD = @LIBNSL@ @LIBSOCKET@
 
-relay_SOURCES = relay.c $(SUBFUNC_H) $(DAEMON_MODE)
-relay_LDADD = @LIBNSL@ @LIBSOCKET@
+relay_SOURCES = relay.c $(SUBFUNC_H) $(DAEMON_MODE) $(WIN_LIBH)
+relay_LDADD = $(WIN_SYSTEM_LIB) @LIBNSL@ @LIBSOCKET@
 
 relaym_SOURCES = relaym.c $(WIN_LIBH) $(SUBFUNC_H) $(DAEMON_MODE) $(UDP_UTILITY)
 relaym_LDADD = $(WIN_SYSTEM_LIB) @LIBNSL@ @LIBSOCKET@

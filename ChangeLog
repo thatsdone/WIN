@@ -1,4 +1,8 @@
- $Id: ChangeLog,v 1.131.2.18 2008/05/07 09:24:59 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.19 2008/05/16 09:36:53 uehira Exp $
+
+2008-05-16  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 1.1.94-LIB released.
+	* b2d[], d2b[] : common declaration in src/winlib.h.
 
 2008-05-07  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* Version 1.1.93-LIB released.

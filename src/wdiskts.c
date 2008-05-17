@@ -1,4 +1,4 @@
-/* $Id: wdiskts.c,v 1.6.2.3 2008/05/17 14:22:04 uehira Exp $ */
+/* $Id: wdiskts.c,v 1.6.2.4 2008/05/17 15:32:50 uehira Exp $ */
 /* 2005.8.10 urabe bug in strcmp2() fixed : 0-6 > 7-9 */
 
 #ifdef HAVE_CONFIG_H
@@ -369,14 +369,6 @@ switch_file(tm)
    fprintf(fp,"%d\n",count);
    fclose(fp);
    return 0;
-}
-
-strcmp2(s1,s2)
-char *s1,*s2;
-{
-  if((*s1>='0' && *s1<='5') && (*s2<='9' && *s2>='6')) return 1;
-  else if((*s1<='9' && *s1>='7') && (*s2>='0' && *s2<='6')) return -1;
-  else return strcmp(s1,s2);
 }
 
 find_oldest(path,oldst) /* returns N of files */

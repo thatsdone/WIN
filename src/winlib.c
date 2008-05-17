@@ -1,4 +1,4 @@
-/* $Id: winlib.c,v 1.1.2.2 2008/05/16 09:36:55 uehira Exp $ */
+/* $Id: winlib.c,v 1.1.2.3 2008/05/17 15:32:51 uehira Exp $ */
 
 /*-
  * winlib.c  (Uehira Kenji)
@@ -8,6 +8,8 @@
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
+
+#include <string.h>
 
 #if TIME_WITH_SYS_TIME
 #include <sys/time.h>
@@ -479,5 +481,29 @@ win2fix(unsigned char *ptr, long *abuf, long *sys_ch, long *sr)
   }
 
   return (g_size);  /* normal return */
+}
+
+int
+strncmp2(char *s1, char *s2, int i)
+{
+
+  if ((*s1 >= '0' && *s1 <= '5') && (*s2 <= '9' && *s2 >= '6'))
+    return (1);
+  else if ((*s1 <= '9' && *s1 >= '7') && (*s2 >= '0' && *s2 <= '6'))
+    return (-1);
+  else
+    return (strncmp(s1,s2,i));
+}
+
+int
+strcmp2(char *s1, char *s2)
+{
+
+  if ((*s1 >= '0' && *s1 <= '5') && (*s2 <= '9' && *s2 >= '6'))
+    return (1);
+  else if ((*s1 <= '9' && *s1 >= '7') && (*s2 >= '0' && *s2 <= '6'))
+    return (-1);
+  else
+    return (strcmp(s1,s2));
 }
 

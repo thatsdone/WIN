@@ -1,4 +1,4 @@
-/* $Id: pmon.c,v 1.14.2.4 2008/05/17 14:22:00 uehira Exp $ */
+/* $Id: pmon.c,v 1.14.2.5 2008/05/17 15:32:50 uehira Exp $ */
 /************************************************************************
 *************************************************************************
 **  program "pmon.c" for NEWS/SPARC                             *********
@@ -268,23 +268,6 @@ struct
   int zero_cnt;    /* counter */
   double zero_acc; /* accumulator for offset calculation */
   } tbl[M_CH];
-
-strncmp2(s1,s2,i)
-char *s1,*s2;             
-int i; 
-  {
-  if((*s1>='0' && *s1<='5') && (*s2<='9' && *s2>='6')) return 1;
-  else if((*s1<='9' && *s1>='7') && (*s2>='0' && *s2<='6')) return -1;
-  else return strncmp(s1,s2,i);
-  }
-
-strcmp2(s1,s2)        
-char *s1,*s2;
-  {
-  if((*s1>='0' && *s1<='5') && (*s2<='9' && *s2>='6')) return 1;
-  else if((*s1<='9' && *s1>='7') && (*s2>='0' && *s2<='6')) return -1;
-  else return strcmp(s1,s2);
-  }
 
 mkfont(y,ii,buf_font,width,jj,k,buf_font16,width16)
   int y,ii,k,width,jj,width16;

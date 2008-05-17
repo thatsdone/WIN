@@ -1,4 +1,4 @@
-/* $Id: winlib.h,v 1.1.2.4 2008/05/17 14:22:06 uehira Exp $ */
+/* $Id: winlib.h,v 1.1.2.5 2008/05/17 15:32:51 uehira Exp $ */
 
 #ifndef _WIN_LIB_H_
 #define _WIN_LIB_H_
@@ -75,5 +75,7 @@ void adj_time(int []);
 int time_cmp(int *, int *, int);
 int winform(long *, unsigned char *, int, unsigned short);
 int win2fix(unsigned char *, long *, long *, long *);
+int strncmp2(char *, char *, int);
+int strcmp2(char *, char *);
 
 #endif  /* !_WIN_LIB_H_*/

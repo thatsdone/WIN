@@ -1,4 +1,4 @@
-/* $Id: events.c,v 1.8.2.3 2008/05/17 14:21:59 uehira Exp $ */
+/* $Id: events.c,v 1.8.2.4 2008/05/17 15:32:50 uehira Exp $ */
 /****************************************************************************
 *****************************************************************************
 **     program "events.c" for NEWS                                  *********
@@ -279,23 +279,6 @@ again:sleep(30);
     break;
     }
   }
-
-strncmp2(s1,s2,i)
-char *s1,*s2;
-int i;
-{
-  if((*s1>='0' && *s1<='5') && (*s2<='9' && *s2>='6')) return 1;
-  else if((*s1<='9' && *s1>='7') && (*s2>='0' && *s2<='6')) return -1;
-  else return strncmp(s1,s2,i);
-}
-
-strcmp2(s1,s2)
-char *s1,*s2;
-{
-  if((*s1>='0' && *s1<='5') && (*s2<='9' && *s2>='6')) return 1;
-  else if((*s1<='9' && *s1>='7') && (*s2>='0' && *s2<='6')) return -1;
-  else return strcmp(s1,s2);
-}
 
 check_space(path)
   char *path;

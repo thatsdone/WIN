@@ -1,4 +1,4 @@
-/* $Id: rtape.c,v 1.9.2.2 2008/05/17 14:22:02 uehira Exp $ */
+/* $Id: rtape.c,v 1.9.2.3 2008/05/17 15:32:50 uehira Exp $ */
 /*
   program "rtape.c"
   9/16/89 - 11/06/90, 6/26/91, 10/30/91, 6/26/92  urabe
@@ -80,14 +80,6 @@
     0x00E5,0x00E6,0x00E7,0x00E8,0x00E9,0x00EA,0x00EB,0x00EC,
     0x00ED,0x00EE,0x00EF,0x00F0,0x00F1,0x00F2,0x00F3,0x00F4,
     0x00F5};
-
-strcmp2(s1,s2)        
-char *s1,*s2;
-{
-  if((*s1>='0' && *s1<='5') && (*s2<='9' && *s2>='6')) return 1;
-  else if((*s1<='9' && *s1>='7') && (*s2>='0' && *s2<='6')) return -1;
-  else return strcmp(s1,s2);
-}
 
 end_process(value)
   int value;

@@ -1,4 +1,4 @@
-/* $Id: find_picks.c,v 1.4 2006/03/18 11:22:16 uehira Exp $
+/* $Id: find_picks.c,v 1.4.2.1 2008/05/17 15:32:50 uehira Exp $
 
 /* find_picks */
 /* search for pick files in pick dir */
@@ -13,19 +13,10 @@
 #include <sys/types.h>
 #include <dirent.h>
 
-#include "subst_func.h"
+#include "winlib.h"
 
 #define LINELEN 256
 #define NAMLEN 256
-
-strncmp2(s1,s2,i)
-char *s1,*s2;             
-int i; 
-{
-  if((*s1>='0' && *s1<='5') && (*s2<='9' && *s2>='6')) return 1;
-  else if((*s1<='9' && *s1>='7') && (*s2>='0' && *s2<='6')) return -1;
-  else return strncmp(s1,s2,i);
-}
 
 main()
   {

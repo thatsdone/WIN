@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.46.2.5 2008/05/17 14:22:04 uehira Exp $
+   $Id: win.c,v 1.46.2.6 2008/05/17 15:32:50 uehira Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -959,15 +959,6 @@ LOCAL
   double pixels_per_km,lat_cent,lon_cent,mec_rc,alat0,along0,pdpi;
   static double  *dbuf,*dbuf2;
   static long *buf,*buf2;
-
-strncmp2(s1,s2,i)
-char *s1,*s2;             
-int i; 
-{
-  if((*s1>='0' && *s1<='5') && (*s2<='9' && *s2>='6')) return 1;
-  else if((*s1<='9' && *s1>='7') && (*s2>='0' && *s2<='6')) return -1;
-  else return strncmp(s1,s2,i);
-}
 
 xgetorigin(d,w,x,y,wi,h,de,ro,pa)
   Display *d;

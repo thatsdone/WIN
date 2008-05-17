@@ -1,9 +1,10 @@
- $Id: ChangeLog,v 1.131.2.20 2008/05/17 14:21:58 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.21 2008/05/17 15:32:49 uehira Exp $
 
 2008-05-17  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* SWAPL(a), SWAPS(a), SWAPF(a) : common	declaration in src/winlib.h. 
 	* LongFromBigEndian(a) : common	declaration in src/winlib.h. 
 	* src/winlib.h : include src/subst_func.h.
+	* src/winlib.c : strncmp2(), strcmp2().
 
 2008-05-16  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* Version 1.1.94-LIB released.

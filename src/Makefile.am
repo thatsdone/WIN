@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.38.2.9 2008/05/17 14:21:58 uehira Exp $
+# $Id: Makefile.am,v 1.38.2.10 2008/05/17 15:32:49 uehira Exp $
 #
 
 if SUNOS4
@@ -257,7 +257,8 @@ insert_raw_LDADD = $(WIN_SYSTEM_LIB) $(GC_CHECK_LIB)
 insert_trg_SOURCES = insert_trg.c $(WIN_LIBH) $(WIN_UTIL) $(GC_CHECK_INCLUDE)
 insert_trg_LDADD = $(WIN_SYSTEM_LIB) $(GC_CHECK_LIB)
 
-find_picks_SOURCES = find_picks.c $(SUBFUNC_H)
+find_picks_SOURCES = find_picks.c $(WIN_LIBH)
+find_picks_LDADD = $(WIN_SYSTEM_LIB)
 
 recvt_SOURCES = recvt.c $(WIN_LIBH) $(DAEMON_MODE)
 recvt_LDADD = $(WIN_SYSTEM_LIB) @LIBNSL@ @LIBSOCKET@ @LIBSHMGET@

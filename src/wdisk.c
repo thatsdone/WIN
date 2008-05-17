@@ -1,4 +1,4 @@
-/* $Id: wdisk.c,v 1.17.2.6 2008/05/17 14:22:03 uehira Exp $ */
+/* $Id: wdisk.c,v 1.17.2.7 2008/05/17 15:32:50 uehira Exp $ */
 /*
   program "wdisk.c"   4/16/93-5/13/93,7/2/93,7/5/94  urabe
                       1/6/95 bug in adj_time fixed (tm[0]--)
@@ -218,14 +218,6 @@ switch_file(tm)
      fclose(fp);
    }
    return 0;
-}
-
-strcmp2(s1,s2)
-char *s1,*s2;
-{
-  if((*s1>='0' && *s1<='5') && (*s2<='9' && *s2>='6')) return 1;
-  else if((*s1<='9' && *s1>='7') && (*s2>='0' && *s2<='6')) return -1;
-  else return strcmp(s1,s2);
 }
 
 find_oldest(path,oldst) /* returns N of files */

@@ -1,4 +1,4 @@
-/* $Id: wtape.c,v 1.12.2.3 2008/05/17 14:22:06 uehira Exp $ */
+/* $Id: wtape.c,v 1.12.2.4 2008/05/17 15:32:51 uehira Exp $ */
 /*
   program "wtape.c"
   8/23/89 - 8/8/90, 6/27/91, 12/24/91, 2/29/92  urabe
@@ -65,30 +65,13 @@
   int  wait_min;
   char param_name[WIN_FILENAME_MAX];
   char *progname;
-  static char rcsid[]="$Id: wtape.c,v 1.12.2.3 2008/05/17 14:22:06 uehira Exp $";
+  static char rcsid[]="$Id: wtape.c,v 1.12.2.4 2008/05/17 15:32:51 uehira Exp $";
 
 switch_sig()
   {
   switch_req=1;
   signal(SIGHUP,(void *)switch_sig);
   }
-
-strncmp2(s1,s2,i)
-char *s1,*s2;             
-int i; 
-{
-  if((*s1>='0' && *s1<='5') && (*s2<='9' && *s2>='6')) return 1;
-  else if((*s1<='9' && *s1>='7') && (*s2>='0' && *s2<='6')) return -1;
-  else return strncmp(s1,s2,i);
-}
-
-strcmp2(s1,s2)        
-char *s1,*s2;
-{
-  if((*s1>='0' && *s1<='5') && (*s2<='9' && *s2>='6')) return 1;
-  else if((*s1<='9' && *s1>='7') && (*s2>='0' && *s2<='6')) return -1;
-  else return strcmp(s1,s2);
-}
 
 get_unit(unit)    /* get exabyte unit */
   int unit;

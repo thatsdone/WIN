@@ -1,4 +1,4 @@
-/* $Id: ras2lips.c,v 1.3 2002/01/13 06:57:51 uehira Exp $ */
+/* $Id: ras2lips.c,v 1.3.4.1 2008/05/17 14:22:00 uehira Exp $ */
 /********************************************************/
 /*  ras2lips.c   97.10.31-97.11.27             urabe    */
 /*               98.3.4      LITTLE ENDIAN    uehira    */
@@ -15,12 +15,10 @@
 #include <signal.h>
 #include <syslog.h>
 
-#include "subst_func.h"
+#include "winlib.h"
 
 #define A4_FRAME_XB     392       /* framebuffer's width (byte) */
 #define A4_FRAME_YP     4516      /* framebuffer's height (pixel) */
-
-#define SWAPL(a) a=(((a)<<24)|((a)<<8)&0xff0000|((a)>>8)&0xff00|((a)>>24)&0xff)
 
 read_header(fp,height,width)
   FILE  *fp;

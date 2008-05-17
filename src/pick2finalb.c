@@ -1,4 +1,4 @@
-/* $Id: pick2finalb.c,v 1.4.4.1 2006/09/25 15:00:57 uehira Exp $ */
+/* $Id: pick2finalb.c,v 1.4.4.2 2008/05/17 14:22:00 uehira Exp $ */
 /* pick2finalb.c */
 /* 8/22/91, 5/22/92, 7/9/92, 8/19/92, 5/25/93, 6/1/93 urabe */
 /* 97.10.3 FreeBSD */
@@ -17,11 +17,6 @@
 #include  <ctype.h>
 
 #include "winlib.h"
-#include "subst_func.h"
-
-#define SWAPF(a) *(long *)&(a)=(((*(long *)&(a))<<24)|\
-  ((*(long *)&(a))<<8)&0xff0000|((*(long *)&(a))>>8)&0xff00|\
-  ((*(long *)&(a))>>24)&0xff)  
 
 adj_sec(tm,se,tmc,sec)
   int *tm,*tmc;

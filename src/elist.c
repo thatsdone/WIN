@@ -1,4 +1,4 @@
-/* $Id: elist.c,v 1.9.4.1 2006/09/25 15:00:56 uehira Exp $ */
+/* $Id: elist.c,v 1.9.4.2 2008/05/17 14:21:59 uehira Exp $ */
 /* program elist.c    2/5/91 - 2/25/91 ,  4/16/92, 4/22/92  urabe */
 /*                      6/10/92, 8/18/92, 10/25/92, 6/8/93, 1/5/94  */
 /*      4/21/94,12/5/94,6/2/95 bug in dat_dir fixed */
@@ -24,7 +24,6 @@
 #include <pwd.h>
 
 #include "winlib.h"
-#include "subst_func.h"
 
 #define   NAMLEN    128
 #define   LINELEN   256

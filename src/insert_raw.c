@@ -1,5 +1,5 @@
 /*
- * $Id: insert_raw.c,v 1.6.4.1 2006/09/25 15:00:57 uehira Exp $
+ * $Id: insert_raw.c,v 1.6.4.2 2008/05/17 14:21:59 uehira Exp $
  * Insert sorted timeout data to raw data.
  *
  *------------ sample of parameter file ------------
@@ -32,7 +32,6 @@
 #endif
 #include "winlib.h"
 #include "win_system.h"
-#include "subst_func.h"
 
 #define DEBUG  0
 
@@ -43,7 +42,7 @@
 #define BUF_SIZE 1024
 
 char *progname;
-static char rcsid[]="$Id: insert_raw.c,v 1.6.4.1 2006/09/25 15:00:57 uehira Exp $";
+static char rcsid[]="$Id: insert_raw.c,v 1.6.4.2 2008/05/17 14:21:59 uehira Exp $";
 
 struct Cnt_file {
   char  raw_dir[WIN_FILENAME_MAX];    /* raw data directory */

@@ -1,4 +1,4 @@
-/* $Id: raw_mon.c,v 1.6.4.2 2007/08/26 02:38:34 uehira Exp $ */
+/* $Id: raw_mon.c,v 1.6.4.3 2008/05/17 14:22:01 uehira Exp $ */
 /* "raw_mon.c"      7/2/93,6/17/94,6/28/94    urabe */
 /*                  3/17/95 write_log(), 4/17/95 MAX_SR safety */
 /*                  usleep -> sleep */
@@ -46,7 +46,6 @@
 
 #include "daemon_mode.h"
 #include "winlib.h"
-#include "subst_func.h"
 
 #define DEBUG       0
 #define BELL        0

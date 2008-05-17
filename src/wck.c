@@ -1,4 +1,4 @@
-/* $Id: wck.c,v 1.5 2002/01/13 06:57:52 uehira Exp $ */
+/* $Id: wck.c,v 1.5.4.1 2008/05/17 14:22:03 uehira Exp $ */
 /* 
    program "wck.c"
 	"wck" checks a win format data file
@@ -23,13 +23,11 @@
 #include <signal.h>
 #include <string.h>
 
-#include "subst_func.h"
+#include "winlib.h"
 
 #define	DEBUG   0
 #define DEBUG1  0
-#define LongFromBigEndian(a) \
-  ((((unsigned char *)&(a))[0]<<24)+(((unsigned char *)&(a))[1]<<16)+ \
-  (((unsigned char *)&(a))[2]<<8)+((unsigned char *)&(a))[3])
+
 int count[65536];
 
 ctrlc() {exit(0);}

@@ -1,4 +1,4 @@
-/* $Id: wch.c,v 1.8.4.1 2006/09/25 15:00:59 uehira Exp $ */
+/* $Id: wch.c,v 1.8.4.2 2008/05/17 14:22:03 uehira Exp $ */
 /*
 program "wch.c"
 "wch" edits a win format data file by channles
@@ -20,10 +20,8 @@ program "wch.c"
 #include  <signal.h>
 
 #include "winlib.h"
-#include "subst_func.h"
 
 #define   DEBUG   0
-#define SWAPL(a) a=(((a)<<24)|((a)<<8)&0xff0000|((a)>>8)&0xff00|((a)>>24)&0xff)
 
 unsigned char *buf,*outbuf;
 unsigned char ch_table[65536];

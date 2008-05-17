@@ -1,4 +1,4 @@
-/* $Id: wtime.c,v 1.3.2.2 2008/05/16 09:36:55 uehira Exp $ */
+/* $Id: wtime.c,v 1.3.2.3 2008/05/17 14:22:06 uehira Exp $ */
 
 /*
   program "wtime.c"
@@ -28,11 +28,9 @@
 #include  <math.h>
 
 #include "winlib.h"
-#include "subst_func.h"
 
 #define   DEBUG   0
 #define   DEBUG1  0
-#define SWAPL(a) a=(((a)<<24)|((a)<<8)&0xff0000|((a)>>8)&0xff00|((a)>>24)&0xff)
 
 unsigned char *rbuf,*wbuf;
 long *sbuf[65536];

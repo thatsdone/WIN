@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.38.2.8 2008/05/07 09:24:59 uehira Exp $
+# $Id: Makefile.am,v 1.38.2.9 2008/05/17 14:21:58 uehira Exp $
 #
 
 if SUNOS4
@@ -71,7 +71,7 @@ WIN_LOG = win_log.h win_log.c win_externs.h
 UDP_UTILITY = udpu.h udp_accept.c udp_dest.c
 TCP_UTILITY = tcpu.h tcp_connect.c
 
-WIN_LIBH=winlib.h win_log.h filter.h
+WIN_LIBH=winlib.h win_log.h filter.h $(SUBFUNC_H)
 WIN_LIBC=winlib.c
 
 WIN_SYSTEM_LIB = libwinsystem.a
@@ -116,28 +116,28 @@ install-exec-hook:
 libwinsystem_a_SOURCES = $(WIN_LIBH) $(WIN_LIBC) filter.c $(WIN_LOG)
 #libwinsystem2_a_SOURCES = $(WIN_UTIL) $(DAEMON_MODE) $(WIN_LOG) $(UDP_UTILITY) $(TCP_UTILITY)
 
-win_SOURCES = win.c $(WIN_LIBH) $(SUBFUNC_H)
+win_SOURCES = win.c $(WIN_LIBH)
 win_CFLAGS = @X_CFLAGS@ $(AM_CFLAGS)
 win_LDFLAGS = @X_LIBS@
 win_LDADD = $(WIN_SYSTEM_LIB) @LIBNSL@ @LIBSOCKET@ -lm -lX11
 
-win32_SOURCES = win.c $(WIN_LIBH) $(SUBFUNC_H)
+win32_SOURCES = win.c $(WIN_LIBH)
 win32_CFLAGS = @X_CFLAGS@ $(AM_CFLAGS) -DHINET_WIN32=1
 win32_LDFLAGS = @X_LIBS@
 win32_LDADD = $(WIN_SYSTEM_LIB) @LIBNSL@ @LIBSOCKET@ -lm -lX11
 
-wed_SOURCES = wed.c $(WIN_LIBH) $(SUBFUNC_H)
+wed_SOURCES = wed.c $(WIN_LIBH)
 wed_LDADD = $(WIN_SYSTEM_LIB)
 
-wck_SOURCES = wck.c $(SUBFUNC_H)
+wck_SOURCES = wck.c $(WIN_LIBH)
 
-wadd_SOURCES = wadd.c $(WIN_LIBH) $(SUBFUNC_H)
+wadd_SOURCES = wadd.c $(WIN_LIBH)
 wadd_LDADD = $(WIN_SYSTEM_LIB)
 
-wadd2_SOURCES = wadd2.c $(WIN_LIBH) $(SUBFUNC_H)
+wadd2_SOURCES = wadd2.c $(WIN_LIBH)
 wadd2_LDADD = $(WIN_SYSTEM_LIB)
 
-dewin_SOURCES = dewin.c $(WIN_LIBH) $(SUBFUNC_H)
+dewin_SOURCES = dewin.c $(WIN_LIBH)
 dewin_LDADD = $(WIN_SYSTEM_LIB) -lm
 
 wintosac_SOURCES = wintosac.c
@@ -146,126 +146,126 @@ wintosac_LDADD = -lm
 select_stations_SOURCES = select_stations.c $(SUBFUNC_H)
 select_stations_LDADD = -lm
 
-wchch_SOURCES = wchch.c $(WIN_LIBH) $(SUBFUNC_H)
+wchch_SOURCES = wchch.c $(WIN_LIBH)
 wchch_LDADD = $(WIN_SYSTEM_LIB)
 
-wchasn_SOURCES = wchasn.c $(WIN_LIBH) $(WIN_UTIL) $(SUBFUNC_H) $(GC_CHECK_INCLUDE)
+wchasn_SOURCES = wchasn.c $(WIN_LIBH) $(WIN_UTIL) $(GC_CHECK_INCLUDE)
 wchasn_LDADD = $(WIN_SYSTEM_LIB) $(GC_CHECK_LIB)
 
 pick2tseis_SOURCES = pick2tseis.c $(SUBFUNC_H)
 
-wch_SOURCES = wch.c $(WIN_LIBH) $(SUBFUNC_H)
+wch_SOURCES = wch.c $(WIN_LIBH)
 wch_LDADD = $(WIN_SYSTEM_LIB)
 
-pick2finalb_SOURCES = pick2finalb.c $(WIN_LIBH) $(SUBFUNC_H)
+pick2finalb_SOURCES = pick2finalb.c $(WIN_LIBH)
 pick2finalb_LDADD = $(WIN_SYSTEM_LIB)
 
 pick2final_SOURCES = pick2final.c $(SUBFUNC_H)
 
-finalb2final_SOURCES = finalb2final.c $(SUBFUNC_H)
+finalb2final_SOURCES = finalb2final.c $(WIN_LIBH)
 
-final2finalb_SOURCES = final2finalb.c $(WIN_LIBH) $(SUBFUNC_H)
+final2finalb_SOURCES = final2finalb.c $(WIN_LIBH)
 final2finalb_LDADD = $(WIN_SYSTEM_LIB)
 
-finalb2seis_SOURCES = finalb2seis.c $(SUBFUNC_H)
+finalb2seis_SOURCES = finalb2seis.c $(WIN_LIBH)
 
-wform_SOURCES = wform.c $(WIN_LIBH) $(SUBFUNC_H)
+wform_SOURCES = wform.c $(WIN_LIBH)
 wform_LDADD = $(WIN_SYSTEM_LIB)
 
-wintowin_SOURCES = wintowin.c $(WIN_LIBH) $(SUBFUNC_H)
+wintowin_SOURCES = wintowin.c $(WIN_LIBH)
 wintowin_LDADD = $(WIN_SYSTEM_LIB) @LIBSHMGET@
 
-wtime_SOURCES = wtime.c $(WIN_LIBH) $(SUBFUNC_H)
+wtime_SOURCES = wtime.c $(WIN_LIBH)
 wtime_LDADD = $(WIN_SYSTEM_LIB) -lm
 
-winadd_SOURCES = winadd.c $(WIN_LIBH) $(WIN_UTIL) $(SUBFUNC_H) $(GC_CHECK_INCLUDE)
+winadd_SOURCES = winadd.c $(WIN_LIBH) $(WIN_UTIL) $(GC_CHECK_INCLUDE)
 winadd_LDADD = $(WIN_SYSTEM_LIB) $(GC_CHECK_LIB)
 
-wck_wdisk_SOURCES = wck_wdisk.c $(WIN_LIBH) $(WIN_UTIL) $(SUBFUNC_H) $(GC_CHECK_INCLUDE)
+wck_wdisk_SOURCES = wck_wdisk.c $(WIN_LIBH) $(WIN_UTIL) $(GC_CHECK_INCLUDE)
 wck_wdisk_LDADD = $(WIN_SYSTEM_LIB) $(GC_CHECK_LIB)
 
-rtape_SOURCES = rtape.c $(WIN_LIBH) $(SUBFUNC_H)
+rtape_SOURCES = rtape.c $(WIN_LIBH)
 rtape_LDADD = $(WIN_SYSTEM_LIB)
 
-fromtape_SOURCES = fromtape.c $(WIN_LIBH) $(SUBFUNC_H)
+fromtape_SOURCES = fromtape.c $(WIN_LIBH)
 fromtape_LDADD = $(WIN_SYSTEM_LIB)
 
-wdisk_SOURCES = wdisk.c $(WIN_LIBH) $(SUBFUNC_H) $(DAEMON_MODE)
+wdisk_SOURCES = wdisk.c $(WIN_LIBH) $(DAEMON_MODE)
 wdisk_LDADD = $(WIN_SYSTEM_LIB) @LIBSHMGET@
 
-wdiskts_SOURCES = wdiskts.c $(WIN_LIBH) $(SUBFUNC_H) $(DAEMON_MODE) $(GC_CHECK_INCLUDE)
+wdiskts_SOURCES = wdiskts.c $(WIN_LIBH) $(DAEMON_MODE) $(GC_CHECK_INCLUDE)
 wdiskts_LDADD = $(WIN_SYSTEM_LIB) @LIBSHMGET@ $(GC_CHECK_LIB)
 
-ras2rpdl_SOURCES = ras2rpdl.c $(SUBFUNC_H)
+ras2rpdl_SOURCES = ras2rpdl.c $(WIN_LIBH)
 
-ras2lips_SOURCES = ras2lips.c $(SUBFUNC_H)
+ras2lips_SOURCES = ras2lips.c $(WIN_LIBH)
 
 file_older_SOURCES = file_older.c $(SUBFUNC_H)
 
-raw2mon_SOURCES = raw2mon.c $(WIN_LIBH) $(SUBFUNC_H)
+raw2mon_SOURCES = raw2mon.c $(WIN_LIBH)
 raw2mon_LDADD = $(WIN_SYSTEM_LIB)
 
-win2raw_SOURCES = win2raw.c $(WIN_LIBH) $(WIN_UTIL) $(SUBFUNC_H) $(GC_CHECK_INCLUDE)
+win2raw_SOURCES = win2raw.c $(WIN_LIBH) $(WIN_UTIL)  $(GC_CHECK_INCLUDE)
 win2raw_LDADD = $(WIN_SYSTEM_LIB) $(GC_CHECK_LIB)
 
-pmon_SOURCES = pmon.c $(WIN_LIBH) $(SUBFUNC_H)
+pmon_SOURCES = pmon.c $(WIN_LIBH)
 pmon_LDADD = $(WIN_SYSTEM_LIB) -lm
 
-elist_SOURCES = elist.c $(WIN_LIBH) $(SUBFUNC_H)
+elist_SOURCES = elist.c $(WIN_LIBH)
 elist_LDADD = $(WIN_SYSTEM_LIB) -lm
 
-events_SOURCES = events.c $(WIN_LIBH) $(SUBFUNC_H)
+events_SOURCES = events.c $(WIN_LIBH)
 events_LDADD = $(WIN_SYSTEM_LIB) -lm
 
-order_SOURCES = order.c $(WIN_LIBH) $(SUBFUNC_H) $(DAEMON_MODE)
+order_SOURCES = order.c $(WIN_LIBH) $(DAEMON_MODE)
 order_LDADD = $(WIN_SYSTEM_LIB) @LIBSHMGET@
 
-raw_mon_SOURCES = raw_mon.c $(WIN_LIBH) $(SUBFUNC_H) $(DAEMON_MODE)
+raw_mon_SOURCES = raw_mon.c $(WIN_LIBH) $(DAEMON_MODE)
 raw_mon_LDADD = $(WIN_SYSTEM_LIB) @LIBSHMGET@
 
-wtape_SOURCES = wtape.c $(WIN_LIBH) $(SUBFUNC_H)
+wtape_SOURCES = wtape.c $(WIN_LIBH)
 wtape_LDADD = $(WIN_SYSTEM_LIB)
 
 setexb_SOURCES = setexb.c $(SUBFUNC_H)
 
 timeout_SOURCES = timeout.c $(SUBFUNC_H)
 
-raw_raw_SOURCES = raw_raw.c $(WIN_LIBH) $(SUBFUNC_H) $(DAEMON_MODE)
+raw_raw_SOURCES = raw_raw.c $(WIN_LIBH) $(DAEMON_MODE)
 raw_raw_LDADD = $(WIN_SYSTEM_LIB) @LIBSHMGET@
 
-raw_shift_SOURCES = raw_shift.c $(WIN_LIBH) $(SUBFUNC_H)
+raw_shift_SOURCES = raw_shift.c $(WIN_LIBH)
 raw_shift_LDADD = $(WIN_SYSTEM_LIB) @LIBSHMGET@
 
-raw_100_SOURCES = raw_100.c $(WIN_LIBH) $(SUBFUNC_H)
+raw_100_SOURCES = raw_100.c $(WIN_LIBH)
 raw_100_LDADD = $(WIN_SYSTEM_LIB) @LIBSHMGET@
 
-cormeisei_SOURCES = cormeisei.c $(WIN_LIBH) $(SUBFUNC_H)
+cormeisei_SOURCES = cormeisei.c $(WIN_LIBH)
 cormeisei_LDADD = $(WIN_SYSTEM_LIB) @LIBSHMGET@
 
-shmdump_SOURCES = shmdump.c $(WIN_LIBH) $(SUBFUNC_H)
+shmdump_SOURCES = shmdump.c $(WIN_LIBH)
 shmdump_LDADD = $(WIN_SYSTEM_LIB) @LIBSHMGET@ -lm
 
-raw_ch_SOURCES = raw_ch.c $(WIN_LIBH) $(SUBFUNC_H)
+raw_ch_SOURCES = raw_ch.c $(WIN_LIBH)
 raw_ch_LDADD = $(WIN_SYSTEM_LIB) @LIBSHMGET@
 
-extraw_SOURCES = extraw.c $(WIN_LIBH) $(SUBFUNC_H)
+extraw_SOURCES = extraw.c $(WIN_LIBH)
 extraw_LDADD = $(WIN_SYSTEM_LIB) @LIBSHMGET@
 
-insert_raw_SOURCES = insert_raw.c $(WIN_LIBH) $(WIN_UTIL) $(SUBFUNC_H) $(GC_CHECK_INCLUDE)
+insert_raw_SOURCES = insert_raw.c $(WIN_LIBH) $(WIN_UTIL) $(GC_CHECK_INCLUDE)
 insert_raw_LDADD = $(WIN_SYSTEM_LIB) $(GC_CHECK_LIB)
 
-insert_trg_SOURCES = insert_trg.c $(WIN_LIBH) $(WIN_UTIL) $(SUBFUNC_H) $(GC_CHECK_INCLUDE)
+insert_trg_SOURCES = insert_trg.c $(WIN_LIBH) $(WIN_UTIL) $(GC_CHECK_INCLUDE)
 insert_trg_LDADD = $(WIN_SYSTEM_LIB) $(GC_CHECK_LIB)
 
 find_picks_SOURCES = find_picks.c $(SUBFUNC_H)
 
-recvt_SOURCES = recvt.c $(WIN_LIBH) $(SUBFUNC_H) $(DAEMON_MODE)
+recvt_SOURCES = recvt.c $(WIN_LIBH) $(DAEMON_MODE)
 recvt_LDADD = $(WIN_SYSTEM_LIB) @LIBNSL@ @LIBSOCKET@ @LIBSHMGET@
 
-send_raw_SOURCES = send_raw.c $(WIN_LIBH) $(SUBFUNC_H) $(DAEMON_MODE)
+send_raw_SOURCES = send_raw.c $(WIN_LIBH) $(DAEMON_MODE)
 send_raw_LDADD = $(WIN_SYSTEM_LIB) @LIBNSL@ @LIBSOCKET@ @LIBSHMGET@
 
-send_raw_old_SOURCES = send_raw_old.c $(WIN_LIBH) $(SUBFUNC_H)
+send_raw_old_SOURCES = send_raw_old.c $(WIN_LIBH)
 send_raw_old_LDADD = $(WIN_SYSTEM_LIB) @LIBNSL@ @LIBSOCKET@ @LIBSHMGET@
 
 recvstatus_SOURCES = recvstatus.c $(SUBFUNC_H)
@@ -274,22 +274,22 @@ recvstatus_LDADD = @LIBNSL@ @LIBSOCKET@
 recvstatus2_SOURCES = recvstatus2.c $(SUBFUNC_H)
 recvstatus2_LDADD = @LIBNSL@ @LIBSOCKET@
 
-relay_SOURCES = relay.c $(SUBFUNC_H) $(DAEMON_MODE) $(WIN_LIBH)
+relay_SOURCES = relay.c $(DAEMON_MODE) $(WIN_LIBH)
 relay_LDADD = $(WIN_SYSTEM_LIB) @LIBNSL@ @LIBSOCKET@
 
-relaym_SOURCES = relaym.c $(WIN_LIBH) $(SUBFUNC_H) $(DAEMON_MODE) $(UDP_UTILITY)
+relaym_SOURCES = relaym.c $(WIN_LIBH) $(DAEMON_MODE) $(UDP_UTILITY)
 relaym_LDADD = $(WIN_SYSTEM_LIB) @LIBNSL@ @LIBSOCKET@
 
-recvnmx_SOURCES = recvnmx.c $(WIN_LIBH) $(SUBFUNC_H)
+recvnmx_SOURCES = recvnmx.c $(WIN_LIBH)
 recvnmx_LDADD = $(WIN_SYSTEM_LIB) @LIBNSL@ @LIBSOCKET@ @LIBSHMGET@
 
-ecore_SOURCES = ecore.c $(WIN_LIBH) $(SUBFUNC_H)
+ecore_SOURCES = ecore.c $(WIN_LIBH)
 ecore_LDADD = $(WIN_SYSTEM_LIB) -lm
 
-ecore2_SOURCES = ecore2.c $(WIN_LIBH) $(SUBFUNC_H)
+ecore2_SOURCES = ecore2.c $(WIN_LIBH)
 ecore2_LDADD = $(WIN_SYSTEM_LIB) -lm @LIBSHMGET@
 
-recvts_SOURCES = recvts.c $(WIN_LIBH) $(SUBFUNC_H)
+recvts_SOURCES = recvts.c $(WIN_LIBH)
 recvts_LDADD = $(WIN_SYSTEM_LIB)
 
 hypomh_SOURCES = hypomh.f
@@ -297,22 +297,22 @@ hypomh_SOURCES = hypomh.f
 hypomhc_SOURCES = hypomhc.c $(SUBFUNC_H)
 hypomhc_LDADD = -lm
 
-sends_SOURCES = sends.c $(WIN_LIBH) $(SUBFUNC_H)
+sends_SOURCES = sends.c $(WIN_LIBH)
 sends_LDADD = $(WIN_SYSTEM_LIB) @LIBNSL@ @LIBSOCKET@
 
 recvs_SOURCES = recvs.c $(SUBFUNC_H)
 recvs_LDADD = @LIBNSL@ @LIBSOCKET@
 
-raw_time_SOURCES = raw_time.c $(WIN_LIBH) $(SUBFUNC_H) $(DAEMON_MODE) $(WIN_UTIL) $(GC_CHECK_INCLUDE)
+raw_time_SOURCES = raw_time.c $(WIN_LIBH) $(DAEMON_MODE) $(WIN_UTIL) $(GC_CHECK_INCLUDE)
 raw_time_LDADD = $(WIN_SYSTEM_LIB) -lm @LIBSHMGET@ $(GC_CHECK_LIB)
 
-recvstatus3_SOURCES = recvstatus3.c $(WIN_LIBH) $(SUBFUNC_H) $(DAEMON_MODE) udpu.h udp_accept.c ls8tel.h
+recvstatus3_SOURCES = recvstatus3.c $(WIN_LIBH) $(DAEMON_MODE) udpu.h udp_accept.c ls8tel.h
 recvstatus3_LDADD = $(WIN_SYSTEM_LIB) @LIBNSL@ @LIBSOCKET@
 
-ls8tel16_win_SOURCES = ls8tel16_win.c $(WIN_LIBH) $(WIN_UTIL) $(SUBFUNC_H) $(GC_CHECK_INCLUDE) ls8tel.h ls8tel.c
+ls8tel16_win_SOURCES = ls8tel16_win.c $(WIN_LIBH) $(WIN_UTIL) $(GC_CHECK_INCLUDE) ls8tel.h ls8tel.c
 ls8tel16_win_LDADD = $(WIN_SYSTEM_LIB) $(GC_CHECK_LIB)
 
-ls8tel16_raw_SOURCES = ls8tel16_raw.c ls8tel.h ls8tel.c $(WIN_LIBH) $(SUBFUNC_H) $(DAEMON_MODE) $(WIN_UTIL) $(GC_CHECK_INCLUDE)
+ls8tel16_raw_SOURCES = ls8tel16_raw.c ls8tel.h ls8tel.c $(WIN_LIBH) $(DAEMON_MODE) $(WIN_UTIL) $(GC_CHECK_INCLUDE)
 ls8tel16_raw_LDADD = $(WIN_SYSTEM_LIB) @LIBSHMGET@ $(GC_CHECK_LIB)
 
 ls8tel_STM_SOURCES = ls8tel_STM.c $(SUBFUNC_H) $(GC_CHECK_INCLUDE) ls8tel.h ls8tel.c
@@ -321,17 +321,17 @@ ls8tel_STM_LDADD = $(GC_CHECK_LIB)
 ls8tel_STS_SOURCES = ls8tel_STS.c $(SUBFUNC_H) $(GC_CHECK_INCLUDE) ls8tel.h ls8tel.c
 ls8tel_STS_LDADD = $(GC_CHECK_LIB)
 
-winrawsrvd_SOURCES = winrawsrv.c $(SUBFUNC_H) $(WIN_LIBH) $(DAEMON_MODE) winraw_bp.h
+winrawsrvd_SOURCES = winrawsrv.c $(WIN_LIBH) $(DAEMON_MODE) winraw_bp.h
 winrawsrvd_LDADD = $(WIN_SYSTEM_LIB) @LIBNSL@ @LIBSOCKET@
 
-winrawcli_test_SOURCES = winrawcli_test.c $(WIN_LIBH) $(DAEMON_MODE) $(TCP_UTILITY) winraw_bp.h $(SUBFUNC_H)
+winrawcli_test_SOURCES = winrawcli_test.c $(WIN_LIBH) $(DAEMON_MODE) $(TCP_UTILITY) winraw_bp.h
 winrawcli_test_LDADD = $(WIN_SYSTEM_LIB) @LIBNSL@ @LIBSOCKET@
 
-winrawreq_SOURCES = winrawreq.c $(WIN_LIBH) $(DAEMON_MODE) $(TCP_UTILITY) $(UDP_UTILITY) winraw_bp.h $(SUBFUNC_H)
+winrawreq_SOURCES = winrawreq.c $(WIN_LIBH) $(DAEMON_MODE) $(TCP_UTILITY) $(UDP_UTILITY) winraw_bp.h
 winrawreq_LDADD = $(WIN_SYSTEM_LIB) @LIBNSL@ @LIBSOCKET@
 
-rawsrv_info_SOURCES = rawsrv_info.c $(TCP_UTILITY) $(WIN_LIBH) winraw_bp.h $(SUBFUNC_H)
+rawsrv_info_SOURCES = rawsrv_info.c $(TCP_UTILITY) $(WIN_LIBH) winraw_bp.h
 rawsrv_info_LDADD = $(WIN_SYSTEM_LIB) @LIBNSL@ @LIBSOCKET@
 
-recvt_LS7000_SOURCES = recvt_LS7000.c $(WIN_LIBH) $(SUBFUNC_H) $(DAEMON_MODE) $(UDP_UTILITY)
+recvt_LS7000_SOURCES = recvt_LS7000.c $(WIN_LIBH) $(DAEMON_MODE) $(UDP_UTILITY)
 recvt_LS7000_LDADD = $(WIN_SYSTEM_LIB) @LIBNSL@ @LIBSOCKET@ @LIBSHMGET@

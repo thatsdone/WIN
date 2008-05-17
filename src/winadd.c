@@ -1,4 +1,4 @@
-/* $Id: winadd.c,v 1.4.4.2 2007/09/14 09:25:14 uehira Exp $ */
+/* $Id: winadd.c,v 1.4.4.3 2008/05/17 14:22:05 uehira Exp $ */
 
 /*
  * winadd.c  (Uehira Kenji)
@@ -39,7 +39,6 @@
 
 #include "winlib.h"
 #include "win_system.h"
-#include "subst_func.h"
 
 struct data_index {
   unsigned long  len;
@@ -52,7 +51,7 @@ typedef struct data_index  INDX;
 
 /* global variables */
 static const char rcsid[] =
-   "$Id: winadd.c,v 1.4.4.2 2007/09/14 09:25:14 uehira Exp $";
+   "$Id: winadd.c,v 1.4.4.3 2008/05/17 14:22:05 uehira Exp $";
 static int  dummy_flag, verbose_flag;
 
 /* prototypes */

@@ -1,4 +1,4 @@
-/* $Id: raw2mon.c,v 1.4.4.2 2007/06/19 06:08:05 uehira Exp $ */
+/* $Id: raw2mon.c,v 1.4.4.3 2008/05/17 14:22:01 uehira Exp $ */
 /*
   program "raw2mon.c"
   6/3/93,6/17/94,8/17/95 urabe
@@ -22,7 +22,6 @@
 #include  <sys/stat.h>
 
 #include "winlib.h"
-#include "subst_func.h"
 
 #define   MAXSIZE   5000000
 #define   SIZE_WBUF 1000000

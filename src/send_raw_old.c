@@ -1,4 +1,4 @@
-/* $Id: send_raw_old.c,v 1.9.4.1 2006/09/25 15:00:58 uehira Exp $ */
+/* $Id: send_raw_old.c,v 1.9.4.2 2008/05/17 14:22:02 uehira Exp $ */
 /*
     program "send_raw_old/send_mon_old.c"   1/24/94 - 1/25/94,5/25/94 urabe
                                     6/15/94 - 6/16/94
@@ -46,7 +46,6 @@
 #include <errno.h>
 
 #include "winlib.h"
-#include "subst_func.h"
 
 #define DEBUG     0
 #define MAXMESG   1024

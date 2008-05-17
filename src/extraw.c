@@ -1,4 +1,4 @@
-/* $Id: extraw.c,v 1.3.4.1 2006/09/25 15:00:56 uehira Exp $ */
+/* $Id: extraw.c,v 1.3.4.2 2008/05/17 14:21:59 uehira Exp $ */
 /* "extraw.c"    2000.3.17 urabe */
 /* 2000.4.24/2001.11.14 strerror() */
 
@@ -29,7 +29,6 @@
 #include <errno.h>
 
 #include "winlib.h"
-#include "subst_func.h"
 
 #define DEBUG       0
 #define BELL        0

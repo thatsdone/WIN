@@ -1,4 +1,4 @@
-/* $Id: wed.c,v 1.5.4.2 2007/06/19 06:08:05 uehira Exp $ */
+/* $Id: wed.c,v 1.5.4.3 2008/05/17 14:22:04 uehira Exp $ */
 /* program "wed.c"
 	"wed" edits a win format data file by time range and channles
 	6/26/91,7/13/92,3/11/93,4/20/94,8/5/94,12/8/94   urabe
@@ -21,11 +21,9 @@
 #include	<signal.h>
 
 #include        "winlib.h"
-#include        "subst_func.h"
 
 #define		DEBUG		0
 #define		DEBUG1		0
-#define SWAPL(a) a=(((a)<<24)|((a)<<8)&0xff0000|((a)>>8)&0xff00|((a)>>24)&0xff)
 
 unsigned char *buf,*outbuf;
 int leng,dec_start[6],dec_end[6],dec_now[6],nch,sysch[65536];

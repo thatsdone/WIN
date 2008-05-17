@@ -1,4 +1,4 @@
-/* $Id: raw_ch.c,v 1.4.4.1 2006/09/25 15:00:57 uehira Exp $ */
+/* $Id: raw_ch.c,v 1.4.4.2 2008/05/17 14:22:01 uehira Exp $ */
 /* "raw_ch.c"    99.12.8 urabe */
 /*                  modified from raw_raw.c */
 /*                  byte-order-free */
@@ -33,7 +33,6 @@
 #include <errno.h>
 
 #include "winlib.h"
-#include "subst_func.h"
 
 #define DEBUG       0
 #define BELL        0

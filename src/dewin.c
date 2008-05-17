@@ -1,4 +1,4 @@
-/* $Id: dewin.c,v 1.4.4.1 2006/09/25 15:00:56 uehira Exp $ */
+/* $Id: dewin.c,v 1.4.4.2 2008/05/17 14:21:58 uehira Exp $ */
 /* program dewin  1994.4.11-4.20  urabe */
 /*                1996.2.23 added -n option */
 /*                1996.9.12 added -8 option */
@@ -19,7 +19,6 @@
 #include  <math.h>
 
 #include "winlib.h"
-#include "subst_func.h"
 
 #define   DEBUG   0
 

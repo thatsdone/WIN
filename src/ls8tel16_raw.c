@@ -1,4 +1,4 @@
-/* $Id: ls8tel16_raw.c,v 1.3.2.1 2006/09/25 15:00:57 uehira Exp $ */
+/* $Id: ls8tel16_raw.c,v 1.3.2.2 2008/05/17 14:22:00 uehira Exp $ */
 
 /*
  * Copyright (c) 2005
@@ -47,8 +47,6 @@
 #include "gc_leak_detector.h"
 #endif
 #include "daemon_mode.h"
-#include "subst_func.h"
-#include "win_log.h"
 #include "winlib.h"
 #include "win_system.h"
 #include "ls8tel.h"
@@ -59,7 +57,7 @@
 /*  #define DEBUG       0 */
 
 static char rcsid[] =
-  "$Id: ls8tel16_raw.c,v 1.3.2.1 2006/09/25 15:00:57 uehira Exp $";
+  "$Id: ls8tel16_raw.c,v 1.3.2.2 2008/05/17 14:22:00 uehira Exp $";
 
 char *progname, *logfile;
 int  daemon_mode, syslog_mode;

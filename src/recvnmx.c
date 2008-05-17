@@ -1,4 +1,4 @@
-/* $Id: recvnmx.c,v 1.16.4.2 2008/05/16 09:36:54 uehira Exp $ */
+/* $Id: recvnmx.c,v 1.16.4.3 2008/05/17 14:22:01 uehira Exp $ */
 /* "recvnmx.c"    2001.7.18-19 modified from recvt.c and nmx2raw.c  urabe */
 /*                2001.8.18 */
 /*                2001.10.5 workaround for hangup */
@@ -41,7 +41,6 @@
 #include <errno.h>
 
 #include "winlib.h"
-#include "subst_func.h"
 
 #define DEBUG     0
 #define DEBUG1    0

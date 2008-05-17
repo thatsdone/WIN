@@ -50,7 +50,6 @@
 #include <errno.h>
 
 #include "winlib.h"
-#include "subst_func.h"
 
 #define DEBUG       1
 #define MAXMESG     2000

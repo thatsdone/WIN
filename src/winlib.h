@@ -1,4 +1,4 @@
-/* $Id: winlib.h,v 1.1.2.3 2008/05/16 09:36:55 uehira Exp $ */
+/* $Id: winlib.h,v 1.1.2.4 2008/05/17 14:22:06 uehira Exp $ */
 
 #ifndef _WIN_LIB_H_
 #define _WIN_LIB_H_
@@ -10,6 +10,8 @@
 #include "filter.h"
 #include "win_log.h"
 
+#include "subst_func.h"
+
 typedef unsigned long  WIN_blocksize;
 typedef unsigned short WIN_ch;
 typedef unsigned long  WIN_sr;
@@ -17,6 +19,16 @@ typedef unsigned long  WIN_sr;
 /* High sampling rate format */
 #define  HEADER_4B    4096     /* SR<2^12  (   1 Hz --    4095 Hz) */
 #define  HEADER_5B    1048576  /* SR<2^20  (4096 Hz -- 1048575 Hz) */
+
+#define  SWAPL(a)  a = (((a) << 24) | ((a) << 8) & 0xff0000 |\
+			((a) >> 8) & 0xff00 | ((a) >> 24) & 0xff)
+#define  SWAPS(a)  a = (((a) << 8) & 0xff00 | ((a) >> 8) & 0xff)
+#define  SWAPF(a)  *(long *)&(a) =\
+    (((*(long *)&(a)) << 24) | ((*(long *)&(a)) << 8) & 0xff0000 |\
+     ((*(long *)&(a)) >> 8) & 0xff00 | ((*(long *)&(a)) >> 24) & 0xff)
+#define  LongFromBigEndian(a) \
+  ((((unsigned char *)&(a))[0] << 24) + (((unsigned char *)&(a))[1] << 16) +\
+   (((unsigned char *)&(a))[2] << 8) + ((unsigned char *)&(a))[3])
 
 /* BCD to DEC */
 static int b2d[] = {

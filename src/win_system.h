@@ -1,4 +1,4 @@
-/* $Id: win_system.h,v 1.7.4.1 2006/09/25 15:01:00 uehira Exp $ */
+/* $Id: win_system.h,v 1.7.4.2 2008/05/17 14:22:05 uehira Exp $ */
 
 #ifndef _WIN_SYSTEM_H_
 #define _WIN_SYSTEM_H_
@@ -61,11 +61,6 @@
 
 #define WINADD  "winadd"
 #define WADD    "wadd"
-
-#define SWAPL(a) a=(((a)<<24)|((a)<<8)&0xff0000|((a)>>8)&0xff00|((a)>>24)&0xff)
-#define LongFromBigEndian(a) \
-    ((((unsigned char *)&(a))[0] << 24) + (((unsigned char *)&(a))[1] << 16) +\
-     (((unsigned char *)&(a))[2] << 8) + ((unsigned char *)&(a))[3])
 
 /* memory malloc utility macro */
 #ifndef MALLOC

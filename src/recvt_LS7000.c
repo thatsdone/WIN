@@ -1,4 +1,4 @@
-/* $Id: recvt_LS7000.c,v 1.1.2.1 2007/11/19 10:11:18 uehira Exp $ */
+/* $Id: recvt_LS7000.c,v 1.1.2.2 2008/05/17 14:22:02 uehira Exp $ */
 /* "recvt_LS7000.c"  uehira */
 /*   2007-11-02  imported from recvt.c 1.29.2.1 */
 
@@ -34,7 +34,6 @@
 #include "daemon_mode.h"
 #include "winlib.h"
 #include "udpu.h"
-#include "subst_func.h"
 
 #define DEBUG0    0
 #define DEBUG1    0

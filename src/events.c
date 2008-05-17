@@ -1,4 +1,4 @@
-/* $Id: events.c,v 1.8.2.2 2008/05/01 01:18:51 uehira Exp $ */
+/* $Id: events.c,v 1.8.2.3 2008/05/17 14:21:59 uehira Exp $ */
 /****************************************************************************
 *****************************************************************************
 **     program "events.c" for NEWS                                  *********
@@ -109,7 +109,6 @@ sso     /dat/etc/sso.station    cut-jc3
 #include  <sys/ioctl.h>
 
 #include "winlib.h"
-#include "subst_func.h"
 
 #define DEBUG     0
 #define CLEAN     1

@@ -1,4 +1,4 @@
-/* $Id: recvt.c,v 1.29.2.1 2006/09/25 15:00:58 uehira Exp $ */
+/* $Id: recvt.c,v 1.29.2.2 2008/05/17 14:22:02 uehira Exp $ */
 /* "recvt.c"      4/10/93 - 6/2/93,7/2/93,1/25/94    urabe */
 /*                2/3/93,5/25/94,6/16/94 */
 /*                1/6/95 bug in adj_time fixed (tm[0]--) */
@@ -83,7 +83,6 @@
 
 #include "daemon_mode.h"
 #include "winlib.h"
-#include "subst_func.h"
 
 #define DEBUG     0
 #define DEBUG0    0
@@ -578,7 +577,6 @@ send_req(sock,host_addr)
   struct sockaddr_in *host_addr;  /* sender address */
   int sock;                       /* socket */
   {
-#define SWAPS(a) (((a)<<8)&0xff00|((a)>>8)&0xff)
   int i,j;
 /*
 send list of chs : 2B/ch,1024B/packet->512ch/packet max 128packets

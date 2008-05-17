@@ -30,7 +30,6 @@
 #endif  /* !TIME_WITH_SYS_TIME */
 
 #include "winlib.h"
-#include "subst_func.h"
 
 /* #define SR 4096 */
 #define SR 250

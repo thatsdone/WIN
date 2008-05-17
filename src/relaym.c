@@ -1,4 +1,4 @@
-/* $Id: relaym.c,v 1.8 2005/06/22 03:14:55 uehira Exp $ */
+/* $Id: relaym.c,v 1.8.2.1 2008/05/17 14:22:02 uehira Exp $ */
 
 /*
  * 2005-06-22 MF relay.c:
@@ -41,11 +41,9 @@
 
 #include <syslog.h>
 
+#include "winlib.h"
 #include "daemon_mode.h"
-#include "subst_func.h"
 #include "udpu.h"
-#include "win_log.h"
-
 
 #define MAXMESG   2048
 #define N_PACKET  64     /* N of old packets to be requested */  
@@ -58,7 +56,7 @@
 #define MAXMSG       1025
 
 static char rcsid[] =
-  "$Id: relaym.c,v 1.8 2005/06/22 03:14:55 uehira Exp $";
+  "$Id: relaym.c,v 1.8.2.1 2008/05/17 14:22:02 uehira Exp $";
 
 /* destination host info. */
 struct hostinfo {

@@ -1,4 +1,4 @@
-/* $Id: winrawsrv.c,v 1.1.4.5 2008/05/16 09:36:55 uehira Exp $ */
+/* $Id: winrawsrv.c,v 1.1.4.6 2008/05/17 14:22:06 uehira Exp $ */
 
 /* winrawsrv.c -- raw data request server */
 
@@ -37,7 +37,6 @@
 #include "gc_leak_detector.h"
 #endif
 #include "daemon_mode.h"
-#include "win_log.h"
 #include "winlib.h"
 #include "winraw_bp.h"
 
@@ -52,7 +51,7 @@
 #define FNAMEMAX     1024
 
 static char rcsid[] =
-  "$Id: winrawsrv.c,v 1.1.4.5 2008/05/16 09:36:55 uehira Exp $";
+  "$Id: winrawsrv.c,v 1.1.4.6 2008/05/17 14:22:06 uehira Exp $";
 
 char *progname, *logfile;
 int  daemon_mode, syslog_mode;

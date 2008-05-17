@@ -1,4 +1,4 @@
-/* $Id: finalb2seis.c,v 1.3 2002/01/13 06:57:50 uehira Exp $ */
+/* $Id: finalb2seis.c,v 1.3.4.1 2008/05/17 14:21:59 uehira Exp $ */
 /******************************************************************/
 /*    finalb2seis.c                8/19/92-6/1/93 urabe           */
 /*    How to use (for example),                                   */
@@ -12,11 +12,7 @@
 
 #include  <stdio.h>
 
-#include "subst_func.h"
-
-#define SWAPF(a) *(long *)&(a)=(((*(long *)&(a))<<24)|\
-  ((*(long *)&(a))<<8)&0xff0000|((*(long *)&(a))>>8)&0xff00|\
-  ((*(long *)&(a))>>24)&0xff)
+#include "winlib.h"
 
 main(argc,argv)
   int argc;

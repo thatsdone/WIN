@@ -1,4 +1,4 @@
-/* $Id: winrawreq.c,v 1.1.2.3 2007/09/14 09:25:14 uehira Exp $ */
+/* $Id: winrawreq.c,v 1.1.2.4 2008/05/17 14:22:06 uehira Exp $ */
 
 /* winrawreq.c -- raw data request client */
 
@@ -35,9 +35,7 @@
 #include "tcpu.h"
 #include "udpu.h"
 #include "winlib.h"
-#include "win_log.h"
 #include "winraw_bp.h"
-#include "subst_func.h"
 
 #define DEBUG1       0
 #define DEBUG_NET    0
@@ -51,7 +49,7 @@
 #define MAXMSG       1025
 
 static char rcsid[] =
-  "$Id: winrawreq.c,v 1.1.2.3 2007/09/14 09:25:14 uehira Exp $";
+  "$Id: winrawreq.c,v 1.1.2.4 2008/05/17 14:22:06 uehira Exp $";
 
 char *progname, *logfile;
 int  daemon_mode, syslog_mode;

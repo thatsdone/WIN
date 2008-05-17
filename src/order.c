@@ -1,4 +1,4 @@
-/* $Id: order.c,v 1.11.4.3 2008/05/16 09:36:54 uehira Exp $ */
+/* $Id: order.c,v 1.11.4.4 2008/05/17 14:22:00 uehira Exp $ */
 /*  program "order.c" 1/26/94 - 2/7/94, 6/14/94 urabe */
 /*                              1/6/95 bug in adj_time(tm[0]--) fixed */
 /*                              3/17/95 write_log() */
@@ -46,9 +46,7 @@
 
 #include "daemon_mode.h"
 #include "winlib.h"
-#include "subst_func.h"
 
-#define SWAPL(a) a=(((a)<<24)|((a)<<8)&0xff0000|((a)>>8)&0xff00|((a)>>24)&0xff)
 #define DEBUG     0
 #define DEBUG1    0
 

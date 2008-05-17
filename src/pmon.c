@@ -1,4 +1,4 @@
-/* $Id: pmon.c,v 1.14.2.3 2007/08/26 02:38:34 uehira Exp $ */
+/* $Id: pmon.c,v 1.14.2.4 2008/05/17 14:22:00 uehira Exp $ */
 /************************************************************************
 *************************************************************************
 **  program "pmon.c" for NEWS/SPARC                             *********
@@ -86,7 +86,6 @@
 #include  <ctype.h>
 
 #include "winlib.h"
-#include "subst_func.h"
 
 #define LONGNAME      1
 #define DEBUG         0
@@ -123,9 +122,6 @@
 #define SIZE_FONT24   ((WIDTH_FONT24*N_CODE+15)/16*2*HEIGHT_FONT24)
 #define SIZE_FONT32   ((WIDTH_FONT32*N_CODE+15)/16*2*HEIGHT_FONT32)
 #define PLOTHEIGHT    (HEIGHT_LBP-Y_BASE-HEIGHT_FONT32)
-
-#define SWAPS(a) a=(((a)<<8)&0xff00|((a)>>8)&0xff)
-#define SWAPL(a) a=(((a)<<24)|((a)<<8)&0xff0000|((a)>>8)&0xff00|((a)>>24)&0xff)
 
 #define WIN_FILENAME_MAX 1024
 

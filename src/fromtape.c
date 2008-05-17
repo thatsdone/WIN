@@ -1,4 +1,4 @@
-/* $Id: fromtape.c,v 1.7.2.1 2006/09/25 15:00:57 uehira Exp $ */
+/* $Id: fromtape.c,v 1.7.2.2 2008/05/17 14:21:59 uehira Exp $ */
 /*
   program "fromtape.c"
   12/10/90 - 12/13/90, 9/19/91, 10/30/91, 6/19/92  urabe
@@ -29,7 +29,6 @@
 #include  <sys/mtio.h>
 
 #include "winlib.h"
-#include "subst_func.h"
 
 #define   DEBUG1    0
 #define   N_FILE    30

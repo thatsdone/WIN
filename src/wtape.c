@@ -1,4 +1,4 @@
-/* $Id: wtape.c,v 1.12.2.2 2007/06/19 11:23:55 uehira Exp $ */
+/* $Id: wtape.c,v 1.12.2.3 2008/05/17 14:22:06 uehira Exp $ */
 /*
   program "wtape.c"
   8/23/89 - 8/8/90, 6/27/91, 12/24/91, 2/29/92  urabe
@@ -45,7 +45,6 @@
 #include  <unistd.h>
 
 #include "winlib.h"
-#include "subst_func.h"
 
 #define   DEBUGFLAG 1
 #define   SIZE_MAX  2000000
@@ -66,7 +65,7 @@
   int  wait_min;
   char param_name[WIN_FILENAME_MAX];
   char *progname;
-  static char rcsid[]="$Id: wtape.c,v 1.12.2.2 2007/06/19 11:23:55 uehira Exp $";
+  static char rcsid[]="$Id: wtape.c,v 1.12.2.3 2008/05/17 14:22:06 uehira Exp $";
 
 switch_sig()
   {

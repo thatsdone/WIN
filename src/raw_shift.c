@@ -1,4 +1,4 @@
-/* $Id: raw_shift.c,v 1.2.4.1 2006/09/25 15:00:58 uehira Exp $ */
+/* $Id: raw_shift.c,v 1.2.4.2 2008/05/17 14:22:01 uehira Exp $ */
 /* "raw_shift.c"    2002.4.1 - 4.1 urabe */
 /*                  modified from raw_100.c */
 /*                  2005.2.20 added fclose() in read_chfile() */
@@ -30,7 +30,6 @@
 #include <errno.h>
 
 #include "winlib.h"
-#include "subst_func.h"
 
 #define DEBUG       0
 #define BELL        0

@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.46.2.4 2008/04/14 03:45:33 uehira Exp $
+   $Id: win.c,v 1.46.2.5 2008/05/17 14:22:04 uehira Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -159,7 +159,6 @@ LOCAL
 #include <X11/cursorfont.h>
 
 #include "winlib.h"
-#include "subst_func.h"
 
   typedef XPoint lPoint;    /* short ! */
   XSizeHints sizehints;

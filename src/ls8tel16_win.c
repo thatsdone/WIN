@@ -1,4 +1,4 @@
-/* $Id: ls8tel16_win.c,v 1.2.4.1 2006/09/25 15:00:57 uehira Exp $ */
+/* $Id: ls8tel16_win.c,v 1.2.4.2 2008/05/17 14:22:00 uehira Exp $ */
 
 /*
  * Copyright (c) 2005
@@ -29,10 +29,9 @@
 #include "ls8tel.h"
 #include "winlib.h"
 #include "win_system.h"
-#include "subst_func.h"
 
 static const char  rcsid[] =
-   "$Id: ls8tel16_win.c,v 1.2.4.1 2006/09/25 15:00:57 uehira Exp $";
+   "$Id: ls8tel16_win.c,v 1.2.4.2 2008/05/17 14:22:00 uehira Exp $";
 
 static char  *progname;
 

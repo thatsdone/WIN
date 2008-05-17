@@ -1,4 +1,4 @@
-/* $Id: wform.c,v 1.4.4.1 2006/09/25 15:00:59 uehira Exp $ */
+/* $Id: wform.c,v 1.4.4.2 2008/05/17 14:22:04 uehira Exp $ */
 /* wform.c - a program to make a win format file */
 /* wform [ch] [sr] */
 
@@ -9,7 +9,6 @@
 #include <stdio.h>
 
 #include "winlib.h"
-#include "subst_func.h"
 
 #define SR 4096
 

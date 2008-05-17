@@ -1,4 +1,4 @@
-/* $Id: final2finalb.c,v 1.3.4.1 2006/09/25 15:00:57 uehira Exp $ */
+/* $Id: final2finalb.c,v 1.3.4.2 2008/05/17 14:21:59 uehira Exp $ */
 /******************************************************************/
 /*    final2finalb.c              9/21/94 urabe                   */
 /*    97.10.3 FreeBSD  99.4.19 byte-order-free                    */
@@ -11,11 +11,6 @@
 #include  <stdio.h>
 
 #include "winlib.h"
-#include "subst_func.h"
-
-#define SWAPF(a) *(long *)&(a)=(((*(long *)&(a))<<24)|\
-  ((*(long *)&(a))<<8)&0xff0000|((*(long *)&(a))>>8)&0xff00|\
-  ((*(long *)&(a))>>24)&0xff)  
 
 adj_sec(tm,se,tmc,sec)
   int *tm,*tmc;

@@ -1,4 +1,4 @@
-/* $Id: raw_time.c,v 1.4.4.2 2008/05/16 09:36:54 uehira Exp $ */
+/* $Id: raw_time.c,v 1.4.4.3 2008/05/17 14:22:01 uehira Exp $ */
 
 /* raw_time.c -- online version of wtime(1W) */
 
@@ -44,8 +44,6 @@
 #include "gc_leak_detector.h"
 #endif
 #include "daemon_mode.h"
-#include "subst_func.h"
-#include "win_log.h"
 #include "winlib.h"
 #include "win_system.h"
 
@@ -54,7 +52,7 @@
 
 
 static char rcsid[] =
-  "$Id: raw_time.c,v 1.4.4.2 2008/05/16 09:36:54 uehira Exp $";
+  "$Id: raw_time.c,v 1.4.4.3 2008/05/17 14:22:01 uehira Exp $";
 
 char *progname, *logfile;
 int  daemon_mode, syslog_mode;

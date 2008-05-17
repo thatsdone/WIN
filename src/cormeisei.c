@@ -1,4 +1,4 @@
-/* $Id: cormeisei.c,v 1.6.4.2 2007/06/19 06:08:05 uehira Exp $ */
+/* $Id: cormeisei.c,v 1.6.4.3 2008/05/17 14:21:58 uehira Exp $ */
 /* "cormeisei.c"    June'97 Ide changed from*/
 /* "raw_raw.c"      3/4/96 urabe */
 /*                  revised on 5/20/96 */
@@ -48,7 +48,6 @@
 #include <errno.h>
 
 #include "winlib.h"
-#include "subst_func.h"
 
 #define DEBUG     0
 #define DEBUG1    0

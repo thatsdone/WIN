@@ -1,4 +1,4 @@
-/* $Id: ecore.c,v 1.4.4.1 2006/09/25 15:00:56 uehira Exp $ */
+/* $Id: ecore.c,v 1.4.4.2 2008/05/17 14:21:58 uehira Exp $ */
 /* ddr news program "ecore.c"
   "ecore.c" works with "fromtape.c"
   "ecore.c" makes continuously filtered and decimated data
@@ -25,7 +25,6 @@
 #include  <fcntl.h>
 
 #include "winlib.h"
-#include "subst_func.h"
 
 /* filter parameters: see SAITO (1978) */
 #define   FILTER    1
@@ -118,10 +117,6 @@ end_process(value)
   printf("***** ecore end *****\n");
   exit(value);
   }
-
-#define LongFromBigEndian(a) \
-  ((((unsigned char *)&(a))[0]<<24)+(((unsigned char *)&(a))[1]<<16)+ \
-  (((unsigned char *)&(a))[2]<<8)+((unsigned char *)&(a))[3])
 
 main(argc,argv)
   int argc;

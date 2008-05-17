@@ -1,4 +1,4 @@
-/* $Id: recvstatus3.c,v 1.8 2006/02/08 15:33:35 uehira Exp $ */
+/* $Id: recvstatus3.c,v 1.8.2.1 2008/05/17 14:22:01 uehira Exp $ */
 
 /* 
  * recvstatus3 :
@@ -41,16 +41,15 @@
 #include <syslog.h>
 
 #include "daemon_mode.h"
-#include "subst_func.h"
 #include "udpu.h"
-#include "win_log.h"
+#include "winlib.h"
 #include "ls8tel.h"
 
 #define MAXMSG       1025
 #define PATHMAX      1024
 
 static char rcsid[] =
-  "$Id: recvstatus3.c,v 1.8 2006/02/08 15:33:35 uehira Exp $";
+  "$Id: recvstatus3.c,v 1.8.2.1 2008/05/17 14:22:01 uehira Exp $";
 
 char *progname, *logfile;
 int  daemon_mode, syslog_mode;

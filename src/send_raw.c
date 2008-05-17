@@ -1,4 +1,4 @@
-/* $Id: send_raw.c,v 1.24.2.2 2008/05/16 09:36:54 uehira Exp $ */
+/* $Id: send_raw.c,v 1.24.2.3 2008/05/17 14:22:02 uehira Exp $ */
 /*
     program "send_raw/send_mon.c"   1/24/94 - 1/25/94,5/25/94 urabe
                                     6/15/94 - 6/16/94
@@ -81,7 +81,6 @@
 
 #include "daemon_mode.h"
 #include "winlib.h"
-#include "subst_func.h"
 
 #define DEBUG0      0
 #define DEBUG       0

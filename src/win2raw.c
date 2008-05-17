@@ -1,5 +1,5 @@
 /*
- * $Id: win2raw.c,v 1.7.2.1 2006/09/25 15:01:00 uehira Exp $
+ * $Id: win2raw.c,v 1.7.2.2 2008/05/17 14:22:05 uehira Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -14,10 +14,9 @@
 
 #include "winlib.h"
 #include "win_system.h"
-#include "subst_func.h"
 
 static const char  rcsid[] =
-   "$Id: win2raw.c,v 1.7.2.1 2006/09/25 15:01:00 uehira Exp $";
+   "$Id: win2raw.c,v 1.7.2.2 2008/05/17 14:22:05 uehira Exp $";
 static char  *progname;
 
 static void usage(void);

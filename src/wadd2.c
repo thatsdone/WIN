@@ -1,4 +1,4 @@
-/* $Id: wadd2.c,v 1.4.4.2 2007/06/19 06:08:05 uehira Exp $ */
+/* $Id: wadd2.c,v 1.4.4.3 2008/05/17 14:22:03 uehira Exp $ */
 /* program "wadd2.c"
   "wadd" puts two win data files together
   7/24/91 - 7/25/91, 4/20/94,6/27/94-6/28/94,7/12/94   urabe
@@ -23,7 +23,6 @@
 #include  <stdio.h>
 #include  <string.h>
 
-#include "subst_func.h"
 #include "winlib.h"
 
 #define   DEBUG   0

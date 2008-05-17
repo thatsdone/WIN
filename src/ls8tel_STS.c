@@ -1,4 +1,4 @@
-/* $Id: ls8tel_STS.c,v 1.2 2005/06/14 10:41:02 uehira Exp $ */
+/* $Id: ls8tel_STS.c,v 1.2.2.1 2008/05/17 14:22:00 uehira Exp $ */
 
 /*
  * Copyright (c) 2005 -
@@ -20,10 +20,11 @@
 #include <string.h>
 
 #include "ls8tel.h"
+#include "subst_func.h"
 
 static char  *progname;
 static char  rcsid[] =
-   "$Id: ls8tel_STS.c,v 1.2 2005/06/14 10:41:02 uehira Exp $";
+   "$Id: ls8tel_STS.c,v 1.2.2.1 2008/05/17 14:22:00 uehira Exp $";
 
 int main(int, char *[]);
 

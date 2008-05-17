@@ -1,4 +1,4 @@
-/* $Id: sends.c,v 1.6.4.1 2006/09/25 15:00:58 uehira Exp $ */
+/* $Id: sends.c,v 1.6.4.2 2008/05/17 14:22:03 uehira Exp $ */
 /*   program "sends"   2000.3.20 urabe                   */
 /*   2000.3.21 */
 /*   2000.4.17 */
@@ -45,7 +45,6 @@
 #endif
 
 #include "winlib.h"
-#include "subst_func.h"
 
 #define DEBUG       0
 #define DEBUG1      0

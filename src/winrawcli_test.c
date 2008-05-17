@@ -1,4 +1,4 @@
-/* $Id: winrawcli_test.c,v 1.1.4.1 2007/06/23 07:21:30 uehira Exp $ */
+/* $Id: winrawcli_test.c,v 1.1.4.2 2008/05/17 14:22:06 uehira Exp $ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -22,14 +22,14 @@
 #include "gc_leak_detector.h"
 #endif
 #include "daemon_mode.h"
-#include "win_log.h"
+#include "winlib.h"
 #include "winraw_bp.h"
 #include "tcpu.h"
 
 #define MAXMSG       1025
 
 static char rcsid[] =
-  "$Id: winrawcli_test.c,v 1.1.4.1 2007/06/23 07:21:30 uehira Exp $";
+  "$Id: winrawcli_test.c,v 1.1.4.2 2008/05/17 14:22:06 uehira Exp $";
 
 char *progname, *logfile;
 int  daemon_mode, syslog_mode;

@@ -43,7 +43,6 @@
 #include <errno.h>
 
 #include "winlib.h"
-#include "subst_func.h"
 
 /*--------------------------------------------*/
 

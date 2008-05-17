@@ -1,4 +1,4 @@
-/* $Id: wdiskts.c,v 1.6.2.2 2007/08/26 02:38:35 uehira Exp $ */
+/* $Id: wdiskts.c,v 1.6.2.3 2008/05/17 14:22:04 uehira Exp $ */
 /* 2005.8.10 urabe bug in strcmp2() fixed : 0-6 > 7-9 */
 
 #ifdef HAVE_CONFIG_H
@@ -37,7 +37,6 @@
 #endif
 #include "daemon_mode.h"
 #include "winlib.h"
-#include "subst_func.h"
 
 /*  #define   DEBUG   0 */
 #define   DEBUG1  0

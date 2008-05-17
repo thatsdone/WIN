@@ -1,4 +1,4 @@
-/* $Id: wchch.c,v 1.5.4.1 2006/09/25 15:00:59 uehira Exp $ */
+/* $Id: wchch.c,v 1.5.4.2 2008/05/17 14:22:03 uehira Exp $ */
 /*
 program "wchch.c"
 "wchch" changes channel no. in a win format data file
@@ -16,11 +16,10 @@ program "wchch.c"
 #include  <stdio.h>
 #include  <signal.h>
 
-#include "subst_func.h"
+#include "winlib.h"
 
 #define   DEBUG   0
 #define   DEBUG1  0
-#define SWAPL(a) a=(((a)<<24)|((a)<<8)&0xff0000|((a)>>8)&0xff00|((a)>>24)&0xff)
 
 unsigned char *buf,*outbuf;
 unsigned short ch_table[65536];

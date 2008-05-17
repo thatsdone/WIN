@@ -1,4 +1,4 @@
-/* $Id: rtape.c,v 1.9.2.1 2006/09/25 15:00:58 uehira Exp $ */
+/* $Id: rtape.c,v 1.9.2.2 2008/05/17 14:22:02 uehira Exp $ */
 /*
   program "rtape.c"
   9/16/89 - 11/06/90, 6/26/91, 10/30/91, 6/26/92  urabe
@@ -31,7 +31,6 @@
 #include  <sys/mtio.h>
 
 #include "winlib.h"
-#include "subst_func.h"
 
 #define   DEBUG     0
 #define   TRY_LIMIT 16

@@ -1,4 +1,4 @@
-/* $Id: wadd.c,v 1.6.4.2 2007/06/19 06:08:05 uehira Exp $ */
+/* $Id: wadd.c,v 1.6.4.3 2008/05/17 14:22:03 uehira Exp $ */
 /* program "wadd.c"
   "wadd" puts two win data files together
   7/24/91 - 7/25/91, 4/20/94,6/27/94-6/28/94,7/12/94   urabe
@@ -22,13 +22,11 @@
 #include  <string.h>
 
 #include "winlib.h"
-#include "subst_func.h"
 
 #define   DEBUG   0
 #define   MAXSIZE   5000000
 #define   NAMLEN    256
 #define   TEMPNAME  "wadd.tmp"
-#define SWAPL(a) a=(((a)<<24)|((a)<<8)&0xff0000|((a)>>8)&0xff00|((a)>>24)&0xff)
 
 /* bcd_dec(dest,sour) */
 /*   char *sour; */

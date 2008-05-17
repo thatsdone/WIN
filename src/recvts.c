@@ -34,7 +34,6 @@
 #endif  /* !TIME_WITH_SYS_TIME */
 
 #include "winlib.h"
-#include "subst_func.h"
 
 #define DEBUG     0
 #define DEBUG1    0

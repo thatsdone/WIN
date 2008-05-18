@@ -1,4 +1,4 @@
-/* $Id: extraw.c,v 1.3.4.2 2008/05/17 14:21:59 uehira Exp $ */
+/* $Id: extraw.c,v 1.3.4.3 2008/05/18 09:29:19 uehira Exp $ */
 /* "extraw.c"    2000.3.17 urabe */
 /* 2000.4.24/2001.11.14 strerror() */
 
@@ -40,13 +40,7 @@ main(argc,argv)
   int argc;
   char *argv[];
   {
-  struct Shm {
-    unsigned long p;    /* write point */
-    unsigned long pl;   /* write limit */
-    unsigned long r;    /* latest */
-    unsigned long c;    /* counter */
-    unsigned char d[1];   /* data buffer */
-    } *shin,*shdat,*shctl;
+  struct Shm  *shin,*shdat,*shctl;
   key_t inkey,datkey,ctlkey;
   int shmid_in,shmid_dat,shmid_ctl;
   unsigned long uni;

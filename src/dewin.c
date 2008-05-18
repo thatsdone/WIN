@@ -1,4 +1,4 @@
-/* $Id: dewin.c,v 1.4.4.2 2008/05/17 14:21:58 uehira Exp $ */
+/* $Id: dewin.c,v 1.4.4.3 2008/05/18 07:43:44 uehira Exp $ */
 /* program dewin  1994.4.11-4.20  urabe */
 /*                1996.2.23 added -n option */
 /*                1996.9.12 added -8 option */
@@ -15,7 +15,11 @@
 #endif
 
 #include  <stdio.h>
+#include  <stdlib.h>
+#include  <string.h>
 #include  <signal.h>
+#include  <unistd.h>
+
 #include  <math.h>
 
 #include "winlib.h"
@@ -68,7 +72,7 @@ read_data(ptr,fp)
 {
    static unsigned int size;
    unsigned char c[4];
-   int i,re;
+   int re;
    if(fread(c,1,4,fp)==0) return 0;
    re=(c[0]<<24)+(c[1]<<16)+(c[2]<<8)+c[3];
    if(*ptr==0) *ptr=(unsigned char *)malloc(size=re*2);
@@ -91,7 +95,6 @@ read_one_sec(ptr,ch,abuf)
   register long *abuf;/* output */
   {
   int g_size,s_rate;
-  register int i;
   register unsigned char *dp;
   unsigned char *ddp;
   unsigned long sys_ch;
@@ -204,12 +207,11 @@ main(argc,argv)
   int argc;
   char *argv[];
   {
-  int i,j,k,sec,re,mainsize,sr,sr_save,c,form,nofill,zero,minblock,
+  int i,j,k,sec,mainsize,sr,sr_save,c,form,nofill,zero,minblock,
     time1[6],time2[6],time3[6];
   unsigned long sysch;
   static unsigned char *mainbuf;
   FILE *f_main,*f_filter;
-  char *ptr;
   unsigned char cc;
   extern int optind;
   extern char *optarg;

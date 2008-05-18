@@ -1,4 +1,4 @@
-/* $Id: cormeisei.c,v 1.6.4.3 2008/05/17 14:21:58 uehira Exp $ */
+/* $Id: cormeisei.c,v 1.6.4.4 2008/05/18 07:43:44 uehira Exp $ */
 /* "cormeisei.c"    June'97 Ide changed from*/
 /* "raw_raw.c"      3/4/96 urabe */
 /*                  revised on 5/20/96 */
@@ -131,7 +131,6 @@ main(argc,argv)
 int argc;
 char *argv[];
 {
-  FILE *fp;
   struct Shm {
     unsigned long p;    /* write point */
     unsigned long pl;   /* write limit */
@@ -143,10 +142,10 @@ char *argv[];
   int shmid_raw,shmid_mon;
   unsigned long uni;
   char tb[100];
-  unsigned char *ptr,*ptw,tm[6],*ptr_lim,*ptr_save;
+  unsigned char *ptr,*ptw,*ptr_lim,*ptr_save;
   static unsigned char dbuf[12][MAX_SEC_SIZE],ch_flagh[12][CH_TOTAL],
     ch_flagl[12][CH_TOTAL];
-  int sr,i,j,k,size,n,size_shm,itdl,itdh,ich,ch;
+  int sr,i,k,size,size_shm,itdl,itdh,ich,ch;
   unsigned long c_save;
   int gs,gh,wf;
   int iah=IAH,ibh=IBH;
@@ -160,8 +159,8 @@ char *argv[];
   float tdlyh=TDLYH;
   float tdlyl=TDLYL;
   static long dath[14][CH_TOTAL][101],datl[14][CH_TOTAL][21];
-  long dt[500],xp[XPM],*pd1,*pd2;
-  double yp[YPM],dout[500],*pdd;
+  long dt[500],*pd1,*pd2;
+  double dout[500],*pdd;
 
   static double ach[30]=
      {2.4880006e-001, 1.7382422e-001, -3.5318485e-001, 3.6853228e-001,

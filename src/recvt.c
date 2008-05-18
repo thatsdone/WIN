@@ -1,4 +1,4 @@
-/* $Id: recvt.c,v 1.29.2.2 2008/05/17 14:22:02 uehira Exp $ */
+/* $Id: recvt.c,v 1.29.2.3 2008/05/18 08:29:02 uehira Exp $ */
 /* "recvt.c"      4/10/93 - 6/2/93,7/2/93,1/25/94    urabe */
 /*                2/3/93,5/25/94,6/16/94 */
 /*                1/6/95 bug in adj_time fixed (tm[0]--) */
@@ -651,13 +651,7 @@ main(argc,argv)
   unsigned short to_port,host_port;
   extern int optind;
   extern char *optarg;
-  struct Shm {
-    unsigned long p;    /* write point */
-    unsigned long pl;   /* write limit */
-    unsigned long r;    /* latest */
-    unsigned long c;    /* counter */
-    unsigned char d[1];   /* data buffer */
-    } *sh;
+  struct Shm  *sh;
   char tb[256],tb2[256];
   struct ip_mreq stMreq;
   char mcastgroup[256]; /* multicast address */

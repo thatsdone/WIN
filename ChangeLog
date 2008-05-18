@@ -1,4 +1,7 @@
- $Id: ChangeLog,v 1.131.2.21 2008/05/17 15:32:49 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.22 2008/05/18 08:29:01 uehira Exp $
+
+2008-05-18  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* struct Shm : src/winlib.h
 
 2008-05-17  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* SWAPL(a), SWAPS(a), SWAPF(a) : common	declaration in src/winlib.h. 

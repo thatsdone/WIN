@@ -59,15 +59,6 @@ char *progname,outfile[256];
 int win;
 FILE *fpout;
 
-struct Shm
-  {
-  unsigned long p;    /* write point */
-  unsigned long pl;   /* write limit */
-  unsigned long r;    /* latest */
-  unsigned long c;    /* counter */
-  unsigned char d[1]; /* data buffer */
-  };
-
 time_dif(t1,t2) /* returns t1-t2(sec) */
   int *t1,*t2;
   {

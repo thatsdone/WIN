@@ -129,13 +129,7 @@ main(argc, argv)
 	unsigned char	*ptr, *ptr_save, *ptw,
 		out_data[SR * NCH], out_buf[100], cmp_tbl[20];
 	key_t	shmkey_in, shmkey_out;
-	struct Shm {
-		unsigned long	p;		/* write point */
-		unsigned long	pl;		/* write limit */
-		unsigned long	r;		/* Latest */
-		unsigned long	c;		/* counter */
-		unsigned char	d[1];	/* data buffer */
-	} *shm_in, *shm_out;
+	struct Shm  *shm_in, *shm_out;
 	struct Ch_header {
 		unsigned short	ch_no;
 		unsigned short	s_size_rate;

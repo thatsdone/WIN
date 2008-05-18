@@ -247,13 +247,7 @@ main(argc,argv)
   int i,j,k,c,size,n,re,fd,nn,pre,post;
   extern int optind;
   extern char *optarg;
-  struct Shm {
-    unsigned long p;    /* write point */
-    unsigned long pl;   /* write limit */
-    unsigned long r;    /* latest */
-    unsigned long c;    /* counter */
-    unsigned char d[1];   /* data buffer */
-    } *sh;
+  struct Shm  *sh;
   time_t ts;
 
   if(progname=strrchr(argv[0],'/')) progname++;

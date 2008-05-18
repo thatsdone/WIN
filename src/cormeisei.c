@@ -1,4 +1,4 @@
-/* $Id: cormeisei.c,v 1.6.4.4 2008/05/18 07:43:44 uehira Exp $ */
+/* $Id: cormeisei.c,v 1.6.4.5 2008/05/18 08:29:01 uehira Exp $ */
 /* "cormeisei.c"    June'97 Ide changed from*/
 /* "raw_raw.c"      3/4/96 urabe */
 /*                  revised on 5/20/96 */
@@ -131,13 +131,7 @@ main(argc,argv)
 int argc;
 char *argv[];
 {
-  struct Shm {
-    unsigned long p;    /* write point */
-    unsigned long pl;   /* write limit */
-    unsigned long r;    /* latest */
-    unsigned long c;    /* counter */
-    unsigned char d[1];   /* data buffer */
-    } *shr,*shm;
+  struct Shm  *shr,*shm;
   key_t rawkey,monkey;
   int shmid_raw,shmid_mon;
   unsigned long uni;

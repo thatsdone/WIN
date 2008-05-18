@@ -65,13 +65,7 @@ char *argv[];
     int c;
 
     key_t shmkey_out;
-    struct Shm {
-	unsigned long p;	/* write point */
-	unsigned long pl;	/* write limit */
-	unsigned long r;	/* Latest */
-	unsigned long c;	/* counter */
-	unsigned char d[1];	/* data buffer */
-    } *shm_out;
+    struct Shm  *shm_out;
     int shmid_out, shm_size = 0;
     unsigned char *ptw;
     unsigned long ltime;

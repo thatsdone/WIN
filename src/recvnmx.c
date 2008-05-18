@@ -1,4 +1,4 @@
-/* $Id: recvnmx.c,v 1.16.4.3 2008/05/17 14:22:01 uehira Exp $ */
+/* $Id: recvnmx.c,v 1.16.4.4 2008/05/18 08:29:02 uehira Exp $ */
 /* "recvnmx.c"    2001.7.18-19 modified from recvt.c and nmx2raw.c  urabe */
 /*                2001.8.18 */
 /*                2001.10.5 workaround for hangup */
@@ -65,13 +65,6 @@ char *model[32]={"HRD","ORION","RM3","RM4","LYNX","CYGNUS","EUROPA","CARINA",
     "TimeServer","TRIDENT","JANUS","TAURUS",
     "012","013","014","015","016","017","018","019",
     "020","021","022","023","024","025","026","027","028","029","030","031"};
-struct Shm {
-  unsigned long p;    /* write point */
-  unsigned long pl;   /* write limit */
-  unsigned long r;    /* latest */
-  unsigned long c;    /* counter */
-  unsigned char d[1]; /* data buffer */
-};
 struct Nmx_Packet {
   int npformat;
   int ptype;

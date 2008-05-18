@@ -1,4 +1,4 @@
-/* $Id: send_raw.c,v 1.24.2.3 2008/05/17 14:22:02 uehira Exp $ */
+/* $Id: send_raw.c,v 1.24.2.4 2008/05/18 08:29:02 uehira Exp $ */
 /*
     program "send_raw/send_mon.c"   1/24/94 - 1/25/94,5/25/94 urabe
                                     6/15/94 - 6/16/94
@@ -372,13 +372,7 @@ main(argc,argv)
   unsigned long gh;
   unsigned char *ptr,*ptr1,*ptr_save,*ptr_lim,*ptw,*ptw_size,
     no,host_name[256],tbuf[1024];
-  struct Shm {
-    unsigned long p;    /* write point */
-    unsigned long pl;   /* write limit */
-    unsigned long r;    /* latest */
-    unsigned long c;    /* counter */
-    unsigned char d[1];   /* data buffer */
-    } *shm,*shw;
+  struct Shm  *shm,*shw;
   extern int optind;
   extern char *optarg;
   char interface[256]; /* multicast interface */

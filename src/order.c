@@ -1,4 +1,4 @@
-/* $Id: order.c,v 1.11.4.4 2008/05/17 14:22:00 uehira Exp $ */
+/* $Id: order.c,v 1.11.4.5 2008/05/18 08:29:01 uehira Exp $ */
 /*  program "order.c" 1/26/94 - 2/7/94, 6/14/94 urabe */
 /*                              1/6/95 bug in adj_time(tm[0]--) fixed */
 /*                              3/17/95 write_log() */
@@ -54,14 +54,6 @@
 
 char *progname,*logfile;
 int  daemon_mode, syslog_mode, exit_status;
-
-struct Shm {
-  unsigned long p;    /* write point */
-  unsigned long pl;   /* write limit */
-  unsigned long r;    /* latest */
-  unsigned long c;    /* counter */
-  unsigned char d[1]; /* data buffer */
-};
 
 t_bcd(t,ptr)
      time_t t;

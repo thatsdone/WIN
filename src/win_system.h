@@ -1,4 +1,4 @@
-/* $Id: win_system.h,v 1.7.4.2 2008/05/17 14:22:05 uehira Exp $ */
+/* $Id: win_system.h,v 1.7.4.3 2008/05/18 08:29:03 uehira Exp $ */
 
 #ifndef _WIN_SYSTEM_H_
 #define _WIN_SYSTEM_H_
@@ -95,16 +95,6 @@ struct channel_tbl {
   double  stcp;                   /* station correction of P phase */
   double  stcs;                   /* station correction of P phase */
 };
-
-/* structure of shared memory */
-struct Shm {
-  unsigned long  p;    /* write point */
-  unsigned long  pl;   /* write limit */
-  unsigned long  r;    /* latest */
-  unsigned long  c;    /* counter */
-  unsigned char  d[1]; /* data buffer */
-};
-
 
 /* void  adj_time(int tm[]); */
 /* void  adj_time_m(int tm[]); */

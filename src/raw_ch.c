@@ -1,4 +1,4 @@
-/* $Id: raw_ch.c,v 1.4.4.2 2008/05/17 14:22:01 uehira Exp $ */
+/* $Id: raw_ch.c,v 1.4.4.3 2008/05/18 08:29:01 uehira Exp $ */
 /* "raw_ch.c"    99.12.8 urabe */
 /*                  modified from raw_raw.c */
 /*                  byte-order-free */
@@ -102,13 +102,7 @@ main(argc,argv)
   int argc;
   char *argv[];
   {
-  struct Shm {
-    unsigned long p;    /* write point */
-    unsigned long pl;   /* write limit */
-    unsigned long r;    /* latest */
-    unsigned long c;    /* counter */
-    unsigned char d[1];   /* data buffer */
-    } *shr,*shm;
+  struct Shm  *shr,*shm;
   key_t rawkey,monkey;
   int shmid_raw,shmid_mon;
   unsigned long uni;

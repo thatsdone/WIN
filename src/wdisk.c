@@ -1,4 +1,4 @@
-/* $Id: wdisk.c,v 1.17.2.7 2008/05/17 15:32:50 uehira Exp $ */
+/* $Id: wdisk.c,v 1.17.2.8 2008/05/18 08:29:02 uehira Exp $ */
 /*
   program "wdisk.c"   4/16/93-5/13/93,7/2/93,7/5/94  urabe
                       1/6/95 bug in adj_time fixed (tm[0]--)
@@ -277,13 +277,7 @@ main(argc,argv)
    unsigned char *ptr,*ptr_save,ptw[4],*buf;
    key_t shmkey;
    int c;
-   struct Shm {
-      unsigned long p;    /* write point */
-      unsigned long pl;   /* write limit */
-      unsigned long r;    /* latest */
-      unsigned long c;    /* counter */
-      unsigned char d[1];   /* data buffer */
-   } *shm;
+   struct Shm  *shm;
    
    if(progname=strrchr(argv[0],'/')) progname++;
    else progname=argv[0];

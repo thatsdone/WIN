@@ -1,4 +1,4 @@
-/* $Id: send_raw_old.c,v 1.9.4.2 2008/05/17 14:22:02 uehira Exp $ */
+/* $Id: send_raw_old.c,v 1.9.4.3 2008/05/18 08:29:02 uehira Exp $ */
 /*
     program "send_raw_old/send_mon_old.c"   1/24/94 - 1/25/94,5/25/94 urabe
                                     6/15/94 - 6/16/94
@@ -147,13 +147,7 @@ main(argc,argv)
   int size,gs,gh,sr,re,shmid;
   unsigned char *ptr,*ptr1,*ptr_save,*ptr_lim,*ptw,*ptw_save,no,no_f,
     host_name[100],tbuf[100];
-  struct Shm {
-    unsigned long p;    /* write point */
-    unsigned long pl;   /* write limit */
-    unsigned long r;    /* latest */
-    unsigned long c;    /* counter */
-    unsigned char d[1];   /* data buffer */
-    } *shm;
+  struct Shm  *shm;
 
   if(progname=strrchr(argv[0],'/')) progname++;
   else progname=argv[0];

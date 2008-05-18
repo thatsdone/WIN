@@ -1,4 +1,4 @@
-/* $Id: recvt_LS7000.c,v 1.1.2.2 2008/05/17 14:22:02 uehira Exp $ */
+/* $Id: recvt_LS7000.c,v 1.1.2.3 2008/05/18 08:29:02 uehira Exp $ */
 /* "recvt_LS7000.c"  uehira */
 /*   2007-11-02  imported from recvt.c 1.29.2.1 */
 
@@ -548,13 +548,7 @@ main(argc,argv)
   unsigned short to_port;
   extern int optind;
   extern char *optarg;
-  struct Shm {
-    unsigned long p;    /* write point */
-    unsigned long pl;   /* write limit */
-    unsigned long r;    /* latest */
-    unsigned long c;    /* counter */
-    unsigned char d[1];   /* data buffer */
-    } *sh;
+  struct Shm  *sh;
   char tb[256],tb2[256];
   struct ip_mreq stMreq;
   char mcastgroup[256]; /* multicast address */

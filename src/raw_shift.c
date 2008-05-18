@@ -1,4 +1,4 @@
-/* $Id: raw_shift.c,v 1.2.4.2 2008/05/17 14:22:01 uehira Exp $ */
+/* $Id: raw_shift.c,v 1.2.4.3 2008/05/18 08:29:02 uehira Exp $ */
 /* "raw_shift.c"    2002.4.1 - 4.1 urabe */
 /*                  modified from raw_100.c */
 /*                  2005.2.20 added fclose() in read_chfile() */
@@ -113,13 +113,7 @@ main(argc,argv)
   int argc;
   char *argv[];
   {
-  struct Shm {
-    unsigned long p;    /* write point */
-    unsigned long pl;   /* write limit */
-    unsigned long r;    /* latest */
-    unsigned long c;    /* counter */
-    unsigned char d[1]; /* data buffer */
-    } *shr,*shm;
+  struct Shm  *shr,*shm;
   key_t rawkey,monkey;
   int shmid_raw,shmid_mon;
   unsigned long uni;

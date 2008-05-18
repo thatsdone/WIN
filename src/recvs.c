@@ -1,4 +1,4 @@
-/* $Id: recvs.c,v 1.6 2005/06/24 02:58:04 urabe Exp $ */
+/* $Id: recvs.c,v 1.6.2.1 2008/05/18 08:29:02 uehira Exp $ */
 /* "recvs.c"    receive sync frames      2000.3.14       urabe */
 /* 2000.3.21 */
 /* 2000.4.17 */
@@ -349,13 +349,7 @@ main(argc,argv)
   unsigned long uni;
   unsigned char *ptr,tm[6],*ptr_size,device[80];
   int i,j,k,size,n,re,fd,baud,aurora,c,fd_req,req_line;
-  struct Shm {
-    unsigned long p;    /* write point */
-    unsigned long pl;   /* write limit */
-    unsigned long r;    /* latest */
-    unsigned long c;    /* counter */
-    unsigned char d[1]; /* data buffer */
-    } *sh;
+  struct Shm  *sh;
   int sock;
   struct sockaddr_in to_addr;
   struct hostent *h;

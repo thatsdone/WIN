@@ -1,4 +1,4 @@
-/* $Id: sends.c,v 1.6.4.2 2008/05/17 14:22:03 uehira Exp $ */
+/* $Id: sends.c,v 1.6.4.3 2008/05/18 08:29:02 uehira Exp $ */
 /*   program "sends"   2000.3.20 urabe                   */
 /*   2000.3.21 */
 /*   2000.4.17 */
@@ -318,13 +318,7 @@ main(argc,argv)
   int size,re,shmid;
   unsigned char *ptr,*ptr_save,*ptr_lim,*ptw,*ptw_save,device[80],
     no,no_f,host_name[100],tbuf[100],nop;
-  struct Shm {
-    unsigned long p;    /* write point */
-    unsigned long pl;   /* write limit */
-    unsigned long r;    /* latest */
-    unsigned long c;    /* counter */
-    unsigned char d[1];   /* data buffer */
-    } *shm;
+  struct Shm  *shm;
   extern int optind;
   extern char *optarg;
   struct timeval timeout,tp;

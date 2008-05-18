@@ -1,4 +1,4 @@
-/* $Id: wdiskts.c,v 1.6.2.4 2008/05/17 15:32:50 uehira Exp $ */
+/* $Id: wdiskts.c,v 1.6.2.5 2008/05/18 08:29:03 uehira Exp $ */
 /* 2005.8.10 urabe bug in strcmp2() fixed : 0-6 > 7-9 */
 
 #ifdef HAVE_CONFIG_H
@@ -412,13 +412,7 @@ main(argc,argv)
    unsigned long shp,size,size_save,c_save;
    unsigned char *ptr,size_out[4],*ptw;
    key_t shmkey;
-   struct Shm {
-      unsigned long p;    /* write point */
-      unsigned long pl;   /* write limit */
-      unsigned long r;    /* latest */
-      unsigned long c;    /* counter */
-      unsigned char d[1];   /* data buffer */
-   } *shm;
+   struct Shm  *shm;
    
    if(progname=strrchr(argv[0],'/')) progname++;
    else progname=argv[0];

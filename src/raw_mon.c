@@ -1,4 +1,4 @@
-/* $Id: raw_mon.c,v 1.6.4.3 2008/05/17 14:22:01 uehira Exp $ */
+/* $Id: raw_mon.c,v 1.6.4.4 2008/05/18 08:29:01 uehira Exp $ */
 /* "raw_mon.c"      7/2/93,6/17/94,6/28/94    urabe */
 /*                  3/17/95 write_log(), 4/17/95 MAX_SR safety */
 /*                  usleep -> sleep */
@@ -212,13 +212,7 @@ main(argc,argv)
   int argc;
   char *argv[];
   {
-  struct Shm {
-    unsigned long p;    /* write point */
-    unsigned long pl;   /* write limit */
-    unsigned long r;    /* latest */
-    unsigned long c;    /* counter */
-    unsigned char d[1];   /* data buffer */
-    } *shr,*shm;
+  struct Shm  *shr,*shm;
   key_t rawkey,monkey;
   int shmid_raw,shmid_mon;
   unsigned long uni;

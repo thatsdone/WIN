@@ -1,4 +1,4 @@
-/* $Id: winlib.h,v 1.1.2.5 2008/05/17 15:32:51 uehira Exp $ */
+/* $Id: winlib.h,v 1.1.2.6 2008/05/18 08:29:03 uehira Exp $ */
 
 #ifndef _WIN_LIB_H_
 #define _WIN_LIB_H_
@@ -11,10 +11,6 @@
 #include "win_log.h"
 
 #include "subst_func.h"
-
-typedef unsigned long  WIN_blocksize;
-typedef unsigned short WIN_ch;
-typedef unsigned long  WIN_sr;
 
 /* High sampling rate format */
 #define  HEADER_4B    4096     /* SR<2^12  (   1 Hz --    4095 Hz) */
@@ -29,6 +25,19 @@ typedef unsigned long  WIN_sr;
 #define  LongFromBigEndian(a) \
   ((((unsigned char *)&(a))[0] << 24) + (((unsigned char *)&(a))[1] << 16) +\
    (((unsigned char *)&(a))[2] << 8) + ((unsigned char *)&(a))[3])
+
+/* structure of shared memory */
+struct Shm {
+  unsigned long  p;    /* write point */
+  unsigned long  pl;   /* write limit */
+  unsigned long  r;    /* latest */
+  unsigned long  c;    /* counter */
+  unsigned char  d[1]; /* data buffer */
+};
+
+typedef unsigned long  WIN_blocksize;
+typedef unsigned short WIN_ch;
+typedef unsigned long  WIN_sr;
 
 /* BCD to DEC */
 static int b2d[] = {

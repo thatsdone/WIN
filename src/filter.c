@@ -1,4 +1,4 @@
-/* $Id */
+/* $Id: filter.c,v 1.1.2.2 2008/05/18 07:38:45 uehira Exp $ */
 
 #include <stdio.h>
 #include <math.h>

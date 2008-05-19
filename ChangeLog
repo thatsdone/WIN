@@ -1,4 +1,8 @@
- $Id: ChangeLog,v 1.131.2.22 2008/05/18 08:29:01 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.23 2008/05/19 04:14:20 uehira Exp $
+
+2008-05-19  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 1.1.95-LIB released.
+	* src/winlib.c : dec_bcd() : bug fixed from 2008-05-16 commitment.
 
 2008-05-18  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* struct Shm : src/winlib.h

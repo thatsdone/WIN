@@ -1,4 +1,4 @@
-/* $Id: winlib.c,v 1.1.2.3 2008/05/17 15:32:51 uehira Exp $ */
+/* $Id: winlib.c,v 1.1.2.4 2008/05/19 04:14:20 uehira Exp $ */
 
 /*-
  * winlib.c  (Uehira Kenji)
@@ -101,9 +101,9 @@ dec_bcd(unsigned char *dest, unsigned int *sour)
   for (cntr = 0; cntr < 6; cntr++) {
     /* dest[cntr] =
        (((sour[cntr] / 10) << 4) & 0xf0) | (sour[cntr] % 10 & 0xf); */
-    if (dest[cntr] > 99)
+    if (sour[cntr] > 99)
       return (0);
-    dest[cntr] = d2b[dest[cntr]];
+    dest[cntr] = d2b[sour[cntr]];
   }
 
   return (1);

@@ -1,4 +1,7 @@
- $Id: ChangeLog,v 1.131.2.23 2008/05/19 04:14:20 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.24 2008/06/21 08:10:32 uehira Exp $
+
+2008-06-21  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* prog/chtbl2kml : added.
 
 2008-05-19  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* Version 1.1.95-LIB released.

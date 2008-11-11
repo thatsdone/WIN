@@ -136,7 +136,7 @@ wincpy(ptw,ptr,size)
   n=0;
   do    /* loop for ch's */
     {
-    gh=mklong(ptr);
+    gh=mkuint4(ptr);
     ch=(gh>>16)&0xffff;
     sr=gh&0xfff;
     ss=(gh>>12)&0xf;
@@ -370,8 +370,8 @@ main(argc,argv)
 #endif
           sh->r=sh->p;      /* latest */
 #if DEBUG
-          printf("sh->r=%d size=%d\n",sh->r,mklong(sh->d+sh->r));
-          if(mklong(sh->d+sh->r)<0 || mklong(sh->d+sh->r)>10000) getchar();
+          printf("sh->r=%d size=%d\n",sh->r,mkuint4(sh->d+sh->r));
+          if(mkuint4(sh->d+sh->r)<0 || mkuint4(sh->d+sh->r)>10000) getchar();
 #endif
           if(ptr>sh->d+sh->pl) ptr=sh->d;
           sh->p=ptr-sh->d;

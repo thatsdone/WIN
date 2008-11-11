@@ -1,4 +1,4 @@
-/* $Id: winlib.c,v 1.1.2.4 2008/05/19 04:14:20 uehira Exp $ */
+/* $Id: winlib.c,v 1.1.2.4.2.1 2008/11/11 15:19:48 uehira Exp $ */
 
 /*-
  * winlib.c  (Uehira Kenji)
@@ -41,28 +41,27 @@ get_time(int rt[])
 }
 
 /*-
- * mklong()
- *  make unsigned long
-*/
-unsigned long
-mklong(unsigned char *ptr)
+ * mkuint4
+ *  make big-endian 4 bytes unsigned int
+ */
+uint32_w
+mkuint4(const uint8_w *ptr)
 {
-  unsigned long a;
+  uint32_w  a;
 
-  a = ((ptr[0] << 24) & 0xff000000) + ((ptr[1] << 16) & 0xff0000) +
+  a = ((ptr[0] << 24) & 0xff000000) + ((ptr[1] << 16)& 0xff0000) +
     ((ptr[2] << 8) & 0xff00) + (ptr[3] & 0xff);
-
   return (a);
 }
 
 /*-
- * mkshort
- *  make unsigned short
+ * mkuint2
+ *  make big-endian 2 bytes unsigned int
  */
-unsigned short
-mkshort(unsigned char *ptr)
+uint16_w
+mkuint2(const uint8_w *ptr)
 {
-  unsigned  short a;      
+  uint16_w  a;      
 
   a = ((ptr[0] << 8) & 0xff00) + (ptr[1] & 0xff);
 

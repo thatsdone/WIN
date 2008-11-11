@@ -1,4 +1,4 @@
-/* $Id: wtime.c,v 1.3.2.3 2008/05/17 14:22:06 uehira Exp $ */
+/* $Id: wtime.c,v 1.3.2.3.2.1 2008/11/11 15:19:48 uehira Exp $ */
 
 /*
   program "wtime.c"
@@ -97,7 +97,7 @@ chloop(old_buf,new_buf)
   int ch,i,j,size,gsize,new_size,sr,sr_shift;
   unsigned char *ptr1,*ptr2,*ptr_lim;
 
-  size=mklong(old_buf);
+  size=mkuint4(old_buf);
   ptr_lim=old_buf+size;
   ptr1=old_buf+4;
   ptr2=new_buf+4;
@@ -177,9 +177,9 @@ main(argc,argv)
     /* read one sec */
     re=chloop(rbuf,wbuf);
     if(re>10)      /* write one sec */
-      if((re=fwrite(wbuf,1,mklong(wbuf),stdout))==0) exit(1);
+      if((re=fwrite(wbuf,1,mkuint4(wbuf),stdout))==0) exit(1);
 #if DEBUG1      
-    fprintf(stderr,"in:%d B out:%d B\n",mklong(rbuf),mklong(wbuf));
+    fprintf(stderr,"in:%d B out:%d B\n",mkuint4(rbuf),mkuint4(wbuf));
 #endif
     }
 #if DEBUG1

@@ -1,4 +1,4 @@
-/* $Id: wtape.c,v 1.12.2.4 2008/05/17 15:32:51 uehira Exp $ */
+/* $Id: wtape.c,v 1.12.2.4.2.1 2008/11/11 15:19:48 uehira Exp $ */
 /*
   program "wtape.c"
   8/23/89 - 8/8/90, 6/27/91, 12/24/91, 2/29/92  urabe
@@ -65,7 +65,7 @@
   int  wait_min;
   char param_name[WIN_FILENAME_MAX];
   char *progname;
-  static char rcsid[]="$Id: wtape.c,v 1.12.2.4 2008/05/17 15:32:51 uehira Exp $";
+  static char rcsid[]="$Id: wtape.c,v 1.12.2.4.2.1 2008/11/11 15:19:48 uehira Exp $";
 
 switch_sig()
   {
@@ -603,7 +603,7 @@ main(argc,argv)
         {
         /* read one sec */
         re=read(f_get,(char *)buf,4); /* read size */
-        j=mklong(buf);      /* record size */
+        j=mkuint4(buf);      /* record size */
         if(j<4 || j>SIZE_MAX) break;
         re=read(f_get,(char *)buf+4,j-4); /* read rest (data) */
         if(re==0) break;

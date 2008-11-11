@@ -1,4 +1,4 @@
-/* $Id: wadd.c,v 1.6.4.3 2008/05/17 14:22:03 uehira Exp $ */
+/* $Id: wadd.c,v 1.6.4.3.2.1 2008/11/11 15:19:48 uehira Exp $ */
 /* program "wadd.c"
   "wadd" puts two win data files together
   7/24/91 - 7/25/91, 4/20/94,6/27/94-6/28/94,7/12/94   urabe
@@ -44,13 +44,13 @@ get_sysch(buf,sys_ch)
   int i,size,gsize,sr;
   unsigned char *ptr,*ptr_lim;
   unsigned int gh;
-  size=mklong(buf);
+  size=mkuint4(buf);
   ptr_lim=buf+size;
   ptr=buf+10;
   i=0;
   do
     {
-    gh=mklong(ptr);
+    gh=mkuint4(ptr);
     sys_ch[i++]=gh>>16;
     sr=gh&0xfff;
     if((gh>>12)&0xf) gsize=((gh>>12)&0xf)*(sr-1)+8;
@@ -69,7 +69,7 @@ read_data(ptr,fp)
   {
   int re;
   if(fread(ptr,1,4,fp)==0) return 0;
-  re=mklong(ptr);
+  re=mkuint4(ptr);
   if(fread(ptr+4,1,re-4,fp)==0) return 0;
 #if DEBUG
   printf("%02x%02x%02x%02x%02x%02x %d\n",ptr[4],ptr[5],ptr[6],
@@ -84,7 +84,7 @@ make_skel(old_buf,new_buf)
   int i,size,gsize,new_size,sr;
   unsigned char *ptr,*new_ptr,*ptr_lim,*ptr1;
   unsigned int gh;
-  size=mklong(old_buf);
+  size=mkuint4(old_buf);
   ptr_lim=old_buf+size;
   ptr=old_buf+4;
   new_ptr=new_buf+4;
@@ -92,7 +92,7 @@ make_skel(old_buf,new_buf)
   new_size=10;
   do
     {
-    gh=mklong(ptr);
+    gh=mkuint4(ptr);
     i=gh>>16;
     sr=gh&0xfff;
     if((gh>>12)&0xf) gsize=((gh>>12)&0xf)*(sr-1)+8;
@@ -126,7 +126,7 @@ elim_ch(sys_ch,n_ch,old_buf,new_buf)
   int i,j,size,gsize,new_size,sr;
   unsigned char *ptr,*new_ptr,*ptr_lim;
   unsigned int gh;
-  size=mklong(old_buf);
+  size=mkuint4(old_buf);
   ptr_lim=old_buf+size;
   ptr=old_buf+4;
   new_ptr=new_buf+4;
@@ -134,7 +134,7 @@ elim_ch(sys_ch,n_ch,old_buf,new_buf)
   new_size=10;
   do
     {
-    gh=mklong(ptr);
+    gh=mkuint4(ptr);
     i=gh>>16;
     sr=gh&0xfff;
     if((gh>>12)&0xf) gsize=((gh>>12)&0xf)*(sr-1)+8;
@@ -266,11 +266,11 @@ main(argc,argv)
         else
           {
           make_skel(subbuf,selbuf);
-          size=mainsize+mklong(selbuf)-10;
+          size=mainsize+mkuint4(selbuf)-10;
           i=1;if(*(char *)&i) SWAPL(size);
           if((re=fwrite(&size,4,1,f_out))==0) werror();
           if((re=fwrite(mainbuf+4,1,mainsize-4,f_out))==0) werror();
-          if((re=fwrite(selbuf+10,1,mklong(selbuf)-10,f_out))==0) werror();
+          if((re=fwrite(selbuf+10,1,mkuint4(selbuf)-10,f_out))==0) werror();
           }
         }
       else

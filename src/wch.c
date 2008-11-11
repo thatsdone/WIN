@@ -1,4 +1,4 @@
-/* $Id: wch.c,v 1.8.4.2 2008/05/17 14:22:03 uehira Exp $ */
+/* $Id: wch.c,v 1.8.4.2.2.1 2008/11/11 15:19:48 uehira Exp $ */
 /*
 program "wch.c"
 "wch" edits a win format data file by channles
@@ -115,7 +115,7 @@ select_ch(table,old_buf,new_buf)
   unsigned int gh;
   unsigned int chtbl[65536];
   for(i=0;i<65536;i++) chtbl[i]=0;
-  size=mklong(old_buf);
+  size=mkuint4(old_buf);
   ptr_lim=old_buf+size;
   ptr=old_buf+4;
   new_ptr=new_buf+4;
@@ -123,7 +123,7 @@ select_ch(table,old_buf,new_buf)
   new_size=10;
   do
     {
-    gh=mklong(ptr);
+    gh=mkuint4(ptr);
     i=gh>>16;
     sr=gh&0xfff;
     if((gh>>12)&0xf) gsize=((gh>>12)&0xf)*(sr-1)+8;
@@ -151,9 +151,9 @@ get_one_record()
     /* read one sec */
     if(select_ch(ch_table,buf,outbuf)>10)
       /* write one sec */
-      if((re=fwrite(outbuf,1,mklong(outbuf),stdout))==0) exit(1);
+      if((re=fwrite(outbuf,1,mkuint4(outbuf),stdout))==0) exit(1);
 #if DEBUG
-    fprintf(stderr,"in:%d B out:%d B\n",mklong(buf),mklong(outbuf));
+    fprintf(stderr,"in:%d B out:%d B\n",mkuint4(buf),mkuint4(outbuf));
 #endif
     }
 #if DEBUG

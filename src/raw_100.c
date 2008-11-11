@@ -1,4 +1,4 @@
-/* $Id: raw_100.c,v 1.5.4.3 2008/05/18 08:29:01 uehira Exp $ */
+/* $Id: raw_100.c,v 1.5.4.3.2.1 2008/11/11 15:19:47 uehira Exp $ */
 /* "raw_100.c"    97.6.23 - 6.30 urabe */
 /*                  modified from raw_raw.c */
 /*                  97.8.4 bug fixed (output empty block) */
@@ -209,7 +209,7 @@ reset:
 
   while(1)
     {
-    ptr_lim=ptr+(size=mklong(ptr_save=ptr));
+    ptr_lim=ptr+(size=mkuint4(ptr_save=ptr));
     c_save=shr->c;
     ptr+=4;
 #if DEBUG
@@ -220,7 +220,7 @@ reset:
     ptw=shm->d+shm->p;
     ptw+=4;               /* size (4) */
     uni=time(0);
-    i=uni-mklong(ptr);
+    i=uni-mkuint4(ptr);
     if(i>=0 && i<1440)   /* with tow */
       {
       if(tow!=1)
@@ -254,7 +254,7 @@ reset:
 
     do    /* loop for ch's */
       {
-      gh=mklong(ptr);
+      gh=mkuint4(ptr);
       ch=(gh>>16)&0xffff;
       sr=gh&0xfff;
       if((gh>>12)&0xf) gs=((gh>>12)&0xf)*(sr-1)+8;
@@ -318,7 +318,7 @@ reset:
 #endif
     if((ptr=ptr_lim)>shr->d+shr->pl) ptr=shr->d;
     while(ptr==shr->d+shr->p) sleep(1);
-    if(shr->c<c_save || mklong(ptr_save)!=size)
+    if(shr->c<c_save || mkuint4(ptr_save)!=size)
       {
       write_log("reset");
       goto reset;

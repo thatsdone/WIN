@@ -1,4 +1,4 @@
-/* $Id: recvt_LS7000.c,v 1.1.2.3 2008/05/18 08:29:02 uehira Exp $ */
+/* $Id: recvt_LS7000.c,v 1.1.2.3.2.1 2008/11/11 15:19:48 uehira Exp $ */
 /* "recvt_LS7000.c"  uehira */
 /*   2007-11-02  imported from recvt.c 1.29.2.1 */
 
@@ -460,7 +460,7 @@ wincpy2(ptw,ts,ptr,size,mon,chhist,from_addr)
     {
     if(!mon)
       {
-      gh=mklong(ptr);
+      gh=mkuint4(ptr);
       ch=(gh>>16)&0xffff;
       sr=gh&0xfff;
       ss=(gh>>12)&0xf;
@@ -482,7 +482,7 @@ wincpy2(ptw,ts,ptr,size,mon,chhist,from_addr)
       }
     else /* mon format */
       {
-      ch=mkshort(ptr1=ptr);
+      ch=mkuint2(ptr1=ptr);
       ptr1+=2;
       for(i=0;i<SR_MON;i++)
         {

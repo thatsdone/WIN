@@ -1,4 +1,4 @@
-/* $Id: cormeisei.c,v 1.6.4.5 2008/05/18 08:29:01 uehira Exp $ */
+/* $Id: cormeisei.c,v 1.6.4.5.2.1 2008/11/11 15:19:46 uehira Exp $ */
 /* "cormeisei.c"    June'97 Ide changed from*/
 /* "raw_raw.c"      3/4/96 urabe */
 /*                  revised on 5/20/96 */
@@ -268,7 +268,7 @@ reset:
 #endif
 
   while(1) {
-    ptr_lim=ptr+(size=mklong(ptr_save=ptr));
+    ptr_lim=ptr+(size=mkuint4(ptr_save=ptr));
     c_save=shm->c;
     ptr+=4;
 #if DEBUG1
@@ -443,7 +443,7 @@ reset:
     j=0;
 #endif
     do {   /* loop for ch's */
-      gh=mklong(ptr);
+      gh=mkuint4(ptr);
       ch=(gh>>16)&0xffff;
       sr=gh&0xfff;
       if((ich=ch_tableh[ch])>=0 && sr==100){
@@ -495,7 +495,7 @@ reset:
     if(wf<1) wf++;
     if((ptr=ptr_lim)>shr->d+shr->pl) ptr=shr->d;
     while(ptr==shr->d+shr->p) usleep(100000);
-    if(mklong(ptr_save)!=size) {
+    if(mkuint4(ptr_save)!=size) {
       write_log("reset");
       goto reset;
     }

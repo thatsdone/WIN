@@ -1,4 +1,4 @@
-/* $Id: wed.c,v 1.5.4.3 2008/05/17 14:22:04 uehira Exp $ */
+/* $Id: wed.c,v 1.5.4.3.2.1 2008/11/11 15:19:48 uehira Exp $ */
 /* program "wed.c"
 	"wed" edits a win format data file by time range and channles
 	6/26/91,7/13/92,3/11/93,4/20/94,8/5/94,12/8/94   urabe
@@ -103,7 +103,7 @@ read_data()
    /* if(fread(&re,1,4,stdin)==0) return 0; */
    /* i=1;if(*(char *)&i) SWAPL(re); */
    if(fread(tmpa,1,4,stdin)==0) return 0;
-   re = mklong(tmpa);
+   re = mkuint4(tmpa);
    if(buf==0){
       buf=(unsigned char *)malloc(size=re*2);
       outbuf=(unsigned char *)malloc(size=re*2);
@@ -126,7 +126,7 @@ select_ch(sys_ch,n_ch,old_buf,new_buf)
    unsigned char *ptr,*new_ptr,*ptr_lim;
    unsigned char gh[5];
  
-   size=mklong(old_buf);
+   size=mkuint4(old_buf);
    ptr_lim=old_buf+size;
    ptr=old_buf+4;
    new_ptr=new_buf+4;

@@ -1,4 +1,4 @@
-/* $Id: ecore.c,v 1.4.4.2 2008/05/17 14:21:58 uehira Exp $ */
+/* $Id: ecore.c,v 1.4.4.2.2.1 2008/11/11 15:19:47 uehira Exp $ */
 /* ddr news program "ecore.c"
   "ecore.c" works with "fromtape.c"
   "ecore.c" makes continuously filtered and decimated data
@@ -284,7 +284,7 @@ main(argc,argv)
           perror("read");
           break;
           }
-	size=mklong(&size);  /* for Endian free  03/04/25 */
+	size=mkuint4(&size);  /* for Endian free  03/04/25 */
 
 	//printf("size=%d(%x)\n",size,size);	/* 030228 */
 	//fflush(stdout);
@@ -316,7 +316,7 @@ main(argc,argv)
             while(ptr<ptr_end)
               {
             /* get one channel data */
-              sys_ch=0xffff&mkshort(ptr);
+              sys_ch=0xffff&mkuint2(ptr);
               pos=pos_table[sys_ch];
               if(pos<0)
                 {
@@ -383,7 +383,7 @@ main(argc,argv)
           bsize = wptr - windata + 10;
 	  //printf("output bsize:%d(%x)\n",bsize,bsize); /* 03/03/14 */
 	  //fflush(stdout);
-	  c_bsize=mklong(&bsize);	/* added 03/04/22 */
+	  c_bsize=mkuint4(&bsize);	/* added 03/04/22 */
 	  //printf("output c_bsize:%d(%x)\n",c_bsize,c_bsize); /* 03/03/22 */
 	  //fflush(stdout);
           if(write(f_out,&c_bsize,4)==(-1))
@@ -446,7 +446,7 @@ get_data(dp,buf,idx)
   int gh,s_rate,g_size,sys_ch,i,b_size;
   short shreg;		/* added 03/05/02 */
   ddp=(*dp);
-  s_rate=(gh=mklong(ddp))&0xfff;
+  s_rate=(gh=mkuint4(ddp))&0xfff;
   ddp+=4;
   if(b_size=(gh>>12)&0xf) g_size=b_size*(s_rate-1)+4;
   else g_size=(s_rate>>1)+4;
@@ -457,7 +457,7 @@ get_data(dp,buf,idx)
   //printf("ecore(get_data):idx=%d,b_size=%x, gh=%x, g_size=%x, sys_ch=%x\n",idx,b_size,gh,g_size,sys_ch); /* 03/04/25 */
   fflush(stdout);
   /* read group */
-  buf[0]=mklong(ddp);
+  buf[0]=mkuint4(ddp);
   ddp+=4;
   switch(b_size)
     {
@@ -476,7 +476,7 @@ get_data(dp,buf,idx)
       for(i=1;i<s_rate;i++)
         {
 	/* 2lines edit 03/05/02 N.Nakawaji
-        buf[i]=buf[i-1]+mkshort(ddp);
+        buf[i]=buf[i-1]+mkuint2(ddp);
         ddp+=2;
 	*/
 	shreg=((ddp[0]<<8) & 0xff00) + (ddp[1] & 0xff);
@@ -487,14 +487,14 @@ get_data(dp,buf,idx)
     case 3:
       for(i=1;i<s_rate;i++)
         {
-        buf[i]=buf[i-1]+(mklong(ddp)>>8);
+        buf[i]=buf[i-1]+(mkuint4(ddp)>>8);
         ddp+=3;
         }
       break;
     case 4:
       for(i=1;i<s_rate;i++)
         {
-        buf[i]=buf[i-1]+mklong(ddp);
+        buf[i]=buf[i-1]+mkuint4(ddp);
         ddp+=4;
         }
       break;

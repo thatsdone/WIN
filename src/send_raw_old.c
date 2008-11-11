@@ -1,4 +1,4 @@
-/* $Id: send_raw_old.c,v 1.9.4.3 2008/05/18 08:29:02 uehira Exp $ */
+/* $Id: send_raw_old.c,v 1.9.4.3.2.1 2008/11/11 15:19:48 uehira Exp $ */
 /*
     program "send_raw_old/send_mon_old.c"   1/24/94 - 1/25/94,5/25/94 urabe
                                     6/15/94 - 6/16/94
@@ -218,7 +218,7 @@ main(argc,argv)
 reset:
   while(shm->r==(-1)) sleep(1);
   c_save=shm->c;
-  size=mklong(ptr_save=shm->d+(shp=shm->r));
+  size=mkuint4(ptr_save=shm->d+(shp=shm->r));
 
   while(1)
     {
@@ -226,13 +226,13 @@ reset:
     else shp+=size;
 
     while(shm->p==shp) usleep(200000);
-    if(shm->c<c_save || mklong(ptr_save)!=size)
+    if(shm->c<c_save || mkuint4(ptr_save)!=size)
       {   /* previous block has been destroyed */
       write_log("reset");
       goto reset;
       }
     c_save=shm->c;
-    size=mklong(ptr_save=ptr=shm->d+shp);
+    size=mkuint4(ptr_save=ptr=shm->d+shp);
 
     ptr_lim=ptr+size;
     ptr+=4;
@@ -251,7 +251,7 @@ reset:
       i=j=re=0;
       while(ptr<ptr_lim)
         {
-        gh=mklong(ptr);
+        gh=mkuint4(ptr);
         ch=(gh>>16);
         sr=gh&0xfff;
         if((gh>>12)&0xf) gs=((gh>>12)&0xf)*(sr-1)+8;
@@ -302,7 +302,7 @@ reset:
       i=j=re=0;
       while(ptr<ptr_lim)
         {
-        ch=mkshort(ptr1=ptr);
+        ch=mkuint2(ptr1=ptr);
         ptr+=2;
         for(ii=0;ii<SR_MON;ii++)
           {

@@ -1,4 +1,4 @@
-/* $Id: raw2mon.c,v 1.4.4.3 2008/05/17 14:22:01 uehira Exp $ */
+/* $Id: raw2mon.c,v 1.4.4.3.2.1 2008/11/11 15:19:47 uehira Exp $ */
 /*
   program "raw2mon.c"
   6/3/93,6/17/94,8/17/95 urabe
@@ -119,7 +119,7 @@ make_mon(ptr,ptw) /* for one minute */
   unsigned long uni;
 
   /* make mon data */
-  ptr_lim=ptr+mklong(ptr);
+  ptr_lim=ptr+mkuint4(ptr);
   ptw_start=ptw;
   ptr+=4;
   ptw+=4;               /* size (4) */
@@ -147,8 +147,8 @@ main(argc,argv)
   {
   while(fread(buf,1,4,stdin)==4)
     {
-    fread(buf+4,1,mklong(buf)-4,stdin);
+    fread(buf+4,1,mkuint4(buf)-4,stdin);
     make_mon(buf,wbuf);
-    fwrite(wbuf,1,mklong(wbuf),stdout);
+    fwrite(wbuf,1,mkuint4(wbuf),stdout);
     }
   }

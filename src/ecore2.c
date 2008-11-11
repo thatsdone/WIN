@@ -199,7 +199,7 @@ reset:
 
 	while (1) {
 		ptr = ptr_save = shm_in->d + shp_in;
-		size_in = mklong(ptr_save);
+		size_in = mkuint4(ptr_save);
 		memcpy(cmp_tbl, ptr_save, 10);
 		counter_save_in = shm_in->c;
 		done_size = 0;
@@ -236,8 +236,8 @@ reset:
 			}
 
 			/* チャネルヘッダ:ch_no(2B)+sampleing(0.5B+1.5B) */
-			ch_header.ch_no = mkshort(ptr);
-			ch_header.s_size_rate = mkshort(ptr+2);
+			ch_header.ch_no = mkuint2(ptr);
+			ch_header.s_size_rate = mkuint2(ptr+2);
 			pos = Pos_table[ch_header.ch_no];
 			if (pos < 0) { /* チャネル表にないのでskip */
 				ch_size = get_ch_size(&ptr);
@@ -348,7 +348,7 @@ reset:
 			write_log("ERROR : counter over. reset");
 			goto reset;
 		}
-		if (mklong(ptr_save) != size_in) {
+		if (mkuint4(ptr_save) != size_in) {
 			write_log("ERROR : ptr_save or size_in modified. reset");
 			goto reset;
 		}
@@ -363,7 +363,7 @@ get_ch_size(dp)
 	int		gh, s_rate, g_size, b_size;
 
 	ddp = (*dp);
-	gh = mklong(ddp);
+	gh = mkuint4(ddp);
 	s_rate = gh & 0xfff;
 	ddp += 4;		/* チャネルヘッダーシフト */
 	b_size = (gh >> 12) & 0xf;	/* サンプルサイズの取得 */

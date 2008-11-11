@@ -1,4 +1,4 @@
-/* $Id: raw_time.c,v 1.4.4.3 2008/05/17 14:22:01 uehira Exp $ */
+/* $Id: raw_time.c,v 1.4.4.3.2.1 2008/11/11 15:19:48 uehira Exp $ */
 
 /* raw_time.c -- online version of wtime(1W) */
 
@@ -52,7 +52,7 @@
 
 
 static char rcsid[] =
-  "$Id: raw_time.c,v 1.4.4.3 2008/05/17 14:22:01 uehira Exp $";
+  "$Id: raw_time.c,v 1.4.4.3.2.1 2008/11/11 15:19:48 uehira Exp $";
 
 char *progname, *logfile;
 int  daemon_mode, syslog_mode;
@@ -198,8 +198,8 @@ main(int argc, char *argv[])
   while (shm_in->r == -1)
     sleep (1);
   ptr = shm_in->d + shm_in->r;
-  sizein = mklong(ptr);
-  if (mklong(ptr + sizein - WIN_BLOCKSIZE_LEN) == sizein)
+  sizein = mkuint4(ptr);
+  if (mkuint4(ptr + sizein - WIN_BLOCKSIZE_LEN) == sizein)
     eobsize_in = 1;
   else
     eobsize_in = 0;
@@ -210,8 +210,8 @@ main(int argc, char *argv[])
 
   /***** main loop *****/
   for (;;) {
-    sizein = mklong(ptr_save = ptr);
-    if (sizein == mklong(ptr + sizein - WIN_BLOCKSIZE_LEN))
+    sizein = mkuint4(ptr_save = ptr);
+    if (sizein == mkuint4(ptr + sizein - WIN_BLOCKSIZE_LEN))
       eobsize_in_count++;
     else
       eobsize_in_count = 0;
@@ -338,7 +338,7 @@ main(int argc, char *argv[])
     while (ptr == shm_in->d + shm_in->p)
       (void)usleep(10000);
 
-    if (shm_in->c - c_save > 1000000 || mklong(ptr_save) != sizein) {
+    if (shm_in->c - c_save > 1000000 || mkuint4(ptr_save) != sizein) {
       write_log("reset");
       goto reset;
     }

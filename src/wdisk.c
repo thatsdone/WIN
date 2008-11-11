@@ -1,4 +1,4 @@
-/* $Id: wdisk.c,v 1.17.2.8 2008/05/18 08:29:02 uehira Exp $ */
+/* $Id: wdisk.c,v 1.17.2.8.2.1 2008/11/11 15:19:48 uehira Exp $ */
 /*
   program "wdisk.c"   4/16/93-5/13/93,7/2/93,7/5/94  urabe
                       1/6/95 bug in adj_time fixed (tm[0]--)
@@ -376,8 +376,8 @@ main(argc,argv)
      while(shm->r==(-1)) sleep(1);
      shp=shp_save=shm->r;    /* read position */
 
-     size=mklong(ptr_save=shm->d+shp);
-     if(mklong(shm->d+shp+size-4)==size) eobsize=1;
+     size=mkuint4(ptr_save=shm->d+shp);
+     if(mkuint4(shm->d+shp+size-4)==size) eobsize=1;
      else eobsize=0;
      eobsize_count=eobsize;
      sprintf(tbuf,"eobsize=%d",eobsize);
@@ -386,7 +386,7 @@ main(argc,argv)
    else
      {
      if(fread(buf,4,1,stdin)<1) end_program();
-     size=mklong(buf);
+     size=mkuint4(buf);
      if(size>bufsiz)
        {
        if(size>BUFLIM || (buf=realloc(buf,size))==NULL)
@@ -464,13 +464,13 @@ main(argc,argv)
         if((shp+=size)>shm->pl) shp=shp_save=0;
         while(shm->p==shp) sleep(1);
         i=shm->c-c_save;
-        if(!(i<5000000 && i>=0) || mklong(ptr_save)!=size){
+        if(!(i<5000000 && i>=0) || mkuint4(ptr_save)!=size){
   	 write_log("reset");
   	 goto reset;
         }
 
-        size=mklong(ptr_save=shm->d+shp);
-        if(size==mklong(ptr_save+size-4)) eobsize_count++;
+        size=mkuint4(ptr_save=shm->d+shp);
+        if(size==mkuint4(ptr_save+size-4)) eobsize_count++;
         else eobsize_count=0;
         if(eobsize && eobsize_count==0) goto reset;
         if(!eobsize && eobsize_count>3) goto reset;
@@ -478,7 +478,7 @@ main(argc,argv)
       else
         {
         if(fread(buf,4,1,stdin)<1) end_program();
-        size=mklong(buf);
+        size=mkuint4(buf);
         if(size>bufsiz)
           {
           if(size>BUFLIM || (buf=realloc(buf,size))==NULL)

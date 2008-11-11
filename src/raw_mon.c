@@ -1,4 +1,4 @@
-/* $Id: raw_mon.c,v 1.6.4.4 2008/05/18 08:29:01 uehira Exp $ */
+/* $Id: raw_mon.c,v 1.6.4.4.2.1 2008/11/11 15:19:48 uehira Exp $ */
 /* "raw_mon.c"      7/2/93,6/17/94,6/28/94    urabe */
 /*                  3/17/95 write_log(), 4/17/95 MAX_SR safety */
 /*                  usleep -> sleep */
@@ -302,7 +302,7 @@ reset:
 
   while(1)
     {
-    ptr_lim=ptr+(size=mklong(ptr_save=ptr));
+    ptr_lim=ptr+(size=mkuint4(ptr_save=ptr));
     c_save=shr->c;
     ptr+=4;
 #if DEBUG
@@ -355,7 +355,7 @@ reset:
 #endif
     if((ptr=ptr_lim)>shr->d+shr->pl) ptr=shr->d;
     while(ptr==shr->d+shr->p) usleep(100000);
-    if(shr->c<c_save || mklong(ptr_save)!=size)
+    if(shr->c<c_save || mkuint4(ptr_save)!=size)
       {
       write_log("reset");
       goto reset;

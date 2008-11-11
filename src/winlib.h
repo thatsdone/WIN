@@ -1,4 +1,4 @@
-/* $Id: winlib.h,v 1.1.2.7 2008/11/11 07:32:37 uehira Exp $ */
+/* $Id: winlib.h,v 1.1.2.7.2.1 2008/11/11 15:19:48 uehira Exp $ */
 
 #ifndef _WIN_LIB_H_
 #define _WIN_LIB_H_
@@ -7,14 +7,38 @@
 #include "config.h"
 #endif
 
+/***** re-define integer *****/
+/* define 1 bye integer */
+#if SIZEOF_CHAR == 1
+#ifdef __CHAR_UNSIGNED__
+typedef signed char      int8_w;   /*   signed 1 byte integer */
+#else
+typedef char             int8_w;   /*   signed 1 byte integer */
+#endif
+typedef unsigned char   uint8_w;   /* unsigned 1 byte integer */
+#else
+#error char is not 1 byte length.
+#endif
+/* define 2 bye integer */
+#if SIZEOF_SHORT == 2
+typedef short            int16_w;  /*   signed 2 byte integer */
+typedef unsigned short  uint16_w;  /* unsigned 2 byte integer */
+#else
+#error short is not 2 byte lengths.
+#endif
+/* define 4 bye integer */
+#if SIZEOF_INT == 4
+typedef int              int32_w;  /*   signed 4 byte integer */
+typedef unsigned int    uint32_w;  /* unsigned 4 byte integer */
+#else
+#error int is not 4 byte lengths.
+#endif
+/******************************/
+
 #include "filter.h"
 #include "win_log.h"
 
 #include "subst_func.h"
-
-#ifdef __CHAR_UNSIGNED__
-#error char is unsigned system.
-#endif
 
 /* High sampling rate format */
 #define  HEADER_4B    4096     /* SR<2^12  (   1 Hz --    4095 Hz) */
@@ -23,25 +47,25 @@
 #define  SWAPL(a)  a = (((a) << 24) | ((a) << 8) & 0xff0000 |\
 			((a) >> 8) & 0xff00 | ((a) >> 24) & 0xff)
 #define  SWAPS(a)  a = (((a) << 8) & 0xff00 | ((a) >> 8) & 0xff)
-#define  SWAPF(a)  *(long *)&(a) =\
-    (((*(long *)&(a)) << 24) | ((*(long *)&(a)) << 8) & 0xff0000 |\
-     ((*(long *)&(a)) >> 8) & 0xff00 | ((*(long *)&(a)) >> 24) & 0xff)
+#define  SWAPF(a)  *(int32_w *)&(a) =\
+    (((*(int32_w *)&(a)) << 24) | ((*(int32_w *)&(a)) << 8) & 0xff0000 |\
+     ((*(int32_w *)&(a)) >> 8) & 0xff00 | ((*(int32_w *)&(a)) >> 24) & 0xff)
 #define  LongFromBigEndian(a) \
-  ((((unsigned char *)&(a))[0] << 24) + (((unsigned char *)&(a))[1] << 16) +\
-   (((unsigned char *)&(a))[2] << 8) + ((unsigned char *)&(a))[3])
+  ((((uint8_w *)&(a))[0] << 24) + (((uint8_w *)&(a))[1] << 16) +\
+   (((uint8_w *)&(a))[2] << 8) + ((uint8_w *)&(a))[3])
 
 /* structure of shared memory */
 struct Shm {
-  unsigned long  p;    /* write point */
-  unsigned long  pl;   /* write limit */
-  unsigned long  r;    /* latest */
-  unsigned long  c;    /* counter */
-  unsigned char  d[1]; /* data buffer */
+  size_t  p;         /* write point */
+  size_t  pl;        /* write limit */
+  size_t  r;         /* latest */
+  unsigned long  c;  /* counter */
+  uint8_w  d[1];     /* data buffer */
 };
 
-typedef unsigned long  WIN_blocksize;
-typedef unsigned short WIN_ch;
-typedef unsigned long  WIN_sr;
+typedef uint32_w  WIN_blocksize;
+typedef uint16_w  WIN_ch;
+typedef uint32_w  WIN_sr;
 
 /* BCD to DEC */
 static int b2d[] = {
@@ -65,7 +89,7 @@ static int b2d[] = {
   -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
 
 /* DEC to BCD */
-static unsigned char d2b[] = {
+static uint8_w d2b[] = {
   0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09,
   0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19,   
   0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28, 0x29,
@@ -79,8 +103,8 @@ static unsigned char d2b[] = {
 
 /** prototypes **/
 void get_time(int []);
-unsigned long mklong(unsigned char *);
-unsigned short mkshort(unsigned char *);
+uint32_w mkuint4(const uint8_w *);
+uint16_w mkuint2(const uint8_w *);
 int bcd_dec(int [], unsigned char *);
 int dec_bcd(unsigned char *, unsigned int *);
 void adj_time_m(int []);

@@ -1,4 +1,4 @@
-/* $Id: winrawreq.c,v 1.1.2.4 2008/05/17 14:22:06 uehira Exp $ */
+/* $Id: winrawreq.c,v 1.1.2.4.2.1 2008/11/11 15:19:48 uehira Exp $ */
 
 /* winrawreq.c -- raw data request client */
 
@@ -49,7 +49,7 @@
 #define MAXMSG       1025
 
 static char rcsid[] =
-  "$Id: winrawreq.c,v 1.1.2.4 2008/05/17 14:22:06 uehira Exp $";
+  "$Id: winrawreq.c,v 1.1.2.4.2.1 2008/11/11 15:19:48 uehira Exp $";
 
 char *progname, *logfile;
 int  daemon_mode, syslog_mode;
@@ -565,7 +565,7 @@ network_output(uint8_t *rawbuf, uint32_t rsize)
   ptr_limit = rawbuf + rsize;
 
   while (ptr < ptr_limit) {
-    size = mklong(ptr);
+    size = mkuint4(ptr);
     ptr_limit2 = ptr + size;
     size -= 2;  /* blocksize for UDP/IP packet */
     ptr += 4;
@@ -586,7 +586,7 @@ network_output(uint8_t *rawbuf, uint32_t rsize)
       jj = 0;
       while (ptr < ptr_limit2) {
 	/* not high sampling version */
-	gh = mklong(ptr);
+	gh = mkuint4(ptr);
 	sr = gh & 0xfff;
 	if ((gh >> 12) & 0xf)
 	  gs = ((gh >> 12) & 0xf) * (sr - 1) + 8;

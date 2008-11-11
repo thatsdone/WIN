@@ -1,4 +1,4 @@
-/* $Id: win_system.c,v 1.10.4.1 2006/09/25 15:01:00 uehira Exp $ */
+/* $Id: win_system.c,v 1.10.4.1.4.1 2008/11/11 15:19:48 uehira Exp $ */
 /* win system utility functions */
 
 #ifdef HAVE_CONFIG_H
@@ -214,7 +214,7 @@ WIN_time_hani(char fname[], int start[], int end[])
   status=0;
   init_flag=1;
   while(fread(&a,1,WIN_BLOCKSIZE_LEN,fp)==WIN_BLOCKSIZE_LEN){
-    size=(WIN_blocksize)mklong((unsigned char *)&a)-WIN_BLOCKSIZE_LEN;
+    size=(WIN_blocksize)mkuint4((unsigned char *)&a)-WIN_BLOCKSIZE_LEN;
     if((tbuf=MALLOC(unsigned char,size))==NULL){
       status=1;
       break;
@@ -313,7 +313,7 @@ read_onesec_win(FILE *fp, unsigned char **rbuf)
   /* printf("%d\n", sizesave); */
   if (fread(sz, 1, WIN_BLOCKSIZE_LEN, fp) != WIN_BLOCKSIZE_LEN)
     return (0);
-  size = mklong(sz);
+  size = mkuint4(sz);
 
   if (*rbuf == NULL)
     sizesave = 0;

@@ -1,4 +1,4 @@
-/* $Id: wadd2.c,v 1.4.4.3 2008/05/17 14:22:03 uehira Exp $ */
+/* $Id: wadd2.c,v 1.4.4.3.2.1 2008/11/11 15:19:48 uehira Exp $ */
 /* program "wadd2.c"
   "wadd" puts two win data files together
   7/24/91 - 7/25/91, 4/20/94,6/27/94-6/28/94,7/12/94   urabe
@@ -45,7 +45,7 @@ read_data(ptr,fp)
   {
   int re;
   if(fread(ptr,1,4,fp)==0) return 0;
-  re=mklong(ptr);
+  re=mkuint4(ptr);
   if(fread(ptr+4,1,re-4,fp)==0) return 0;
 #if DEBUG
   printf("%02x%02x%02x%02x%02x%02x %d\n",ptr[4],ptr[5],ptr[6],
@@ -74,7 +74,7 @@ copy_ch(makelist,sys_ch,inbuf,insize,outbuf)
   k=0;
   do
     {
-    gh=mklong(ptr);
+    gh=mkuint4(ptr);
     i=gh>>16;
     sr=gh&0xfff;
     if((gh>>12)&0xf) gsize=((gh>>12)&0xf)*(sr-1)+8;

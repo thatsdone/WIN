@@ -1,5 +1,5 @@
 /*
- * $Id: insert_raw.c,v 1.6.4.2 2008/05/17 14:21:59 uehira Exp $
+ * $Id: insert_raw.c,v 1.6.4.2.2.1 2008/11/11 15:19:47 uehira Exp $
  * Insert sorted timeout data to raw data.
  *
  *------------ sample of parameter file ------------
@@ -42,7 +42,7 @@
 #define BUF_SIZE 1024
 
 char *progname;
-static char rcsid[]="$Id: insert_raw.c,v 1.6.4.2 2008/05/17 14:21:59 uehira Exp $";
+static char rcsid[]="$Id: insert_raw.c,v 1.6.4.2.2.1 2008/11/11 15:19:47 uehira Exp $";
 
 struct Cnt_file {
   char  raw_dir[WIN_FILENAME_MAX];    /* raw data directory */
@@ -154,7 +154,7 @@ do_insert(int tim[], struct Cnt_file *cnt)
 
   while(fread(&a,1,WIN_BLOCKSIZE_LEN,fp)==WIN_BLOCKSIZE_LEN){  /*(1)*/
     /*** copy same minute data to data[] ***/
-    data_num_save=data_num=size=(WIN_blocksize)mklong((unsigned char *)&a);
+    data_num_save=data_num=size=(WIN_blocksize)mkuint4((unsigned char *)&a);
     array_size_of_data = data_num << 2;
     if((data=MALLOC(unsigned char,array_size_of_data))==NULL) memory_error();
     memcpy(data,&a,WIN_BLOCKSIZE_LEN);
@@ -169,7 +169,7 @@ do_insert(int tim[], struct Cnt_file *cnt)
     }
     fpt=ftell(fp);
     while(fread(&a,1,WIN_BLOCKSIZE_LEN,fp)==WIN_BLOCKSIZE_LEN){  /*(2)*/
-      size_save=size=(WIN_blocksize)mklong((unsigned char *)&a);
+      size_save=size=(WIN_blocksize)mkuint4((unsigned char *)&a);
       if((tmpbuf=MALLOC(unsigned char,size))==NULL) memory_error();
       memcpy(tmpbuf,&a,WIN_BLOCKSIZE_LEN);
       size-=WIN_BLOCKSIZE_LEN;
@@ -253,7 +253,7 @@ do_insert(int tim[], struct Cnt_file *cnt)
     /* read raw data file */
     else{
       while(fread(&a,1,WIN_BLOCKSIZE_LEN,fpraw)==WIN_BLOCKSIZE_LEN){
-	sizer=(WIN_blocksize)mklong((unsigned char *)&a);
+	sizer=(WIN_blocksize)mkuint4((unsigned char *)&a);
 	sizer-=WIN_BLOCKSIZE_LEN;
 	if((datar=MALLOC(unsigned char,sizer))==NULL){
 	  memory_error();
@@ -274,7 +274,7 @@ do_insert(int tim[], struct Cnt_file *cnt)
 	}
 	/* In case of time stamp same */
 	else{
-	  size=(WIN_blocksize)mklong(ptrd)-WIN_BLOCKSIZE_LEN;
+	  size=(WIN_blocksize)mkuint4(ptrd)-WIN_BLOCKSIZE_LEN;
 	  ptrd+=WIN_BLOCKSIZE_LEN;
 	  if((datam=MALLOC(unsigned char,size))==NULL) memory_error();
 	  sizem=get_merge_data(datam,datar,&sizer,ptrd,&size);

@@ -1,4 +1,4 @@
-/* $Id: winadd.c,v 1.4.4.3 2008/05/17 14:22:05 uehira Exp $ */
+/* $Id: winadd.c,v 1.4.4.3.2.1 2008/11/11 15:19:48 uehira Exp $ */
 
 /*
  * winadd.c  (Uehira Kenji)
@@ -51,7 +51,7 @@ typedef struct data_index  INDX;
 
 /* global variables */
 static const char rcsid[] =
-   "$Id: winadd.c,v 1.4.4.3 2008/05/17 14:22:05 uehira Exp $";
+   "$Id: winadd.c,v 1.4.4.3.2.1 2008/11/11 15:19:48 uehira Exp $";
 static int  dummy_flag, verbose_flag;
 
 /* prototypes */
@@ -226,7 +226,7 @@ win_file_read(char *name, WIN_ch **ch, int *ch_num, int *ch_num_arr,
 
   /* read 1 sec block size */
   while (fread(re_c, 1, WIN_BLOCKSIZE_LEN, fp) == WIN_BLOCKSIZE_LEN) {
-    re = mklong(re_c);
+    re = mkuint4(re_c);
     re -= WIN_BLOCKSIZE_LEN;
     if (NULL == (buf = MALLOC(unsigned char, re))) {
       (void)fclose(fp);
@@ -308,7 +308,7 @@ get_index(char *name, INDX **indx, WIN_ch *ch, int ch_num,
 
   /* read 1 sec block size */
   while (fread(re_c, 1, WIN_BLOCKSIZE_LEN, fp) == WIN_BLOCKSIZE_LEN) {
-    re = mklong(re_c);
+    re = mkuint4(re_c);
     re -= 4;
     if (NULL == (buf = MALLOC(unsigned char, re))) {
       (void)fclose(fp);
@@ -588,7 +588,7 @@ win_file_read_from_buf(unsigned char *rawbuf, off_t rawsize,
 
   while (ptr < ptr_limit) {
     /* get 1 sec block size */
-    re = mklong(ptr);
+    re = mkuint4(ptr);
     re -= WIN_BLOCKSIZE_LEN;
 
     buf = (ptr += WIN_BLOCKSIZE_LEN);
@@ -653,7 +653,7 @@ get_index_from_buf(unsigned char *rawbuf, off_t rawsize, int main_sfx,
   point = 0;
 
   while (ptr < ptr_limit) {
-    re = mklong(ptr);
+    re = mkuint4(ptr);
     re -= WIN_BLOCKSIZE_LEN;
 
     buf = (ptr += WIN_BLOCKSIZE_LEN);

@@ -111,12 +111,12 @@ advance_s(shm,shp,c_save,size)
   int shpp,tmp,i;
   shpp=(*shp);
   i=shm->c-(*c_save);
-  if(!(i<1000000 && i>=0) || *size!=mklong(shm->d+(*shp))) return -1;
+  if(!(i<1000000 && i>=0) || *size!=mkuint4(shm->d+(*shp))) return -1;
   if(shpp+(*size)>shm->pl) shpp=0; /* advance pointer */
   else shpp+=(*size);
   if(shm->p==shpp) return 0;
   *c_save=shm->c;
-  *size=mklong(shm->d+(*shp=shpp));
+  *size=mkuint4(shm->d+(*shp=shpp));
   return 1;
   }
 
@@ -438,13 +438,13 @@ reset:
     {
     while(shm_in->r==(-1)) usleep(200000);
     c_save_in=shm_in->c;
-    if(zero) size_in=mklong(shm_in->d+(shp_in=0));
-    else size_in=mklong(shm_in->d+(shp_in=shm_in->r));
+    if(zero) size_in=mkuint4(shm_in->d+(shp_in=0));
+    else size_in=mkuint4(shm_in->d+(shp_in=shm_in->r));
     }
   wtow=0;
   ptw=buf+4;
 
-  if(mklong(shm_in->d+shp_in+size_in-4)==size_in) eobsize=1;
+  if(mkuint4(shm_in->d+shp_in+size_in-4)==size_in) eobsize=1;
   else eobsize=0;
   eobsize_count=eobsize;
   nch=end=0;
@@ -461,7 +461,7 @@ reset:
         }
       else if(i<0) goto reset;
 
-      if(size_in==mklong(shm_in->d+shp_in+size_in-4)) eobsize_count++;
+      if(size_in==mkuint4(shm_in->d+shp_in+size_in-4)) eobsize_count++;
       else eobsize_count=0;
       if(eobsize && eobsize_count==0) goto reset;
       if(!eobsize && eobsize_count>3) goto reset;
@@ -471,7 +471,7 @@ reset:
       if((i=fread(shm_in->d,1,4,stdin))==0) end=1;
       else
         {
-        size_in=mklong(shm_in->d);
+        size_in=mkuint4(shm_in->d);
         if(sizeof(long)*4+size_in>bufsize_in)
           {
           bufsize_in=sizeof(long)*4+size_in+MAXMESG*100;
@@ -501,7 +501,7 @@ reset:
     if(*ptr>0x20 && *ptr<0x90) /* with tow */
       {
       wtow=1;
-      tow=mklong(ptr);
+      tow=mkuint4(ptr);
       nt=localtime(&tow);
 /*      printf("%d ",tow);*/
       ptr+=4;

@@ -1,4 +1,4 @@
-/* $Id: raw_raw.c,v 1.9.4.3 2008/05/18 08:29:01 uehira Exp $ */
+/* $Id: raw_raw.c,v 1.9.4.3.2.1 2008/11/11 15:19:48 uehira Exp $ */
 /* "raw_raw.c"    97.8.5 urabe */
 /*                  modified from raw_100.c */
 /*                  98.4.17 FreeBSD */
@@ -254,8 +254,8 @@ reset:
   ptr=shr->d+shr->r;
   tow=(-1);
 
-  size=mklong(ptr);
-  if(mklong(ptr+size-4)==size) eobsize_in=1;
+  size=mkuint4(ptr);
+  if(mkuint4(ptr+size-4)==size) eobsize_in=1;
   else eobsize_in=0;
   eobsize_in_count=eobsize_in;
   sprintf(tb,"eobsize_in=%d, eobsize_out=%d",eobsize_in,eobsize_out);
@@ -263,8 +263,8 @@ reset:
 
   while(1)
     {
-    size=mklong(ptr_save=ptr);
-    if(size==mklong(ptr+size-4)) eobsize_in_count++;
+    size=mkuint4(ptr_save=ptr);
+    if(size==mkuint4(ptr+size-4)) eobsize_in_count++;
     else eobsize_in_count=0;
     if(eobsize_in && eobsize_in_count==0) goto reset;
     if(!eobsize_in && eobsize_in_count>3) goto reset;
@@ -282,7 +282,7 @@ reset:
     ptw=shm->d+shm->p;
     ptw+=4;               /* size (4) */
     uni=time(0);
-    i=uni-mklong(ptr);
+    i=uni-mkuint4(ptr);
     if(i>=0 && i<1440)   /* with tow */
       {
       if(tow!=1)
@@ -316,7 +316,7 @@ reset:
 
     do    /* loop for ch's */
       {
-      gh=mklong(ptr);
+      gh=mkuint4(ptr);
       ch=(gh>>16)&0xffff;
       sr=gh&0xfff;
       if((gh>>12)&0xf) gs=((gh>>12)&0xf)*(sr-1)+8;
@@ -328,7 +328,7 @@ reset:
 #endif
         if(shift45 && (gh&0xffff)==0x2001)
           {
-          i=mklong(ptr+4)>>4;
+          i=mkuint4(ptr+4)>>4;
           ptr[4]=i>>24;
           ptr[5]=i>>16;
           ptr[6]=i>>8;
@@ -375,7 +375,7 @@ reset:
     if((ptr=ptr_save+size)>shr->d+shr->pl) ptr=shr->d;
     while(ptr==shr->d+shr->p) usleep(10000);
     i=shr->c-c_save;
-    if(!(i<1000000 && i>=0) || mklong(ptr_save)!=size)
+    if(!(i<1000000 && i>=0) || mkuint4(ptr_save)!=size)
       {
       write_log("reset");
       goto reset;

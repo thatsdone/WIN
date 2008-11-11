@@ -1,4 +1,4 @@
-/* $Id: rtape.c,v 1.9.2.3 2008/05/17 15:32:50 uehira Exp $ */
+/* $Id: rtape.c,v 1.9.2.3.2.1 2008/11/11 15:19:48 uehira Exp $ */
 /*
   program "rtape.c"
   9/16/89 - 11/06/90, 6/26/91, 10/30/91, 6/26/92  urabe
@@ -241,7 +241,7 @@ get_one_record(blocking)
     read_exb();  /* read one block */
     bcd_dec(dec_now,(char *)buf+4);
     printf("\n%02x%02x%02x %02x%02x%02x  %5d",buf[4],buf[5],
-      buf[6],buf[7],buf[8],buf[9],mklong(buf));
+      buf[6],buf[7],buf[8],buf[9],mkuint4(buf));
     fflush(stdout);
     } while(time_cmp(dec_start,dec_now,6));
   if((f_get=open(name_file,O_RDWR|O_CREAT|O_TRUNC,0664))==-1)
@@ -255,14 +255,14 @@ get_one_record(blocking)
     {
     select_ch(buf,outbuf,old_format);
   /* write one sec */
-    re=write(f_get,(char *)outbuf,mklong(outbuf));
+    re=write(f_get,(char *)outbuf,mkuint4(outbuf));
     if(time_cmp(dec_now,dec_end,6)==0) break;
   /* read one sec */
     read_exb();
     bcd_dec(dec_now,(char *)buf+4);
     if(time_cmp(dec_now,dec_end,6)>0) break;
     printf("\r%02x%02x%02x %02x%02x%02x  %5d",buf[4],buf[5],
-      buf[6],buf[7],buf[8],buf[9],mklong(buf));
+      buf[6],buf[7],buf[8],buf[9],mkuint4(buf));
     fflush(stdout);
     }
   printf(" : done\n");
@@ -287,7 +287,7 @@ read_exb()
     if(re>0)
       {
       blocking=1;
-      size=mklong(buf);
+      size=mkuint4(buf);
       if(size<0) continue;
       if(bcd_dec(dec,(char *)buf+4)==0) continue;
 #if DEBUG
@@ -320,7 +320,7 @@ select_ch(old_buf,new_buf,old_form)
   int i,j,size,gsize,new_size,sr;
   unsigned char *ptr,*new_ptr,*ptr_lim;
   unsigned int gh;
-  size=mklong(old_buf);
+  size=mkuint4(old_buf);
   ptr_lim=old_buf+size;
   ptr=old_buf+4;
   new_ptr=new_buf+4;
@@ -328,7 +328,7 @@ select_ch(old_buf,new_buf,old_form)
   new_size=10;
   do
     {
-    gh=mklong(ptr);
+    gh=mkuint4(ptr);
     i=gh>>16;
     if(old_form)
       {
@@ -404,7 +404,7 @@ main(argc,argv)
   else if(strcmp2(textbuf,TIME3)<0) fm_type=60;
   else fm_type=10;
   printf("%02x%02x%02x %02x%02x%02x  %d (type=%d)\n",buf[4],buf[5],
-    buf[6],buf[7],buf[8],buf[9],mklong(buf),fm_type);
+    buf[6],buf[7],buf[8],buf[9],mkuint4(buf),fm_type);
 
   if(argc<2+optbase)
     {

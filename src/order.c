@@ -1,4 +1,4 @@
-/* $Id: order.c,v 1.11.4.5 2008/05/18 08:29:01 uehira Exp $ */
+/* $Id: order.c,v 1.11.4.5.2.1 2008/11/11 15:19:47 uehira Exp $ */
 /*  program "order.c" 1/26/94 - 2/7/94, 6/14/94 urabe */
 /*                              1/6/95 bug in adj_time(tm[0]--) fixed */
 /*                              3/17/95 write_log() */
@@ -146,16 +146,16 @@ advance(shm,shp,c_save,size,t,shp_busy_save)
 
   shpp=(*shp); /* copy read pointer */
   i=shm->c-(*c_save);
-  if(!(i<1000000 && i>=0) || *size!=mklong(shm->d+(*shp))) return -2;
+  if(!(i<1000000 && i>=0) || *size!=mkuint4(shm->d+(*shp))) return -2;
   if((shpp+=(*size))>shm->pl) shpp=0; /* advance read pointer by one block */
   if(shm->p==shpp) {  /* block is still busy */
     if(shp_busy_save) *shp_busy_save=shpp;
     return 0;
   }
   *c_save=shm->c;
-  *size=mklong(shm->d+(*shp=shpp)); /* size of next block */
+  *size=mkuint4(shm->d+(*shp=shpp)); /* size of next block */
   if(!(*t=bcd_t(shm->d+shpp+8))) return -1;
-  return mklong(shm->d+shpp+4); /* return value = TOW */
+  return mkuint4(shm->d+shpp+4); /* return value = TOW */
 }
 
 
@@ -292,19 +292,19 @@ main(argc,argv)
 reset:
   while(shm_in->r==(-1)) sleep(1);
   c_save_in=shm_in->c;
-  size_in=mklong(ptr_save=shm_in->d+(shp_in=shm_in->r));
+  size_in=mkuint4(ptr_save=shm_in->d+(shp_in=shm_in->r));
   if(check_time(ptr_save+8)){
      sleep(1);
      goto reset;
   }
-  sec_1=mklong(ptr_save+4); /* TOW */
+  sec_1=mkuint4(ptr_save+4); /* TOW */
   t_out=t_bottom=bcd_t(ptr_save+8); /* TS */
   if(late) {
     shp_busy_save=(-1);
     timeout_flag=0;
   }
   sysclk=sysclk_org;
-  if(mklong(ptr_save+size_in-4)==size_in) eobsize_in=1;
+  if(mkuint4(ptr_save+size_in-4)==size_in) eobsize_in=1;
   else eobsize_in=sysclk=0;
   eobsize_in_count=eobsize_in;
   sprintf(tbuf,"eobsize_in=%d, eobsize_out=%d, sysclk=%d sysclk_org=%d",
@@ -378,8 +378,8 @@ reset:
             i=0;
             while(1) /* sweep to output data at ts==rt-n_sec */
               {
-              size=mklong(ptr);
-              tow=mklong(ptr+4);
+              size=mkuint4(ptr);
+              tow=mkuint4(ptr+4);
               ts=bcd_t(ptr+8);
               if(tow<rt-n_sec-1) /* quit loop - TOW too old */
                 {
@@ -401,17 +401,17 @@ reset:
               ptr_prev=ptr;
               if(ptr-shm_in->d>0) /* go back one packet */
                 {
-                size_next=mklong(ptr-4);
+                size_next=mkuint4(ptr-4);
                 ptr-=size_next;
                 }
               else if(ptr==shm_in->d) /* return to the tail of SHM */
                 {
-                size_next=mklong(shm_in->d+shm_in->pl);
+                size_next=mkuint4(shm_in->d+shm_in->pl);
                 ptr=shm_in->d+shm_in->pl+4-size_next;
                 }
               else break;
               if(ptr<shm_in->d) break;
-              if(size_next!=mklong(ptr))
+              if(size_next!=mkuint4(ptr))
                 {
                 if(i) break;
                 else goto reset;
@@ -466,7 +466,7 @@ reset:
     t=t_bottom;
 
     do{
-      if(size==mklong(shm_in->d+shp+size-4)) eobsize_in_count++;
+      if(size==mkuint4(shm_in->d+shp+size-4)) eobsize_in_count++;
       else eobsize_in_count=0;
       if(eobsize_in && eobsize_in_count==0) goto reset;
       if(!eobsize_in && eobsize_in_count>3) goto reset;

@@ -1,4 +1,4 @@
-/* $Id: ls8tel16_raw.c,v 1.3.2.2 2008/05/17 14:22:00 uehira Exp $ */
+/* $Id: ls8tel16_raw.c,v 1.3.2.2.2.1 2008/11/11 15:19:47 uehira Exp $ */
 
 /*
  * Copyright (c) 2005
@@ -57,7 +57,7 @@
 /*  #define DEBUG       0 */
 
 static char rcsid[] =
-  "$Id: ls8tel16_raw.c,v 1.3.2.2 2008/05/17 14:22:00 uehira Exp $";
+  "$Id: ls8tel16_raw.c,v 1.3.2.2.2.1 2008/11/11 15:19:47 uehira Exp $";
 
 char *progname, *logfile;
 int  daemon_mode, syslog_mode;
@@ -199,7 +199,7 @@ reset:
 
   /***** main loop *****/
   for (;;) {
-    ptr_lim = ptr + (size = mklong(ptr_save = ptr));
+    ptr_lim = ptr + (size = mkuint4(ptr_save = ptr));
     c_save = shr->c;
     ptr += WIN_BLOCKSIZE_LEN;
 #if DEBUG
@@ -211,7 +211,7 @@ reset:
     ptw = shm->d + shm->p;
     ptw += 4;			/* size (4) */
     uni = time(0);
-    i = uni - mklong(ptr);
+    i = uni - mkuint4(ptr);
     if (i >= 0 && i < 1440) {	/* with tow */
       if (tow != 1) {
 	(void)snprintf(tb, sizeof(tb), "with TOW (diff=%ds)", i);
@@ -301,7 +301,7 @@ reset:
       ptr = shr->d;
     while (ptr == shr->d + shr->p)
       usleep(100000);
-    if (shr->c < c_save || mklong(ptr_save) != size) {
+    if (shr->c < c_save || mkuint4(ptr_save) != size) {
       write_log("reset");
       goto reset;
     }

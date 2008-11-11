@@ -1,4 +1,4 @@
-/* $Id: wdiskts.c,v 1.6.2.5 2008/05/18 08:29:03 uehira Exp $ */
+/* $Id: wdiskts.c,v 1.6.2.5.2.1 2008/11/11 15:19:48 uehira Exp $ */
 /* 2005.8.10 urabe bug in strcmp2() fixed : 0-6 > 7-9 */
 
 #ifdef HAVE_CONFIG_H
@@ -159,7 +159,7 @@ sort_buf()
    /** sweep buf **/
    ptr=datbuf;
    do{
-     re=mklong(ptr);
+     re=mkuint4(ptr);
      re-=4;
      ptr+=4;
      ptr_dat=ptr;
@@ -211,7 +211,7 @@ sort_buf()
        indx[i][j].flag=0; /* clear flag */
    ptr=datbuf;
    do{
-     re=mklong(ptr);
+     re=mkuint4(ptr);
      re-=4;
      ptr+=4;
      ptr_dat=ptr;
@@ -494,7 +494,7 @@ main(argc,argv)
 	switch_file(tm);
       }
       while(shp!=shm->p){
-	size_save=size=mklong(shm->d+shp);
+	size_save=size=mkuint4(shm->d+shp);
 	size-=4;
 	size_out[0]=size>>24;
 	size_out[1]=size>>16;

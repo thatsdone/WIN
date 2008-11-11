@@ -1,4 +1,4 @@
-/* $Id: extraw.c,v 1.3.4.3 2008/05/18 09:29:19 uehira Exp $ */
+/* $Id: extraw.c,v 1.3.4.3.2.1 2008/11/11 15:19:47 uehira Exp $ */
 /* "extraw.c"    2000.3.17 urabe */
 /* 2000.4.24/2001.11.14 strerror() */
 
@@ -109,7 +109,7 @@ reset:
 
   while(1)
     {
-    ptr_lim=ptr+(size=mklong(ptr_save=ptr));
+    ptr_lim=ptr+(size=mkuint4(ptr_save=ptr));
     c_save=shin->c;
     ptr+=4; /* skip size */
     ptr+=4; /* skip tow */
@@ -177,7 +177,7 @@ reset:
 #endif
     if((ptr=ptr_lim)>shin->d+shin->pl) ptr=shin->d;
     while(ptr==shin->d+shin->p) sleep(1);
-    if(shin->c<c_save || mklong(ptr_save)!=size)
+    if(shin->c<c_save || mkuint4(ptr_save)!=size)
       {
       write_log("reset");
       goto reset;

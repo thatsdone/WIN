@@ -1,4 +1,4 @@
-/* $Id: dewin.c,v 1.4.4.3 2008/05/18 07:43:44 uehira Exp $ */
+/* $Id: dewin.c,v 1.4.4.3.2.1 2008/11/11 15:19:47 uehira Exp $ */
 /* program dewin  1994.4.11-4.20  urabe */
 /*                1996.2.23 added -n option */
 /*                1996.9.12 added -8 option */
@@ -100,7 +100,7 @@ read_one_sec(ptr,ch,abuf)
   unsigned long sys_ch;
 
   dp=ptr+10;
-  ddp=ptr+mklong(ptr);
+  ddp=ptr+mkuint4(ptr);
   while(1)
     {
     if((g_size=win2fix(dp,abuf,&sys_ch,(long *)&s_rate))==0) return 0;

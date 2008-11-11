@@ -1,5 +1,5 @@
 /*
- * $Id: insert_trg.c,v 1.6.4.4 2008/05/17 14:21:59 uehira Exp $
+ * $Id: insert_trg.c,v 1.6.4.4.2.1 2008/11/11 15:19:47 uehira Exp $
  * Insert sorted timeout data to event data.
  *
  *------------ sample of parameter file ------------
@@ -49,7 +49,7 @@
 #define BUF_SIZE 1024
 
 char *progname;
-static char rcsid[]="$Id: insert_trg.c,v 1.6.4.4 2008/05/17 14:21:59 uehira Exp $";
+static char rcsid[]="$Id: insert_trg.c,v 1.6.4.4.2.1 2008/11/11 15:19:47 uehira Exp $";
 
 struct Cnt_file {
   char  trg_dir[WIN_FILENAME_MAX];    /* trg data directory */
@@ -174,7 +174,7 @@ do_insert(int tim[], struct Cnt_file *cnt)
 
   while(fread(&a,1,WIN_BLOCKSIZE_LEN,fp)==WIN_BLOCKSIZE_LEN){  /*(1)*/
     /*** copy same minute data to data[] ***/
-    data_num_save=data_num=size=(WIN_blocksize)mklong((unsigned char *)&a);
+    data_num_save=data_num=size=(WIN_blocksize)mkuint4((unsigned char *)&a);
     array_size_of_data = data_num << 2;
     if((data=MALLOC(unsigned char,array_size_of_data))==NULL) memory_error();
     memcpy(data,&a,WIN_BLOCKSIZE_LEN);
@@ -190,7 +190,7 @@ do_insert(int tim[], struct Cnt_file *cnt)
     for(j=0;j<WIN_TIME_LEN;++j) dtime_start[j]=dtime_end[j]=dtime[j];
     fpt=ftell(fp);
     while(fread(&a,1,WIN_BLOCKSIZE_LEN,fp)==WIN_BLOCKSIZE_LEN){  /*(2)*/
-      size_save=size=(WIN_blocksize)mklong((unsigned char *)&a);
+      size_save=size=(WIN_blocksize)mkuint4((unsigned char *)&a);
       if((tmpbuf=MALLOC(unsigned char,size))==NULL) memory_error();
       memcpy(tmpbuf,&a,WIN_BLOCKSIZE_LEN);
       size-=WIN_BLOCKSIZE_LEN;
@@ -299,7 +299,7 @@ do_insert(int tim[], struct Cnt_file *cnt)
       if((fpch=fopen(chname,"r"))==NULL){
 	if((fptrg=fopen(outname,"r"))!=NULL){
 	  if(fread(&a,1,WIN_BLOCKSIZE_LEN,fptrg)==WIN_BLOCKSIZE_LEN){
-	    sizet=(WIN_blocksize)mklong((unsigned char *)&a)-WIN_BLOCKSIZE_LEN;
+	    sizet=(WIN_blocksize)mkuint4((unsigned char *)&a)-WIN_BLOCKSIZE_LEN;
 	    if((tmpbuf=MALLOC(unsigned char,sizet))==NULL) memory_error();
 	    if(fread(tmpbuf,1,sizet,fptrg)==sizet){
 	      trg_chnum=get_sysch_list(tmpbuf,sizet,trg_ch);
@@ -324,7 +324,7 @@ do_insert(int tim[], struct Cnt_file *cnt)
       ptrd=data;
       for(j=0;j<WIN_TIME_LEN;++j) dtime[j]=dtime_start[j];
       while(time_cmp(dtime,tim_trg_start,WIN_TIME_LEN)<0){  /* skip */
-	size=(WIN_blocksize)mklong((unsigned char *)ptrd);
+	size=(WIN_blocksize)mkuint4((unsigned char *)ptrd);
 	ptrd+=size;
 	bcd_dec(dtime,ptrd+WIN_BLOCKSIZE_LEN);
       }
@@ -333,7 +333,7 @@ do_insert(int tim[], struct Cnt_file *cnt)
       ptw=datas;
       datas_num=0;
       while(time_cmp(dtime,tim_trg_end,WIN_TIME_LEN)<=0 && ptrd<data+data_num){
-	size=(WIN_blocksize)mklong((unsigned char *)ptrd)-WIN_BLOCKSIZE_LEN;
+	size=(WIN_blocksize)mkuint4((unsigned char *)ptrd)-WIN_BLOCKSIZE_LEN;
 	ptrd+=WIN_BLOCKSIZE_LEN;
 #if DEBUG1>5
 	fprintf(stderr,"size=%ld dtime=%02d%02d%02d.%02d%02d%02d\n",
@@ -382,7 +382,7 @@ dttime[0],dttime[1],dttime[2],dttime[3],dttime[4],dttime[5]);
 #endif
       /* merge data */
       while(fread(&a,1,WIN_BLOCKSIZE_LEN,fptrg)==WIN_BLOCKSIZE_LEN){
-	sizet=(WIN_blocksize)mklong((unsigned char *)&a)-WIN_BLOCKSIZE_LEN;
+	sizet=(WIN_blocksize)mkuint4((unsigned char *)&a)-WIN_BLOCKSIZE_LEN;
 	if((datat=MALLOC(unsigned char,sizet))==NULL) memory_error();
 	if(fread(datat,1,sizet,fptrg)!=sizet){
 	  FREE(datat);
@@ -405,7 +405,7 @@ dttime[0],dttime[1],dttime[2],dttime[3],dttime[4],dttime[5]);
 	}
 	/* In case of time stamp same */
 	else{
-	  size=(WIN_blocksize)mklong(ptrs)-WIN_BLOCKSIZE_LEN;
+	  size=(WIN_blocksize)mkuint4(ptrs)-WIN_BLOCKSIZE_LEN;
 	  ptrs+=WIN_BLOCKSIZE_LEN;
 	  if((datam=MALLOC(unsigned char,size))==NULL) memory_error();
 	  sizem=get_merge_data(datam,datat,&sizet,ptrs,&size);

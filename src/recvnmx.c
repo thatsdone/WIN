@@ -1,4 +1,4 @@
-/* $Id: recvnmx.c,v 1.16.4.4 2008/05/18 08:29:02 uehira Exp $ */
+/* $Id: recvnmx.c,v 1.16.4.4.2.1 2008/11/11 15:19:48 uehira Exp $ */
 /* "recvnmx.c"    2001.7.18-19 modified from recvt.c and nmx2raw.c  urabe */
 /*                2001.8.18 */
 /*                2001.10.5 workaround for hangup */
@@ -155,33 +155,33 @@ parse_one_packet_np(unsigned char *inbuf,int len,struct Nmx_Packet *pk)
   unsigned long long t,thigh,tlow;
   int x1,x2,x3,x5,ch,i,j;
   ptr=inbuf;
-  signature=mkshort(ptr);
+  signature=mkuint2(ptr);
   if(signature!=SIGNATURE_NP) return -1;
   ptr+=2;
-  size=mkshort(ptr);
+  size=mkuint2(ptr);
   if(size!=len) return -1;
   ptr+=2;
-  pk->seq=mklong(ptr);
+  pk->seq=mkuint4(ptr);
   ptr+=8;
-  thigh=mklong(ptr);
+  thigh=mkuint4(ptr);
   ptr+=4;
-  tlow=mklong(ptr);
+  tlow=mkuint4(ptr);
   ptr+=4;
   t=tlow+(thigh<<32);
   pk->tim=t/(unsigned long long)1000000000;
   pk->t=localtime(&pk->tim);
   pk->subsec=(t%(unsigned long long)1000000000)/100000;
-  pk->lat=0.000001*(double)((long)mklong(ptr));
+  pk->lat=0.000001*(double)((long)mkuint4(ptr));
   ptr+=4;
-  pk->lon=0.000001*(double)((long)mklong(ptr));
+  pk->lon=0.000001*(double)((long)mkuint4(ptr));
   ptr+=4;
-  pk->alt=(short)mkshort(ptr);
+  pk->alt=(short)mkuint2(ptr);
   ptr+=2;
-  mdl=(short)mkshort(ptr);
+  mdl=(short)mkuint2(ptr);
   if(mdl!=TAURUS) return -1;
   pk->model=11;
   ptr+=2;
-  pk->serno=mkshort(ptr);
+  pk->serno=mkuint2(ptr);
   ptr+=2;
   ch=(*ptr);
   if(ch==151) pk->ch=0;
@@ -190,30 +190,30 @@ parse_one_packet_np(unsigned char *inbuf,int len,struct Nmx_Packet *pk)
   else return -1;
   ptr+=1;
   ptr+=2;
-  size=mkshort(ptr); /* payload size */
+  size=mkuint2(ptr); /* payload size */
   pk->bpp=(size-14)/64;
   ptr+=2;
-  x1=mkshort(ptr); /* payload chid */
+  x1=mkuint2(ptr); /* payload chid */
   ptr+=2;
-  x2=mkshort(ptr);
+  x2=mkuint2(ptr);
   ptr+=2;
-  x3=mkshort(ptr);
+  x3=mkuint2(ptr);
   ptr+=2;
-  pk->ns=mkshort(ptr);
+  pk->ns=mkuint2(ptr);
   ptr+=2;
-  x5=mkshort(ptr);
+  x5=mkuint2(ptr);
   ptr+=2;
-  pk->sr=mkshort(ptr);
+  pk->sr=mkuint2(ptr);
   ptr+=2;
   for(i=0;i<pk->bpp;i++)
     {
-    pk->b2[i].bundle_type=mklong(ptr);
+    pk->b2[i].bundle_type=mkuint4(ptr);
     ptr+=4;
     for(j=0;j<60;j++) pk->b2[i].u.c[j]=(*ptr++);
     if(i==0)
       {
-      pk->first=mklong(pk->b2[i].u.uc[0]);
-      pk->last=mklong(pk->b2[i].u.uc[1]);
+      pk->first=mkuint4(pk->b2[i].u.uc[0]);
+      pk->last=mkuint4(pk->b2[i].u.uc[1]);
       }
     }
 /* printf("size=%d seq=%d tim=%lu.%04lu lat=%f lon=%f alt=%d\n",
@@ -313,15 +313,15 @@ int bundle2fix_np(struct Nmx_Packet *pk,int *dbuf)
         }
       else if(difsize[i]==2)
         {
-        diff2=mkshort(pk->b2[k].u.uc[i]);
+        diff2=mkuint2(pk->b2[k].u.uc[i]);
         if(flag==0) {diff0=diff2;flag=1;}
         else dbuf[n++]=data=data+diff2;
-        diff2=mkshort(pk->b2[k].u.uc[i]+2);
+        diff2=mkuint2(pk->b2[k].u.uc[i]+2);
         dbuf[n++]=data=data+diff2;
         }
       else if(difsize[i]==3)
         {
-        diff4=mklong(pk->b2[k].u.uc[i]);
+        diff4=mkuint4(pk->b2[k].u.uc[i]);
         if(flag==0) {diff0=diff4;flag=1;}
         else dbuf[n++]=data=data+diff4;
         }

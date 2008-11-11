@@ -1,4 +1,4 @@
-/* $Id: sends.c,v 1.6.4.3 2008/05/18 08:29:02 uehira Exp $ */
+/* $Id: sends.c,v 1.6.4.3.2.1 2008/11/11 15:19:48 uehira Exp $ */
 /*   program "sends"   2000.3.20 urabe                   */
 /*   2000.3.21 */
 /*   2000.4.17 */
@@ -409,21 +409,21 @@ main(argc,argv)
 reset:
   while(shm->r==(-1)) sleep(1);
   c_save=shm->c;
-  size=mklong(ptr_save=shm->d+(shp=shm->r));
+  size=mkuint4(ptr_save=shm->d+(shp=shm->r));
 
   while(1)
     {
     if(shp+size>shm->pl) shp=0; /* advance pointer */
     else shp+=size;
     while(shm->p==shp) usleep(10000);
-    i=mklong(ptr_save);
+    i=mkuint4(ptr_save);
     if(shm->c<c_save || i!=size)
       {   /* previous block has been destroyed */
       write_log(logfile,"reset");
       goto reset;
       }
     c_save=shm->c;
-    size=mklong(ptr_save=ptr=shm->d+shp);
+    size=mkuint4(ptr_save=ptr=shm->d+shp);
     ptr_lim=ptr+size;
     ptr+=4; /* size */
     ptr+=4; /* tow */

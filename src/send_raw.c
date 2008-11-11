@@ -1,4 +1,4 @@
-/* $Id: send_raw.c,v 1.24.2.4 2008/05/18 08:29:02 uehira Exp $ */
+/* $Id: send_raw.c,v 1.24.2.4.2.1 2008/11/11 15:19:48 uehira Exp $ */
 /*
     program "send_raw/send_mon.c"   1/24/94 - 1/25/94,5/25/94 urabe
                                     6/15/94 - 6/16/94
@@ -285,8 +285,8 @@ recv_pkts(sock,to_addr,no,bufno,standby,seq_exp,n_seq_exp,time_req,req_timo)
         }
       else if(len>=8 && strncmp(rbuf,"REQ",4)==0)
         { /* send request packet (channels list) */
-        seq=mkshort(&rbuf[4]);
-        n_seq=mkshort(&rbuf[6]);
+        seq=mkuint2(&rbuf[4]);
+        n_seq=mkuint2(&rbuf[6]);
         j=0; /* change flag */
         n_ch_req=0;
         if(len==8 && seq==0 && n_seq==0) /* all channels */
@@ -306,7 +306,7 @@ recv_pkts(sock,to_addr,no,bufno,standby,seq_exp,n_seq_exp,time_req,req_timo)
           if(*n_seq_exp==0) *n_seq_exp=n_seq;
           if(seq==(*seq_exp))
             {
-            for(i=8;i<len;i+=2) ch_req_tmp[mkshort(rbuf+i)]=1;
+            for(i=8;i<len;i+=2) ch_req_tmp[mkuint2(rbuf+i)]=1;
             if(seq==n_seq)
               {
               for(i=0;i<65536;i++)
@@ -631,10 +631,10 @@ reset:
     sleep(1);
     }
   c_save=shm->c;
-  size=mklong(ptr_save=shm->d+(shp=shm->r));
+  size=mkuint4(ptr_save=shm->d+(shp=shm->r));
   slptime=1;
 
-  if(mklong(ptr_save+size-4)==size) eobsize=1;
+  if(mkuint4(ptr_save+size-4)==size) eobsize=1;
   else eobsize=0;
   eobsize_count=eobsize;
   sprintf(tbuf,"eobsize=%d",eobsize);
@@ -662,7 +662,7 @@ reset:
     if(nw>1 && slptime<SLPLIMIT) slptime*=2;
     else if(nw==0 && slptime>1) slptime/=2;
     i=shm->c-c_save;
-    if(!(i<1000000 && i>=0) || mklong(ptr_save)!=size)
+    if(!(i<1000000 && i>=0) || mkuint4(ptr_save)!=size)
       {   /* previous block has been destroyed */
       write_log("reset");
       goto reset;
@@ -695,9 +695,9 @@ reset:
         }
       }
 
-    size=mklong(ptr_save=ptr=shm->d+shp);
+    size=mkuint4(ptr_save=ptr=shm->d+shp);
 
-    if(size==mklong(shm->d+shp+size-4)) eobsize_count++;
+    if(size==mkuint4(shm->d+shp+size-4)) eobsize_count++;
     else eobsize_count=0;
     if(eobsize && eobsize_count==0) goto reset;
     if(!eobsize && eobsize_count>3) goto reset;
@@ -751,7 +751,7 @@ reset:
     /* obtain gs(group size) and advance ptr by gs */
       if(raw)
         {
-        gh=mklong(ptr1=ptr);
+        gh=mkuint4(ptr1=ptr);
         ch=(gh>>16);
         sr=gh&0xfff;
         if((gh>>12)&0xf) gs=((gh>>12)&0xf)*(sr-1)+8;
@@ -760,7 +760,7 @@ reset:
         }
       else /* mon */
         {
-        ch=mkshort(ptr1=ptr);
+        ch=mkuint2(ptr1=ptr);
         ptr+=2;
         for(i=0;i<SR_MON;i++)
           {

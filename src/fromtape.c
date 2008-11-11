@@ -1,4 +1,4 @@
-/* $Id: fromtape.c,v 1.7.2.3 2008/05/17 15:32:50 uehira Exp $ */
+/* $Id: fromtape.c,v 1.7.2.3.2.1 2008/11/11 15:19:47 uehira Exp $ */
 /*
   program "fromtape.c"
   12/10/90 - 12/13/90, 9/19/91, 10/30/91, 6/19/92  urabe
@@ -171,7 +171,7 @@ main(argc,argv)
   read_exb();
   bcd_dec(dec_now,(char *)buf+4);
   printf("\r%02x%02x%02x %02x%02x%02x  %5d",buf[4],buf[5],
-    buf[6],buf[7],buf[8],buf[9],mklong(buf));
+    buf[6],buf[7],buf[8],buf[9],mkuint4(buf));
   fflush(stdout);
   sprintf(textbuf,"%02x%02x%02x%02x%02x",buf[4],buf[5],
     buf[6],buf[7],buf[8]);
@@ -227,18 +227,18 @@ main(argc,argv)
     if(dec_now[4]!=min_reserve)
       change_file(argc-optbase,max_file,handshake);
     min_reserve=dec_now[4];
-    fwrite(buf,1,mklong(buf),f_raw);
+    fwrite(buf,1,mkuint4(buf),f_raw);
     if(argc>4+optbase)
       {
       make_mon(buf,wbuf);
-      fwrite(wbuf,1,mklong(wbuf),f_mon);
-/*      printf(" %d>MON\n",mklong(wbuf));*/
+      fwrite(wbuf,1,mkuint4(wbuf),f_mon);
+/*      printf(" %d>MON\n",mkuint4(wbuf));*/
       }
     if(time_cmp(dec_now,dec_end,6)==0) break;
     read_exb();
     bcd_dec(dec_now,(char *)buf+4);
     printf("\r%02x%02x%02x %02x%02x%02x  %5d",buf[4],buf[5],
-      buf[6],buf[7],buf[8],buf[9],mklong(buf));
+      buf[6],buf[7],buf[8],buf[9],mkuint4(buf));
     fflush(stdout);
     if(time_cmp(dec_now,dec_end,6)>0) break;
     }
@@ -333,7 +333,7 @@ make_mon(ptr,ptw) /* for one minute */
   unsigned long uni;
 
   /* make mon data */
-  ptr_lim=ptr+mklong(ptr);
+  ptr_lim=ptr+mkuint4(ptr);
   ptw_start=ptw;
   ptr+=4;
   ptw+=4;               /* size (4) */
@@ -482,7 +482,7 @@ get_pos()
     read_exb();           /* read one block */
     bcd_dec(dec_now,(char *)buf+4);
     printf("\r%02x%02x%02x %02x%02x%02x  %5d",buf[4],buf[5],
-      buf[6],buf[7],buf[8],buf[9],mklong(buf));
+      buf[6],buf[7],buf[8],buf[9],mkuint4(buf));
     fflush(stdout);
     } while(time_cmp(dec_start,dec_now,6));
   }
@@ -605,7 +605,7 @@ read_exb()
     if(re>0)
       {
       blocking=1;
-      size=mklong(buf);
+      size=mkuint4(buf);
       if(size<0) continue;
       if(bcd_dec(dec,(char *)buf+4)==0) continue;
 #if DEBUG

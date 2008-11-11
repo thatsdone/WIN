@@ -1,4 +1,4 @@
-/* $Id: pmon.c,v 1.14.2.5 2008/05/17 15:32:50 uehira Exp $ */
+/* $Id: pmon.c,v 1.14.2.5.2.1 2008/11/11 15:19:47 uehira Exp $ */
 /************************************************************************
 *************************************************************************
 **  program "pmon.c" for NEWS/SPARC                             *********
@@ -548,7 +548,7 @@ read_one_sec(sec)
     0xfc000000,0xfd000000,0xfe000000,0xff000000};
 
   if((ret=read(fd,buf,4))<4) return -1;
-  size=mklong(buf);
+  size=mkuint4(buf);
   if(size<0 || size>LENGTH) return -1;
   if((ret=read(fd,buf+4,size-4))<size-4) return -1;
   ptr=buf+9;

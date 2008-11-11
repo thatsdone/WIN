@@ -1,4 +1,8 @@
- $Id: ChangeLog,v 1.131.2.24 2008/06/21 08:10:32 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25 2008/11/11 07:32:37 uehira Exp $
+
+2008-11-11  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* if 'char' is unsigned, exit make command.
+	* Version 1.1.96-LIB released.
 
 2008-06-21  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* prog/chtbl2kml : added.

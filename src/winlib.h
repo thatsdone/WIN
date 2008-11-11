@@ -1,4 +1,4 @@
-/* $Id: winlib.h,v 1.1.2.6 2008/05/18 08:29:03 uehira Exp $ */
+/* $Id: winlib.h,v 1.1.2.7 2008/11/11 07:32:37 uehira Exp $ */
 
 #ifndef _WIN_LIB_H_
 #define _WIN_LIB_H_
@@ -11,6 +11,10 @@
 #include "win_log.h"
 
 #include "subst_func.h"
+
+#ifdef __CHAR_UNSIGNED__
+#error char is unsigned system.
+#endif
 
 /* High sampling rate format */
 #define  HEADER_4B    4096     /* SR<2^12  (   1 Hz --    4095 Hz) */

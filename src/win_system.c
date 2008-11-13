@@ -1,4 +1,4 @@
-/* $Id: win_system.c,v 1.10.4.1.4.1 2008/11/11 15:19:48 uehira Exp $ */
+/* $Id: win_system.c,v 1.10.4.1.4.2 2008/11/13 15:34:15 uehira Exp $ */
 /* win system utility functions */
 
 #ifdef HAVE_CONFIG_H
@@ -301,37 +301,6 @@ imatrix(int nrow, int ncol)
       m[i][j] = 0;
 
   return (m);
-}
-
-WIN_blocksize
-read_onesec_win(FILE *fp, unsigned char **rbuf)
-{
-  unsigned char  sz[WIN_BLOCKSIZE_LEN];
-  WIN_blocksize  size;
-  static WIN_blocksize  sizesave;
-
-  /* printf("%d\n", sizesave); */
-  if (fread(sz, 1, WIN_BLOCKSIZE_LEN, fp) != WIN_BLOCKSIZE_LEN)
-    return (0);
-  size = mkuint4(sz);
-
-  if (*rbuf == NULL)
-    sizesave = 0;
-  if (size > sizesave) {
-    sizesave = (size << 1);
-    *rbuf = realloc(*rbuf, sizesave);
-    if (*rbuf == NULL) {
-      (void)fprintf(stderr, "%s\n", strerror(errno));
-      exit(1);
-    }
-  }
-
-  memcpy(*rbuf, sz, WIN_BLOCKSIZE_LEN);
-  if (fread(*rbuf + WIN_BLOCKSIZE_LEN, 1, size - WIN_BLOCKSIZE_LEN, fp) !=
-      size - WIN_BLOCKSIZE_LEN)
-    return (0);
-
-  return (size);
 }
 
 /* High sampling rate version */

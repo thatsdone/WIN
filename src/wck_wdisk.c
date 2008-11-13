@@ -1,5 +1,5 @@
 /*
- * $Id: wck_wdisk.c,v 1.1.4.3 2008/05/17 14:22:03 uehira Exp $
+ * $Id: wck_wdisk.c,v 1.1.4.3.2.1 2008/11/13 15:34:15 uehira Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -15,11 +15,10 @@
 #include "win_system.h"
 
 static const char  rcsid[] =
-   "$Id: wck_wdisk.c,v 1.1.4.3 2008/05/17 14:22:03 uehira Exp $";
+   "$Id: wck_wdisk.c,v 1.1.4.3.2.1 2008/11/13 15:34:15 uehira Exp $";
 char  *progname;
 
 static void usage();
-static WIN_blocksize read_data(FILE *, unsigned char **);
 int main(int, char *[]);
 
 #define  MIN  60
@@ -94,7 +93,7 @@ main(int argc, char *argv[])
   sec = 0;
 
   /* data loop */
-  while ((mainsize = read_data(fp, &mainbuf)) != 0) {
+  while ((mainsize = read_onesec_win(fp, &mainbuf)) != 0) {
 #if DEBUG > 5
     (void)printf("mainsize = %d [bytes]\n", mainsize);
 #endif
@@ -128,7 +127,7 @@ main(int argc, char *argv[])
     sec++;
     if (sec == MIN)
       break;
-  }  /* while (mainsize = read_data(fp, &mainbuf)) */
+  }  /* while (mainsize = read_onesec_win(fp, &mainbuf)) */
   if (fp != stdin)
     (void)fclose(fp);
 
@@ -219,27 +218,6 @@ main(int argc, char *argv[])
 
 
   exit(0);
-}
-
-
-static WIN_blocksize
-read_data(FILE *fp, unsigned char **ptr)
-{
-  WIN_blocksize  re, size;
-
-  if (fread(&re, 1, WIN_BLOCKSIZE_LEN, fp) != WIN_BLOCKSIZE_LEN)
-    return (0);
-  re = LongFromBigEndian(re);
-  if (*ptr == NULL)
-    *ptr = (unsigned char *)malloc(size = re * 2);
-  else if (re > size)
-    *ptr=(unsigned char *)realloc(*ptr, size = re * 2);
-  *(WIN_blocksize *)*ptr = re;
-  if (fread(*ptr + WIN_BLOCKSIZE_LEN, 1, re - WIN_BLOCKSIZE_LEN, fp) != 
-      re - WIN_BLOCKSIZE_LEN)
-    return (0);
-
-  return (re);
 }
 
 static void

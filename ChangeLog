@@ -1,4 +1,12 @@
- $Id: ChangeLog,v 1.131.2.25.2.2 2008/11/13 05:06:53 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.3 2008/11/13 15:34:14 uehira Exp $
+
+2008-11-13  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* MF Version 1.1.98-LIB release.
+	* install include files.
+        * src/winlib.h : remove LongFromBigEndian(a) macro.
+	* src/winlib.c : read_onesec_win() is moved from src/win_system.c.
+	* dewin.c, wadd.c, wadd2.c, wck.c, wck_wdisk.c
+	               : replace read_data() with read_onesec_win().
 
 2008-11-13  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* suppress warnings.

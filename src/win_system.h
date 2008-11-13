@@ -1,4 +1,4 @@
-/* $Id: win_system.h,v 1.7.4.3.2.1 2008/11/13 09:36:07 uehira Exp $ */
+/* $Id: win_system.h,v 1.7.4.3.2.2 2008/11/13 15:34:15 uehira Exp $ */
 
 #ifndef _WIN_SYSTEM_H_
 #define _WIN_SYSTEM_H_
@@ -16,7 +16,7 @@
 /* typedef unsigned short WIN_ch; */
 /* typedef unsigned long  WIN_sr; */
 
-#define WIN_BLOCKSIZE_LEN  (sizeof(WIN_blocksize))  /* byte */
+/* #define WIN_BLOCKSIZE_LEN  (sizeof(WIN_blocksize))  /\* byte *\/ */
 #define WIN_TIME_LEN       6  /* byte */
 #define WIN_CH_LEN         (sizeof(WIN_ch))  /* byte */
 #define WIN_CHHEADER_LEN   4  /* byte */
@@ -115,7 +115,7 @@ WIN_blocksize get_select_data(unsigned char *selectbuf,
 int WIN_time_hani(char fname[], int start[], int end[]);
 int read_channel_file(FILE *, struct channel_tbl [], int);
 int **imatrix(int, int);
-WIN_blocksize read_onesec_win(FILE *, unsigned char **);
+/* WIN_blocksize read_onesec_win(FILE *, unsigned char **); */
 WIN_blocksize win_get_chhdr(unsigned char *, WIN_ch *, WIN_sr *);
 
 /* int win2fix(unsigned char *, long *, long *, long *); */

@@ -1,4 +1,4 @@
-/* $Id: winlib.h,v 1.1.2.8 2008/11/13 14:49:14 uehira Exp $ */
+/* $Id: winlib.h,v 1.1.2.9 2008/11/13 15:34:54 uehira Exp $ */
 
 #ifndef _WIN_LIB_H_
 #define _WIN_LIB_H_
@@ -34,9 +34,6 @@ typedef unsigned long  WIN_sr;
 #define  SWAPF(a)  *(long *)&(a) =\
     (((*(long *)&(a)) << 24) | ((*(long *)&(a)) << 8) & 0xff0000 |\
      ((*(long *)&(a)) >> 8) & 0xff00 | ((*(long *)&(a)) >> 24) & 0xff)
-/* #define  LongFromBigEndian(a) \ */
-/*   ((((unsigned char *)&(a))[0] << 24) + (((unsigned char *)&(a))[1] << 16) +\ */
-/*    (((unsigned char *)&(a))[2] << 8) + ((unsigned char *)&(a))[3]) */
 
 /* structure of shared memory */
 struct Shm {

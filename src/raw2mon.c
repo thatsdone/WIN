@@ -1,4 +1,4 @@
-/* $Id: raw2mon.c,v 1.4.4.3.2.1 2008/11/11 15:19:47 uehira Exp $ */
+/* $Id: raw2mon.c,v 1.4.4.3.2.2 2008/11/13 09:36:06 uehira Exp $ */
 /*
   program "raw2mon.c"
   6/3/93,6/17/94,8/17/95 urabe
@@ -29,7 +29,7 @@
 #define   MAX_SR    1024
 
   unsigned char wbuf[SIZE_WBUF],buf[MAXSIZE];
-  long buf_raw[MAX_SR],buf_mon[SR_MON][2];
+  int32_w buf_raw[MAX_SR],buf_mon[SR_MON][2];
 
 get_mon(gm_sr,gm_raw,gm_mon)
   int gm_sr,*gm_raw,(*gm_mon)[2];
@@ -115,7 +115,9 @@ make_mon(ptr,ptw) /* for one minute */
   unsigned char *ptr,*ptw;
   {
   unsigned char *ptr_lim,*ptw_start,*ptw_save;
-  int i,j,ch,sr,re;
+  int i,j,re;
+  WIN_ch ch;
+  WIN_sr sr;
   unsigned long uni;
 
   /* make mon data */
@@ -126,7 +128,7 @@ make_mon(ptr,ptw) /* for one minute */
   for(i=0;i<6;i++) *ptw++=(*ptr++); /* YMDhms (6) */
   do    /* loop for ch's */
     {
-    if((re=win2fix(ptr,buf_raw,(long *)&ch,(long *)&sr))==0) break;
+    if((re=win2fix(ptr,buf_raw,&ch,&sr))==0) break;
     if (sr > MAX_SR) break;
     ptr+=re;
     get_mon(sr,buf_raw,buf_mon); /* get mon data from raw */

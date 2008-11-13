@@ -1,4 +1,4 @@
-/* $Id: wed.c,v 1.5.4.3.2.1 2008/11/11 15:19:48 uehira Exp $ */
+/* $Id: wed.c,v 1.5.4.3.2.2 2008/11/13 09:36:07 uehira Exp $ */
 /* program "wed.c"
 	"wed" edits a win format data file by time range and channles
 	6/26/91,7/13/92,3/11/93,4/20/94,8/5/94,12/8/94   urabe
@@ -17,6 +17,7 @@
 #endif
 
 #include	<stdio.h>
+#include	<stdlib.h>
 #include	<string.h>
 #include	<signal.h>
 

@@ -1,4 +1,4 @@
-/* $Id: raw_100.c,v 1.5.4.3.2.1 2008/11/11 15:19:47 uehira Exp $ */
+/* $Id: raw_100.c,v 1.5.4.3.2.2 2008/11/13 09:36:07 uehira Exp $ */
 /* "raw_100.c"    97.6.23 - 6.30 urabe */
 /*                  modified from raw_raw.c */
 /*                  97.8.4 bug fixed (output empty block) */
@@ -128,11 +128,13 @@ main(argc,argv)
   unsigned long uni;
   char tb[100];
   unsigned char *ptr,*ptw,tm[6],*ptr_lim,*ptr_save;
-  int sr,i,j,k,size,n,size_shm,ch1,sr1,tow,rest;
+  int sr,i,j,k,size,n,size_shm,tow,rest;
+  WIN_ch  ch1;
+  WIN_sr  sr1;
   unsigned long c_save;
   unsigned short ch;
   int gs,gh;
-  static int buf1[MAX_SR],buf2[SR];
+  static int32_w buf1[MAX_SR],buf2[SR];
   float t,ds,dt;
 
   if(progname=strrchr(argv[0],'/')) progname++;
@@ -266,7 +268,7 @@ reset:
 #endif
         if(sr!=SR && sr>=SR_LOWER) 
           {
-          win2fix(ptr,(long *)buf1,(long *)&ch1,(long *)&sr1);
+          win2fix(ptr,buf1,&ch1,&sr1);
           ds=(float)sr/(float)SR;
           t=0.0;
           buf1[sr]=buf1[sr+1];
@@ -277,7 +279,7 @@ reset:
             buf2[i]=buf1[j]+(int)(dt*(float)(buf1[j+1]-buf1[j]));
             t+=ds;
             }
-          ptw+=winform((long *)buf2,ptw,SR,ch);
+          ptw+=winform(buf2,ptw,SR,ch);
           }
         else
           {

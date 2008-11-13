@@ -1,4 +1,4 @@
-/* $Id: fromtape.c,v 1.7.2.3.2.1 2008/11/11 15:19:47 uehira Exp $ */
+/* $Id: fromtape.c,v 1.7.2.3.2.2 2008/11/13 09:36:06 uehira Exp $ */
 /*
   program "fromtape.c"
   12/10/90 - 12/13/90, 9/19/91, 10/30/91, 6/19/92  urabe
@@ -51,7 +51,7 @@
   char name_file[NAMLEN],path_raw[NAMLEN],path_mon[NAMLEN],
     textbuf[80],name_time[NAMLEN],file_done[NAMLEN],param[100],
     mon_written[NAMLEN],raw_written[NAMLEN],exb_name[NAMLEN];
-  long buf_raw[MAX_SR],buf_mon[SR_MON][2];
+  int32_w buf_raw[MAX_SR],buf_mon[SR_MON][2];
   FILE *fp,*f_mon,*f_raw;
   int e_ch[241]={
     0x0000,0x0001,0x0002,0x0003,0x0004,0x0005,0x0006,0x0007,
@@ -329,7 +329,9 @@ make_mon(ptr,ptw) /* for one minute */
   unsigned char *ptr,*ptw;
   {
   unsigned char *ptr_lim,*ptw_start;
-  int i,j,k,ch,sr;
+  int i,j,k;
+  WIN_ch ch;
+  WIN_sr sr;
   unsigned long uni;
 
   /* make mon data */
@@ -341,7 +343,7 @@ make_mon(ptr,ptw) /* for one minute */
 
   do    /* loop for chs */
     {
-    ptr+=win2fix(ptr,buf_raw,(long *)&ch,(long *)&sr);
+    ptr+=win2fix(ptr,buf_raw,&ch,&sr);
     *ptw++=ch>>8;
     *ptw++=ch;
     get_mon(sr,buf_raw,buf_mon);  /* get mon data from raw */

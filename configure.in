@@ -1,5 +1,5 @@
 dnl ------------------------------------------------------------------------- 
-dnl $Id: configure.in,v 1.98.2.17.2.2 2008/11/13 05:06:53 uehira Exp $
+dnl $Id: configure.in,v 1.98.2.17.2.3 2008/11/13 09:36:06 uehira Exp $
 dnl -------------------------------------------------------------------------
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT(src/win.c)
@@ -15,7 +15,7 @@ dnl AC_CYGWIN
 
 dnl set default CFLAGS and FFLAGS
 if test x"$CFLAGS" = x; then
-	CFLAGS="-pipe -O"
+	CFLAGS="-Wall -pipe -O"
 fi
 if test x"$FFLAGS" = x; then
  	FFLAGS="-O"

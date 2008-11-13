@@ -1,4 +1,4 @@
-/* $Id: ls8tel.c,v 1.2.8.1 2008/11/13 03:03:02 uehira Exp $ */
+/* $Id: ls8tel.c,v 1.2.8.2 2008/11/13 09:36:06 uehira Exp $ */
 
 /*
  * Copyright (c) 2005
@@ -22,12 +22,12 @@
  * LS8TEL16 winformat to fix buffer
  *   returns group size in bytes 
  */
-WIN_blocksize
-ls8tel16_fix(uint8_w *ptr, int32_w *abuf, uint16_w *sys_ch, uint32_w *sr)
-     /*       uint8_w  *ptr;          /* input */
-     /*       int32_w  *abuf;         /* output */
-     /*       uint16_w *sys_ch;       /* sys_ch */
-     /*       uint32_  *sr;           /* sr */
+uint32_w
+ls8tel16_fix(uint8_w *ptr, int32_w *abuf, WIN_ch *sys_ch, WIN_sr *sr)
+/*       uint8_w  *ptr;     : input  */
+/*       int32_w  *abuf;    : output */
+/*       WIN_ch   *sys_ch;  : sys_ch */
+/*       WIN_sr   *sr;      : sr     */
 {
   uint32_w       b_size, g_size;
   uint32_w       i;

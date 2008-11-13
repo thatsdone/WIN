@@ -1,4 +1,4 @@
-/* $Id: wch.c,v 1.8.4.2.2.1 2008/11/11 15:19:48 uehira Exp $ */
+/* $Id: wch.c,v 1.8.4.2.2.2 2008/11/13 09:36:07 uehira Exp $ */
 /*
 program "wch.c"
 "wch" edits a win format data file by channles
@@ -17,6 +17,7 @@ program "wch.c"
 #endif
 
 #include  <stdio.h>
+#include  <stdlib.h>
 #include  <signal.h>
 
 #include "winlib.h"

@@ -1,4 +1,4 @@
-/* $Id: win_log.c,v 1.2.4.1 2006/09/25 15:01:00 uehira Exp $ */
+/* $Id: win_log.c,v 1.2.4.1.4.1 2008/11/13 09:36:07 uehira Exp $ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -6,6 +6,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <errno.h>
 
 #include <syslog.h>

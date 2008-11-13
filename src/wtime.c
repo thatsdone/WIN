@@ -1,4 +1,4 @@
-/* $Id: wtime.c,v 1.3.2.3.2.2 2008/11/13 05:06:53 uehira Exp $ */
+/* $Id: wtime.c,v 1.3.2.3.2.3 2008/11/13 09:36:07 uehira Exp $ */
 
 /*
   program "wtime.c"
@@ -33,7 +33,7 @@
 #define   DEBUG1  0
 
 unsigned char *rbuf,*wbuf;
-long *sbuf[65536];
+int32_w *sbuf[65536];
 int s_add,ms_add;
 
 wabort() {exit(0);}
@@ -93,8 +93,10 @@ shift_sec(tm_bcd,sec)
 chloop(old_buf,new_buf)
   unsigned char *old_buf,*new_buf;
   {
-  static long fixbuf1[4096],fixbuf2[4096],ltime,ltime_ch[65536];
-  int ch,i,j,size,gsize,new_size,sr,sr_shift;
+  static int32_w fixbuf1[4096],fixbuf2[4096],ltime,ltime_ch[65536];
+  int i,j,size,gsize,new_size,sr_shift;
+  WIN_ch  ch;
+  WIN_sr  sr;
   unsigned char *ptr1,*ptr2,*ptr_lim;
 
   size=mkuint4(old_buf);
@@ -106,8 +108,8 @@ chloop(old_buf,new_buf)
   new_size=10;
   do
     {
-    ptr1+=win2fix(ptr1,fixbuf1,(long *)&ch,(long *)&sr); /* returns group size in bytes */
-    if(!sbuf[ch]) sbuf[ch]=(long *)malloc(4*sr);
+    ptr1+=win2fix(ptr1,fixbuf1,&ch,&sr); /* returns group size in bytes */
+    if(!sbuf[ch]) sbuf[ch]=(int32_w *)malloc(sizeof(int32_w)*sr);
     if(ltime!=ltime_ch[ch]+1) for(i=0;i<sr;i++) sbuf[ch][i]=fixbuf1[0]; 
     sr_shift=(ms_add*sr+500)/1000;
     for(i=0;i<sr_shift;i++) fixbuf2[i]=sbuf[ch][sr-sr_shift+i];

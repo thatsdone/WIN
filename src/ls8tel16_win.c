@@ -1,4 +1,4 @@
-/* $Id: ls8tel16_win.c,v 1.2.4.2 2008/05/17 14:22:00 uehira Exp $ */
+/* $Id: ls8tel16_win.c,v 1.2.4.2.2.1 2008/11/13 09:36:06 uehira Exp $ */
 
 /*
  * Copyright (c) 2005
@@ -31,7 +31,7 @@
 #include "win_system.h"
 
 static const char  rcsid[] =
-   "$Id: ls8tel16_win.c,v 1.2.4.2 2008/05/17 14:22:00 uehira Exp $";
+   "$Id: ls8tel16_win.c,v 1.2.4.2.2.1 2008/11/13 09:36:06 uehira Exp $";
 
 static char  *progname;
 
@@ -42,13 +42,15 @@ int main(int, char *[]);
 int
 main(int argc, char *argv[])
 {
-  WIN_blocksize  dsize, gsize, wsize;
+  WIN_bs         wsize;
+  uint32_w       dsize, gsize;
   unsigned char  *dbuf = NULL, *ptr, *ptr_limit;
   unsigned char  *obuf = NULL, *ptw, *ptw_limit;
   size_t         obuf_size = 0;
   int            dtime[WIN_TIME_LEN];
-  long           ch, sr;
-  static long    fixbuf[HEADER_4B];
+  WIN_ch         ch;
+  WIN_sr         sr;
+  static int32_w fixbuf[HEADER_4B];
   int            i, c;
 
   /* get program name */
@@ -99,7 +101,7 @@ main(int argc, char *argv[])
 	(void)fprintf(stderr, "This data is not LS8TEL format.\n");
 	exit(1);
       }
-      ptw += winform(fixbuf, ptw, sr, (unsigned short)ch);
+      ptw += winform(fixbuf, ptw, sr, ch);
       if (ptw > ptw_limit) {
 	(void)fprintf(stderr, "Buffer overrun!\n");
 	exit(1);

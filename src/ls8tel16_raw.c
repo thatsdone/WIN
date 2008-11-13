@@ -1,4 +1,4 @@
-/* $Id: ls8tel16_raw.c,v 1.3.2.2.2.2 2008/11/13 03:03:02 uehira Exp $ */
+/* $Id: ls8tel16_raw.c,v 1.3.2.2.2.3 2008/11/13 09:36:06 uehira Exp $ */
 
 /*
  * Copyright (c) 2005
@@ -57,7 +57,7 @@
 /*  #define DEBUG       0 */
 
 static char rcsid[] =
-  "$Id: ls8tel16_raw.c,v 1.3.2.2.2.2 2008/11/13 03:03:02 uehira Exp $";
+  "$Id: ls8tel16_raw.c,v 1.3.2.2.2.3 2008/11/13 09:36:06 uehira Exp $";
 
 char *progname, *logfile;
 int  daemon_mode, syslog_mode;
@@ -85,10 +85,10 @@ main(int argc, char *argv[])
   unsigned long	  c_save;
   WIN_ch          ch, ch1;
   WIN_sr          sr, sr1;
-  WIN_blocksize   gs;
+  WIN_blocksize   gs, gs1;
   static int32_w  fixbuf[MAX_SR];
   char		  tb[1024];
-  int             tow, size, gs1;
+  int             tow, size;
   int             c, rest, i;
 
   if (progname = strrchr(argv[0], '/'))
@@ -250,7 +250,7 @@ reset:
 	    write_log("reset: input data is not LS8TEL format?");
 	    goto reset;
 	  }
-	  ptw += (gs1 = winform(fixbuf, ptw, (int)sr1, (unsigned short)ch1));
+	  ptw += (gs1 = winform(fixbuf, ptw, sr1, ch1));
 #if DEBUG
 	  fprintf(stderr, "->%d ", gs1);
 #endif

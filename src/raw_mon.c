@@ -1,4 +1,4 @@
-/* $Id: raw_mon.c,v 1.6.4.4.2.1 2008/11/11 15:19:48 uehira Exp $ */
+/* $Id: raw_mon.c,v 1.6.4.4.2.2 2008/11/13 09:36:07 uehira Exp $ */
 /* "raw_mon.c"      7/2/93,6/17/94,6/28/94    urabe */
 /*                  3/17/95 write_log(), 4/17/95 MAX_SR safety */
 /*                  usleep -> sleep */
@@ -52,7 +52,7 @@
 #define MAX_SR      4096
 #define SR_MON      5
 
-long buf_raw[MAX_SR],buf_mon[SR_MON][2];
+int32_w buf_raw[MAX_SR],buf_mon[SR_MON][2];
 unsigned char ch_table[65536];
 char *progname,*logfile,chfile[256];
 int n_ch,negate_channel;
@@ -218,7 +218,9 @@ main(argc,argv)
   unsigned long uni;
   char tb[100];
   unsigned char *ptr,*ptw,tm[6],*ptr_lim,*ptr_save;
-  int ch,sys,sr,i,j,k,size,n,size_shm,re;
+  int sys,i,j,k,size,n,size_shm,re;
+  WIN_ch ch;
+  WIN_sr sr;
   unsigned long c_save;
 
   if(progname=strrchr(argv[0],'/')) progname++;
@@ -316,7 +318,7 @@ reset:
 
     do    /* loop for ch's */
       {
-      re=win2fix(ptr,buf_raw,(long *)&ch,(long *)&sr);
+      re=win2fix(ptr,buf_raw,&ch,&sr);
       if((re==0) || (sr>MAX_SR))
         {
         sprintf(tb,"%02X%02X%02X%02X%02X%02X%02X%02X",

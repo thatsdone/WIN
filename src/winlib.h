@@ -1,4 +1,4 @@
-/* $Id: winlib.h,v 1.1.2.7.2.2 2008/11/13 03:03:02 uehira Exp $ */
+/* $Id: winlib.h,v 1.1.2.7.2.3 2008/11/13 09:36:07 uehira Exp $ */
 
 #ifndef _WIN_LIB_H_
 #define _WIN_LIB_H_
@@ -6,6 +6,11 @@
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
+
+#include "filter.h"
+#include "win_log.h"
+
+#include "subst_func.h"
 
 /***** re-define integer *****/
 /* define 1 bye integer */
@@ -35,14 +40,16 @@ typedef unsigned int    uint32_w;  /* unsigned 4 byte integer */
 #endif
 /******************************/
 
-#include "filter.h"
-#include "win_log.h"
-
-#include "subst_func.h"
+typedef uint32_w  WIN_blocksize;
+typedef uint32_w  WIN_bs;
+typedef uint16_w  WIN_ch;
+typedef uint32_w  WIN_sr;
 
 /* High sampling rate format */
 #define  HEADER_4B    4096     /* SR<2^12  (   1 Hz --    4095 Hz) */
 #define  HEADER_5B    1048576  /* SR<2^20  (4096 Hz -- 1048575 Hz) */
+
+#define  WIN_CHMAX    65536   /* Max. number of channel: 2^16 */
 
 #define  SWAPL(a)  a = (((a) << 24) | ((a) << 8) & 0xff0000 |\
 			((a) >> 8) & 0xff00 | ((a) >> 24) & 0xff)
@@ -62,11 +69,6 @@ struct Shm {
   unsigned long  c;  /* counter */
   uint8_w  d[1];     /* data buffer */
 };
-
-typedef uint32_w  WIN_blocksize;
-typedef uint32_w  WIN_bs;
-typedef uint16_w  WIN_ch;
-typedef uint32_w  WIN_sr;
 
 /* BCD to DEC */
 static int b2d[] = {
@@ -111,7 +113,7 @@ int dec_bcd(uint8_w *, int *);
 void adj_time_m(int []);
 void adj_time(int []);
 int time_cmp(int *, int *, int);
-int32_w winform(int32_w *, uint8_w *, WIN_sr, WIN_ch);
+WIN_bs winform(int32_w *, uint8_w *, WIN_sr, WIN_ch);
 uint32_w win2fix(uint8_w *, int32_w *, WIN_ch *, WIN_sr *);
 int strncmp2(char *, char *, int);
 int strcmp2(char *, char *);

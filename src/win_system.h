@@ -1,4 +1,4 @@
-/* $Id: win_system.h,v 1.7.4.3 2008/05/18 08:29:03 uehira Exp $ */
+/* $Id: win_system.h,v 1.7.4.3.2.1 2008/11/13 09:36:07 uehira Exp $ */
 
 #ifndef _WIN_SYSTEM_H_
 #define _WIN_SYSTEM_H_
@@ -22,7 +22,7 @@
 #define WIN_CHHEADER_LEN   4  /* byte */
 #define WIN_CHHEADERH_LEN  5  /* byte */
 
-#define WIN_CH_MAX_NUM  65536   /* 2^16 */
+#define WIN_CH_MAX_NUM  WIN_CHMAX   /* 2^16 */
 #define WIN_STANAME_LEN    11   /* (length of station code)+1 */
 #define WIN_STACOMP_LEN     7   /* (length of component code)+1 */
 

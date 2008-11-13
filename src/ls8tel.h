@@ -1,4 +1,4 @@
-/* $Id: ls8tel.h,v 1.2.2.2.2.1 2008/11/13 03:03:02 uehira Exp $ */
+/* $Id: ls8tel.h,v 1.2.2.2.2.2 2008/11/13 09:36:06 uehira Exp $ */
 
 /*
  * Copyright (c) 2005
@@ -18,8 +18,8 @@
 #include "config.h"
 #endif
 
-/* #include "winlib.h" */
-#include "win_system.h"
+#include "winlib.h"
+/* #include "win_system.h" */
 
 
 #define LS8_PHDER_LEN  5     /* LS8000SH packet header length */
@@ -43,5 +43,5 @@ static int A8_sampling[] = {200, 100};
 static unsigned char A8_gain_mask = 0x7F;
 static int A8_gain[] = {0, 2, 10, 30, 100, 300, 900};
 
-WIN_blocksize ls8tel16_fix(uint8_w *, int32_w *, uint16_w *, uint32_w *);
+uint32_w ls8tel16_fix(uint8_w *, int32_w *, WIN_ch *, WIN_sr *);
 #endif  /*_LS8TEL_H_ */

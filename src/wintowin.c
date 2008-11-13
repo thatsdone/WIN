@@ -59,7 +59,7 @@ char *argv[];
 {
 #define MAXCH 1000
     static unsigned char **outbuf, tt[6], cbuf;
-    static long inbuf[SR];
+    static int32_w inbuf[SR];
     char buf[8192];
     int sr, ch, size, *chsize, t[6], i, j, k, ntoken, nch;
     int c;
@@ -148,7 +148,7 @@ char *argv[];
 	    sscanf(tokens[0], "%x", &ch);
 	    sr = atoi(tokens[1]);
 	    for (i = 0; i < sr; i++) {
-		inbuf[i] = atoi(tokens[i + 2]);
+	      inbuf[i] = atoi(tokens[i + 2]);
 	    }
 	    chsize[j] = winform(inbuf, outbuf[j], sr, ch);
 	    size = size + chsize[j];

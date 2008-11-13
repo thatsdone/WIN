@@ -1,4 +1,4 @@
-/* $Id: recvnmx.c,v 1.16.4.4.2.2 2008/11/13 05:06:53 uehira Exp $ */
+/* $Id: recvnmx.c,v 1.16.4.4.2.3 2008/11/13 09:36:07 uehira Exp $ */
 /* "recvnmx.c"    2001.7.18-19 modified from recvt.c and nmx2raw.c  urabe */
 /*                2001.8.18 */
 /*                2001.10.5 workaround for hangup */
@@ -118,7 +118,7 @@ write_shm(int ch,int sr,time_t tim,int *buf,struct Shm *shm,int eobsize,int pl)
   *ptw++=d2b[t->tm_hour];
   *ptw++=d2b[t->tm_min];
   *ptw++=d2b[t->tm_sec];
-  ptw+=winform((long *)buf,ptw,sr,ch);
+  ptw+=winform((int32_w *)buf,ptw,sr,ch);
   ptw_save2=ptw;
   if(eobsize) ptw+=4;
   uni=ptw-ptw_save;

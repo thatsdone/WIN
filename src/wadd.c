@@ -1,4 +1,4 @@
-/* $Id: wadd.c,v 1.6.4.3 2008/05/17 14:22:03 uehira Exp $ */
+/* $Id: wadd.c,v 1.6.4.4 2008/11/13 14:49:14 uehira Exp $ */
 /* program "wadd.c"
   "wadd" puts two win data files together
   7/24/91 - 7/25/91, 4/20/94,6/27/94-6/28/94,7/12/94   urabe
@@ -61,21 +61,6 @@ get_sysch(buf,sys_ch)
     ptr+=gsize;
     } while(ptr<ptr_lim);
   return i;
-  }
-
-read_data(ptr,fp)
-  FILE *fp;
-  unsigned char *ptr;
-  {
-  int re;
-  if(fread(ptr,1,4,fp)==0) return 0;
-  re=mklong(ptr);
-  if(fread(ptr+4,1,re-4,fp)==0) return 0;
-#if DEBUG
-  printf("%02x%02x%02x%02x%02x%02x %d\n",ptr[4],ptr[5],ptr[6],
-    ptr[7],ptr[8],ptr[9],re);
-#endif
-  return re;
   }
 
 make_skel(old_buf,new_buf)
@@ -171,9 +156,10 @@ main(argc,argv)
     dec_start[6],dec_now[6];
   FILE *f_main,*f_sub,*f_out,*fp;
   char *ptr;
-  static unsigned char mainbuf[MAXSIZE],subbuf[MAXSIZE],tmpfile1[NAMLEN],
-    textbuf[NAMLEN],new_file[NAMLEN],selbuf[MAXSIZE],tmpfile3[NAMLEN],
+  static unsigned char subbuf[MAXSIZE],tmpfile1[NAMLEN],
+    textbuf[NAMLEN],new_file[NAMLEN],tmpfile3[NAMLEN],
     chfile1[NAMLEN],chfile2[NAMLEN],tmpfile2[NAMLEN];
+  static  unsigned char *mainbuf=NULL,*selbuf=NULL;
   static int sysch[65536];
 
   if(argc<3)
@@ -223,7 +209,7 @@ main(argc,argv)
 
   init=1;
   mainend=subend=0;
-  if((mainsize=read_data(mainbuf,f_main))==0)
+  if((mainsize=read_onesec_win(f_main,&mainbuf))==0)
     {
     mainend=1;
     nch=0;
@@ -236,7 +222,7 @@ main(argc,argv)
     printf("nch=%d\n",nch);
 #endif
     }
-  if((subsize=read_data(selbuf,f_sub))==0) subend=1;
+  if((subsize=read_onesec_win(f_sub,&selbuf))==0) subend=1;
   else
     {
     if((subsize=elim_ch(sysch,nch,selbuf,subbuf))<=10) subend=1;
@@ -276,7 +262,7 @@ main(argc,argv)
       else
       if((re=fwrite(mainbuf,1,mainsize,f_out))==0) werror();
       init=0;
-      if((mainsize=read_data(mainbuf,f_main))==0) mainend=1;
+      if((mainsize=read_onesec_win(f_main,&mainbuf))==0) mainend=1;
       else bcd_dec(dec_start,(char *)mainbuf+4);
       }     
     else if(mainend || re==1) /* skip sub until main */
@@ -285,7 +271,7 @@ main(argc,argv)
         {
         if((re=fwrite(subbuf,1,subsize,f_out))==0) werror();
         }
-      if((subsize=read_data(selbuf,f_sub))==0) subend=1;
+      if((subsize=read_onesec_win(f_sub,&selbuf))==0) subend=1;
       else
         {
         if((subsize=elim_ch(sysch,nch,selbuf,subbuf))<=10) subend=1;
@@ -300,9 +286,9 @@ main(argc,argv)
       if((re=fwrite(mainbuf+4,1,mainsize-4,f_out))==0) werror();
       if((re=fwrite(subbuf+10,1,subsize-10,f_out))==0) werror();
       init=0;
-      if((mainsize=read_data(mainbuf,f_main))==0) mainend=1;
+      if((mainsize=read_onesec_win(f_main,&mainbuf))==0) mainend=1;
       else bcd_dec(dec_start,(char *)mainbuf+4);
-      if((subsize=read_data(selbuf,f_sub))<=10) subend=1;
+      if((subsize=read_onesec_win(f_sub,&selbuf))<=10) subend=1;
       else
         {
         if((subsize=elim_ch(sysch,nch,selbuf,subbuf))<=10) subend=1;

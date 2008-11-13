@@ -1,4 +1,4 @@
-/* $Id: wadd2.c,v 1.4.4.3 2008/05/17 14:22:03 uehira Exp $ */
+/* $Id: wadd2.c,v 1.4.4.4 2008/11/13 14:49:14 uehira Exp $ */
 /* program "wadd2.c"
   "wadd" puts two win data files together
   7/24/91 - 7/25/91, 4/20/94,6/27/94-6/28/94,7/12/94   urabe
@@ -38,21 +38,6 @@
 /*   for(cntr=0;cntr<6;cntr++) */
 /*     dest[cntr]=((sour[cntr]>>4)&0xf)*10+(sour[cntr]&0xf); */
 /*   } */
-
-read_data(ptr,fp)
-  FILE *fp;
-  unsigned char *ptr;
-  {
-  int re;
-  if(fread(ptr,1,4,fp)==0) return 0;
-  re=mklong(ptr);
-  if(fread(ptr+4,1,re-4,fp)==0) return 0;
-#if DEBUG
-  printf("%02x%02x%02x%02x%02x%02x %d\n",ptr[4],ptr[5],ptr[6],
-    ptr[7],ptr[8],ptr[9],re);
-#endif
-  return re;
-  }
 
 copy_ch(makelist,sys_ch,inbuf,insize,outbuf)
   int makelist;
@@ -117,8 +102,9 @@ main(argc,argv)
   int i,re,size,mainsize,subsize,mainend,subend,dec_sub[6],dec_main[6];
   FILE *f_main,*f_sub,*f_out;
   unsigned char *ptr;
-  static unsigned char mainbuf[MAXSIZE],subbuf[MAXSIZE],tmpfile1[NAMLEN],
+  static unsigned char tmpfile1[NAMLEN],
     textbuf[NAMLEN],new_file[NAMLEN],selbuf[MAXSIZE];
+  static unsigned char *mainbuf=NULL,*subbuf=NULL;
   static int sysch[65536];
 
   if(argc<3)
@@ -159,10 +145,10 @@ main(argc,argv)
 
   mainend=subend=0;
 
-  if((mainsize=read_data(mainbuf,f_main))==0) mainend=1;
+  if((mainsize=read_onesec_win(f_main,&mainbuf))==0) mainend=1;
   else bcd_dec(dec_main,(char *)mainbuf+4);
 
-  if((subsize=read_data(subbuf,f_sub))==0) subend=1;
+  if((subsize=read_onesec_win(f_sub,&subbuf))==0) subend=1;
   else bcd_dec(dec_sub,(char *)subbuf+4);
 
   while(mainend==0 || subend==0) /* MAIN LOOP */
@@ -186,14 +172,14 @@ main(argc,argv)
     if(re<=0) /* output main */
       {
       ptr+=copy_ch(1,sysch,mainbuf+4,mainsize-4,ptr);
-      if((mainsize=read_data(mainbuf,f_main))==0) mainend=1;
+      if((mainsize=read_onesec_win(f_main,&mainbuf))==0) mainend=1;
       else bcd_dec(dec_main,(char *)mainbuf+4);
       }
     if(re>=0) /* output sub */
       {
       if(re>0) ptr+=copy_ch(1,sysch,subbuf+4,subsize-4,ptr);
       else ptr+=copy_ch(0,sysch,subbuf+4,subsize-4,ptr);
-      if((subsize=read_data(subbuf,f_sub))==0) subend=1;
+      if((subsize=read_onesec_win(f_sub,&subbuf))==0) subend=1;
       else bcd_dec(dec_sub,(char *)subbuf+4);
       }
 

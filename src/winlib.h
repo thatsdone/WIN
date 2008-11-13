@@ -1,4 +1,4 @@
-/* $Id: winlib.h,v 1.1.2.7 2008/11/11 07:32:37 uehira Exp $ */
+/* $Id: winlib.h,v 1.1.2.8 2008/11/13 14:49:14 uehira Exp $ */
 
 #ifndef _WIN_LIB_H_
 #define _WIN_LIB_H_
@@ -16,6 +16,14 @@
 #error char is unsigned system.
 #endif
 
+typedef unsigned long  WIN_blocksize;
+typedef unsigned long  WIN_bs;
+typedef unsigned short WIN_ch;
+typedef unsigned long  WIN_sr;
+
+#define WIN_BSLEN  (sizeof(WIN_bs))  /* WIN block size length in byte */
+#define WIN_BLOCKSIZE_LEN  WIN_BSLEN
+
 /* High sampling rate format */
 #define  HEADER_4B    4096     /* SR<2^12  (   1 Hz --    4095 Hz) */
 #define  HEADER_5B    1048576  /* SR<2^20  (4096 Hz -- 1048575 Hz) */
@@ -26,9 +34,9 @@
 #define  SWAPF(a)  *(long *)&(a) =\
     (((*(long *)&(a)) << 24) | ((*(long *)&(a)) << 8) & 0xff0000 |\
      ((*(long *)&(a)) >> 8) & 0xff00 | ((*(long *)&(a)) >> 24) & 0xff)
-#define  LongFromBigEndian(a) \
-  ((((unsigned char *)&(a))[0] << 24) + (((unsigned char *)&(a))[1] << 16) +\
-   (((unsigned char *)&(a))[2] << 8) + ((unsigned char *)&(a))[3])
+/* #define  LongFromBigEndian(a) \ */
+/*   ((((unsigned char *)&(a))[0] << 24) + (((unsigned char *)&(a))[1] << 16) +\ */
+/*    (((unsigned char *)&(a))[2] << 8) + ((unsigned char *)&(a))[3]) */
 
 /* structure of shared memory */
 struct Shm {
@@ -38,10 +46,6 @@ struct Shm {
   unsigned long  c;    /* counter */
   unsigned char  d[1]; /* data buffer */
 };
-
-typedef unsigned long  WIN_blocksize;
-typedef unsigned short WIN_ch;
-typedef unsigned long  WIN_sr;
 
 /* BCD to DEC */
 static int b2d[] = {
@@ -90,5 +94,6 @@ int winform(long *, unsigned char *, int, unsigned short);
 int win2fix(unsigned char *, long *, long *, long *);
 int strncmp2(char *, char *, int);
 int strcmp2(char *, char *);
+unsigned long read_onesec_win(FILE *, unsigned char **);
 
 #endif  /* !_WIN_LIB_H_*/

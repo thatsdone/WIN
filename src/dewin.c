@@ -1,4 +1,4 @@
-/* $Id: dewin.c,v 1.4.4.3 2008/05/18 07:43:44 uehira Exp $ */
+/* $Id: dewin.c,v 1.4.4.4 2008/11/13 14:49:14 uehira Exp $ */
 /* program dewin  1994.4.11-4.20  urabe */
 /*                1996.2.23 added -n option */
 /*                1996.9.12 added -8 option */
@@ -28,7 +28,8 @@
 
 #define LINELEN     1024
 #define MAX_FILT    100
-#define MAX_SR      20000
+/* #define MAX_SR      20000 */
+#define MAX_SR      HEADER_5B
 
   int buf[MAX_SR];
   double dbuf[MAX_SR];
@@ -65,29 +66,6 @@ print_usage()
   fprintf(stderr,"        -n  not fill absent part\n");
   fprintf(stderr,"        -f  [filter file] filter paramter file\n");
   }
-
-read_data(ptr,fp)
-     FILE *fp;
-     unsigned char **ptr;
-{
-   static unsigned int size;
-   unsigned char c[4];
-   int re;
-   if(fread(c,1,4,fp)==0) return 0;
-   re=(c[0]<<24)+(c[1]<<16)+(c[2]<<8)+c[3];
-   if(*ptr==0) *ptr=(unsigned char *)malloc(size=re*2);
-   else if(re>size) *ptr=(unsigned char *)realloc(*ptr,size=re*2);
-   (*ptr)[0]=c[0];
-   (*ptr)[1]=c[1];
-   (*ptr)[2]=c[2];
-   (*ptr)[3]=c[3];
-   if(fread(*ptr+4,1,re-4,fp)==0) return 0;
-#if DEBUG > 2
-   fprintf(stderr,"%02x%02x%02x%02x%02x%02x %d\n",(*ptr)[4],(*ptr)[5],(*ptr)[6],
-	   (*ptr)[7],(*ptr)[8],(*ptr)[9],re);
-#endif
-   return re;
-}
 
 read_one_sec(ptr,ch,abuf)
   unsigned char *ptr; /* input */
@@ -322,7 +300,7 @@ main(argc,argv)
   }
 
   sec=sr_save=i=0;
-  while(mainsize=read_data(&mainbuf,f_main)){
+  while(mainsize=read_onesec_win(f_main,&mainbuf)){
      if((sr=read_one_sec(mainbuf,sysch,buf))==0) continue;
      bcd_dec(time3,mainbuf+4);
      if(sr_save==0){

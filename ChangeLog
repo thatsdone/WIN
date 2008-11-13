@@ -1,4 +1,12 @@
- $Id: ChangeLog,v 1.131.2.27 2008/11/13 04:21:46 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.28 2008/11/13 14:49:14 uehira Exp $
+
+2008-11-13  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* install include files.
+        * src/winlib.h : remove LongFromBigEndian(a) macro.
+	* src/winlib.c : read_onesec_win() is moved from src/win_system.c.
+	* dewin.c, wadd.c, wadd2.c, wck.c, wck_wdisk.c
+	               : replace read_data() with read_onesec_win().
+	* Version 1.1.98-LIB released.
 
 2008-11-13  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* suppress warnings.

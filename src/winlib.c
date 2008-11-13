@@ -1,4 +1,4 @@
-/* $Id: winlib.c,v 1.1.2.4 2008/05/19 04:14:20 uehira Exp $ */
+/* $Id: winlib.c,v 1.1.2.5 2008/11/13 14:49:14 uehira Exp $ */
 
 /*-
  * winlib.c  (Uehira Kenji)
@@ -9,7 +9,10 @@
 #include "config.h"
 #endif
 
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 
 #if TIME_WITH_SYS_TIME
 #include <sys/time.h>
@@ -505,5 +508,42 @@ strcmp2(char *s1, char *s2)
     return (-1);
   else
     return (strcmp(s1,s2));
+}
+
+unsigned long
+read_onesec_win(FILE *fp, unsigned char **rbuf)
+{
+  unsigned char  sz[WIN_BSLEN];
+  unsigned long  size;
+  static unsigned long  sizesave;
+
+  /* printf("%d\n", sizesave); */
+  if (fread(sz, 1, WIN_BSLEN, fp) != WIN_BSLEN)
+    return (0);
+  size = mklong(sz);
+
+  if (*rbuf == NULL)
+    sizesave = 0;
+  if (size > sizesave) {
+    sizesave = (size << 1);
+    *rbuf = (unsigned char *)realloc(*rbuf, sizesave);
+    if (*rbuf == NULL) {
+      (void)fprintf(stderr, "%s\n", strerror(errno));
+      exit(1);
+    }
+  }
+
+  (void)memcpy(*rbuf, sz, WIN_BSLEN);
+  if (fread(*rbuf + WIN_BSLEN, 1, size - WIN_BSLEN, fp) != size - WIN_BSLEN)
+    return (0);
+
+#if DEBUG > 2
+  fprintf(stderr,
+	  "%02x%02x%02x%02x%02x%02x %d\n",
+	  (*rbuf)[4], (*rbuf)[5], (*rbuf)[6],(*rbuf)[7], (*rbuf)[8],
+	  (*rbuf)[9], size);
+#endif
+
+  return (size);
 }
 

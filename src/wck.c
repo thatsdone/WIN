@@ -1,4 +1,4 @@
-/* $Id: wck.c,v 1.5.4.1 2008/05/17 14:22:03 uehira Exp $ */
+/* $Id: wck.c,v 1.5.4.2 2008/11/13 14:49:14 uehira Exp $ */
 /* 
    program "wck.c"
 	"wck" checks a win format data file
@@ -31,27 +31,6 @@
 int count[65536];
 
 ctrlc() {exit(0);}
-
-read_data(ptr,fp)
-   FILE *fp;
-   unsigned char **ptr;
-{
-   static unsigned int size;
-   int re;
-   
-   if(fread(&re,1,4,fp)==0) return 0;
-   re=LongFromBigEndian(re);
-   if(*ptr==0) *ptr=(unsigned char *)malloc(size=re*2);
-   else if(re>size) *ptr=(unsigned char *)realloc(*ptr,size=re*2);
-   *(int *)*ptr=re;
-   if(fread(*ptr+4,1,re-4,fp)==0) return 0;
-#if DEBUG
-/*   fprintf(stderr,"%02x%02x%02x%02x%02x%02x %d\n",*ptr[4],*ptr[5],*ptr[6],
-     *ptr[7],*ptr[8],*ptr[9],re);*/
-/* Segmentation Fault! Why? (uehira) */
-#endif
-   return re;
-}
 
 main(argc,argv)
    int argc;
@@ -118,7 +97,7 @@ main(argc,argv)
    else ss=0;
    
    sec=ts=0;
-   while(mainsize=read_data(&mainbuf,f_main)) {
+   while(mainsize=read_onesec_win(f_main,&mainbuf)) {
 #if DEBUG1
      printf("mainsize = %d\n", mainsize);
 #endif

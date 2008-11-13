@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.38.2.11 2008/11/13 04:21:46 uehira Exp $
+# $Id: Makefile.am,v 1.38.2.12 2008/11/13 14:49:14 uehira Exp $
 #
 
 if SUNOS4
@@ -84,6 +84,7 @@ libexec_PROGRAMS = winrawsrvd
 noinst_PROGRAMS = winrawcli_test
 endif
 lib_LIBRARIES = $(WIN_SYSTEM_LIB) $(WIN_SYSTEM_LIB2)
+include_HEADERS = $(WIN_LIBH)
 
 install-exec-hook:
 	(rm -f @bindir@/send_mon; cd @bindir@ && @LN_S@ send_raw send_mon)
@@ -130,6 +131,7 @@ wed_SOURCES = wed.c $(WIN_LIBH)
 wed_LDADD = $(WIN_SYSTEM_LIB)
 
 wck_SOURCES = wck.c $(WIN_LIBH)
+wck_LDADD = $(WIN_SYSTEM_LIB)
 
 wadd_SOURCES = wadd.c $(WIN_LIBH)
 wadd_LDADD = $(WIN_SYSTEM_LIB)

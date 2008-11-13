@@ -1,4 +1,4 @@
-/* $Id: extraw.c,v 1.3.4.3 2008/05/18 09:29:19 uehira Exp $ */
+/* $Id: extraw.c,v 1.3.4.4 2008/11/13 02:56:15 uehira Exp $ */
 /* "extraw.c"    2000.3.17 urabe */
 /* 2000.4.24/2001.11.14 strerror() */
 
@@ -34,7 +34,7 @@
 #define BELL        0
 
 char *progname,*logfile;
-int syslog_mode = 0; exit_status;
+int syslog_mode, exit_status;
 
 main(argc,argv)
   int argc;
@@ -51,6 +51,7 @@ main(argc,argv)
 
   if(progname=strrchr(argv[0],'/')) progname++;
   else progname=argv[0];
+  syslog_mode = 0;
   exit_status = EXIT_SUCCESS;
 
   if(argc<6)

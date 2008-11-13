@@ -1,4 +1,4 @@
-/* $Id: recvstatus.c,v 1.6 2002/01/13 08:34:33 uehira Exp $ */
+/* $Id: recvstatus.c,v 1.6.4.1 2008/11/13 02:56:15 uehira Exp $ */
 /* "recvstatus.c"      5/24/95    urabe */
 /* 97.7.17 two lines of "if() continue;" in the main loop */
 /* 2000.4.24/2001.11.14 strerror() */
@@ -45,8 +45,8 @@ get_time(rt)
   {
   struct tm *nt;
   unsigned long ltime;
-  time(&ltime);
-  nt=localtime(&ltime);
+  time((time_t *)&ltime);
+  nt=localtime((time_t *)&ltime);
   rt[0]=nt->tm_year%100;
   rt[1]=nt->tm_mon+1;
   rt[2]=nt->tm_mday;

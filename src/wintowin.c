@@ -176,7 +176,7 @@ char *argv[];
 	    cbuf = size >> 8; memcpy(ptw, &cbuf, 1); ptw++;
 	    cbuf = size; memcpy(ptw, &cbuf, 1); ptw++;
             if ( tmst ) {
-            time(&ltime);
+            time((time_t *)&ltime);
             memcpy(ptw,&ltime, 4); ptw +=4;
             }
 	    memcpy(ptw, tt, 6); ptw += 6;

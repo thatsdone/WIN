@@ -1,4 +1,4 @@
-/* $Id: ecore.c,v 1.4.4.2 2008/05/17 14:21:58 uehira Exp $ */
+/* $Id: ecore.c,v 1.4.4.3 2008/11/13 02:56:15 uehira Exp $ */
 /* ddr news program "ecore.c"
   "ecore.c" works with "fromtape.c"
   "ecore.c" makes continuously filtered and decimated data
@@ -128,11 +128,12 @@ main(argc,argv)
   int dec_start[6],dec_end[6],dec_wtn[6],dec_now[6],dec_buf[6],
     i,j,nch,next,sys_ch,sr,pos,size,cnt_min;
   //int fildata[SSR];   int => long 03/04/23
+  unsigned char sizetmp[4];
   long fildata[SSR];
   unsigned char windata[500*1000],*wptr;  /* added 03/03/07 */
   int idx,bsize;  				  /* added 03/03/07 */
   unsigned char min_head[6];  		  /* added 03/03/07 */
-  int c_bsize;			/* added 03/04/22 */
+  unsigned char c_bsize[4];			/* added 03/04/22 */
 
   f_in=f_out=(-1);
   printf("***** ecore start *****\n");
@@ -279,12 +280,12 @@ main(argc,argv)
         /*for(j=0;j<SR*nch;j++) out_data[j]=0;*/ /* deleted 03/03/07 */
         for(j=0;j<sizeof(windata);j++) windata[j]=0;
         /* read one sec data */
-        if(read(f_in,&size,4)<=0)
+        if(read(f_in,sizetmp,4)<=0)
           {
           perror("read");
           break;
           }
-	size=mklong(&size);  /* for Endian free  03/04/25 */
+	size=mklong(sizetmp);  /* for Endian free  03/04/25 */
 
 	//printf("size=%d(%x)\n",size,size);	/* 030228 */
 	//fflush(stdout);
@@ -383,10 +384,14 @@ main(argc,argv)
           bsize = wptr - windata + 10;
 	  //printf("output bsize:%d(%x)\n",bsize,bsize); /* 03/03/14 */
 	  //fflush(stdout);
-	  c_bsize=mklong(&bsize);	/* added 03/04/22 */
+	  c_bsize[0] = bsize >>24;
+	  c_bsize[1] = bsize >>16;
+	  c_bsize[2] = bsize >>8;
+	  c_bsize[3] = bsize;
+	  /* c_bsize=mklong(&bsize);	/\* added 03/04/22 *\/ */
 	  //printf("output c_bsize:%d(%x)\n",c_bsize,c_bsize); /* 03/03/22 */
 	  //fflush(stdout);
-          if(write(f_out,&c_bsize,4)==(-1))
+          if(write(f_out,c_bsize,4)==(-1))
             {
             perror("fprintf");
             end_process(1);

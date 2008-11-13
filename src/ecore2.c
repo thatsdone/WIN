@@ -189,8 +189,8 @@ main(argc, argv)
 
 	ptw = shm_out->d;
 
-	signal(SIGTERM,end_program);
-	signal(SIGINT,end_program);
+	signal(SIGTERM,(void *)end_program);
+	signal(SIGINT,(void *)end_program);
 
 reset:
 	while (shm_in->r == (-1))

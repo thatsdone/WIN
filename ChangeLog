@@ -1,7 +1,10 @@
- $Id: ChangeLog,v 1.131.2.26 2008/11/13 02:56:14 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.27 2008/11/13 04:21:46 uehira Exp $
 
 2008-11-13  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* suppress warnings.
+	* src/recvs.c, src/sends.c : use library (src/win_log.c).	
+	* src/recvstatus.c, src/recvstatus2.c: use library (src/win_log.c).
+	* Version 1.1.97-LIB released.
 
 2008-11-11  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* if 'char' is unsigned, exit make command.

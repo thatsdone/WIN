@@ -1,4 +1,4 @@
-/* $Id: sends.c,v 1.6.4.3 2008/05/18 08:29:02 uehira Exp $ */
+/* $Id: sends.c,v 1.6.4.4 2008/11/13 04:21:46 uehira Exp $ */
 /*   program "sends"   2000.3.20 urabe                   */
 /*   2000.3.21 */
 /*   2000.4.17 */
@@ -34,11 +34,15 @@
 #include <netinet/in.h>
 #include <netdb.h>
 #include <unistd.h>
+#if HAVE_STROPTS_H
 #include <stropts.h>
+#endif
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/stat.h>
+#if HAVE_SYS_SER_SYNC_H
 #include <sys/ser_sync.h>
+#endif
 #include <errno.h>
 #if AURORA
 #include "/opt/AURAacs/syncuser.h"
@@ -55,54 +59,8 @@
 
 int sock,psize[BUFNO];
 unsigned char sbuf[BUFNO][MAXMESG],rbuf[MAXMESG];
-char *progname,logfile[256];
-
-get_time(rt)
-  int *rt;
-  {
-  struct tm *nt;
-  unsigned long ltime;
-  time(&ltime);
-  nt=localtime(&ltime);
-  rt[0]=nt->tm_year%100;
-  rt[1]=nt->tm_mon+1;
-  rt[2]=nt->tm_mday;
-  rt[3]=nt->tm_hour;
-  rt[4]=nt->tm_min;
-  rt[5]=nt->tm_sec;
-  }
-
-write_log(logfil,ptr)
-  char *logfil;
-  char *ptr;
-  {
-  FILE *fp;
-  int tm[6];
-  if(*logfil) fp=fopen(logfil,"a");
-  else fp=stdout;
-  get_time(tm);
-  fprintf(fp,"%02d%02d%02d.%02d%02d%02d %s %s\n",
-    tm[0],tm[1],tm[2],tm[3],tm[4],tm[5],progname,ptr);
-  if(*logfil) fclose(fp);
-  }
-
-ctrlc()
-  {
-  write_log(logfile,"end");
-  close(sock);
-  exit(0);
-  }
-
-err_sys(ptr)
-  char *ptr;
-  {
-  perror(ptr);
-  write_log(logfile,ptr);
-  if(strerror(errno)) write_log(logfile,strerror(errno));
-  write_log(logfile,"end");
-  close(sock);
-  exit(1);
-  }
+char *progname, *logfile;
+int  syslog_mode = 0, exit_status = EXIT_SUCCESS;
 
 get_packet(bufno,no)
   int bufno;  /* present(next) bufno */
@@ -364,8 +322,8 @@ main(argc,argv)
 
   shm_key=atoi(argv[1+optind]);
   strcpy(device,argv[2+optind]);
-  *logfile=0;
-  if(argc>3+optind) strcpy(logfile,argv[3+optind]);
+  logfile=NULL;
+  if(argc>3+optind) logfile=argv[3+optind];
     
   /* shared memory */
   if((shmid=shmget(shm_key,0,0))<0) err_sys("shmget");
@@ -373,7 +331,7 @@ main(argc,argv)
     err_sys("shmat");
 
   sprintf(tbuf,"start shm_key=%d id=%d",shm_key,shmid);
-  write_log(logfile,tbuf);
+  write_log(tbuf);
 
   if(to_port)
     {
@@ -385,7 +343,7 @@ main(argc,argv)
     if(bind(sock,(struct sockaddr *)&to_addr,sizeof(to_addr))<0)
       err_sys("bind");
     sprintf(tbuf,"accept resend request at localhost:%d",to_port);
-    write_log(logfile,tbuf);
+    write_log(tbuf);
     }
 
   if((fd=open(device,O_RDWR))<0) err_sys("open HDLC device");
@@ -398,11 +356,11 @@ main(argc,argv)
 
   if(baud) sprintf(tbuf,"use internal TX clock %d bps",baud);
   else sprintf(tbuf,"use external TX clock");
-  write_log(logfile,tbuf);
+  write_log(tbuf);
 
-  signal(SIGPIPE,(void *)ctrlc);
-  signal(SIGINT,(void *)ctrlc);
-  signal(SIGTERM,(void *)ctrlc);
+  signal(SIGPIPE,(void *)end_program);
+  signal(SIGINT,(void *)end_program);
+  signal(SIGTERM,(void *)end_program);
   for(i=0;i<BUFNO;i++) psize[i]=(-1);
   no=bufno=0;
 
@@ -419,7 +377,7 @@ reset:
     i=mklong(ptr_save);
     if(shm->c<c_save || i!=size)
       {   /* previous block has been destroyed */
-      write_log(logfile,"reset");
+      write_log("reset");
       goto reset;
       }
     c_save=shm->c;
@@ -479,7 +437,7 @@ reset:
 #endif
           sprintf(tbuf,"resend for %s:%d #%d as #%d, %d B",
             inet_ntoa(from_addr.sin_addr),ntohs(from_addr.sin_port),no_f,no,re);
-          write_log(logfile,tbuf);
+          write_log(tbuf);
           if(++bufno==BUFNO) bufno=0;
           no++;
           }
@@ -508,7 +466,7 @@ reset:
           fprintf(stderr,"\n");
 #endif
           sprintf(tbuf,"resend for line #%d as #%d, %d B",no_f,no,re);
-          write_log(logfile,tbuf);
+          write_log(tbuf);
           if(++bufno==BUFNO) bufno=0;
           no++;
           }

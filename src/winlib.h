@@ -1,4 +1,4 @@
-/* $Id: winlib.h,v 1.1.2.7.2.4 2008/11/13 15:34:15 uehira Exp $ */
+/* $Id: winlib.h,v 1.1.2.7.2.5 2008/11/13 15:47:11 uehira Exp $ */
 
 #ifndef _WIN_LIB_H_
 #define _WIN_LIB_H_
@@ -44,11 +44,6 @@ typedef uint32_w  WIN_blocksize;
 typedef uint32_w  WIN_bs;
 typedef uint16_w  WIN_ch;
 typedef uint32_w  WIN_sr;
-
-typedef unsigned long  WIN_blocksize;
-typedef unsigned long  WIN_bs;
-typedef unsigned short WIN_ch;
-typedef unsigned long  WIN_sr;
 
 #define WIN_BSLEN  (sizeof(WIN_bs))  /* WIN block size length in byte */
 #define WIN_BLOCKSIZE_LEN  WIN_BSLEN
@@ -122,6 +117,6 @@ WIN_bs winform(int32_w *, uint8_w *, WIN_sr, WIN_ch);
 uint32_w win2fix(uint8_w *, int32_w *, WIN_ch *, WIN_sr *);
 int strncmp2(char *, char *, int);
 int strcmp2(char *, char *);
-unsigned long read_onesec_win(FILE *, unsigned char **);
+uint32_w read_onesec_win(FILE *, uint8_w **);
 
 #endif  /* !_WIN_LIB_H_*/

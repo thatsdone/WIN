@@ -1,4 +1,4 @@
-/* $Id: winlib.c,v 1.1.2.4.2.4 2008/11/13 15:34:15 uehira Exp $ */
+/* $Id: winlib.c,v 1.1.2.4.2.5 2008/11/13 15:47:11 uehira Exp $ */
 
 /*-
  * winlib.c  (Uehira Kenji)
@@ -545,17 +545,17 @@ strcmp2(char *s1, char *s2)
     return (strcmp(s1, s2));
 }
 
-unsigned long
-read_onesec_win(FILE *fp, unsigned char **rbuf)
+uint32_w
+read_onesec_win(FILE *fp, uint8_w **rbuf)
 {
-  unsigned char  sz[WIN_BSLEN];
-  unsigned long  size;
-  static unsigned long  sizesave;
+  uint8_w        sz[WIN_BSLEN];
+  uint32_w       size;
+  static size_t  sizesave;
 
   /* printf("%d\n", sizesave); */
   if (fread(sz, 1, WIN_BSLEN, fp) != WIN_BSLEN)
     return (0);
-  size = mklong(sz);
+  size = mkuint4(sz);
 
   if (*rbuf == NULL)
     sizesave = 0;

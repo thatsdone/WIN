@@ -1,4 +1,4 @@
-/* $Id: winlib.c,v 1.1.2.4.2.1 2008/11/11 15:19:48 uehira Exp $ */
+/* $Id: winlib.c,v 1.1.2.4.2.2 2008/11/13 03:03:02 uehira Exp $ */
 
 /*-
  * winlib.c  (Uehira Kenji)
@@ -73,7 +73,7 @@ mkuint2(const uint8_w *ptr)
  *  convert BCD to DEC
  */
 int
-bcd_dec(int dest[], unsigned char *sour)
+bcd_dec(int dest[], uint8_w *sour)
 {
   int i;
   
@@ -93,7 +93,7 @@ bcd_dec(int dest[], unsigned char *sour)
 }
 
 int
-dec_bcd(unsigned char *dest, unsigned int *sour)
+dec_bcd(uint8_w *dest, int *sour)
 {
   int  cntr;
 
@@ -289,16 +289,18 @@ time_cmp(int *t1, int *t2, int i)
 /*            2005.3.9 high sampling rate uehira */
 /* winform converts fixed-sample-size-data into win's format */
 /* winform returns the length in bytes of output data */
-int
-winform(long *inbuf, unsigned char *outbuf, int sr, unsigned short sys_ch)
-     /* long *inbuf;      /* input data array for one sec */
-     /* unsigned char *outbuf;  /* output data array for one sec */
-     /* int sr;         /* n of data (i.e. sampling rate) */
-     /* unsigned short sys_ch;  /* 16 bit long channel ID number */
+int32_w
+winform(int32_w *inbuf, uint8_w *outbuf, WIN_sr sr, WIN_ch sys_ch)
+     /* int32_w  *inbuf;   /* input data array for one sec */
+     /* uint8_w  *outbuf;  /* output data array for one sec */
+     /* uint32_w sr;       /* n of data (i.e. sampling rate) */
+     /* uint16_w sys_ch;   /* 16 bit long channel ID number */
 {
-  int             dmin, dmax, aa, bb, br, i, byte_leng;
-  long           *ptr;
-  unsigned char  *buf;
+  int            byte_leng;
+  int32_w        dmin, dmax, aa, bb, br;
+  int32_w        *ptr;
+  uint8_w        *buf;
+  uint32_w       i;
 
   if (sr >= HEADER_5B)
     return (-1);   /* sampling rate is out of range */
@@ -390,36 +392,35 @@ winform(long *inbuf, unsigned char *outbuf, int sr, unsigned short sys_ch)
     break;
   }
 
-  return ((int)(buf - outbuf));
+  return((int32_w)(buf - outbuf));
 }
 
 /* returns group size in bytes */
 /* High sampling rate version */
-int
-win2fix(unsigned char *ptr, long *abuf, long *sys_ch, long *sr)
-     /*       unsigned char *ptr; /* input */
-     /*       long *abuf;         /* output */
-     /*       long *sys_ch;       /* sys_ch */
-     /*       long *sr;           /* sr */
+uint32_w
+win2fix(uint8_w *ptr, int32_w *abuf, WIN_ch *sys_ch, WIN_sr *sr)
+/*       uint8_w   *ptr;          /* input */
+/*       int32_w   *abuf;         /* output */
+/*       uint16_w  *sys_ch;       /* sys_ch */
+/*       uint32_w  *sr;           /* sr */
 {
-  int            b_size, g_size;
-  int            i;
-  long           s_rate;
-  unsigned char  *dp;
-  unsigned long  gh;
-  short          shreg;
-  int            inreg;
+  uint32_w       b_size, g_size;
+  uint32_w       i;
+  uint32_w       s_rate;
+  uint8_w        *dp;
+  int16_w        shreg;
+  int32_w        inreg;
 
   /* channel number */
-  *sys_ch = (long)((((WIN_ch)ptr[0]) << 8) + (WIN_ch)ptr[1]);
+  *sys_ch = (((WIN_ch)ptr[0]) << 8) + (WIN_ch)ptr[1];
 
   /* sampling rate */
   if ((ptr[2] & 0x80) == 0x0) {  /* channel header = 4 byte */
-    *sr = s_rate = (long)((WIN_sr)ptr[3] + (((WIN_sr)(ptr[2] & 0x0f)) << 8));
+    *sr = s_rate = (WIN_sr)ptr[3] + (((WIN_sr)(ptr[2] & 0x0f)) << 8);
     dp = ptr + 4;
   } else {                       /* channel header = 5 byte */
-    *sr = s_rate = (long)((WIN_sr)ptr[4] + (((WIN_sr)ptr[3]) << 8)
-			  + (((WIN_sr)(ptr[2] & 0x0f)) << 16));
+    *sr = s_rate = (WIN_sr)ptr[4] + (((WIN_sr)ptr[3]) << 8)
+      + (((WIN_sr)(ptr[2] & 0x0f)) << 16);
     dp = ptr + 5;
   }
 
@@ -442,15 +443,15 @@ win2fix(unsigned char *ptr, long *abuf, long *sys_ch, long *sr)
   switch (b_size) {
   case 0:
     for (i = 1; i < s_rate; i += 2) {
-      abuf[i] = abuf[i - 1] + ((*(char *)dp) >> 4);
+      abuf[i] = abuf[i - 1] + ((*(int8_w *)dp) >> 4);
       if (i == s_rate - 1)
 	break;
-      abuf[i + 1] = abuf[i] + (((char)(*(dp++) << 4)) >> 4);
+      abuf[i + 1] = abuf[i] + (((int8_w)(*(dp++) << 4)) >> 4);
     }
     break;
   case 1:
     for (i = 1; i < s_rate; i++)
-      abuf[i] = abuf[i - 1] + (*(char *)(dp++));
+      abuf[i] = abuf[i - 1] + (*(int8_w *)(dp++));
     break;
   case 2:
     for (i = 1; i < s_rate; i++) {

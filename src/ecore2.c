@@ -123,7 +123,8 @@ main(argc, argv)
 {
 	double	dbuf[512], dt;
 	int		i, j, sr, pos, shmid_in, shmid_out;
-	long	dl, lbuf[512], work[512];
+	long	dl;
+	int32_w lbuf[512], work[512];
 	unsigned long	shp_in, shp_in_save, ch_size, size_in,
 		counter_save_in, shm_size, done_size, write_point;
 	unsigned char	*ptr, *ptr_save, *ptw,
@@ -189,8 +190,8 @@ main(argc, argv)
 
 	ptw = shm_out->d;
 
-	signal(SIGTERM,end_program);
-	signal(SIGINT,end_program);
+	signal(SIGTERM,(void *)end_program);
+	signal(SIGINT,(void *)end_program);
 
 reset:
 	while (shm_in->r == (-1))
@@ -257,7 +258,8 @@ reset:
 				done_size += ch_size;
 			} else {
 				/* winフォーマットをlbufに展開 */
-				long sys_ch0, sr0; /*dummy*/
+				uint16_w sys_ch0; /*dummy*/
+				uint32_w sr0; /*dummy*/
 				ch_size = get_ch_size(&ptr);
 				win2fix(ptr,lbuf,&sys_ch0,&sr0);
 				ptr += ch_size;

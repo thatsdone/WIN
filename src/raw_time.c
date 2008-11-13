@@ -1,4 +1,4 @@
-/* $Id: raw_time.c,v 1.4.4.3.2.1 2008/11/11 15:19:48 uehira Exp $ */
+/* $Id: raw_time.c,v 1.4.4.3.2.2 2008/11/13 03:03:02 uehira Exp $ */
 
 /* raw_time.c -- online version of wtime(1W) */
 
@@ -52,7 +52,7 @@
 
 
 static char rcsid[] =
-  "$Id: raw_time.c,v 1.4.4.3.2.1 2008/11/11 15:19:48 uehira Exp $";
+  "$Id: raw_time.c,v 1.4.4.3.2.2 2008/11/13 03:03:02 uehira Exp $";
 
 char *progname, *logfile;
 int  daemon_mode, syslog_mode;
@@ -82,15 +82,16 @@ main(int argc, char *argv[])
   unsigned char  *ptr1, *ptr1_lim, *ptr2;
   WIN_blocksize  sizein, sizein2;
   unsigned long  c_save;
-  long  *fixbuf1 = NULL, *fixbuf2 = NULL;
+  int32_w  *fixbuf1 = NULL, *fixbuf2 = NULL;
   WIN_sr fixbuf_num;
   time_t      ltime[WIN_CH_MAX_NUM], ltime_prev[WIN_CH_MAX_NUM];
   char        msg[MAXMESG];
   WIN_ch         chn;
   WIN_sr         sr, sr_check[WIN_CH_MAX_NUM];
   WIN_blocksize  gsize, new_size;
-  static long    *sbuf[WIN_CH_MAX_NUM];
-  long  chdum, srdum;
+  static int32_w   *sbuf[WIN_CH_MAX_NUM];
+  uint16_w  chdum;
+  uint32_w  srdum;
   int   c, sr_shift;
   int   i;
 
@@ -245,7 +246,8 @@ main(int argc, char *argv[])
 	/* check sampling rate */
 	if (sr_check[chn] == 0) {
 	  sr_check[chn] = sr;
-	  sbuf[chn] = (long *)realloc(sbuf[chn], (size_t)(sr * sizeof(long)));
+	  sbuf[chn] =
+	    (int32_w *)realloc(sbuf[chn], (size_t)(sr * sizeof(int32_w)));
 	  if (sbuf[chn] == NULL)
 	    err_sys("malloc sbuf[ch]");
 	}
@@ -259,8 +261,8 @@ main(int argc, char *argv[])
 	  
 	if (fixbuf_num < sr) {
 	  /*  printf("sr=%d\n",sr); */
-	  fixbuf1 = (long *)realloc(fixbuf1, (size_t)(sr * sizeof(long)));
-	  fixbuf2 = (long *)realloc(fixbuf2, (size_t)(sr * sizeof(long)));
+	  fixbuf1 = (int32_w *)realloc(fixbuf1, (size_t)(sr * sizeof(int32_w)));
+	  fixbuf2 = (int32_w *)realloc(fixbuf2, (size_t)(sr * sizeof(int32_w)));
 	  if (fixbuf1 == NULL || fixbuf2 == NULL)
 	    err_sys("fixbuf realloc");
 	  fixbuf_num = sr;

@@ -1,4 +1,4 @@
-/* $Id: dewin.c,v 1.4.4.3.2.1 2008/11/11 15:19:47 uehira Exp $ */
+/* $Id: dewin.c,v 1.4.4.3.2.2 2008/11/13 03:03:02 uehira Exp $ */
 /* program dewin  1994.4.11-4.20  urabe */
 /*                1996.2.23 added -n option */
 /*                1996.9.12 added -8 option */
@@ -90,20 +90,20 @@ read_data(ptr,fp)
 }
 
 read_one_sec(ptr,ch,abuf)
-  unsigned char *ptr; /* input */
-  unsigned long ch; /* input */
-  register long *abuf;/* output */
+  uint8_w            *ptr; /* input */
+  uint16_w             ch; /* input */
+  register int32_w  *abuf; /* output */
   {
-  int g_size,s_rate;
-  register unsigned char *dp;
-  unsigned char *ddp;
-  unsigned long sys_ch;
+  uint32_w g_size,s_rate;
+  register uint8_w *dp;
+  uint8_w *ddp;
+  uint16_w  sys_ch;
 
   dp=ptr+10;
   ddp=ptr+mkuint4(ptr);
   while(1)
     {
-    if((g_size=win2fix(dp,abuf,&sys_ch,(long *)&s_rate))==0) return 0;
+    if((g_size=win2fix(dp,abuf,&sys_ch,&s_rate))==0) return 0;
     if(sys_ch==ch) return s_rate;
     if((dp+=g_size)>=ddp) return 0;
     }

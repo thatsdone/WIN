@@ -1,4 +1,4 @@
-/* $Id: ls8tel.c,v 1.2 2005/06/10 14:52:09 uehira Exp $ */
+/* $Id: ls8tel.c,v 1.2.8.1 2008/11/13 03:03:02 uehira Exp $ */
 
 /*
  * Copyright (c) 2005
@@ -23,26 +23,25 @@
  *   returns group size in bytes 
  */
 WIN_blocksize
-ls8tel16_fix(unsigned char *ptr, long *abuf, long *sys_ch, long *sr)
-     /*       unsigned char *ptr; /* input */
-     /*       long *abuf;         /* output */
-     /*       long *sys_ch;       /* sys_ch */
-     /*       long *sr;           /* sr */
+ls8tel16_fix(uint8_w *ptr, int32_w *abuf, uint16_w *sys_ch, uint32_w *sr)
+     /*       uint8_w  *ptr;          /* input */
+     /*       int32_w  *abuf;         /* output */
+     /*       uint16_w *sys_ch;       /* sys_ch */
+     /*       uint32_  *sr;           /* sr */
 {
-  int            b_size, g_size;
-  int            i;
-  long           s_rate;
-  unsigned char  *dp;
-  unsigned long  gh;
-  short          shreg;
-  long           lonreg, atmp;
-  char           chreg;
+  uint32_w       b_size, g_size;
+  uint32_w       i;
+  uint32_w       s_rate;
+  uint8_w        *dp;
+  int16_w        shreg;
+  int32_w        lonreg, atmp;
+  int8_w         chreg;
 
   /* channel number */
-  *sys_ch = (long)((((WIN_ch)ptr[0]) << 8) + (WIN_ch)ptr[1]);
+  *sys_ch = (((WIN_ch)ptr[0]) << 8) + (WIN_ch)ptr[1];
 
   /* sampling rate */
-  *sr = s_rate = (long)((WIN_sr)ptr[3] + (((WIN_sr)(ptr[2] & 0x0f)) << 8));
+  *sr = s_rate = (WIN_sr)ptr[3] + (((WIN_sr)(ptr[2] & 0x0f)) << 8);
   dp = ptr + 4;
 
   /* size */
@@ -64,8 +63,8 @@ ls8tel16_fix(unsigned char *ptr, long *abuf, long *sys_ch, long *sr)
   switch (b_size) {
   case 0:   /* 0.5 byte */
     for (i = 1; i < s_rate; i += 2) {
-      chreg = ((*(char *)dp) >> 4);
-      lonreg = (long)chreg;
+      chreg = ((*(int8_w *)dp) >> 4);
+      lonreg = (int32_w)chreg;
       atmp = abuf[i - 1] + lonreg;
       if (atmp < LS8_AMP_MIN || LS8_AMP_MAX < atmp) {
 	if (lonreg <= 0)
@@ -78,8 +77,8 @@ ls8tel16_fix(unsigned char *ptr, long *abuf, long *sys_ch, long *sr)
       if (i == s_rate - 1)
 	break;
 
-      chreg = (((char)(*(dp++) << 4)) >> 4);
-      lonreg = (long)chreg;
+      chreg = (((int8_w)(*(dp++) << 4)) >> 4);
+      lonreg = (int32_w)chreg;
       atmp = abuf[i] + lonreg;
       if (atmp < LS8_AMP_MIN || LS8_AMP_MAX < atmp) {
 	if (lonreg <= 0)
@@ -92,8 +91,8 @@ ls8tel16_fix(unsigned char *ptr, long *abuf, long *sys_ch, long *sr)
     break;
   case 1:   /* 1 bye */
     for (i = 1; i < s_rate; i++) {
-      chreg =  (*(char *)(dp++));
-      lonreg = (long)chreg;
+      chreg =  (*(int8_w *)(dp++));
+      lonreg = (int32_w)chreg;
       atmp = abuf[i - 1] + lonreg;
       if (atmp < LS8_AMP_MIN || LS8_AMP_MAX < atmp) {
 	if (lonreg <= 0)
@@ -108,7 +107,7 @@ ls8tel16_fix(unsigned char *ptr, long *abuf, long *sys_ch, long *sr)
     for (i = 1; i < s_rate; i++) {
       shreg = ((dp[0] << 8) & 0xff00) + (dp[1] & 0xff);
       dp += 2;
-      lonreg = (long)shreg;
+      lonreg = (int32_w)shreg;
       atmp = abuf[i - 1] + lonreg;
       if (atmp < LS8_AMP_MIN || LS8_AMP_MAX < atmp) {
 	if (lonreg <= 0)

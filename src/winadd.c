@@ -1,4 +1,4 @@
-/* $Id: winadd.c,v 1.4.4.3.2.1 2008/11/11 15:19:48 uehira Exp $ */
+/* $Id: winadd.c,v 1.4.4.3.2.2 2008/11/13 03:03:02 uehira Exp $ */
 
 /*
  * winadd.c  (Uehira Kenji)
@@ -51,7 +51,7 @@ typedef struct data_index  INDX;
 
 /* global variables */
 static const char rcsid[] =
-   "$Id: winadd.c,v 1.4.4.3.2.1 2008/11/11 15:19:48 uehira Exp $";
+   "$Id: winadd.c,v 1.4.4.3.2.2 2008/11/13 03:03:02 uehira Exp $";
 static int  dummy_flag, verbose_flag;
 
 /* prototypes */
@@ -170,7 +170,7 @@ bcd2time(unsigned char *bcd)
 static void
 time2bcd(time_t time, unsigned char *bcd)
 {
-  unsigned int  t[6];
+  int          t[6];
   struct tm    time_str;
 
   time_str = *localtime(&time);

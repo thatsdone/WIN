@@ -1,4 +1,4 @@
-/* $Id: winlib.h,v 1.1.2.7.2.1 2008/11/11 15:19:48 uehira Exp $ */
+/* $Id: winlib.h,v 1.1.2.7.2.2 2008/11/13 03:03:02 uehira Exp $ */
 
 #ifndef _WIN_LIB_H_
 #define _WIN_LIB_H_
@@ -64,6 +64,7 @@ struct Shm {
 };
 
 typedef uint32_w  WIN_blocksize;
+typedef uint32_w  WIN_bs;
 typedef uint16_w  WIN_ch;
 typedef uint32_w  WIN_sr;
 
@@ -105,13 +106,13 @@ static uint8_w d2b[] = {
 void get_time(int []);
 uint32_w mkuint4(const uint8_w *);
 uint16_w mkuint2(const uint8_w *);
-int bcd_dec(int [], unsigned char *);
-int dec_bcd(unsigned char *, unsigned int *);
+int bcd_dec(int [], uint8_w *);
+int dec_bcd(uint8_w *, int *);
 void adj_time_m(int []);
 void adj_time(int []);
 int time_cmp(int *, int *, int);
-int winform(long *, unsigned char *, int, unsigned short);
-int win2fix(unsigned char *, long *, long *, long *);
+int32_w winform(int32_w *, uint8_w *, WIN_sr, WIN_ch);
+uint32_w win2fix(uint8_w *, int32_w *, WIN_ch *, WIN_sr *);
 int strncmp2(char *, char *, int);
 int strcmp2(char *, char *);
 

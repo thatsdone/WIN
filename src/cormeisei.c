@@ -1,4 +1,4 @@
-/* $Id: cormeisei.c,v 1.6.4.5.2.1 2008/11/11 15:19:46 uehira Exp $ */
+/* $Id: cormeisei.c,v 1.6.4.5.2.2 2008/11/13 03:03:01 uehira Exp $ */
 /* "cormeisei.c"    June'97 Ide changed from*/
 /* "raw_raw.c"      3/4/96 urabe */
 /*                  revised on 5/20/96 */
@@ -139,7 +139,9 @@ char *argv[];
   unsigned char *ptr,*ptw,*ptr_lim,*ptr_save;
   static unsigned char dbuf[12][MAX_SEC_SIZE],ch_flagh[12][CH_TOTAL],
     ch_flagl[12][CH_TOTAL];
-  int sr,i,k,size,size_shm,itdl,itdh,ich,ch;
+  int i,k,size,size_shm,itdl,itdh,ich;
+  uint32_w sr;
+  uint16_w ch;
   unsigned long c_save;
   int gs,gh,wf;
   int iah=IAH,ibh=IBH;
@@ -152,8 +154,8 @@ char *argv[];
   int iddx07,iddx08,iddx09,iddx10,iddx11,iddx12;
   float tdlyh=TDLYH;
   float tdlyl=TDLYL;
-  static long dath[14][CH_TOTAL][101],datl[14][CH_TOTAL][21];
-  long dt[500],*pd1,*pd2;
+  static int32_w dath[14][CH_TOTAL][101],datl[14][CH_TOTAL][21];
+  int32_w dt[500],*pd1,*pd2;
   double dout[500],*pdd;
 
   static double ach[30]=
@@ -447,13 +449,13 @@ reset:
       ch=(gh>>16)&0xffff;
       sr=gh&0xfff;
       if((ich=ch_tableh[ch])>=0 && sr==100){
-        gs=win2fix(ptr,dath[idx12][ich],(long *)&ch,(long *)&sr);
+        gs=win2fix(ptr,dath[idx12][ich],&ch,&sr);
         ch_flagh[iddx12][ich]=1;
 #if DEBUG
         fprintf(stderr,"+");
 #endif
       } else if((ich=ch_tablel[ch])>=0 && sr==20){
-        gs=win2fix(ptr,datl[idx12][ich],(long *)&ch,(long *)&sr);
+        gs=win2fix(ptr,datl[idx12][ich],&ch,&sr);
         ch_flagl[iddx12][ich]=1;
 #if DEBUG
         fprintf(stderr,"+");

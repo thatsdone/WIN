@@ -1,4 +1,4 @@
-/* $Id: raw_shift.c,v 1.2.4.3.2.1 2008/11/11 15:19:48 uehira Exp $ */
+/* $Id: raw_shift.c,v 1.2.4.3.2.2 2008/11/13 03:03:02 uehira Exp $ */
 /* "raw_shift.c"    2002.4.1 - 4.1 urabe */
 /*                  modified from raw_100.c */
 /*                  2005.2.20 added fclose() in read_chfile() */
@@ -119,11 +119,13 @@ main(argc,argv)
   unsigned long uni;
   char tb[100];
   unsigned char *ptr,*ptw,tm[6],*ptr_lim,*ptr_save;
-  int sr,i,j,k,size,n,size_shm,ch1,sr1,tow,rest,bits_shift;
+  int sr,i,j,k,size,n,size_shm,tow,rest,bits_shift;
+  uint16_w ch1;
+  uint32_w sr1;
   unsigned long c_save;
   unsigned short ch;
   int gs,gh,gs1;
-  static int buf1[MAX_SR],buf2[MAX_SR];
+  static int32_w buf1[MAX_SR],buf2[MAX_SR];
 
   if(progname=strrchr(argv[0],'/')) progname++;
   else progname=argv[0];
@@ -257,9 +259,9 @@ reset:
 #endif
         if(sr<=MAX_SR)
           {
-          win2fix(ptr,(long *)buf1,(long *)&ch1,(long *)&sr1);
+          win2fix(ptr,buf1,&ch1,&sr1);
           for(i=0;i<sr1;i++) buf2[i]=buf1[i]>>bits_shift;
-          ptw+=(gs1=winform((long *)buf2,ptw,sr1,ch1));
+          ptw+=(gs1=winform(buf2,ptw,sr1,ch1));
 #if DEBUG
           fprintf(stderr,"->%d ",gs1);
 #endif

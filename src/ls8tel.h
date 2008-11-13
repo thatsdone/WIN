@@ -1,4 +1,4 @@
-/* $Id: ls8tel.h,v 1.2.2.2 2008/05/17 14:22:00 uehira Exp $ */
+/* $Id: ls8tel.h,v 1.2.2.2.2.1 2008/11/13 03:03:02 uehira Exp $ */
 
 /*
  * Copyright (c) 2005
@@ -43,6 +43,5 @@ static int A8_sampling[] = {200, 100};
 static unsigned char A8_gain_mask = 0x7F;
 static int A8_gain[] = {0, 2, 10, 30, 100, 300, 900};
 
-WIN_blocksize ls8tel16_fix(unsigned char *, long *, long *, long *);
-
+WIN_blocksize ls8tel16_fix(uint8_w *, int32_w *, uint16_w *, uint32_w *);
 #endif  /*_LS8TEL_H_ */

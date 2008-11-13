@@ -1,4 +1,4 @@
-/* $Id: ls8tel16_raw.c,v 1.3.2.2.2.1 2008/11/11 15:19:47 uehira Exp $ */
+/* $Id: ls8tel16_raw.c,v 1.3.2.2.2.2 2008/11/13 03:03:02 uehira Exp $ */
 
 /*
  * Copyright (c) 2005
@@ -57,7 +57,7 @@
 /*  #define DEBUG       0 */
 
 static char rcsid[] =
-  "$Id: ls8tel16_raw.c,v 1.3.2.2.2.1 2008/11/11 15:19:47 uehira Exp $";
+  "$Id: ls8tel16_raw.c,v 1.3.2.2.2.2 2008/11/13 03:03:02 uehira Exp $";
 
 char *progname, *logfile;
 int  daemon_mode, syslog_mode;
@@ -83,11 +83,10 @@ main(int argc, char *argv[])
   unsigned long	  uni;
   unsigned char   *ptr, *ptw, *ptr_lim, *ptr_save;
   unsigned long	  c_save;
-  WIN_ch          ch;
-  WIN_sr          sr;
-  long            ch1, sr1;
+  WIN_ch          ch, ch1;
+  WIN_sr          sr, sr1;
   WIN_blocksize   gs;
-  static long    fixbuf[MAX_SR];
+  static int32_w  fixbuf[MAX_SR];
   char		  tb[1024];
   int             tow, size, gs1;
   int             c, rest, i;

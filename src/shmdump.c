@@ -207,9 +207,12 @@ main(argc,argv)
     char c[4];
     } un;
   int i,j,k,c_save_in,shp_in,shmid_in,size_in,shp,c_save,wtow,c,out,all,mon,
-    ch,sr,gs,size,chsel,nch,search,seconds,tbufp,bufsize,zero,nsec,aa,bb,end,
-    eobsize,eobsize_count,size2,tout,abuf[4096],bufsize_in,rawdump,quiet,
+    gs,size,chsel,nch,search,seconds,tbufp,bufsize,zero,nsec,aa,bb,end,
+    eobsize,eobsize_count,size2,tout,bufsize_in,rawdump,quiet,
     hexdump;
+  WIN_ch ch;
+  WIN_sr sr;
+  int32_w abuf[4096];
   time_t tow,time_end,time_now;
   long wsize;
   unsigned int packet_id;
@@ -593,7 +596,7 @@ last_out:     if((wsize=ptw-buf)>10)
                   ptw=buf+10;
                   while(ptw<buf+wsize)
                     {
-                    ptw+=win2fix(ptw,(long *)abuf,(long *)&ch,(long *)&sr);
+                    ptw+=win2fix(ptw,abuf,&ch,&sr);
                     if ( SR > 0 ) fprintf(fpout,"%04X %d",ch,SR);
                     else          fprintf(fpout,"%04X %d",ch,sr);
                     if ( filter_flag ) {   /* filtering start */

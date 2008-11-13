@@ -1,4 +1,4 @@
-/* $Id: recvt.c,v 1.29.2.3.2.1 2008/11/11 15:19:48 uehira Exp $ */
+/* $Id: recvt.c,v 1.29.2.3.2.2 2008/11/13 03:03:02 uehira Exp $ */
 /* "recvt.c"      4/10/93 - 6/2/93,7/2/93,1/25/94    urabe */
 /*                2/3/93,5/25/94,6/16/94 */
 /*                1/6/95 bug in adj_time fixed (tm[0]--) */
@@ -113,6 +113,13 @@ struct {
     unsigned int n_bytes;
     unsigned int n_packets;
     } ht[N_HOST];
+
+struct ch_hist {
+  int n;
+  time_t (*ts)[65536];
+  int p[65536];
+} ;
+
 
 time_t check_ts(ptr,pre,post)
   char *ptr;
@@ -481,7 +488,7 @@ wincpy2(ptw,ts,ptr,size,mon,chhist,from_addr)
   unsigned char *ptw,*ptr;
   time_t ts;
   int size,mon;
-  struct { int n; time_t (*ts)[65536]; int p[65536];} *chhist;
+  struct ch_hist *chhist;
   struct sockaddr_in *from_addr;
   {
 #define MAX_SR 500
@@ -657,7 +664,7 @@ main(argc,argv)
   char mcastgroup[256]; /* multicast address */
   char interface[256]; /* multicast interface */
   time_t ts,sec,sec_p;
-  struct { int n; time_t (*ts)[65536]; int p[65536];} chhist;
+  struct ch_hist  chhist;
   struct hostent *h;
   struct timeval timeout;
 

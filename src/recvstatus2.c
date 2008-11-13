@@ -1,4 +1,4 @@
-/* $Id: recvstatus2.c,v 1.6 2002/12/17 07:37:18 uehira Exp $ */
+/* $Id: recvstatus2.c,v 1.6.8.1 2008/11/13 05:06:53 uehira Exp $ */
 /* modified from "recvstatus.c" */
 /* 2002.6.19 recvstatus2 receive A8/A9 packets from Datamark LS-7000XT */
 /* 2002.7.3 fixed a bug - 'ok' deleted */
@@ -33,26 +33,15 @@
 #include <netdb.h>
 #include <errno.h>
 
-#include "subst_func.h"
+#include "winlib.h"
 
 #define MAXMESG   2048
 #define DEBUG   0
 
 int sock;     /* socket */
 
-ctrlc()
-  {
-  close(sock);
-  exit(0);
-  }
-
-err_sys(ptr)
-  char *ptr;
-  {
-  perror(ptr);
-  close(sock);
-  ctrlc();
-  }
+char *progname, *logfile = NULL;
+int syslog_mode = 0, exit_status = EXIT_SUCCESS;
 
 main(argc,argv)
   int argc;
@@ -60,7 +49,7 @@ main(argc,argv)
   {
 #define NSMAX 100
   unsigned char rbuf[MAXMESG];
-  char tb[100],*progname,logdir[256],logfile[256];
+  char tb[100],logdir[256],logxml[256];
   int i,j,k,fromlen,n,re,ns,c,rcs;
   extern int optind;
   extern char *optarg;
@@ -121,9 +110,9 @@ main(argc,argv)
 
   if(bind(sock,(struct sockaddr *)&to_addr,sizeof(to_addr))<0) err_sys("bind");
 
-  signal(SIGTERM,(void *)ctrlc);
-  signal(SIGINT,(void *)ctrlc);
-  signal(SIGPIPE,(void *)ctrlc);
+  signal(SIGTERM,(void *)end_program);
+  signal(SIGINT,(void *)end_program);
+  signal(SIGPIPE,(void *)end_program);
 
   ns=0;
   while(1)
@@ -184,18 +173,18 @@ printf("%s",s[i]->c);
 #endif
         if(*logdir)
           {
-          if(rbuf[2]==0xA8) sprintf(logfile,"%s/S%04X.xml",logdir,s[i]->ch);
-          else sprintf(logfile,"%s/M%04X.xml",logdir,s[i]->ch);
-          if((fp=fopen(logfile,"w+"))==NULL)
+          if(rbuf[2]==0xA8) sprintf(logxml,"%s/S%04X.xml",logdir,s[i]->ch);
+          else sprintf(logxml,"%s/M%04X.xml",logdir,s[i]->ch);
+          if((fp=fopen(logxml,"w+"))==NULL)
             {
             fprintf(stderr,"file '%s' not open !\n",tb);
-            ctrlc();
+            end_program();
             }
           fwrite(s[i]->c,1,s[i]->len+1,fp);
           fclose(fp);
           if(rcs)
             {
-            sprintf(tb,"ci -l -q %s</dev/null",logfile);
+            sprintf(tb,"ci -l -q %s</dev/null",logxml);
             system(tb);
             }
           }

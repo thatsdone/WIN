@@ -1,4 +1,4 @@
-/* $Id: recvt.c,v 1.29.2.3.2.2 2008/11/13 03:03:02 uehira Exp $ */
+/* $Id: recvt.c,v 1.29.2.3.2.3 2008/11/13 05:06:53 uehira Exp $ */
 /* "recvt.c"      4/10/93 - 6/2/93,7/2/93,1/25/94    urabe */
 /*                2/3/93,5/25/94,6/16/94 */
 /*                1/6/95 bug in adj_time fixed (tm[0]--) */
@@ -119,7 +119,6 @@ struct ch_hist {
   time_t (*ts)[65536];
   int p[65536];
 } ;
-
 
 time_t check_ts(ptr,pre,post)
   char *ptr;

@@ -1,4 +1,4 @@
-/* $Id: wform.c,v 1.4.4.2 2008/05/17 14:22:04 uehira Exp $ */
+/* $Id: wform.c,v 1.4.4.2.2.1 2008/11/13 05:06:53 uehira Exp $ */
 /* wform.c - a program to make a win format file */
 /* wform [ch] [sr] */
 
@@ -16,7 +16,8 @@ main(argc,argv)
   int argc;
   char *argv[];
   {
-  static unsigned char inbuf[SR*4],outbuf[4+4*SR],tt[6],cbuf;
+  static unsigned char outbuf[4+4*SR],tt[6],cbuf;
+  static long  inbuf[SR];
   int sr,ch,size,t[6],i;
 
   if(argc<4)

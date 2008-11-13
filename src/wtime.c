@@ -1,4 +1,4 @@
-/* $Id: wtime.c,v 1.3.2.3.2.1 2008/11/11 15:19:48 uehira Exp $ */
+/* $Id: wtime.c,v 1.3.2.3.2.2 2008/11/13 05:06:53 uehira Exp $ */
 
 /*
   program "wtime.c"
@@ -80,7 +80,7 @@ shift_sec(tm_bcd,sec)
   ltime=mktime(&mt);
   if(sec) ltime+=sec;
   else return ltime;
-  nt=localtime(&ltime);
+  nt=localtime((time_t *)&ltime);
   tm_bcd[0]=d2b[nt->tm_year%100];
   tm_bcd[1]=d2b[nt->tm_mon+1];
   tm_bcd[2]=d2b[nt->tm_mday];

@@ -1,4 +1,4 @@
-/* $Id: recvstatus.c,v 1.6 2002/01/13 08:34:33 uehira Exp $ */
+/* $Id: recvstatus.c,v 1.6.8.1 2008/11/13 05:06:53 uehira Exp $ */
 /* "recvstatus.c"      5/24/95    urabe */
 /* 97.7.17 two lines of "if() continue;" in the main loop */
 /* 2000.4.24/2001.11.14 strerror() */
@@ -32,59 +32,16 @@
 #include <netdb.h>
 #include <errno.h>
 
-#include "subst_func.h"
+#include "winlib.h"
 
 #define MAXMESG   2048
 
 int sock;     /* socket */
 unsigned char rbuf[MAXMESG],stt[65536];
-char tb[100],*progname,logfile[256];
+char tb[100];
 
-get_time(rt)
-  int *rt;
-  {
-  struct tm *nt;
-  unsigned long ltime;
-  time(&ltime);
-  nt=localtime(&ltime);
-  rt[0]=nt->tm_year%100;
-  rt[1]=nt->tm_mon+1;
-  rt[2]=nt->tm_mday;
-  rt[3]=nt->tm_hour;
-  rt[4]=nt->tm_min;
-  rt[5]=nt->tm_sec;
-  }
-
-write_log(logfil,ptr)
-  char *logfil;
-  char *ptr;
-  {
-  FILE *fp;
-  int tm[6];
-  if(*logfil) fp=fopen(logfil,"a");
-  else fp=stdout;
-  get_time(tm);
-  fprintf(fp,"%02d%02d%02d.%02d%02d%02d %s %s\n",
-    tm[0],tm[1],tm[2],tm[3],tm[4],tm[5],progname,ptr);
-  if(*logfil) fclose(fp);
-  }
-
-ctrlc()
-  {
-  write_log(logfile,"end");
-  close(sock);
-  exit(0);
-  }
-
-err_sys(ptr)
-  char *ptr;
-  {
-  perror(ptr);
-  write_log(logfile,ptr);
-  if(strerror(errno)) write_log(logfile,strerror(errno));
-  close(sock);
-  ctrlc();
-  }
+char *progname,*logfile;
+int  syslog_mode = 0, exit_status = EXIT_SUCCESS;
 
 main(argc,argv)
   int argc;
@@ -109,11 +66,11 @@ main(argc,argv)
     exit(1);
     }
   to_port=atoi(argv[1]);
-  if(argc>2) strcpy(logfile,argv[2]);
-  else *logfile=0;
+  if(argc>2) logfile=argv[2];
+  else logfile=NULL;
 
   sprintf(tb,"%s started. port=%d file=%s",progname,to_port,logfile);
-  write_log(logfile,tb);
+  write_log(tb);
 
   if((sock=socket(AF_INET,SOCK_DGRAM,0))<0) err_sys("socket");
   i=32768;
@@ -128,9 +85,9 @@ main(argc,argv)
   if(bind(sock,(struct sockaddr *)&to_addr,sizeof(to_addr))<0)
     err_sys("bind");
 
-  signal(SIGTERM,(void *)ctrlc);
-  signal(SIGINT,(void *)ctrlc);
-  signal(SIGPIPE,(void *)ctrlc);
+  signal(SIGTERM,(void *)end_program);
+  signal(SIGINT,(void *)end_program);
+  signal(SIGPIPE,(void *)end_program);
 
   for(i=0;i<65535;i++) stt[i]=0xff;
   while(1)
@@ -143,7 +100,7 @@ main(argc,argv)
       inet_ntoa(from_addr.sin_addr),ntohs(from_addr.sin_port),
       rbuf[0],rbuf[1],rbuf[2],rbuf[3],rbuf[4],rbuf[5],rbuf[6],
       rbuf[7],rbuf[8],rbuf[9]);
-    write_log(logfile,tb);
+    write_log(tb);
     stt[(rbuf[7]<<8)+rbuf[8]]=rbuf[9];
     }
   }

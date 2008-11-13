@@ -1,4 +1,4 @@
-/* $Id: ecore.c,v 1.4.4.2.2.2 2008/11/13 03:03:02 uehira Exp $ */
+/* $Id: ecore.c,v 1.4.4.2.2.3 2008/11/13 05:06:53 uehira Exp $ */
 /* ddr news program "ecore.c"
   "ecore.c" works with "fromtape.c"
   "ecore.c" makes continuously filtered and decimated data
@@ -127,8 +127,8 @@ main(argc,argv)
   unsigned char *ptr,*ptr_end,textbuf[NAMLEN];
   int dec_start[6],dec_end[6],dec_wtn[6],dec_now[6],dec_buf[6],
     i,j,nch,next,sys_ch,sr,pos,size,cnt_min;
-  uint8_w sizetmp[4];
   //int fildata[SSR];   int => long 03/04/23
+  uint8_w sizetmp[4];
   int32_w fildata[SSR];
   unsigned char windata[500*1000],*wptr;  /* added 03/03/07 */
   int idx,bsize;  				  /* added 03/03/07 */

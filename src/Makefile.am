@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.38.2.10 2008/05/17 15:32:49 uehira Exp $
+# $Id: Makefile.am,v 1.38.2.10.2.1 2008/11/13 05:06:53 uehira Exp $
 #
 
 if SUNOS4
@@ -269,11 +269,11 @@ send_raw_LDADD = $(WIN_SYSTEM_LIB) @LIBNSL@ @LIBSOCKET@ @LIBSHMGET@
 send_raw_old_SOURCES = send_raw_old.c $(WIN_LIBH)
 send_raw_old_LDADD = $(WIN_SYSTEM_LIB) @LIBNSL@ @LIBSOCKET@ @LIBSHMGET@
 
-recvstatus_SOURCES = recvstatus.c $(SUBFUNC_H)
-recvstatus_LDADD = @LIBNSL@ @LIBSOCKET@
+recvstatus_SOURCES = recvstatus.c $(WIN_LIBH) $(SUBFUNC_H)
+recvstatus_LDADD = $(WIN_SYSTEM_LIB) @LIBNSL@ @LIBSOCKET@
 
-recvstatus2_SOURCES = recvstatus2.c $(SUBFUNC_H)
-recvstatus2_LDADD = @LIBNSL@ @LIBSOCKET@
+recvstatus2_SOURCES = recvstatus2.c $(WIN_LIBH) $(SUBFUNC_H)
+recvstatus2_LDADD = $(WIN_SYSTEM_LIB) @LIBNSL@ @LIBSOCKET@
 
 relay_SOURCES = relay.c $(DAEMON_MODE) $(WIN_LIBH)
 relay_LDADD = $(WIN_SYSTEM_LIB) @LIBNSL@ @LIBSOCKET@
@@ -301,8 +301,8 @@ hypomhc_LDADD = -lm
 sends_SOURCES = sends.c $(WIN_LIBH)
 sends_LDADD = $(WIN_SYSTEM_LIB) @LIBNSL@ @LIBSOCKET@
 
-recvs_SOURCES = recvs.c $(SUBFUNC_H)
-recvs_LDADD = @LIBNSL@ @LIBSOCKET@
+recvs_SOURCES = recvs.c $(WIN_LIBH)
+recvs_LDADD = $(WIN_SYSTEM_LIB) @LIBNSL@ @LIBSOCKET@
 
 raw_time_SOURCES = raw_time.c $(WIN_LIBH) $(DAEMON_MODE) $(WIN_UTIL) $(GC_CHECK_INCLUDE)
 raw_time_LDADD = $(WIN_SYSTEM_LIB) -lm @LIBSHMGET@ $(GC_CHECK_LIB)

@@ -1,4 +1,8 @@
- $Id: ChangeLog,v 1.131.2.25.2.3 2008/11/13 15:34:14 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.4 2008/11/14 02:01:20 uehira Exp $
+
+2008-11-14  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* wck : 64 bit clean.
+	* Version 2.0.2 released.
 
 2008-11-13  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* MF Version 1.1.98-LIB release.

@@ -1,4 +1,4 @@
-/* $Id: winlib.h,v 1.1.2.7.2.5 2008/11/13 15:47:11 uehira Exp $ */
+/* $Id: winlib.h,v 1.1.2.7.2.6 2008/11/17 13:44:54 uehira Exp $ */
 
 #ifndef _WIN_LIB_H_
 #define _WIN_LIB_H_
@@ -54,9 +54,9 @@ typedef uint32_w  WIN_sr;
 
 #define  WIN_CHMAX    65536   /* Max. number of channel: 2^16 */
 
-#define  SWAPL(a)  a = (((a) << 24) | ((a) << 8) & 0xff0000 |\
-			((a) >> 8) & 0xff00 | ((a) >> 24) & 0xff)
-#define  SWAPS(a)  a = (((a) << 8) & 0xff00 | ((a) >> 8) & 0xff)
+#define  SWAPL(a)  a = ((((a) << 24)) | (((a) << 8) & 0xff0000) |	\
+			(((a) >> 8) & 0xff00) | (((a) >> 24) & 0xff))
+#define  SWAPS(a)  a = ((((a) << 8) & 0xff00) | (((a) >> 8) & 0xff))
 #define  SWAPF(a)  *(int32_w *)&(a) =\
     (((*(int32_w *)&(a)) << 24) | ((*(int32_w *)&(a)) << 8) & 0xff0000 |\
      ((*(int32_w *)&(a)) >> 8) & 0xff00 | ((*(int32_w *)&(a)) >> 24) & 0xff)

@@ -1,68 +1,82 @@
-/* $Id: recvt.c,v 1.29.2.3.2.4 2008/11/13 09:36:07 uehira Exp $ */
-/* "recvt.c"      4/10/93 - 6/2/93,7/2/93,1/25/94    urabe */
-/*                2/3/93,5/25/94,6/16/94 */
-/*                1/6/95 bug in adj_time fixed (tm[0]--) */
-/*                2/17/95 "illegal time" message stopped */
-/*                3/15-16/95 write_log changed */
-/*                3/26/95 check_packet_no; port# */
-/*                10/16/95 added processing of "host table full" */
-/*                5/22/96 support merged packet with ID="0x0A" */
-/*                5/22/96 widen time window to +/-30 min */
-/*                5/28/96 bcopy -> memcpy */
-/*                6/6/96,7/9/96 discard duplicated resent packets & fix bug */ 
-/*                12/29/96 "next" */
-/*                97.6.23 RCVBUF->65535 */
-/*                97.9.4        & 50000 */
-/*                97.12.18 channel selection by file */
-/*                97.12.23 ch no. in "illegal time" & LITTLE_ENDIAN */
-/*                98.4.23 b2d[] etc. */
-/*                98.6.26 yo2000 */
-/*                99.2.4  moved signal(HUP) to read_chfile() by urabe */
-/*                99.4.19 byte-order-free */
-/*                2000.3.13 >=A1 format */
-/*                2000.4.24 added SS & SR check, check_time +/-60m */
-/*                2000.4.24 strerror() */
-/*                2000.4.25 added check_time() in >=A1 format */
-/*                2000.4.26 host control, statistics, -a, -m, -p options */
-/*                2001.2.20 wincpy() improved */
-/*                2001.3.9 debugged for sh->r */
-/*                2001.11.14 strerror(),ntohs() */
-/*                2002.1.7 implemented multicasting (options -g, -i) */
-/*                2002.1.7 option -n to suppress info on abnormal packets */
-/*                2002.1.8 MAXMESG increased to 32768 bytes */
-/*                2002.1.12 trivial fixes on 'usage' */
-/*                2002.1.15 option '-M' necessary for receiving mon data */
-/*                2002.3.2 wincpy2() discard duplicated data (TS+CH) */
-/*                2002.3.2 option -B ; write blksize at EOB */
-/*                2002.3.18 host control debugged */
-/*                2002.5.3 N_PACKET 64->128, 'no request resend' log */
-/*                2002.5.3 maximize RCVBUF size */
-/*                2002.5.3,7 maximize RCVBUF size ( option '-s' )*/
-/*                2002.5.14 -n debugged / -d to set ddd length */
-/*                2002.5.23 stronger to destructed packet */
-/*                2002.11.29 corrected byte-order of port no. in log */
-/*                2002.12.21 disable resend request if -r */
-/*                2003.3.24-25 -N (no pno) and -A (no TS) options */
-/*                2004.8.9 fixed bug introduced in 2002.5.23 */
-/*                2004.10.26 daemon mode (Uehira) */
-/*                2004.11.15 corrected byte-order of port no. in log */
-/*                2005.2.17 option -o [source host]:[port] for send request */
-/*                2005.2.20 option -f [ch_file] for additional ch files */
-/*                2005.6.24 don't change optarg's content (-o) */
-/*                2005.9.25 allow disorder of arriving packets */
-/*                2005.9.25 host(:port) in control file */
+/* $Id: recvt.c,v 1.29.2.3.2.5 2008/11/17 13:44:54 uehira Exp $ */
+/*-
+ "recvt.c"      4/10/93 - 6/2/93,7/2/93,1/25/94    urabe
+                2/3/93,5/25/94,6/16/94 
+                1/6/95 bug in adj_time fixed (tm[0]--) 
+                2/17/95 "illegal time" message stopped 
+                3/15-16/95 write_log changed 
+                3/26/95 check_packet_no; port# 
+                10/16/95 added processing of "host table full" 
+                5/22/96 support merged packet with ID="0x0A" 
+                5/22/96 widen time window to +/-30 min 
+                5/28/96 bcopy -> memcpy 
+                6/6/96,7/9/96 discard duplicated resent packets & fix bug  
+                12/29/96 "next" 
+                97.6.23 RCVBUF->65535 
+                97.9.4        & 50000 
+                97.12.18 channel selection by file 
+                97.12.23 ch no. in "illegal time" & LITTLE_ENDIAN 
+                98.4.23 b2d[] etc. 
+                98.6.26 yo2000 
+                99.2.4  moved signal(HUP) to read_chfile() by urabe 
+                99.4.19 byte-order-free 
+                2000.3.13 >=A1 format 
+                2000.4.24 added SS & SR check, check_time +/-60m 
+                2000.4.24 strerror() 
+                2000.4.25 added check_time() in >=A1 format 
+                2000.4.26 host control, statistics, -a, -m, -p options 
+                2001.2.20 wincpy() improved 
+                2001.3.9 debugged for sh->r 
+                2001.11.14 strerror(),ntohs() 
+                2002.1.7 implemented multicasting (options -g, -i) 
+                2002.1.7 option -n to suppress info on abnormal packets 
+                2002.1.8 MAXMESG increased to 32768 bytes 
+                2002.1.12 trivial fixes on 'usage' 
+                2002.1.15 option '-M' necessary for receiving mon data 
+                2002.3.2 wincpy2() discard duplicated data (TS+CH) 
+                2002.3.2 option -B ; write blksize at EOB 
+                2002.3.18 host control debugged 
+                2002.5.3 N_PACKET 64->128, 'no request resend' log 
+                2002.5.3 maximize RCVBUF size 
+                2002.5.3,7 maximize RCVBUF size ( option '-s' )
+                2002.5.14 -n debugged / -d to set ddd length 
+                2002.5.23 stronger to destructed packet 
+                2002.11.29 corrected byte-order of port no. in log 
+                2002.12.21 disable resend request if -r 
+                2003.3.24-25 -N (no pno) and -A (no TS) options 
+                2004.8.9 fixed bug introduced in 2002.5.23 
+                2004.10.26 daemon mode (Uehira) 
+                2004.11.15 corrected byte-order of port no. in log 
+                2005.2.17 option -o [source host]:[port] for send request 
+                2005.2.20 option -f [ch_file] for additional ch files 
+                2005.6.24 don't change optarg's content (-o) 
+                2005.9.25 allow disorder of arriving packets 
+                2005.9.25 host(:port) in control file 
+-*/
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
 
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
+#include <sys/param.h>
+#include <sys/stat.h>
+
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
 #include <stdio.h>
 #include <signal.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/types.h>
-#include <sys/ipc.h>
-#include <sys/shm.h>
+#include <unistd.h>
+
+#include <netdb.h>
+#include <errno.h>
+#include <syslog.h>
 
 #if TIME_WITH_SYS_TIME
 #include <sys/time.h>
@@ -75,16 +89,9 @@
 #endif  /* !HAVE_SYS_TIME_H */
 #endif  /* !TIME_WITH_SYS_TIME */
 
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <netdb.h>
-#include <errno.h>
-#include <syslog.h>
-
 #include "daemon_mode.h"
 #include "winlib.h"
 
-#define DEBUG     0
 #define DEBUG0    0
 #define DEBUG1    0
 #define DEBUG2    0
@@ -98,7 +105,10 @@
 #define N_CHFILE  30    /* N of channel files */
 #define N_PNOS    62    /* length of packet nos. history >=2 */
 
-unsigned char rbuf[MAXMESG],ch_table[65536];
+static char rcsid[] =
+  "$Id: recvt.c,v 1.29.2.3.2.5 2008/11/17 13:44:54 uehira Exp $";
+
+uint8_w rbuf[MAXMESG],ch_table[WIN_CHMAX];
 char *progname,*logfile,chfile[N_CHFILE][256];
 int n_ch,negate_channel,hostlist[N_HOST][3],n_host,no_pinfo,n_chfile;
 int  daemon_mode, syslog_mode, exit_status;
@@ -116,17 +126,19 @@ struct {
 
 struct ch_hist {
   int n;
-  time_t (*ts)[65536];
-  int p[65536];
+  time_t (*ts)[WIN_CHMAX];
+  int p[WIN_CHMAX];
 };
 
-time_t check_ts(ptr,pre,post)
-  char *ptr;
-  int pre,post;
+static time_t
+check_ts(ptr,pre,post)
+  uint8_w *ptr;
+  time_t pre,post;
   {
-  int diff,tm[6];
-  time_t ts,rt;
+  int tm[6];
+  time_t ts,rt,diff;
   struct tm mt;
+
   if(!bcd_dec(tm,ptr)) return 0; /* out of range */
   memset((char *)&mt,0,sizeof(mt));
   if((mt.tm_year=tm[0])<50) mt.tm_year+=100;
@@ -142,11 +154,12 @@ time_t check_ts(ptr,pre,post)
   diff=ts-rt;
   if((pre==0 || pre<diff) && (post==0 || diff<post)) return ts;
 #if DEBUG1
-  printf("diff %d s out of range (%ds - %ds)\n",diff,pre,post);
+  printf("diff %ld s out of range (%ds - %ds)\n",diff,pre,post);
 #endif
   return 0;
   }
 
+static void
 read_chfile()
   {
   FILE *fp;
@@ -163,8 +176,8 @@ read_chfile()
 #if DEBUG
       fprintf(stderr,"ch_file=%s\n",chfile[0]);
 #endif
-      if(negate_channel) for(i=0;i<65536;i++) ch_table[i]=1;
-      else for(i=0;i<65536;i++) ch_table[i]=0;
+      if(negate_channel) for(i=0;i<WIN_CHMAX;i++) ch_table[i]=1;
+      else for(i=0;i<WIN_CHMAX;i++) ch_table[i]=0;
       ii=0;
       while(fgets(tbuf,1024,fp))
         {
@@ -173,8 +186,8 @@ read_chfile()
         if(*host_name==0 || *host_name=='#') continue;
         if(*tbuf=='*') /* match any channel */
           {
-          if(negate_channel) for(i=0;i<65536;i++) ch_table[i]=0;
-          else for(i=0;i<65536;i++) ch_table[i]=1;
+          if(negate_channel) for(i=0;i<WIN_CHMAX;i++) ch_table[i]=0;
+          else for(i=0;i<WIN_CHMAX;i++) ch_table[i]=1;
           }
         else if(n_host==0 && (*tbuf=='+' || *tbuf=='-'))
           {
@@ -209,8 +222,8 @@ read_chfile()
               if(*tbuf=='+') sprintf(tb,"allow");
               else sprintf(tb,"deny");
               sprintf(tb+strlen(tb)," from host %d.%d.%d.%d:%d",
- ((unsigned char *)&hostlist[ii][1])[0],((unsigned char *)&hostlist[ii][1])[1],
- ((unsigned char *)&hostlist[ii][1])[2],((unsigned char *)&hostlist[ii][1])[3],
+ ((uint8_w *)&hostlist[ii][1])[0],((uint8_w *)&hostlist[ii][1])[1],
+ ((uint8_w *)&hostlist[ii][1])[2],((uint8_w *)&hostlist[ii][1])[3],
                 hostlist[ii][2]);
               write_log(tb);
               }
@@ -218,7 +231,7 @@ read_chfile()
           if(++ii==N_HOST)
             {
             n_host=ii;
-            write_log("host control table full"); 
+	    write_log("host control table full"); 
             }
           }
         else
@@ -253,7 +266,7 @@ read_chfile()
     }
   else
     {
-    for(i=0;i<65536;i++) ch_table[i]=1;
+    for(i=0;i<WIN_CHMAX;i++) ch_table[i]=1;
     n_host=0;
     }
 
@@ -287,9 +300,9 @@ read_chfile()
     }
 
   n_ch=0;
-  for(i=0;i<65536;i++) if(ch_table[i]==1) n_ch++;
-  if(n_ch==65536) sprintf(tb,"all channels");
-  else sprintf(tb,"%d (-%d) channels",n_ch,65536-n_ch);
+  for(i=0;i<WIN_CHMAX;i++) if(ch_table[i]==1) n_ch++;
+  if(n_ch==WIN_CHMAX) sprintf(tb,"all channels");
+  else sprintf(tb,"%d (-%d) channels",n_ch,WIN_CHMAX-n_ch);
   write_log(tb);
 
   time(&ltime);
@@ -304,8 +317,8 @@ read_chfile()
     {
     if(ht[i].host==0) break;
     sprintf(tb,"  src %d.%d.%d.%d:%d   %d %d %d %d",
-      ((unsigned char *)&ht[i].host)[0],((unsigned char *)&ht[i].host)[1],
-      ((unsigned char *)&ht[i].host)[2],((unsigned char *)&ht[i].host)[3],
+      ((uint8_w *)&ht[i].host)[0],((uint8_w *)&ht[i].host)[1],
+      ((uint8_w *)&ht[i].host)[2],((uint8_w *)&ht[i].host)[3],
       ntohs(ht[i].port),ht[i].n_packets,ht[i].n_bytes,(ht[i].n_packets+k)/j,
       (ht[i].n_bytes+k)/j);
     write_log(tb);
@@ -315,6 +328,7 @@ read_chfile()
   signal(SIGHUP,(void *)read_chfile);
   }
 
+static int
 check_pno(from_addr,pn,pn_f,sock,fromlen,n,nr,req_delay) /* returns -1 if dup */
   struct sockaddr_in *from_addr;  /* sender address */
   unsigned int pn,pn_f;           /* present and former packet Nos. */
@@ -349,8 +363,8 @@ check_pno(from_addr,pn,pn_f,sock,fromlen,n,nr,req_delay) /* returns -1 if dup */
       if(!no_pinfo)
         {
         sprintf(tb,"deny packet from host %d.%d.%d.%d:%d",
-          ((unsigned char *)&host_)[0],((unsigned char *)&host_)[1],
-          ((unsigned char *)&host_)[2],((unsigned char *)&host_)[3],ntohs(port_));
+          ((uint8_w *)&host_)[0],((uint8_w *)&host_)[1],
+          ((uint8_w *)&host_)[2],((uint8_w *)&host_)[3],ntohs(port_));
         write_log(tb);
         }
       return -1;
@@ -398,8 +412,8 @@ check_pno(from_addr,pn,pn_f,sock,fromlen,n,nr,req_delay) /* returns -1 if dup */
     ht[i].nos[pn>>3]|=mask[pn&0x07]; /* set bit for the packet no */
     ht[i].nosf[pn>>6]=1;
     sprintf(tb,"registered host %d.%d.%d.%d:%d (%d)",
-      ((unsigned char *)&host_)[0],((unsigned char *)&host_)[1],
-      ((unsigned char *)&host_)[2],((unsigned char *)&host_)[3],ntohs(port_),i);
+      ((uint8_w *)&host_)[0],((uint8_w *)&host_)[1],
+      ((uint8_w *)&host_)[2],((uint8_w *)&host_)[3],ntohs(port_),i);
     write_log(tb);
     ht[i].n_bytes=n;
     ht[i].n_packets=1;
@@ -483,21 +497,25 @@ check_pno(from_addr,pn,pn_f,sock,fromlen,n,nr,req_delay) /* returns -1 if dup */
   return 0;
   }
 
+static int
 wincpy2(ptw,ts,ptr,size,mon,chhist,from_addr)
-  unsigned char *ptw,*ptr;
+  uint8_w *ptw,*ptr;
   time_t ts;
-  int size,mon;
+  ssize_t size;
+  int mon;
   struct ch_hist *chhist;
   struct sockaddr_in *from_addr;
   {
 #define MAX_SR 500
 #define MAX_SS 4
 #define SR_MON 5
-  int sr,n,ss;
-  unsigned char *ptr_lim,*ptr1;
-  unsigned short ch;
-  int gs,i,j,aa,bb,k;
-  unsigned long gh;
+  int n,ss;
+  WIN_sr sr;
+  uint8_w *ptr_lim,*ptr1;
+  WIN_ch ch;
+  int i,k;
+  int32_w aa,bb;  /* must be check later!! */
+  uint32_w gh,gs;
   char tb[256];
 
   ptr_lim=ptr+size;
@@ -517,11 +535,11 @@ wincpy2(ptw,ts,ptr,size,mon,chhist,from_addr)
         if(!no_pinfo)
           {
           sprintf(tb,
-"ill ch hdr %02X%02X%02X%02X %02X%02X%02X%02X psiz=%d sr=%d ss=%d gs=%d rest=%d from %s:%d",
+"ill ch hdr %02X%02X%02X%02X %02X%02X%02X%02X psiz=%ld sr=%d ss=%d gs=%d rest=%d from %s:%hu",
             ptr[0],ptr[1],ptr[2],ptr[3],ptr[4],ptr[5],ptr[6],ptr[7],
             size,sr,ss,gs,ptr_lim-ptr,
             inet_ntoa(from_addr->sin_addr),ntohs(from_addr->sin_port));
-          write_log(tb);
+	  write_log(tb);
           }
         return n;
         }
@@ -543,7 +561,7 @@ wincpy2(ptw,ts,ptr,size,mon,chhist,from_addr)
         if(!no_pinfo)
           {
           sprintf(tb,
-"ill ch blk %02X%02X%02X%02X %02X%02X%02X%02X psiz=%d sr=%d gs=%d rest=%d from %s:%d",
+"ill ch blk %02X%02X%02X%02X %02X%02X%02X%02X psiz=%ld sr=%d gs=%d rest=%d from %s:%d",
             ptr[0],ptr[1],ptr[2],ptr[3],ptr[4],ptr[5],ptr[6],ptr[7],
             size,sr,gs,ptr_lim-ptr,
             inet_ntoa(from_addr->sin_addr),ntohs(from_addr->sin_port));
@@ -579,6 +597,7 @@ wincpy2(ptw,ts,ptr,size,mon,chhist,from_addr)
   return n;
   }
 
+static void
 send_req(sock,host_addr)
   struct sockaddr_in *host_addr;  /* sender address */
   int sock;                       /* socket */
@@ -593,14 +612,14 @@ if all channels, seq=n=0 and no list.
   struct { char mn[4]; unsigned short seq[2]; unsigned short chlist[512];}
     sendbuf;
   strcpy(sendbuf.mn,"REQ");
-  if(n_ch<65536)
+  if(n_ch<WIN_CHMAX)
     {
     seq=1;
     if(n_ch==0) n_seq=1;
     else n_seq=(n_ch-1)/512+1;
     sendbuf.seq[1]=SWAPS(n_seq);
     j=0;
-    for(i=0;i<65536;i++)
+    for(i=0;i<WIN_CHMAX;i++)
       {
       sendbuf.seq[0]=SWAPS(seq);
       if(ch_table[i]) sendbuf.chlist[j++]=SWAPS(i);
@@ -643,6 +662,28 @@ if all channels, seq=n=0 and no list.
     }
   }
 
+static void
+usage()
+{
+
+  fprintf(stderr, "%s\n", rcsid);
+  if (daemon_mode)
+    fprintf(stderr,
+	    " usage : '%s (-AaBnMNr) (-d [len(s)]) (-m [pre(m)]) (-p [post(m)]) \\\n\
+              (-i [interface]) (-g [mcast_group]) (-s sbuf(KB)) \\\n\
+              (-o [src_host]:[src_port]) (-f [ch file]) \\\n\
+              [port] [shm_key] [shm_size(KB)] ([ctl file]/- ([log file]))'\n",
+	    progname);
+  else
+    fprintf(stderr,
+	    " usage : '%s (-AaBDnMNr) (-d [len(s)]) (-m [pre(m)]) (-p [post(m)]) \\\n\
+              (-i [interface]) (-g [mcast_group]) (-s sbuf(KB)) \\\n\
+              (-o [src_host]:[src_port]) (-f [ch file]) (-y [req_delay])\\\n\
+              [port] [shm_key] [shm_size(KB)] ([ctl file]/- ([log file]))'\n",
+	    progname);
+}
+
+int
 main(argc,argv)
   int argc;
   char *argv[];
@@ -650,13 +691,15 @@ main(argc,argv)
   key_t shm_key;
   int shmid;
   unsigned long uni;
-  unsigned char *ptr,tm[6],*ptr_size,*ptr_size2,host_name[1024];
-  int i,j,k,size,fromlen,n,re,nlen,sock,nn,all,pre,post,c,mon,pl,eobsize,
+  uint8_w *ptr,tm[6],*ptr_size,*ptr_size2;
+  char host_name[1024];
+  int i,j,k,fromlen,nlen,sock,all,c,mon,eobsize,
     sbuf,noreq,no_ts,no_pno,req_delay;
+  size_t size,pl;
+  ssize_t n,nn;
+  time_t pre,post;
   struct sockaddr_in to_addr,from_addr,host_addr;
   unsigned short to_port,host_port;
-  extern int optind;
-  extern char *optarg;
   struct Shm  *sh;
   char tb[256],tb2[256];
   struct ip_mreq stMreq;
@@ -667,28 +710,13 @@ main(argc,argv)
   struct hostent *h;
   struct timeval timeout;
 
-  if(progname=strrchr(argv[0],'/')) progname++;
+  if((progname=strrchr(argv[0],'/'))) progname++;
   else progname=argv[0];
 
   daemon_mode = syslog_mode = 0;
   exit_status = EXIT_SUCCESS;
 
   if(strcmp(progname,"recvtd")==0) daemon_mode=1;
-
-  if(strcmp(progname,"recvtd")==0)
-    sprintf(tb,
-	    " usage : '%s (-AaBnMNr) (-d [len(s)]) (-m [pre(m)]) (-p [post(m)]) \\\n\
-              (-i [interface]) (-g [mcast_group]) (-s sbuf(KB)) \\\n\
-              (-o [src_host]:[src_port]) (-f [ch file]) \\\n\
-              [port] [shm_key] [shm_size(KB)] ([ctl file]/- ([log file]))'",
-	    progname);
-  else
-    sprintf(tb,
-	    " usage : '%s (-AaBDnMNr) (-d [len(s)]) (-m [pre(m)]) (-p [post(m)]) \\\n\
-              (-i [interface]) (-g [mcast_group]) (-s sbuf(KB)) \\\n\
-              (-o [src_host]:[src_port]) (-f [ch file]) (-y [req_delay])\\\n\
-              [port] [shm_key] [shm_size(KB)] ([ctl file]/- ([log file]))'",
-	    progname);
 
   all=no_pinfo=mon=eobsize=noreq=no_ts=no_pno=0;
   pre=post=0;
@@ -726,7 +754,7 @@ main(argc,argv)
         strcpy(mcastgroup,optarg);
         break;
       case 'm':   /* time limit before RT in minutes */
-        pre=atoi(optarg);
+        pre=atol(optarg);
         if(pre<0) pre=(-pre);
         break;
       case 'M':   /* 'mon' format data */
@@ -740,21 +768,21 @@ main(argc,argv)
         break;
       case 'o':   /* host and port for request */
         strcpy(tb2,optarg);
-        if(ptr=(unsigned char *)strchr(tb2,':'))
+        if((ptr=(uint8_w *)strchr(tb2,':')))
           {
           *ptr=0;
           host_port=atoi(ptr+1);
           }
         else
           {
-          fprintf(stderr," option -o requires '[host]:[port]' pair !\n",c);
-          fprintf(stderr,"%s\n",tb);
+          fprintf(stderr," option -o requires '[host]:[port]' pair !\n");
+          usage();
           exit(1);
           }
         strcpy(host_name,tb2);
         break;
       case 'p':   /* time limit after RT in minutes */
-        post=atoi(optarg);
+        post=atol(optarg);
         break;
       case 'r':   /* disable resend request */
         noreq=1;
@@ -767,27 +795,27 @@ main(argc,argv)
         if(req_delay>N_PNOS-2 || req_delay<0)
           {
           fprintf(stderr," resend-request delay < %d !\n",N_PNOS-1);
-          fprintf(stderr,"%s\n",tb);
+          usage();
           exit(1);
           }
         break;
       default:
         fprintf(stderr," option -%c unknown\n",c);
-        fprintf(stderr,"%s\n",tb);
+        usage();
         exit(1);
       }
     }
   optind--;
   if(argc<4+optind)
     {
-    fprintf(stderr,"%s\n",tb);
+    usage();
     exit(1);
     }
   pre=(-pre*60);
   post*=60;
   to_port=atoi(argv[1+optind]);
   shm_key=atoi(argv[2+optind]);
-  size=atoi(argv[3+optind])*1000;
+  size=atol(argv[3+optind])*1000;
   *chfile[0]=0;
   if(argc>4+optind)
     {
@@ -817,11 +845,11 @@ main(argc,argv)
     }
 
   if((chhist.ts=
-      (time_t (*)[65536])malloc(65536*chhist.n*sizeof(time_t)))==NULL)
+      (time_t (*)[WIN_CHMAX])malloc(WIN_CHMAX*chhist.n*sizeof(time_t)))==NULL)
     {
     chhist.n=N_HIST;
     if((chhist.ts=
-        (time_t (*)[65536])malloc(65536*chhist.n*sizeof(time_t)))==NULL)
+        (time_t (*)[WIN_CHMAX])malloc(WIN_CHMAX*chhist.n*sizeof(time_t)))==NULL)
       {
       fprintf(stderr,"malloc failed (chhist.ts)\n");
       exit(1);
@@ -834,8 +862,8 @@ main(argc,argv)
      umask(022);
    }
 
-  sprintf(tb,"n_hist=%d size=%d req_delay=%d",chhist.n,
-    65536*chhist.n*sizeof(time_t),req_delay);
+  snprintf(tb,sizeof(tb),"n_hist=%d size=%d req_delay=%d",chhist.n,
+    WIN_CHMAX*chhist.n*sizeof(time_t),req_delay);
   write_log(tb);
 
   /* shared memory */
@@ -849,10 +877,10 @@ main(argc,argv)
   sh->p=0;
   sh->r=(-1);
 
-  sprintf(tb,"start shm_key=%d id=%d size=%d",shm_key,shmid,size);
+  snprintf(tb,sizeof(tb),"start shm_key=%d id=%d size=%ld",shm_key,shmid,size);
   write_log(tb);
   if(all) write_log("accept >=A1 packets");
-  sprintf(tb,"TS window %ds - +%ds",pre,post);
+  snprintf(tb,sizeof(tb),"TS window %lds - +%lds",pre,post);
   write_log(tb);
 
   if((sock=socket(AF_INET,SOCK_DGRAM,0))<0) err_sys("socket");
@@ -863,7 +891,7 @@ main(argc,argv)
       break;
     }
   if(j<16) err_sys("SO_RCVBUF setsockopt error\n");
-  sprintf(tb,"RCVBUF size=%d",j*1024);
+  snprintf(tb,sizeof(tb),"RCVBUF size=%d",j*1024);
   write_log(tb);
 
   memset((char *)&to_addr,0,sizeof(to_addr));
@@ -895,7 +923,7 @@ main(argc,argv)
         break;
       }
     if(j<16) err_sys("SO_SNDBUF setsockopt error\n");
-    sprintf(tb,"SNDBUF size=%d",j*1024);
+    snprintf(tb,sizeof(tb),"SNDBUF size=%d",j*1024);
     write_log(tb);
     }
 
@@ -904,7 +932,7 @@ main(argc,argv)
   if(no_pno) write_log("packet numbers not interpreted");
   if(*host_name)
     {
-    sprintf(tb,"send channel list to %s:%d",
+    snprintf(tb,sizeof(tb),"send channel list to %s:%d",
       inet_ntoa(host_addr.sin_addr),ntohs(host_addr.sin_port));
     write_log(tb);
     }
@@ -1025,7 +1053,7 @@ main(argc,argv)
             ptr_size2[3]=ptr_size[3];  /* size (L) */
             }
 #if DEBUG2
-          printf("%d - %d (%d) %d / %d\n",ptr_size-sh->d,uni,ptr_size2-sh->d,
+          printf("%d - %d (%d) %lu / %lu\n",ptr_size-sh->d,uni,ptr_size2-sh->d,
             sh->pl,pl);
 #endif
 #if DEBUG1
@@ -1039,7 +1067,8 @@ main(argc,argv)
           {
           if(!no_pinfo)
             {
-            sprintf(tb,"ill time %02X:%02X %02X%02X%02X.%02X%02X%02X:%02X%02X%02X%02X%02X%02X%02X%02X from %s:%d",
+            snprintf(tb,sizeof(tb),
+		     "ill time %02X:%02X %02X%02X%02X.%02X%02X%02X:%02X%02X%02X%02X%02X%02X%02X%02X from %s:%d",
               rbuf[0],rbuf[1],rbuf[2],rbuf[3],rbuf[4],rbuf[5],rbuf[6],rbuf[7],
               rbuf[8],rbuf[9],rbuf[10],rbuf[11],rbuf[12],rbuf[13],rbuf[14],
               rbuf[15],inet_ntoa(from_addr.sin_addr),ntohs(from_addr.sin_port));
@@ -1082,7 +1111,8 @@ main(argc,argv)
           {
           if(!no_pinfo)
             {
-sprintf(tb,"ill blk n=%d(%02X%02X) %02X%02X%02X.%02X%02X%02X:%02X%02X%02X%02X%02X%02X%02X%02X from %s:%d #%d(#%d) at %d",
+	      snprintf(tb,sizeof(tb),
+		       "ill blk n=%d(%02X%02X) %02X%02X%02X.%02X%02X%02X:%02X%02X%02X%02X%02X%02X%02X%02X from %s:%d #%d(#%d) at %d",
               n,rbuf[j],rbuf[j+1],rbuf[j+2],rbuf[j+3],rbuf[j+4],rbuf[j+5],
               rbuf[j+6],rbuf[j+7],rbuf[j+8],rbuf[j+9],rbuf[j+10],rbuf[j+11],
               rbuf[j+12],rbuf[j+13],rbuf[j+14],rbuf[j+15],
@@ -1124,7 +1154,7 @@ sprintf(tb,"ill blk n=%d(%02X%02X) %02X%02X%02X.%02X%02X%02X:%02X%02X%02X%02X%02
               ptr_size2[3]=ptr_size[3];  /* size (L) */
               }
 #if DEBUG2
-          printf("%d - %d (%d) %d / %d\n",ptr_size-sh->d,uni,ptr_size2-sh->d,
+          printf("%d - %d (%d) %lu / %lu\n",ptr_size-sh->d,uni,ptr_size2-sh->d,
             sh->pl,pl);
 #endif
 #if DEBUG1
@@ -1145,7 +1175,7 @@ sprintf(tb,"ill blk n=%d(%02X%02X) %02X%02X%02X.%02X%02X%02X:%02X%02X%02X%02X%02
             {
             if(!no_pinfo)
               {
-              sprintf(tb,"ill time %02X%02X%02X.%02X%02X%02X:%02X%02X%02X%02X%02X%02X%02X%02X from %s:%d",
+              snprintf(tb,sizeof(tb),"ill time %02X%02X%02X.%02X%02X%02X:%02X%02X%02X%02X%02X%02X%02X%02X from %s:%d",
                 rbuf[j],rbuf[j+1],rbuf[j+2],rbuf[j+3],rbuf[j+4],rbuf[j+5],
                 rbuf[j+6],rbuf[j+7],rbuf[j+8],rbuf[j+9],rbuf[j+10],rbuf[j+11],
                 rbuf[j+12],rbuf[j+13],
@@ -1180,7 +1210,8 @@ sprintf(tb,"ill blk n=%d(%02X%02X) %02X%02X%02X.%02X%02X%02X:%02X%02X%02X%02X%02
         {
         if(!no_pinfo)
           {
-          sprintf(tb,"ill time %02X:%02X %02X %02X%02X%02X.%02X%02X%02X:%02X%02X%02X%02X%02X%02X%02X%02X from %s:%d",
+         snprintf(tb,sizeof(tb),
+		  "ill time %02X:%02X %02X %02X%02X%02X.%02X%02X%02X:%02X%02X%02X%02X%02X%02X%02X%02X from %s:%d",
             rbuf[0],rbuf[1],rbuf[2],rbuf[3],rbuf[4],rbuf[5],rbuf[6],rbuf[7],
             rbuf[8],rbuf[9],rbuf[10],rbuf[11],rbuf[12],rbuf[13],rbuf[14],
             rbuf[15],rbuf[16],inet_ntoa(from_addr.sin_addr),

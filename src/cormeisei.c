@@ -1,4 +1,4 @@
-/* $Id: cormeisei.c,v 1.6.4.5.2.2 2008/11/13 03:03:01 uehira Exp $ */
+/* $Id: cormeisei.c,v 1.6.4.5.2.3 2008/11/18 02:27:58 uehira Exp $ */
 /* "cormeisei.c"    June'97 Ide changed from*/
 /* "raw_raw.c"      3/4/96 urabe */
 /*                  revised on 5/20/96 */
@@ -228,9 +228,10 @@ char *argv[];
 
 reset:
   /* initialize buffer */
-  shm->p=shm->c=0;
-  shm->pl=(size_shm-sizeof(*shm))/10*9;
-  shm->r=(-1);
+  Shm_init(shm, size_shm);
+  /* shm->p=shm->c=0; */
+  /*   shm->pl=(size_shm-sizeof(*shm))/10*9; */
+  /*   shm->r=(-1); */
 
   ptr=shr->d;
   while(shr->r==(-1)) sleep(1);

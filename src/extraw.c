@@ -1,4 +1,4 @@
-/* $Id: extraw.c,v 1.3.4.3.2.2 2008/11/13 03:03:02 uehira Exp $ */
+/* $Id: extraw.c,v 1.3.4.3.2.3 2008/11/18 02:27:58 uehira Exp $ */
 /* "extraw.c"    2000.3.17 urabe */
 /* 2000.4.24/2001.11.14 strerror() */
 
@@ -97,12 +97,15 @@ main(argc,argv)
 
 reset:
   /* initialize buffer */
-  shdat->p=shdat->c=0;
-  shdat->pl=(size_shdat-sizeof(*shdat))/10*9;
-  shdat->r=(-1);
-  shctl->p=shctl->c=0;
-  shctl->pl=(size_shctl-sizeof(*shctl))/10*9;
-  shctl->r=(-1);
+  Shm_init(shdat, size_shdat);
+  /*   shdat->p=shdat->c=0; */
+  /*   shdat->pl=(size_shdat-sizeof(*shdat))/10*9; */
+  /*   shdat->r=(-1); */
+  Shm_init(shctl, size_shctl);
+  /*   shctl->p=shctl->c=0; */
+  /*   shctl->pl=(size_shctl-sizeof(*shctl))/10*9; */
+  /*   shctl->r=(-1); */
+
   ptr=shin->d;
   while(shin->r==(-1)) sleep(1);
   ptr=shin->d+shin->r;

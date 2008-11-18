@@ -1,4 +1,4 @@
-/* $Id: recvt_LS7000.c,v 1.1.2.3.2.1 2008/11/11 15:19:48 uehira Exp $ */
+/* $Id: recvt_LS7000.c,v 1.1.2.3.2.2 2008/11/18 02:27:58 uehira Exp $ */
 /* "recvt_LS7000.c"  uehira */
 /*   2007-11-02  imported from recvt.c 1.29.2.1 */
 
@@ -749,10 +749,12 @@ main(argc,argv)
     err_sys("shmat");
 
   /* initialize buffer */
-  sh->c=0;
-  sh->pl=pl=(size-sizeof(*sh))/10*9;
-  sh->p=0;
-  sh->r=(-1);
+  Shm_init(sh, size);
+  pl = sh->pl;
+  /*   sh->c=0; */
+  /*   sh->pl=pl=(size-sizeof(*sh))/10*9; */
+  /*   sh->p=0; */
+  /*   sh->r=(-1); */
 
   sprintf(tb,"start shm_key=%d id=%d size=%d",shm_key,shmid,size);
   write_log(tb);

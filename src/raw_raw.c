@@ -1,4 +1,4 @@
-/* $Id: raw_raw.c,v 1.9.4.3.2.1 2008/11/11 15:19:48 uehira Exp $ */
+/* $Id: raw_raw.c,v 1.9.4.3.2.2 2008/11/18 02:27:58 uehira Exp $ */
 /* "raw_raw.c"    97.8.5 urabe */
 /*                  modified from raw_100.c */
 /*                  98.4.17 FreeBSD */
@@ -232,9 +232,11 @@ main(argc,argv)
     err_sys("shmat out");
 
   /* initialize buffer */
-  shm->p=shm->c=0;
-  shm->pl=pl_out=(size_shm-sizeof(*shm))/10*9;
-  shm->r=(-1);
+  Shm_init(shm, size_shm);
+  pl_out = shm->pl;
+  /*   shm->p=shm->c=0; */
+  /*   shm->pl=pl_out=(size_shm-sizeof(*shm))/10*9; */
+  /*   shm->r=(-1); */
 
   sprintf(tb,"start in_key=%d id=%d out_key=%d id=%d size=%d",
     rawkey,shmid_raw,monkey,shmid_mon,size_shm);

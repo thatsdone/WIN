@@ -1,4 +1,4 @@
-/* $Id: raw_shift.c,v 1.2.4.3.2.2 2008/11/13 03:03:02 uehira Exp $ */
+/* $Id: raw_shift.c,v 1.2.4.3.2.3 2008/11/18 02:27:58 uehira Exp $ */
 /* "raw_shift.c"    2002.4.1 - 4.1 urabe */
 /*                  modified from raw_100.c */
 /*                  2005.2.20 added fclose() in read_chfile() */
@@ -192,9 +192,10 @@ main(argc,argv)
 
 reset:
   /* initialize buffer */
-  shm->p=shm->c=0;
-  shm->pl=(size_shm-sizeof(*shm))/10*9;
-  shm->r=(-1);
+  Shm_init(shm, size_shm);
+  /*   shm->p=shm->c=0; */
+  /*   shm->pl=(size_shm-sizeof(*shm))/10*9; */
+  /*   shm->r=(-1); */
   ptr=shr->d;
   while(shr->r==(-1)) sleep(1);
   ptr=shr->d+shr->r;

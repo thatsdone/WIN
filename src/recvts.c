@@ -313,9 +313,10 @@ main(argc,argv)
     err_sys("shmat");
 
   /* initialize buffer */
-  sh->c=0;
-  sh->pl=(size-sizeof(*sh))/10*9;
-  sh->p=sh->r=(-1);
+  Shm_init(sh, size);   /* previous code had bug????? sh->p=0 ???? */
+  /*   sh->c=0; */
+  /*   sh->pl=(size-sizeof(*sh))/10*9; */
+  /*   sh->p=sh->r=(-1); */
 
   sprintf(tb,"start shm_key=%d id=%d size=%d",shm_key,shmid,size);
   write_log(tb);

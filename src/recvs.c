@@ -1,4 +1,4 @@
-/* $Id: recvs.c,v 1.6.2.1.2.2 2008/11/13 05:06:53 uehira Exp $ */
+/* $Id: recvs.c,v 1.6.2.1.2.3 2008/11/18 02:27:58 uehira Exp $ */
 /* "recvs.c"    receive sync frames      2000.3.14       urabe */
 /* 2000.3.21 */
 /* 2000.4.17 */
@@ -379,9 +379,10 @@ main(argc,argv)
     err_sys("shmat");
 
   /* initialize buffer */
-  sh->c=0;
-  sh->pl=(size-sizeof(*sh))/10*9;
-  sh->p=sh->r=(-1);
+  Shm_init(sh, size);    /* previous code had bug?? sh->p=0 ??? */
+  /*   sh->c=0; */
+  /*   sh->pl=(size-sizeof(*sh))/10*9; */
+  /*   sh->p=sh->r=(-1); */
 
   sprintf(tb,"start shm_key=%d id=%d size=%d",shm_key,shmid,size);
   write_log(tb);

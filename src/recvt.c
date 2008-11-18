@@ -1,4 +1,4 @@
-/* $Id: recvt.c,v 1.29.2.3.2.5 2008/11/17 13:44:54 uehira Exp $ */
+/* $Id: recvt.c,v 1.29.2.3.2.6 2008/11/18 02:27:58 uehira Exp $ */
 /*-
  "recvt.c"      4/10/93 - 6/2/93,7/2/93,1/25/94    urabe
                 2/3/93,5/25/94,6/16/94 
@@ -106,7 +106,7 @@
 #define N_PNOS    62    /* length of packet nos. history >=2 */
 
 static char rcsid[] =
-  "$Id: recvt.c,v 1.29.2.3.2.5 2008/11/17 13:44:54 uehira Exp $";
+  "$Id: recvt.c,v 1.29.2.3.2.6 2008/11/18 02:27:58 uehira Exp $";
 
 uint8_w rbuf[MAXMESG],ch_table[WIN_CHMAX];
 char *progname,*logfile,chfile[N_CHFILE][256];
@@ -872,10 +872,12 @@ main(argc,argv)
     err_sys("shmat");
 
   /* initialize buffer */
-  sh->c=0;
-  sh->pl=pl=(size-sizeof(*sh))/10*9;
-  sh->p=0;
-  sh->r=(-1);
+  Shm_init(sh, size);
+  pl = sh->pl;
+  /* sh->c=0; */
+  /*   sh->pl=pl=(size-sizeof(*sh))/10*9; */
+  /*   sh->p=0; */
+  /*   sh->r=(-1); */
 
   snprintf(tb,sizeof(tb),"start shm_key=%d id=%d size=%ld",shm_key,shmid,size);
   write_log(tb);

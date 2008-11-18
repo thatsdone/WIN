@@ -1,4 +1,4 @@
-/* $Id: raw_mon.c,v 1.6.4.4.2.2 2008/11/13 09:36:07 uehira Exp $ */
+/* $Id: raw_mon.c,v 1.6.4.4.2.3 2008/11/18 02:27:58 uehira Exp $ */
 /* "raw_mon.c"      7/2/93,6/17/94,6/28/94    urabe */
 /*                  3/17/95 write_log(), 4/17/95 MAX_SR safety */
 /*                  usleep -> sleep */
@@ -294,9 +294,10 @@ main(argc,argv)
 
 reset:
   /* initialize buffer */
-  shm->p=shm->c=0;
-  shm->pl=(size_shm-sizeof(*shm))/10*9;
-  shm->r=(-1);
+  Shm_init(shm, size_shm);
+  /*   shm->p=shm->c=0; */
+  /*   shm->pl=(size_shm-sizeof(*shm))/10*9; */
+  /*   shm->r=(-1); */
 
   ptr=shr->d;
   while(shr->r==(-1)) sleep(1);

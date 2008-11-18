@@ -1,4 +1,4 @@
-/* $Id: raw_ch.c,v 1.4.4.3.2.1 2008/11/11 15:19:47 uehira Exp $ */
+/* $Id: raw_ch.c,v 1.4.4.3.2.2 2008/11/18 02:27:58 uehira Exp $ */
 /* "raw_ch.c"    99.12.8 urabe */
 /*                  modified from raw_raw.c */
 /*                  byte-order-free */
@@ -172,9 +172,10 @@ main(argc,argv)
 
 reset:
   /* initialize buffer */
-  shm->p=shm->c=0;
-  shm->pl=(size_shm-sizeof(*shm))/10*9;
-  shm->r=(-1);
+  Shm_init(shm, size_shm);
+  /*   shm->p=shm->c=0; */
+  /*   shm->pl=(size_shm-sizeof(*shm))/10*9; */
+  /*   shm->r=(-1); */
   ptr=shr->d;
   while(shr->r==(-1)) sleep(1);
   ptr=shr->d+shr->r;

@@ -1,4 +1,4 @@
-/* $Id: winlib.c,v 1.1.2.4.2.5 2008/11/13 15:47:11 uehira Exp $ */
+/* $Id: winlib.c,v 1.1.2.4.2.6 2008/11/18 02:27:58 uehira Exp $ */
 
 /*-
  * winlib.c  (Uehira Kenji)
@@ -580,5 +580,15 @@ read_onesec_win(FILE *fp, uint8_w **rbuf)
 #endif
 
   return (size);
+}
+
+void
+Shm_init(struct Shm *sh, size_t size)
+{
+
+  sh->p = 0; 
+  sh->pl = (size - sizeof(*sh)) / 10 * 9;
+  sh->c = 0;
+  sh->r = (-1);
 }
 

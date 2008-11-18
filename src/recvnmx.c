@@ -1,4 +1,4 @@
-/* $Id: recvnmx.c,v 1.16.4.4.2.3 2008/11/13 09:36:07 uehira Exp $ */
+/* $Id: recvnmx.c,v 1.16.4.4.2.4 2008/11/18 02:27:58 uehira Exp $ */
 /* "recvnmx.c"    2001.7.18-19 modified from recvt.c and nmx2raw.c  urabe */
 /*                2001.8.18 */
 /*                2001.10.5 workaround for hangup */
@@ -609,9 +609,11 @@ main(argc,argv)
   write_log(tb);
 
   /* initialize buffer */
-  shm->p=shm->c=0;
-  shm->pl=pl=(size_shm-sizeof(*shm))/10*9;
-  shm->r=(-1);
+  Shm_init(shm, size_shm);
+  pl = shm->pl;
+  /*   shm->p=shm->c=0; */
+  /*   shm->pl=pl=(size_shm-sizeof(*shm))/10*9; */
+  /*   shm->r=(-1); */
 
   read_ch_map();
 

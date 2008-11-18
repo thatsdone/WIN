@@ -1,4 +1,4 @@
-/* $Id: winlib.h,v 1.1.2.7.2.6 2008/11/17 13:44:54 uehira Exp $ */
+/* $Id: winlib.h,v 1.1.2.7.2.7 2008/11/18 02:27:58 uehira Exp $ */
 
 #ifndef _WIN_LIB_H_
 #define _WIN_LIB_H_
@@ -118,5 +118,6 @@ uint32_w win2fix(uint8_w *, int32_w *, WIN_ch *, WIN_sr *);
 int strncmp2(char *, char *, int);
 int strcmp2(char *, char *);
 uint32_w read_onesec_win(FILE *, uint8_w **);
+void Shm_init(struct Shm *, size_t);
 
 #endif  /* !_WIN_LIB_H_*/

@@ -1,4 +1,4 @@
-/* $Id: order.c,v 1.11.4.5.2.1 2008/11/11 15:19:47 uehira Exp $ */
+/* $Id: order.c,v 1.11.4.5.2.2 2008/11/18 02:27:58 uehira Exp $ */
 /*  program "order.c" 1/26/94 - 2/7/94, 6/14/94 urabe */
 /*                              1/6/95 bug in adj_time(tm[0]--) fixed */
 /*                              3/17/95 write_log() */
@@ -267,10 +267,11 @@ main(argc,argv)
   write_log(tbuf);
 
   /* initialize buffer */
-
-  shm_out->p=shm_out->c=0;
-  shm_out->pl=pl_out=(size-sizeof(*shm_out))/10*9;
-  shm_out->r=(-1);
+  Shm_init(shm_out, size);
+  pl_out = shm_out->pl;
+  /*   shm_out->p=shm_out->c=0; */
+  /*   shm_out->pl=pl_out=(size-sizeof(*shm_out))/10*9; */
+  /*   shm_out->r=(-1); */
 
   if(late) {
     if((shmid_late=shmget(shm_key_late,sizej,IPC_CREAT|0666))<0)
@@ -280,9 +281,10 @@ main(argc,argv)
     sprintf(tbuf,"late: shm_key_late=%d id=%d size=%d",
           shm_key_late,shmid_late,sizej);
     write_log(tbuf);
-    shm_late->p=shm_late->c=0;
-    shm_late->pl=(sizej-sizeof(*shm_late))/10*9;
-    shm_late->r=(-1);
+    Shm_init(shm_late, sizej);
+    /*     shm_late->p=shm_late->c=0; */
+    /*     shm_late->pl=(sizej-sizeof(*shm_late))/10*9; */
+    /*     shm_late->r=(-1); */
   }
  
   signal(SIGPIPE,(void *)end_program);

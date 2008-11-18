@@ -184,9 +184,10 @@ main(argc, argv)
 	write_log(Tbuf);
 
 	/* initialize output buffer */
-	shm_out->p = shm_out->c = 0;
-	shm_out->pl = (shm_size - sizeof(*shm_out)) / 10 * 9;
-	shm_out->r = -1;
+	Shm_init(shm_out, shm_size);
+	/* 	shm_out->p = shm_out->c = 0; */
+	/* 	shm_out->pl = (shm_size - sizeof(*shm_out)) / 10 * 9; */
+	/* 	shm_out->r = -1; */
 
 	ptw = shm_out->d;
 

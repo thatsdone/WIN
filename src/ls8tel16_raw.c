@@ -1,4 +1,4 @@
-/* $Id: ls8tel16_raw.c,v 1.3.2.2.2.3 2008/11/13 09:36:06 uehira Exp $ */
+/* $Id: ls8tel16_raw.c,v 1.3.2.2.2.4 2008/11/18 02:56:25 uehira Exp $ */
 
 /*
  * Copyright (c) 2005
@@ -57,7 +57,7 @@
 /*  #define DEBUG       0 */
 
 static char rcsid[] =
-  "$Id: ls8tel16_raw.c,v 1.3.2.2.2.3 2008/11/13 09:36:06 uehira Exp $";
+  "$Id: ls8tel16_raw.c,v 1.3.2.2.2.4 2008/11/18 02:56:25 uehira Exp $";
 
 char *progname, *logfile;
 int  daemon_mode, syslog_mode;
@@ -187,9 +187,10 @@ main(int argc, char *argv[])
 
 reset:
   /* initialize buffer */
-  shm->p = shm->c = 0;
-  shm->pl = (size_shm - sizeof(*shm)) / 10 * 9;
-  shm->r = (-1);
+  Shm_init(shm, size_shm);
+  /*   shm->p = shm->c = 0; */
+  /*   shm->pl = (size_shm - sizeof(*shm)) / 10 * 9; */
+  /*   shm->r = (-1); */
   ptr = shr->d;
   while (shr->r == (-1))
     sleep(1);

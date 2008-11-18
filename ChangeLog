@@ -1,7 +1,8 @@
- $Id: ChangeLog,v 1.131.2.25.2.5 2008/11/18 02:27:57 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.6 2008/11/18 04:04:15 uehira Exp $
 
 2008-11-18  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
-	* src/winlib.c : Shm_init().
+	* src/winlib.c : added Shm_init().
+	* src/winlib.c : added WIN_version().
 
 2008-11-14  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* wck : 64 bit clean.

@@ -1,4 +1,4 @@
-/* $Id: winlib.c,v 1.1.2.4.2.6 2008/11/18 02:27:58 uehira Exp $ */
+/* $Id: winlib.c,v 1.1.2.4.2.7 2008/11/18 04:04:16 uehira Exp $ */
 
 /*-
  * winlib.c  (Uehira Kenji)
@@ -582,6 +582,7 @@ read_onesec_win(FILE *fp, uint8_w **rbuf)
   return (size);
 }
 
+/* init shared memory */
 void
 Shm_init(struct Shm *sh, size_t size)
 {
@@ -592,3 +593,14 @@ Shm_init(struct Shm *sh, size_t size)
   sh->r = (-1);
 }
 
+/* print version */
+void
+WIN_version(void)
+{
+
+#if defined __LP64__
+  (void)printf("%s package Version %s [64-bit]\n", PACKAGE, VERSION);
+#else
+  (void)printf("%s package Version %s\n", PACKAGE, VERSION);
+#endif
+}

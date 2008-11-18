@@ -1,4 +1,4 @@
-/* $Id: wck.c,v 1.5.4.1.2.2 2008/11/14 02:01:20 uehira Exp $ */
+/* $Id: wck.c,v 1.5.4.1.2.3 2008/11/18 04:04:16 uehira Exp $ */
 /*- 
    program "wck.c"
 	"wck" checks a win format data file
@@ -37,7 +37,7 @@
 #define DEBUG1  0
 
 static char rcsid[] =
-  "$Id: wck.c,v 1.5.4.1.2.2 2008/11/14 02:01:20 uehira Exp $";
+  "$Id: wck.c,v 1.5.4.1.2.3 2008/11/18 04:04:16 uehira Exp $";
 
 char *progname;
 unsigned long count[WIN_CHMAX];
@@ -53,6 +53,7 @@ static void
 usage()
 {
 
+  WIN_version();
   fprintf(stderr, "%s\n", rcsid);
   fprintf(stderr,
 	  " usage : '%s (-r/-m/-h/-c/-t) ([data file]/- ([sec position]))'\n",

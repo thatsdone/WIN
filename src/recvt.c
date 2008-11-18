@@ -1,4 +1,4 @@
-/* $Id: recvt.c,v 1.29.2.3.2.6 2008/11/18 02:27:58 uehira Exp $ */
+/* $Id: recvt.c,v 1.29.2.3.2.7 2008/11/18 04:04:15 uehira Exp $ */
 /*-
  "recvt.c"      4/10/93 - 6/2/93,7/2/93,1/25/94    urabe
                 2/3/93,5/25/94,6/16/94 
@@ -106,7 +106,7 @@
 #define N_PNOS    62    /* length of packet nos. history >=2 */
 
 static char rcsid[] =
-  "$Id: recvt.c,v 1.29.2.3.2.6 2008/11/18 02:27:58 uehira Exp $";
+  "$Id: recvt.c,v 1.29.2.3.2.7 2008/11/18 04:04:15 uehira Exp $";
 
 uint8_w rbuf[MAXMESG],ch_table[WIN_CHMAX];
 char *progname,*logfile,chfile[N_CHFILE][256];
@@ -666,6 +666,7 @@ static void
 usage()
 {
 
+  WIN_version();
   fprintf(stderr, "%s\n", rcsid);
   if (daemon_mode)
     fprintf(stderr,

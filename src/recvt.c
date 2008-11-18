@@ -1,4 +1,4 @@
-/* $Id: recvt.c,v 1.29.2.3.2.7 2008/11/18 04:04:15 uehira Exp $ */
+/* $Id: recvt.c,v 1.29.2.3.2.8 2008/11/18 11:15:57 uehira Exp $ */
 /*-
  "recvt.c"      4/10/93 - 6/2/93,7/2/93,1/25/94    urabe
                 2/3/93,5/25/94,6/16/94 
@@ -106,7 +106,7 @@
 #define N_PNOS    62    /* length of packet nos. history >=2 */
 
 static char rcsid[] =
-  "$Id: recvt.c,v 1.29.2.3.2.7 2008/11/18 04:04:15 uehira Exp $";
+  "$Id: recvt.c,v 1.29.2.3.2.8 2008/11/18 11:15:57 uehira Exp $";
 
 uint8_w rbuf[MAXMESG],ch_table[WIN_CHMAX];
 char *progname,*logfile,chfile[N_CHFILE][256];
@@ -333,7 +333,7 @@ check_pno(from_addr,pn,pn_f,sock,fromlen,n,nr,req_delay) /* returns -1 if dup */
   struct sockaddr_in *from_addr;  /* sender address */
   unsigned int pn,pn_f;           /* present and former packet Nos. */
   int sock;                       /* socket */
-  int fromlen;                    /* length of from_addr */
+  socklen_t fromlen;              /* length of from_addr */
   int n;                          /* size of packet */
   int nr;                         /* no resend request if 1 */
   int req_delay;                  /* packet count for delayed resend-request */
@@ -694,10 +694,11 @@ main(argc,argv)
   unsigned long uni;
   uint8_w *ptr,tm[6],*ptr_size,*ptr_size2;
   char host_name[1024];
-  int i,j,k,fromlen,nlen,sock,all,c,mon,eobsize,
+  int i,j,k,sock,all,c,mon,eobsize,
     sbuf,noreq,no_ts,no_pno,req_delay;
+  socklen_t fromlen;
   size_t size,pl;
-  ssize_t n,nn;
+  ssize_t n,nn,nlen;
   time_t pre,post;
   struct sockaddr_in to_addr,from_addr,host_addr;
   unsigned short to_port,host_port;
@@ -772,7 +773,7 @@ main(argc,argv)
         if((ptr=(uint8_w *)strchr(tb2,':')))
           {
           *ptr=0;
-          host_port=atoi(ptr+1);
+          host_port=(unsigned short)atoi(ptr+1);
           }
         else
           {
@@ -814,7 +815,7 @@ main(argc,argv)
     }
   pre=(-pre*60);
   post*=60;
-  to_port=atoi(argv[1+optind]);
+  to_port=(unsigned short)atoi(argv[1+optind]);
   shm_key=atoi(argv[2+optind]);
   size=atol(argv[3+optind])*1000;
   *chfile[0]=0;

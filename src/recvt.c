@@ -1,4 +1,4 @@
-/* $Id: recvt.c,v 1.29.2.3.2.10 2008/11/23 10:01:09 uehira Exp $ */
+/* $Id: recvt.c,v 1.29.2.3.2.11 2008/11/23 10:49:46 uehira Exp $ */
 /*-
  "recvt.c"      4/10/93 - 6/2/93,7/2/93,1/25/94    urabe
                 2/3/93,5/25/94,6/16/94 
@@ -106,7 +106,7 @@
 #define N_PNOS    62    /* length of packet nos. history >=2 */
 
 static char rcsid[] =
-  "$Id: recvt.c,v 1.29.2.3.2.10 2008/11/23 10:01:09 uehira Exp $";
+  "$Id: recvt.c,v 1.29.2.3.2.11 2008/11/23 10:49:46 uehira Exp $";
 
 uint8_w rbuf[MAXMESG],ch_table[WIN_CHMAX];
 char *progname,*logfile,chfile[N_CHFILE][256];
@@ -120,8 +120,10 @@ struct {
     unsigned int pnos[N_PNOS];
     int nosf[4]; /* 4 segments x 64 */
     unsigned char nos[256/8];
-    unsigned int n_bytes;
-    unsigned int n_packets;
+    unsigned long n_bytes;
+    unsigned long n_packets;
+  /*     unsigned int n_bytes; */
+  /*     unsigned int n_packets; */
     } ht[N_HOST];
 
 struct ch_hist {
@@ -140,7 +142,8 @@ check_ts(ptr,pre,post)   /* 64bit ok */
   struct tm mt;
 
   if(!bcd_dec(tm,ptr)) return 0; /* out of range */
-  memset((char *)&mt,0,sizeof(mt));
+  /* memset((char *)&mt,0,sizeof(mt)); */
+  memset(&mt,0,sizeof(mt));
   if((mt.tm_year=tm[0])<50) mt.tm_year+=100;
   mt.tm_mon=tm[1]-1;
   mt.tm_mday=tm[2];
@@ -163,7 +166,8 @@ static void
 read_chfile()
   {
   FILE *fp;
-  int i,j,k,ii,i_chfile;
+  int i,k,ii,i_chfile;
+  time_t tdif, tdif2;
   char tbuf[1024],host_name[80],tb[256],*ptr;
   struct hostent *h;
   static time_t ltime,ltime_p;
@@ -306,21 +310,21 @@ read_chfile()
   write_log(tb);
 
   time(&ltime);
-  j=ltime-ltime_p;
-  k=j/2;
+  tdif=ltime-ltime_p;
+  tdif2=tdif/2;
   if(ht[0].host)
     {
-    sprintf(tb,"statistics in %d s (pkts, B, pkts/s, B/s)",j);
+    sprintf(tb,"statistics in %ld s (pkts, B, pkts/s, B/s)",tdif);
     write_log(tb);
     }
   for(i=0;i<N_HOST;i++) /* print statistics for hosts */
     {
     if(ht[i].host==0) break;
-    sprintf(tb,"  src %d.%d.%d.%d:%d   %d %d %d %d",
+    sprintf(tb,"  src %d.%d.%d.%d:%d   %lu %lu %lu %lu",
       ((uint8_w *)&ht[i].host)[0],((uint8_w *)&ht[i].host)[1],
       ((uint8_w *)&ht[i].host)[2],((uint8_w *)&ht[i].host)[3],
-      ntohs(ht[i].port),ht[i].n_packets,ht[i].n_bytes,(ht[i].n_packets+k)/j,
-      (ht[i].n_bytes+k)/j);
+      ntohs(ht[i].port),ht[i].n_packets,ht[i].n_bytes,
+     (ht[i].n_packets+tdif2)/tdif,(ht[i].n_bytes+tdif2)/tdif);
     write_log(tb);
     ht[i].n_packets=ht[i].n_bytes=0;
     }
@@ -538,7 +542,7 @@ wincpy2(ptw,ts,ptr,size,mon,chhist,from_addr)   /* 64bit ok */
         if(!no_pinfo)
           {
           sprintf(tb,
-"ill ch hdr %02X%02X%02X%02X %02X%02X%02X%02X psiz=%ld sr=%d ss=%d gs=%d rest=%d from %s:%hu",
+"ill ch hdr %02X%02X%02X%02X %02X%02X%02X%02X psiz=%ld sr=%d ss=%d gs=%d rest=%lu from %s:%hu",
             ptr[0],ptr[1],ptr[2],ptr[3],ptr[4],ptr[5],ptr[6],ptr[7],
             size,sr,ss,gs,ptr_lim-ptr,
             inet_ntoa(from_addr->sin_addr),ntohs(from_addr->sin_port));
@@ -564,7 +568,7 @@ wincpy2(ptw,ts,ptr,size,mon,chhist,from_addr)   /* 64bit ok */
         if(!no_pinfo)
           {
           sprintf(tb,
-"ill ch blk %02X%02X%02X%02X %02X%02X%02X%02X psiz=%ld sr=%d gs=%d rest=%d from %s:%d",
+"ill ch blk %02X%02X%02X%02X %02X%02X%02X%02X psiz=%ld sr=%d gs=%d rest=%lu from %s:%d",
             ptr[0],ptr[1],ptr[2],ptr[3],ptr[4],ptr[5],ptr[6],ptr[7],
             size,sr,gs,ptr_lim-ptr,
             inet_ntoa(from_addr->sin_addr),ntohs(from_addr->sin_port));
@@ -692,12 +696,12 @@ main(argc,argv)
   int argc;
   char *argv[];
   {
-  key_t shm_key;
-  int shmid;
-  uint32_w uni;
-  WIN_bs  uni2;
-  uint8_w *ptr,tm[6],*ptr_size,*ptr_size2;
-  char host_name[1024];
+  key_t shm_key;  /* 64bit ok */
+  int shmid;  /* 64bit ok */
+  uint32_w uni;  /* 64bit ok */
+  WIN_bs  uni2;  /* 64bit ok */
+  uint8_w *ptr,tm[6],*ptr_size,*ptr_size2;  /* 64bit ok */
+  char host_name[1024];  /* 64bit ok */
   int i,j,k,sock,all,c,mon,eobsize,
     sbuf,noreq,no_ts,no_pno,req_delay;
   socklen_t fromlen;
@@ -820,7 +824,7 @@ main(argc,argv)
   pre=(-pre*60);
   post*=60;
   to_port=(unsigned short)atoi(argv[1+optind]);
-  shm_key=atoi(argv[2+optind]);
+  shm_key=atol(argv[2+optind]);
   size=atol(argv[3+optind])*1000;
   *chfile[0]=0;
   if(argc>4+optind)
@@ -868,7 +872,7 @@ main(argc,argv)
      umask(022);
    }
 
-  snprintf(tb,sizeof(tb),"n_hist=%d size=%d req_delay=%d",chhist.n,
+  snprintf(tb,sizeof(tb),"n_hist=%d size=%ld req_delay=%d",chhist.n,
     WIN_CHMAX*chhist.n*sizeof(time_t),req_delay);
   write_log(tb);
 
@@ -885,7 +889,7 @@ main(argc,argv)
   /*   sh->p=0; */
   /*   sh->r=(-1); */
 
-  snprintf(tb,sizeof(tb),"start shm_key=%d id=%d size=%ld",shm_key,shmid,size);
+  snprintf(tb,sizeof(tb),"start shm_key=%ld id=%d size=%ld",shm_key,shmid,size);
   write_log(tb);
   if(all) write_log("accept >=A1 packets");
   snprintf(tb,sizeof(tb),"TS window %lds - +%lds",pre,post);
@@ -1120,7 +1124,7 @@ main(argc,argv)
           if(!no_pinfo)
             {
 	      snprintf(tb,sizeof(tb),
-		       "ill blk n=%d(%02X%02X) %02X%02X%02X.%02X%02X%02X:%02X%02X%02X%02X%02X%02X%02X%02X from %s:%d #%d(#%d) at %d",
+		       "ill blk n=%ld(%02X%02X) %02X%02X%02X.%02X%02X%02X:%02X%02X%02X%02X%02X%02X%02X%02X from %s:%d #%d(#%d) at %d",
               n,rbuf[j],rbuf[j+1],rbuf[j+2],rbuf[j+3],rbuf[j+4],rbuf[j+5],
               rbuf[j+6],rbuf[j+7],rbuf[j+8],rbuf[j+9],rbuf[j+10],rbuf[j+11],
               rbuf[j+12],rbuf[j+13],rbuf[j+14],rbuf[j+15],

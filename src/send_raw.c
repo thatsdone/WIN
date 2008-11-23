@@ -1,4 +1,4 @@
-/* $Id: send_raw.c,v 1.24.2.4.2.1 2008/11/11 15:19:48 uehira Exp $ */
+/* $Id: send_raw.c,v 1.24.2.4.2.2 2008/11/23 10:01:10 uehira Exp $ */
 /*
     program "send_raw/send_mon.c"   1/24/94 - 1/25/94,5/25/94 urabe
                                     6/15/94 - 6/16/94
@@ -89,7 +89,7 @@
 #define TEST_RESEND 0
 #define MTU       1500 /* (max of UDP data size) = IP_MTU - 28 */
 #define RSIZE    10000
-#define SR_MON      5
+/* #define SR_MON      5 */
 #define NBUF      250
 #define SLPLIMIT  100
 #define REQ_TIMO  10   /* timeout (sec) for request */

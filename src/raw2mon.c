@@ -1,4 +1,4 @@
-/* $Id: raw2mon.c,v 1.4.4.3.2.2 2008/11/13 09:36:06 uehira Exp $ */
+/* $Id: raw2mon.c,v 1.4.4.3.2.3 2008/11/23 10:01:09 uehira Exp $ */
 /*
   program "raw2mon.c"
   6/3/93,6/17/94,8/17/95 urabe
@@ -25,7 +25,7 @@
 
 #define   MAXSIZE   5000000
 #define   SIZE_WBUF 1000000
-#define   SR_MON    5
+/* #define   SR_MON    5 */
 #define   MAX_SR    1024
 
   unsigned char wbuf[SIZE_WBUF],buf[MAXSIZE];

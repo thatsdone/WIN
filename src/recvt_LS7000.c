@@ -1,4 +1,4 @@
-/* $Id: recvt_LS7000.c,v 1.1.2.3.2.2 2008/11/18 02:27:58 uehira Exp $ */
+/* $Id: recvt_LS7000.c,v 1.1.2.3.2.3 2008/11/23 10:01:09 uehira Exp $ */
 /* "recvt_LS7000.c"  uehira */
 /*   2007-11-02  imported from recvt.c 1.29.2.1 */
 
@@ -446,7 +446,7 @@ wincpy2(ptw,ts,ptr,size,mon,chhist,from_addr)
   {
 #define MAX_SR 500
 #define MAX_SS 4
-#define SR_MON 5
+/* #define SR_MON 5 */
   int sr,n,ss;
   unsigned char *ptr_lim,*ptr1;
   unsigned short ch;

@@ -199,7 +199,7 @@ main(argc,argv)
   int argc;
   char *argv[];
   {
-#define SR_MON 5
+/* #define SR_MON 5 */
   key_t shm_key_in;
   union {
     unsigned long i;

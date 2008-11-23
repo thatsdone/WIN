@@ -1,4 +1,4 @@
-/* $Id: winlib.h,v 1.1.2.7.2.9 2008/11/23 04:02:31 uehira Exp $ */
+/* $Id: winlib.h,v 1.1.2.7.2.10 2008/11/23 10:01:10 uehira Exp $ */
 
 #ifndef _WIN_LIB_H_
 #define _WIN_LIB_H_
@@ -53,7 +53,7 @@ typedef uint32_w  WIN_sr;
 #define  HEADER_5B    1048576  /* SR<2^20  (4096 Hz -- 1048575 Hz) */
 
 #define  WIN_CHMAX    65536   /* Max. number of channel: 2^16 */
-
+#define  SR_MON       5   /* sampling rate of MON */
 #define  TIME_OFFSET ((time_t)0)  /* time(0) offset */
 
 #define  SWAPL(a)  a = ((((a) << 24)) | (((a) << 8) & 0xff0000) |	\
@@ -122,5 +122,6 @@ int strcmp2(char *, char *);
 uint32_w read_onesec_win(FILE *, uint8_w **);
 void Shm_init(struct Shm *, size_t);
 void WIN_version(void);
+uint32_w win_chheader_info(const uint8_w *, WIN_ch *, WIN_sr *, int *);
 
 #endif  /* !_WIN_LIB_H_*/

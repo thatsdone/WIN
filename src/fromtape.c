@@ -1,4 +1,4 @@
-/* $Id: fromtape.c,v 1.7.2.3.2.2 2008/11/13 09:36:06 uehira Exp $ */
+/* $Id: fromtape.c,v 1.7.2.3.2.3 2008/11/23 10:01:09 uehira Exp $ */
 /*
   program "fromtape.c"
   12/10/90 - 12/13/90, 9/19/91, 10/30/91, 6/19/92  urabe
@@ -36,7 +36,7 @@
 #define   NAMLEN    256
 #define   MAXSIZE   2000000
 #define   SIZE_WBUF 600000
-#define   SR_MON    5
+/* #define   SR_MON    5 */
 #define   MAX_SR    1024
 
 #define   TIME1   "9005151102"  /* 10 m / fm before this time */

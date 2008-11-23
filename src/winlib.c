@@ -1,4 +1,4 @@
-/* $Id: winlib.c,v 1.1.2.4.2.7 2008/11/18 04:04:16 uehira Exp $ */
+/* $Id: winlib.c,v 1.1.2.4.2.8 2008/11/23 10:01:10 uehira Exp $ */
 
 /*-
  * winlib.c  (Uehira Kenji)
@@ -604,3 +604,59 @@ WIN_version(void)
   (void)printf("%s package Version %s\n", PACKAGE, VERSION);
 #endif
 }
+
+/*-
+ * channel header information (High sampling rate version)
+ *  return group size (byte)
+ * input  : *ptr
+ * output : ch  : channel number
+ *          sr  : sampling rate
+ *          ss  : sample size (0-->0.5byte)
+ -*/
+uint32_w
+win_chheader_info(const uint8_w *ptr, WIN_ch *ch, WIN_sr *sr, int *ss)
+{
+  WIN_bs    gsize;
+
+  /* channel number */
+  *ch = (((WIN_ch)ptr[0]) << 8) + (WIN_ch)ptr[1];
+
+  /* samping rate */
+  if ((ptr[2] & 0x80) == 0x0) /* channel header = 4 byte */
+    *sr = (WIN_sr)ptr[3] + (((WIN_sr)(ptr[2] & 0x0f)) << 8);
+  else                        /* channel header = 5 byte */
+    *sr = (WIN_sr)ptr[4] + (((WIN_sr)ptr[3]) << 8)
+      + (((WIN_sr)(ptr[2] & 0x0f)) << 16);
+
+  /* sample size */
+  *ss = (ptr[2] >> 4) & 0x7;
+
+  /* goupe size */
+  if (*ss)
+    gsize = *ss * (*sr - 1) + 8;
+  else
+    gsize = ((*sr) >> 1) + 8;
+  if (ptr[2] & 0x80)
+    gsize++;
+
+  return (gsize);
+}
+/** ORIGINAL VERSION **/
+/* WIN_bs */
+/* win_chheader_info(const uint8_w *ptr, WIN_ch *ch, WIN_sr *sr, int *ss) */
+/* { */
+/*   uint32_w  gh; */
+/*   WIN_bs    gsize; */
+
+/*   gh = mkuint4(ptr); */
+/*   *ch = (WIN_ch)((gh >> 16) & 0xffff); */
+/*   *sr = gh & 0xfff; */
+/*   *ss = (gh >> 12) & 0xf; */
+/*   if (*ss) */
+/*     gsize = *ss * (*sr - 1) + 8; */
+/*   else */
+/*     gsize = ((*sr) >> 1) + 8; */
+
+/*   return (gsize); */
+/* } */
+

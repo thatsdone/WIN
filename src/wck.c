@@ -1,4 +1,4 @@
-/* $Id: wck.c,v 1.5.4.1.2.3 2008/11/18 04:04:16 uehira Exp $ */
+/* $Id: wck.c,v 1.5.4.1.2.4 2008/11/23 10:01:10 uehira Exp $ */
 /*- 
    program "wck.c"
 	"wck" checks a win format data file
@@ -32,12 +32,12 @@
 #define RAW_HSR 0x02
 #define COUNT 0x10
 #define TABLE 0x20
-#define SR_MON 5
+/* #define SR_MON 5 */
 
 #define DEBUG1  0
 
 static char rcsid[] =
-  "$Id: wck.c,v 1.5.4.1.2.3 2008/11/18 04:04:16 uehira Exp $";
+  "$Id: wck.c,v 1.5.4.1.2.4 2008/11/23 10:01:10 uehira Exp $";
 
 char *progname;
 unsigned long count[WIN_CHMAX];
@@ -66,7 +66,8 @@ main(argc,argv)
    char *argv[];
 {
    int i,j,k,ii,chs,chs16,mode,c,nch;
-   uint32_w mainsize,size,gs;
+   uint32_w mainsize,gs;
+   int size;
    unsigned long ts,sec,ss;
    WIN_ch   sysch;
    WIN_sr   sr;
@@ -130,7 +131,8 @@ main(argc,argv)
      nch=0;
      do
        {
-       sysch=(WIN_ch)ptr[1]+(((WIN_ch)ptr[0]<<8));
+/*        sysch=(WIN_ch)ptr[1]+(((WIN_ch)ptr[0]<<8)); */
+       gs=win_chheader_info(ptr,&sysch,&sr,&size);
        if(mode&(COUNT|TABLE)) count[sysch]++;
        if(mode&MON)
          {
@@ -148,10 +150,10 @@ main(argc,argv)
          {
          if((ptr[2]&0x80)==0) /* channel header = 4 byte */
            {
-           sr=ptr[3]+(((WIN_sr)(ptr[2]&0x0f))<<8);
-           size=(ptr[2]>>4)&0x7;
-           if(size) gs=size*(sr-1)+8;
-           else gs=(sr>>1)+8;
+/*            sr=ptr[3]+(((WIN_sr)(ptr[2]&0x0f))<<8); */
+/*            size=(ptr[2]>>4)&0x7; */
+/*            if(size) gs=size*(sr-1)+8; */
+/*            else gs=(sr>>1)+8; */
 #if DEBUG
 printf("gs=%u gh=%02x%02x%02x%02x%02x sr=%u gs=%u ptr=%p ptr_lim=%p\n",
   gs,ptr[0],ptr[1],ptr[2],ptr[3],ptr[4],sr,gs,ptr,ptr_lim); 
@@ -183,15 +185,15 @@ printf("gs=%u gh=%02x%02x%02x%02x%02x sr=%u gs=%u ptr=%p ptr_lim=%p\n",
                nch+1,sysch,sr,bytes,gs);
              }
            }
-         else
+         else              /* channel header = 5 byte */
            {
-           if(mode&RAW_HSR) /* channel header = 5 byte */
+           if(mode&RAW_HSR)
              {
-             sr=ptr[4]+(((WIN_sr)ptr[3])<<8)+(((WIN_sr)(ptr[2]&0x0f))<<16);
-             size=(ptr[2]>>4)&0x7;
-             if(size) gs=size*(sr-1)+8;
-             else gs=(sr>>1)+8;
-             gs++;
+/*              sr=ptr[4]+(((WIN_sr)ptr[3])<<8)+(((WIN_sr)(ptr[2]&0x0f))<<16); */
+/*              size=(ptr[2]>>4)&0x7; */
+/*              if(size) gs=size*(sr-1)+8; */
+/*              else gs=(sr>>1)+8; */
+/*              gs++; */
              if(!(mode&(COUNT|TABLE)) && sec==ss)
                {
                switch(size)

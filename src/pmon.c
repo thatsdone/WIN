@@ -1,4 +1,4 @@
-/* $Id: pmon.c,v 1.14.2.5.2.1 2008/11/11 15:19:47 uehira Exp $ */
+/* $Id: pmon.c,v 1.14.2.5.2.2 2008/11/23 10:01:09 uehira Exp $ */
 /************************************************************************
 *************************************************************************
 **  program "pmon.c" for NEWS/SPARC                             *********
@@ -97,7 +97,7 @@
 #define WIDTH_LBP     392    /* in bytes (must be even) */
 #define HEIGHT_LBP    4516   /* in pixels */
 #define LENGTH        200000 /* buffer size */
-#define SR_MON        5
+/* #define SR_MON        5 */
 #define TOO_LOW       0.0
 #define TIME_TOO_LOW  10.0
 #define STNLEN        11   /* (length of station code)+1 */

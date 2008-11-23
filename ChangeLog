@@ -1,7 +1,9 @@
- $Id: ChangeLog,v 1.131.2.25.2.7 2008/11/23 04:02:31 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.8 2008/11/23 10:01:09 uehira Exp $
 
 2008-11-23  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* src/winlib.h : introduced TIME_OFFSET.
+	* src/winlib.h : all SR_MON definition moved to this file.
+	* src/winlib.c : added win_chheader_info().
 
 2008-11-18  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* src/winlib.c : added Shm_init().

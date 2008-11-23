@@ -1,4 +1,4 @@
-/* $Id: recvt.c,v 1.29.2.3.2.9 2008/11/23 08:18:08 uehira Exp $ */
+/* $Id: recvt.c,v 1.29.2.3.2.10 2008/11/23 10:01:09 uehira Exp $ */
 /*-
  "recvt.c"      4/10/93 - 6/2/93,7/2/93,1/25/94    urabe
                 2/3/93,5/25/94,6/16/94 
@@ -106,7 +106,7 @@
 #define N_PNOS    62    /* length of packet nos. history >=2 */
 
 static char rcsid[] =
-  "$Id: recvt.c,v 1.29.2.3.2.9 2008/11/23 08:18:08 uehira Exp $";
+  "$Id: recvt.c,v 1.29.2.3.2.10 2008/11/23 10:01:09 uehira Exp $";
 
 uint8_w rbuf[MAXMESG],ch_table[WIN_CHMAX];
 char *progname,*logfile,chfile[N_CHFILE][256];
@@ -131,7 +131,7 @@ struct ch_hist {
 };
 
 static time_t
-check_ts(ptr,pre,post)
+check_ts(ptr,pre,post)   /* 64bit ok */
   uint8_w *ptr;
   time_t pre,post;
   {
@@ -499,7 +499,7 @@ check_pno(from_addr,pn,pn_f,sock,fromlen,n,nr,req_delay)
   }
 
 static int
-wincpy2(ptw,ts,ptr,size,mon,chhist,from_addr)
+wincpy2(ptw,ts,ptr,size,mon,chhist,from_addr)   /* 64bit ok */
   uint8_w *ptw,*ptr;
   time_t ts;
   ssize_t size;
@@ -509,14 +509,15 @@ wincpy2(ptw,ts,ptr,size,mon,chhist,from_addr)
   {
 #define MAX_SR 500
 #define MAX_SS 4
-#define SR_MON 5
+/* #define SR_MON 5 */
   int n,ss;
   WIN_sr sr;
   uint8_w *ptr_lim,*ptr1;
   WIN_ch ch;
   int i,k;
   int32_w aa,bb;  /* must be check later!! */
-  uint32_w gh,gs;
+  /* uint32_w gh,gs; */
+  uint32_w gs;
   char tb[256];
 
   ptr_lim=ptr+size;
@@ -525,12 +526,13 @@ wincpy2(ptw,ts,ptr,size,mon,chhist,from_addr)
     {
     if(!mon)
       {
-      gh=mkuint4(ptr);
-      ch=(gh>>16)&0xffff;
-      sr=gh&0xfff;
-      ss=(gh>>12)&0xf;
-      if(ss) gs=ss*(sr-1)+8;
-      else gs=(sr>>1)+8;
+      gs=win_chheader_info(ptr,&ch,&sr,&ss);
+      /*       gh=mkuint4(ptr); */
+      /*       ch=(gh>>16)&0xffff; */
+      /*       sr=gh&0xfff; */
+      /*       ss=(gh>>12)&0xf; */
+      /*       if(ss) gs=ss*(sr-1)+8; */
+      /*       else gs=(sr>>1)+8; */
       if(sr>MAX_SR || ss>MAX_SS || ptr+gs>ptr_lim)
         {
         if(!no_pinfo)

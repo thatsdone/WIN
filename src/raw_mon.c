@@ -1,4 +1,4 @@
-/* $Id: raw_mon.c,v 1.6.4.4.2.3 2008/11/18 02:27:58 uehira Exp $ */
+/* $Id: raw_mon.c,v 1.6.4.4.2.4 2008/11/23 10:01:09 uehira Exp $ */
 /* "raw_mon.c"      7/2/93,6/17/94,6/28/94    urabe */
 /*                  3/17/95 write_log(), 4/17/95 MAX_SR safety */
 /*                  usleep -> sleep */
@@ -50,7 +50,7 @@
 #define DEBUG       0
 #define BELL        0
 #define MAX_SR      4096
-#define SR_MON      5
+/* #define SR_MON      5 */
 
 int32_w buf_raw[MAX_SR],buf_mon[SR_MON][2];
 unsigned char ch_table[65536];

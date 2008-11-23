@@ -1,4 +1,4 @@
-/* $Id: winlib.h,v 1.1.2.7.2.8 2008/11/18 04:04:16 uehira Exp $ */
+/* $Id: winlib.h,v 1.1.2.7.2.9 2008/11/23 04:02:31 uehira Exp $ */
 
 #ifndef _WIN_LIB_H_
 #define _WIN_LIB_H_
@@ -53,6 +53,8 @@ typedef uint32_w  WIN_sr;
 #define  HEADER_5B    1048576  /* SR<2^20  (4096 Hz -- 1048575 Hz) */
 
 #define  WIN_CHMAX    65536   /* Max. number of channel: 2^16 */
+
+#define  TIME_OFFSET ((time_t)0)  /* time(0) offset */
 
 #define  SWAPL(a)  a = ((((a) << 24)) | (((a) << 8) & 0xff0000) |	\
 			(((a) >> 8) & 0xff00) | (((a) >> 24) & 0xff))

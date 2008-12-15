@@ -1,4 +1,4 @@
-/* $Id: events.c,v 1.9 2008/04/24 05:14:54 nakagawa Exp $ */
+/* $Id: events.c,v 1.10 2008/12/15 06:49:07 uehira Exp $ */
 /****************************************************************************
 *****************************************************************************
 **     program "events.c" for NEWS                                  *********
@@ -99,7 +99,7 @@ sso     /dat/etc/sso.station    cut-jc3
 #include  <sys/vfs.h>
 #endif
 
-#if defined(__SVR4)
+#if defined(__SVR4) || defined(__NetBSD__)
 #include  <sys/statvfs.h>
 #define statfs statvfs
 #define f_bsize f_frsize

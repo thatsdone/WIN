@@ -1,5 +1,14 @@
- $Id: ChangeLog,v 1.149 2008/05/01 00:59:42 uehira Exp $
+ $Id: ChangeLog,v 1.150 2008/12/15 06:49:07 uehira Exp $
 
+2008-12-15  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 1.1.88 released.
+	* src/events.c : added NetBSD specific macro.
+	* src/recvnmx.c, src/recvs.c, src/recvstatus.c, src/recvstatus2.c,
+	  src/recvt.c, src/relay.c, src/send_raw.c, src/send_raw_old.c,
+ 	  src/sends.c :
+	   include arpa/inet.h if exists.
+	* configure.in : check arpa/inet.h.
+	
 2008-04-24  Shigeki Nakagawa  <nakagawa@eri.u-tokyo.ac.jp>
 	* Version 1.1.87 released.
 	* src/events.c, src/wdisk.c : add USE_LARGE_FS option.

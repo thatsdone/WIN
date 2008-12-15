@@ -1,4 +1,4 @@
-/* $Id: recvstatus.c,v 1.6 2002/01/13 08:34:33 uehira Exp $ */
+/* $Id: recvstatus.c,v 1.7 2008/12/15 06:49:07 uehira Exp $ */
 /* "recvstatus.c"      5/24/95    urabe */
 /* 97.7.17 two lines of "if() continue;" in the main loop */
 /* 2000.4.24/2001.11.14 strerror() */
@@ -29,6 +29,9 @@
 
 #include <sys/socket.h>
 #include <netinet/in.h>
+#if HAVE_ARPA_INET_H
+#include <arpa/inet.h>
+#endif
 #include <netdb.h>
 #include <errno.h>
 

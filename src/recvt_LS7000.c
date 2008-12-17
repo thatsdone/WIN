@@ -1,4 +1,4 @@
-/* $Id: recvt_LS7000.c,v 1.1.2.3.2.3 2008/11/23 10:01:09 uehira Exp $ */
+/* $Id: recvt_LS7000.c,v 1.1.2.3.2.4 2008/12/17 05:53:15 uehira Exp $ */
 /* "recvt_LS7000.c"  uehira */
 /*   2007-11-02  imported from recvt.c 1.29.2.1 */
 
@@ -27,6 +27,9 @@
 
 #include <sys/socket.h>
 #include <netinet/in.h>
+#if HAVE_ARPA_INET_H
+#include <arpa/inet.h>
+#endif
 #include <netdb.h>
 #include <errno.h>
 #include <syslog.h>

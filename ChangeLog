@@ -1,5 +1,14 @@
- $Id: ChangeLog,v 1.131.2.25.2.8 2008/11/23 10:01:09 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.9 2008/12/17 05:53:14 uehira Exp $
 
+2008-12-17  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* MF Version 1.1.88 release.
+	* src/events.c : added NetBSD specific macro.
+	* src/recvnmx.c, src/recvs.c, src/recvstatus.c, src/recvstatus2.c,
+	  src/recvt.c, src/relay.c, src/send_raw.c, src/send_raw_old.c,
+ 	  src/sends.c :
+	   include arpa/inet.h if exists.
+	* configure.in : check arpa/inet.h.
+	
 2008-11-23  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* src/winlib.h : introduced TIME_OFFSET.
 	* src/winlib.h : all SR_MON definition moved to this file.

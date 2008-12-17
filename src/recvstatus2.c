@@ -1,4 +1,4 @@
-/* $Id: recvstatus2.c,v 1.6.8.1 2008/11/13 05:06:53 uehira Exp $ */
+/* $Id: recvstatus2.c,v 1.6.8.2 2008/12/17 05:53:15 uehira Exp $ */
 /* modified from "recvstatus.c" */
 /* 2002.6.19 recvstatus2 receive A8/A9 packets from Datamark LS-7000XT */
 /* 2002.7.3 fixed a bug - 'ok' deleted */
@@ -30,6 +30,9 @@
 
 #include <sys/socket.h>
 #include <netinet/in.h>
+#if HAVE_ARPA_INET_H
+#include <arpa/inet.h>
+#endif
 #include <netdb.h>
 #include <errno.h>
 

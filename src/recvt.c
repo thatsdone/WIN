@@ -1,4 +1,4 @@
-/* $Id: recvt.c,v 1.29.2.3.2.12 2008/12/17 05:40:01 uehira Exp $ */
+/* $Id: recvt.c,v 1.29.2.3.2.13 2008/12/17 05:53:15 uehira Exp $ */
 /*-
  "recvt.c"      4/10/93 - 6/2/93,7/2/93,1/25/94    urabe
                 2/3/93,5/25/94,6/16/94 
@@ -66,7 +66,9 @@
 #include <sys/stat.h>
 
 #include <netinet/in.h>
+#if HAVE_ARPA_INET_H
 #include <arpa/inet.h>
+#endif
 
 #include <stdio.h>
 #include <signal.h>
@@ -106,7 +108,7 @@
 #define N_PNOS    62    /* length of packet nos. history >=2 */
 
 static char rcsid[] =
-  "$Id: recvt.c,v 1.29.2.3.2.12 2008/12/17 05:40:01 uehira Exp $";
+  "$Id: recvt.c,v 1.29.2.3.2.13 2008/12/17 05:53:15 uehira Exp $";
 
 uint8_w rbuf[MAXMESG],ch_table[WIN_CHMAX];
 char *progname,*logfile,chfile[N_CHFILE][256];

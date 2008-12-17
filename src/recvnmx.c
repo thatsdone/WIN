@@ -1,4 +1,4 @@
-/* $Id: recvnmx.c,v 1.16.4.4.2.4 2008/11/18 02:27:58 uehira Exp $ */
+/* $Id: recvnmx.c,v 1.16.4.4.2.5 2008/12/17 05:53:15 uehira Exp $ */
 /* "recvnmx.c"    2001.7.18-19 modified from recvt.c and nmx2raw.c  urabe */
 /*                2001.8.18 */
 /*                2001.10.5 workaround for hangup */
@@ -37,6 +37,9 @@
 
 #include <sys/socket.h>
 #include <netinet/in.h>
+#if HAVE_ARPA_INET_H
+#include <arpa/inet.h>
+#endif
 #include <netdb.h>
 #include <errno.h>
 

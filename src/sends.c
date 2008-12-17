@@ -1,4 +1,4 @@
-/* $Id: sends.c,v 1.6.4.3.2.2 2008/11/13 05:06:53 uehira Exp $ */
+/* $Id: sends.c,v 1.6.4.3.2.3 2008/12/17 05:53:15 uehira Exp $ */
 /*   program "sends"   2000.3.20 urabe                   */
 /*   2000.3.21 */
 /*   2000.4.17 */
@@ -32,6 +32,9 @@
 
 #include <sys/socket.h>
 #include <netinet/in.h>
+#if HAVE_ARPA_INET_H
+#include <arpa/inet.h>
+#endif
 #include <netdb.h>
 #include <unistd.h>
 #if HAVE_STROPTS_H

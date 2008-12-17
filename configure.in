@@ -1,5 +1,5 @@
 dnl ------------------------------------------------------------------------- 
-dnl $Id: configure.in,v 1.98.2.17.2.4 2008/11/14 02:01:20 uehira Exp $
+dnl $Id: configure.in,v 1.98.2.17.2.5 2008/12/17 05:53:14 uehira Exp $
 dnl -------------------------------------------------------------------------
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT(src/win.c)
@@ -73,7 +73,7 @@ AC_PATH_X
 AC_PATH_XTRA
 AC_HEADER_DIRENT
 AC_HEADER_STDC
-AC_CHECK_HEADERS(fcntl.h sys/file.h sys/ioctl.h sys/time.h syslog.h unistd.h stdarg.h varargs.h sys/param.h sys/mount.h sys/vfs.h sys/statvfs.h sys/statvfs.h stropts.h sys/ser_sync.h)
+AC_CHECK_HEADERS(fcntl.h sys/file.h sys/ioctl.h sys/time.h syslog.h unistd.h stdarg.h varargs.h sys/param.h sys/mount.h sys/vfs.h sys/statvfs.h sys/statvfs.h stropts.h sys/ser_sync.h  arpa/inet.h)
 
 dnl Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
@@ -92,7 +92,6 @@ AC_CHECK_SIZEOF(short)
 AC_CHECK_SIZEOF(char)
 AC_CHECK_SIZEOF(float)
 AC_CHECK_SIZEOF(double)
-
 
 AC_MSG_CHECKING(for tm.tm_gmtoff)
 AC_EGREP_CPP(tm_gmtoff, [#include <time.h>],

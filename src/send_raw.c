@@ -1,4 +1,4 @@
-/* $Id: send_raw.c,v 1.24.2.4.2.2 2008/11/23 10:01:10 uehira Exp $ */
+/* $Id: send_raw.c,v 1.24.2.4.2.3 2008/12/17 05:53:15 uehira Exp $ */
 /*
     program "send_raw/send_mon.c"   1/24/94 - 1/25/94,5/25/94 urabe
                                     6/15/94 - 6/16/94
@@ -74,6 +74,9 @@
 
 #include <sys/socket.h>
 #include <netinet/in.h>
+#if HAVE_ARPA_INET_H
+#include <arpa/inet.h>
+#endif
 #include <netdb.h>
 #include <unistd.h>
 #include <errno.h>

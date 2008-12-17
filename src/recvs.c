@@ -1,4 +1,4 @@
-/* $Id: recvs.c,v 1.6.2.1.2.3 2008/11/18 02:27:58 uehira Exp $ */
+/* $Id: recvs.c,v 1.6.2.1.2.4 2008/12/17 05:53:15 uehira Exp $ */
 /* "recvs.c"    receive sync frames      2000.3.14       urabe */
 /* 2000.3.21 */
 /* 2000.4.17 */
@@ -40,6 +40,9 @@
 #endif
 #include <sys/socket.h>
 #include <netinet/in.h>
+#if HAVE_ARPA_INET_H
+#include <arpa/inet.h>
+#endif
 #include <netdb.h>
 #include <errno.h>
 #if AURORA

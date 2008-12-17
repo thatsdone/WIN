@@ -1,4 +1,4 @@
-/* $Id: recvt.c,v 1.29.2.3.2.11 2008/11/23 10:49:46 uehira Exp $ */
+/* $Id: recvt.c,v 1.29.2.3.2.12 2008/12/17 05:40:01 uehira Exp $ */
 /*-
  "recvt.c"      4/10/93 - 6/2/93,7/2/93,1/25/94    urabe
                 2/3/93,5/25/94,6/16/94 
@@ -106,7 +106,7 @@
 #define N_PNOS    62    /* length of packet nos. history >=2 */
 
 static char rcsid[] =
-  "$Id: recvt.c,v 1.29.2.3.2.11 2008/11/23 10:49:46 uehira Exp $";
+  "$Id: recvt.c,v 1.29.2.3.2.12 2008/12/17 05:40:01 uehira Exp $";
 
 uint8_w rbuf[MAXMESG],ch_table[WIN_CHMAX];
 char *progname,*logfile,chfile[N_CHFILE][256];
@@ -119,9 +119,9 @@ struct {
     int ppnos;	/* pointer for pnos */
     unsigned int pnos[N_PNOS];
     int nosf[4]; /* 4 segments x 64 */
-    unsigned char nos[256/8];
-    unsigned long n_bytes;
-    unsigned long n_packets;
+    uint8_w  nos[256/8];     /*- 64bit ok?? -*/
+    unsigned long n_bytes;       /*- 64bit ok -*/
+    unsigned long n_packets;     /*- 64bit ok -*/
   /*     unsigned int n_bytes; */
   /*     unsigned int n_packets; */
     } ht[N_HOST];
@@ -348,7 +348,7 @@ check_pno(from_addr,pn,pn_f,sock,fromlen,n,nr,req_delay)
   int port_;  /* port No. in network byte-order */
   unsigned int pn_1;
   static unsigned int mask[8]={0x80,0x40,0x20,0x10,0x08,0x04,0x02,0x01};
-  unsigned char pnc;
+  uint8_w pnc;   /* 64bit ok */
   char tb[256];
 
 #if DEBUG4
@@ -696,26 +696,26 @@ main(argc,argv)
   int argc;
   char *argv[];
   {
-  key_t shm_key;  /* 64bit ok */
-  int shmid;  /* 64bit ok */
-  uint32_w uni;  /* 64bit ok */
-  WIN_bs  uni2;  /* 64bit ok */
-  uint8_w *ptr,tm[6],*ptr_size,*ptr_size2;  /* 64bit ok */
-  char host_name[1024];  /* 64bit ok */
-  int i,j,k,sock,all,c,mon,eobsize,
-    sbuf,noreq,no_ts,no_pno,req_delay;
-  socklen_t fromlen;
-  size_t size,pl;
-  ssize_t n,nn,nlen;
-  time_t pre,post;
-  struct sockaddr_in to_addr,from_addr,host_addr;
-  unsigned short to_port,host_port;
+  key_t shm_key;  /*- 64bit ok -*/
+  int shmid;      /*- 64bit ok -*/
+  uint32_w uni;  /*- 64bit ok -*/
+  WIN_bs  uni2;  /*- 64bit ok -*/
+  uint8_w *ptr,tm[6],*ptr_size,*ptr_size2;  /*- 64bit ok -*/
+  char host_name[1024];  /*- 64bit ok -*/
+  int i,j,k,sock,all,c,mon,eobsize,      /*- 64bit ok -*/
+    sbuf,noreq,no_ts,no_pno,req_delay;   /*- 64bit ok -*/
+  socklen_t fromlen;  /*- 64bit ok -*/
+  size_t size,pl;     /*- 64bit ok -*/
+  ssize_t n,nn,nlen;  /*- 64bit ok -*/
+  time_t pre,post;    /*- 64bit ok -*/
+  struct sockaddr_in to_addr,from_addr,host_addr;  /*- 64bit ok -*/
+  uint16_t  to_port,host_port;  /*- 64bit ok -*/
   struct Shm  *sh;
   char tb[256],tb2[256];
-  struct ip_mreq stMreq;
+  struct ip_mreq stMreq;  /*- 64bit ok -*/
   char mcastgroup[256]; /* multicast address */
   char interface[256]; /* multicast interface */
-  time_t ts,sec,sec_p;
+  time_t ts,sec,sec_p;  /*- 64bit ok -*/
   struct ch_hist  chhist;
   struct hostent *h;
   struct timeval timeout;
@@ -781,7 +781,7 @@ main(argc,argv)
         if((ptr=(uint8_w *)strchr(tb2,':')))
           {
           *ptr=0;
-          host_port=(unsigned short)atoi(ptr+1);
+          host_port=(uint16_t)atoi(ptr+1);
           }
         else
           {
@@ -823,7 +823,7 @@ main(argc,argv)
     }
   pre=(-pre*60);
   post*=60;
-  to_port=(unsigned short)atoi(argv[1+optind]);
+  to_port=(uint16_t)atoi(argv[1+optind]);
   shm_key=atol(argv[2+optind]);
   size=atol(argv[3+optind])*1000;
   *chfile[0]=0;
@@ -864,6 +864,7 @@ main(argc,argv)
       fprintf(stderr,"malloc failed (chhist.ts)\n");
       exit(1);
       }
+    /* Later, insert some warning messages into here. */
     }
 
    /* daemon mode */

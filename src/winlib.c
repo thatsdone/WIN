@@ -1,4 +1,4 @@
-/* $Id: winlib.c,v 1.1.2.4.2.8 2008/11/23 10:01:10 uehira Exp $ */
+/* $Id: winlib.c,v 1.1.2.4.2.9 2008/12/17 10:35:23 uehira Exp $ */
 
 /*-
  * winlib.c  (Uehira Kenji)
@@ -442,34 +442,20 @@ win2fix(uint8_w *ptr, int32_w *abuf, WIN_ch *sys_ch, WIN_sr *sr)
 /* WIN_ch    *sys_ch;  : sys_ch */
 /* WIN_sr    *sr;      : sr */
 {
-  uint32_w	  b_size, g_size;
+  int             b_size;
+  uint32_w	  g_size;
   uint32_w	  i;
   WIN_sr	  s_rate;
   uint8_w        *dp;
   int16_w	  shreg;
   int32_w	  inreg;
 
-  /* channel number */
-  *sys_ch = (((WIN_ch) ptr[0]) << 8) + (WIN_ch) ptr[1];
-
-  /* sampling rate */
-  if ((ptr[2] & 0x80) == 0x0) {	/* channel header = 4 byte */
-    *sr = s_rate = (WIN_sr) ptr[3] + (((WIN_sr) (ptr[2] & 0x0f)) << 8);
+  g_size = win_chheader_info(ptr, sys_ch, sr, &b_size);
+  s_rate = *sr;
+  if ((ptr[2] & 0x80) == 0x0)	/* channel header = 4 byte */
     dp = ptr + 4;
-  } else {			/* channel header = 5 byte */
-    *sr = s_rate = (WIN_sr) ptr[4] + (((WIN_sr) ptr[3]) << 8)
-      + (((WIN_sr) (ptr[2] & 0x0f)) << 16);
+  else			        /* channel header = 5 byte */
     dp = ptr + 5;
-  }
-
-  /* size */
-  b_size = (ptr[2] >> 4) & 0x7;
-  if (b_size)
-    g_size = b_size * (s_rate - 1) + 8;
-  else
-    g_size = (s_rate >> 1) + 8;
-  if (ptr[2] & 0x80)
-    g_size++;
 
   /* read group */
   abuf[0] = ((dp[0] << 24) & 0xff000000) + ((dp[1] << 16) & 0xff0000)

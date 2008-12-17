@@ -51,14 +51,17 @@
 
 #include "winlib.h"
 
-#define DEBUG       1
 #define MAXMESG     2000
 #define XINETD      0
+
+static char rcsid[] =
+  "$Id: shmdump.c,v 1.21.4.6.2.4 2008/12/17 10:35:23 uehira Exp $";
 
 char *progname,outfile[256];
 int win;
 FILE *fpout;
 
+static int
 time_dif(t1,t2) /* returns t1-t2(sec) */
   int *t1,*t2;
   {
@@ -93,7 +96,7 @@ time_dif(t1,t2) /* returns t1-t2(sec) */
   else return -(86400+sdif);
   }
 
-static
+static void
 err_sys_local(ptr)
   char *ptr;
   {
@@ -104,11 +107,12 @@ err_sys_local(ptr)
   exit(0);
   }
 
+static int
 advance_s(shm,shp,c_save,size)
   struct Shm *shm;
   unsigned int *shp,*c_save,*size;
   {
-  int shpp,tmp,i;
+  int shpp,i;
   shpp=(*shp);
   i=shm->c-(*c_save);
   if(!(i<1000000 && i>=0) || *size!=mkuint4(shm->d+(*shp))) return -1;
@@ -120,6 +124,7 @@ advance_s(shm,shp,c_save,size)
   return 1;
   }
 
+static int
 bcd_dec2(dest,sour)
   unsigned char *sour;
   int *dest;
@@ -142,6 +147,7 @@ bcd_dec2(dest,sour)
   return 1;
   }
 
+static void
 ctrlc()
   {
   char tb[100];
@@ -169,6 +175,7 @@ struct Filter
   double gn_filt;              /* gain factor of filter */
 };
 
+static void
 get_filter(sr,f)
      int    sr;
      struct Filter  *f;
@@ -195,34 +202,48 @@ get_filter(sr,f)
    }
 }
 
+static void
+usage()
+{
+
+  WIN_version();
+  fprintf(stderr, "%s\n", rcsid);
+  fprintf(stderr, " usage : '%s (-amoqrtwxz) (-s [s]) (-f [chfile]/-) (-R [freq])\n", 
+	  progname);
+  fprintf(stderr, "   (-L [fp]:[fs]:[ap]:[as] -H [fp]:[fs]:[ap]:[as] -B [fl]:[fh]:[fs]:[ap]:[as])\n");
+  fprintf(stderr, "   [shm_key]/- ([ch] ...)'\n");
+}
+
+int
 main(argc,argv)
   int argc;
   char *argv[];
   {
-/* #define SR_MON 5 */
-  key_t shm_key_in;
-  union {
-    unsigned long i;
-    unsigned short s;
-    char c[4];
-    } un;
-  int i,j,k,c_save_in,shp_in,shmid_in,size_in,shp,c_save,wtow,c,out,all,mon,
-    gs,size,chsel,nch,search,seconds,tbufp,bufsize,zero,nsec,aa,bb,end,
-    eobsize,eobsize_count,size2,tout,bufsize_in,rawdump,quiet,
+  /* #define SR_MON 5 */
+  key_t shm_key_in;  /* 64 bit ok */
+  int i,j,k,c_save_in,shp_in,shmid_in,size_in,wtow,c,out,all,mon,
+    size,chsel,nch,search,seconds,tbufp,zero,nsec,aa,bb,end,
+    eobsize,eobsize_count,tout,rawdump,quiet,
     hexdump;
+  /*- 64bit ok
+    shmid_in
+    -*/
+  size_t  bufsize, bufsize_in;  /* 64 bit ok */
+  uint32_w  gs;
   WIN_ch ch;
   WIN_sr sr;
   int32_w abuf[4096];
   time_t tow,time_end,time_now;
   long wsize;
   unsigned int packet_id;
-  unsigned char *ptr,tbuf[256],*ptr_lim,*buf,chlist[65536/8],*ptw,tms[6],
-    tb[256],*ptr1,*ptr_save;
+  unsigned char *ptr,*ptr_lim,*buf,chlist[65536/8],*ptw,tms[6],
+    *ptr1,*ptr_save;
+  char  tbuf[256];
   struct Shm *shm_in;
   struct tm *nt;
   int rt[6],ts[6];
-  extern int optind;
-  extern char *optarg;
+  /* extern int optind; */
+  /* extern char *optarg; */
   FILE *fplist,*fp;
   char *tmpdir,fname[1024];
   static unsigned int mask[8]={0x80,0x40,0x20,0x10,0x08,0x04,0x02,0x01};
@@ -239,13 +260,8 @@ main(argc,argv)
   float flt_fl, flt_fh, flt_fp, flt_fs, flt_ap, flt_as;
   int chid;              /* filter var end */
 
-  if(progname=strrchr(argv[0],'/')) progname++;
+  if((progname=strrchr(argv[0],'/'))) progname++;
   else progname=argv[0];
-  sprintf(tb," usage : '%s (-amoqrtwxz) (-s [s]) (-f [chfile]/-) (-R [freq])\n", 
-    progname);
-  strcat(tb,
-    "   (-L [fp]:[fs]:[ap]:[as] -H [fp]:[fs]:[ap]:[as] -B [fl]:[fh]:[fs]:[ap]:[as])\n");
-  strcat(tb,"   [shm_key]/- ([ch] ...)'");
   search=out=all=seconds=win=zero=mon=tout=rawdump=quiet=hexdump=0;
   fplist=stdout;
   *fname=0;
@@ -333,7 +349,7 @@ main(argc,argv)
 #if XINETD
 #else
         fprintf(stderr," option -%c unknown\n",c);
-        fprintf(stderr,"%s\n",tb);
+        usage();
 #endif
         exit(1);
       }
@@ -343,7 +359,7 @@ main(argc,argv)
     {
 #if XINETD
 #else
-    fprintf(stderr,"%s\n",tb);
+    usage();
 #endif
     exit(1);
     }
@@ -540,16 +556,18 @@ reset:
       do
         {
         tbuf[tbufp]=0;
-        ch=ptr[1]+(((long)ptr[0])<<8);
+        /* ch=ptr[1]+(((long)ptr[0])<<8); */
         if(!mon)
           {
-          sr=ptr[3]+(((long)(ptr[2]&0x0f))<<8);
-          size=(ptr[2]>>4)&0x7;
-          if(size) gs=size*(sr-1)+8;
-          else gs=(sr>>1)+8;
+          gs=win_chheader_info(ptr,&ch,&sr,&size);
+/*           sr=ptr[3]+(((long)(ptr[2]&0x0f))<<8); */
+/*           size=(ptr[2]>>4)&0x7; */
+/*           if(size) gs=size*(sr-1)+8; */
+/*           else gs=(sr>>1)+8; */
           }
         else
           {
+	  ch=mkuint2(ptr); 
           ptr1=ptr;
           ptr1+=2;
           for(j=0;j<SR_MON;j++)

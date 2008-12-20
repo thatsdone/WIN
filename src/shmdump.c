@@ -55,17 +55,17 @@
 #define XINETD      0
 
 static char rcsid[] =
-  "$Id: shmdump.c,v 1.21.4.6.2.4 2008/12/17 10:35:23 uehira Exp $";
+  "$Id: shmdump.c,v 1.21.4.6.2.5 2008/12/20 04:04:41 uehira Exp $";
 
 char *progname,outfile[256];
 int win;
 FILE *fpout;
 
 static int
-time_dif(t1,t2) /* returns t1-t2(sec) */
+time_dif(t1,t2) /* returns t1-t2(sec) */	/* 64 bit ok */
   int *t1,*t2;
   {
-  int i,*a,*b,soda,sodb,t1_is_lager,sdif,ok;
+    int i,*a,*b,soda,sodb,t1_is_lager,sdif,ok;  /* what is ok? */
   for(i=0;i<6;i++) if(t1[i]!=t2[i]) break;
   if(i==6) return 0;
   else
@@ -97,7 +97,7 @@ time_dif(t1,t2) /* returns t1-t2(sec) */
   }
 
 static void
-err_sys_local(ptr)
+err_sys_local(ptr)	/* 64 bit ok */
   char *ptr;
   {
 #if XINETD
@@ -108,25 +108,29 @@ err_sys_local(ptr)
   }
 
 static int
-advance_s(shm,shp,c_save,size)
+advance_s(shm,shp,c_save,size)	/* 64 bit ok */
   struct Shm *shm;
-  unsigned int *shp,*c_save,*size;
+  size_t  *shp;
+  unsigned long *c_save;
+  uint32_w *size;
   {
-  int shpp,i;
+  long i;
+  size_t shpp;
+
   shpp=(*shp);
   i=shm->c-(*c_save);
-  if(!(i<1000000 && i>=0) || *size!=mkuint4(shm->d+(*shp))) return -1;
+  if(!(i<1000000 && i>=0) || *size!=mkuint4(shm->d+(*shp))) return (-1);
   if(shpp+(*size)>shm->pl) shpp=0; /* advance pointer */
   else shpp+=(*size);
-  if(shm->p==shpp) return 0;
+  if(shm->p==shpp) return (0);
   *c_save=shm->c;
   *size=mkuint4(shm->d+(*shp=shpp));
-  return 1;
+  return (1);
   }
 
 static int
-bcd_dec2(dest,sour)
-  unsigned char *sour;
+bcd_dec2(dest,sour)	/* 64 bit ok */
+  uint8_w *sour;
   int *dest;
   {
   int i;
@@ -148,13 +152,13 @@ bcd_dec2(dest,sour)
   }
 
 static void
-ctrlc()
+ctrlc()	/* 64 bit ok */
   {
-  char tb[100];
+  char tb[1024];
   if(win) /* invoke "win" */
     {
     fclose(fpout);
-    sprintf(tb,"win %s",outfile);
+    snprintf(tb,sizeof(tb),"win %s",outfile);
     system(tb);
     unlink(outfile);
     }
@@ -163,7 +167,8 @@ ctrlc()
 
 /* filter */
 #define MAX_FILT    100
-#define MAX_SR      20000
+#define MAX_SR      (HEADER_5B)
+/* #define MAX_SR      20000 */
 
 struct Filter
 {
@@ -221,27 +226,32 @@ main(argc,argv)
   {
   /* #define SR_MON 5 */
   key_t shm_key_in;  /* 64 bit ok */
-  int i,j,k,c_save_in,shp_in,shmid_in,size_in,wtow,c,out,all,mon,
+  int i,j,k,shmid_in,wtow,c,out,all,mon,
     size,chsel,nch,search,seconds,tbufp,zero,nsec,aa,bb,end,
     eobsize,eobsize_count,tout,rawdump,quiet,
     hexdump;
   /*- 64bit ok
     shmid_in
     -*/
+  uint32_w  size_in;  /* 64 bit ok */
+  size_t  shp_in;  /* 64 bit ok */
+  unsigned long c_save_in; /* 64 bit ok */
   size_t  bufsize, bufsize_in;  /* 64 bit ok */
   uint32_w  gs;
   WIN_ch ch;
   WIN_sr sr;
-  int32_w abuf[4096];
+  int32_w abuf[HEADER_5B];  /* 64 bit ok */
   time_t tow,time_end,time_now;
   long wsize;
-  unsigned int packet_id;
-  unsigned char *ptr,*ptr_lim,*buf,chlist[65536/8],*ptw,tms[6],
-    *ptr1,*ptr_save;
-  char  tbuf[256];
-  struct Shm *shm_in;
-  struct tm *nt;
-  int rt[6],ts[6];
+  uint32_w  wsize4;
+  unsigned int packet_id;      /* 64 bit ok */
+  unsigned char chlist[65536/8],tms[6];
+  uint8_w  *buf,*ptw;
+  char  tbuf[1024];
+  uint8_w  *ptr,*ptr_lim,*ptr_save,*ptr1;    /* 64 bit ok */
+  struct Shm *shm_in;     /* 64 bit ok */
+  struct tm *nt;     /* 64 bit ok */
+  int rt[6],ts[6];     /* 64 bit ok */
   /* extern int optind; */
   /* extern char *optarg; */
   FILE *fplist,*fp;
@@ -259,6 +269,7 @@ main(argc,argv)
   double dbuf[MAX_SR];
   float flt_fl, flt_fh, flt_fp, flt_fs, flt_ap, flt_as;
   int chid;              /* filter var end */
+
 
   if((progname=strrchr(argv[0],'/'))) progname++;
   else progname=argv[0];
@@ -432,7 +443,7 @@ main(argc,argv)
     {
     if(all) bufsize=MAXMESG*100;
     else bufsize=MAXMESG*nch;
-    if((buf=(unsigned char *)malloc(bufsize))==0) err_sys_local("malloc outbuf");
+    if((buf=(uint8_w *)malloc(bufsize))==0) err_sys_local("malloc outbuf");
     }
 
   /* alloc flt & uv */
@@ -485,7 +496,7 @@ reset:
       if(eobsize && eobsize_count==0) goto reset;
       if(!eobsize && eobsize_count>3) goto reset;
       }
-    else
+    else  /* !shm_key_in */
       {
       if((i=fread(shm_in->d,1,4,stdin))==0) end=1;
       else
@@ -506,7 +517,7 @@ reset:
         if(fread(shm_in->d+4,1,size_in-4,stdin)==0) end=1;
         }
       shp_in=0;
-      }
+      }   /* if(shm_key_in) */
     if(end)
       {
       if(out && (all || search)) goto last_out;
@@ -520,7 +531,7 @@ reset:
     if(*ptr>0x20 && *ptr<0x90) /* with tow */
       {
       wtow=1;
-      tow=mkuint4(ptr);
+      tow=(time_t)mkuint4(ptr);
       nt=localtime(&tow);
 /*      printf("%d ",tow);*/
       ptr+=4;
@@ -590,7 +601,7 @@ reset:
             if(ptw-buf+gs>bufsize)
               {
               bufsize=ptw-buf+gs+MAXMESG*100;
-              if((buf=(unsigned char *)realloc(buf,bufsize))==0)
+              if((buf=(uint8_w *)realloc(buf,bufsize))==0)
                 {
 #if XINETD
 #else
@@ -603,10 +614,15 @@ reset:
               {
 last_out:     if((wsize=ptw-buf)>10)
                 {
-                buf[0]=wsize>>24;  /* size (H) */
-                buf[1]=wsize>>16;
-                buf[2]=wsize>>8;
-                buf[3]=wsize;      /* size (L) */
+                wsize4 = (uint32_w)wsize;
+		if (wsize4 != wsize) {
+		  fprintf(stderr, "32bit limit exceeded\n");
+		  ctrlc();
+		}
+                buf[0]=wsize4>>24;  /* size (H) */
+                buf[1]=wsize4>>16;
+                buf[2]=wsize4>>8;
+                buf[3]=wsize4;      /* size (L) */
                 if(tout) /* convert to text before output */
                   {
                   fprintf(fpout,"%02X %02X %02X %02X %02X %02X %d\n",

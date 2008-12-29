@@ -1,4 +1,4 @@
-/* $Id: recvstatus2.c,v 1.6.8.2 2008/12/17 05:53:15 uehira Exp $ */
+/* $Id: recvstatus2.c,v 1.6.8.3 2008/12/29 11:25:12 uehira Exp $ */
 /* modified from "recvstatus.c" */
 /* 2002.6.19 recvstatus2 receive A8/A9 packets from Datamark LS-7000XT */
 /* 2002.7.3 fixed a bug - 'ok' deleted */
@@ -76,7 +76,7 @@ main(argc,argv)
   else progname=argv[0];
   sprintf(tb," usage : '%s (-r) [port] ([log dir])'",progname);
   rcs=0;
-  while((c=getopt(argc,argv,"r"))!=EOF)
+  while((c=getopt(argc,argv,"r"))!=-1)
     {
     switch(c)
       {

@@ -1,4 +1,4 @@
-/* $Id: events.c,v 1.8.2.4.2.1 2008/12/17 05:53:15 uehira Exp $ */
+/* $Id: events.c,v 1.8.2.4.2.2 2008/12/29 11:25:11 uehira Exp $ */
 /****************************************************************************
 *****************************************************************************
 **     program "events.c" for NEWS                                  *********
@@ -460,7 +460,7 @@ main(argc,argv)
   ix=0;
   *file_used=0;
   strcpy(tapeunit,"/dev/nrst0");
-  while((c=getopt(argc,argv,"f:x:u:"))!=EOF)
+  while((c=getopt(argc,argv,"f:x:u:"))!=-1)
     {
     switch(c)
       {

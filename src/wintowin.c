@@ -75,7 +75,7 @@ char *argv[];
     extern int optind;
     extern char *optarg;
 
-    while ((c = getopt(argc, argv, "hk:s:tm:")) != EOF) {
+    while ((c = getopt(argc, argv, "hk:s:tm:")) != -1) {
 	switch (c) {
 	case 'h':
 	    fprintf(stderr, "usage: wintowin <[in_file] >[out_file]\n");

@@ -1,4 +1,7 @@
- $Id: ChangeLog,v 1.131.2.25.2.10 2008/12/17 10:35:23 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.11 2008/12/29 11:25:11 uehira Exp $
+
+2008-12-29  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* getopt() : EOF --> -1
 
 2008-12-17  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* win2fix() : use win_chheader_info().

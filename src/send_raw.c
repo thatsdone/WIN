@@ -1,4 +1,4 @@
-/* $Id: send_raw.c,v 1.24.2.4.2.3 2008/12/17 05:53:15 uehira Exp $ */
+/* $Id: send_raw.c,v 1.24.2.4.2.4 2008/12/29 11:25:12 uehira Exp $ */
 /*
     program "send_raw/send_mon.c"   1/24/94 - 1/25/94,5/25/94 urabe
                                     6/15/94 - 6/16/94
@@ -417,7 +417,7 @@ main(argc,argv)
   standby=0;
   src_port=0;
   single=0;
-  while((c=getopt(argc,argv,"1ab:Df:h:i:mp:Rrs:tw:T:"))!=EOF)
+  while((c=getopt(argc,argv,"1ab:Df:h:i:mp:Rrs:tw:T:"))!=-1)
     {
     switch(c)
       {

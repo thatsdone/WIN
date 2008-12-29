@@ -258,7 +258,7 @@ main(argc,argv)
 " usage : '%s (-m [pre(m)]) (-p [post(m)]) [shm_key] [shm_size(KB)] ([ch file]/- ([log file]))'\n",
       progname);
   pre=post=0;
-  while((c=getopt(argc,argv,"m:p:"))!=EOF)
+  while((c=getopt(argc,argv,"m:p:"))!=-1)
     {
     switch(c)
       {

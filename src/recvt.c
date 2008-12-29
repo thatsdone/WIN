@@ -1,4 +1,4 @@
-/* $Id: recvt.c,v 1.29.2.3.2.13 2008/12/17 05:53:15 uehira Exp $ */
+/* $Id: recvt.c,v 1.29.2.3.2.14 2008/12/29 11:25:12 uehira Exp $ */
 /*-
  "recvt.c"      4/10/93 - 6/2/93,7/2/93,1/25/94    urabe
                 2/3/93,5/25/94,6/16/94 
@@ -108,7 +108,7 @@
 #define N_PNOS    62    /* length of packet nos. history >=2 */
 
 static char rcsid[] =
-  "$Id: recvt.c,v 1.29.2.3.2.13 2008/12/17 05:53:15 uehira Exp $";
+  "$Id: recvt.c,v 1.29.2.3.2.14 2008/12/29 11:25:12 uehira Exp $";
 
 uint8_w rbuf[MAXMESG],ch_table[WIN_CHMAX];
 char *progname,*logfile,chfile[N_CHFILE][256];
@@ -737,7 +737,7 @@ main(argc,argv)
   chhist.n=N_HIST;
   n_chfile=1;
   req_delay=0;
-  while((c=getopt(argc,argv,"AaBDd:f:g:i:m:MNno:p:rs:y:"))!=EOF)
+  while((c=getopt(argc,argv,"AaBDd:f:g:i:m:MNno:p:rs:y:"))!=-1)
     {
     switch(c)
       {

@@ -113,7 +113,7 @@ char *argv[];
 	exit(1);
     }
 
-    while ((c = getopt(argc, argv, "lt:b:o:d:")) != EOF) {
+    while ((c = getopt(argc, argv, "lt:b:o:d:")) != -1) {
 	switch (c) {
 	case 'b':
 	    begin = atof(optarg);

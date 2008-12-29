@@ -1,4 +1,4 @@
-/* $Id: order.c,v 1.11.4.5.2.2 2008/11/18 02:27:58 uehira Exp $ */
+/* $Id: order.c,v 1.11.4.5.2.3 2008/12/29 11:25:11 uehira Exp $ */
 /*  program "order.c" 1/26/94 - 2/7/94, 6/14/94 urabe */
 /*                              1/6/95 bug in adj_time(tm[0]--) fixed */
 /*                              3/17/95 write_log() */
@@ -55,6 +55,7 @@
 char *progname,*logfile;
 int  daemon_mode, syslog_mode, exit_status;
 
+static void
 t_bcd(t,ptr)
      time_t t;
      unsigned char *ptr;
@@ -70,7 +71,8 @@ t_bcd(t,ptr)
   ptr[5]=d2b[nt->tm_sec];
 }
 
-time_t mktime2(struct tm *mt) /* high-speed version of mktime() */
+static time_t
+mktime2(struct tm *mt) /* high-speed version of mktime() */
   {
   static struct tm *m;
   time_t t;
@@ -104,7 +106,8 @@ time_t mktime2(struct tm *mt) /* high-speed version of mktime() */
 #endif
   }
 
-time_t bcd_t(ptr)
+static time_t
+bcd_t(ptr)
   unsigned char *ptr;
   {
   int tm[6];
@@ -127,6 +130,7 @@ time_t bcd_t(ptr)
   return ts;
   }
 
+static int
 check_time(ptr)
   char *ptr;
   {
@@ -137,6 +141,7 @@ check_time(ptr)
   return 0;
   }
 
+static int
 advance(shm,shp,c_save,size,t,shp_busy_save)
   struct Shm *shm;
   unsigned int *shp,*size,*c_save,*shp_busy_save;
@@ -159,6 +164,7 @@ advance(shm,shp,c_save,size,t,shp_busy_save)
 }
 
 
+int
 main(argc,argv)
   int argc;
   char *argv[];
@@ -194,7 +200,7 @@ main(argc,argv)
 
 
   sysclk_org=late=eobsize_in=eobsize_out=0;
-  while((c=getopt(argc,argv,"aBDl:"))!=EOF)
+  while((c=getopt(argc,argv,"aBDl:"))!=-1)
     {
     switch(c)
       {
@@ -454,125 +460,124 @@ reset:
         }
       }
     }
-
   else /* conventional mode */
-  while(1){
-    no_data=1;
-    while(sec_1+n_sec>time(0)) sleep(1);
-    shp=shp_in;
-    c_save=c_save_in;
-    size=size_in;
-    ptw_save=ptw=shm_out->d+shm_out->p;
-    ptw+=4;
-    if(late) ptw_late=shm_late->d+shm_late->p;
-    t=t_bottom;
-
-    do{
-      if(size==mkuint4(shm_in->d+shp+size-4)) eobsize_in_count++;
-      else eobsize_in_count=0;
-      if(eobsize_in && eobsize_in_count==0) goto reset;
-      if(!eobsize_in && eobsize_in_count>3) goto reset;
-
-      if(eobsize_in) size2=size-4;
-      else size2=size;
-
-      if(t==t_out){
-        ptr=shm_in->d+shp+8; /* points to YY-ss */
-        if(no_data){
-          memcpy(ptw,ptr,size2-8);
-          ptw+=size2-8;
-          no_data=0;
-        }
-        else{
-          memcpy(ptw,ptr+6,size2-14); /* skip YY-ss */
-          ptw+=size2-14;
-        }
+    while(1){
+      no_data=1;
+      while(sec_1+n_sec>time(0)) sleep(1);
+      shp=shp_in;
+      c_save=c_save_in;
+      size=size_in;
+      ptw_save=ptw=shm_out->d+shm_out->p;
+      ptw+=4;
+      if(late) ptw_late=shm_late->d+shm_late->p;
+      t=t_bottom;
+      
+      do{
+	if(size==mkuint4(shm_in->d+shp+size-4)) eobsize_in_count++;
+	else eobsize_in_count=0;
+	if(eobsize_in && eobsize_in_count==0) goto reset;
+	if(!eobsize_in && eobsize_in_count>3) goto reset;
+	
+	if(eobsize_in) size2=size-4;
+	else size2=size;
+	
+	if(t==t_out){
+	  ptr=shm_in->d+shp+8; /* points to YY-ss */
+	  if(no_data){
+	    memcpy(ptw,ptr,size2-8);
+	    ptw+=size2-8;
+	    no_data=0;
+	  }
+	  else{
+	    memcpy(ptw,ptr+6,size2-14); /* skip YY-ss */
+	    ptw+=size2-14;
+	  }
+	}
+	
+	if(late && shp==shp_busy_save) timeout_flag=1;
+	if(late && timeout_flag){
+	  if(t<t_out){
+	    /* output late data */
+	    ptr=shm_in->d+shp;
+	    memcpy(ptw_late,ptr,size2);
+	    ptw_late[0]=size2>>24;
+	    ptw_late[1]=size2>>16;
+	    ptw_late[2]=size2>>8;
+	    ptw_late[3]=size2;
+	    uni=time(NULL);
+	    ptw_late[4]=uni>>24;
+	    ptw_late[5]=uni>>16;
+	    ptw_late[6]=uni>>8;
+	    ptw_late[7]=uni;
+	    ptw_late+=size2;
+	    shm_late->r=shm_late->p;
+	    if(ptw_late>shm_late->d+shm_late->pl) ptw_late=shm_late->d;
+	    shm_late->p=ptw_late-shm_late->d;
+	    shm_late->c++;
+	  }
+	}
+	
+	while((sec=advance(shm_in,&shp,&c_save,&size,&t,&shp_busy_save))==(-1));
+	if(sec==(-2)){
+	  ptr=shm_in->d+shp+8;
+	  sprintf(tbuf,"reset %02X%02X%02X.%02X%02X%02X:%02X%02X",
+		  ptr[0],ptr[1],ptr[2],ptr[3],ptr[4],ptr[5],ptr[6],ptr[7]);
+	  write_log(tbuf);
+	  goto reset;
+	}
+      } while(sec>0);
+      
+      if(late) timeout_flag=0;
+      
+      if((uni=ptw-ptw_save)>10){
+	if(eobsize_out) uni+=4;
+	ptw_save[0]=uni>>24;
+	ptw_save[1]=uni>>16;
+	ptw_save[2]=uni>>8;
+	ptw_save[3]=uni;
+	if(eobsize_out)
+	  {
+	    ptw[0]=uni>>24;
+	    ptw[1]=uni>>16;
+	    ptw[2]=uni>>8;
+	    ptw[3]=uni;
+	    ptw+=4;
+	  }
+	shm_out->r=shm_out->p;
+	if(eobsize_out && ptw>shm_out->d+pl_out)
+	  {shm_out->pl=ptw-shm_out->d-4;ptw=shm_out->d;}
+	if(!eobsize_out && ptw>shm_out->d+shm_out->pl) ptw=shm_out->d;
+	shm_out->p=ptw-shm_out->d;
+	shm_out->c++;
       }
-
-      if(late && shp==shp_busy_save) timeout_flag=1;
-      if(late && timeout_flag){
-        if(t<t_out){
-          /* output late data */
-          ptr=shm_in->d+shp;
-          memcpy(ptw_late,ptr,size2);
-          ptw_late[0]=size2>>24;
-          ptw_late[1]=size2>>16;
-          ptw_late[2]=size2>>8;
-          ptw_late[3]=size2;
-          uni=time(NULL);
-          ptw_late[4]=uni>>24;
-          ptw_late[5]=uni>>16;
-          ptw_late[6]=uni>>8;
-          ptw_late[7]=uni;
-          ptw_late+=size2;
-          shm_late->r=shm_late->p;
-          if(ptw_late>shm_late->d+shm_late->pl) ptw_late=shm_late->d;
-          shm_late->p=ptw_late-shm_late->d;
-          shm_late->c++;
-        }
+      
+      t_out++;
+      while(t_bottom!=t_out){
+	if(sec_1+n_sec+4>time(0) && t_bottom>t_out) break;
+	if(t_bottom>t_out){
+	  ptr=shm_in->d+shp_in+8;
+	  t_bcd(t_out,tm_out);
+	  sprintf(tbuf,
+		  "passing %02X%02X%02X.%02X%02X%02X:%02X%02X(out=%02d%02d%02d.%02d%02d%02d)",
+		  ptr[0],ptr[1],ptr[2],ptr[3],ptr[4],ptr[5],ptr[6],ptr[7],
+		  tm_out[0],tm_out[1],tm_out[2],tm_out[3],tm_out[4],tm_out[5]);
+	  write_log(tbuf);
+	}
+	while((sec_1=advance(shm_in,&shp_in,&c_save_in,&size_in,&t_bottom,NULL))<=0){
+	  if(late && shp_in==shp_busy_save) shp_busy_save=(-1);
+	  if(sec_1==(-1)) continue;
+	  else if(sec_1==0){
+	    sleep(1);
+	    continue;
+	  }
+	  else if(sec_1==(-2)){
+	    ptr=shm_in->d+shp_in+8;
+	    sprintf(tbuf,"reset %02X%02X%02X.%02X%02X%02X:%02X%02X",
+		    ptr[0],ptr[1],ptr[2],ptr[3],ptr[4],ptr[5],ptr[6],ptr[7]);
+	    write_log(tbuf);
+	    goto reset;
+	  }
+	}
       }
-
-      while((sec=advance(shm_in,&shp,&c_save,&size,&t,&shp_busy_save))==(-1));
-      if(sec==(-2)){
-        ptr=shm_in->d+shp+8;
-        sprintf(tbuf,"reset %02X%02X%02X.%02X%02X%02X:%02X%02X",
-          ptr[0],ptr[1],ptr[2],ptr[3],ptr[4],ptr[5],ptr[6],ptr[7]);
-        write_log(tbuf);
-        goto reset;
-      }
-    } while(sec>0);
-
-    if(late) timeout_flag=0;
-
-    if((uni=ptw-ptw_save)>10){
-      if(eobsize_out) uni+=4;
-      ptw_save[0]=uni>>24;
-      ptw_save[1]=uni>>16;
-      ptw_save[2]=uni>>8;
-      ptw_save[3]=uni;
-      if(eobsize_out)
-        {
-        ptw[0]=uni>>24;
-        ptw[1]=uni>>16;
-        ptw[2]=uni>>8;
-        ptw[3]=uni;
-        ptw+=4;
-        }
-      shm_out->r=shm_out->p;
-      if(eobsize_out && ptw>shm_out->d+pl_out)
-        {shm_out->pl=ptw-shm_out->d-4;ptw=shm_out->d;}
-      if(!eobsize_out && ptw>shm_out->d+shm_out->pl) ptw=shm_out->d;
-      shm_out->p=ptw-shm_out->d;
-      shm_out->c++;
     }
-
-    t_out++;
-    while(t_bottom!=t_out){
-      if(sec_1+n_sec+4>time(0) && t_bottom>t_out) break;
-      if(t_bottom>t_out){
-        ptr=shm_in->d+shp_in+8;
-        t_bcd(t_out,tm_out);
-        sprintf(tbuf,
-"passing %02X%02X%02X.%02X%02X%02X:%02X%02X(out=%02d%02d%02d.%02d%02d%02d)",
-          ptr[0],ptr[1],ptr[2],ptr[3],ptr[4],ptr[5],ptr[6],ptr[7],
-          tm_out[0],tm_out[1],tm_out[2],tm_out[3],tm_out[4],tm_out[5]);
-        write_log(tbuf);
-      }
-      while((sec_1=advance(shm_in,&shp_in,&c_save_in,&size_in,&t_bottom,NULL))<=0){
-        if(late && shp_in==shp_busy_save) shp_busy_save=(-1);
-        if(sec_1==(-1)) continue;
-        else if(sec_1==0){
-          sleep(1);
-          continue;
-        }
-        else if(sec_1==(-2)){
-          ptr=shm_in->d+shp_in+8;
-          sprintf(tbuf,"reset %02X%02X%02X.%02X%02X%02X:%02X%02X",
-            ptr[0],ptr[1],ptr[2],ptr[3],ptr[4],ptr[5],ptr[6],ptr[7]);
-          write_log(tbuf);
-          goto reset;
-        }
-      }
-    }
-  }
 }

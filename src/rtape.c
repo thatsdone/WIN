@@ -1,4 +1,4 @@
-/* $Id: rtape.c,v 1.9.2.3.2.1 2008/11/11 15:19:48 uehira Exp $ */
+/* $Id: rtape.c,v 1.9.2.3.2.2 2008/12/29 11:25:12 uehira Exp $ */
 /*
   program "rtape.c"
   9/16/89 - 11/06/90, 6/26/91, 10/30/91, 6/26/92  urabe
@@ -366,7 +366,7 @@ main(argc,argv)
 
   printf("***** rtape start *****\n");
   strcpy(dev_file,"/dev/nrst0");
-  while((c=getopt(argc,argv,"f:"))!=EOF)
+  while((c=getopt(argc,argv,"f:"))!=-1)
     {
     switch(c)
       {

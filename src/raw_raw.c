@@ -1,4 +1,4 @@
-/* $Id: raw_raw.c,v 1.9.4.3.2.2 2008/11/18 02:27:58 uehira Exp $ */
+/* $Id: raw_raw.c,v 1.9.4.3.2.3 2008/12/29 11:25:11 uehira Exp $ */
 /* "raw_raw.c"    97.8.5 urabe */
 /*                  modified from raw_100.c */
 /*                  98.4.17 FreeBSD */
@@ -156,7 +156,7 @@ main(argc,argv)
                   (-/[ch_file]/-[ch_file] ([log file]))'",progname);
 
   eobsize_out=eobsize_in=0;
-  while((c=getopt(argc,argv,"gBD"))!=EOF)
+  while((c=getopt(argc,argv,"gBD"))!=-1)
     {
     switch(c)
       {

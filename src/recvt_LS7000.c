@@ -1,4 +1,4 @@
-/* $Id: recvt_LS7000.c,v 1.1.2.3.2.4 2008/12/17 05:53:15 uehira Exp $ */
+/* $Id: recvt_LS7000.c,v 1.1.2.3.2.5 2008/12/29 11:25:12 uehira Exp $ */
 /* "recvt_LS7000.c"  uehira */
 /*   2007-11-02  imported from recvt.c 1.29.2.1 */
 
@@ -603,7 +603,7 @@ main(argc,argv)
   n_chfile=1;
   req_delay=0;
   host_status[0] = '\0';
-  while((c=getopt(argc,argv,"ABDd:f:g:i:m:Nno:p:rS:s:y:"))!=EOF)
+  while((c=getopt(argc,argv,"ABDd:f:g:i:m:Nno:p:rS:s:y:"))!=-1)
     {
     switch(c)
       {

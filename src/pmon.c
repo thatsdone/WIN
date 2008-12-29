@@ -1,4 +1,4 @@
-/* $Id: pmon.c,v 1.14.2.5.2.2 2008/11/23 10:01:09 uehira Exp $ */
+/* $Id: pmon.c,v 1.14.2.5.2.3 2008/12/29 11:25:11 uehira Exp $ */
 /************************************************************************
 *************************************************************************
 **  program "pmon.c" for NEWS/SPARC                             *********
@@ -1113,7 +1113,7 @@ main(argc,argv)
   offset=wait_min=0;
   logfile=NULL;
   exit_status = EXIT_SUCCESS;
-  while((c=getopt(argc,argv,"d:ol:"))!=EOF)
+  while((c=getopt(argc,argv,"d:ol:"))!=-1)
     {
     switch(c)
       {

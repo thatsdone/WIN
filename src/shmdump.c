@@ -55,7 +55,7 @@
 #define XINETD      0
 
 static char rcsid[] =
-  "$Id: shmdump.c,v 1.21.4.6.2.5 2008/12/20 04:04:41 uehira Exp $";
+  "$Id: shmdump.c,v 1.21.4.6.2.6 2008/12/29 11:25:12 uehira Exp $";
 
 char *progname,outfile[256];
 int win;
@@ -241,9 +241,9 @@ main(argc,argv)
   WIN_ch ch;
   WIN_sr sr;
   int32_w abuf[HEADER_5B];  /* 64 bit ok */
-  time_t tow,time_end,time_now;
-  long wsize;
-  uint32_w  wsize4;
+  time_t tow,time_end,time_now;    /* 64 bit ok */
+  long wsize;         /* 64 bit ok */
+  uint32_w  wsize4;   /* 64 bit ok */
   unsigned int packet_id;      /* 64 bit ok */
   unsigned char chlist[65536/8],tms[6];
   uint8_w  *buf,*ptw;
@@ -263,9 +263,10 @@ main(argc,argv)
   int filter_flag = 0;   /* filter var */
   int flt_kind;       
   int SR=0;
-  struct Filter *flt;
+  struct Filter *flt=NULL;
   int chindex[65536];
-  double (*uv)[MAX_FILT*4];
+  /* double (*uv)[MAX_FILT*4]; */
+  double **uv=NULL;   /* uv[nch][[MAX_FILT*4] */
   double dbuf[MAX_SR];
   float flt_fl, flt_fh, flt_fp, flt_fs, flt_ap, flt_as;
   int chid;              /* filter var end */
@@ -277,7 +278,7 @@ main(argc,argv)
   fplist=stdout;
   *fname=0;
 
-  while((c=getopt(argc,argv,"amoqrs:twf:xzL:H:B:R:"))!=EOF)
+  while((c=getopt(argc,argv,"amoqrs:twf:xzL:H:B:R:"))!=-1)
     {
     switch(c)
       {
@@ -447,11 +448,19 @@ main(argc,argv)
     }
 
   /* alloc flt & uv */
-  if((flt=malloc(nch*sizeof(struct Filter)))==0) err_sys_local("malloc filter");
-  if((uv=malloc(nch*sizeof(double[MAX_FILT*4])))==0) err_sys_local("malloc uv");
-  for(j=0;j<nch;j++)
-    for(i=0;i<MAX_FILT*4;i++)
-      uv[j][i]=0.0;
+  if(nch) {
+    if((flt=(struct Filter *)malloc(nch*sizeof(struct Filter)))==0)
+      err_sys_local("malloc filter");
+    if((uv=(double **)malloc(nch*sizeof(double)))==NULL)
+      err_sys_local("malloc uv");
+    for(j=0;j<nch;j++)
+      if((uv[j]=(double *)malloc(MAX_FILT*4*sizeof(double)))==NULL)
+	err_sys_local("malloc uv");
+    /* if((uv=malloc(nch*sizeof(double[MAX_FILT*4])))==0) err_sys_local("malloc uv"); */
+    for(j=0;j<nch;j++)
+      for(i=0;i<MAX_FILT*4;i++)
+	uv[j][i]=0.0;
+  }
 
   signal(SIGPIPE,(void *)ctrlc);
   signal(SIGINT,(void *)ctrlc);
@@ -635,6 +644,7 @@ last_out:     if((wsize=ptw-buf)>10)
                     else          fprintf(fpout,"%04X %d",ch,sr);
                     if ( filter_flag ) {   /* filtering start */
                       chid=chindex[ch];
+		      /* fprintf(stderr, "Fil : %04X\n", chid); */
                       if ( flt_kind == 0 ) {
                         sprintf(flt[chid].kind,"LPF");
                       } else if ( flt_kind == 1 ) {

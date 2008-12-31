@@ -1,4 +1,4 @@
-/* $Id: recvt.c,v 1.30 2008/12/15 06:49:07 uehira Exp $ */
+/* $Id: recvt.c,v 1.31 2008/12/31 08:03:56 uehira Exp $ */
 /* "recvt.c"      4/10/93 - 6/2/93,7/2/93,1/25/94    urabe */
 /*                2/3/93,5/25/94,6/16/94 */
 /*                1/6/95 bug in adj_time fixed (tm[0]--) */
@@ -811,7 +811,7 @@ main(argc,argv)
   chhist.n=N_HIST;
   n_chfile=1;
   req_delay=0;
-  while((c=getopt(argc,argv,"AaBDd:f:g:i:m:MNno:p:rs:y:"))!=EOF)
+  while((c=getopt(argc,argv,"AaBDd:f:g:i:m:MNno:p:rs:y:"))!=-1)
     {
     switch(c)
       {

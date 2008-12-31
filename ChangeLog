@@ -1,4 +1,9 @@
- $Id: ChangeLog,v 1.150 2008/12/15 06:49:07 uehira Exp $
+ $Id: ChangeLog,v 1.151 2008/12/31 08:03:55 uehira Exp $
+
+2008-12-31  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 1.1.89 released.
+	* src/shmdump.c : fixed bugs.
+	* getopt() : EOF --> -1
 
 2008-12-15  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* Version 1.1.88 released.

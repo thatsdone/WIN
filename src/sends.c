@@ -1,4 +1,4 @@
-/* $Id: sends.c,v 1.7 2008/12/15 06:49:08 uehira Exp $ */
+/* $Id: sends.c,v 1.8 2008/12/31 08:03:56 uehira Exp $ */
 /*   program "sends"   2000.3.20 urabe                   */
 /*   2000.3.21 */
 /*   2000.4.17 */
@@ -348,7 +348,7 @@ main(argc,argv)
   sprintf(tbuf,
 " usage : '%s (-ad) (-p req_port) (-b rate) (-i my_ID) [shm_key] [device] ([log file]))'",
     progname);
-  while((c=getopt(argc,argv,"ap:b:di:"))!=EOF)
+  while((c=getopt(argc,argv,"ap:b:di:"))!=-1)
     {
     switch(c)
       {

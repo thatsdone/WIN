@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.49 2008/04/14 03:37:19 uehira Exp $
+   $Id: win.c,v 1.50 2008/12/31 08:03:56 uehira Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -4513,7 +4513,7 @@ main(argc,argv)
   *ft.final_opt=0;
   dot='.';
   *chstr=0;
-  while((c=getopt(argc,argv,"abcd:e:fhi:mnop:qrs:twx:z:BC:S_"))!=EOF)
+  while((c=getopt(argc,argv,"abcd:e:fhi:mnop:qrs:twx:z:BC:S_"))!=-1)
     {
     switch(c)
       {

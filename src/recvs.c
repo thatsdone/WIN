@@ -1,4 +1,4 @@
-/* $Id: recvs.c,v 1.7 2008/12/15 06:49:07 uehira Exp $ */
+/* $Id: recvs.c,v 1.8 2008/12/31 08:03:56 uehira Exp $ */
 /* "recvs.c"    receive sync frames      2000.3.14       urabe */
 /* 2000.3.21 */
 /* 2000.4.17 */
@@ -374,7 +374,7 @@ main(argc,argv)
   sprintf(tb,
     " usage : '%s (-as) (-i my_ID) (-p host:port) (-b rate) [device] [shm_key] [shm_size(KB)] ([log file])'",
     progname);
-  while((c=getopt(argc,argv,"ap:b:si:"))!=EOF)
+  while((c=getopt(argc,argv,"ap:b:si:"))!=-1)
     {
     switch(c)
       {

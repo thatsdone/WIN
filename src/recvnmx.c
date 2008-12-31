@@ -1,4 +1,4 @@
-/* $Id: recvnmx.c,v 1.17 2008/12/15 06:49:07 uehira Exp $ */
+/* $Id: recvnmx.c,v 1.18 2008/12/31 08:03:56 uehira Exp $ */
 /* "recvnmx.c"    2001.7.18-19 modified from recvt.c and nmx2raw.c  urabe */
 /*                2001.8.18 */
 /*                2001.10.5 workaround for hangup */
@@ -699,7 +699,7 @@ main(argc,argv)
 
   station=verbose=use_chmap=eobsize=pk.npformat=0;
   *interface=(*mcastgroup)=(*chmapfile)=(*fragdir)=0;
-  while((c=getopt(argc,argv,"c:d:i:m:nvB"))!=EOF)
+  while((c=getopt(argc,argv,"c:d:i:m:nvB"))!=-1)
     {
     switch(c)
       {

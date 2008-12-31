@@ -1,4 +1,4 @@
-/* $Id: relay.c,v 1.17 2008/12/15 06:49:07 uehira Exp $ */
+/* $Id: relay.c,v 1.18 2008/12/31 08:03:56 uehira Exp $ */
 /* "relay.c"      5/23/94-5/25/94,6/15/94-6/16/94,6/23/94,3/16/95 urabe */
 /*                3/26/95 check_packet_no; port# */
 /*                5/24/96 added processing of "host table full" */
@@ -447,7 +447,7 @@ main(argc,argv)
   no_pinfo=src_port=delay=noreq=negate_channel=nopno=0;
   sockbuf=256;
 
-  while((c=getopt(argc,argv,"b:Dd:f:g:i:Nnp:rs:t:T:"))!=EOF)
+  while((c=getopt(argc,argv,"b:Dd:f:g:i:Nnp:rs:t:T:"))!=-1)
     {
     switch(c)
       {

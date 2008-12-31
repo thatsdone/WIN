@@ -1,4 +1,4 @@
-/* $Id: wck.c,v 1.5 2002/01/13 06:57:52 uehira Exp $ */
+/* $Id: wck.c,v 1.6 2008/12/31 08:03:56 uehira Exp $ */
 /* 
    program "wck.c"
 	"wck" checks a win format data file
@@ -79,7 +79,7 @@ main(argc,argv)
    if(progname=strrchr(argv[0],'/')) progname++;
    else progname=argv[0]; 
    mode=RAW;
-   while((c=getopt(argc,argv,"mrhctu"))!=EOF)
+   while((c=getopt(argc,argv,"mrhctu"))!=-1)
      {
      switch(c)
        {

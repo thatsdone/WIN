@@ -34,7 +34,7 @@
 /* #define SR 4096 */
 #define SR 250
 
-/* $Id: wintowin.c,v 1.7 2008/04/17 09:16:33 tsuru Exp $ */
+/* $Id: wintowin.c,v 1.8 2008/12/31 08:03:57 uehira Exp $ */
 /* winform.c  4/30/91,99.4.19   urabe */
 /* winform converts fixed-sample-size-data into win's format */
 /* winform returns the length in bytes of output data */
@@ -174,7 +174,7 @@ char *argv[];
     extern int optind;
     extern char *optarg;
 
-    while ((c = getopt(argc, argv, "hk:s:tm:")) != EOF) {
+    while ((c = getopt(argc, argv, "hk:s:tm:")) != -1) {
 	switch (c) {
 	case 'h':
 	    fprintf(stderr, "usage: wintowin <[in_file] >[out_file]\n");

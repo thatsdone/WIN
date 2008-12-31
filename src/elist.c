@@ -1,4 +1,4 @@
-/* $Id: elist.c,v 1.9 2002/01/13 06:57:50 uehira Exp $ */
+/* $Id: elist.c,v 1.10 2008/12/31 08:03:56 uehira Exp $ */
 /* program elist.c    2/5/91 - 2/25/91 ,  4/16/92, 4/22/92  urabe */
 /*                      6/10/92, 8/18/92, 10/25/92, 6/8/93, 1/5/94  */
 /*      4/21/94,12/5/94,6/2/95 bug in dat_dir fixed */
@@ -218,7 +218,7 @@ main(argc,argv)
   *ppfile=(*eefile)=0;
   reverse=delete=1;
   hidenoise=0;
-  while((c=getopt(argc,argv,"hup:o:ns"))!=EOF)
+  while((c=getopt(argc,argv,"hup:o:ns"))!=-1)
     {
     switch(c)
       {

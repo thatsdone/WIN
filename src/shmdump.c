@@ -684,18 +684,13 @@ main(argc,argv)
   {
 #define SR_MON 5
   key_t shm_key_in;
-  union {
-    unsigned long i;
-    unsigned short s;
-    char c[4];
-    } un;
-  int i,j,k,c_save_in,shp_in,shmid_in,size_in,shp,c_save,wtow,c,out,all,mon,
-    ch,sr,gs,size,chsel,nch,search,seconds,tbufp,bufsize,zero,nsec,aa,bb,end,
-    eobsize,eobsize_count,size2,tout,abuf[4096],bufsize_in,rawdump,quiet,
+  int i,j,k,c_save_in,shp_in,shmid_in,size_in,wtow,c,out,all,mon,
+    ch,sr,gs=0,size,chsel,nch=0,search,seconds,tbufp=0,bufsize=0,zero,nsec,aa,bb,end,
+    eobsize,eobsize_count,tout,abuf[4096],bufsize_in=0,rawdump,quiet,
     hexdump;
   time_t tow,time_end,time_now;
   long wsize;
-  unsigned int packet_id;
+  unsigned int packet_id=0;
   unsigned char *ptr,tbuf[256],*ptr_lim,*buf,chlist[65536/8],*ptw,tms[6],
     tb[256],*ptr1,*ptr_save;
   struct Shm *shm_in;
@@ -730,7 +725,7 @@ main(argc,argv)
   fplist=stdout;
   *fname=0;
 
-  while((c=getopt(argc,argv,"amoqrs:twf:xzL:H:B:R:"))!=EOF)
+  while((c=getopt(argc,argv,"amoqrs:twf:xzL:H:B:R:"))!=-1)
     {
     switch(c)
       {
@@ -828,6 +823,8 @@ main(argc,argv)
     exit(1);
     }
 
+  if(all) filter_flag=0;
+
   if(rawdump || hexdump) search=all=win=out=tout=mon=0;
 
   if(*fname)
@@ -900,11 +897,19 @@ main(argc,argv)
     }
 
   /* alloc flt & uv */
-  if((flt=malloc(nch*sizeof(struct Filter)))==0) err_sys("malloc filter");
-  if((uv=malloc(nch*sizeof(double[MAX_FILT*4])))==0) err_sys("malloc uv");
-  for(j=0;j<nch;j++)
-    for(i=0;i<MAX_FILT*4;i++)
-      uv[j][i]=0.0;
+  if (nch == 0)
+    filter_flag = 0;
+  if(filter_flag)
+    {
+      /* fprintf(stderr, "nch=%d\n", nch); */
+      if((flt=(struct Filter *)malloc(nch*sizeof(struct Filter)))==0)
+	err_sys("malloc filter");
+      if((uv=(double (*)[MAX_FILT*4])malloc(nch*sizeof(double[MAX_FILT*4])))==0)
+	err_sys("malloc uv");
+      for(j=0;j<nch;j++)
+	for(i=0;i<MAX_FILT*4;i++)
+	  uv[j][i]=0.0;
+    }
 
   signal(SIGPIPE,(void *)ctrlc);
   signal(SIGINT,(void *)ctrlc);
@@ -1080,6 +1085,7 @@ last_out:     if((wsize=ptw-buf)>10)
                     if ( SR > 0 ) fprintf(fpout,"%04X %d",ch,SR);
                     else          fprintf(fpout,"%04X %d",ch,sr);
                     if ( filter_flag ) {   /* filtering start */
+		      /* fprintf(stderr, "Filtering!!!\n"); */
                       chid=chindex[ch];
                       if ( flt_kind == 0 ) {
                         sprintf(flt[chid].kind,"LPF");

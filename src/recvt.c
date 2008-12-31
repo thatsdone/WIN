@@ -1,4 +1,4 @@
-/* $Id: recvt.c,v 1.29.2.3.2.14 2008/12/29 11:25:12 uehira Exp $ */
+/* $Id: recvt.c,v 1.29.2.3.2.15 2008/12/31 08:23:31 uehira Exp $ */
 /*-
  "recvt.c"      4/10/93 - 6/2/93,7/2/93,1/25/94    urabe
                 2/3/93,5/25/94,6/16/94 
@@ -108,7 +108,7 @@
 #define N_PNOS    62    /* length of packet nos. history >=2 */
 
 static char rcsid[] =
-  "$Id: recvt.c,v 1.29.2.3.2.14 2008/12/29 11:25:12 uehira Exp $";
+  "$Id: recvt.c,v 1.29.2.3.2.15 2008/12/31 08:23:31 uehira Exp $";
 
 uint8_w rbuf[MAXMESG],ch_table[WIN_CHMAX];
 char *progname,*logfile,chfile[N_CHFILE][256];
@@ -827,7 +827,7 @@ main(argc,argv)
   post*=60;
   to_port=(uint16_t)atoi(argv[1+optind]);
   shm_key=atol(argv[2+optind]);
-  size=atol(argv[3+optind])*1000;
+  size=(size_t)atol(argv[3+optind])*1000;
   *chfile[0]=0;
   if(argc>4+optind)
     {

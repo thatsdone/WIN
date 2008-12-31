@@ -1,4 +1,8 @@
- $Id: ChangeLog,v 1.131.2.25.2.11 2008/12/29 11:25:11 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.12 2008/12/31 08:23:31 uehira Exp $
+
+2008-12-31  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* MF Version 1.1.89 release.
+	* src/shmdump.c : fixed bugs.
 
 2008-12-29  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* getopt() : EOF --> -1

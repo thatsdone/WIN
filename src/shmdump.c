@@ -1,3 +1,5 @@
+/* $Id: shmdump.c,v 1.21.4.6.2.7 2008/12/31 08:23:31 uehira Exp $ */
+
 /*  program "shmdump.c" 6/14/94 urabe */
 /*  revised 5/29/96 */
 /*  Little Endian (uehira) 8/27/96 */
@@ -55,7 +57,7 @@
 #define XINETD      0
 
 static char rcsid[] =
-  "$Id: shmdump.c,v 1.21.4.6.2.6 2008/12/29 11:25:12 uehira Exp $";
+  "$Id: shmdump.c,v 1.21.4.6.2.7 2008/12/31 08:23:31 uehira Exp $";
 
 char *progname,outfile[256];
 int win;
@@ -227,7 +229,7 @@ main(argc,argv)
   /* #define SR_MON 5 */
   key_t shm_key_in;  /* 64 bit ok */
   int i,j,k,shmid_in,wtow,c,out,all,mon,
-    size,chsel,nch,search,seconds,tbufp,zero,nsec,aa,bb,end,
+    size,chsel,nch=0,search,seconds,tbufp=0,zero,nsec,aa,bb,end,
     eobsize,eobsize_count,tout,rawdump,quiet,
     hexdump;
   /*- 64bit ok
@@ -236,8 +238,8 @@ main(argc,argv)
   uint32_w  size_in;  /* 64 bit ok */
   size_t  shp_in;  /* 64 bit ok */
   unsigned long c_save_in; /* 64 bit ok */
-  size_t  bufsize, bufsize_in;  /* 64 bit ok */
-  uint32_w  gs;
+  size_t  bufsize=0, bufsize_in=0;  /* 64 bit ok */
+  uint32_w  gs=0;
   WIN_ch ch;
   WIN_sr sr;
   int32_w abuf[HEADER_5B];  /* 64 bit ok */
@@ -265,8 +267,7 @@ main(argc,argv)
   int SR=0;
   struct Filter *flt=NULL;
   int chindex[65536];
-  /* double (*uv)[MAX_FILT*4]; */
-  double **uv=NULL;   /* uv[nch][[MAX_FILT*4] */
+  double (*uv)[MAX_FILT*4];
   double dbuf[MAX_SR];
   float flt_fl, flt_fh, flt_fp, flt_fs, flt_ap, flt_as;
   int chid;              /* filter var end */
@@ -376,6 +377,8 @@ main(argc,argv)
     exit(1);
     }
 
+  if(all) filter_flag=0;
+
   if(rawdump || hexdump) search=all=win=out=tout=mon=0;
 
   if(*fname)
@@ -448,15 +451,14 @@ main(argc,argv)
     }
 
   /* alloc flt & uv */
-  if(nch) {
+  if (nch == 0)
+    filter_flag = 0;
+  if(filter_flag) {
+    /* fprintf(stderr,"nch=%d\n", nch); */
     if((flt=(struct Filter *)malloc(nch*sizeof(struct Filter)))==0)
       err_sys_local("malloc filter");
-    if((uv=(double **)malloc(nch*sizeof(double)))==NULL)
+    if((uv=(double (*)[MAX_FILT*4])malloc(nch*sizeof(double[MAX_FILT*4])))==0)
       err_sys_local("malloc uv");
-    for(j=0;j<nch;j++)
-      if((uv[j]=(double *)malloc(MAX_FILT*4*sizeof(double)))==NULL)
-	err_sys_local("malloc uv");
-    /* if((uv=malloc(nch*sizeof(double[MAX_FILT*4])))==0) err_sys_local("malloc uv"); */
     for(j=0;j<nch;j++)
       for(i=0;i<MAX_FILT*4;i++)
 	uv[j][i]=0.0;
@@ -643,6 +645,7 @@ last_out:     if((wsize=ptw-buf)>10)
                     if ( SR > 0 ) fprintf(fpout,"%04X %d",ch,SR);
                     else          fprintf(fpout,"%04X %d",ch,sr);
                     if ( filter_flag ) {   /* filtering start */
+		      /* fprintf(stderr, "Filtering!!!\n"); */
                       chid=chindex[ch];
 		      /* fprintf(stderr, "Fil : %04X\n", chid); */
                       if ( flt_kind == 0 ) {

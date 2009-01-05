@@ -1,4 +1,4 @@
-/* $Id: sends.c,v 1.6 2004/11/26 14:09:45 uehira Exp $ */
+/* $Id: sends.c,v 1.6.2.1 2009/01/05 14:55:55 uehira Exp $ */
 /*   program "sends"   2000.3.20 urabe                   */
 /*   2000.3.21 */
 /*   2000.4.17 */
@@ -32,6 +32,9 @@
 
 #include <sys/socket.h>
 #include <netinet/in.h>
+#if HAVE_ARPA_INET_H
+#include <arpa/inet.h>
+#endif
 #include <netdb.h>
 #include <unistd.h>
 #include <stropts.h>
@@ -345,7 +348,7 @@ main(argc,argv)
   sprintf(tbuf,
 " usage : '%s (-ad) (-p req_port) (-b rate) (-i my_ID) [shm_key] [device] ([log file]))'",
     progname);
-  while((c=getopt(argc,argv,"ap:b:di:"))!=EOF)
+  while((c=getopt(argc,argv,"ap:b:di:"))!=-1)
     {
     switch(c)
       {

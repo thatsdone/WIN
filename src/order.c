@@ -1,4 +1,4 @@
-/* $Id: order.c,v 1.11 2004/10/26 14:42:01 uehira Exp $ */
+/* $Id: order.c,v 1.11.2.1 2009/01/05 14:55:55 uehira Exp $ */
 /*  program "order.c" 1/26/94 - 2/7/94, 6/14/94 urabe */
 /*                              1/6/95 bug in adj_time(tm[0]--) fixed */
 /*                              3/17/95 write_log() */
@@ -315,7 +315,7 @@ main(argc,argv)
 
 
   sysclk_org=late=eobsize_in=eobsize_out=0;
-  while((c=getopt(argc,argv,"aBDl:"))!=EOF)
+  while((c=getopt(argc,argv,"aBDl:"))!=-1)
     {
     switch(c)
       {

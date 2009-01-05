@@ -1,4 +1,4 @@
-/* $Id: dewin.c,v 1.4 2003/10/29 14:44:12 urabe Exp $ */
+/* $Id: dewin.c,v 1.4.2.1 2009/01/05 14:55:54 uehira Exp $ */
 /* program dewin  1994.4.11-4.20  urabe */
 /*                1996.2.23 added -n option */
 /*                1996.9.12 added -8 option */
@@ -877,7 +877,7 @@ main(argc,argv)
   for(i=0;i<MAX_FILT*4;++i)
     uv[i]=0.0;
 
-  while((c=getopt(argc,argv,"chmnaf:"))!=EOF){
+  while((c=getopt(argc,argv,"chmnaf:"))!=-1){
      switch(c){
       case 'a':
         form=8;   /* 8bit format output*/
@@ -947,7 +947,7 @@ main(argc,argv)
         print_usage();
         exit(0);
       }
-    }  /*  End of "while((c=getopt(argc,argv,"chmnaf:"))!=EOF){" */
+    }  /*  End of "while((c=getopt(argc,argv,"chmnaf:"))!=-1){" */
 
 #if DEBUG
   fprintf(stderr,"filter_flag = %d\n",filter_flag);

@@ -1,4 +1,4 @@
-/* $Id: events.c,v 1.7.2.1 2005/08/11 02:26:52 uehira Exp $ */
+/* $Id: events.c,v 1.7.2.2 2009/01/05 14:55:54 uehira Exp $ */
 /****************************************************************************
 *****************************************************************************
 **     program "events.c" for NEWS                                  *********
@@ -64,6 +64,11 @@ sso     /dat/etc/sso.station    cut-jc3
 #include "config.h"
 #endif
 
+#define USE_LARGE_FS 0
+#ifdef USE_LARGE_FS
+#define _LARGEFILE64_SOURCE
+#endif
+
 #include  <stdio.h>
 #include  <stdlib.h>
 #include  <signal.h>
@@ -94,7 +99,7 @@ sso     /dat/etc/sso.station    cut-jc3
 #include  <sys/vfs.h>
 #endif
 
-#if defined(__SVR4)
+#if defined(__SVR4) || defined(__NetBSD__)
 #include  <sys/statvfs.h>
 #define statfs statvfs
 #define f_bsize f_frsize
@@ -409,7 +414,11 @@ check_space(path)
   char *path;
   {
   FILE *fp;
+#if USE_LARGE_FS
+  struct statfs64 fsbuf;
+#else
   struct statfs fsbuf;
+#endif
   int i,dirblocks;
   struct dirent *dir_ent;
   DIR *dir_ptr;
@@ -473,7 +482,11 @@ check_space(path)
       i,path,(dirblocks+1)/2,oldest,oldest2,newest);
 #endif
     closedir(dir_ptr);
+#if USE_LARGE_FS
+    if(statfs64(path1,&fsbuf)<0)
+#else
     if(statfs(path1,&fsbuf)<0)
+#endif
       {
       printf("%s:statfs : %s (%d)",progname,path1,getpid());
       owari();
@@ -592,7 +605,7 @@ main(argc,argv)
   ix=0;
   *file_used=0;
   strcpy(tapeunit,"/dev/nrst0");
-  while((c=getopt(argc,argv,"f:x:u:"))!=EOF)
+  while((c=getopt(argc,argv,"f:x:u:"))!=-1)
     {
     switch(c)
       {

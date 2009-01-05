@@ -1,4 +1,4 @@
-/* $Id: recvstatus2.c,v 1.6 2002/12/17 07:37:18 uehira Exp $ */
+/* $Id: recvstatus2.c,v 1.6.2.1 2009/01/05 14:55:55 uehira Exp $ */
 /* modified from "recvstatus.c" */
 /* 2002.6.19 recvstatus2 receive A8/A9 packets from Datamark LS-7000XT */
 /* 2002.7.3 fixed a bug - 'ok' deleted */
@@ -30,6 +30,9 @@
 
 #include <sys/socket.h>
 #include <netinet/in.h>
+#if HAVE_ARPA_INET_H
+#include <arpa/inet.h>
+#endif
 #include <netdb.h>
 #include <errno.h>
 
@@ -84,7 +87,7 @@ main(argc,argv)
   else progname=argv[0];
   sprintf(tb," usage : '%s (-r) [port] ([log dir])'",progname);
   rcs=0;
-  while((c=getopt(argc,argv,"r"))!=EOF)
+  while((c=getopt(argc,argv,"r"))!=-1)
     {
     switch(c)
       {

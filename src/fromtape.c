@@ -1,4 +1,4 @@
-/* $Id: fromtape.c,v 1.6.2.1 2005/08/11 02:26:52 uehira Exp $ */
+/* $Id: fromtape.c,v 1.6.2.2 2009/01/05 14:55:54 uehira Exp $ */
 /*
   program "fromtape.c"
   12/10/90 - 12/13/90, 9/19/91, 10/30/91, 6/19/92  urabe
@@ -297,7 +297,7 @@ main(argc,argv)
 /* open exabyte device */
   max_file=handshake=0;
   strcpy(exb_name,"/dev/nrst0");
-  while((c=getopt(argc,argv,"sn:f:"))!=EOF)
+  while((c=getopt(argc,argv,"sn:f:"))!=-1)
     {
     switch(c)
       {

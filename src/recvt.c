@@ -1,4 +1,4 @@
-/* $Id: recvt.c,v 1.27.2.2 2005/09/26 03:07:50 uehira Exp $ */
+/* $Id: recvt.c,v 1.27.2.3 2009/01/05 14:55:55 uehira Exp $ */
 /* "recvt.c"      4/10/93 - 6/2/93,7/2/93,1/25/94    urabe */
 /*                2/3/93,5/25/94,6/16/94 */
 /*                1/6/95 bug in adj_time fixed (tm[0]--) */
@@ -77,6 +77,9 @@
 
 #include <sys/socket.h>
 #include <netinet/in.h>
+#if HAVE_ARPA_INET_H
+#include <arpa/inet.h>
+#endif
 #include <netdb.h>
 #include <errno.h>
 #include <syslog.h>
@@ -808,7 +811,7 @@ main(argc,argv)
   chhist.n=N_HIST;
   n_chfile=1;
   req_delay=0;
-  while((c=getopt(argc,argv,"AaBDd:f:g:i:m:MNno:p:rs:y:"))!=EOF)
+  while((c=getopt(argc,argv,"AaBDd:f:g:i:m:MNno:p:rs:y:"))!=-1)
     {
     switch(c)
       {

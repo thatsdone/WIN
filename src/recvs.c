@@ -1,4 +1,4 @@
-/* $Id: recvs.c,v 1.5.2.1 2005/06/24 11:27:36 uehira Exp $ */
+/* $Id: recvs.c,v 1.5.2.2 2009/01/05 14:55:55 uehira Exp $ */
 /* "recvs.c"    receive sync frames      2000.3.14       urabe */
 /* 2000.3.21 */
 /* 2000.4.17 */
@@ -36,6 +36,9 @@
 #include <sys/ser_sync.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#if HAVE_ARPA_INET_H
+#include <arpa/inet.h>
+#endif
 #include <netdb.h>
 #include <errno.h>
 #if AURORA
@@ -371,7 +374,7 @@ main(argc,argv)
   sprintf(tb,
     " usage : '%s (-as) (-i my_ID) (-p host:port) (-b rate) [device] [shm_key] [shm_size(KB)] ([log file])'",
     progname);
-  while((c=getopt(argc,argv,"ap:b:si:"))!=EOF)
+  while((c=getopt(argc,argv,"ap:b:si:"))!=-1)
     {
     switch(c)
       {

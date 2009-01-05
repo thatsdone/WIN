@@ -1,4 +1,4 @@
-/* $Id: wtime.c,v 1.2.2.1 2006/03/18 11:29:22 uehira Exp $ */
+/* $Id: wtime.c,v 1.2.2.2 2009/01/05 14:55:56 uehira Exp $ */
 
 /*
   program "wtime.c"
@@ -338,7 +338,7 @@ main(argc,argv)
   signal(SIGTERM,(void *)wabort);
   hours=0;
   fsec=0.0;
-  while((c=getopt(argc,argv,"ch:s:tu"))!=EOF)
+  while((c=getopt(argc,argv,"ch:s:tu"))!=-1)
     {
     switch(c)
       {

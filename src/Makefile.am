@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.35.2.6 2006/08/31 09:51:46 uehira Exp $
+# $Id: Makefile.am,v 1.35.2.7 2009/01/05 14:55:54 uehira Exp $
 #
 
 if SUNOS4

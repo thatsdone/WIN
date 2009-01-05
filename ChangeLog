@@ -1,4 +1,35 @@
- $Id: ChangeLog,v 1.113.2.31 2008/04/07 09:40:42 uehira Exp $
+ $Id: ChangeLog,v 1.113.2.32 2009/01/05 14:55:54 uehira Exp $
+
+2008-12-31  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 1.1.89 released.
+	* src/shmdump.c : fixed bugs.
+	* getopt() : EOF --> -1
+
+2008-12-15  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 1.1.88 released.
+	* src/events.c : added NetBSD specific macro.
+	* src/recvnmx.c, src/recvs.c, src/recvstatus.c, src/recvstatus2.c,
+	  src/recvt.c, src/relay.c, src/send_raw.c, src/send_raw_old.c,
+ 	  src/sends.c :
+	   include arpa/inet.h if exists.
+	* configure.in : check arpa/inet.h.
+	
+2008-04-24  Shigeki Nakagawa  <nakagawa@eri.u-tokyo.ac.jp>
+	* Version 1.1.87 released.
+	* src/events.c, src/wdisk.c : add USE_LARGE_FS option.
+           In very large file system (maybe over 8TB) on linux server,
+           use statfs64(2) instead of statfs(2).
+
+2008-04-17  Tsuruoka Hiroshi <tsuru@eri.u-tokyo.ac.jp>
+	* bug fix : datej.pl.in
+	* MeSO-net : wintosac.c, wintowin.c
+
+2008-04-14  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/win.c, src/hypomhc.c : check FreeBSD OS version.
+
+2008-04-13  Shigeki Nakagawa  <nakagawa@eri.u-tokyo.ac.jp>
+	* src/wdisk.c (main): bug fix: initialize eobsize=0 
+	                           (reported by M. Sato)
 
 2008-04-07  Urabe Taku <urabe@eri.u-tokyo.ac.jp>
 	* src/shmdump.c : fixed bug(?) in option -s (071220)

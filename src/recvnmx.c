@@ -1,4 +1,4 @@
-/* $Id: recvnmx.c,v 1.16 2005/04/14 09:10:12 urabe Exp $ */
+/* $Id: recvnmx.c,v 1.16.2.1 2009/01/05 14:55:55 uehira Exp $ */
 /* "recvnmx.c"    2001.7.18-19 modified from recvt.c and nmx2raw.c  urabe */
 /*                2001.8.18 */
 /*                2001.10.5 workaround for hangup */
@@ -37,6 +37,9 @@
 
 #include <sys/socket.h>
 #include <netinet/in.h>
+#if HAVE_ARPA_INET_H
+#include <arpa/inet.h>
+#endif
 #include <netdb.h>
 #include <errno.h>
 
@@ -696,7 +699,7 @@ main(argc,argv)
 
   station=verbose=use_chmap=eobsize=pk.npformat=0;
   *interface=(*mcastgroup)=(*chmapfile)=(*fragdir)=0;
-  while((c=getopt(argc,argv,"c:d:i:m:nvB"))!=EOF)
+  while((c=getopt(argc,argv,"c:d:i:m:nvB"))!=-1)
     {
     switch(c)
       {

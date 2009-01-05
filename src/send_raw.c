@@ -1,4 +1,4 @@
-/* $Id: send_raw.c,v 1.22.2.2 2006/09/02 01:52:33 uehira Exp $ */
+/* $Id: send_raw.c,v 1.22.2.3 2009/01/05 14:55:55 uehira Exp $ */
 /*
     program "send_raw/send_mon.c"   1/24/94 - 1/25/94,5/25/94 urabe
                                     6/15/94 - 6/16/94
@@ -74,6 +74,9 @@
 
 #include <sys/socket.h>
 #include <netinet/in.h>
+#if HAVE_ARPA_INET_H
+#include <arpa/inet.h>
+#endif
 #include <netdb.h>
 #include <unistd.h>
 #include <errno.h>
@@ -524,7 +527,7 @@ main(argc,argv)
   standby=0;
   src_port=0;
   single=0;
-  while((c=getopt(argc,argv,"1ab:Df:h:i:mp:Rrs:tw:T:"))!=EOF)
+  while((c=getopt(argc,argv,"1ab:Df:h:i:mp:Rrs:tw:T:"))!=-1)
     {
     switch(c)
       {

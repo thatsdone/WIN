@@ -1,4 +1,4 @@
-/* $Id: recvt.c,v 1.29.2.3.2.15 2008/12/31 08:23:31 uehira Exp $ */
+/* $Id: recvt.c,v 1.29.2.3.2.16 2009/01/08 06:35:56 uehira Exp $ */
 /*-
  "recvt.c"      4/10/93 - 6/2/93,7/2/93,1/25/94    urabe
                 2/3/93,5/25/94,6/16/94 
@@ -51,7 +51,8 @@
                 2005.2.20 option -f [ch_file] for additional ch files 
                 2005.6.24 don't change optarg's content (-o) 
                 2005.9.25 allow disorder of arriving packets 
-                2005.9.25 host(:port) in control file 
+                2005.9.25 host(:port) in control file
+		2009.1.8  64bit?
 -*/
 
 #ifdef HAVE_CONFIG_H
@@ -108,14 +109,17 @@
 #define N_PNOS    62    /* length of packet nos. history >=2 */
 
 static char rcsid[] =
-  "$Id: recvt.c,v 1.29.2.3.2.15 2008/12/31 08:23:31 uehira Exp $";
+  "$Id: recvt.c,v 1.29.2.3.2.16 2009/01/08 06:35:56 uehira Exp $";
 
-uint8_w rbuf[MAXMESG],ch_table[WIN_CHMAX];
-char *progname,*logfile,chfile[N_CHFILE][256];
-int n_ch,negate_channel,hostlist[N_HOST][3],n_host,no_pinfo,n_chfile;
-int  daemon_mode, syslog_mode, exit_status;
+static uint8_w rbuf[MAXMESG],ch_table[WIN_CHMAX];
+static char chfile[N_CHFILE][256];
+static int n_ch,negate_channel,hostlist[N_HOST][3],n_host,no_pinfo,n_chfile;
+static int daemon_mode;
 
-struct {
+char *progname, *logfile;
+int  syslog_mode, exit_status;
+
+static struct {
     int host;
     int port;
     int ppnos;	/* pointer for pnos */
@@ -612,13 +616,13 @@ send_req(sock,host_addr)
   int sock;                       /* socket */
   {
   int i,j;
-/*-
-send list of chs : 2B/ch,1024B/packet->512ch/packet max 128packets
-header: magic number,seq,n,list...
-if all channels, seq=n=0 and no list.
--*/
+  /*-
+    send list of chs : 2B/ch,1024B/packet->512ch/packet max 128packets
+    header: magic number,seq,n,list...
+    if all channels, seq=n=0 and no list.
+    -*/
   unsigned seq,n_seq;
-  struct { char mn[4]; unsigned short seq[2]; unsigned short chlist[512];}
+  struct { char mn[4]; uint16_w seq[2]; uint16_w chlist[512];}
     sendbuf;
   strcpy(sendbuf.mn,"REQ");
   if(n_ch<WIN_CHMAX)
@@ -626,12 +630,12 @@ if all channels, seq=n=0 and no list.
     seq=1;
     if(n_ch==0) n_seq=1;
     else n_seq=(n_ch-1)/512+1;
-    sendbuf.seq[1]=SWAPS(n_seq);
+    sendbuf.seq[1]=MKSWAPS(n_seq);
     j=0;
     for(i=0;i<WIN_CHMAX;i++)
       {
-      sendbuf.seq[0]=SWAPS(seq);
-      if(ch_table[i]) sendbuf.chlist[j++]=SWAPS(i);
+      sendbuf.seq[0]=MKSWAPS(seq);
+      if(ch_table[i]) sendbuf.chlist[j++]=MKSWAPS(i);
       if(j==512)
         {
         sendto(sock,&sendbuf,8+2*j,0,(struct sockaddr *)host_addr,
@@ -639,8 +643,8 @@ if all channels, seq=n=0 and no list.
 #if DEBUG3
         printf("send channel list to %s:%d (%d): %s %d/%d %04X %04X %04X ...\n",
           inet_ntoa(host_addr->sin_addr),ntohs(host_addr->sin_port),
-          n_ch,sendbuf.mn,SWAPS(sendbuf.seq[0]),SWAPS(sendbuf.seq[1]),
-          SWAPS(sendbuf.chlist[0]),SWAPS(sendbuf.chlist[1]),SWAPS(sendbuf.chlist[2]));
+          n_ch,sendbuf.mn,MKSWAPS(sendbuf.seq[0]),MKSWAPS(sendbuf.seq[1]),
+          MKSWAPS(sendbuf.chlist[0]),MKSWAPS(sendbuf.chlist[1]),MKSWAPS(sendbuf.chlist[2]));
 #endif
         j=0;
         seq++;
@@ -653,8 +657,8 @@ if all channels, seq=n=0 and no list.
 #if DEBUG3
         printf("send channel list to %s:%d (%d): %s %d/%d %04X %04X %04X ...\n",
           inet_ntoa(host_addr->sin_addr),ntohs(host_addr->sin_port),
-          n_ch,sendbuf.mn,SWAPS(sendbuf.seq[0]),SWAPS(sendbuf.seq[1]),
-          SWAPS(sendbuf.chlist[0]),SWAPS(sendbuf.chlist[1]),SWAPS(sendbuf.chlist[2]));
+          n_ch,sendbuf.mn,MKSWAPS(sendbuf.seq[0]),MKSWAPS(sendbuf.seq[1]),
+          MKSWAPS(sendbuf.chlist[0]),MKSWAPS(sendbuf.chlist[1]),MKSWAPS(sendbuf.chlist[2]));
 #endif
       seq++;
       }
@@ -666,7 +670,7 @@ if all channels, seq=n=0 and no list.
 #if DEBUG3
     printf("send channel list to %s:%d (%d): %s %d/%d\n",
       inet_ntoa(host_addr->sin_addr),ntohs(host_addr->sin_port),
-      n_ch,sendbuf.mn,SWAPS(sendbuf.seq[0]),SWAPS(sendbuf.seq[1]));
+      n_ch,sendbuf.mn,MKSWAPS(sendbuf.seq[0]),MKSWAPS(sendbuf.seq[1]));
 #endif
     }
   }

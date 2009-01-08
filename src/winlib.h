@@ -1,4 +1,4 @@
-/* $Id: winlib.h,v 1.1.2.7.2.10 2008/11/23 10:01:10 uehira Exp $ */
+/* $Id: winlib.h,v 1.1.2.7.2.11 2009/01/08 06:35:56 uehira Exp $ */
 
 #ifndef _WIN_LIB_H_
 #define _WIN_LIB_H_
@@ -59,6 +59,7 @@ typedef uint32_w  WIN_sr;
 #define  SWAPL(a)  a = ((((a) << 24)) | (((a) << 8) & 0xff0000) |	\
 			(((a) >> 8) & 0xff00) | (((a) >> 24) & 0xff))
 #define  SWAPS(a)  a = ((((a) << 8) & 0xff00) | (((a) >> 8) & 0xff))
+#define  MKSWAPS(a)  (uint16_w)((((a) << 8) & 0xff00) | (((a) >> 8) & 0xff))
 #define  SWAPF(a)  *(int32_w *)&(a) =\
     (((*(int32_w *)&(a)) << 24) | ((*(int32_w *)&(a)) << 8) & 0xff0000 |\
      ((*(int32_w *)&(a)) >> 8) & 0xff00 | ((*(int32_w *)&(a)) >> 24) & 0xff)

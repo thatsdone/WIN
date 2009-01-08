@@ -1,4 +1,9 @@
- $Id: ChangeLog,v 1.131.2.25.2.12 2008/12/31 08:23:31 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.13 2009/01/08 06:35:56 uehira Exp $
+
+2009-01-08  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/winlib.h : added MKSWAPS.
+	* src/recvt.c : bug fixed in send_req(). SWAPS --> MKSWAPS.
+	* src/shmdump.c : fixed bugs?
 
 2008-12-31  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* MF Version 1.1.89 release.
@@ -9,7 +14,7 @@
 
 2008-12-17  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* win2fix() : use win_chheader_info().
-	* recvt : 64 bit clean?
+	* src/recvt : 64 bit clean?
 	* Version 2.0.3 released.
 
 2008-12-17  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>

@@ -930,7 +930,8 @@ reset:
     else size_in=mklong(shm_in->d+(shp_in=shm_in->r));
     }
   wtow=0;
-  ptw=buf+4;
+  if(out)
+    ptw=buf+4;
 
   if(mklong(shm_in->d+shp_in+size_in-4)==size_in) eobsize=1;
   else eobsize=0;

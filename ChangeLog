@@ -1,4 +1,9 @@
- $Id: ChangeLog,v 1.113.2.32 2009/01/05 14:55:54 uehira Exp $
+ $Id: ChangeLog,v 1.113.2.33 2009/01/08 12:34:15 uehira Exp $
+
+2009-01-08  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 1.1.90 released.
+	* src/shmdump.c : bug fixed.
+	* prog/ee_manager : tail +5 --> tail -n +5 (for Linux system)
 
 2008-12-31  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* Version 1.1.89 released.

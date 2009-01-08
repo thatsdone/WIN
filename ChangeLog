@@ -1,9 +1,10 @@
- $Id: ChangeLog,v 1.131.2.25.2.13 2009/01/08 06:35:56 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.14 2009/01/08 12:36:44 uehira Exp $
 
 2009-01-08  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* src/winlib.h : added MKSWAPS.
 	* src/recvt.c : bug fixed in send_req(). SWAPS --> MKSWAPS.
 	* src/shmdump.c : fixed bugs?
+	* prog/ee_manager : tail +5 --> tail -n +5 (for Linux system)
 
 2008-12-31  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* MF Version 1.1.89 release.

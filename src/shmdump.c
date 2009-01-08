@@ -1,4 +1,4 @@
-/* $Id: shmdump.c,v 1.21.4.6.2.7 2008/12/31 08:23:31 uehira Exp $ */
+/* $Id: shmdump.c,v 1.21.4.6.2.8 2009/01/08 05:56:30 uehira Exp $ */
 
 /*  program "shmdump.c" 6/14/94 urabe */
 /*  revised 5/29/96 */
@@ -57,7 +57,7 @@
 #define XINETD      0
 
 static char rcsid[] =
-  "$Id: shmdump.c,v 1.21.4.6.2.7 2008/12/31 08:23:31 uehira Exp $";
+  "$Id: shmdump.c,v 1.21.4.6.2.8 2009/01/08 05:56:30 uehira Exp $";
 
 char *progname,outfile[256];
 int win;
@@ -67,7 +67,7 @@ static int
 time_dif(t1,t2) /* returns t1-t2(sec) */	/* 64 bit ok */
   int *t1,*t2;
   {
-    int i,*a,*b,soda,sodb,t1_is_lager,sdif,ok;  /* what is ok? */
+    int i,*a,*b,soda,sodb,t1_is_lager,sdif,ok;
   for(i=0;i<6;i++) if(t1[i]!=t2[i]) break;
   if(i==6) return 0;
   else
@@ -85,7 +85,7 @@ time_dif(t1,t2) /* returns t1-t2(sec) */	/* 64 bit ok */
     else return (-sdif);
     }
   /* 'day' is different */
-  ok=0;
+  ok=0;  /* 'ok' is not used. ok=0; 1 day diff, ok=2; abave 1 day diff */ 
   if(i==0 && a[0]+1==b[0] && a[1]==12 && b[1]==1 && a[2]==31 && b[2]==1) ok=1;
   else if(i==1 && a[1]+1==b[1] && b[2]==1) ok=1;
   else if(i==2 && a[2]+1==b[2]) ok=1;
@@ -183,8 +183,8 @@ struct Filter
 };
 
 static void
-get_filter(sr,f)
-     int    sr;
+get_filter(sr,f)  /* 64 bit ok */
+     WIN_sr    sr;
      struct Filter  *f;
 {
    double   dt;
@@ -247,9 +247,9 @@ main(argc,argv)
   long wsize;         /* 64 bit ok */
   uint32_w  wsize4;   /* 64 bit ok */
   unsigned int packet_id;      /* 64 bit ok */
-  unsigned char chlist[65536/8],tms[6];
-  uint8_w  *buf,*ptw;
-  char  tbuf[1024];
+  uint8_w chlist[WIN_CHMAX<<3],tms[6];  /* 64 bit ok */
+  uint8_w  *buf,*ptw;  /* 64 bit ok */
+  char  tbuf[1024];    /* 64 bit ok */
   uint8_w  *ptr,*ptr_lim,*ptr_save,*ptr1;    /* 64 bit ok */
   struct Shm *shm_in;     /* 64 bit ok */
   struct tm *nt;     /* 64 bit ok */
@@ -266,7 +266,7 @@ main(argc,argv)
   int flt_kind;       
   int SR=0;
   struct Filter *flt=NULL;
-  int chindex[65536];
+  int chindex[WIN_CHMAX];
   double (*uv)[MAX_FILT*4];
   double dbuf[MAX_SR];
   float flt_fl, flt_fh, flt_fp, flt_fs, flt_ap, flt_as;
@@ -388,8 +388,8 @@ main(argc,argv)
       if(*fname=='-') fp=stdin;
       else if((fp=fopen(fname,"r"))==0) err_sys_local(outfile);
       nch=0;
-      for(i=0;i<65536/8;i++) chlist[i]=0;
-      while(fgets(tbuf,100,fp))
+      for(i=0;i<(WIN_CHMAX<<3);i++) chlist[i]=0;
+      while(fgets(tbuf,sizeof(tbuf),fp)!=NULL)
         {
         if(*tbuf=='#' || sscanf(tbuf,"%x",&chsel)<0) continue;
         chsel&=0xffff;
@@ -427,10 +427,10 @@ main(argc,argv)
   if(argc>2+optind)
     {
     nch=0;
-    for(i=0;i<65536/8;i++) chlist[i]=0;
+    for(i=0;i<(WIN_CHMAX<<3);i++) chlist[i]=0;
     for(i=2+optind;i<argc;i++)
       {
-      chsel=strtol(argv[i],0,16);
+      chsel=(int)strtol(argv[i],0,16);
       setch(chsel);
       chindex[chsel]=nch; /* filter */
 #if XINETD
@@ -483,7 +483,8 @@ reset:
     else size_in=mkuint4(shm_in->d+(shp_in=shm_in->r));
     }
   wtow=0;
-  ptw=buf+4;
+  if (out)
+    ptw=buf+4;
 
   if(mkuint4(shm_in->d+shp_in+size_in-4)==size_in) eobsize=1;
   else eobsize=0;

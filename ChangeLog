@@ -1,4 +1,8 @@
- $Id: ChangeLog,v 1.131.2.25.2.14 2009/01/08 12:36:44 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.15 2009/02/15 07:41:36 uehira Exp $
+
+2009-02-15  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* MF Version 1.1.91 released.
+	* src/shmdump.c : bug fixed.
 
 2009-01-08  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* src/winlib.h : added MKSWAPS.

@@ -1,4 +1,4 @@
-/* $Id: shmdump.c,v 1.21.4.6.2.8 2009/01/08 05:56:30 uehira Exp $ */
+/* $Id: shmdump.c,v 1.21.4.6.2.9 2009/02/15 07:41:36 uehira Exp $ */
 
 /*  program "shmdump.c" 6/14/94 urabe */
 /*  revised 5/29/96 */
@@ -57,7 +57,7 @@
 #define XINETD      0
 
 static char rcsid[] =
-  "$Id: shmdump.c,v 1.21.4.6.2.8 2009/01/08 05:56:30 uehira Exp $";
+  "$Id: shmdump.c,v 1.21.4.6.2.9 2009/02/15 07:41:36 uehira Exp $";
 
 char *progname,outfile[256];
 int win;
@@ -475,19 +475,19 @@ main(argc,argv)
 
   nsec=0;
 reset:
+  eobsize=0;
   if(shm_key_in)
     {
     while(shm_in->r==(-1)) usleep(200000);
     c_save_in=shm_in->c;
     if(zero) size_in=mkuint4(shm_in->d+(shp_in=0));
     else size_in=mkuint4(shm_in->d+(shp_in=shm_in->r));
+    if(mkuint4(shm_in->d+shp_in+size_in-4)==size_in) eobsize=1;
     }
   wtow=0;
   if (out)
     ptw=buf+4;
 
-  if(mkuint4(shm_in->d+shp_in+size_in-4)==size_in) eobsize=1;
-  else eobsize=0;
   eobsize_count=eobsize;
   nch=end=0;
 

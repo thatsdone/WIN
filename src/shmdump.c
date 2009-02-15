@@ -922,19 +922,19 @@ main(argc,argv)
 
   nsec=0;
 reset:
+  eobsize=0;
   if(shm_key_in)
     {
     while(shm_in->r==(-1)) usleep(200000);
     c_save_in=shm_in->c;
     if(zero) size_in=mklong(shm_in->d+(shp_in=0));
     else size_in=mklong(shm_in->d+(shp_in=shm_in->r));
+    if(mklong(shm_in->d+shp_in+size_in-4)==size_in) eobsize=1;
     }
   wtow=0;
   if(out)
     ptw=buf+4;
-
-  if(mklong(shm_in->d+shp_in+size_in-4)==size_in) eobsize=1;
-  else eobsize=0;
+  
   eobsize_count=eobsize;
   nch=end=0;
 

@@ -1,9 +1,9 @@
 dnl ------------------------------------------------------------------------- 
-dnl $Id: configure.in,v 1.82.2.23 2009/01/08 12:34:15 uehira Exp $
+dnl $Id: configure.in,v 1.82.2.24 2009/02/15 07:45:21 uehira Exp $
 dnl -------------------------------------------------------------------------
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT(src/win.c)
-AM_INIT_AUTOMAKE(WIN_pkg, 1.1.90-SEVO)
+AM_INIT_AUTOMAKE(WIN_pkg, 1.1.91-SEVO)
 AM_CONFIG_HEADER(config.h)
 AC_ARG_PROGRAM
 AC_CANONICAL_TARGET
@@ -243,7 +243,7 @@ fi
 dnl ---------------------------------------
 dnl check wish
 dnl ---------------------------------------
-AC_PATH_PROGS(WISH, wish8.0jp wish4.2jp wish, :)
+AC_PATH_PROGS(WISH, wish8.0jp wish4.2jp wish wish8.5, :)
 if test $WISH = ":"; then
 	AC_MSG_WARN(Test for wish failed. Please install wish program.)
 fi
@@ -251,7 +251,7 @@ fi
 dnl ---------------------------------------
 dnl check tclsh
 dnl ---------------------------------------
-AC_PATH_PROGS(TCLSH, tclsh8.0jp tclsh7.6jp tclsh, :)
+AC_PATH_PROGS(TCLSH, tclsh8.0jp tclsh7.6jp tclsh tcl8.5, :)
 if test $TCLSH = ":"; then
 	AC_MSG_WARN(Test for tclsh failed. Please install tclsh program.)
 fi

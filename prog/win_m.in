@@ -1,7 +1,7 @@
 #! @WISH@
 
 #
-# $Id: win_m.in,v 1.5 2005/06/17 11:11:33 uehira Exp $
+# $Id: win_m.in,v 1.6 2009/02/19 07:25:26 uehira Exp $
 #  win_m : ＷＩＮのピックマネージャー
 #
 #    Uehira Kenji (Original 96.2.29)
@@ -609,7 +609,7 @@ proc disp_help {} {
 	    -relief raised -bd 2
     scrollbar $w.scroll -command "$w.help yview" -relief sunken
     # Set up Display Style
-    $w.help tag configure kbold -kanjifont $KANJI_BOLD
+    #$w.help tag configure kbold -kanjifont $KANJI_BOLD
     $w.help tag configure bold -font $BOLD_FONT
     $w.help tag configure aka -foreground red
     $w.help tag configure ao -foreground blue

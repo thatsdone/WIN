@@ -1,4 +1,7 @@
- $Id: ChangeLog,v 1.113.2.34 2009/02/15 07:45:21 uehira Exp $
+ $Id: ChangeLog,v 1.113.2.35 2009/02/19 07:29:34 uehira Exp $
+
+2009-02-19  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* prog/win_m : do not use "-kanjifont". comment out.
 
 2009-02-15  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* Version 1.1.91 released.

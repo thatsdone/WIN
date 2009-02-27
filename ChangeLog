@@ -1,10 +1,13 @@
- $Id: ChangeLog,v 1.131.2.25.2.16 2009/02/19 07:41:56 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.17 2009/02/27 08:14:42 uehira Exp $
+
+2009-02-27  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* MF Version 1.1.92 released.
+	* configure.in : FFLAGS added "-fno-automatic -finit-local-zero"
 
 2009-02-19  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* MFH.
 	* prog/win_m : do not use "-kanjifont". comment out.
 
-2009-02-15  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 2009-02-15  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* MF Version 1.1.91 released.
 	* src/shmdump.c : bug fixed.

@@ -1,9 +1,9 @@
 dnl ------------------------------------------------------------------------- 
-dnl $Id: configure.in,v 1.82.2.25 2009/02/19 07:29:34 uehira Exp $
+dnl $Id: configure.in,v 1.82.2.26 2009/02/27 08:11:19 uehira Exp $
 dnl -------------------------------------------------------------------------
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT(src/win.c)
-AM_INIT_AUTOMAKE(WIN_pkg, 1.1.91-SEVO)
+AM_INIT_AUTOMAKE(WIN_pkg, 1.1.92-SEVO)
 AM_CONFIG_HEADER(config.h)
 AC_ARG_PROGRAM
 AC_CANONICAL_TARGET
@@ -18,7 +18,7 @@ if test x"$CFLAGS" = x; then
 	CFLAGS="-pipe -O"
 fi
 if test x"$FFLAGS" = x; then
- 	FFLAGS="-O"
+ 	FFLAGS="-O -fno-automatic -finit-local-zero"
 fi
 
 dnl Checks for programs.
@@ -154,7 +154,7 @@ AC_ARG_ENABLE(debug,
 if test "$ts_cv_debug" = yes; then
 	AC_DEFINE(DEBUG)
 	CFLAGS="-g"
-	FFLAGS="-g"
+	FFLAGS="-g -fno-automatic -finit-local-zero"
 fi
 AC_MSG_RESULT($ts_cv_debug)
 
@@ -243,7 +243,7 @@ fi
 dnl ---------------------------------------
 dnl check wish
 dnl ---------------------------------------
-AC_PATH_PROGS(WISH, wish8.5 wish8.4 wish8.0jp wish4.2jp wish wish8.5, :)
+AC_PATH_PROGS(WISH, wish8.5 wish8.4 wish8.0jp wish4.2jp wish, :)
 if test $WISH = ":"; then
 	AC_MSG_WARN(Test for wish failed. Please install wish program.)
 fi
@@ -251,7 +251,7 @@ fi
 dnl ---------------------------------------
 dnl check tclsh
 dnl ---------------------------------------
-AC_PATH_PROGS(TCLSH, tclsh8.5 tclsh8.4 tclsh8.0jp tclsh7.6jp tclsh tcl8.5, :)
+AC_PATH_PROGS(TCLSH, tclsh8.5 tclsh8.4 tclsh8.0jp tclsh7.6jp tclsh, :)
 if test $TCLSH = ":"; then
 	AC_MSG_WARN(Test for tclsh failed. Please install tclsh program.)
 fi

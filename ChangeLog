@@ -1,4 +1,8 @@
- $Id: ChangeLog,v 1.113.2.35 2009/02/19 07:29:34 uehira Exp $
+ $Id: ChangeLog,v 1.113.2.36 2009/02/27 08:11:19 uehira Exp $
+
+2009-02-27  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 1.1.92 released.
+	* configure.in : FFLAGS added "-fno-automatic -finit-local-zero"
 
 2009-02-19  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* prog/win_m : do not use "-kanjifont". comment out.

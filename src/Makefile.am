@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.38.2.10.2.2 2008/11/13 15:34:14 uehira Exp $
+# $Id: Makefile.am,v 1.38.2.10.2.3 2009/03/06 13:03:02 uehira Exp $
 #
 
 if SUNOS4
@@ -27,7 +27,7 @@ OFFLINE_X=win win32
 endif
 
 if IPV6
-IPV6_PGM = relaym recvstatus3 winrawreq rawsrv_info recvt_LS7000
+IPV6_PGM = relaym recvstatus3 recvstatus4 winrawreq rawsrv_info recvt_LS7000
 else
 IPV6_PGM =
 endif
@@ -52,7 +52,7 @@ OFFLINE_F77=hypomh
 OFFLINE_USER=$(OFFLINE_X) $(OFFLINE_F77) wed wck wadd $(OFFLINE_MATH) wchch pick2tseis \
              wch pick2finalb pick2final finalb2final final2finalb finalb2seis \
              wform wintowin $(OFFLINE_USER_MATH) winadd wck_wdisk wadd2 \
-             win2raw wchasn ls8tel16_win ls8tel_STM ls8tel_STS
+             win2raw wchasn ls8tel16_win ls8tel_STM ls8tel_STS ls7000_A8 ls7000_A9
 TAPE_USER=rtape fromtape wdisk wdiskts ras2rpdl ras2lips file_older raw2mon \
           $(TAPE_USER_MATH)
 ONLINE=order raw_mon wtape setexb timeout raw_raw raw_100 cormeisei shmdump \
@@ -112,6 +112,7 @@ install-exec-hook:
 	(rm -f @bindir@/raw_rawd; cd @bindir@ && @LN_S@ raw_raw raw_rawd)
 	(rm -f @bindir@/wdisktsd; cd @bindir@ && @LN_S@ wdiskts wdisktsd)
 	(rm -f @bindir@/recvstatus3d; cd @bindir@ && @LN_S@ recvstatus3 recvstatus3d)
+	(rm -f @bindir@/recvstatus4d; cd @bindir@ && @LN_S@ recvstatus4 recvstatus4d)
 	(rm -f @bindir@/ls8tel16_rawd; cd @bindir@ && @LN_S@ ls8tel16_raw ls8tel16_rawd)
 	(rm -f @bindir@/recvt_LS7000d; cd @bindir@ && @LN_S@ recvt_LS7000 recvt_LS7000d)
 libwinsystem_a_SOURCES = $(WIN_LIBH) $(WIN_LIBC) filter.c $(WIN_LOG)
@@ -312,16 +313,19 @@ raw_time_LDADD = $(WIN_SYSTEM_LIB) -lm @LIBSHMGET@ $(GC_CHECK_LIB)
 recvstatus3_SOURCES = recvstatus3.c $(WIN_LIBH) $(DAEMON_MODE) udpu.h udp_accept.c ls8tel.h
 recvstatus3_LDADD = $(WIN_SYSTEM_LIB) @LIBNSL@ @LIBSOCKET@
 
+recvstatus4_SOURCES = recvstatus4.c $(WIN_LIBH) $(DAEMON_MODE) udpu.h udp_accept.c ls7000.h
+recvstatus4_LDADD = $(WIN_SYSTEM_LIB) @LIBNSL@ @LIBSOCKET@
+
 ls8tel16_win_SOURCES = ls8tel16_win.c $(WIN_LIBH) $(WIN_UTIL) $(GC_CHECK_INCLUDE) ls8tel.h ls8tel.c
 ls8tel16_win_LDADD = $(WIN_SYSTEM_LIB) $(GC_CHECK_LIB)
 
 ls8tel16_raw_SOURCES = ls8tel16_raw.c ls8tel.h ls8tel.c $(WIN_LIBH) $(DAEMON_MODE) $(WIN_UTIL) $(GC_CHECK_INCLUDE)
 ls8tel16_raw_LDADD = $(WIN_SYSTEM_LIB) @LIBSHMGET@ $(GC_CHECK_LIB)
 
-ls8tel_STM_SOURCES = ls8tel_STM.c $(SUBFUNC_H) $(GC_CHECK_INCLUDE) ls8tel.h ls8tel.c
+ls8tel_STM_SOURCES = ls8tel_STM.c $(SUBFUNC_H) $(GC_CHECK_INCLUDE) ls8tel.h
 ls8tel_STM_LDADD = $(GC_CHECK_LIB)
 
-ls8tel_STS_SOURCES = ls8tel_STS.c $(SUBFUNC_H) $(GC_CHECK_INCLUDE) ls8tel.h ls8tel.c
+ls8tel_STS_SOURCES = ls8tel_STS.c $(SUBFUNC_H) $(GC_CHECK_INCLUDE) ls8tel.h
 ls8tel_STS_LDADD = $(GC_CHECK_LIB)
 
 winrawsrvd_SOURCES = winrawsrv.c $(WIN_LIBH) $(DAEMON_MODE) winraw_bp.h
@@ -336,5 +340,12 @@ winrawreq_LDADD = $(WIN_SYSTEM_LIB) @LIBNSL@ @LIBSOCKET@
 rawsrv_info_SOURCES = rawsrv_info.c $(TCP_UTILITY) $(WIN_LIBH) winraw_bp.h
 rawsrv_info_LDADD = $(WIN_SYSTEM_LIB) @LIBNSL@ @LIBSOCKET@
 
-recvt_LS7000_SOURCES = recvt_LS7000.c $(WIN_LIBH) $(DAEMON_MODE) $(UDP_UTILITY)
+recvt_LS7000_SOURCES = recvt_LS7000.c $(WIN_LIBH) $(DAEMON_MODE) $(UDP_UTILITY) ls7000.h
 recvt_LS7000_LDADD = $(WIN_SYSTEM_LIB) @LIBNSL@ @LIBSOCKET@ @LIBSHMGET@
+
+ls7000_A8_SOURCES = ls7000_A8.c $(WIN_LIBH) ls7000.h
+ls7000_A8_LDADD = $(WIN_SYSTEM_LIB) 
+
+ls7000_A9_SOURCES = ls7000_A9.c $(WIN_LIBH) ls7000.h
+ls7000_A9_LDADD = $(WIN_SYSTEM_LIB) 
+

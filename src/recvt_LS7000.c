@@ -1,4 +1,4 @@
-/* $Id: recvt_LS7000.c,v 1.1.2.3.2.5 2008/12/29 11:25:12 uehira Exp $ */
+/* $Id: recvt_LS7000.c,v 1.1.2.3.2.6 2009/03/06 13:03:03 uehira Exp $ */
 /* "recvt_LS7000.c"  uehira */
 /*   2007-11-02  imported from recvt.c 1.29.2.1 */
 
@@ -37,6 +37,7 @@
 #include "daemon_mode.h"
 #include "winlib.h"
 #include "udpu.h"
+#include "ls7000.h"
 
 #define DEBUG0    0
 #define DEBUG1    0
@@ -816,7 +817,7 @@ main(argc,argv)
     /* packet ID check */
     memcpy(&logger_address, rbuff, 2);
     memcpy(rbuf, rbuff + 2, 2);  /* delete logger address */
-    if (rbuff[4] == 0xA1) {  /* waveform data */
+    if (rbuff[LS7_PID] == 0xA1) {  /* waveform data */
       memcpy(rbuf + 2, rbuff + 5, norg - 6);
       n = norg - 4;
     } else {  /* status data */
@@ -972,7 +973,7 @@ main(argc,argv)
 		   rbuf[3], rbuf[4], rbuf[5], rbuf[6], rbuf[7], rbuf[8]);
 	  if ((fp = fopen(staf, "w")) == NULL)
 	    err_sys("fopen");
-	  fwrite(rbuff, 1, norg, fp);
+	  fwrite(rbuff + LS7_PHDER_LEN, 1, norg - LS7_PHDER_LEN, fp);
 	  fclose(fp);
 	} else {
 	  if ((sendnum = sendto(sock_status, rbuff, norg, 0, sa, salen))
@@ -999,7 +1000,7 @@ main(argc,argv)
 		   rbuf[3], rbuf[4], rbuf[5], rbuf[6], rbuf[7], rbuf[8]);
 	  if ((fp = fopen(staf, "w")) == NULL)
 	    err_sys("fopen");
-	  fwrite(rbuff, 1, norg, fp);
+	  fwrite(rbuff + LS7_PHDER_LEN, 1, norg - LS7_PHDER_LEN, fp);
 	  fclose(fp);
 	} else {
 	  if ((sendnum = sendto(sock_status, rbuff, norg, 0, sa, salen))

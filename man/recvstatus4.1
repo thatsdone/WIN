@@ -1,0 +1,54 @@
+.TH recvstatus4 1W "2009.3.6" "WIN SYSTEM" "WIN SYSTEM"
+.SH 名称
+recvstatus4 - 白山WIN_UDP動作/設定ステータスパケットの受信(LS7000無印)
+.SH 形式
+recvstatus4 [\-\fBD\fR]
+.I port
+.I dirname
+[
+.I logfile
+]
+.LP
+recvstatus4d
+.I port
+.I dirname
+[
+.I logfile
+]
+.LP
+.SH 解説
+recvstatus4 は、白山工業社製データロガーLS-7000(無印)から送信される、
+設定ステータスパケット(パケット種類A8)と動作ステータスパケット(パケッ
+ト種類A9)をUDPポート
+.I \ port
+で受信し、ディレクトリ
+.I \ dirname
+の下にファイルとして出力します。保存されるデータは、先頭のアドレス、コ
+ントロール、サブコントロール、パケットIDの5バイトを除いた部分のみです。
+.LP
+.I dirname
+以下には、LS7_XXXX (XXXXはロガーアドレス)が無ければ作られ、更に、A8パ
+ケットの場合はA8、A9パケットの場合は A9 というディレクトリが無ければ
+作成され、その下にファイルとして保存されます。ファイル名は、パケットデー
+タ中の時刻フィールドの内容と同じになります。
+.LP
+recvstatus4d は daemon モードで起動します。
+.LP
+ログファイル名
+.I logfile
+を指定すると、ここに動作ログがとられ、
+指定しないとログ情報は標準出力に
+送られます(ただし、daemon モードで動い
+ている時は syslogd(8) に送られます)。ログファイルは書き込みのたび毎に
+オープン／クローズされます。
+.LP
+recvstatus4 はパケットの再送要求を行いません。
+recvstatus4 は引数なしで起動すると簡単な使用法を表示します。
+.SH オプション
+.IP \fB\-D 5
+daemon mode で起動します。
+.SH ソース
+.TP
+`recvstatus4.c'
+.SH 関連事項
+ls7000_A8(1W), ls7000_A9(1W)

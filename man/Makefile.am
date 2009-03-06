@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.27.2.2 2008/04/07 06:52:12 uehira Exp $
+# $Id: Makefile.am,v 1.27.2.2.4.1 2009/03/06 13:03:02 uehira Exp $
 #
 #  Makefile.am in man subdirectory.
 #
@@ -18,10 +18,11 @@ WIN_MAN = _bj.1 _update.1 automan.1 autopick.1 cormeisei.1 dat.1 dewin.1 \
 	win2raw.1 shmx.1 shmz.1 shmck.1 wintowin.1 wintosac.1 wchasn.1 clean_nmx.1 winadd.1 \
 	pick2pick.1 raw_time.1 mkpicknoise.1 \
 	ls8tel16_win.1 ls8tel16_raw.1 ls8tel_STM.1 ls8tel_STS.1 \
+	ls7000_A8.1 ls7000_A9.1 \
 	intro_win.1
 
 if IPV6
-IPV6_MAN = relaym.1 recvstatus3.1 recvt_LS7000.1
+IPV6_MAN = relaym.1 recvstatus3.1 recvt_LS7000.1 recvstatus4.1
 else
 IPV6_MAN =
 endif
@@ -53,5 +54,6 @@ install-data-hook:
 	(rm -f $(man1dir)/wdisktsd.1; cd $(man1dir) && @LN_S@ wdiskts.1 wdisktsd.1)
 	(rm -f $(man1dir)/raw_timed.1; cd $(man1dir) && @LN_S@ raw_time.1 raw_timed.1)
 	(rm -f $(man1dir)/recvstatus3d.1; cd $(man1dir) && @LN_S@ recvstatus3.1 recvstatus3d.1)
+	(rm -f $(man1dir)/recvstatus4d.1; cd $(man1dir) && @LN_S@ recvstatus4.1 recvstatus4d.1)
 	(rm -f $(man1dir)/ls8tel16_rawd.1; cd $(man1dir) && @LN_S@ ls8tel16_raw.1 ls8tel16_rawd.1)
 	(rm -f $(man1dir)/recvt_LS7000d.1; cd $(man1dir) && @LN_S@ recvt_LS7000.1 recvt_LS7000d.1)

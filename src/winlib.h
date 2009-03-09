@@ -1,4 +1,4 @@
-/* $Id: winlib.h,v 1.1.2.7.2.11 2009/01/08 06:35:56 uehira Exp $ */
+/* $Id: winlib.h,v 1.1.2.7.2.12 2009/03/09 10:22:45 uehira Exp $ */
 
 #ifndef _WIN_LIB_H_
 #define _WIN_LIB_H_
@@ -37,6 +37,10 @@ typedef int              int32_w;  /*   signed 4 byte integer */
 typedef unsigned int    uint32_w;  /* unsigned 4 byte integer */
 #else
 #error int is not 4 byte lengths.
+#endif
+/* check float size */
+#if SIZEOF_FLOAT != 4
+#error float is not 4 byte lengths.
 #endif
 /******************************/
 

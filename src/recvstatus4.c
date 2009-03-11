@@ -1,4 +1,4 @@
-/* $Id: recvstatus4.c,v 1.1.2.1 2009/03/06 13:03:03 uehira Exp $ */
+/* $Id: recvstatus4.c,v 1.1.2.2 2009/03/11 06:49:35 uehira Exp $ */
 
 /* 
  * recvstatus4 :
@@ -48,7 +48,7 @@
 #define PATHMAX      1024
 
 static char rcsid[] =
-  "$Id: recvstatus4.c,v 1.1.2.1 2009/03/06 13:03:03 uehira Exp $";
+  "$Id: recvstatus4.c,v 1.1.2.2 2009/03/11 06:49:35 uehira Exp $";
 
 char *progname, *logfile;
 int  daemon_mode, syslog_mode;
@@ -91,7 +91,7 @@ main(int argc, char *argv[])
 
   exit_status = EXIT_SUCCESS;
   daemon_mode = syslog_mode = 0;
-  if (strcmp(progname, "recvstatus3d") == 0)
+  if (strcmp(progname, "recvstatus4d") == 0)
     daemon_mode = 1;
   
   sockbuf = 256;  /* default socket buffer size in KB */

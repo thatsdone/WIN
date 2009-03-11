@@ -1,4 +1,7 @@
- $Id: ChangeLog,v 1.131.2.25.2.19 2009/03/09 10:22:43 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.20 2009/03/11 06:49:34 uehira Exp $
+
+2009-03-11  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/recvstatus4.c : fixed bug.
 
 2009-03-09  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* src/win.c (2009.3.9) :  MAP mode reactivate.

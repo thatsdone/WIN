@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.46.2.6.2.2 2009/03/09 10:22:44 uehira Exp $
+   $Id: win.c,v 1.46.2.6.2.3 2009/03/16 15:01:52 uehira Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -21,7 +21,7 @@
 #else
 #define NAME_PRG      "win32"
 #endif
-#define WIN_VERSION   "2009.3.9(+Hi-net) 64bit"
+#define WIN_VERSION   "2009.3.17(+Hi-net) 64bit"
 #define DEBUG_AP      0   /* for debugging auto-pick */
 /* 5:sr, 4:ch, 3:sec, 2:find_pick, 1:all */
 /************ HOW TO COMPILE THE PROGRAM **************************
@@ -425,6 +425,10 @@ LOCAL
 /* psup screen */
 /* mech screen */
 #define UPPER       6
+
+#define   LEVEL_1   0.010   /* error width */
+#define   LEVEL_2   0.030   /* good sharpness */
+#define   LEVEL_3   0.100   /* lower limit of (aic_all-aic) */
 
   char cursor_color[20]={"blue"},
     *func_main[]={"OPEN" ,"EVDET","AUTPK","HYPO","SAVE","","    ","    ","$"},
@@ -935,6 +939,49 @@ char patterns[N_LPTN][2]={{1,0}, {1,1}, {2,2}, {4,4}, {1,7}, {1,15}};
     char m,blast,o[4],s,ss;
     } HypoData;     /* 24 bytes / event */
 
+typedef struct
+    {
+    int n_min_trig;
+    int n_trig_off;
+    int trigger;
+    double dist1,dist2;
+    int ms_on,ms_off;
+    int sub_rate;
+    double lt,st,ratio;
+    double ap,as,fl,fh,fs;
+    } Evdet;
+
+typedef struct
+    {
+    int status;   /* 0:OFF, 1:ON but not comfirmed */
+            /* 2:ON confirmed, 3:OFF but not confirmed */
+    struct Pick_Time pt;  /* P time */
+    int score;        /* trigger score */
+    int dis;        /* channel that disabled this channel */
+    int flag;       /* enable flag */
+    int use;        /* 0:unuse 1:use */
+    double sd;        /* SD for AR model */
+    double sdp;       /* SD of last sec */
+    int sec_sdp;      /* sec where SD decreased */
+    double c[MAX_FILT*4]; /* AR coefficient */
+    double rec[MAX_FILT*4]; /* buffer for digfil */
+    int m;          /* order of AR model */
+    double zero;      /* offset level */
+    int on_sec;       /* time of on (sec) */
+    int on_msec;      /* time of on (msec) */
+    int count_on;     /* on sample counter */
+    int count_off;      /* off sample counter */
+    double res[4];      /* reserved sapmles to kill spikes */
+    double lta;
+    double lta_save;
+    double sta;
+    double al,bl;
+    double as,bs;
+    double ratio;     /* maximum ratio during event */
+    struct Filt f;
+    double uv[MAX_FILT*4];
+    } Evdet_Tbl;
+
   int eventmask,readfds,fd_mouse,fd_fb,n_zoom_max,n_zoom,main_mode,
     loop,loop_stack[5],loop_stack_ptr,x_zero_max,
     y_zero_max,width_win_mon,height_win_mon,width_mon,mailer_flag,
@@ -960,10 +1007,9 @@ char patterns[N_LPTN][2]={{1,0}, {1,1}, {2,2}, {4,4}, {1,7}, {1,15}};
   static double  *dbuf,*dbuf2;
   static long *buf,*buf2;
 
-/* prototypes */
-static void xgetorigin(Display *, Window, int *, int *, unsigned int *, unsigned int *,
-		       unsigned int *, Window *, Window*);
-static char *get_time_win(struct YMDhms *, int);
+/*********************** prototypes **********************/
+static void xgetorigin(Display *, Window, int *, int *, unsigned int *,
+		       unsigned int *, unsigned int *, Window *, Window*);
 static char *get_time_win(struct YMDhms *, int);
 static int invert_dpy(int, int, int);
 static char *getname(uid_t);
@@ -976,41 +1022,72 @@ static void put_fill(lBitmap *, int, int, int, int, int);
 static time_t time2lsec(int *);
 static void lsec2time(time_t, int *);
 static void make_sec_table(void);
+static int read_one_sec(long, long, register long *, int);
+static int read_one_sec_mon(long, long, register long *, long);
+static void print_usage(void);
+static int init_process(int, char *[], int);
+static int refresh(int);    /* Is return value really OK? */
+static void set_period(int, struct Pick_Time *);
+static void set_pick(struct Pick_Time *, int, int, int, int);
+static int get_width(struct Pick_Time *);
+static void set_width(struct Pick_Time *pt, int, int);
+static int show_pick(int, struct Pick_Time *, int);
+/*- some structures & macros -*/
+static void *alloc_mem(size_t, char *);
+static int getdata(int, struct Pick_Time, double **, int *);
+static int find_pick(double *, float *, float *, float *, int, int,
+		     int, double *);
+static int get_range(int, int, float *, float *, float *, int, int, int,
+		     int, struct Pick_Time *);
+static int pick_phase(int, int);
+static int cancel_picks(char *, int);
+static int cancel_picks_calc(void);
+static int get_pick(char *, int, struct Pick_Time *);
+static int auto_pick(int);
+static int set_max(double, int, int, int);
+static int auto_pick_range(Evdet_Tbl *);
+static void auto_pick_pick(int, int);
+static void auto_pick_hypo(char *, int);
 
+
+
+
+
+static void end_process(int);
+/*--------------- main()--------------------*/
 static void put_bitblt(lBitmap *, int, int, int, int, lBitmap *, int, int, unsigned char);
 
 static void put_text(lBitmap *, int, int, char *, unsigned char);
 
 
-
 static long time2long(int, int, int, int, int);
 static void long2time(struct YMDhms *, long *);
 
-/******************************/
+static void emalloc(char *);
+static void writelog(char *);
+/*********************** prototypes **********************/
+
 static void
-xgetorigin(d,w,x,y,wi,h,de,ro,pa)
-  Display *d;
-  Window w,*ro,*pa;
-  int *x,*y;
-  unsigned int *wi,*h,*de;
+xgetorigin(Display *d, Window w, int *x, int *y, unsigned int *wi,
+	   unsigned int *h, unsigned int *de, Window *ro, Window *pa)
   {
   Window child,*children;
   int xx,yy;
   unsigned int b,nchildren;
+
   XGetGeometry(d,w,ro,&xx,&yy,wi,h,&b,de);
   XQueryTree(d,w,ro,pa,&children,&nchildren);
   XFree((void *)children);
   XTranslateCoordinates(d,*pa,*ro,xx,yy,x,y,&child);
   }
 
-static char
-*get_time_win(rt,addsec)
-  struct YMDhms *rt;
-  int addsec;
+static char *
+get_time_win(struct YMDhms *rt, int addsec)
   {
   static char c[18];
   struct tm *nt;
   time_t ltime;
+
   time(&ltime);
   ltime+=addsec;
   nt=localtime(&ltime);
@@ -1029,10 +1106,9 @@ static char
   }
 
 static int
-invert_dpy(sbmtype,dbmtype,func)
-  int sbmtype,dbmtype;
-  int func;
+invert_dpy(int sbmtype, int dbmtype, int func)
   {
+
   if(black) return func;  /* if black>0, return */
   if(dbmtype==BM_FB)
     switch(func)
@@ -1046,31 +1122,31 @@ invert_dpy(sbmtype,dbmtype,func)
   }
 
 /* alternative to 'getlogin()' which doesn't work in 'su' */
-static char
-*getname(uid)
-  uid_t uid;
+static char *
+getname(uid_t  uid)
   {
   struct passwd *pwd;
+
   pwd=getpwuid(uid);
   if(pwd) return pwd->pw_name;
   else return NULL;
   }
 
-static FILE
-*open_file(fn,fs)
-  char *fn,*fs;
+static FILE *
+open_file(char *fn, char *fs)
   {
   FILE *fp;
+
   if((fp=fopen(fn,"r"))==NULL)
     fprintf(stderr,"%s file '%s' not found\007\n",fs,fn);
   return fp;
   }
 
 static int
-get_func(x)
-  int x;
+get_func(int x)
   {
   int xx,i;
+
   if(x<WB) return 0;
   xx=width_dpy-WB;
   i=1;
@@ -1084,11 +1160,10 @@ get_func(x)
   }
 
 static void
-put_funcs(func,y)
-  char **func;
-  int y;
+put_funcs(char **func, int y)
   {
   int i;
+
   i=0;
   while(*func[i]!='$')
     {
@@ -1098,14 +1173,13 @@ put_funcs(func,y)
   }
 
 static void
-put_func(func,n,y,idx,h)
-  char *func;
-  int n;    /* func index */
-  int y;
-  int idx;  /* 0:white on black, 1:black on white, 2:reverse */
-  int h;    /* 0:MARGIN, 1:HEIGHT_TEXT */
+put_func(char *func, int n, int y, int idx, int h)
+  /* int n;    func index */
+  /* int idx;  0:white on black, 1:black on white, 2:reverse */
+  /* int h;    0:MARGIN, 1:HEIGHT_TEXT */
   {
   int x,len,hi,yh;
+
   if((len=strlen(func))==0) return;
   if(n==0) x=0;
   else x=width_dpy-(WB+HW)*(n-1)-WB;
@@ -1133,20 +1207,19 @@ put_func(func,n,y,idx,h)
   }
 
 static int
-x_func(n)
-  int n;
+x_func(int n)
   {
+
   if(n==0) return 0;
   else return width_dpy-(WB+HW)*(n-1)-WB;
   }
 
 static void
-put_fill(bm,xzero,yzero,xsize,ysize,blk)
-  lBitmap *bm;
-  int xzero,yzero,xsize,ysize;   
-  int blk; /* if 1 then black else white */
+put_fill(lBitmap *bm, int xzero, int yzero, int xsize, int ysize, int blk)
+  /*int blk;   if 1 then black else white */
   {
   GC *gc;
+
   if(background) return;
   if(bm->type==BM_FB)
     {   
@@ -1167,6 +1240,7 @@ static time_t
 time2lsec(int *tarray)
 {
   static struct tm tm;
+
   tm.tm_year=tarray[0];
   if(tm.tm_year<70) tm.tm_year+=100;
   tm.tm_mon=tarray[1]-1;
@@ -1181,6 +1255,7 @@ static void
 lsec2time(time_t sec, int *tarray)
 {
   struct tm *tm;
+
   tm=localtime(&sec);
   if((tarray[0]=tm->tm_year)>=100) tarray[0]-=100;
   tarray[1]=tm->tm_mon+1;
@@ -1387,10 +1462,10 @@ reset_blockmode:
   ft.ptr_secbuf=(-1);
   }
 
-read_one_sec(ptr,sys_ch,abuf,spike)
-  long ptr,sys_ch;    /* sys_ch = sys*256 + ch */
-  register long *abuf;
-  int spike;    /* if 1, eliminate spikes */
+static int
+read_one_sec(long ptr, long sys_ch, register long *abuf, int spike)
+  /* long ptr,sys_ch;    sys_ch = sys*256 + ch */
+  /*int spike;           if 1, eliminate spikes */
   {
 #define N_SBUF   600
 #define SR_SBUF  100
@@ -1618,9 +1693,9 @@ read_one_sec(ptr,sys_ch,abuf,spike)
   return s_rate;  /* normal return */
   }
 
-read_one_sec_mon(ptr,sys_ch,abuf,ppsm)
-  long ptr,sys_ch,ppsm;   /* sys_ch = sys*256 + ch */
-  register long *abuf;
+static int
+read_one_sec_mon(long ptr, long sys_ch, register long *abuf, long ppsm)
+  /* long ptr,sys_ch,ppsm;   /* sys_ch = sys*256 + ch */
   {
   register int i,k,now,y_min,y_max,s_rate,sub_rate;
   register unsigned char *dp;
@@ -1989,6 +2064,7 @@ read_one_sec_mon(ptr,sys_ch,abuf,ppsm)
   return 1; /* normal return */
   }
 
+static void
 print_usage()
   {
   fprintf(stderr,"usage of '%s' :\n",NAME_PRG);
@@ -2022,9 +2098,8 @@ print_usage()
   fprintf(stderr,"`ee` command may show you a list of event files, but it depends on installation\n");
   }
 
-init_process(argc,argv,args)
-  int argc,args;
-  char *argv[];
+static int
+init_process(int argc, char *argv[], int args)
   {
   struct YMDhms tm;
   FILE *fp;
@@ -2704,12 +2779,13 @@ just_map:
 bg: return 1;
   }
 
-refresh(idx)
-  int idx;
+static int
+refresh(int idx) /* Is return value really OK? */
   {
   Window root;
   int x,y;
   unsigned int bw,d;
+
   if(!background)
     {
     XGetGeometry(disp,dpy.drw,&root,&x,&y,&width_dpy,&height_dpy,&bw,&d);
@@ -2724,13 +2800,13 @@ refresh(idx)
     }
   }
 
-set_period(idx,pt)
-  struct Pick_Time *pt;
-  int idx;
+static void
+set_period(int idx, struct Pick_Time *pt)
   {
   struct Pick_Time pt1;
   int n,i;
   double *db,zero,dj;
+
   /* length= 2 s */
   pt1=(*pt);
   pt1.sec2=pt1.sec1+2;
@@ -2745,10 +2821,10 @@ set_period(idx,pt)
   free(db);
   }
 
-set_pick(pt,sec,msec,ms_width1,ms_width2)
-  struct Pick_Time *pt;
-  int sec,msec,ms_width1,ms_width2;
+static void
+set_pick(struct Pick_Time *pt, int sec, int msec, int ms_width1, int ms_width2)
   { /* negative time is permitted only for ft.pick_calc_ot */
+
   if(pt!=&ft.pick_calc_ot &&(sec<0 || sec>=ft.len)) pt->valid=0;
   else
     {
@@ -2764,26 +2840,27 @@ set_pick(pt,sec,msec,ms_width1,ms_width2)
   pt->polarity=0;
   }
 
-get_width(pt)
-  struct Pick_Time *pt;
+static int
+get_width(struct Pick_Time *pt)
   {
+
   return ((pt->sec2-pt->sec1)*1000+pt->msec2-pt->msec1)/2;
   }
 
-set_width(pt,ms_width1,ms_width2)
-  struct Pick_Time *pt;
-  int ms_width1,ms_width2;
+static void
+set_width(struct Pick_Time *pt, int ms_width1, int ms_width2)
   {
   int msec;
+
   msec=((pt->sec1+pt->sec2)*1000+pt->msec1+pt->msec2)/2;
   set_pick(pt,msec/1000,msec%1000,ms_width1,ms_width2);
   }
 
-show_pick(idx,pt,i) /* set and show pick time */
-  int idx,i;
-  struct Pick_Time *pt;
+static int
+show_pick(int idx, struct Pick_Time *pt, int i) /* set and show pick time */
   {
   int j;
+
   if(pt->valid)
     {
     cancel_picks(ft.stn[idx].name,i);
@@ -2796,58 +2873,12 @@ show_pick(idx,pt,i) /* set and show pick time */
   else return 0;
   }
 
-typedef struct
-    {
-    int n_min_trig;
-    int n_trig_off;
-    int trigger;
-    double dist1,dist2;
-    int ms_on,ms_off;
-    int sub_rate;
-    double lt,st,ratio;
-    double ap,as,fl,fh,fs;
-    } Evdet;
-
-typedef struct
-    {
-    int status;   /* 0:OFF, 1:ON but not comfirmed */
-            /* 2:ON confirmed, 3:OFF but not confirmed */
-    struct Pick_Time pt;  /* P time */
-    int score;        /* trigger score */
-    int dis;        /* channel that disabled this channel */
-    int flag;       /* enable flag */
-    int use;        /* 0:unuse 1:use */
-    double sd;        /* SD for AR model */
-    double sdp;       /* SD of last sec */
-    int sec_sdp;      /* sec where SD decreased */
-    double c[MAX_FILT*4]; /* AR coefficient */
-    double rec[MAX_FILT*4]; /* buffer for digfil */
-    int m;          /* order of AR model */
-    double zero;      /* offset level */
-    int on_sec;       /* time of on (sec) */
-    int on_msec;      /* time of on (msec) */
-    int count_on;     /* on sample counter */
-    int count_off;      /* off sample counter */
-    double res[4];      /* reserved sapmles to kill spikes */
-    double lta;
-    double lta_save;
-    double sta;
-    double al,bl;
-    double as,bs;
-    double ratio;     /* maximum ratio during event */
-    struct Filt f;
-    double uv[MAX_FILT*4];
-    } Evdet_Tbl;
-
-#define   LEVEL_1   0.010   /* error width */
-#define   LEVEL_2   0.030   /* good sharpness */
-#define   LEVEL_3   0.100   /* lower limit of (aic_all-aic) */
-
-char *alloc_mem(size,mes)
-  long size;
+static void *
+alloc_mem(size_t size, char *mes)   /* 64bit OK */
   {
   char *almem,tb[100];
-  if((almem=(char *)malloc(size))==0)
+
+  if((almem=(void *)malloc(size))==0)
     {
     sprintf(tb,"%s(%d)",mes,size);
     emalloc(tb);
@@ -2855,10 +2886,9 @@ char *alloc_mem(size,mes)
   return almem;
   }
 
-getdata(idx,pt,dbp,ip)
-  int idx,*ip;    /* if interpolated, *ip=1 (for measure MAX) */
-  struct Pick_Time pt;
-  double **dbp;
+static int
+getdata(int idx, struct Pick_Time pt, double **dbp, int *ip)
+  /* int idx,*ip;    /* if interpolated, *ip=1 (for measure MAX) */
   {
 /*  int sec,n1,n2,n3,n,i,j,sr,i1,ii;*/
   int n1,n2,n3,n,i,j,sr,i1,ii;
@@ -2874,7 +2904,7 @@ getdata(idx,pt,dbp,ip)
   n2=(pt.sec2-pt.sec1-1)*sr;
   if(n2<0) n=n3-n1;
   else n=(sr-n1)+n2+n3;
-  *dbp=(double *)alloc_mem((long)sizeof(double)*n,"dbp");
+  *dbp=(double *)alloc_mem((size_t)sizeof(double)*n,"dbp");
   db=(*dbp);
   if(read_one_sec(sec++,(long)ft.idx2ch[idx],buf2,NOT_KILL_SPIKE)==0)
     fill((int *)buf2,ft.sr[idx],0);
@@ -2932,10 +2962,9 @@ getdata(idx,pt,dbp,ip)
   return n;
   }
 
-find_pick(db,aic,sd1,sd2,i0,n,m,aic_all)
-  double *db,*aic_all;
-  float *aic,*sd1,*sd2;
-  int i0,n,m;
+static int
+find_pick(double *db, float *aic, float *sd1, float *sd2, int i0, int n,
+	  int m, double *aic_all)
   {
   double aic_min,sd,s1,s2,dn1,dn2;
   int i,j,i_min;
@@ -2967,10 +2996,9 @@ aic_min/(dn1+dn2),aic[n-1]/(dn1+dn2),*aic_all/(dn1+dn2));
   return i_min;
   }
 
-get_range(sec,msec,aic,sd1,sd2,nm,n,i_min,sr,pt)
-  float *aic,*sd1,*sd2;
-  int nm,n,i_min,sr,sec,msec;
-  struct Pick_Time *pt;
+static int
+get_range(int sec, int msec, float *aic, float *sd1, float *sd2, int nm,
+	  int n, int i_min, int sr, struct Pick_Time *pt)
   {
   int ms,i,ms1,ms2,width;
   double dj,sum,nn,d;
@@ -3024,9 +3052,10 @@ fprintf(stderr,"min=%d(%d.%03d) 1=%d 2=%d w=%d\n",i_min,sec,msec,ms1,ms2,width);
   return 1;
   }
 
-pick_phase(idx,iph)   /* pick an onset in a range of time */
-  int idx;      /* channel index */
-  int iph;      /* P/S/X */
+static int
+pick_phase(int idx, int iph)   /* pick an onset in a range of time */
+  /* int idx;      /* channel index */
+  /* int iph;      /* P/S/X */
   {
   int sr,n,n1,i,j,i_min,i_all1,i_all2,width,sec,msec,im1,im2,
     ms,ms1,ms2,ret,decim,sr1,nm,period,m,width_ar;
@@ -3064,12 +3093,12 @@ pt.sec1,pt.msec1,pt.sec2,pt.msec2,pt.polarity);
   sec=pt.sec1;
   msec=pt.msec1;
   n=getdata(idx,pt,&db,&i);         /* get raw data */
-  db2=(double *)alloc_mem((long)(n*sizeof(double)),"db2"); /* AR resid squared */
-  aic=(float *)alloc_mem((long)(n*sizeof(float)),"aic");  /* AIC */
-  sd1=(float *)alloc_mem((long)(n*sizeof(float)),"sd1");  /* sd1 */
-  sd2=(float *)alloc_mem((long)(n*sizeof(float)),"sd2");  /* sd2 */
-  c=(double *)alloc_mem((long)(nm*sizeof(double)),"c"); /* AR filter coef */
-  rec=(double *)alloc_mem((long)(nm*sizeof(double)),"rec"); /* rsvd data for filt */
+  db2=(double *)alloc_mem((size_t)(n*sizeof(double)),"db2"); /* AR resid squared */
+  aic=(float *)alloc_mem((size_t)(n*sizeof(float)),"aic");  /* AIC */
+  sd1=(float *)alloc_mem((size_t)(n*sizeof(float)),"sd1");  /* sd1 */
+  sd2=(float *)alloc_mem((size_t)(n*sizeof(float)),"sd2");  /* sd2 */
+  c=(double *)alloc_mem((size_t)(nm*sizeof(double)),"c"); /* AR filter coef */
+  rec=(double *)alloc_mem((size_t)(nm*sizeof(double)),"rec"); /* rsvd data for filt */
   smeadl(db,n,&zero);         /* remove offset */
   getar(db,nm,&sd,&m,c,&zero,0);    /* get AR from first NM data */
 #if DEBUG_AP>=2
@@ -3168,11 +3197,13 @@ pt.sec1,pt.msec1,pt.sec2,pt.msec2,pt.polarity);
   return ret;
   }
 
-cancel_picks(name,idx)  /* cancel picks */
-  char *name;     /* station name or NULL */
-  int idx;      /* P/S/X/-1 */
+static int
+cancel_picks(char *name, int idx)  /* cancel picks */
+  /* char *name;     /* station name or NULL */
+  /* int idx;      /* P/S/X/-1 */
   {
   int i,j;
+
   j=0;
   if(idx<0)
     {
@@ -3199,9 +3230,11 @@ cancel_picks(name,idx)  /* cancel picks */
   return j;
   }
 
+static int
 cancel_picks_calc()  /* cancel calculated picks */
   {
   int i,j,jj,k,idx;
+
   j=0;
   for(i=0;i<ft.n_ch;i++)
     {
@@ -3220,10 +3253,11 @@ cancel_picks_calc()  /* cancel calculated picks */
   return j;
   }
 
-get_pick(name,idx,pt) /* get picks */
-  char *name;     /* station name or NULL */
-  int idx;      /* P/S/X/-1 */
-  struct Pick_Time *pt; /* pt to return, or NULL */
+static int
+get_pick(char *name, int idx, struct Pick_Time *pt) /* get picks */
+  /* char *name;     /* station name or NULL */
+  /* int idx;      /* P/S/X/-1 */
+  /* struct Pick_Time *pt; /* pt to return, or NULL */
   {
   int i,j;
   j=0;
@@ -3236,8 +3270,9 @@ get_pick(name,idx,pt) /* get picks */
   return j;
   }
 
-auto_pick(singl)     /* automatic pick & locate routine */
-  int singl; /* process just one event */
+static int
+auto_pick(int singl)     /* automatic pick & locate routine */
+  /* int singl; /* process just one event */
   {
   static Evdet ev={
     3,0,0,        /* int n_min_trig,n_trig_off,trigger, */
@@ -3303,9 +3338,8 @@ auto_pick(singl)     /* automatic pick & locate routine */
   return done;
   }
 
-set_max(d,sec,msec,ch)
-  double d;
-  int sec,msec,ch;
+static int
+set_max(double d, int sec, int msec, int ch)
   {
   int i,idx;
   char tbuf1[10];
@@ -3340,8 +3374,8 @@ set_max(d,sec,msec,ch)
   return(1);
   }
 
-auto_pick_range(tbl)
-  Evdet_Tbl *tbl;
+static int
+auto_pick_range(Evdet_Tbl *tbl)
   {
   struct Pick_Time *p;
   int i,j,sec,msec,period;
@@ -3415,13 +3449,14 @@ fprintf(stderr,"%d %d %d %d\n",p->sec1,p->msec1,p->sec2,p->msec2);
     }
   }
 
-auto_pick_pick(sec_now,hint)
-  int sec_now; /* limit of sec < ft.len */
-  int hint;
+static void
+auto_pick_pick(int sec_now, int hint)
+  /* int sec_now; /* limit of sec < ft.len */
   {
   struct Pick_Time pt;
   int i,j,k,sec,msec,idx,idx_s,n,n_max,n_min,c_max,c_min,ip;
   double *db,zero;
+
   /* (3) pick each station (P, and then S) */
   for(i=0;i<ft.n_trigch;i++)
     {
@@ -3482,13 +3517,13 @@ auto_pick_pick(sec_now,hint)
     }
   }
 
-auto_pick_hypo(tbuf,hint)
-  char *tbuf;
-  int hint;
+static void
+auto_pick_hypo(char *tbuf, int hint)
   {
   int i,j,k;
   double tlim,omc,rat;
   char *name,tb[80];
+
   /************** hypocenter determination ***************/
   for(j=0;;j++)
     {
@@ -4455,6 +4490,7 @@ mapconv(argc,argv,args)
 
 bye_entry() {got_hup=1;}
 
+static void
 end_process(ret)
   int ret;
   {
@@ -6631,6 +6667,7 @@ put_main()
 #if DEBUG_AP>=1
 if(background==0) XSync(disp,0);
 #endif
+ return (0);
   }
 
 get_screen_type(np,w_dpy,h_dpy,w_frame,h_frame)
@@ -9147,7 +9184,7 @@ tsjump: map_mode=MODE_TS3;
     put_text(&dpy,WIDTH_TEXT*75,height_dpy-MARGIN+Y_LINE1,mapbuf,BF_SI);
     }
   put_function_map();
-  return;
+  return (0);
   }
 
 init_map(idx)
@@ -10135,7 +10172,7 @@ init_mecha()
     if(*textbuf=='l' || *textbuf=='L') strcpy(mec_hemi,"LOWER");
     else strcpy(mec_hemi,"UPPER");
     }
-  refresh();
+  refresh(999);
   }
 
 proc_mecha()
@@ -10161,11 +10198,11 @@ proc_mecha()
           case UPPER:
             if(*mec_hemi=='L') strcpy(mec_hemi,"UPPER");
             else strcpy(mec_hemi,"LOWER");
-            refresh();
+            refresh(999);
             ring_bell=0;
             break;
           case RFSH:
-            refresh();
+            refresh(999);
             ring_bell=0;
             break;
           case MAP:
@@ -10187,7 +10224,7 @@ proc_mecha()
           case STNS:
             if(mech_name) mech_name=0;
             else mech_name=1;
-            refresh();
+            refresh(999);
             ring_bell=0;
             break;
           }
@@ -10223,7 +10260,7 @@ proc_mecha()
       }
     if(ring_bell) bell();
     }
-  else if(event.mse_trig==MSE_EXP) refresh();
+  else if(event.mse_trig==MSE_EXP) refresh(999);
   }
 
 xy_pt(x,y,p,t,idx)
@@ -10424,7 +10461,7 @@ init_psup()
     fprintf(stderr,"no hypocenter\007\n");
     return;
     }
-  if(refresh())
+  if(refresh(999))
     {
     loop=loop_stack[--loop_stack_ptr];
     if(!background) refresh(0);    
@@ -10479,7 +10516,7 @@ proc_psup()
             if(!background) refresh(0);    
             return;
         case RFSH:
-            if(refresh())
+            if(refresh(999))
             {
             loop=loop_stack[--loop_stack_ptr];
             if(!background) refresh(0);    
@@ -10772,7 +10809,7 @@ proc_psup()
   else if(event.mse_trig==MSE_EXP)
     {
     ring_bell=1;
-    if(refresh())
+    if(refresh(999))
       {
       loop=loop_stack[--loop_stack_ptr];
       if(!background) refresh(0);    
@@ -11732,6 +11769,7 @@ fill(buffer,count,data)
   while(count-->0) *buffer++=data;
   }
 
+static void
 emalloc(mes)
   char *mes;
   {
@@ -11742,6 +11780,7 @@ emalloc(mes)
   end_process(1);
   }
 
+static void
 writelog(mes)
   char *mes;
   {

@@ -1,11 +1,13 @@
- $Id: ChangeLog,v 1.131.2.25.2.22 2009/03/11 08:03:56 uehira Exp $
-
-2009-03-11  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
-	* src/recvstatus4.c src/ls7000_A9 : fixed bug.
-	
+ $Id: ChangeLog,v 1.131.2.25.2.23 2009/03/17 14:59:06 uehira Exp $
 
 2009-03-09  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
-	* src/win.c (2009.3.9) :  MAP mode reactivate.
+	* src/win.c (2009.3.17) : make prototypes.
+	
+2009-03-11  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/recvstatus4.c src/ls7000_A9 : fixed bug.
+
+2009-03-09  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/win.c (2009.3.9) : MAP mode reactivate.
 	* Version 2.0.5 released.
 
 2009-03-06  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>

@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.46.2.6.2.3 2009/03/16 15:01:52 uehira Exp $
+   $Id: win.c,v 1.46.2.6.2.4 2009/03/17 14:59:07 uehira Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -1048,24 +1048,134 @@ static int set_max(double, int, int, int);
 static int auto_pick_range(Evdet_Tbl *);
 static void auto_pick_pick(int, int);
 static void auto_pick_hypo(char *, int);
-
-
-
-
-
+static int auto_pick_hint(int);
+static int auto_pick_single(Evdet_Tbl *, int, int);
+static int get_ratio(char *, double *);
+static void set_diagnos(char *, char *);
+static int pick_s(int, int, int);
+static void get_trigch(void);
+static int evdet(Evdet *, int);
+static void confirm_off(int, int, int, Evdet_Tbl *, Evdet *);
+static void plot_mon(int, int, register int, unsigned char *);
+static void mapconv(int, char *[], int);
+static void bye_entry(void);
 static void end_process(int);
+static void set_geometry(void);
 /*--------------- main()--------------------*/
-static void put_bitblt(lBitmap *, int, int, int, int, lBitmap *, int, int, unsigned char);
-
+int main(int, char *[]);
+/*--------------- main()--------------------*/
+static void bye_process(void);
+static void do_auto_pick(void);
+static void do_auto_pick_hint(void);
+static void do_just_hypo(void);
+static void proc_alarm(void);
+static void do_map(void);
+static void window_main_loop(void);
+static void open_save(void);
+static int ulaw(int);
+static void plot_zoom(int, int, struct Pick_Time *, int);
+static void close_zoom(int);
+static void proc_main(void);
+static int measure_max_zoom(int);
+static int get_max(double *, int, int *, int *, int *, int *);
+static void put_function(void);
+static void put_function_map(void);
+static void put_init_depth(void);
+static void put_function_mecha(void);
+static void put_function_psup(void);
+static int put_main(void);
+static void get_screen_type(int *, int *, int *, int *, int *);
+static void draw_ellipse(int, int, double, double, double, int,
+			 unsigned char, lBitmap *, int, int, int, int);
+static void draw_circle(int, int, int, int, unsigned char, lBitmap *);
+static void draw_seg(int, int, int, int, int, unsigned char, lBitmap *);
+static void draw_rect(int, int, int, int, int, unsigned char, lBitmap *);
+static void draw_line(lPoint *, int, int,
+		      unsigned char, lBitmap *, int, int, int, int, int);
+static void put_mark_zoom(int, int, struct Pick_Time *, int);
+static void put_mon(int, int);
+static void put_bitblt(lBitmap *, int, int, int, int,
+		       lBitmap *, int, int, unsigned char);
+static void define_bm(lBitmap *, char, int, int, char *);
+static void invert_bits(unsigned char *, register int);
 static void put_text(lBitmap *, int, int, char *, unsigned char);
-
-
+static int put_mark(int, int, int);
+static void put_mark_mon(int, int);
+static void make_visible(int);
+static void list_line(void);
+static void raise_ttysw(int);
+static void adj_sec(int *, double *, int *, double *);
+static void get_calc(void);
+#if HINET_EXTENTION_3
+static int load_data_prep(int);
+static int replot_mon(int);
+static int reorder(void);
+static int get_delta(void);
+#endif  /* HINET_EXTENTION_3 */
+static void locate(int, int);
+static void list_picks(int);
+static void list_finl(int);
+static void output_all(FILE *);
+static void output_pick(FILE *);
+static void wait_mouse(void);
+static void hard_copy(int);
+static void draw_ticks(int, int, int, int, int, int, int);
+static void draw_coord(int, int, double, double, double, double, int, int,
+		       int, double, double, double, double);
+static int km2pixel(int, int, int, int, int, int, int, double,
+		    double, double, double, int *, int *, double, double);
+static void phypo(int, int, HypoData *);
+static void put_time1(long, long, long *, long *, int, int, int, int, int,
+		      char *);
+static void put_time2(long, long, long *, long *, int, int, int, int, int,
+		      char *);
+static int draw_ticks_ts(int, long, int, int, int);
+static int draw_ticks_ts2(int, long, int, int, int *, int);
+static int put_map(int);
+static void init_map(int);
+static int check(int, int *, int, int);
+static int check_year(int, int *, int, int);
+static void proc_map(void);
+static int open_sock(char *, unsigned short);
+static int load_data(int);
+static void init_mecha(void);
+static void proc_mecha(void);
+static void xy_pt(int *, int *, double *, double *, int);
+static int read_final(char *, struct Hypo *);
+static void str2double(char *, int, int, double *);
+static int put_mecha(void);
+static void switch_psup(int, int);
+static void init_psup(void);
+static void bell(void);
+static void proc_psup(void);
+static int put_psup(void);
+static void plot_psup(int);
+static int save_data(int);
+static int read_parameter(int, char *);
+static int read_filter_file(void);
+static int read_label_file(void);
+static void get_filter(int, struct Filt *, int, int);
+static int form2(double, char *);
+static void pltxy(double, double, double *, double *, double *, double *, int);
+static void autcor(double *, int, int, double *, double *);
+static void smeadl(double *,int, double *);
+static void crosco(double *, double *, int, double *, int);
+static void fpeaut(int, int, int, double *, double *, double *,
+		   int *, double *);
+static int getar(double *, int, double *, int *, double *, double *, int);
+static void digfil(double *, double *, int, double *, int, double *, double *);
+static void mat_sym(double (*)[3]);
+static void mat_copy(double (*)[3], double(*)[3]);
+static void mat_mul(double (*)[3], double (*)[3], double (*)[3]);
+static void mat_print(char *, double (*)[3]);
+static void get_mat(double, double, double (*)[3]);
 static long time2long(int, int, int, int, int);
 static void long2time(struct YMDhms *, long *);
-
+static int time_cmp_win(int *, int *, int);
+static void fill(int *, int, int);
 static void emalloc(char *);
 static void writelog(char *);
-/*********************** prototypes **********************/
+/*********************** END prototypes **********************/
 
 static void
 xgetorigin(Display *d, Window w, int *x, int *y, unsigned int *wi,
@@ -3692,8 +3802,9 @@ auto_pick_hypo(char *tbuf, int hint)
   /************** end of hypocenter determination ***************/
   }
 
-auto_pick_hint(save) /* automatic pick & locate with a preliminary hypocenter */
-  int save;
+/* automatic pick & locate with a preliminary hypocenter */
+static int
+auto_pick_hint(int save)
   {
   int i,width;
   char tbuf[20];
@@ -3750,10 +3861,10 @@ auto_pick_hint(save) /* automatic pick & locate with a preliminary hypocenter */
   return 1;
   }
 
-auto_pick_single(tbl,sec_now,save) /* automatic pick & locate (single) */
-  Evdet_Tbl *tbl;
-  int sec_now;
-  int save; /* if 1, save result */
+/* automatic pick & locate (single) */
+static int
+auto_pick_single(Evdet_Tbl *tbl, int sec_now, int save)
+  /* int save; /* if 1, save result */
   {
   int i;
   char tbuf[20],tb[80];
@@ -3792,11 +3903,11 @@ auto_pick_single(tbl,sec_now,save) /* automatic pick & locate (single) */
   return 1;
   }
 
-get_ratio(stn,rat)
-  char *stn;
-  double *rat;
+static int
+get_ratio(char *stn, double *rat)
   {
   int i;
+
   for(i=0;i<ft.n_trigch;i++) if(ft.pick[ft.trigch[i]][P].valid)
     {
     if(strcmp(ft.stn[ft.trigch[i]].name,stn)==0)
@@ -3809,11 +3920,12 @@ get_ratio(stn,rat)
   else return 1;
   }
 
-set_diagnos(tb,ub)
-  char *tb,*ub;
+static void
+set_diagnos(char *tb, char *ub)
   {
   char *ptr;
   int i;
+
   strcpy(diagnos,"                             ");
   ptr=diagnos+1;
   if(tb)
@@ -3829,8 +3941,8 @@ set_diagnos(tb,ub)
     }
   }
 
-pick_s(idx,sec_now,hint)
-  int idx,sec_now,hint;
+static int
+pick_s(int idx, int sec_now, int hint)
   {
   struct Pick_Time pt,pt_s,pt1,pt_ss;
   int n,pos,done,sec,msec,idxs,width_s,idx_s,period,ms,n_max,n_min,
@@ -3931,9 +4043,11 @@ fprintf(stderr,"%2d.%03d : %2d.%03d\n",pt.sec1,pt.msec1,pt.sec2,pt.msec2);
   return idx_s;
   }
 
+static void
 get_trigch()
   {
   int i,k,j,jj;
+
   if(ft.trigch==0)
     if((ft.trigch=(short *)malloc(sizeof(ft.trigch)*ft.n_ch))==0)
       emalloc("ft.trigch");
@@ -3962,9 +4076,9 @@ get_trigch()
   ft.n_trigch=k;
   }
 
-evdet(ev,singl)
-  Evdet *ev;
-  int singl; /* process just one event */
+static int
+evdet(Evdet *ev, int singl)
+  /* int singl; /* process just one event */
   {
   static Evdet_Tbl *tbl;
   int n,i,k,j,jj,idx,sec,ch,sr,trig,x1,x2,y1,y2,d,m,done,sub,trig_off,sec_on,
@@ -4250,6 +4364,7 @@ fprintf(stderr,"\n");
   return done;
   }
 
+
 confirm_on(ch,sec,msec,tbl,ev)
   int ch,sec,msec;
   Evdet_Tbl *tbl;
@@ -4297,14 +4412,13 @@ fprintf(stderr,"ch=%04X sr=%d\n",ft.idx2ch[ft.trigch[ch]],ft.sr[ft.trigch[ch]]);
   fflush(ft.fp_log);
   }
 
-confirm_off(ch,sec,msec,tbl,ev)
-  int ch,sec,msec;
-  Evdet_Tbl *tbl;
-  Evdet *ev;
+static void
+confirm_off(int ch, int sec, int msec, Evdet_Tbl *tbl, Evdet *ev)
   {
   int j;
   double x1,x2,y1,y2,d;
   struct Pick_Time pt;
+
   tbl[ch].status=0;
   if(tbl[ch].pt.valid)
     {
@@ -4342,10 +4456,8 @@ confirm_off(ch,sec,msec,tbl,ev)
   fflush(ft.fp_log);
   }
 
-plot_mon(base_sec,mon_len,wmb,buf_mon)
-  register int wmb;
-  int base_sec,mon_len;
-  unsigned char *buf_mon;
+static void
+plot_mon(int base_sec, int mon_len, register int wmb, unsigned char *buf_mon)
   {
   register long *ptr;
   register int x_byte,y,y_min,y_max,x,yy,ofs;
@@ -4353,6 +4465,7 @@ plot_mon(base_sec,mon_len,wmb,buf_mon)
   int i,j,kk,xx;
   static unsigned char bit_mask[8]=
     {0x1,0x2,0x4,0x8,0x10,0x20,0x40,0x80};
+
   /* plot mon traces */
   xx=0;
   for(i=0;i<mon_len;i++)
@@ -4401,9 +4514,8 @@ plot_mon(base_sec,mon_len,wmb,buf_mon)
   if(i%60!=0) fprintf(stderr,"%d\n",i);
   }
 
-mapconv(argc,argv,args)
-  int argc,args;
-  char *argv[];
+static void
+mapconv(int argc, char *argv[], int args)
   {
   struct {float x,y;} a;
   int flag;
@@ -4488,12 +4600,17 @@ mapconv(argc,argv,args)
     }
   }
 
-bye_entry() {got_hup=1;}
+static void
+bye_entry()
+ {
+
+   got_hup=1;
+ }
 
 static void
-end_process(ret)
-  int ret;
+end_process(int ret)
   {
+
   raise_ttysw(1);
   /* delete temporary files */
   unlink(ft.seis_file);
@@ -4511,8 +4628,10 @@ end_process(ret)
   exit(ret);
   }
 
+static void
 set_geometry()
   {
+
   /* geometry for MECHA */
   mec_xzero=width_dpy/2;
   mec_yzero=HEIGHT_TEXT*3+(height_dpy-HEIGHT_TEXT*3)/2;
@@ -4542,9 +4661,8 @@ set_geometry()
   height_zoom=HEIGHT_ZOOM+1;
   }
 
-main(argc,argv)
-  int argc;
-  char *argv[];
+int
+main(int argc, char *argv[])
   {
   FILE *fp;
   int xx,yy,i,j,k,base_sec,mon_len,i_mon,c,mc;
@@ -5038,14 +5156,18 @@ skip_mon:
   window_main_loop();
   }
 
+static void
 bye_process()
   {
+
   signal(SIGHUP,(void *)end_process);
   if(got_hup) end_process(0);
   }
 
+static void
 do_auto_pick()
   {
+
   if(background) fprintf(stderr,"AUTO-PICK mode\n");
   else
     {
@@ -5059,8 +5181,10 @@ do_auto_pick()
   auto_flag=0;
   }
 
+static void
 do_auto_pick_hint()
   {
+
   if(background) fprintf(stderr,"AUTO-PICK W/HINT mode\n");
   else
     {
@@ -5078,8 +5202,10 @@ do_auto_pick_hint()
   auto_flag_hint=0;
   }
 
+static void
 do_just_hypo()
   {
+
   fprintf(stderr,"JUST-HYPO mode\n");
   load_data(MSE_BUTNL);
 
@@ -5088,8 +5214,10 @@ do_just_hypo()
   end_process(0);
   }
 
-void proc_alarm()
+static void
+proc_alarm()
   {
+
   read_hypo=1;
   raise_ttysw(0);
   refresh(0);
@@ -5097,8 +5225,10 @@ void proc_alarm()
   signal(SIGALRM,proc_alarm);
   }
 
+static void
 do_map()
   {
+
   other_epis=1;
   loop=LOOP_MAP;
   if(map_interval)
@@ -5111,8 +5241,10 @@ do_map()
   else bye_process();
   }
 
+static void
 window_main_loop()
   {
+
   while (1)
     {
     wait_mouse(); /* Get the next event */
@@ -5140,10 +5272,12 @@ auto_wrap_off()
   }
 */
 
+static void
 open_save()
   {
 #define MAGIC 601
   int magic;
+
   /* flag_save: 0-none, 1-load, 2-save */
   sprintf(ft.mon_file,"%s.sv",ft.data_file);
   if(flag_save==2 && (ft.fd_save=open(ft.mon_file,
@@ -5168,10 +5302,11 @@ open_save()
   else flag_save=0;
   }
 
-ulaw(c)
-  int c;
+static int
+ulaw(int c)
   {
   int mask;
+
   if(c<0)
     {
     c=(-c);
@@ -5190,9 +5325,8 @@ ulaw(c)
   return(mask&c);
   }
 
-plot_zoom(izoom,leng,pt,put)
-  int izoom,leng,put;
-  struct Pick_Time *pt;
+static void
+plot_zoom(int izoom, int leng, struct Pick_Time *pt, int put)
   {
   FILE *fp;
   unsigned char *ptr,path[NAMLEN],filename[NAMLEN],text_buf[LINELEN],fmt[5];
@@ -5203,6 +5337,7 @@ plot_zoom(izoom,leng,pt,put)
   unsigned char tbuf[100],tbuf1[STNLEN+CMPLEN];
   double uv[MAX_FILT*4],rec[MAX_FILT*4],sd,dk;
   lPoint pts[5];
+
   if(put)
     {
     read_parameter(PARAM_WAVE,path);
@@ -5593,9 +5728,11 @@ write_error:
   return;
   }
 
-close_zoom(izoom)
+static void
+close_zoom(int izoom)
   {
   int xz,k,i_map;
+
   if(zoom_win[izoom].valid)
     {
     i_map=(xz=zoom_win[izoom].sec_save*PIXELS_PER_SEC_MON)/ft.w_mon;
@@ -5621,6 +5758,7 @@ close_zoom(izoom)
   if((y_zero_max=height_mon-height_win_mon)<0) y_zero_max=0;
   }
 
+static void
 proc_main()
   {
   static struct Pick_Time pt;
@@ -6530,11 +6668,12 @@ proc_main()
   else if(ring_bell) bell();
   }
 
-measure_max_zoom(izoom)
-  int izoom;
+static int
+measure_max_zoom(int izoom)
   {
   int sr,i,j,ch;
   struct Pick_Time pt;
+
   pt.valid=0;
 
   plot_zoom(izoom,zoom_win[izoom].length,&pt,0);
@@ -6555,10 +6694,9 @@ measure_max_zoom(izoom)
   return(1);
   }
 
-get_max(db,n,n_max,n_min,c_max,c_min)
-  double *db;
-  int n,*n_max,*n_min;
-  int *c_max,*c_min;  /* number of the same values */
+static int
+get_max(double *db, int n, int *n_max, int *n_min, int *c_max, int *c_min)
+  /* int *c_max,*c_min;  /* number of the same values */
   {
   int i;
   double d_max,d_min;
@@ -6591,9 +6729,11 @@ get_max(db,n,n_max,n_min,c_max,c_min)
   else return 0;
   }
 
+static void
 put_function()
   {
   int y;
+
   put_init_depth();
   put_funcs(func_main2,0);
   y=HEIGHT_FUNC;
@@ -6605,9 +6745,11 @@ put_function()
   put_text(&dpy,x_time_now,Y_TIME,diagnos,BF_SI);
   }
 
+static void
 put_function_map()
   {
   char textbuf[10];
+
   put_funcs(func_map,0);
   if(map_mode==MODE_TS3) put_reverse(&dpy,x_func(TMSP),0,WB,MARGIN);
   put_funcs(func_map2,height_dpy-MARGIN);
@@ -6623,15 +6765,18 @@ put_function_map()
     }
   }
 
+static void
 put_init_depth()
   {
   char textbuf[LINELEN];
+
   sprintf(textbuf,"DEPTH=>%3dkm+%3dkm",init_dep,init_depe);
   put_black(&dpy,0,0,WIDTH_TEXT*(strlen(textbuf)+1),MARGIN);
   put_text(&dpy,HW,Y_LINE1,textbuf,BF_SI);
   put_text(&dpy,WIDTH_TEXT*12+HW,Y_LINE1,"_",BF_SIDA);
   }
 
+static void
 put_function_mecha()
   {
   char textbuf[LINELEN];
@@ -6641,14 +6786,18 @@ put_function_mecha()
   put_text(&dpy,HW,Y_LINE1,textbuf,BF_SI);
   }
 
+static void
 put_function_psup()
   {
+
   put_funcs(func_psup,0);
   }
 
+static int
 put_main()
   {
   int i;
+
   fflush(stderr);
   put_white(&dpy,0,0,width_dpy,height_dpy); /* clear */
   put_function();
@@ -6670,9 +6819,10 @@ if(background==0) XSync(disp,0);
  return (0);
   }
 
-get_screen_type(np,w_dpy,h_dpy,w_frame,h_frame)
-  int *np,*w_dpy,*h_dpy,*w_frame,*h_frame;
+static void
+get_screen_type(int *np, int *w_dpy, int *h_dpy, int *w_frame, int *h_frame)
   {
+
   if(background)
     {
     *np=1;
@@ -6688,11 +6838,9 @@ get_screen_type(np,w_dpy,h_dpy,w_frame,h_frame)
   else *h_dpy=((*h_frame)-10-35); /* 30 for title bar */
   }
 
-draw_ellipse(xzero,yzero,s1,s2,roh,lptn,func,bm,x1,x2,y1,y2)
-  int xzero,yzero,lptn,x1,x2,y1,y2;
-  double s1,s2,roh;
-  unsigned char func;
-  lBitmap *bm;
+static void
+draw_ellipse(int xzero, int yzero, double s1, double s2, double roh, int lptn,
+	     unsigned char func, lBitmap *bm, int x1, int x2, int y1, int y2)
   {
   lPoint pts[200];
   int i,j,jj;
@@ -6756,14 +6904,14 @@ draw_ellipse(xzero,yzero,s1,s2,roh,lptn,func,bm,x1,x2,y1,y2)
     bm->rect.origin.y,bm->rect.extent.x,bm->rect.extent.y,0);
   }
 
-draw_circle(xzero,yzero,r,lptn,func,bm)
-  int xzero,yzero,r,lptn;
-  unsigned char func;
-  lBitmap *bm;
+static void
+draw_circle(int xzero, int yzero, int r,
+	    int lptn, unsigned char func, lBitmap *bm)
   {
   lPoint pts[100];
   int i;
   double rr,a;
+
   i=0;
   rr=(double)r;
   a=0.0;
@@ -6777,24 +6925,24 @@ draw_circle(xzero,yzero,r,lptn,func,bm)
     bm->rect.extent.x,bm->rect.extent.y,0);
   }
 
-draw_seg(x1,y1,x2,y2,lptn,func,bm)
-  int x1,y1,x2,y2,lptn;
-  unsigned char func;
-  lBitmap *bm;
+static void
+draw_seg(int x1, int y1, int x2, int y2,
+	 int lptn, unsigned char func, lBitmap *bm)
   {
   lPoint pts[2];
+
   pts[0].x=x1;  pts[0].y=y1;
   pts[1].x=x2;  pts[1].y=y2;
   draw_line(pts,2,lptn,func,bm,bm->rect.origin.x,bm->rect.origin.y,
     bm->rect.extent.x,bm->rect.extent.y,0);
   }
 
-draw_rect(x1,y1,x2,y2,lptn,func,bm)
-  int x1,y1,x2,y2,lptn;
-  unsigned char func;
-  lBitmap *bm;
+static void
+draw_rect(int x1, int y1, int x2, int y2, int lptn,
+	  unsigned char func, lBitmap *bm)
   {
   lPoint pts[5];
+
   pts[0].x=x1;pts[0].y=y1;
   pts[1].x=x1;pts[1].y=y2;
   pts[2].x=x2;pts[2].y=y2;
@@ -6804,14 +6952,12 @@ draw_rect(x1,y1,x2,y2,lptn,func,bm)
     bm->rect.extent.x,bm->rect.extent.y,0);
   }
 
-draw_line(pts,np,lptn,func,bm,xzero,yzero,xsize,ysize,disjoin)
-  lPoint *pts;
-  unsigned char func;
-  int lptn,xzero,yzero,xsize,ysize;
-  lBitmap *bm;
-  int np,disjoin;
+static void
+draw_line(lPoint *pts, int np, int lptn, unsigned char func,
+	  lBitmap *bm, int xzero, int yzero, int xsize, int ysize, int disjoin)
   {
   GC *gc;
+
   if(background) return;
   if(bm->type==BM_FB) gc=(&gc_line[lptn]);
   else gc=(&gc_line_mem[lptn]);
@@ -6821,12 +6967,12 @@ draw_line(pts,np,lptn,func,bm,xzero,yzero,xsize,ysize,disjoin)
   XFlush(disp);
   }
 
-put_mark_zoom(idx,izoom,pt,mode)
-  int idx,izoom;
-  int mode; /* 0 for observed, 1 for calculated */
-  struct Pick_Time *pt;
+static void
+put_mark_zoom(int idx, int izoom, struct Pick_Time *pt, int mode)
+  /* int mode; /* 0 for observed, 1 for calculated */
   {
   int x,y,i,xshift;
+
   if(calc_line_off&&(mode==1)) return;
   if(zoom_win[izoom].sec<=pt->sec2 &&
       zoom_win[izoom].sec+zoom_win[izoom].length>pt->sec1)
@@ -6856,10 +7002,11 @@ put_mark_zoom(idx,izoom,pt,mode)
     }
   }
 
-put_mon(xzero,yzero)
-  int xzero,yzero;
+static void
+put_mon(int xzero, int yzero)
   {
   int i,j,xwm,xz,xlim;
+
   xlim=xzero+width_win_mon;
   i=xzero/ft.w_mon;
   xz=xzero-i*ft.w_mon;
@@ -6890,12 +7037,11 @@ put_mon(xzero,yzero)
   }
 
 static void
-put_bitblt(sbm,xzero,yzero,xsize,ysize,dbm,x,y,func)
-  lBitmap *sbm,*dbm;
-  int xzero,yzero,xsize,ysize,x,y;
-  unsigned char func;
+put_bitblt(lBitmap *sbm, int xzero, int yzero, int xsize, int ysize,
+	   lBitmap *dbm, int x, int y, unsigned char func)
   {
   GC *gc;
+
   if(background) return;
   if(dbm->type==BM_FB) gc=(&gc_fb);
   else gc=(&gc_mem);
@@ -6906,12 +7052,10 @@ put_bitblt(sbm,xzero,yzero,xsize,ysize,dbm,x,y,func)
   XFlush(disp);
   }
 
-define_bm(bm,type,xsize,ysize,base)
-  lBitmap *bm;
-  char type;
-  int xsize,ysize;
-  char *base;
+static void
+define_bm(lBitmap *bm, char type, int xsize, int ysize, char *base)
   {
+
   if(background) return;
   bm->type=type;
   bm->rect.origin.x=0;
@@ -6932,14 +7076,14 @@ define_bm(bm,type,xsize,ysize,base)
     }
   }
 
-invert_bits(base,bytes)
-  unsigned char *base;
-  register int bytes;
+static void
+invert_bits(unsigned char *base, register int bytes)
   {
   static unsigned char bit_conv[256]; /* conversion table */
   static int flag=0;
   static unsigned char bit_mask[8]={0x80,0x40,0x20,0x10,0x8,0x4,0x2,0x1};
   register int i,j;
+
   if(flag==0)   /* for the first call */
     {
     for(i=0;i<256;i++) for(j=0;j<8;j++)
@@ -6950,13 +7094,10 @@ invert_bits(base,bytes)
   }
 
 static void
-put_text(bm,xzero,yzero,text,func)
-  int xzero,yzero;
-  char *text;
-  unsigned char func;
-  lBitmap *bm;
+put_text(lBitmap *bm, int xzero, int yzero, char *text, unsigned char func)
   {
   register int i,j,code,len;
+
   if(background) return;
   if((len=strlen(text))>N_BM) len=N_BM;
   for(i=0;i<len;i++)
@@ -6969,11 +7110,12 @@ put_text(bm,xzero,yzero,text,func)
   XFreePixmap(disp,bbuf.drw);
   }
 
-put_mark(idx,pos,loaded)
-  int idx,pos,loaded;
+static int
+put_mark(int idx, int pos, int loaded)
   {
   int i;
   char tb1[20],tb2[20];
+
   if(ft.pick[ft.pos2idx[pos]][idx].valid==0) return 0;
   /* mon */
   put_mark_mon(idx,pos);
@@ -6999,11 +7141,12 @@ if(background==0) XSync(disp,0);
   return 1;
   }
 
-put_mark_mon(idx,pos)
-  int idx,pos;
+static void
+put_mark_mon(int idx, int pos)
   {
   int x,y,i_map,xz;
   struct Pick_Time *pt;
+
   pt=(&(ft.pick[ft.pos2idx[pos]][idx]));
   x=((pt->sec1+pt->sec2)*PIXELS_PER_SEC_MON+
     ((pt->msec1+pt->msec2)*PIXELS_PER_SEC_MON+500)/1000)/2;
@@ -7016,10 +7159,11 @@ put_mark_mon(idx,pos)
       marks[idx],BF_SDXI);
   }
 
-make_visible(idx)
-  int idx;
+static void
+make_visible(int idx)
   {
   int pos,y;
+
   pos=ft.idx2pos[idx];
   y=pos*pixels_per_trace;
   if(y<y_zero || y_zero+height_win_mon<y+pixels_per_trace)
@@ -7030,20 +7174,23 @@ make_visible(idx)
     }
   }
 
+static void
 list_line()
   {
   int i;
+
   for(i=0;i<80;i++) fprintf(stderr,"=");
   fprintf(stderr,"\n");
   }
 
-raise_ttysw(idx)
-  int idx;
+static void
+raise_ttysw(int idx)
   {
   XEvent xevent;
   int x,y,xt,yt,xx,yy;
   unsigned int w,h,b,d;
   Window root,parent;
+
   if(background) return;
   if(idx)
     {
@@ -7068,12 +7215,12 @@ raise_ttysw(idx)
   expose_list=idx;
   }
 
-adj_sec(tm,se,tmc,sec)
-  int *tm,*tmc;
-  double *se,*sec;
+static void
+adj_sec(int *tm, double *se, int *tmc, double *sec)
   {
   int i;
   double f;
+
   for(i=0;i<5;i++) tmc[i]=tm[i]; /* copy YMDhm */
   tmc[5]=(int)(f=floor(*se));
   f=(*se)-f;
@@ -7082,13 +7229,16 @@ adj_sec(tm,se,tmc,sec)
   *sec=(double)tmc[5]+f;
   }
 
-get_calc()  /* get calculated arrival times for all stations */
+/* get calculated arrival times for all stations */
+static void
+get_calc()
 {
   int iz,i,j,tm_p[7],tm_s[7],tm_ot[7],tm_base[6];
   time_t lsec_bs;
   double sec,sec_ot;
   FILE *fp;
   char prog[NAMLEN],stan[NAMLEN],text_buf[LINELEN];
+
   read_parameter(PARAM_HYPO,prog);
   read_parameter(PARAM_STRUCT,stan);
   /* write seis file */
@@ -7133,9 +7283,11 @@ get_calc()  /* get calculated arrival times for all stations */
        tm_ot[0],tm_ot[1],tm_ot[2],tm_ot[3],tm_ot[4],sec_ot,ft.hypoall.alat,
        ft.hypoall.along,ft.hypoall.dep,ft.hypoall.mag);
 }
+
 #if HINET_EXTENTION_3
-load_data_prep(btn) /* return=1 means success */
-  int btn;  /* MSE_BUTNL, MSE_BUTNM or MSE_BUTNR */
+static int
+load_data_prep(int btn) /* return=1 means success */
+  /* int btn;  /* MSE_BUTNL, MSE_BUTNM or MSE_BUTNR */
   {
   FILE *fp,*fq;
   struct dirent *dir_ent;
@@ -7147,6 +7299,7 @@ load_data_prep(btn) /* return=1 means success */
     name_low[NAMLEN],name_high[NAMLEN],filename[NAMLEN],
     namebuf[NAMLEN],namebuf1[NAMLEN],diagbuf[50],userbuf[50];
   char **picks_list;
+
   *name_low=(*name_high)=0;
   if(*ft.save_file) find_file=0;  /* pick file name already fixed */
   else find_file=1;               /* search file name here */
@@ -7373,6 +7526,8 @@ load_data_prep(btn) /* return=1 means success */
   if(!ft.hypo.valid) return 0;
   return 1;
   }
+
+static int
 replot_mon(int replot_locate)
 {
   int xx,yy,i,j,k,base_sec,mon_len,i_mon,c,mc;
@@ -7412,7 +7567,7 @@ replot_mon(int replot_locate)
   put_text(&zoom,X_Z_GET+(W_Z_GET-WIDTH_TEXT*3)/2,Y_Z_GET+Y_Z_OFS,"GET",BF_SDO);
   put_text(&zoom,X_Z_PUT+(W_Z_PUT-WIDTH_TEXT*3)/2,Y_Z_PUT+Y_Z_OFS,"PUT",BF_SDO);
   put_text(&zoom,X_Z_CLS+(W_Z_CLS-WIDTH_TEXT*3)/2,Y_Z_CLS+Y_Z_OFS,"CLS",BF_SDO);
-#endif
+#endif  /* #if 1 */
   if(replot_locate==-1) reorder();
   else get_delta();
   /*flag_hypo=1;*/
@@ -7487,8 +7642,12 @@ replot_mon(int replot_locate)
   flag_change=save_flag_change;
   return 0;
 }
-reorder(){
+
+static int
+reorder()
+{
   int i,j,k,kk;
+
   k=0;
   for(j=0;j<ft.n_ch;j++) {
     ft.idx2pos[j]=-1;
@@ -7514,13 +7673,17 @@ reorder(){
   fprintf(stderr,"re-order by default.\n");
   return 0;
 }
-get_delta()  /* get calculated delta  for all stations */
+
+/* get calculated delta  for all stations */
+static int
+get_delta()
 {
   int iz,i,j,k,tm_p[7],tm_s[7],tm_ot[7],tm_base[6],b,kk,ll;
   time_t lsec_bs;
   double sec,sec_ot,a;
   FILE *fp;
   char prog[NAMLEN],stan[NAMLEN],text_buf[LINELEN];
+
   read_parameter(PARAM_HYPO,prog);
   read_parameter(PARAM_STRUCT,stan);
   /* write seis file */
@@ -7562,7 +7725,7 @@ get_delta()  /* get calculated delta  for all stations */
     fprintf(stderr,"%10s %4d %7.1f\n",
 	    ft.hypoall.fnl[ft.hypoall.fnl[i].idx].stn,ft.hypoall.fnl[i].idx,ft.hypoall.fnl[i].delta);
   }
-#endif
+#endif  /* #if 0 */
   for(j=0;j<ft.n_ch;j++) {
     ft.idx2pos[j]=-1;
   }
@@ -7599,14 +7762,17 @@ get_delta()  /* get calculated delta  for all stations */
 	  ft.hypoall.along,ft.hypoall.dep,ft.hypoall.mag);
   return 0;
 }
-#endif
-locate(flag,hint)
-  int flag; /* 1:output on display */
-  int hint; /* 1:use present hypocenter as the initial value */
+#endif  /* #if HINET_EXTENTION_3 */
+
+static void
+locate(int flag, int hint)
+  /* int flag; /* 1:output on display */
+  /* int hint; /* 1:use present hypocenter as the initial value */
   {
   FILE *fp;
   float init_lat,init_lon;
   char prog[NAMLEN],stan[NAMLEN],text_buf[LINELEN],*ptr;
+
   read_parameter(PARAM_HYPO,prog);
   read_parameter(PARAM_STRUCT,stan);
   /* write and read seis file */
@@ -7657,12 +7823,14 @@ locate(flag,hint)
   flag_hypo=flag_change=1;
   }
 
-list_picks(more)
-  int more; /* if 1, use more */
+static void
+list_picks(int more)
+  /* int more; /* if 1, use more */
   {
   char textbuf[LINELEN];
   FILE *fp;
   int i,j,k;
+
   list_line();
   if(diagnos[1]!=' ' || diagnos[strlen(diagnos)-2]!=' ')
     fprintf(stderr,"%s\n",diagnos);
@@ -7682,11 +7850,13 @@ list_picks(more)
   else fprintf(stderr,"no picks\n");
   }
 
-list_finl(more)
-  int more; /* if 1, use more */
+static void
+list_finl(int more)
+  /* int more; /* if 1, use more */
   {
   char textbuf[LINELEN];
   int i;
+
   list_line();
   if(flag_hypo==1)
     {
@@ -7698,11 +7868,12 @@ list_finl(more)
   else fprintf(stderr,"no hypocenter\n");
   }
 
-output_all(fp)
-  FILE *fp;
+static void
+output_all(FILE *fp)
   {
   int i,idx,tm_base[6];
   char stn[20];
+
   bcd_dec(tm_base,ft.ptr[0].time);
   fprintf(fp,"%02d/%02d/%02d %02d:%02d                   %14s\n",
     tm_base[0],tm_base[1],tm_base[2],tm_base[3],tm_base[4],get_time_win(0,0));
@@ -7724,14 +7895,15 @@ output_all(fp)
   fprintf(fp,"\n");
   }
  
-output_pick(fp)
-  FILE *fp;
+static void
+output_pick(FILE *fp)
   {
   long minu,time1,time2,sec,msec,sec_err,msec_err;
   int i,j,k,init,tm_base[6],tm[6],pos[4],sys_ch;
   double err,rat;
   time_t lsec_base;
   struct Pick_Time *pt;
+
   for(i=0;i<ft.n_ch;i++) for(j=0;j<4;j++)
     if(ft.pick[i][j].valid) ft.pick[i][j].valid=(-ft.pick[i][j].valid);
   init=1;
@@ -7851,9 +8023,11 @@ output_pick(fp)
   fprintf(fp,"\n");
   }
 
+static void
 wait_mouse()
   {
   XEvent xevent;
+
   XNextEvent(disp,&xevent);
   event.mse_data.md_x=xevent.xbutton.x;
   event.mse_data.md_y=xevent.xbutton.y;
@@ -7880,8 +8054,8 @@ wait_mouse()
   XSync(disp,False);
   }
 
-hard_copy(ratio)
-  int ratio;
+static void
+hard_copy(int ratio)
   {
   FILE *fp;
   int i,j,x,y,inreg,lbp,width_lbp,height_lbp,lines,ratio1,d,
@@ -7891,6 +8065,7 @@ hard_copy(ratio)
 #define FMT_RASTER  2
 #define FMT_PS    3
   Window root,parent,hardcopy_id;
+
   xgetorigin(disp,dpy.drw,&x,&y,&i,&j,&d,&root,&parent);
   if(parent!=ttysw && parent!=root) hardcopy_id=parent;
   else hardcopy_id=dpy.drw;
@@ -7934,15 +8109,17 @@ hard_copy(ratio)
   return;
   }
 
-draw_ticks(x_y,yx,xy1,xylen,num1,num2,dir)
-  int x_y;    /* 0:X axis, 1:Y axis */
-  int yx;     /* pos of axis */
-  int xy1,xylen;  /* start and end of axis */
-  int num1,num2;  /* range of values */
-  int dir;    /* +1/-1, direction of tick mark */
+static void
+draw_ticks(int x_y, int yx, int xy1, int xylen, int num1, int num2, int dir)
+  /* int x_y;    /* 0:X axis, 1:Y axis */
+  /* int yx;     /* pos of axis */
+  /* int xy1,xylen;  /* start and end of axis */
+  /* int num1,num2;  /* range of values */
+  /* int dir;    /* +1/-1, direction of tick mark */
   {
   static int steps[]={1,5,10,50,100};
   int i,j,nsteps,m,n,maxx,xy,tlen;
+
   maxx=(xylen)/(WIDTH_TEXT*2);
   nsteps=sizeof(steps)/sizeof(*steps);
   for(m=0;m<nsteps;m++) if((num2-num1)/steps[m]<=maxx) break;
@@ -7970,15 +8147,16 @@ draw_ticks(x_y,yx,xy1,xylen,num1,num2,dir)
         s2=sqrt(mat_error[j][j]);\
         roh=mat_error[i][j]/(s1*s2)
 
-draw_coord(idx,conv,along,alat1,alat2,step,lptn,xzero,yzero,x_cent,y_cent,cs,sn)
-  int idx;  /* 0:lat, 1:long */
-  int conv; /* 1:conv, 0:no conv */ 
-  double along,alat1,alat2,step;
-  int lptn,xzero,yzero;
-  double x_cent,y_cent,cs,sn;
+static void
+draw_coord(int idx, int conv, double along, double alat1, double alat2,
+	   double step, int lptn, int xzero, int yzero, double x_cent,
+	   double y_cent, double cs, double sn)
+  /* int idx;  /* 0:lat, 1:long */
+  /* int conv; /* 1:conv, 0:no conv */ 
   {
   int j,x1,x2,y1,y2,xi,yi;
   double  alat,xd,yd;
+
   j=(int)(step*120.0*pixels_per_km);
   x1=(-j);
   x2=width_horiz+j;
@@ -7998,10 +8176,12 @@ draw_coord(idx,conv,along,alat1,alat2,step,lptn,xzero,yzero,x_cent,y_cent,cs,sn)
   if(j) draw_line(points,j,lptn,BF_SDO,&dpy,0,MARGIN,width_horiz,height_horiz,0);
   }
 
-km2pixel(conv,xzero,yzero,x1,y1,x2,y2,x_cent,y_cent,xd,yd,xi,yi,cs,sn)
-  int conv,xzero,yzero,x1,x2,y1,y2,*xi,*yi;
-  double xd,yd,x_cent,y_cent,cs,sn;
+static int
+km2pixel(int conv, int xzero, int yzero, int x1, int y1, int x2, int y2,
+	 double x_cent, double y_cent, double xd, double yd, int *xi, int *yi,
+	 double cs, double sn)
   {
+
   if(conv)
     {
     *xi=xzero+(int)(pixels_per_km*XCONV(xd,yd));
@@ -8016,13 +8196,13 @@ km2pixel(conv,xzero,yzero,x1,y1,x2,y2,x_cent,y_cent,xd,yd,xi,yi,cs,sn)
   return 0;
   }
 
-phypo(x,y,h)
-  int x,y;
-  HypoData *h;
+static void
+phypo(int x, int y, HypoData *h)
   {
   int yy,tm[5],tmc[7];
   double mag,se,sec,lat,lon;
   char textbuf[LINELEN],ulat,ulon;
+
   if(map_f1x<x && x<map_f2x && map_f1y<y && y<map_f2y)
     {
     long2time((struct YMDhms *)tmc,&h->t);
@@ -8055,11 +8235,10 @@ phypo(x,y,h)
   }
 
 static void
-put_time1(itv,t,t1,t1a,ye,mo,da,ho,mi,tbuf)  /* 64bit ok */
-  long  itv,t,*t1,*t1a;
-  int ye,mo,da,ho,mi;
-  char *tbuf;
+put_time1(long itv, long t, long *t1, long *t1a,
+	  int ye, int mo, int da, int ho, int mi, char *tbuf)  /* 64bit ok */
   {
+
   if(t<(*t1a)-itv)
     {
     *t1a=(*t1);
@@ -8070,11 +8249,10 @@ put_time1(itv,t,t1,t1a,ye,mo,da,ho,mi,tbuf)  /* 64bit ok */
   }
 
 static void
-put_time2(itv,t,t2,t2a,ye,mo,da,ho,mi,tbuf)  /* 64bit ok */
-  long  itv,t,*t2,*t2a;
-  int ye,mo,da,ho,mi;
-  char *tbuf;
+put_time2(long itv, long t, long *t2, long *t2a,
+	  int ye, int mo, int da, int ho, int mi, char *tbuf)  /* 64bit ok */
   {
+
   if(t>(*t2a)+itv)
     {
     *t2a=(*t2);
@@ -8084,12 +8262,13 @@ put_time2(itv,t,t2,t2a,ye,mo,da,ho,mi,tbuf)  /* 64bit ok */
   *t2=t;
   }
 
-draw_ticks_ts(j,jj,it,step,k)
-  int j,it,step,k;
-  long jj;  /* 64bit ok */
+static int
+draw_ticks_ts(int j, long jj, int it, int step, int k)
+  /* long jj;  /* 64bit ok */
   {
   char textbuf[10];
   int x,tim[6],t;
+
   if(it==2 && k>0)
     {
     long2time((struct YMDhms *)tim,&sel.t1);
@@ -8124,12 +8303,13 @@ draw_ticks_ts(j,jj,it,step,k)
   return it+1;
   }
 
-draw_ticks_ts2(j,jj,it,k,tim,t)
-  int j,it,k,*tim,t;
-  long jj;  /* 64bit ok */
+static int
+draw_ticks_ts2(int j, long jj, int it, int k, int *tim, int t)
+  /* long jj;  /* 64bit ok */
   {
   char textbuf[10];
   int x;
+
   x=map_f2x+MARGIN*3/2+(int)
       ((double)j*(double)(jj-sel.t1)/(double)(sel.t2-sel.t1));
   draw_seg(x,map_f1y,x,map_f1y+HW*it,LPTN_FF,BF_SDO,&dpy);
@@ -8151,8 +8331,8 @@ draw_ticks_ts2(j,jj,it,k,tim,t)
   return t;
   }
 
-put_map(idx)  /* 0:redraw all, 1:plot only hypocenters, */
-  int idx;
+static int
+put_map(int idx)  /* 0:redraw all, 1:plot only hypocenters, */
   {
   FILE *fp,*fp_othrs;
   struct dirent *dir_ent;
@@ -9187,13 +9367,14 @@ tsjump: map_mode=MODE_TS3;
   return (0);
   }
 
-init_map(idx)
-  int idx;
+static void
+init_map(int idx)
   {
   FILE *fp;
   char textbuf[LINELEN];
   double f;
   int i;
+
   map_mode=MODE_NORMAL;
   if(!map_only) put_reverse(&dpy,x_func(MAP),0,WB,MARGIN);
   if(first_map)
@@ -9216,12 +9397,11 @@ init_map(idx)
   first_map=0;
   }
 
-check(code,ptr,low,high)
-  int code;
-  int *ptr;
-  int low,high;
+static int
+check(int code, int *ptr, int low, int high)
   {
   int now;
+
   now=(*ptr);
   switch(code)
     {
@@ -9233,12 +9413,11 @@ check(code,ptr,low,high)
   else {*ptr=now;return 1;} 
   }
 
-check_year(code,ptr,low,high)
-  int code;
-  int *ptr;
-  int low,high;
+static int
+check_year(int code, int *ptr, int low, int high)
   {
   int now;
+
   now=(*ptr);
 /* this code is vaild from 1925 to 2024 */
   if(now<25) now+=100;
@@ -9255,6 +9434,7 @@ check_year(code,ptr,low,high)
   else {*ptr=now;return 1;}
   }
 
+static void
 proc_map()
   {
   double alat,along,xd,yd,x_cent,y_cent,cs,sn,arg,ala,alo;
@@ -9882,9 +10062,8 @@ change_dep:
   else if(event.mse_trig==MSE_EXP) refresh(0);
   }
 
-open_sock(host,port)
-  char *host;
-  unsigned short port;
+static int
+open_sock(char *host, unsigned short port)
   {
   int sockfd;
   struct sockaddr_in serv_addr;
@@ -9913,8 +10092,9 @@ open_sock(host,port)
   return sockfd;
   }
 
-load_data(btn) /* return=1 means success */
-  int btn;  /* MSE_BUTNL, MSE_BUTNM or MSE_BUTNR */
+static int
+load_data(int btn) /* return=1 means success */
+  /* int btn;  /* MSE_BUTNL, MSE_BUTNM or MSE_BUTNR */
   {
   FILE *fp,*fq;
   struct dirent *dir_ent;
@@ -9926,6 +10106,7 @@ load_data(btn) /* return=1 means success */
     name_low[NAMLEN],name_high[NAMLEN],filename[NAMLEN],
     namebuf[NAMLEN],namebuf1[NAMLEN],diagbuf[50],userbuf[50];
   char **picks_list;
+
   *name_low=(*name_high)=0;
   if(*ft.save_file) find_file=0;  /* pick file name already fixed */
   else find_file=1;               /* search file name here */
@@ -10153,6 +10334,7 @@ load_data(btn) /* return=1 means success */
   return 1;
   }
 
+static void
 init_mecha()
   {
   char textbuf[LINELEN];
@@ -10175,6 +10357,7 @@ init_mecha()
   refresh(999);
   }
 
+static void
 proc_mecha()
   {
   int ring_bell,x,y;
@@ -10263,11 +10446,11 @@ proc_mecha()
   else if(event.mse_trig==MSE_EXP) refresh(999);
   }
 
-xy_pt(x,y,p,t,idx)
-  int idx,*x,*y;
-  double *p,*t;
+static void
+xy_pt(int *x, int *y, double *p, double *t, int idx)
   {
   double r,xx,yy,pp,tt;
+
   if(idx)   /* if idx=1, (x,y) -> (p,t) */
     {
     xx=(double)((*x)-mec_xzero);
@@ -10294,7 +10477,8 @@ xy_pt(x,y,p,t,idx)
     }
   }
 
-read_final(char *final_file,struct Hypo *hypo)
+static int
+read_final(char *final_file, struct Hypo *hypo)
   {
   FILE *fp;
   int i,j;
@@ -10368,18 +10552,18 @@ read_final(char *final_file,struct Hypo *hypo)
   return 1;
   }
 
-str2double(t,n,m,d)
-  char *t;
-  int n,m;
-  double *d;
+static void
+str2double(char *t, int n, int m, double *d)
   {
   char tb[20];
+
   strncpy(tb,t+n,m);
   tb[m]=0;
   if(tb[0]=='*') *d=100.0;
   else *d=atof(tb);
   }
 
+static int
 put_mecha()
   {
   char textbuf[LINELEN],p;
@@ -10432,9 +10616,10 @@ put_mecha()
   return 1;
   }
 
-switch_psup(idx,sw)
-  int idx,sw;
+static void
+switch_psup(int idx, int sw)
   {
+
   switch(sw)
     {
     case 0: ft.stn[idx].psup=0;break;
@@ -10448,6 +10633,7 @@ switch_psup(idx,sw)
     HEIGHT_TEXT);
   }
 
+static void
 init_psup()
   {
   char textbuf[LINELEN];
@@ -10471,6 +10657,7 @@ init_psup()
     }
   }
 
+static void
 bell()
   {
   if(background || auto_flag || auto_flag_hint) return;
@@ -10483,11 +10670,13 @@ bell()
 #define x2t(x)  (pu.t1+(double)(x-pu.xx1)/pu.pixels_per_sec)
 #define y2x(y)  (pu.x1+(double)(y-pu.yy1)/pu.pixels_per_km)
 
+static void
 proc_psup()
   {
   int ring_bell,x,y,idx,i,j,pos;
   char textbuf[30],textbuf1[30];
   double f,dist,time;
+
   x=event.mse_data.md_x;
   y=event.mse_data.md_y;
   ring_bell=0;
@@ -10821,6 +11010,7 @@ proc_psup()
   if(ring_bell) bell();
   }
 
+static int
 put_psup()
   {
   FILE *fp;
@@ -10952,8 +11142,8 @@ put_psup()
   return(0);
   }
 
-plot_psup(idx)
-  int idx;
+static void
+plot_psup(int idx)
   {
   double x0,uv[MAX_FILT*4],tred;
   int yy0,ylim1,ylim2,zero,sr,i,j,start,join,np,np_last,sec,xzero,
@@ -11051,8 +11241,8 @@ plot_psup(idx)
     }
   }
 
-save_data(private)
-  int private;
+static int
+save_data(int private)
   {
   FILE *fp,*fq;
   int i,j,k,year,month,day,hour,minute,tm[6];
@@ -11226,13 +11416,13 @@ save_data(private)
   return 1;
   }
 
-read_parameter(n,tbuf)
-  int n;
-  char *tbuf;
+static int
+read_parameter(int n, char *tbuf)
   {
   FILE *fp;
   int i;
   char text_buf[LINELEN];
+
   if((fp=open_file(ft.param_file,"parameter"))==NULL) return 0;
   i=0;
   while(1)
@@ -11252,11 +11442,13 @@ read_parameter(n,tbuf)
   return 1;
   }
 
+static int
 read_filter_file()
   {
   FILE *fp,*fc;
   int i,j;
   char text_buf[LINELEN];
+
   if((fp=open_file(ft.filt_file,"filter"))==NULL) return 0;
   strcpy(ft.filt[0].kind,"APF");
   i=1;
@@ -11340,6 +11532,7 @@ read_filter_file()
   return i;
   }
 
+static int
 read_label_file()
   {
   FILE *fp;
@@ -11359,14 +11552,14 @@ read_label_file()
   return i;
   }
 
-get_filter(filt,f,sr,iz)
-  int filt,sr,iz;
-  struct Filt *f;
+static void
+get_filter(int filt, struct Filt *f, int sr, int iz)
   {
   double dt,*x,zero;
   struct Pick_Time pt;
   int n,idx,i;
   char tbuf1[3],tbuf2[3];
+
   dt=1.0/(double)sr;
   if(filt==0) strcpy(f->tfilt,"   NO FILTER     ");
   else if(filt<0)
@@ -11421,11 +11614,11 @@ get_filter(filt,f,sr,iz)
     }
   }
 
-form2(s,d)
-  double s;
-  char *d;
+static int
+form2(double s, char *d)
   {
   char tbuf[8];
+
   if(s>=100.0 || s<0.0) return 0;
   sprintf(tbuf,"%6.2f",s);
   if(s<1.0) sprintf(d,"%.2s",tbuf+3);
@@ -11436,13 +11629,14 @@ form2(s,d)
 /*  this program was translated from HYPOMH(HIRATA and MATSU'URA) */
 /*  PLTXY TRANSFORMS (X,Y) TO (ALAT,ALONG) IF IND.EQ.1  */
 /*  PLTXY TRANSFORMS (ALAT,ALONG) TO (X,Y) IF IND.EQ.0  */
-pltxy(alt0,alng0,alat,along,x,y,ind)
-  double alt0,alng0,*alat,*along,*x,*y;
-  int ind;
+static void
+pltxy(double alt0, double alng0,
+      double *alat, double *along, double *x, double *y, int ind)
   {
   static double a=6.378160e3,e2=6.6944541e-3,e12=6.7395719e-3,d=5.72958e1;
   double rd,rlat,slat,clat,v2,al,ph1,rph1,rph2,an,c1,c2,rlato,slato,
     tphi1,cphi1,r;
+
   rd=1.0e0/d;
   if(ind==0)
     {
@@ -11481,25 +11675,27 @@ pltxy(alt0,alng0,alat,along,x,y,ind)
   }
 
 /* C version of TIMSAC, by Akaike & Nakagawa (1972) */
-autcor(x,n,lagh,cxx,z)
-  double *x;    /* original data */
-  int n;      /* N of original data */
-  int lagh;   /* largest lag */
-  double *cxx;  /* (output) autocovariances (cxx[0] - cxx[lagh]) */
-  double *z;    /* mean level */
+static void
+autcor(double *x, int n, int lagh, double *cxx, double *z)
+  /* double *x;    /* original data */
+  /* int n;      /* N of original data */
+  /* int lagh;   /* largest lag */
+  /* double *cxx;  /* (output) autocovariances (cxx[0] - cxx[lagh]) */
+  /* double *z;    /* mean level */
   {
+
   /* mean deletion */
   smeadl(x,n,z);
   /* auto covariance computation */
   crosco(x,x,n,cxx,lagh+1);
   }
 
-smeadl(x,n,xmean)
-  double *x,*xmean;
-  int n;
+static void
+smeadl(double *x,int n, double *xmean)
   {
   int i;
   double xm;
+
   xm=0.0;
   for(i=0;i<n;i++) xm+=x[i];
   xm/=(double)n;
@@ -11507,14 +11703,12 @@ smeadl(x,n,xmean)
   *xmean=xm;
   }
 
-crosco(x,y,n,c,lagh1)
-  double *x,*y;
-  int n;
-  double *c;
-  int lagh1;
+static void
+crosco(double *x, double *y, int n, double *c, int lagh1)
   {
   int i,j,il;
   double t,bn;
+
   bn=1.0/(double)n;
   for(i=0;i<lagh1;i++)
     {
@@ -11528,19 +11722,22 @@ crosco(x,y,n,c,lagh1)
     }
   }
 
-fpeaut(l,n,lagh,cxx,ofpe,osd,mo,ao)
-  int l;      /* upper limit of model order */
-  int n;      /* n of original data */
-  int lagh;   /* highest lag */
-  double *cxx;  /* autocovariances, cxx[0]-cxx[lagh] */
-  double *ofpe; /* minimum FPE */
-  double *osd;  /* SIGMA^2, variance of residual for minimum FPE */
-  int *mo;    /* model order for minimum FPE */
-  double *ao;   /* coefficients of AR process, ao[0]-ao[mo-1] */
+static void
+fpeaut(int l, int n, int lagh, double *cxx, double *ofpe, double *osd,
+       int *mo, double *ao)
+  /* int l;      /* upper limit of model order */
+  /* int n;      /* n of original data */
+  /* int lagh;   /* highest lag */
+  /* double *cxx;  /* autocovariances, cxx[0]-cxx[lagh] */
+  /* double *ofpe; /* minimum FPE */
+  /* double *osd;  /* SIGMA^2, variance of residual for minimum FPE */
+  /* int *mo;    /* model order for minimum FPE */
+  /* double *ao;   /* coefficients of AR process, ao[0]-ao[mo-1] */
   {
   double sd,an,anp1,anm1,oofpe,se,d,orfpe,a[500],d2,fpe,rfpe,chi2,
     b[500];
   int np1,nm1,m,mp1,i,im,lm;
+
   sd=cxx[0];
   an=n;
   np1=n+1;
@@ -11594,17 +11791,19 @@ fpeaut(l,n,lagh,cxx,ofpe,osd,mo,ao)
 /*fprintf(stderr,"\n");*/
   }
 
-getar(x,n,sd,m,c,z,lh)
-  double *x;  /* input data */
-  int n;    /* n of data */
-  double *sd; /* standard deviation */
-  int *m;   /* order of filter */
-  double *c;  /* filter coefficients */
-  double *z;  /* mean level */
-  int lh;   /* maximum lag */
+static int
+getar(double *x, int n, double *sd, int *m, double *c, double *z, int lh)
+  /* double *x;  /* input data */
+  /* int n;    /* n of data */
+  /* double *sd; /* standard deviation */
+  /* int *m;   /* order of filter */
+  /* double *c;  /* filter coefficients */
+  /* double *z;  /* mean level */
+  /* int lh;   /* maximum lag */
   {
   double fpe,*cxx;
   int lagh;
+
   lagh=(int)(3.0*sqrt((double)n));
   if(lh>0 && lh<lagh) lagh=lh;
   cxx=(double *)malloc(sizeof(*cxx)*(lagh+1));
@@ -11616,17 +11815,19 @@ getar(x,n,sd,m,c,z,lh)
   return *m;
   }
 
-digfil(x,y,n,c,m,r,sd)
-  double *x;  /* input data */
-  double *y;  /* output data */
-  int n;    /* n of data */
-  double *c;  /* filter coefficients */
-  int m;    /* order of filter */
-  double *r;  /* last m data */
-  double *sd; /* sd (mean-square of residuals) */
+static void
+digfil(double *x, double *y, int n, double *c, int m, double *r, double *sd)
+  /* double *x;  /* input data */
+  /* double *y;  /* output data */
+  /* int n;    /* n of data */
+  /* double *c;  /* filter coefficients */
+  /* int m;    /* order of filter */
+  /* double *r;  /* last m data */
+  /* double *sd; /* sd (mean-square of residuals) */
   {
   int i,j,k;
   double t,s;
+
   for(i=0;i<n;i++)
     {
     t=0.0;
@@ -11641,25 +11842,28 @@ digfil(x,y,n,c,m,r,sd)
   }
 
 /**** library for handling matrices (URABE) ****/
-mat_sym(mat)
-  double (*mat)[3];
+static void
+mat_sym(double (*mat)[3])
   {
+
   int i,j;
   for(i=1;i<3;i++) for(j=0;j<i;j++) mat[i][j]=mat[j][i];
   }
 
-mat_copy(mat1,mat2)
-  double (*mat1)[3],(*mat2)[3];
+static void
+mat_copy(double (*mat1)[3], double(*mat2)[3])
   {
+
   int i,j;
   for(i=0;i<3;i++) for(j=0;j<3;j++) mat1[i][j]=mat2[i][j];
   }
 
-mat_mul(mat,mat1,mat2)
-  double (*mat)[3],(*mat1)[3],(*mat2)[3];
+static void
+mat_mul(double (*mat)[3], double (*mat1)[3], double (*mat2)[3])
   {
   int i,j,k;
   double mat_r[3][3];
+
   for(i=0;i<3;i++) for(j=0;j<3;j++)
     {
     mat_r[i][j]=0.0;
@@ -11668,21 +11872,21 @@ mat_mul(mat,mat1,mat2)
   mat_copy(mat,mat_r);
   }
 
-mat_print(textbuf,mat)
-  char *textbuf;
-  double (*mat)[3];
+static void
+mat_print(char *textbuf, double (*mat)[3])
   {
   int i;
+
   fprintf(stderr,"%s\n",textbuf);
   for(i=0;i<3;i++)
     fprintf(stderr,"   { %+9.2e  %+9.2e  %+9.2e }\n",
       mat[i][0],mat[i][1],mat[i][2]);
   }
 
-get_mat(cs,sn,mat)
-  double (*mat)[3];
-  double cs,sn;
+static void
+get_mat(double cs, double sn, double (*mat)[3])
   {
+
   mat[0][0]=mat[1][1]=cs;
   mat[0][1]=(-sn);
   mat[1][0]=sn;
@@ -11691,11 +11895,11 @@ get_mat(cs,sn,mat)
   }
 
 static long
-time2long(ye,mo,da,ho,mi)
-  int ye,mo,da,ho,mi;
+time2long(int ye, int mo, int da, int ho, int mi)
   {
   register int i,j;
   static int dm[]={0,31,28,31,30,31,30,31,31,30,31,30,31};
+
   if(ye<25) ye+=100;
   j=0;
   for(i=1;i<mo;i++) j+=dm[i]; /* days till the previous month */
@@ -11705,15 +11909,14 @@ time2long(ye,mo,da,ho,mi)
   }
 
 static void
-long2time(tm,tl)
-  struct YMDhms *tm;
-  long *tl;
+long2time(struct YMDhms *tm, long *tl)
   {
   register int j,k,*d;
   long i;
   static int dm[]={0,31,28,31,30,31,30,31,31,30,31,30,31},
     dml[]={0,31,29,31,30,31,30,31,31,30,31,30,31},
     dy[]={366,365,365,365};
+
   i=(*tl);
   tm->mi=i%60;
   tm->ho=(i%(60*24))/60;
@@ -11736,10 +11939,11 @@ long2time(tm,tl)
   if(tm->ye>99) tm->ye-=100;
   }
 
-time_cmp_win(t1,t2,i)
-  int *t1,*t2,i;  
+static int
+time_cmp_win(int *t1, int *t2, int i)
   {
   int cntr;
+
   cntr=0;
   if(t1[cntr]<25 && t2[cntr]>25) return 1;
   if(t1[cntr]>25 && t2[cntr]<25) return -1;
@@ -11763,17 +11967,18 @@ bcd_dec(dest,sour)
   }
 */
 
-fill(buffer,count,data)
-  int *buffer,count,data;
+static void
+fill(int *buffer, int count, int data)
   {
+
   while(count-->0) *buffer++=data;
   }
 
 static void
-emalloc(mes)
-  char *mes;
+emalloc(char *mes)
   {
   char tb[LINELEN];
+
   sprintf(tb,"malloc failed ! (%s)",mes);
   fprintf(stderr,"%s\007\n",tb);
   writelog(tb);
@@ -11781,9 +11986,9 @@ emalloc(mes)
   }
 
 static void
-writelog(mes)
-  char *mes;
+writelog(char *mes)
   {
+
   if(ft.fp_log==NULL)
     {
     ft.fp_log=fopen(ft.log_file,"a+");

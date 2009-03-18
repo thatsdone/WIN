@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.46.2.6.2.4 2009/03/17 14:59:07 uehira Exp $
+   $Id: win.c,v 1.46.2.6.2.5 2009/03/18 01:14:34 uehira Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -21,7 +21,7 @@
 #else
 #define NAME_PRG      "win32"
 #endif
-#define WIN_VERSION   "2009.3.17(+Hi-net) 64bit"
+#define WIN_VERSION   "2009.3.18(+Hi-net) 64bit"
 #define DEBUG_AP      0   /* for debugging auto-pick */
 /* 5:sr, 4:ch, 3:sec, 2:find_pick, 1:all */
 /************ HOW TO COMPILE THE PROGRAM **************************
@@ -1591,7 +1591,7 @@ read_one_sec(long ptr, long sys_ch, register long *abuf, int spike)
 #endif
   int b_size,g_size;
   register int i,j,s_rate;
-  register unsigned char *dp,*pts;
+  register unsigned char *dp;
 #if OLD_FORMAT
   unsigned int gh;
 #else
@@ -1819,7 +1819,7 @@ read_one_sec_mon(long ptr, long sys_ch, register long *abuf, long ppsm)
 #else
   unsigned char gh[5];
 #endif
-  unsigned char *ddp,*pts;
+  unsigned char *ddp;
   short shreg;
   int inreg;
 
@@ -2220,9 +2220,12 @@ init_process(int argc, char *argv[], int args)
   float north,east,stcp,stcs,dm1,dm2,sens,to,h,g,adc;
   double alat,along,x,y;
   struct {float x,y;} md;
-  char text_buf[LINELEN],text_buf2[LINELEN],text_buf3[LINELEN],fname[NAMLEN],fname1[NAMLEN],name[STNLEN],unit[7],
+  char text_buf[LINELEN],fname[NAMLEN],fname1[NAMLEN],name[STNLEN],unit[7],
     dpath[NAMLEN],comp[CMPLEN],*ptr,fname2[NAMLEN],sname[STNLEN],c,*cp,
     fname00[NAMLEN],fname01[NAMLEN],fname02[NAMLEN],(*stations)[STNLEN];
+#if HINET_WIN32
+  char text_buf2[LINELEN],text_buf3[LINELEN];
+#endif
   union Swp {
     float f;
     uint32_w i;
@@ -2966,10 +2969,10 @@ set_width(struct Pick_Time *pt, int ms_width1, int ms_width2)
   set_pick(pt,msec/1000,msec%1000,ms_width1,ms_width2);
   }
 
+/* set and show pick time */
 static int
-show_pick(int idx, struct Pick_Time *pt, int i) /* set and show pick time */
+show_pick(int idx, struct Pick_Time *pt, int i)
   {
-  int j;
 
   if(pt->valid)
     {
@@ -3164,11 +3167,11 @@ fprintf(stderr,"min=%d(%d.%03d) 1=%d 2=%d w=%d\n",i_min,sec,msec,ms1,ms2,width);
 
 static int
 pick_phase(int idx, int iph)   /* pick an onset in a range of time */
-  /* int idx;      /* channel index */
-  /* int iph;      /* P/S/X */
+  /* int idx;      channel index */
+  /* int iph;      P/S/X */
   {
-  int sr,n,n1,i,j,i_min,i_all1,i_all2,width,sec,msec,im1,im2,
-    ms,ms1,ms2,ret,decim,sr1,nm,period,m,width_ar;
+  int sr,n,n1,i,i_min,width,sec,msec,
+    ret,nm,period,m,width_ar;
   double *db,aic_all,d,sum,dj,zero,freq,level,sd,sdd,sump;
   struct Pick_Time pt,pt1,pt2;
   static double *db2,*c,*rec;
@@ -3945,7 +3948,7 @@ static int
 pick_s(int idx, int sec_now, int hint)
   {
   struct Pick_Time pt,pt_s,pt1,pt_ss;
-  int n,pos,done,sec,msec,idxs,width_s,idx_s,period,ms,n_max,n_min,
+  int n,done,sec,msec,idxs,width_s,idx_s,period,ms,n_max,n_min,
     c_max,c_min,i,j;
   char *name,*comp;
   double *db,zero;
@@ -4081,10 +4084,8 @@ evdet(Evdet *ev, int singl)
   /* int singl; /* process just one event */
   {
   static Evdet_Tbl *tbl;
-  int n,i,k,j,jj,idx,sec,ch,sr,trig,x1,x2,y1,y2,d,m,done,sub,trig_off,sec_on,
+  int i,k,j,jj,sec,ch,sr,trig,m,done,sub,trig_off,sec_on,
     sec_start,save;
-  struct Pick_Time pt;
-  unsigned int st;
   double sd,zero,c[MAX_FILT*4],dmin,dmax,drange,dd,lta,ratio;
 
   if(singl) {sec_start=x_zero/PIXELS_PER_SEC_MON;save=0;}
@@ -4665,17 +4666,15 @@ int
 main(int argc, char *argv[])
   {
   FILE *fp;
-  int xx,yy,i,j,k,base_sec,mon_len,i_mon,c,mc;
+  int yy,i,j,k,base_sec,mon_len,i_mon,c,mc;
   char textbuf[LINELEN],tbuf[LINELEN],chstr[100],file_exclusive[LINELEN];
   unsigned char *buf_mon,*ptr;
   short i2p;
-  XEvent xevent;
   int x,y;
-  unsigned int w,h,b,d;
+  unsigned int w,h,d;
   Window root,parent;
   extern int optind;
   extern char *optarg;
-  lPoint pts[10];
 
 #if (defined(__FreeBSD__) && (__FreeBSD__ < 4))
 #include <floatingpoint.h>
@@ -5329,7 +5328,7 @@ static void
 plot_zoom(int izoom, int leng, struct Pick_Time *pt, int put)
   {
   FILE *fp;
-  unsigned char *ptr,path[NAMLEN],filename[NAMLEN],text_buf[LINELEN],fmt[5];
+  unsigned char path[NAMLEN],filename[NAMLEN],text_buf[LINELEN],fmt[5];
   char cc;
   short ss;
   long ll;
@@ -6671,7 +6670,7 @@ proc_main()
 static int
 measure_max_zoom(int izoom)
   {
-  int sr,i,j,ch;
+  int i,ch;
   struct Pick_Time pt;
 
   pt.valid=0;
@@ -7187,8 +7186,8 @@ static void
 raise_ttysw(int idx)
   {
   XEvent xevent;
-  int x,y,xt,yt,xx,yy;
-  unsigned int w,h,b,d;
+  int x,y,xt,yt;
+  unsigned int w,h,d;
   Window root,parent;
 
   if(background) return;
@@ -7298,7 +7297,6 @@ load_data_prep(int btn) /* return=1 means success */
   char text_buf[LINELEN],*ptr,name1[NAMLEN],name2[NAMLEN],pickfile[NAMLEN],
     name_low[NAMLEN],name_high[NAMLEN],filename[NAMLEN],
     namebuf[NAMLEN],namebuf1[NAMLEN],diagbuf[50],userbuf[50];
-  char **picks_list;
 
   *name_low=(*name_high)=0;
   if(*ft.save_file) find_file=0;  /* pick file name already fixed */
@@ -7530,10 +7528,9 @@ load_data_prep(int btn) /* return=1 means success */
 static int
 replot_mon(int replot_locate)
 {
-  int xx,yy,i,j,k,base_sec,mon_len,i_mon,c,mc;
+  int yy,i,j,k,base_sec,mon_len,i_mon;
   char textbuf[LINELEN],tbuf[20];
-  unsigned char *buf_mon,*ptr;
-  short i2p;
+  unsigned char *buf_mon;
   int save_flag_change;
 
   save_flag_change=flag_change;
@@ -7678,9 +7675,9 @@ reorder()
 static int
 get_delta()
 {
-  int iz,i,j,k,tm_p[7],tm_s[7],tm_ot[7],tm_base[6],b,kk,ll;
+  int i,j,k,tm_ot[7],tm_base[6],b,kk,ll;
   time_t lsec_bs;
-  double sec,sec_ot,a;
+  double sec_ot,a;
   FILE *fp;
   char prog[NAMLEN],stan[NAMLEN],text_buf[LINELEN];
 
@@ -7852,10 +7849,9 @@ list_picks(int more)
 
 static void
 list_finl(int more)
-  /* int more; /* if 1, use more */
+  /* int more;  if 1, use more */
   {
   char textbuf[LINELEN];
-  int i;
 
   list_line();
   if(flag_hypo==1)
@@ -8057,9 +8053,7 @@ wait_mouse()
 static void
 hard_copy(int ratio)
   {
-  FILE *fp;
-  int i,j,x,y,inreg,lbp,width_lbp,height_lbp,lines,ratio1,d,
-    offset_x,offset_y,format;
+  int i,j,x,y,ratio1,d,format;
   char textbuf[200],printer[30],*ptr;
 #define FMT_XWD   1
 #define FMT_RASTER  2
@@ -8118,7 +8112,7 @@ draw_ticks(int x_y, int yx, int xy1, int xylen, int num1, int num2, int dir)
   /* int dir;    /* +1/-1, direction of tick mark */
   {
   static int steps[]={1,5,10,50,100};
-  int i,j,nsteps,m,n,maxx,xy,tlen;
+  int i,nsteps,m,n,maxx,xy,tlen;
 
   maxx=(xylen)/(WIDTH_TEXT*2);
   nsteps=sizeof(steps)/sizeof(*steps);
@@ -8199,8 +8193,8 @@ km2pixel(int conv, int xzero, int yzero, int x1, int y1, int x2, int y2,
 static void
 phypo(int x, int y, HypoData *h)
   {
-  int yy,tm[5],tmc[7];
-  double mag,se,sec,lat,lon;
+  int yy,tmc[7];
+  double mag,sec,lat,lon;
   char textbuf[LINELEN],ulat,ulon;
 
   if(map_f1x<x && x<map_f2x && map_f1y<y && y<map_f2y)
@@ -8343,11 +8337,11 @@ put_map(int idx)  /* 0:redraw all, 1:plot only hypocenters, */
   typedef struct {float x,y;} MapData;
   static MapData *mapdata;
   int i,j,xzero,yzero,xi,yi,zi_y,zi_x,ye,mo,da,ho,mi,farout,
-    x1,x2,y1,y2,lptn,tm[5],conv,radi,x,y,xt,yt,it,tim[6],t,istep,
+    x1,x2,y1,y2,lptn,conv,radi,x,y,xt,yt,it,tim[6],t,istep,
     width_map,height_map,length_map,length_vert,length_horiz;
   long jj;    /* 64bit ok */
   long size,t1,t2,t1a,t2a;   /* 64bit ok */
-  double xd,yd,alat,along,ala[6],alo[6],se,dep,x_cent,y_cent,
+  double xd,yd,alat,along,ala[6],alo[6],se,x_cent,y_cent,
     alat1,alat2,along1,along2,cs,sn,arg,step,s1,s2,roh,step0;
   float mag,dep_base;
   HypoData hypo;
@@ -9370,10 +9364,6 @@ tsjump: map_mode=MODE_TS3;
 static void
 init_map(int idx)
   {
-  FILE *fp;
-  char textbuf[LINELEN];
-  double f;
-  int i;
 
   map_mode=MODE_NORMAL;
   if(!map_only) put_reverse(&dpy,x_func(MAP),0,WB,MARGIN);
@@ -10105,7 +10095,6 @@ load_data(int btn) /* return=1 means success */
   char text_buf[LINELEN],*ptr,name1[NAMLEN],name2[NAMLEN],pickfile[NAMLEN],
     name_low[NAMLEN],name_high[NAMLEN],filename[NAMLEN],
     namebuf[NAMLEN],namebuf1[NAMLEN],diagbuf[50],userbuf[50];
-  char **picks_list;
 
   *name_low=(*name_high)=0;
   if(*ft.save_file) find_file=0;  /* pick file name already fixed */
@@ -10481,8 +10470,8 @@ static int
 read_final(char *final_file, struct Hypo *hypo)
   {
   FILE *fp;
-  int i,j;
-  char textbuf[LINELEN],*ptr,tb[20],ulat,ulon;
+  int i;
+  char textbuf[LINELEN],ulat,ulon;
   double lat,lon;
 
   hypo->valid=0;
@@ -10567,7 +10556,7 @@ static int
 put_mecha()
   {
   char textbuf[LINELEN],p;
-  int i,x,y,ye;
+  int i,x,y;
 
   fflush(stderr);
   put_white(&dpy,0,0,width_dpy,height_dpy); /* clear */
@@ -10636,8 +10625,6 @@ switch_psup(int idx, int sw)
 static void
 init_psup()
   {
-  char textbuf[LINELEN];
-  FILE *fp;
 
   if(flag_hypo==0)
     {
@@ -10660,6 +10647,7 @@ init_psup()
 static void
 bell()
   {
+
   if(background || auto_flag || auto_flag_hint) return;
   fprintf(stderr,"\007");
   fflush(stderr);
@@ -10673,7 +10661,7 @@ bell()
 static void
 proc_psup()
   {
-  int ring_bell,x,y,idx,i,j,pos;
+  int ring_bell,x,y,idx,i,j;
   char textbuf[30],textbuf1[30];
   double f,dist,time;
 
@@ -11013,12 +11001,10 @@ proc_psup()
 static int
 put_psup()
   {
-  FILE *fp;
-  int i,j,k,n,tm[5],tlen;
-  unsigned char textbuf[LINELEN],fname[NAMLEN];
-  char *ptr;
-  double xd,yd,alat,along,alat1,along1,se,dep;
-  float mag,delta_max,delta_min;
+  int i,j,k,n;
+  char textbuf[LINELEN];
+  double xd,yd,alat1,along1;
+  float delta_max,delta_min;
 
   fflush(stderr);
   put_white(&dpy,0,0,width_dpy,height_dpy); /* clear */
@@ -11147,7 +11133,7 @@ plot_psup(int idx)
   {
   double x0,uv[MAX_FILT*4],tred;
   int yy0,ylim1,ylim2,zero,sr,i,j,start,join,np,np_last,sec,xzero,
-    tm[6],tm0[6],tm1[7],tm2[7],sr_start,sr_end,y,
+    tm[6],tm1[7],tm2[7],sr_start,sr_end,y,
     tred_s,tred_ms,cp1,cp2;
   char textbuf[30],textbuf1[30];
 
@@ -11536,8 +11522,9 @@ static int
 read_label_file()
   {
   FILE *fp;
-  int i,j;
-  char text_buf[LINELEN],label[20];
+  int i;
+  char text_buf[LINELEN];
+
   if((fp=open_file(ft.label_file,"label"))==NULL) return 0;
   *ft.label[0]=0;
   i=1;

@@ -1,6 +1,9 @@
- $Id: ChangeLog,v 1.131.2.25.2.23 2009/03/17 14:59:06 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.24 2009/03/18 01:14:34 uehira Exp $
 
-2009-03-09  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+2009-03-18  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/win.c (2009.3.18) : remove unused variables.
+	
+2009-03-17  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* src/win.c (2009.3.17) : make prototypes.
 	
 2009-03-11  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>

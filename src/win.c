@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.46.2.6.2.5 2009/03/18 01:14:34 uehira Exp $
+   $Id: win.c,v 1.46.2.6.2.6 2009/03/18 05:12:45 uehira Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -1055,6 +1055,7 @@ static void set_diagnos(char *, char *);
 static int pick_s(int, int, int);
 static void get_trigch(void);
 static int evdet(Evdet *, int);
+static void confirm_on(int, int, int, Evdet_Tbl *, Evdet *);
 static void confirm_off(int, int, int, Evdet_Tbl *, Evdet *);
 static void plot_mon(int, int, register int, unsigned char *);
 static void mapconv(int, char *[], int);
@@ -4365,14 +4366,12 @@ fprintf(stderr,"\n");
   return done;
   }
 
-
-confirm_on(ch,sec,msec,tbl,ev)
-  int ch,sec,msec;
-  Evdet_Tbl *tbl;
-  Evdet *ev;
+static void
+confirm_on(int ch, int sec, int msec, Evdet_Tbl *tbl, Evdet *ev)
   {
   int j;
   double x1,x2,y1,y2,d;
+
   tbl[ch].status=2;
   if(ev->trigger==0 || (ev->trigger && ft.pick[ft.trigch[ch]][P].valid==0))
     {

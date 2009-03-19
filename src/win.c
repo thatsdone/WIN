@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.46.2.6.2.6 2009/03/18 05:12:45 uehira Exp $
+   $Id: win.c,v 1.46.2.6.2.7 2009/03/19 13:21:25 uehira Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -21,7 +21,7 @@
 #else
 #define NAME_PRG      "win32"
 #endif
-#define WIN_VERSION   "2009.3.18(+Hi-net) 64bit"
+#define WIN_VERSION   "2009.3.19(+Hi-net) 64bit"
 #define DEBUG_AP      0   /* for debugging auto-pick */
 /* 5:sr, 4:ch, 3:sec, 2:find_pick, 1:all */
 /************ HOW TO COMPILE THE PROGRAM **************************
@@ -986,7 +986,7 @@ typedef struct
     loop,loop_stack[5],loop_stack_ptr,x_zero_max,
     y_zero_max,width_win_mon,height_win_mon,width_mon,mailer_flag,
     width_mon_max,height_mon,flag_change,width_info,height_info,
-    width_dpy,height_dpy,not_save,other_epis,map_only,flag_save,
+    not_save,other_epis,map_only,flag_save,
     auto_flag,auto_flag_hint,background,doing_auto_pick,x_win_mon,y_win_mon,
     x_win_info,y_win_info,x_zero,y_zero,expose_list,width_win_info,
     map_vert,width_horiz,height_horiz,map_dir,copy_file,ratio_vert,
@@ -1000,6 +1000,7 @@ typedef struct
     com_diag2,mecha_mode,hypo_use_ratio,map_f1x,map_f1y,map_f2x,map_f2y,
     map_n_find,map_line,fit_height,read_hypo,map_interval,mon_offset,
     just_hypo,just_hypo_offset,list_on_map,phypo_format,sec_block,autpk_but_off,calc_line_off;
+  unsigned int  width_dpy,height_dpy;
   float init_lat_init,init_lon_init,init_late_init,init_lone_init;
   char mec_hemi[10],diagnos[50],apbuf[20],monbuf[20],mapbuf[20],
     map_period_unit,dot;
@@ -1097,7 +1098,7 @@ static void put_mark_zoom(int, int, struct Pick_Time *, int);
 static void put_mon(int, int);
 static void put_bitblt(lBitmap *, int, int, int, int,
 		       lBitmap *, int, int, unsigned char);
-static void define_bm(lBitmap *, char, int, int, char *);
+static void define_bm(lBitmap *, char, unsigned int, unsigned int, char *);
 static void invert_bits(unsigned char *, register int);
 static void put_text(lBitmap *, int, int, char *, unsigned char);
 static int put_mark(int, int, int);
@@ -1703,7 +1704,7 @@ read_one_sec(long ptr, long sys_ch, register long *abuf, int spike)
     if((gh[2]&0x80)==0x0)
       {
       s_rate=gh[3]+(((long)(gh[2]&0x0f))<<8);
-      if(b_size=(gh[2]>>4)&0x7) g_size=b_size*(s_rate-1)+8;
+      if((b_size=(gh[2]>>4)&0x7)) g_size=b_size*(s_rate-1)+8;
       else g_size=(s_rate>>1)+8;
       if((gh[1]+(((long)gh[0])<<8))==sys_ch)
         { /* advance pointer and break */
@@ -1717,7 +1718,7 @@ read_one_sec(long ptr, long sys_ch, register long *abuf, int spike)
       {
       gh[4]=dp[4];
       s_rate=gh[4]+(((long)gh[3])<<8)+(((long)(gh[2]&0x0f))<<16);
-      if(b_size=(gh[2]>>4)&0x7) g_size=b_size*(s_rate-1)+9;
+      if((b_size=(gh[2]>>4)&0x7)) g_size=b_size*(s_rate-1)+9;
       else g_size=(s_rate>>1)+9;
       if((gh[1]+(((long)gh[0])<<8))==sys_ch)
         {
@@ -1806,7 +1807,7 @@ read_one_sec(long ptr, long sys_ch, register long *abuf, int spike)
 
 static int
 read_one_sec_mon(long ptr, long sys_ch, register long *abuf, long ppsm)
-  /* long ptr,sys_ch,ppsm;   /* sys_ch = sys*256 + ch */
+  /* long ptr,sys_ch,ppsm;   sys_ch = sys*256 + ch */
   {
   register int i,k,now,y_min,y_max,s_rate,sub_rate;
   register unsigned char *dp;
@@ -1981,7 +1982,7 @@ read_one_sec_mon(long ptr, long sys_ch, register long *abuf, long ppsm)
   if((gh[2]&0x80)==0x0)
     {
     s_rate=gh[3]+(((long)(gh[2]&0x0f))<<8);
-    if(b_size=(gh[2]>>4)&0x7) g_size=b_size*(s_rate-1)+8;
+    if((b_size=(gh[2]>>4)&0x7)) g_size=b_size*(s_rate-1)+8;
     else g_size=(s_rate>>1)+8;
     dp+=4;
     }
@@ -1990,7 +1991,7 @@ read_one_sec_mon(long ptr, long sys_ch, register long *abuf, long ppsm)
     {
     gh[4]=dp[4];
     s_rate=gh[4]+(((long)gh[3])<<8)+(((long)(gh[2]&0x0f))<<16);   
-    if(b_size=(gh[2]>>4)&0x7) g_size=b_size*(s_rate-1)+9;
+    if((b_size=(gh[2]>>4)&0x7)) g_size=b_size*(s_rate-1)+9;
     else g_size=(s_rate>>1)+9;
     dp+=5;
     }
@@ -2017,7 +2018,7 @@ read_one_sec_mon(long ptr, long sys_ch, register long *abuf, long ppsm)
       if((gh[2]&0x80)==0x0)
         {
         s_rate=gh[3]+(((long)(gh[2]&0x0f))<<8);
-        if(b_size=(gh[2]>>4)&0x7) g_size=b_size*(s_rate-1)+8;
+        if((b_size=(gh[2]>>4)&0x7)) g_size=b_size*(s_rate-1)+8;
         else g_size=(s_rate>>1)+8;
         if((gh[1]+(((long)gh[0])<<8))==sys_ch)
           {
@@ -2032,7 +2033,7 @@ read_one_sec_mon(long ptr, long sys_ch, register long *abuf, long ppsm)
         { 
         gh[4]=dp[4];
         s_rate=gh[4]+(((long)gh[3])<<8)+(((long)(gh[2]&0x0f))<<16);
-        if(b_size=(gh[2]>>4)&0x7) g_size=b_size*(s_rate-1)+9;
+        if((b_size=(gh[2]>>4)&0x7)) g_size=b_size*(s_rate-1)+9;
         else g_size=(s_rate>>1)+9;
         if((gh[1]+(((long)gh[0])<<8))==sys_ch)
           {
@@ -2234,7 +2235,7 @@ init_process(int argc, char *argv[], int args)
     } *swp;
 
   /* open parameter file */
-  if(fp=open_file(ft.param_file,"parameter")) fclose(fp);
+  if((fp=open_file(ft.param_file,"parameter"))) fclose(fp);
   else return 0;
   read_parameter(PARAM_PATH,dpath); /* default data file path */
   read_parameter(PARAM_CHS,fname);  /* channels table file */
@@ -2325,7 +2326,7 @@ init_process(int argc, char *argv[], int args)
     if(ft.hypo_dir[i-1]=='/') while(1)
       {
       sprintf(ft.hypo_dir+i,"%02d%02d",tm.ye,tm.mo);
-      if(dir_ptr=opendir(ft.hypo_dir))
+      if((dir_ptr=opendir(ft.hypo_dir)))
         {
         closedir(dir_ptr);
         break;
@@ -2425,7 +2426,7 @@ init_process(int argc, char *argv[], int args)
   *ft.save_file=0;
   if(ft.fd==-1)
     {
-    fprintf(stderr,"data file not found\n",ft.data_file);
+    fprintf(stderr,"data file not found : %s\n",ft.data_file);
     print_usage();
     exit(1);
     }
@@ -2465,7 +2466,7 @@ init_process(int argc, char *argv[], int args)
   if(ft.hypo_dir[i-1]=='/') while(1)
     {
     sprintf(ft.hypo_dir+i,"%02d%02d",tmd[0],tmd[1]);
-    if(dir_ptr=opendir(ft.hypo_dir))
+    if((dir_ptr=opendir(ft.hypo_dir)))
       {
       closedir(dir_ptr);
       break;
@@ -2488,7 +2489,7 @@ init_process(int argc, char *argv[], int args)
   if(*ft.hypo_dir1 && ft.hypo_dir1[i-1]=='/') while(1)
     {
     sprintf(ft.hypo_dir1+i,"%02d%02d",tmd[0],tmd[1]);
-    if(dir_ptr=opendir(ft.hypo_dir1))
+    if((dir_ptr=opendir(ft.hypo_dir1)))
       {
       closedir(dir_ptr);
       break;
@@ -2508,17 +2509,17 @@ init_process(int argc, char *argv[], int args)
     }
 
   read_parameter(PARAM_FILT,ft.filt_file);  /* filter file */
-  if(ft.n_filt=read_filter_file())
+  if((ft.n_filt=read_filter_file()))
     fprintf(stderr,"%d filters installed from '%s'\n",ft.n_filt-1,ft.filt_file);
 
   read_parameter(PARAM_LABELS,ft.label_file); /* label file */
-  if(ft.n_label=read_label_file())
+  if((ft.n_label=read_label_file()))
     fprintf(stderr,"%d labels installed from '%s'\n",ft.n_label-1,ft.label_file);
   ft.label_idx=0;
 
   /* read zone table file */
   i=0;
-  if(fp=open_file(fname1,"zone table"))
+  if((fp=open_file(fname1,"zone table")))
     {
     while(fscanf(fp,"%s",text_buf)!=EOF)
       if(*text_buf=='#') continue;
@@ -2560,7 +2561,7 @@ just_map:
 
   /* get origin of coordinate */
   read_parameter(PARAM_MAP,ft.map_file);
-  if(fp=open_file(ft.map_file,"map"))
+  if((fp=open_file(ft.map_file,"map")))
     {
     fread(&md,sizeof(md),1,fp);
     fclose(fp);
@@ -2860,7 +2861,7 @@ just_map:
   /* read initial value for depth */
   read_parameter(PARAM_STRUCT,fname);
   if((ptr=strchr(fname,'*'))) *ptr=0;
-  if(fp=open_file(fname,"structure"))
+  if((fp=open_file(fname,"structure")))
     {
     fgets(text_buf,LINELEN,fp);
     sscanf(text_buf,"%f%f%f",&init_lat_init,&init_lon_init,&dm1);
@@ -2882,7 +2883,7 @@ just_map:
     fprintf(stderr,"X : display not open\n");
     exit(1);
     }
-  if(ptr=(char *)getenv("WINDOWID")) ttysw=strtol(ptr,(char **)NULL,10);
+  if((ptr=(char *)getenv("WINDOWID"))) ttysw=strtol(ptr,(char **)NULL,10);
   else if(map_only) ttysw=0;
   else
     {
@@ -2994,7 +2995,7 @@ alloc_mem(size_t size, char *mes)   /* 64bit OK */
 
   if((almem=(void *)malloc(size))==0)
     {
-    sprintf(tb,"%s(%d)",mes,size);
+    snprintf(tb,sizeof(tb),"%s(%ld)",mes,size);
     emalloc(tb);
     }
   return almem;
@@ -3002,9 +3003,9 @@ alloc_mem(size_t size, char *mes)   /* 64bit OK */
 
 static int
 getdata(int idx, struct Pick_Time pt, double **dbp, int *ip)
-  /* int idx,*ip;    /* if interpolated, *ip=1 (for measure MAX) */
+  /* int idx,*ip;    if interpolated, *ip=1 (for measure MAX) */
   {
-/*  int sec,n1,n2,n3,n,i,j,sr,i1,ii;*/
+  /*  int sec,n1,n2,n3,n,i,j,sr,i1,ii;*/
   int n1,n2,n3,n,i,j,sr,i1,ii;
   double dmax,dmin,drange,*db;
   long sec;
@@ -3085,7 +3086,8 @@ find_pick(double *db, float *aic, float *sd1, float *sd2, int i0, int n,
 
   s2=s1=dn1=0.0;
   for(j=i0;j<n;j++) s2+=db[j];
-  aic[i0]=aic_min=(*aic_all)=dn2*log(sd=s2/(dn2=(double)(n-i0)));
+  dn2=(double)(n-i0);
+  aic[i0]=aic_min=(*aic_all)=dn2*log(sd=s2/dn2);
 #if DEBUG_AP>=2
 fprintf(stderr,"n-i0=%d sd=%f aic_all=%f m=%d\n",n-i0,sd,*aic_all,m);
 #endif
@@ -3313,8 +3315,8 @@ pt.sec1,pt.msec1,pt.sec2,pt.msec2,pt.polarity);
 
 static int
 cancel_picks(char *name, int idx)  /* cancel picks */
-  /* char *name;     /* station name or NULL */
-  /* int idx;      /* P/S/X/-1 */
+  /* char *name;    station name or NULL */
+  /* int idx;       P/S/X/-1 */
   {
   int i,j;
 
@@ -3344,8 +3346,9 @@ cancel_picks(char *name, int idx)  /* cancel picks */
   return j;
   }
 
+/* cancel calculated picks */
 static int
-cancel_picks_calc()  /* cancel calculated picks */
+cancel_picks_calc()
   {
   int i,j,jj,k,idx;
 
@@ -3367,11 +3370,12 @@ cancel_picks_calc()  /* cancel calculated picks */
   return j;
   }
 
+/* get picks */
 static int
-get_pick(char *name, int idx, struct Pick_Time *pt) /* get picks */
-  /* char *name;     /* station name or NULL */
-  /* int idx;      /* P/S/X/-1 */
-  /* struct Pick_Time *pt; /* pt to return, or NULL */
+get_pick(char *name, int idx, struct Pick_Time *pt)
+  /* char *name;            station name or NULL */
+  /* int idx;               P/S/X/-1 */
+  /* struct Pick_Time *pt;  pt to return, or NULL */
   {
   int i,j;
   j=0;
@@ -3384,9 +3388,10 @@ get_pick(char *name, int idx, struct Pick_Time *pt) /* get picks */
   return j;
   }
 
+/* automatic pick & locate routine */
 static int
-auto_pick(int singl)     /* automatic pick & locate routine */
-  /* int singl; /* process just one event */
+auto_pick(int singl)
+  /* int singl;   process just one event */
   {
   static Evdet ev={
     3,0,0,        /* int n_min_trig,n_trig_off,trigger, */
@@ -3407,7 +3412,7 @@ auto_pick(int singl)     /* automatic pick & locate routine */
   else fprintf(stderr,"(entire file)\n");
   put_mon(x_zero,y_zero);
   /* some 'pick' file may have been loaded, but it will be deleted  */
-  if(fp=fopen("winap.prm","r"))
+  if((fp=fopen("winap.prm","r")))
     {
     fgets(tbuf,LINELEN,fp);sscanf(tbuf,"%d",&ev.n_min_trig);
     fgets(tbuf,LINELEN,fp);sscanf(tbuf,"%d",&ev.n_trig_off);
@@ -3565,7 +3570,7 @@ fprintf(stderr,"%d %d %d %d\n",p->sec1,p->msec1,p->sec2,p->msec2);
 
 static void
 auto_pick_pick(int sec_now, int hint)
-  /* int sec_now; /* limit of sec < ft.len */
+  /* int sec_now;  limit of sec < ft.len */
   {
   struct Pick_Time pt;
   int i,j,k,sec,msec,idx,idx_s,n,n_max,n_min,c_max,c_min,ip;
@@ -3868,7 +3873,7 @@ auto_pick_hint(int save)
 /* automatic pick & locate (single) */
 static int
 auto_pick_single(Evdet_Tbl *tbl, int sec_now, int save)
-  /* int save; /* if 1, save result */
+  /* int save;   if 1, save result */
   {
   int i;
   char tbuf[20],tb[80];
@@ -4082,7 +4087,7 @@ get_trigch()
 
 static int
 evdet(Evdet *ev, int singl)
-  /* int singl; /* process just one event */
+  /* int singl;  process just one event */
   {
   static Evdet_Tbl *tbl;
   int i,k,j,jj,sec,ch,sr,trig,m,done,sub,trig_off,sec_on,
@@ -4667,7 +4672,8 @@ main(int argc, char *argv[])
   FILE *fp;
   int yy,i,j,k,base_sec,mon_len,i_mon,c,mc;
   char textbuf[LINELEN],tbuf[LINELEN],chstr[100],file_exclusive[LINELEN];
-  unsigned char *buf_mon,*ptr;
+  unsigned char *buf_mon;
+  char  *ptr;
   short i2p;
   int x,y;
   unsigned int w,h,d;
@@ -4684,10 +4690,9 @@ main(int argc, char *argv[])
   fpsetmask(fpgetmask() & ~(FP_X_DZ|FP_X_INV));
 #endif
 
-  if(ptr=(unsigned char *)getenv("WIN_PICK_SERVER")) strcpy(ft.pick_server,ptr);
+  if((ptr=getenv("WIN_PICK_SERVER"))) strcpy(ft.pick_server,ptr);
   else *ft.pick_server=0;
-  if(ptr=(unsigned char *)getenv("WIN_PICK_SERVER_PORT"))
-    ft.pick_server_port=atoi(ptr);
+  if((ptr=getenv("WIN_PICK_SERVER_PORT"))) ft.pick_server_port=atoi(ptr);
   else ft.pick_server_port=PICK_SERVER_PORT;
   sprintf(ft.param_file,"%s.prm",NAME_PRG);
   background=map_only=mc=bye=auto_flag=auto_flag_hint=not_save=autpk_but_off=calc_line_off=0;
@@ -4745,7 +4750,7 @@ main(int argc, char *argv[])
         break;
       case 's':   /* specify find_picks server & port */
         strcpy(tbuf,optarg);
-        if(ptr=(unsigned char *)strchr(tbuf,':'))
+        if((ptr=strchr(tbuf,':')))
           {
           *ptr=0;
           ft.pick_server_port=atoi(ptr+1);
@@ -4890,7 +4895,7 @@ main(int argc, char *argv[])
   XStoreName(disp,dpy.drw,textbuf);
   sizehints.flags=PPosition|PResizeInc;
   XSetWMNormalHints(disp,dpy.drw,&sizehints);
-  sprintf(textbuf,"black=%d(%08X) white=%d(%08X)",
+  sprintf(textbuf,"black=%lu(%08lX) white=%lu(%08lX)",  /* 64bit ok */
     (unsigned long)BlackPixel(disp,0),(unsigned long)BlackPixel(disp,0),
     (unsigned long)WhitePixel(disp,0),(unsigned long)WhitePixel(disp,0));
   writelog(textbuf);
@@ -4900,15 +4905,15 @@ main(int argc, char *argv[])
   define_bm(&dpy,BM_FB,width_dpy,height_dpy,0);
 
 /* make patterns */
-  define_bm(&sym,BM_MEM,16*4,58,buf_sym);  
-  define_bm(&sym_stn,BM_MEM,16*1,16,buf_sym_stn);
-  define_bm(&arrows_ud,BM_MEM,16*2,16,buf_arrows_ud);
-  define_bm(&arrows_lr,BM_MEM,16*2,16,buf_arrows_lr);
-  define_bm(&arrows_lr_zoom,BM_MEM,16*2,16,buf_arrows_lr_zoom);
-  define_bm(&arrows_leng,BM_MEM,16*2,16,buf_arrows_leng);
-  define_bm(&arrows_scale,BM_MEM,16*2,16,buf_arrows_scale);
-  define_bm(&epi_s,BM_MEM,16*1,16,buf_epi_s);
-  define_bm(&epi_l,BM_MEM,16*1,16,buf_epi_l);
+  define_bm(&sym,BM_MEM,16*4,58,(char *)buf_sym);  
+  define_bm(&sym_stn,BM_MEM,16*1,16,(char *)buf_sym_stn);
+  define_bm(&arrows_ud,BM_MEM,16*2,16,(char *)buf_arrows_ud);
+  define_bm(&arrows_lr,BM_MEM,16*2,16,(char *)buf_arrows_lr);
+  define_bm(&arrows_lr_zoom,BM_MEM,16*2,16,(char *)buf_arrows_lr_zoom);
+  define_bm(&arrows_leng,BM_MEM,16*2,16,(char *)buf_arrows_leng);
+  define_bm(&arrows_scale,BM_MEM,16*2,16,(char *)buf_arrows_scale);
+  define_bm(&epi_s,BM_MEM,16*1,16,(char *)buf_epi_s);
+  define_bm(&epi_l,BM_MEM,16*1,16,(char *)buf_epi_l);
 
 /* create GCs */
   for(i=0;i<N_LPTN;i++)
@@ -5088,7 +5093,7 @@ bg: if(map_only) goto skip_mon;
         }
       }
     else plot_mon(base_sec,mon_len,p2w(width_mon)*2,buf_mon);
-    define_bm(&mon[i_mon],BM_MEM,p2w(width_mon)*16,height_mon,buf_mon);
+    define_bm(&mon[i_mon],BM_MEM,p2w(width_mon)*16,height_mon,(char *)buf_mon);
     if(flag_save==2)
       {
       if(i_mon==0) for(j=0;j<ft.n_ch;j++)
@@ -7051,15 +7056,16 @@ put_bitblt(lBitmap *sbm, int xzero, int yzero, int xsize, int ysize,
   }
 
 static void
-define_bm(lBitmap *bm, char type, int xsize, int ysize, char *base)
+define_bm(lBitmap *bm, char type, unsigned int xsize, unsigned int ysize,
+	  char *base)
   {
 
   if(background) return;
   bm->type=type;
   bm->rect.origin.x=0;
   bm->rect.origin.y=0;
-  bm->rect.extent.x=xsize;
-  bm->rect.extent.y=ysize;
+  bm->rect.extent.x=(short)xsize;   /* warning : will over flow? */
+  bm->rect.extent.y=(short)ysize;   /* warning : will over flow? */
 /* X11 type ; Window (BM_FB) or Pixmap (BM_MEM) */
   if(bm->type==BM_MEM)
     {

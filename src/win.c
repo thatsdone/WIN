@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.46.2.6.2.7 2009/03/19 13:21:25 uehira Exp $
+   $Id: win.c,v 1.46.2.6.2.8 2009/03/29 10:32:40 uehira Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -21,7 +21,7 @@
 #else
 #define NAME_PRG      "win32"
 #endif
-#define WIN_VERSION   "2009.3.19(+Hi-net) 64bit"
+#define WIN_VERSION   "2009.3.29(+Hi-net) 64bit"
 #define DEBUG_AP      0   /* for debugging auto-pick */
 /* 5:sr, 4:ch, 3:sec, 2:find_pick, 1:all */
 /************ HOW TO COMPILE THE PROGRAM **************************
@@ -761,7 +761,7 @@ char patterns[N_LPTN][2]={{1,0}, {1,1}, {2,2}, {4,4}, {1,7}, {1,15}};
 
   struct File_Ptr
     {
-    unsigned long offset,size;
+    size_t        offset,size;  /* 64bit ok? */
     unsigned char time[8];  /* last 2 bytes are padding */
     };
   struct Pick_Time
@@ -1046,7 +1046,7 @@ static int cancel_picks_calc(void);
 static int get_pick(char *, int, struct Pick_Time *);
 static int auto_pick(int);
 static int set_max(double, int, int, int);
-static int auto_pick_range(Evdet_Tbl *);
+static void auto_pick_range(Evdet_Tbl *);
 static void auto_pick_pick(int, int);
 static void auto_pick_hypo(char *, int);
 static int auto_pick_hint(int);
@@ -1108,8 +1108,10 @@ static void list_line(void);
 static void raise_ttysw(int);
 static void adj_sec(int *, double *, int *, double *);
 static void get_calc(void);
-#if HINET_EXTENTION_3
+#if HINET_EXTENTION_3>=2
 static int load_data_prep(int);
+#endif  /* HINET_EXTENTION_3>=2 */
+#if HINET_EXTENTION_3
 static int replot_mon(int);
 static int reorder(void);
 static int get_delta(void);
@@ -1169,7 +1171,7 @@ static void digfil(double *, double *, int, double *, int, double *, double *);
 static void mat_sym(double (*)[3]);
 static void mat_copy(double (*)[3], double(*)[3]);
 static void mat_mul(double (*)[3], double (*)[3], double (*)[3]);
-static void mat_print(char *, double (*)[3]);
+/* static void mat_print(char *, double (*)[3]); */
 static void get_mat(double, double, double (*)[3]);
 static long time2long(int, int, int, int, int);
 static void long2time(struct YMDhms *, long *);
@@ -1577,7 +1579,7 @@ reset_blockmode:
 static int
 read_one_sec(long ptr, long sys_ch, register long *abuf, int spike)
   /* long ptr,sys_ch;    sys_ch = sys*256 + ch */
-  /*int spike;           if 1, eliminate spikes */
+  /* int spike;           if 1, eliminate spikes */
   {
 #define N_SBUF   600
 #define SR_SBUF  100
@@ -2608,7 +2610,7 @@ just_map:
 	text_buf2[strlen(ft.data_file)-23]='\0';
       }
       /* find win32file name */
-      if(ptr=strrchr(ft.data_file,'/')){
+      if((ptr=strrchr(ft.data_file,'/'))){
 	ptr++;
 	strncpy(text_buf3,ptr,19);
 	text_buf3[19]='\0';
@@ -3081,15 +3083,19 @@ static int
 find_pick(double *db, float *aic, float *sd1, float *sd2, int i0, int n,
 	  int m, double *aic_all)
   {
-  double aic_min,sd,s1,s2,dn1,dn2;
+  double aic_min,s1,s2,dn1,dn2;
   int i,j,i_min;
+#if DEBUG_AP>=2
+  double sd;
+#endif
 
   s2=s1=dn1=0.0;
   for(j=i0;j<n;j++) s2+=db[j];
   dn2=(double)(n-i0);
-  aic[i0]=aic_min=(*aic_all)=dn2*log(sd=s2/dn2);
+  aic[i0]=aic_min=(*aic_all)=dn2*log(s2/dn2);
 #if DEBUG_AP>=2
-fprintf(stderr,"n-i0=%d sd=%f aic_all=%f m=%d\n",n-i0,sd,*aic_all,m);
+  sd=s2/dn2;
+  fprintf(stderr,"n-i0=%d sd=%f aic_all=%f m=%d\n",n-i0,sd,*aic_all,m);
 #endif
   i_min=0;
   j=i0;
@@ -3493,7 +3499,7 @@ set_max(double d, int sec, int msec, int ch)
   return(1);
   }
 
-static int
+static void
 auto_pick_range(Evdet_Tbl *tbl)
   {
   struct Pick_Time *p;
@@ -3521,7 +3527,7 @@ p->sec1,p->msec1,p->sec2,p->msec2,p->period);
       j++;
       }
     }
-  if(j==0) return 0;
+  if(j==0) return;
   ft.period=(period/=j);  /* averaged period (for default) */
 #if DEBUG_AP>=2
 fprintf(stderr,"np=%d p=%d earliest=%2d.%03d\n",j,ft.period,sec,msec);
@@ -5225,7 +5231,7 @@ proc_alarm()
   raise_ttysw(0);
   refresh(0);
   alarm(map_interval*60);
-  signal(SIGALRM,proc_alarm);
+  signal(SIGALRM,(void *)proc_alarm);
   }
 
 static void
@@ -5237,7 +5243,7 @@ do_map()
   if(map_interval)
     {
     alarm(map_interval*60);
-    signal(SIGALRM,proc_alarm);
+    signal(SIGALRM,(void *)proc_alarm);
     }
   init_map(MSE_BUTNL);
   if(bye) end_process(0);
@@ -5316,14 +5322,14 @@ ulaw(int c)
     mask=0x7f;
     }
   else mask=0xff;
-  if(c<32) c=0xF0|15-(c>>1);
-  else if(c<96) c=0xE0|15-((c-32)>>2);
-  else if(c<224) c=0xD0|15-((c-96)>>3);
-  else if(c<480) c=0xC0|15-((c-224)>>4);
-  else if(c<992) c=0xB0|15-((c-480)>>5);
-  else if(c<2016) c=0xA0|15-((c-992)>>6);
-  else if(c<4064) c=0x90|15-((c-2016)>>7);
-  else if(c<8160) c=0x80|15-((c-4064)>>8);
+  if(c<32) c=0xF0|(15-(c>>1));
+  else if(c<96) c=0xE0|(15-((c-32)>>2));
+  else if(c<224) c=0xD0|(15-((c-96)>>3));
+  else if(c<480) c=0xC0|(15-((c-224)>>4));
+  else if(c<992) c=0xB0|(15-((c-480)>>5));
+  else if(c<2016) c=0xA0|(15-((c-992)>>6));
+  else if(c<4064) c=0x90|(15-((c-2016)>>7));
+  else if(c<8160) c=0x80|(15-((c-4064)>>8));
   else c=0x80;
   return(mask&c);
   }
@@ -5331,13 +5337,13 @@ ulaw(int c)
 static void
 plot_zoom(int izoom, int leng, struct Pick_Time *pt, int put)
   {
-  FILE *fp;
-  unsigned char path[NAMLEN],filename[NAMLEN],text_buf[LINELEN],fmt[5];
+  FILE *fp=NULL;
+  char path[NAMLEN],filename[NAMLEN],text_buf[LINELEN], fmt[5];
   char cc;
   short ss;
   long ll;
   int xzero,yzero,i,j,k,sr,buf0,i_map,xz,join,start,np,np_last,x,y,xp,ymax,ymin;
-  unsigned char tbuf[100],tbuf1[STNLEN+CMPLEN];
+  char tbuf[100],tbuf1[STNLEN+CMPLEN];
   double uv[MAX_FILT*4],rec[MAX_FILT*4],sd,dk;
   lPoint pts[5];
 
@@ -5346,7 +5352,7 @@ plot_zoom(int izoom, int leng, struct Pick_Time *pt, int put)
     read_parameter(PARAM_WAVE,path);
     read_parameter(PARAM_FMT,text_buf);
     sscanf(text_buf,"%4s",fmt);
-    fmt[0]=toupper(fmt[0]);
+    fmt[0]=(char)toupper((unsigned char)fmt[0]);
     }
   /* reverse mon */
   if(zoom_win[izoom].valid)
@@ -5669,7 +5675,7 @@ plot_zoom(int izoom, int leng, struct Pick_Time *pt, int put)
         else if(!strcmp(fmt,"C"))  /* numerical characters */
           for(j=0;j<sr;j++)
             {
-            if(fprintf(fp,"%d\n",buf[j])==EOF) goto write_error;
+            if(fprintf(fp,"%ld\n",buf[j])==EOF) goto write_error;
             }
         else if(!strcmp(fmt,"A"))    /* u-law */
           {
@@ -6699,7 +6705,7 @@ measure_max_zoom(int izoom)
 
 static int
 get_max(double *db, int n, int *n_max, int *n_min, int *c_max, int *c_min)
-  /* int *c_max,*c_min;  /* number of the same values */
+  /* int *c_max,*c_min;   number of the same values */
   {
   int i;
   double d_max,d_min;
@@ -6972,7 +6978,7 @@ draw_line(lPoint *pts, int np, int lptn, unsigned char func,
 
 static void
 put_mark_zoom(int idx, int izoom, struct Pick_Time *pt, int mode)
-  /* int mode; /* 0 for observed, 1 for calculated */
+  /* int mode;   0 for observed, 1 for calculated */
   {
   int x,y,i,xshift;
 
@@ -7288,10 +7294,10 @@ get_calc()
        ft.hypoall.along,ft.hypoall.dep,ft.hypoall.mag);
 }
 
-#if HINET_EXTENTION_3
+#if HINET_EXTENTION_3>=2
 static int
 load_data_prep(int btn) /* return=1 means success */
-  /* int btn;  /* MSE_BUTNL, MSE_BUTNM or MSE_BUTNR */
+  /* int btn;     MSE_BUTNL, MSE_BUTNM or MSE_BUTNR */
   {
   FILE *fp,*fq;
   struct dirent *dir_ent;
@@ -7529,7 +7535,9 @@ load_data_prep(int btn) /* return=1 means success */
   if(!ft.hypo.valid) return 0;
   return 1;
   }
+#endif  /* #if HINET_EXTENTION_3>=2  */
 
+#if HINET_EXTENTION_3
 static int
 replot_mon(int replot_locate)
 {
@@ -7621,7 +7629,7 @@ replot_mon(int replot_locate)
     fprintf(stderr,"   %d bytes\n",p2w(width_mon)*height_mon*2);
     /* plot mon */
     plot_mon(base_sec,mon_len,p2w(width_mon)*2,buf_mon);
-    define_bm(&mon[i_mon],BM_MEM,p2w(width_mon)*16,height_mon,buf_mon);
+    define_bm(&mon[i_mon],BM_MEM,p2w(width_mon)*16,height_mon,(char *)buf_mon);
     base_sec+=mon_len;
     }
   if(i_mon<ft.n_mon)
@@ -7768,8 +7776,8 @@ get_delta()
 
 static void
 locate(int flag, int hint)
-  /* int flag; /* 1:output on display */
-  /* int hint; /* 1:use present hypocenter as the initial value */
+  /* int flag;    1:output on display */
+  /* int hint;    1:use present hypocenter as the initial value */
   {
   FILE *fp;
   float init_lat,init_lon;
@@ -7827,7 +7835,7 @@ locate(int flag, int hint)
 
 static void
 list_picks(int more)
-  /* int more; /* if 1, use more */
+  /* int more;    if 1, use more */
   {
   char textbuf[LINELEN];
   FILE *fp;
@@ -7886,7 +7894,7 @@ output_all(FILE *fp)
     if(strcmp(stn,ft.stn[idx].name)==0) continue;
     fprintf(fp,"%-10s ",ft.stn[idx].name);
     fprintf(fp,".   0.000 1.000   0.000 1.000   0.0 0.00e+00");
-    fprintf(fp," %10.5f %10.5f %6d",ft.stn[idx].north,ft.stn[idx].east,
+    fprintf(fp," %10.5f %10.5f %6ld",ft.stn[idx].north,ft.stn[idx].east,
       ft.stn[idx].z);
     if(ft.stn[idx].stcp!=0.0 || ft.stn[idx].stcs!=0.0)
       fprintf(fp," %6.3f %6.3f\n",ft.stn[idx].stcp,ft.stn[idx].stcs);
@@ -7908,6 +7916,7 @@ output_pick(FILE *fp)
   for(i=0;i<ft.n_ch;i++) for(j=0;j<4;j++)
     if(ft.pick[i][j].valid) ft.pick[i][j].valid=(-ft.pick[i][j].valid);
   init=1;
+  lsec_base=0;  /* just for suppress warning */
   for(j=0;j<4;j++) while(1)
     {
     minu=ft.len*1000;
@@ -7978,7 +7987,7 @@ output_pick(FILE *fp)
           }
         if(err>99.0) err=99.0;
         bcd_dec(tm,ft.ptr[sec].time);
-        fprintf(fp," %3d.%03d%6.3f",(int)(time2lsec(tm)-lsec_base),msec,err);
+        fprintf(fp," %3d.%03ld%6.3f",(int)(time2lsec(tm)-lsec_base),msec,err);
         ft.pick[pos[i]][i].valid=(-ft.pick[pos[i]][i].valid);
         }
       else fprintf(fp,"   0.000 0.000");
@@ -8012,7 +8021,7 @@ output_pick(FILE *fp)
     if(sys_ch<0) fprintf(fp,"\n");
     else
       {
-      fprintf(fp," %10.5f %10.5f %6d",ft.stn[ft.ch2idx[sys_ch]].north,
+      fprintf(fp," %10.5f %10.5f %6ld",ft.stn[ft.ch2idx[sys_ch]].north,
         ft.stn[ft.ch2idx[sys_ch]].east,ft.stn[ft.ch2idx[sys_ch]].z);
       if(ft.stn[ft.ch2idx[sys_ch]].stcp!=0.0 ||
           ft.stn[ft.ch2idx[sys_ch]].stcs!=0.0)
@@ -8020,7 +8029,7 @@ output_pick(FILE *fp)
           ft.stn[ft.ch2idx[sys_ch]].stcs);
       else fprintf(fp,"\n");
       }
-    }
+    }  /* while(1) */
   fprintf(fp,"\n");
   }
 
@@ -8058,7 +8067,8 @@ wait_mouse()
 static void
 hard_copy(int ratio)
   {
-  int i,j,x,y,ratio1,d,format;
+  int x,y,ratio1,format;
+  unsigned int i,j,d;
   char textbuf[200],printer[30],*ptr;
 #define FMT_XWD   1
 #define FMT_RASTER  2
@@ -8068,7 +8078,7 @@ hard_copy(int ratio)
   xgetorigin(disp,dpy.drw,&x,&y,&i,&j,&d,&root,&parent);
   if(parent!=ttysw && parent!=root) hardcopy_id=parent;
   else hardcopy_id=dpy.drw;
-  if(ptr=(char *)getenv("DISPLAY")) sprintf(textbuf,"xwd -display %s ",ptr);
+  if((ptr=(char *)getenv("DISPLAY"))) sprintf(textbuf,"xwd -display %s ",ptr);
   else strcpy(textbuf,"xwd ");
   if(ratio<1) ratio=1;
   if(ratio>3) ratio=3;
@@ -8091,18 +8101,18 @@ hard_copy(int ratio)
   if(format==FMT_PS)  /* PostScript */
     {
     if(*printer) sprintf(textbuf+strlen(textbuf),
-      "-id %d | xpr -device ps -scale %d | lpr -P%s",
+      "-id %ld | xpr -device ps -scale %d | lpr -P%s",
         hardcopy_id,ratio,printer);
     else sprintf(textbuf+strlen(textbuf),
-      "-id %d | xpr -device ps -scale %d > %s.ps",
+      "-id %ld | xpr -device ps -scale %d > %s.ps",
       hardcopy_id,ratio,NAME_PRG);
     }
   else if(format==FMT_XWD)  /* XWD format */
     {
     if(*printer) sprintf(textbuf+strlen(textbuf),
-      "-id %d | lpr -P%s -x",hardcopy_id,printer);
+      "-id %ld | lpr -P%s -x",hardcopy_id,printer);
     else sprintf(textbuf+strlen(textbuf),
-      "-id %d > %s.xwd",hardcopy_id,NAME_PRG);
+      "-id %ld > %s.xwd",hardcopy_id,NAME_PRG);
     }
   system(textbuf);
   return;
@@ -8110,11 +8120,11 @@ hard_copy(int ratio)
 
 static void
 draw_ticks(int x_y, int yx, int xy1, int xylen, int num1, int num2, int dir)
-  /* int x_y;    /* 0:X axis, 1:Y axis */
-  /* int yx;     /* pos of axis */
-  /* int xy1,xylen;  /* start and end of axis */
-  /* int num1,num2;  /* range of values */
-  /* int dir;    /* +1/-1, direction of tick mark */
+  /* int x_y;        0:X axis, 1:Y axis */
+  /* int yx;         pos of axis */
+  /* int xy1,xylen;  start and end of axis */
+  /* int num1,num2;  range of values */
+  /* int dir;        +1/-1, direction of tick mark */
   {
   static int steps[]={1,5,10,50,100};
   int i,nsteps,m,n,maxx,xy,tlen;
@@ -8150,8 +8160,8 @@ static void
 draw_coord(int idx, int conv, double along, double alat1, double alat2,
 	   double step, int lptn, int xzero, int yzero, double x_cent,
 	   double y_cent, double cs, double sn)
-  /* int idx;  /* 0:lat, 1:long */
-  /* int conv; /* 1:conv, 0:no conv */ 
+  /* int idx;     0:lat, 1:long */
+  /* int conv;    1:conv, 0:no conv */ 
   {
   int j,x1,x2,y1,y2,xi,yi;
   double  alat,xd,yd;
@@ -8263,7 +8273,7 @@ put_time2(long itv, long t, long *t2, long *t2a,
 
 static int
 draw_ticks_ts(int j, long jj, int it, int step, int k)
-  /* long jj;  /* 64bit ok */
+  /* long jj; */  /* 64bit ok */
   {
   char textbuf[10];
   int x,tim[6],t;
@@ -8304,7 +8314,7 @@ draw_ticks_ts(int j, long jj, int it, int step, int k)
 
 static int
 draw_ticks_ts2(int j, long jj, int it, int k, int *tim, int t)
-  /* long jj;  /* 64bit ok */
+  /* long jj; */   /* 64bit ok */
   {
   char textbuf[10];
   int x;
@@ -8367,7 +8377,7 @@ put_map(int idx)  /* 0:redraw all, 1:plot only hypocenters, */
   /* read map data file */
   if(mapdata==NULL)
     {
-    if(fp=fopen(ft.map_file,"r"))
+    if((fp=fopen(ft.map_file,"r")))
       {
       fseek(fp,0L,2);
       if((mapdata=(MapData *)malloc(size=ftell(fp)))==0)
@@ -8807,8 +8817,8 @@ only:
         i=1;
         }
       else i=read_parameter(PARAM_FINAL,final_dir);
-      if(i==0 || ((dir_ptr=opendir(final_dir))==NULL) &&
-          ((fp=fopen(final_dir,"r"))==NULL))
+      if(i==0 || (((dir_ptr=opendir(final_dir))==NULL) &&
+		  ((fp=fopen(final_dir,"r"))==NULL)))
         {
         /* (1) read hypocenter data from 'PICK' directory */
         if((dir_ptr=opendir(ft.hypo_dir))==NULL)
@@ -9359,7 +9369,7 @@ tsjump: map_mode=MODE_TS3;
   if(other_epis)
     {
     /* 75- */
-    sprintf(mapbuf," N= %d ",jj);
+    sprintf(mapbuf," N= %ld ",jj);
     put_text(&dpy,WIDTH_TEXT*75,height_dpy-MARGIN+Y_LINE1,mapbuf,BF_SI);
     }
   put_function_map();
@@ -9551,10 +9561,12 @@ proc_map()
     else i=0;
     put_text(&dpy,i,Y_LINE1,textbuf,BF_SI);
     if(other_epis)
-      if(map_mode==MODE_NORMAL) put_text(&dpy,WIDTH_TEXT*75,
-        height_dpy-MARGIN+Y_LINE1,textbuf1,BF_SI);
+      {
+      if(map_mode==MODE_NORMAL)
+	put_text(&dpy,WIDTH_TEXT*75,height_dpy-MARGIN+Y_LINE1,textbuf1,BF_SI);
       else if(map_mode==MODE_FIND1 || map_mode==MODE_FIND2)
         put_text(&dpy,WIDTH_TEXT*75,height_dpy-MARGIN+Y_LINE1,textbuf1,BF_S);
+      }
     }
   else if(event.mse_trig==MSE_BUTTON && event.mse_dir==MSE_DOWN)
     {
@@ -10089,7 +10101,7 @@ open_sock(char *host, unsigned short port)
 
 static int
 load_data(int btn) /* return=1 means success */
-  /* int btn;  /* MSE_BUTNL, MSE_BUTNM or MSE_BUTNR */
+  /* int btn;    MSE_BUTNL, MSE_BUTNM or MSE_BUTNR */
   {
   FILE *fp,*fq;
   struct dirent *dir_ent;
@@ -10747,7 +10759,7 @@ proc_psup()
           {
           pu_new.vred=f;
           if(pu_new.vred) sprintf(textbuf,"T - D /%4.1f ",pu_new.vred);
-          else sprintf(textbuf,"     T      ",pu_new.vred);
+          else sprintf(textbuf,"     T      ");
           put_text(&dpy,pu.xx1+(pu.xx2-pu.xx1)/2-WIDTH_TEXT*12/2,
             pu.yy1-MARGIN,textbuf,BF_SI);
           pu_new.valid=1;
@@ -10809,8 +10821,10 @@ proc_psup()
             break;
           case MSE_BUTNM:
             if((i=pu_new.x1_init)>=pu_new.x2)
-            if(pu_new.x2==10) i=5;
-            else if((i=pu_new.x2-10)<0) i=0;
+	      {
+	      if(pu_new.x2==10) i=5;
+	      else if((i=pu_new.x2-10)<0) i=0;
+	      }
             break;
           case MSE_BUTNR:
             if(i>10) i-=10;
@@ -10840,8 +10854,10 @@ proc_psup()
             break;
           case MSE_BUTNM:
             if((i=pu_new.x2_init)<=pu_new.x1)
-            if(pu_new.x1<10) i=pu_new.x1+5;
-            else i=pu_new.x1+10;
+	      {
+	      if(pu_new.x1<10) i=pu_new.x1+5;
+	      else i=pu_new.x1+10;
+	      }
             break;
           case MSE_BUTNR:
             if(i==10 && pu_new.x1<5) i=5;
@@ -11092,7 +11108,7 @@ put_psup()
   draw_ticks(1,t2x(pu.t1),x2y(pu.x1),x2y(pu.x2)-x2y(pu.x1),pu.x1,pu.x2,1);
   draw_ticks(1,t2x(pu.t2),x2y(pu.x1),x2y(pu.x2)-x2y(pu.x1),pu.x1,pu.x2,-1);
   if(pu.vred) sprintf(textbuf,"T - D /%4.1f ",pu.vred);
-  else sprintf(textbuf,"     T      ",pu.vred);
+  else sprintf(textbuf,"     T      ");
   put_text(&dpy,pu.xx1+(pu.xx2-pu.xx1)/2-WIDTH_TEXT*12/2,
     pu.yy1-MARGIN,textbuf,BF_S);
 
@@ -11241,7 +11257,7 @@ save_data(int private)
     *ptr,textbuf1[LINELEN];
   float sec;
 
-  if(not_save) return;
+  if(not_save) return 0;   /* Is it OK? */
   /* if already loaded, delete previous file */
   if(*ft.save_file)
     {
@@ -11669,11 +11685,11 @@ pltxy(double alt0, double alng0,
 /* C version of TIMSAC, by Akaike & Nakagawa (1972) */
 static void
 autcor(double *x, int n, int lagh, double *cxx, double *z)
-  /* double *x;    /* original data */
-  /* int n;      /* N of original data */
-  /* int lagh;   /* largest lag */
-  /* double *cxx;  /* (output) autocovariances (cxx[0] - cxx[lagh]) */
-  /* double *z;    /* mean level */
+  /* double *x;     original data */
+  /* int n;         N of original data */
+  /* int lagh;      largest lag */
+  /* double *cxx;   (output) autocovariances (cxx[0] - cxx[lagh]) */
+  /* double *z;      mean level */
   {
 
   /* mean deletion */
@@ -11717,14 +11733,14 @@ crosco(double *x, double *y, int n, double *c, int lagh1)
 static void
 fpeaut(int l, int n, int lagh, double *cxx, double *ofpe, double *osd,
        int *mo, double *ao)
-  /* int l;      /* upper limit of model order */
-  /* int n;      /* n of original data */
-  /* int lagh;   /* highest lag */
-  /* double *cxx;  /* autocovariances, cxx[0]-cxx[lagh] */
-  /* double *ofpe; /* minimum FPE */
-  /* double *osd;  /* SIGMA^2, variance of residual for minimum FPE */
-  /* int *mo;    /* model order for minimum FPE */
-  /* double *ao;   /* coefficients of AR process, ao[0]-ao[mo-1] */
+  /* int l;          upper limit of model order */
+  /* int n;          n of original data */
+  /* int lagh;       highest lag */
+  /* double *cxx;    autocovariances, cxx[0]-cxx[lagh] */
+  /* double *ofpe;   minimum FPE */
+  /* double *osd;    SIGMA^2, variance of residual for minimum FPE */
+  /* int *mo;        model order for minimum FPE */
+  /* double *ao;     coefficients of AR process, ao[0]-ao[mo-1] */
   {
   double sd,an,anp1,anm1,oofpe,se,d,orfpe,a[500],d2,fpe,rfpe,chi2,
     b[500];
@@ -11785,13 +11801,13 @@ fpeaut(int l, int n, int lagh, double *cxx, double *ofpe, double *osd,
 
 static int
 getar(double *x, int n, double *sd, int *m, double *c, double *z, int lh)
-  /* double *x;  /* input data */
-  /* int n;    /* n of data */
-  /* double *sd; /* standard deviation */
-  /* int *m;   /* order of filter */
-  /* double *c;  /* filter coefficients */
-  /* double *z;  /* mean level */
-  /* int lh;   /* maximum lag */
+  /* double *x;    input data */
+  /* int n;        n of data */
+  /* double *sd;   standard deviation */
+  /* int *m;       order of filter */
+  /* double *c;    filter coefficients */
+  /* double *z;    mean level */
+  /* int lh;       maximum lag */
   {
   double fpe,*cxx;
   int lagh;
@@ -11809,13 +11825,13 @@ getar(double *x, int n, double *sd, int *m, double *c, double *z, int lh)
 
 static void
 digfil(double *x, double *y, int n, double *c, int m, double *r, double *sd)
-  /* double *x;  /* input data */
-  /* double *y;  /* output data */
-  /* int n;    /* n of data */
-  /* double *c;  /* filter coefficients */
-  /* int m;    /* order of filter */
-  /* double *r;  /* last m data */
-  /* double *sd; /* sd (mean-square of residuals) */
+  /* double *x;  input data */
+  /* double *y;  output data */
+  /* int n;       n of data */
+  /* double *c;   filter coefficients */
+  /* int m;       order of filter */
+  /* double *r;   last m data */
+  /* double *sd;  sd (mean-square of residuals) */
   {
   int i,j,k;
   double t,s;
@@ -11864,6 +11880,7 @@ mat_mul(double (*mat)[3], double (*mat1)[3], double (*mat2)[3])
   mat_copy(mat,mat_r);
   }
 
+/*
 static void
 mat_print(char *textbuf, double (*mat)[3])
   {
@@ -11874,6 +11891,7 @@ mat_print(char *textbuf, double (*mat)[3])
     fprintf(stderr,"   { %+9.2e  %+9.2e  %+9.2e }\n",
       mat[i][0],mat[i][1],mat[i][2]);
   }
+*/
 
 static void
 get_mat(double cs, double sn, double (*mat)[3])

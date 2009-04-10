@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.46.2.6.2.8 2009/03/29 10:32:40 uehira Exp $
+   $Id: win.c,v 1.46.2.6.2.9 2009/04/10 10:54:24 uehira Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -1383,7 +1383,7 @@ static void
 make_sec_table()
   {
   int i,ii,j,size,ptr,size_max,sr,tm[6];
-  time_t lsec_done,lsec;
+  time_t lsec_done=0,lsec;  /* just for suppress warning */
   unsigned char c[4],t[6];
 #if OLD_FORMAT
    unsigned int gh;
@@ -2218,7 +2218,7 @@ init_process(int argc, char *argv[], int args)
   struct YMDhms tm;
   FILE *fp;
   DIR *dir_ptr;
-  int i,j,jj,k,kk,sys_ch,height,dum1,dum2,use_default_chfile,n_stations,
+  int i,j,jj,k,kk,sys_ch,height,dum1,dum2,use_default_chfile,n_stations=0, /* just for suppress warning */
     tmd[6];
   unsigned short *rflag;
   float north,east,stcp,stcs,dm1,dm2,sens,to,h,g,adc;
@@ -3008,7 +3008,7 @@ getdata(int idx, struct Pick_Time pt, double **dbp, int *ip)
   /* int idx,*ip;    if interpolated, *ip=1 (for measure MAX) */
   {
   /*  int sec,n1,n2,n3,n,i,j,sr,i1,ii;*/
-  int n1,n2,n3,n,i,j,sr,i1,ii;
+  int n1,n2,n3,n,i,j,sr,i1=0,ii;  /* just for suppress warning */
   double dmax,dmin,drange,*db;
   long sec;
 
@@ -3181,7 +3181,7 @@ pick_phase(int idx, int iph)   /* pick an onset in a range of time */
   {
   int sr,n,n1,i,i_min,width,sec,msec,
     ret,nm,period,m,width_ar;
-  double *db,aic_all,d,sum,dj,zero,freq,level,sd,sdd,sump;
+  double *db,aic_all,d=0.0,sum,dj,zero,freq,level,sd,sdd,sump; /* just for suppress warning */
   struct Pick_Time pt,pt1,pt2;
   static double *db2,*c,*rec;
   static float *aic,*sd1,*sd2;
@@ -5342,7 +5342,7 @@ plot_zoom(int izoom, int leng, struct Pick_Time *pt, int put)
   char cc;
   short ss;
   long ll;
-  int xzero,yzero,i,j,k,sr,buf0,i_map,xz,join,start,np,np_last,x,y,xp,ymax,ymin;
+  int xzero,yzero,i,j,k,sr,buf0=0,i_map,xz,join,start,np,np_last=0,x,y,xp=0,ymax=0,ymin=0;  /* just for suppress warning */
   char tbuf[100],tbuf1[STNLEN+CMPLEN];
   double uv[MAX_FILT*4],rec[MAX_FILT*4],sd,dk;
   lPoint pts[5];
@@ -8002,7 +8002,7 @@ output_pick(FILE *fp)
       sec_err=((time2-time1)/2)/1000;
       if((msec_err=((time2-time1)/2)%1000)==0) msec_err=1;
       bcd_dec(tm,ft.ptr[sec].time);
-      fprintf(fp," %3d.%1d",(int)(time2lsec(tm)-lsec_base),msec/100);
+      fprintf(fp," %3d.%1ld",(int)(time2lsec(tm)-lsec_base),msec/100);
       ft.pick[pos[i]][i].valid=(-ft.pick[pos[i]][i].valid);
       }
     else fprintf(fp,"   0.0");
@@ -8276,7 +8276,7 @@ draw_ticks_ts(int j, long jj, int it, int step, int k)
   /* long jj; */  /* 64bit ok */
   {
   char textbuf[10];
-  int x,tim[6],t;
+  int x,tim[6],t=0; /* just for suppress warning */
 
   if(it==2 && k>0)
     {

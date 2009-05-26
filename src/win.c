@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.38.2.13 2009/05/26 15:11:34 uehira Exp $
+   $Id: win.c,v 1.38.2.14 2009/05/26 15:44:42 uehira Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -7046,7 +7046,7 @@ calc_mec()
     (void)fprintf(stderr, "%s: %s\n", strerror(errno), ps_name);
 
   snprintf(text_buf, sizeof(text_buf),
-	   "calc_mec.csh %s %s > %s", final_name, mecout_name, ps_name);
+	   "calc_mec %s %s > %s", final_name, mecout_name, ps_name);
   system(text_buf);
   snprintf(text_buf, sizeof(text_buf), "gv %s", ps_name);
   system(text_buf);

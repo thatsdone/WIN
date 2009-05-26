@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.38.2.12 2009/01/05 14:55:55 uehira Exp $
+   $Id: win.c,v 1.38.2.13 2009/05/26 15:11:34 uehira Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -21,7 +21,7 @@
 #else
 #define NAME_PRG      "win32"
 #endif
-#define WIN_VERSION   "2008.2.20(+Hi-net)"
+#define WIN_VERSION   "2009.5.26(+Hi-net) SEVO"
 #define DEBUG_AP      0   /* for debugging auto-pick */
 /* 5:sr, 4:ch, 3:sec, 2:find_pick, 1:all */
 /************ HOW TO COMPILE THE PROGRAM **************************
@@ -120,6 +120,7 @@ LOCAL
 
 #include <stdio.h>
 #include <string.h>
+#include <errno.h>
 
 #if TIME_WITH_SYS_TIME
 #include <sys/time.h>
@@ -427,6 +428,7 @@ LOCAL
 /* psup screen */
 /* mech screen */
 #define UPPER       6
+#define MECHA       7
 
   char cursor_color[20]={"blue"},
     *func_main[]={"OPEN" ,"EVDET","AUTPK","HYPO","SAVE","","    ","    ","$"},
@@ -436,7 +438,7 @@ LOCAL
     *func_map2[]={"","OTHRS","$"},
     *func_map3[]={"","RATIO","$"},
     *func_psup[]={"","RFSH","RETN","COPY","MAP","$"},
-    *func_mech[]={"","RFSH","RETN","COPY","MAP","STNS","UP/LO","$"};
+    *func_mech[]={"","RFSH","RETN","COPY","MAP","STNS","UP/LO","MECHA","$"};
 
 #define put_reverse(bm,xzero,yzero,xsize,ysize) \
   put_bitblt(bm,xzero,yzero,xsize,ysize,bm,xzero,yzero,BF_DI)
@@ -7012,6 +7014,48 @@ adj_sec(tm,se,tmc,sec)
   *sec=(double)tmc[5]+f;
   }
 
+calc_mec()
+{
+  char text_buf[LINELEN];
+  char final_name[NAMLEN], mecout_name[NAMLEN], ps_name[NAMLEN];
+  int  fd_final;
+  FILE  *fp_final, *fq;
+
+  fprintf(stderr, "MECHA\n");
+  if(read_parameter(PARAM_TEMP, text_buf) == 0)
+    strcpy(text_buf, ".");
+  snprintf(final_name, sizeof(final_name), "%s/final.XXXXXX", text_buf);
+  snprintf(mecout_name, sizeof(mecout_name), "%s/mecout.XXXXXX", text_buf);
+  snprintf(ps_name, sizeof(ps_name), "%s/psname.XXXXXX", text_buf);
+
+  /* final file */
+  if ((fd_final = mkstemp(final_name)) == -1)
+    (void)fprintf(stderr, "%s: %s\n", strerror(errno), final_name);
+  if ((fp_final = fdopen(fd_final, "w")) == NULL)
+    (void)fprintf(stderr, "%s\n", strerror(errno));
+  fq = fopen(ft.finl_file, "r");
+  while(fgets(text_buf, sizeof(text_buf), fq) != NULL)
+    fprintf(fp_final, "#f %s",text_buf);
+  fclose(fp_final);
+
+  /* GAMECHA output name */
+  if (mkstemp(mecout_name) == -1)
+    (void)fprintf(stderr, "%s: %s\n", strerror(errno), mecout_name);
+  /* ps name */
+  if (mkstemp(ps_name) == -1)
+    (void)fprintf(stderr, "%s: %s\n", strerror(errno), ps_name);
+
+  snprintf(text_buf, sizeof(text_buf),
+	   "calc_mec.csh %s %s > %s", final_name, mecout_name, ps_name);
+  system(text_buf);
+  snprintf(text_buf, sizeof(text_buf), "gv %s", ps_name);
+  system(text_buf);
+
+  (void)unlink(final_name);
+  (void)unlink(mecout_name);
+  (void)unlink(ps_name);
+}
+
 get_calc()  /* get calculated arrival times for all stations */
 {
   int iz,i,j,tm_p[7],tm_s[7],tm_ot[7],tm_base[6];
@@ -10193,6 +10237,10 @@ proc_mecha()
             refresh();
             ring_bell=0;
             break;
+	  case MECHA:
+	    raise_ttysw(1);
+	    calc_mec();
+	    break;
           }
         }
       else if(mecha_mode==MODE_DOWN)

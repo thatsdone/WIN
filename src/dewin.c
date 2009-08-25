@@ -1,4 +1,4 @@
-/* $Id: dewin.c,v 1.4.4.3.2.4 2008/12/29 11:25:11 uehira Exp $ */
+/* $Id: dewin.c,v 1.4.4.3.2.5 2009/08/25 04:00:15 uehira Exp $ */
 /* program dewin  1994.4.11-4.20  urabe */
 /*                1996.2.23 added -n option */
 /*                1996.9.12 added -8 option */
@@ -24,7 +24,7 @@
 
 #include "winlib.h"
 
-#define   DEBUG   0
+/* #define   DEBUG   0 */
 
 #define LINELEN     1024
 #define MAX_FILT    100
@@ -300,7 +300,7 @@ main(argc,argv)
   }
 
   sec=sr_save=i=0;
-  while(mainsize=read_onesec_win(f_main,&mainbuf)){
+  while((mainsize=read_onesec_win(f_main,&mainbuf))){
      if((sr=read_one_sec(mainbuf,sysch,buf))==0) continue;
      bcd_dec(time3,mainbuf+4);
      if(sr_save==0){

@@ -1,4 +1,4 @@
-/* $Id: raw_ch.c,v 1.4.4.3.2.2 2008/11/18 02:27:58 uehira Exp $ */
+/* $Id: raw_ch.c,v 1.4.4.3.2.3 2009/08/25 04:00:15 uehira Exp $ */
 /* "raw_ch.c"    99.12.8 urabe */
 /*                  modified from raw_raw.c */
 /*                  byte-order-free */
@@ -14,6 +14,7 @@
 #include <signal.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
@@ -34,7 +35,7 @@
 
 #include "winlib.h"
 
-#define DEBUG       0
+/* #define DEBUG       0 */
 #define BELL        0
 
 int ch_table[65536];
@@ -107,13 +108,13 @@ main(argc,argv)
   int shmid_raw,shmid_mon;
   unsigned long uni;
   char tb[100];
-  unsigned char *ptr,*ptw,tm[6],*ptr_lim,*ptr_save;
-  int sr,i,j,k,size,n,size_shm,tow;
+  unsigned char *ptr,*ptw,*ptr_lim,*ptr_save;
+  int sr,i,size,size_shm,tow;
   unsigned long c_save;
   unsigned short ch;
   int gs,gh;
 
-  if(progname=strrchr(argv[0],'/')) progname++;
+  if((progname=strrchr(argv[0],'/')) != NULL) progname++;
   else progname=argv[0];
   exit_status=0;
   if(argc<4)
@@ -122,8 +123,7 @@ main(argc,argv)
       " usage : '%s [in_key] [out_key] [shm_size(KB)] \\\n",
       progname);
     fprintf(stderr,
-      "                       (-/[ch_file]/-[ch_file] ([log file]))'\n",
-      progname);
+      "                       (-/[ch_file]/-[ch_file] ([log file]))'\n");
     exit(1);
     }
   rawkey=atoi(argv[1]);

@@ -13,6 +13,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stddef.h>
+#include <unistd.h>
 
 #include <sys/types.h>
 #include <sys/ipc.h>
@@ -72,8 +73,8 @@ char *argv[];
     int tmst = 0;
     int mdim = MAXCH;
 
-    extern int optind;
-    extern char *optarg;
+/*     extern int optind; */
+/*     extern char *optarg; */
 
     while ((c = getopt(argc, argv, "hk:s:tm:")) != -1) {
 	switch (c) {

@@ -1,4 +1,4 @@
-/* $Id: recvstatus3.c,v 1.8.2.1 2008/05/17 14:22:01 uehira Exp $ */
+/* $Id: recvstatus3.c,v 1.8.2.1.2.1 2009/08/25 04:00:15 uehira Exp $ */
 
 /* 
  * recvstatus3 :
@@ -49,7 +49,7 @@
 #define PATHMAX      1024
 
 static char rcsid[] =
-  "$Id: recvstatus3.c,v 1.8.2.1 2008/05/17 14:22:01 uehira Exp $";
+  "$Id: recvstatus3.c,v 1.8.2.1.2.1 2009/08/25 04:00:15 uehira Exp $";
 
 char *progname, *logfile;
 int  daemon_mode, syslog_mode;
@@ -70,7 +70,7 @@ main(int argc, char *argv[])
   struct sockaddr *sa = (struct sockaddr *)&ss;
   socklen_t   fromlen;
   ssize_t     psize;
-  int  maxsoc, maxsoc1;
+  int  maxsoc;
   fd_set  rset;
   FILE  *fp;
   int  sockbuf;
@@ -85,7 +85,7 @@ main(int argc, char *argv[])
   char port_[NI_MAXSERV];  /* port No. */
 #endif
 
-  if (progname = strrchr(argv[0], '/'))
+  if ((progname = strrchr(argv[0], '/')) != NULL)
     progname++;
   else
     progname = argv[0];
@@ -192,7 +192,7 @@ main(int argc, char *argv[])
       (void)getnameinfo(sa, fromlen,
 			host_, sizeof(host_), port_, sizeof(port_),
 			NI_DGRAM | NI_NUMERICHOST | NI_NUMERICSERV);
-      (void)printf("%s : %s : %d byte(s)\n", host_, port_, psize);
+      (void)printf("%s : %s : %ld byte(s)\n", host_, port_, psize);
 #endif
 
 #if DEBUG
@@ -249,14 +249,14 @@ main(int argc, char *argv[])
 	dsize = fwrite(ptr, 1, LS8_A8_DLEN, fp);
 	if (dsize != LS8_A8_DLEN) {
 	  (void)snprintf(msg, sizeof(msg),
-			 "strange A8 packet: %d bytes\n", dsize);
+			 "strange A8 packet: %ld bytes\n", dsize);
 	  write_log(msg);
 	}
       } else if (rbuf[LS8_PID] == 0xA9) {
 	dsize = fwrite(ptr, 1, LS8_A9_DLEN, fp);
 	if (dsize != LS8_A9_DLEN) {
 	  (void)snprintf(msg, sizeof(msg),
-			 "strange A9 packet: %d bytes\n", dsize);
+			 "strange A9 packet: %ld bytes\n", dsize);
 	  write_log(msg);
 	}
       }

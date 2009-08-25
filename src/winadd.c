@@ -1,4 +1,4 @@
-/* $Id: winadd.c,v 1.4.4.3.2.2 2008/11/13 03:03:02 uehira Exp $ */
+/* $Id: winadd.c,v 1.4.4.3.2.3 2009/08/25 04:00:16 uehira Exp $ */
 
 /*
  * winadd.c  (Uehira Kenji)
@@ -8,6 +8,7 @@
  *  99/1/6    skip no data file
  *  2000/2/29  bye-order free. delete NR code.
  *  2003/11/2-3  memory mode.
+ *  2009/8/1  64bit clean?
  *
  */
 
@@ -38,7 +39,12 @@
 #include <memory.h>
 
 #include "winlib.h"
-#include "win_system.h"
+/* #include "win_system.h" */
+
+/*  #define   DEBUG  0 */
+#define  CH_INC     1000
+#define  TIME_INC   3600
+#define  MIN_LEN    8  /* minimum channel block length */
 
 struct data_index {
   unsigned long  len;
@@ -51,15 +57,15 @@ typedef struct data_index  INDX;
 
 /* global variables */
 static const char rcsid[] =
-   "$Id: winadd.c,v 1.4.4.3.2.2 2008/11/13 03:03:02 uehira Exp $";
+   "$Id: winadd.c,v 1.4.4.3.2.3 2009/08/25 04:00:16 uehira Exp $";
 static int  dummy_flag, verbose_flag;
 
 /* prototypes */
 static void memory_mode_run(int, char *[]);
-static void get_index_from_buf(unsigned char *, off_t, int,
+static void get_index_from_buf(uint8_w *, off_t, int,
 			       INDX **, WIN_ch *, int,
 			       time_t *, int);
-static void win_file_read_from_buf(unsigned char *, off_t,
+static void win_file_read_from_buf(uint8_w *, off_t,
 				   WIN_ch **, int *, int *,
 				   time_t **, int *, int *);
 static void file_mode_run(int, char *[]);
@@ -68,16 +74,11 @@ static void get_index(char *, INDX **, WIN_ch *, int,
 static void win_file_read(char *, WIN_ch **, int *, int *,
 			  time_t **, int *, int *);
 static int time_cmpq(const void *, const void *);
-static void time2bcd(time_t, unsigned char *);
-static time_t bcd2time(unsigned char *);
+static void time2bcd(time_t, uint8_w *);
+static time_t bcd2time(uint8_w *);
 static void memory_error(void);
 static void usage(void);
 int main(int, char *[]);
-
-/*  #define   DEBUG  0 */
-#define  CH_INC     100
-#define  TIME_INC   60
-#define  MIN_LEN    8  /* minimum channel block length */
 
 int
 main(int argc, char *argv[])
@@ -125,6 +126,7 @@ static void
 usage(void)
 {
 
+  WIN_version();
   (void)fprintf(stderr, "%s\n", rcsid);
   (void)fputs("Usage : winadd [options] file1 file2 ... > output\n", stderr);
   (void)fputs("  options : -n         : do not append dummy headers.\n",
@@ -142,7 +144,7 @@ memory_error(void)
 }
 
 static time_t
-bcd2time(unsigned char *bcd)
+bcd2time(uint8_w *bcd)
 {
   int  t[6];
   struct tm  time_str;
@@ -168,7 +170,7 @@ bcd2time(unsigned char *bcd)
 }
 
 static void
-time2bcd(time_t time, unsigned char *bcd)
+time2bcd(time_t time, uint8_w *bcd)
 {
   int          t[6];
   struct tm    time_str;
@@ -210,13 +212,13 @@ win_file_read(char *name, WIN_ch **ch, int *ch_num, int *ch_num_arr,
 	      time_t **time, int *time_num, int *time_num_arr)
 {
   FILE            *fp;
-  unsigned char   tt[WIN_TIME_LEN], re_c[4];
-  unsigned char   *ptr, *buf;
+  uint8_w   tt[WIN_TIME_LEN], re_c[4];
+  uint8_w   *ptr, *buf;
   WIN_blocksize   re, re_debug, gsize;
   WIN_sr          srdummy;
   time_t          time_tmp;
   WIN_ch  ch_tmp;
-  int             i;
+  int             i, ss;
   
   if (NULL == (fp = fopen(name, "r"))) {
     (void)fprintf(stderr, "Warring! Skip file : %s\n", name);
@@ -228,7 +230,7 @@ win_file_read(char *name, WIN_ch **ch, int *ch_num, int *ch_num_arr,
   while (fread(re_c, 1, WIN_BLOCKSIZE_LEN, fp) == WIN_BLOCKSIZE_LEN) {
     re = mkuint4(re_c);
     re -= WIN_BLOCKSIZE_LEN;
-    if (NULL == (buf = MALLOC(unsigned char, re))) {
+    if (NULL == (buf = MALLOC(uint8_w, re))) {
       (void)fclose(fp);
       memory_error();
     }
@@ -260,7 +262,7 @@ win_file_read(char *name, WIN_ch **ch, int *ch_num, int *ch_num_arr,
 
     /* read & compare channel number */
     while (ptr < buf + re) {
-      gsize = win_get_chhdr(ptr, &ch_tmp, &srdummy);
+      gsize = win_chheader_info(ptr, &ch_tmp, &srdummy, &ss);
 
       /* ch number */
       for (i = 0; i < *ch_num; ++i)
@@ -289,14 +291,14 @@ get_index(char *name, INDX **indx, WIN_ch *ch, int ch_num,
 	  time_t *time, int time_num)
 {
   FILE   *fp;
-  unsigned char  tt[WIN_TIME_LEN], re_c[4];
-  unsigned char  *ptr, *buf;
+  uint8_w  tt[WIN_TIME_LEN], re_c[4];
+  uint8_w  *ptr, *buf;
   unsigned long  point;
   WIN_blocksize  re, gsize;
   WIN_sr         srdummy;
   time_t         time_tmp;
   WIN_ch ch_tmp;
-  int            i;
+  int            i, ss;
   int            time_sfx, ch_sfx;
    
   if (NULL == (fp = fopen(name, "r"))) {
@@ -310,7 +312,7 @@ get_index(char *name, INDX **indx, WIN_ch *ch, int ch_num,
   while (fread(re_c, 1, WIN_BLOCKSIZE_LEN, fp) == WIN_BLOCKSIZE_LEN) {
     re = mkuint4(re_c);
     re -= 4;
-    if (NULL == (buf = MALLOC(unsigned char, re))) {
+    if (NULL == (buf = MALLOC(uint8_w, re))) {
       (void)fclose(fp);
       memory_error();
     }
@@ -330,7 +332,7 @@ get_index(char *name, INDX **indx, WIN_ch *ch, int ch_num,
     time_sfx = i;
     /* read & compare channel number */
     while (ptr < buf + re){
-      gsize = win_get_chhdr(ptr, &ch_tmp, &srdummy);
+      gsize = win_chheader_info(ptr, &ch_tmp, &srdummy, &ss);
       
       /* ch number */
       for (i = 0; i < ch_num; ++i)
@@ -369,8 +371,8 @@ file_mode_run(int argcc, char *argvv[])
   INDX   **indx;
   unsigned long  *sortin, *time_sort;
   unsigned long secbuf_len, len_max;
-  unsigned char *outbuf, *secbuf, *ptr;
-  unsigned char tt[WIN_TIME_LEN];
+  uint8_w *outbuf, *secbuf, *ptr;
+  uint8_w tt[WIN_TIME_LEN];
   FILE  *fp_in;
 
   if (verbose_flag)
@@ -449,9 +451,9 @@ file_mode_run(int argcc, char *argvv[])
 	secbuf_len += MIN_LEN;
     }
   }
-  if (NULL == (secbuf = MALLOC(unsigned char, secbuf_len)))
+  if (NULL == (secbuf = MALLOC(uint8_w, secbuf_len)))
     memory_error();
-  if (NULL == (outbuf = MALLOC(unsigned char, len_max)))
+  if (NULL == (outbuf = MALLOC(uint8_w, len_max)))
     memory_error();
   ptr = secbuf;
   ptr[0] = secbuf_len >> 24;
@@ -492,9 +494,9 @@ file_mode_run(int argcc, char *argvv[])
     if (dummy_flag && (((*time)[sortin[j]] - (*time)[sortin[j - 1]]) != 1)) {
       secbuf_len = 18;
       len_max = MIN_LEN;
-      if (NULL == (secbuf = MALLOC(unsigned char, secbuf_len)))
+      if (NULL == (secbuf = MALLOC(uint8_w, secbuf_len)))
 	memory_error();
-      if (NULL == (outbuf = MALLOC(unsigned char, len_max)))
+      if (NULL == (outbuf = MALLOC(uint8_w, len_max)))
 	memory_error();
       ptr = secbuf;
       ptr[0] = secbuf_len >> 24;
@@ -523,9 +525,9 @@ file_mode_run(int argcc, char *argvv[])
 	if (len_max < indx[i][sortin[j]].len)
 	  len_max = indx[i][sortin[j]].len;
       }
-    if (NULL == (secbuf = MALLOC(unsigned char, secbuf_len)))
+    if (NULL == (secbuf = MALLOC(uint8_w, secbuf_len)))
       memory_error();
-    if (NULL == (outbuf = MALLOC(unsigned char, len_max)))
+    if (NULL == (outbuf = MALLOC(uint8_w, len_max)))
       memory_error();
     ptr = secbuf;
     ptr[0] = secbuf_len >> 24;
@@ -571,17 +573,17 @@ file_mode_run(int argcc, char *argvv[])
  * memory mode functions
  */
 static void
-win_file_read_from_buf(unsigned char *rawbuf, off_t rawsize,
+win_file_read_from_buf(uint8_w *rawbuf, off_t rawsize,
 		       WIN_ch **ch, int *ch_num, int *ch_num_arr,
 		       time_t **time, int *time_num, int *time_num_arr)
 {
-  unsigned char   tt[WIN_TIME_LEN];
-  unsigned char   *ptr, *ptr_limit, *buf;
+  uint8_w   tt[WIN_TIME_LEN];
+  uint8_w   *ptr, *ptr_limit, *buf;
   WIN_blocksize   re, gsize;
   WIN_sr          srdummy;
   time_t          time_tmp;
   WIN_ch          ch_tmp;
-  int             i;
+  int             i, ss;
 
   ptr = rawbuf;
   ptr_limit = rawbuf + rawsize;
@@ -611,7 +613,7 @@ win_file_read_from_buf(unsigned char *rawbuf, off_t rawsize,
     }
     /* read & compare channel number */
     while (ptr < buf + re) {
-      gsize = win_get_chhdr(ptr, &ch_tmp, &srdummy);
+      gsize = win_chheader_info(ptr, &ch_tmp, &srdummy, &ss);
 
       /* ch number */
       for (i = 0; i < *ch_num; ++i)
@@ -634,17 +636,17 @@ win_file_read_from_buf(unsigned char *rawbuf, off_t rawsize,
 
 
 static void
-get_index_from_buf(unsigned char *rawbuf, off_t rawsize, int main_sfx,
+get_index_from_buf(uint8_w *rawbuf, off_t rawsize, int main_sfx,
 		   INDX **indx, WIN_ch *ch, int ch_num,
 		   time_t *time, int time_num)
 {
-  unsigned char  tt[WIN_TIME_LEN], re_c[4];
-  unsigned char  *ptr, *ptr_limit, *buf;
+  uint8_w  tt[WIN_TIME_LEN];
+  uint8_w  *ptr, *ptr_limit, *buf;
   WIN_sr         srdummy;
   WIN_blocksize  re, gsize;
   time_t         time_tmp;
   WIN_ch         ch_tmp;
-  int            i;
+  int            i, ss;
   int            time_sfx, ch_sfx;
   unsigned long  point;
 
@@ -672,7 +674,7 @@ get_index_from_buf(unsigned char *rawbuf, off_t rawsize, int main_sfx,
 
     /* read & compare channel number */
     while (ptr < buf + re){
-      gsize = win_get_chhdr(ptr, &ch_tmp, &srdummy);
+      gsize = win_chheader_info(ptr, &ch_tmp, &srdummy, &ss);
 
       /* ch number */
       for (i = 0; i < ch_num; ++i)
@@ -687,7 +689,7 @@ get_index_from_buf(unsigned char *rawbuf, off_t rawsize, int main_sfx,
 	indx[ch_sfx][time_sfx].point = point;
 	indx[ch_sfx][time_sfx].len = gsize;
 #if DEBUG
-	   fprintf(stderr,"indx[%d][%d]-->%d  fnum=%d  point=%d  len=%d\n",
+	   fprintf(stderr,"indx[%d][%d]-->%d  fnum=%d  point=%ld  len=%ld\n",
 		   ch_sfx,time_sfx,indx[ch_sfx][time_sfx].flag,
 		   indx[ch_sfx][time_sfx].fnum,indx[ch_sfx][time_sfx].point,
 		   indx[ch_sfx][time_sfx].len);
@@ -706,18 +708,18 @@ memory_mode_run(int argcc, char *argvv[])
   static time_t  *time[1];
   static WIN_ch  *ch[1];
   int  ch_num = 0, time_num = 0, ch_num_arr, time_num_arr;
-  WIN_blocksize   re_debug;
+  size_t re_debug;
   FILE  *fp_in;
   struct stat  sb;
-  static unsigned char  **rawbuf;
+  static uint8_w  **rawbuf;
   off_t  *raw_size;
   int  *fopen_flag;
   int  i, j;
   INDX   **indx;
   unsigned long  *sortin, *time_sort;
   unsigned long  secbuf_len;
-  unsigned char  hbuf[10]; /* WIN_BLOCKSIZE_LEN + WIN_TIME_LEN */
-  unsigned char tt[WIN_TIME_LEN];
+  uint8_w  hbuf[10]; /* WIN_BLOCKSIZE_LEN + WIN_TIME_LEN */
+  uint8_w tt[WIN_TIME_LEN];
 
   if (verbose_flag)
     (void)fprintf(stderr, "Memory mode\n");
@@ -729,7 +731,7 @@ memory_mode_run(int argcc, char *argvv[])
   time_num_arr = TIME_INC;
   ch_num_arr = CH_INC;
 
-  if ((rawbuf = MALLOC(unsigned char *, argcc)) == NULL)
+  if ((rawbuf = MALLOC(uint8_w *, argcc)) == NULL)
     memory_error();
   if ((fopen_flag = MALLOC(int, argcc)) == NULL)
     memory_error();
@@ -737,7 +739,8 @@ memory_mode_run(int argcc, char *argvv[])
     memory_error();
 
   /*** file loop ***/
-  for (i = 0; i < argcc; ++i) { 
+  /* First, check malloc memory */
+  for (i = 0; i < argcc; ++i) {
     fp_in = fopen(argvv[i], "r");
     if (fp_in == NULL) {  /* skip file */
       (void)fprintf(stderr, "Skip file : %s (%s)\n",
@@ -746,6 +749,7 @@ memory_mode_run(int argcc, char *argvv[])
       continue;
     } else
       fopen_flag[i] = 1;
+    (void)fclose(fp_in);
     
     /* get file size */
     if (stat(argvv[i], &sb)) {
@@ -754,22 +758,32 @@ memory_mode_run(int argcc, char *argvv[])
     }
     raw_size[i] = sb.st_size;
     if (verbose_flag)
-      (void)fprintf(stderr, "%s: %d\n", argvv[i], raw_size[i]);
+      (void)fprintf(stderr, "%s: %ld bytes\n", argvv[i], raw_size[i]);
 
     /* malloc memory. unless get memory, memory mode tunes off */
-    rawbuf[i] = MALLOC(unsigned char, raw_size[i]);
+    rawbuf[i] = MALLOC(uint8_w, raw_size[i]);
     if (rawbuf[i] == NULL) {
       (void)fprintf(stderr, "Memory mode off\n");
       for (j = 0; j < i; ++j)
 	FREE(rawbuf[j]);
       return;  /* go back to file mode */
     }
+  }  /* for (i = 0; i < argcc; ++i) */
+
+  /* Then read data */
+  for (i = 0; i < argcc; ++i) {
+    if (!fopen_flag[i])
+      continue;
+    fp_in = fopen(argvv[i], "r");
+
+    if (verbose_flag)
+      (void)fprintf(stderr, "Reading '%s' ......\n", argvv[i]);
 
     /* read win raw file */
     re_debug = fread(rawbuf[i], 1, (size_t)raw_size[i], fp_in);
     if (re_debug != raw_size[i]) {
       (void)fprintf(stderr, "Input file is strange! : %s\n", argvv[i]);
-      (void)fprintf(stderr, "  Require=%u [byte], but %u [byte]\n",
+      (void)fprintf(stderr, "  Require=%lu [byte], but %lu [byte]\n",
 		    raw_size[i], re_debug);
       exit(1);
     }
@@ -838,10 +852,10 @@ memory_mode_run(int argcc, char *argvv[])
 	secbuf_len += MIN_LEN;
     }
   }
-  hbuf[0] = (unsigned char)(secbuf_len >> 24);
-  hbuf[1] = (unsigned char)(secbuf_len >> 16);
-  hbuf[2] = (unsigned char)(secbuf_len >> 8);
-  hbuf[3] = (unsigned char)secbuf_len;
+  hbuf[0] = (uint8_w)(secbuf_len >> 24);
+  hbuf[1] = (uint8_w)(secbuf_len >> 16);
+  hbuf[2] = (uint8_w)(secbuf_len >> 8);
+  hbuf[3] = (uint8_w)secbuf_len;
   time2bcd((*time)[sortin[0]], tt);
   memcpy(&hbuf[4], tt, WIN_TIME_LEN);  /* copy time stamp */
   (void)fwrite(hbuf, 1, 10, stdout);   /* output secsize and time stamp */
@@ -869,10 +883,10 @@ memory_mode_run(int argcc, char *argvv[])
     /* if time jumps, add dummy data */
     if (dummy_flag && (((*time)[sortin[j]] - (*time)[sortin[j - 1]]) != 1)) {
       secbuf_len = 18;
-      hbuf[0] = (unsigned char)(secbuf_len >> 24);
-      hbuf[1] = (unsigned char)(secbuf_len >> 16);
-      hbuf[2] = (unsigned char)(secbuf_len >> 8);
-      hbuf[3] = (unsigned char)secbuf_len;
+      hbuf[0] = (uint8_w)(secbuf_len >> 24);
+      hbuf[1] = (uint8_w)(secbuf_len >> 16);
+      hbuf[2] = (uint8_w)(secbuf_len >> 8);
+      hbuf[3] = (uint8_w)secbuf_len;
       time2bcd((*time)[sortin[j - 1]] + 1, tt);
       memcpy(&hbuf[4], tt, WIN_TIME_LEN);  /* copy time stamp */
       (void)fwrite(hbuf, 1, 10, stdout);   /* output secsize and time stamp */
@@ -889,10 +903,10 @@ memory_mode_run(int argcc, char *argvv[])
     for (i = 0; i < ch_num; ++i)
       if (indx[i][sortin[j]].flag)
 	secbuf_len += indx[i][sortin[j]].len;
-    hbuf[0] = (unsigned char)(secbuf_len >> 24);
-    hbuf[1] = (unsigned char)(secbuf_len >> 16);
-    hbuf[2] = (unsigned char)(secbuf_len >> 8);
-    hbuf[3] = (unsigned char)secbuf_len;
+    hbuf[0] = (uint8_w)(secbuf_len >> 24);
+    hbuf[1] = (uint8_w)(secbuf_len >> 16);
+    hbuf[2] = (uint8_w)(secbuf_len >> 8);
+    hbuf[3] = (uint8_w)secbuf_len;
     time2bcd((*time)[sortin[j]], tt);
     memcpy(&hbuf[4], tt, WIN_TIME_LEN);  /* copy time stamp */
     (void)fwrite(hbuf, 1, 10, stdout);   /* output secsize and time stamp */

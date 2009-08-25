@@ -1,4 +1,4 @@
-/* $Id: wck.c,v 1.5.4.1.2.5 2008/12/29 11:25:12 uehira Exp $ */
+/* $Id: wck.c,v 1.5.4.1.2.6 2009/08/25 04:00:16 uehira Exp $ */
 /*- 
    program "wck.c"
 	"wck" checks a win format data file
@@ -37,10 +37,10 @@
 #define DEBUG1  0
 
 static char rcsid[] =
-  "$Id: wck.c,v 1.5.4.1.2.5 2008/12/29 11:25:12 uehira Exp $";
+  "$Id: wck.c,v 1.5.4.1.2.6 2009/08/25 04:00:16 uehira Exp $";
 
 char *progname;
-unsigned long count[WIN_CHMAX];
+static unsigned long count[WIN_CHMAX];
 
 static void
 ctrlc()
@@ -79,7 +79,7 @@ main(argc,argv)
    signal(SIGINT,(void *)ctrlc);
    signal(SIGTERM,(void *)ctrlc);
    signal(SIGPIPE,(void *)ctrlc);
-   if((progname=strrchr(argv[0],'/'))) progname++;
+   if((progname=strrchr(argv[0],'/')) != NULL) progname++;
    else progname=argv[0]; 
    mode=RAW;
    while((c=getopt(argc,argv,"mrhctu"))!=-1)

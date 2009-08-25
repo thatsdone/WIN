@@ -1,6 +1,8 @@
-/*
- * $Id: win2raw.c,v 1.7.2.2 2008/05/17 14:22:05 uehira Exp $
- */
+/* $Id: win2raw.c,v 1.7.2.2.2.1 2009/08/25 04:00:16 uehira Exp $ */
+
+/*-
+  2009.7.31  64bit check
+  -*/
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -13,10 +15,10 @@
 #include <unistd.h>
 
 #include "winlib.h"
-#include "win_system.h"
+/* #include "win_system.h" */
 
 static const char  rcsid[] =
-   "$Id: win2raw.c,v 1.7.2.2 2008/05/17 14:22:05 uehira Exp $";
+   "$Id: win2raw.c,v 1.7.2.2.2.1 2009/08/25 04:00:16 uehira Exp $";
 static char  *progname;
 
 static void usage(void);
@@ -37,8 +39,8 @@ main(int argc, char *argv[])
   FILE  *fpin, *fpraw = NULL;
   int  c, uflag = 0, vflag = 0, mode = 5, submode = 0;
   char  *rawdir, fullname[NAMELEN];
-  unsigned char  *dbuf = NULL;
-  WIN_blocksize  dsize;
+  uint8_w  *dbuf = NULL;
+  WIN_bs  dsize;
   int  dtime[WIN_TIME_LEN], dtime_save[5];
   int  i;
 
@@ -206,6 +208,7 @@ static void
 usage(void)
 {
 
+  WIN_version();
   (void)fprintf(stderr, "%s\n", rcsid);
   (void)fprintf(stderr, "Usage : %s [options] rawdir [data]\n", progname);
   (void)fprintf(stderr, "   options: -u    : unlink input data file\n");

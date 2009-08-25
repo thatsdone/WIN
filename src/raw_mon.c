@@ -1,4 +1,4 @@
-/* $Id: raw_mon.c,v 1.6.4.4.2.4 2008/11/23 10:01:09 uehira Exp $ */
+/* $Id: raw_mon.c,v 1.6.4.4.2.5 2009/08/25 04:00:15 uehira Exp $ */
 /* "raw_mon.c"      7/2/93,6/17/94,6/28/94    urabe */
 /*                  3/17/95 write_log(), 4/17/95 MAX_SR safety */
 /*                  usleep -> sleep */
@@ -27,6 +27,7 @@
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
+#include <sys/stat.h>
 
 #if TIME_WITH_SYS_TIME
 #include <sys/time.h>
@@ -47,97 +48,19 @@
 #include "daemon_mode.h"
 #include "winlib.h"
 
-#define DEBUG       0
+/* #define DEBUG       0 */
 #define BELL        0
 #define MAX_SR      4096
 /* #define SR_MON      5 */
 
-int32_w buf_raw[MAX_SR],buf_mon[SR_MON][2];
-unsigned char ch_table[65536];
-char *progname,*logfile,chfile[256];
-int n_ch,negate_channel;
+char *progname,*logfile;
 int  daemon_mode, syslog_mode;
 int  exit_status;
 
-get_mon(gm_sr,gm_raw,gm_mon)
-  int gm_sr,*gm_raw,(*gm_mon)[2];
-  {
-  int gm_i,gm_j,gm_subr;
-  switch(gm_sr)
-    {
-    case 100:
-      gm_subr=100/SR_MON;
-      break;
-    case 20:
-      gm_subr=20/SR_MON;
-      break;
-    case 120:
-      gm_subr=120/SR_MON;
-      break;
-    default:
-      gm_subr=gm_sr/SR_MON;
-      break;
-    }
-  for(gm_i=0;gm_i<SR_MON;gm_i++)
-    {
-    gm_mon[gm_i][0]=gm_mon[gm_i][1]=(*gm_raw);
-    for(gm_j=0;gm_j<gm_subr;gm_j++)
-      {
-      if(*gm_raw<gm_mon[gm_i][0]) gm_mon[gm_i][0]=(*gm_raw);
-      else if(*gm_raw>gm_mon[gm_i][1]) gm_mon[gm_i][1]=(*gm_raw);
-      gm_raw++;
-      }
-    }
-  }
-
-unsigned char *compress_mon(peaks,ptr)
-  int *peaks;
-  unsigned char *ptr;
-  {
-  /* data compression */
-  if(((peaks[0]&0xffffffc0)==0xffffffc0 || (peaks[0]&0xffffffc0)==0) &&
-    ((peaks[1]&0xffffffc0)==0xffffffc0 ||(peaks[1]&0xffffffc0)==0))
-    {
-    *ptr++=((peaks[0]&0x70)<<1)|((peaks[1]&0x70)>>2);
-    *ptr++=((peaks[0]&0xf)<<4)|(peaks[1]&0xf);
-    }
-  else
-  if(((peaks[0]&0xfffffc00)==0xfffffc00 || (peaks[0]&0xfffffc00)==0) &&
-    ((peaks[1]&0xfffffc00)==0xfffffc00 ||(peaks[1]&0xfffffc00)==0))
-    {
-    *ptr++=((peaks[0]&0x700)>>3)|((peaks[1]&0x700)>>6)|1;
-    *ptr++=peaks[0];
-    *ptr++=peaks[1];
-    }
-  else
-  if(((peaks[0]&0xfffc0000)==0xfffc0000 ||(peaks[0]&0xfffc0000)==0) &&
-    ((peaks[1]&0xfffc0000)==0xfffc0000 ||(peaks[1]&0xfffc0000)==0))
-    {
-    *ptr++=((peaks[0]&0x70000)>>11)|((peaks[1]&0x70000)>>14)|2;
-    *ptr++=peaks[0];
-    *ptr++=peaks[0]>>8;
-    *ptr++=peaks[1];
-    *ptr++=peaks[1]>>8;
-    }
-  else
-  if(((peaks[0]&0xfc000000)==0xfc000000 || (peaks[0]&0xfc000000)==0) &&
-    ((peaks[1]&0xfc000000)==0xfc000000 ||(peaks[1]&0xfc000000)==0))
-    {
-    *ptr++=((peaks[0]&0x7000000)>>19)|((peaks[1]&0x7000000)>>22)|3;
-    *ptr++=peaks[0];
-    *ptr++=peaks[0]>>8;
-    *ptr++=peaks[0]>>16;
-    *ptr++=peaks[1];
-    *ptr++=peaks[1]>>8;
-    *ptr++=peaks[1]>>16;
-    }
-  else 
-    {
-    *ptr++=0;
-    *ptr++=0;
-    }
-  return ptr;
-  }
+static int32_w buf_raw[MAX_SR],buf_mon[SR_MON][2];
+static unsigned char ch_table[WIN_CHMAX];
+static char chfile[256];
+static int n_ch,negate_channel;
 
 read_chfile()
   {
@@ -151,8 +74,8 @@ read_chfile()
 #if DEBUG
       fprintf(stderr,"ch_file=%s\n",chfile);
 #endif
-      if(negate_channel) for(i=0;i<65536;i++) ch_table[i]=1;
-      else for(i=0;i<65536;i++) ch_table[i]=0;
+      if(negate_channel) for(i=0;i<WIN_CHMAX;i++) ch_table[i]=1;
+      else for(i=0;i<WIN_CHMAX;i++) ch_table[i]=0;
       i=j=0;
       while(fgets(tbuf,1024,fp))
         {
@@ -180,7 +103,7 @@ read_chfile()
         i++;
         }
 #if DEBUG
-      fprintf(stderr,"\n",k);
+      fprintf(stderr,"\n");
 #endif
       n_ch=j;
       if(negate_channel) sprintf(tbuf,"-%d channels",n_ch);
@@ -201,7 +124,7 @@ read_chfile()
     }
   else
     {
-    for(i=0;i<65536;i++) ch_table[i]=1;
+    for(i=0;i<WIN_CHMAX;i++) ch_table[i]=1;
     n_ch=i;
     write_log("all channels");
     }
@@ -217,13 +140,13 @@ main(argc,argv)
   int shmid_raw,shmid_mon;
   unsigned long uni;
   char tb[100];
-  unsigned char *ptr,*ptw,tm[6],*ptr_lim,*ptr_save;
-  int sys,i,j,k,size,n,size_shm,re;
+  unsigned char *ptr,*ptw,*ptr_lim,*ptr_save;
+  int i,size,size_shm,re;
   WIN_ch ch;
   WIN_sr sr;
   unsigned long c_save;
 
-  if(progname=strrchr(argv[0],'/')) progname++;
+  if((progname=strrchr(argv[0],'/')) != NULL) progname++;
   else progname=argv[0];
 
   daemon_mode = syslog_mode = 0;

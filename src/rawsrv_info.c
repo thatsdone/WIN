@@ -1,4 +1,4 @@
-/* $Id: rawsrv_info.c,v 1.1.2.2 2007/09/18 09:01:20 uehira Exp $ */
+/* $Id: rawsrv_info.c,v 1.1.2.2.4.1 2009/08/25 04:00:15 uehira Exp $ */
 
 /* rawsrv_info.c -- print information about raw-data server */
 
@@ -35,7 +35,7 @@
 #define MAXMSG       1025
 
 static char rcsid[] =
-  "$Id: rawsrv_info.c,v 1.1.2.2 2007/09/18 09:01:20 uehira Exp $";
+  "$Id: rawsrv_info.c,v 1.1.2.2.4.1 2009/08/25 04:00:15 uehira Exp $";
 
 char *progname, *logfile;
 int  daemon_mode, syslog_mode;
@@ -61,7 +61,7 @@ main(int argc, char *argv[])
 {
   int   i, c;
 
-  if (progname = strrchr(argv[0], '/'))
+  if ((progname = strrchr(argv[0], '/')) != NULL)
     progname++;
   else
     progname = argv[0];
@@ -117,7 +117,7 @@ get_info(const char *host, const char *port)
   int   socknum;
   ssize_t  readnum, sendnum;
   FILE    *fpsockr, *fpsockw;
-  char  buf[WRBP_CLEN], wrbp_buf[WRBP_CLEN];   /* command buffer */
+  char  wrbp_buf[WRBP_CLEN];   /* command buffer */
   int     status;
 #if DEBUG
   char  host_[NI_MAXHOST];  /* host address */
@@ -150,7 +150,7 @@ get_info(const char *host, const char *port)
 #if DEBUG
   (void)snprintf(msg, sizeof(msg), "%s", wrbp_buf);
   write_log(msg);
-  (void)snprintf(msg, sizeof(msg), "num = %d %s",
+  (void)snprintf(msg, sizeof(msg), "num = %ld %s",
 		 readnum, (char *)strerror(errno));
   write_log(msg);
 #endif
@@ -162,7 +162,7 @@ get_info(const char *host, const char *port)
   readnum = fread(wrbp_buf, 1, WRBP_CLEN, fpsockr);
   if (readnum != WRBP_CLEN) {
     (void)snprintf(msg, sizeof(msg),
-		   "SIZE packet len. invalid: %d %s",
+		   "SIZE packet len. invalid: %ld %s",
 		   readnum, (char *)strerror(errno));
     write_log(msg);
     (void)fclose(fpsockw);
@@ -174,7 +174,7 @@ get_info(const char *host, const char *port)
 #if DEBUG
   (void)snprintf(msg, sizeof(msg), "%s", wrbp_buf);
   write_log(msg);
-  (void)snprintf(msg, sizeof(msg), "num2 = %d %s",
+  (void)snprintf(msg, sizeof(msg), "num2 = %ld %s",
 		 readnum, (char *)strerror(errno));
   write_log(msg);
 #endif
@@ -195,8 +195,7 @@ read_srvlist(void)
   FILE  *fp;
   char  tbuf[2048];
   char  *field_p, *htmp, *ptmp;
-  int   hpindx;
-  int   i, k;
+  int   i;
 
   if ((fp = fopen(srvlist_file, "r")) == NULL) {
     (void)snprintf(msg, sizeof(msg), "server list file '%s' : %s",
@@ -246,7 +245,6 @@ usage(void)
 		"Usage : %s srvlist\n",
 		progname);
   (void)fprintf(stderr,
-		"  options : -h : print this message.    \n",
-		progname);
+		"  options : -h : print this message.    \n");
   exit(1);
 }

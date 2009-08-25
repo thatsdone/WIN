@@ -1,4 +1,4 @@
-/* $Id: rtape.c,v 1.9.2.3.2.2 2008/12/29 11:25:12 uehira Exp $ */
+/* $Id: rtape.c,v 1.9.2.3.2.3 2009/08/25 04:00:16 uehira Exp $ */
 /*
   program "rtape.c"
   9/16/89 - 11/06/90, 6/26/91, 10/30/91, 6/26/92  urabe
@@ -24,6 +24,8 @@
 
 #include  <stdio.h>
 #include  <stdlib.h>
+#include  <string.h>
+#include  <unistd.h>
 #include  <sys/types.h>
 #include  <sys/fcntl.h>
 #include  <sys/ioctl.h>
@@ -32,7 +34,7 @@
 
 #include "winlib.h"
 
-#define   DEBUG     0
+/* #define   DEBUG     0 */
 #define   TRY_LIMIT 16
 #define   NAMLEN    256
 #define   MAXSIZE   2000000
@@ -317,7 +319,7 @@ select_ch(old_buf,new_buf,old_form)
   unsigned char *old_buf,*new_buf;
   int old_form;
   {
-  int i,j,size,gsize,new_size,sr;
+  int i,size,gsize,new_size,sr;
   unsigned char *ptr,*new_ptr,*ptr_lim;
   unsigned int gh;
   size=mkuint4(old_buf);
@@ -359,9 +361,6 @@ main(argc,argv)
   int argc;
   char *argv[];
   {
-  char *ptr;
-  extern int optind;
-  extern char *optarg;
   int i,c,optbase,blocking;
 
   printf("***** rtape start *****\n");

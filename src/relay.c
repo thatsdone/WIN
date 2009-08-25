@@ -1,4 +1,4 @@
-/* $Id: relay.c,v 1.15.4.3.2.2 2008/12/29 11:25:12 uehira Exp $ */
+/* $Id: relay.c,v 1.15.4.3.2.3 2009/08/25 04:00:15 uehira Exp $ */
 /* "relay.c"      5/23/94-5/25/94,6/15/94-6/16/94,6/23/94,3/16/95 urabe */
 /*                3/26/95 check_packet_no; port# */
 /*                5/24/96 added processing of "host table full" */
@@ -35,9 +35,11 @@
 #include <signal.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
+#include <sys/stat.h>
 
 #if TIME_WITH_SYS_TIME
 #include <sys/time.h>
@@ -62,7 +64,7 @@
 #include "daemon_mode.h"
 #include "winlib.h"
 
-#define DEBUG     0
+/* #define DEBUG     0 */
 #define DEBUG1    0
 #define BELL      0
 #define MAXMESG   2048
@@ -350,7 +352,7 @@ main(argc,argv)
   {
   struct timeval timeout,tv1,tv2;
   double idletime;
-  int c,i,j,re,fromlen,n,bufno,bufno_f,pts,ttl,delay,noreq,sockbuf,nopno;
+  int c,i,j,re,fromlen,bufno,bufno_f,ttl,delay,noreq,sockbuf,nopno;
   struct sockaddr_in to_addr,from_addr;
   unsigned short to_port;
   struct hostent *h;
@@ -361,11 +363,11 @@ main(argc,argv)
   char mcastgroup[256]; /* multicast address */
   char interface[256]; /* multicast interface for receive */
   char sinterface[256]; /* multicast interface for send */
-  extern int optind;
-  extern char *optarg;
+/*   extern int optind; */
+/*   extern char *optarg; */
   unsigned long mif; /* multicast interface address */
 
-  if(progname=strrchr(argv[0],'/')) progname++;
+  if((progname=strrchr(argv[0],'/')) != NULL) progname++;
   else progname=argv[0];
 
   daemon_mode = syslog_mode = 0;

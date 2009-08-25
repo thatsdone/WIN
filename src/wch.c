@@ -1,4 +1,4 @@
-/* $Id: wch.c,v 1.8.4.2.2.2 2008/11/13 09:36:07 uehira Exp $ */
+/* $Id: wch.c,v 1.8.4.2.2.3 2009/08/25 04:00:16 uehira Exp $ */
 /*
 program "wch.c"
 "wch" edits a win format data file by channles
@@ -10,6 +10,7 @@ program "wch.c"
 2002.2.18 delete duplicated data & negate_channel
 2003.10.29 exit()->exit(0)
 2005.2.20 added fclose() in read_chfile()
+2009.7.31  64bit clean.
 */
 
 #ifdef HAVE_CONFIG_H
@@ -18,32 +19,47 @@ program "wch.c"
 
 #include  <stdio.h>
 #include  <stdlib.h>
+#include  <string.h>
 #include  <signal.h>
 
 #include "winlib.h"
 
-#define   DEBUG   0
+/* #define   DEBUG   0 */
 
-unsigned char *buf,*outbuf;
-unsigned char ch_table[65536];
-int negate_channel;
+static char rcsid[] =
+  "$Id: wch.c,v 1.8.4.2.2.3 2009/08/25 04:00:16 uehira Exp $";
 
+static uint8_w *buf=NULL,*outbuf;
+static uint8_w ch_table[WIN_CHMAX];
+static int negate_channel;
+
+/* prototypes */
+static void wabort(void);
+static int read_chfile(char *);
+static WIN_bs read_data(void);
+static WIN_bs select_ch(uint8_w *, uint8_w *, uint8_w *);
+static void get_one_record(void);
+static void usage(void);
+int main(int, char *[]);
+
+static void
 wabort() {exit(0);}
 
-read_chfile(chfile)
-  char *chfile;
+static int
+read_chfile(char *chfile)
   {
   FILE *fp;
   int i,j,k;
   char tbuf[1024];
-  if(*chfile)
+
+  if(chfile != NULL)
     {
     if((fp=fopen(chfile,"r"))!=NULL)
       {
-      if(negate_channel) for(i=0;i<65536;i++) ch_table[i]=1;
-      else for(i=0;i<65536;i++) ch_table[i]=0;
+      if(negate_channel) for(i=0;i<WIN_CHMAX;i++) ch_table[i]=1;
+      else for(i=0;i<WIN_CHMAX;i++) ch_table[i]=0;
       i=j=0;
-      while(fgets(tbuf,1024,fp))
+      while(fgets(tbuf,sizeof(tbuf),fp) != NULL)
         {
         if(*tbuf=='#' || sscanf(tbuf,"%x",&k)<0) continue;
         k&=0xffff;
@@ -68,72 +84,91 @@ read_chfile(chfile)
       fclose(fp);
       if(negate_channel) fprintf(stderr,"-%d channels\n",j);
       else fprintf(stderr,"%d channels\n",j);
-      return j;
+      return (j);
       }
     else
       {
       fprintf(stderr,"ch_file '%s' not open\n",chfile);
-      return 0;
+      return (0);
       }
     }
   else
     {
-    for(i=0;i<65536;i++) ch_table[i]=1;
+    for(i=0;i<WIN_CHMAX;i++) ch_table[i]=1;
     fprintf(stderr,"all channels\n");
-    return i;
+    return (i);
     }
   }
 
+static WIN_bs
 read_data()
   {
-  static unsigned int size;
-  int re,i;
-  if(fread(&re,1,4,stdin)==0) return 0;
+  static size_t size;
+  WIN_bs re;
+  int i;
+
+  if(fread(&re,1,WIN_BSLEN,stdin)==0) return (0);
   i=1;if(*(char *)&i) SWAPL(re);
-  if(buf==0)
+  if(buf==NULL)
     {
-    buf=(unsigned char *)malloc(size=re*2);
-    outbuf=(unsigned char *)malloc(size=re*2);
+    buf=(uint8_w *)malloc(size=re*2);
+    outbuf=(uint8_w *)malloc(size=re*2);
+    if ((buf == NULL) || (outbuf == NULL))
+      {
+	fprintf(stderr, "Cannot malloc memory\n");
+	exit(1);
+      }
     }
   else if(re>size)
     {
-    buf=(unsigned char *)realloc(buf,size=re*2);
-    outbuf=(unsigned char *)realloc(outbuf,size=re*2);
+    buf=(uint8_w *)realloc(buf,size=re*2);
+    outbuf=(uint8_w *)realloc(outbuf,size=re*2);
+    if ((buf == NULL) || (outbuf == NULL))
+      {
+	fprintf(stderr, "Cannot realloc memory\n");
+	exit(1);
+      }
     }
   buf[0]=re>>24;
   buf[1]=re>>16;
   buf[2]=re>>8;
   buf[3]=re;
-  re=fread(buf+4,1,re-4,stdin);
-  return re;
+  re=fread(buf+WIN_BSLEN,1,re-WIN_BSLEN,stdin);
+  return (re);
   }
 
-select_ch(table,old_buf,new_buf)
-  unsigned char *old_buf,*new_buf,*table;
+static WIN_bs 
+select_ch(uint8_w *table, uint8_w *old_buf, uint8_w *new_buf)
   {
-  int i,j,size,gsize,new_size,sr;
-  unsigned char *ptr,*new_ptr,*ptr_lim;
-  unsigned int gh;
-  unsigned int chtbl[65536];
-  for(i=0;i<65536;i++) chtbl[i]=0;
+  int i,ss;
+  WIN_bs size,new_size;
+  uint8_w *ptr,*new_ptr,*ptr_lim;
+  unsigned int chtbl[WIN_CHMAX];
+  uint32_w gsize;
+  WIN_ch ch;
+  WIN_sr sr;
+  /* unsigned int gh; */
+
+  for(i=0;i<WIN_CHMAX;i++) chtbl[i]=0;
   size=mkuint4(old_buf);
   ptr_lim=old_buf+size;
-  ptr=old_buf+4;
-  new_ptr=new_buf+4;
+  ptr=old_buf+WIN_BSLEN;
+  new_ptr=new_buf+WIN_BSLEN;
   for(i=0;i<6;i++) *new_ptr++=(*ptr++);
   new_size=10;
   do
     {
-    gh=mkuint4(ptr);
-    i=gh>>16;
-    sr=gh&0xfff;
-    if((gh>>12)&0xf) gsize=((gh>>12)&0xf)*(sr-1)+8;
-    else gsize=(sr>>1)+8;
-    if(table[i] && chtbl[i]==0)
+    gsize = win_chheader_info(ptr,&ch,&sr,&ss);
+/*     gh=mkuint4(ptr); */
+/*     i=gh>>16; */
+/*     sr=gh&0xfff; */
+/*     if((gh>>12)&0xf) gsize=((gh>>12)&0xf)*(sr-1)+8; */
+/*     else gsize=(sr>>1)+8; */
+    if(table[ch] && chtbl[ch]==0)
       {
       new_size+=gsize;
       while(gsize-->0) *new_ptr++=(*ptr++);
-      chtbl[i]=1;
+      chtbl[ch]=1;
       }
     else ptr+=gsize;
     } while(ptr<ptr_lim);
@@ -141,18 +176,19 @@ select_ch(table,old_buf,new_buf)
   new_buf[1]=new_size>>16;
   new_buf[2]=new_size>>8;
   new_buf[3]=new_size;
-  return new_size;
+  return (new_size);
   }
 
+static void
 get_one_record()
   {
-  int i,re;
+
   while(read_data()>0)
     {
     /* read one sec */
     if(select_ch(ch_table,buf,outbuf)>10)
       /* write one sec */
-      if((re=fwrite(outbuf,1,mkuint4(outbuf),stdout))==0) exit(1);
+      if(fwrite(outbuf,1,mkuint4(outbuf),stdout)==0) exit(1);
 #if DEBUG
     fprintf(stderr,"in:%d B out:%d B\n",mkuint4(buf),mkuint4(outbuf));
 #endif
@@ -162,31 +198,40 @@ get_one_record()
 #endif
   }
 
-main(argc,argv)
-  int argc;
-  char *argv[];
+static void
+usage()
+{
+
+  WIN_version();
+  fprintf(stderr, "%s\n", rcsid);
+  fprintf(stderr," usage of 'wch' :\n");
+  fprintf(stderr,"   'wch -/[ch file]/-[ch file] <[in_file] >[out_file]'\n");
+}
+
+int
+main(int argc, char *argv[])
   {
-  char chfile[1024];
+  char *chfile;
+
   signal(SIGINT,(void *)wabort);
   signal(SIGTERM,(void *)wabort);
 
   if(argc<2)
     {
-    fprintf(stderr," usage of 'wch' :\n");
-    fprintf(stderr,"   'wch -/[ch file]/-[ch file] <[in_file] >[out_file]'\n");
-    exit(0);
+    usage();
+    exit(1);
     }
-  if(strcmp("-",argv[1])==0) *chfile=0;
+  if(strcmp("-",argv[1])==0) chfile=NULL;
   else
     {
     if(argv[1][0]=='-')
       {
-      strcpy(chfile,argv[1]+1);
+      chfile=argv[1]+1;
       negate_channel=1;
       }
     else
       {
-      strcpy(chfile,argv[1]);
+      chfile=argv[1];
       negate_channel=0;
       }
     }

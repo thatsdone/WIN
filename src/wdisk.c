@@ -1,4 +1,4 @@
-/* $Id: wdisk.c,v 1.17.2.8.2.1 2008/11/11 15:19:48 uehira Exp $ */
+/* $Id: wdisk.c,v 1.17.2.8.2.2 2009/08/25 04:00:16 uehira Exp $ */
 /*
   program "wdisk.c"   4/16/93-5/13/93,7/2/93,7/5/94  urabe
                       1/6/95 bug in adj_time fixed (tm[0]--)
@@ -40,6 +40,7 @@
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <sys/file.h>
+#include <sys/stat.h>
 
 #if TIME_WITH_SYS_TIME
 #include <sys/time.h>
@@ -77,7 +78,7 @@
 #include "daemon_mode.h"
 #include "winlib.h"
 
-#define   DEBUG   0
+/* #define   DEBUG   0 */
 #define   BELL    0
 
 #define   NAMELEN  1025
@@ -143,7 +144,7 @@ switch_file(tm)
        write_log("tbuf[]: buffer overflow");
        end_program();
      }
-     if(fp=fopen(tbuf,"r")){
+     if((fp=fopen(tbuf,"r")) != NULL){
        fscanf(fp,"%d",&count_max);
        fclose(fp);
      }
@@ -180,7 +181,7 @@ switch_file(tm)
        write_log("tbuf[]: buffer overflow");
        end_program();
      }
-     if(fp=fopen(tbuf,"r")){
+     if((fp=fopen(tbuf,"r")) != NULL){
        fscanf(fp,"%d",&count_max);
        fclose(fp);
        if(count_max>0 && count_max<3) count_max=3;
@@ -272,7 +273,7 @@ main(argc,argv)
 #define BUFSZ 1000000
 #define BUFLIM 5000000
    FILE *fp;
-   int i,j,shmid,shid,tm[6],tm_last[6],eobsize,eobsize_count,bufsiz;
+   int i,shmid,tm[6],tm_last[6],eobsize,eobsize_count,bufsiz;
    unsigned long shp,shp_save,size,c_save,size2;
    unsigned char *ptr,*ptr_save,ptw[4],*buf;
    key_t shmkey;

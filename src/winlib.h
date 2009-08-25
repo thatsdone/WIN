@@ -1,4 +1,4 @@
-/* $Id: winlib.h,v 1.1.2.7.2.12 2009/03/09 10:22:45 uehira Exp $ */
+/* $Id: winlib.h,v 1.1.2.7.2.13 2009/08/25 04:00:16 uehira Exp $ */
 
 #ifndef _WIN_LIB_H_
 #define _WIN_LIB_H_
@@ -51,6 +51,8 @@ typedef uint32_w  WIN_sr;
 
 #define WIN_BSLEN  (sizeof(WIN_bs))  /* WIN block size length in byte */
 #define WIN_BLOCKSIZE_LEN  WIN_BSLEN
+#define WIN_TM_LEN       6  /* byte */
+#define WIN_TIME_LEN     WIN_TM_LEN
 
 /* High sampling rate format */
 #define  HEADER_4B    4096     /* SR<2^12  (   1 Hz --    4095 Hz) */
@@ -67,6 +69,18 @@ typedef uint32_w  WIN_sr;
 #define  SWAPF(a)  *(int32_w *)&(a) =\
     (((*(int32_w *)&(a)) << 24) | ((*(int32_w *)&(a)) << 8) & 0xff0000 |\
      ((*(int32_w *)&(a)) >> 8) & 0xff00 | ((*(int32_w *)&(a)) >> 24) & 0xff)
+
+/* memory malloc utility macro */
+#ifndef MALLOC
+#define MALLOC(type, n) (type*)malloc((size_t)(sizeof(type)*(n)))
+#endif
+#ifndef REALLOC
+#define REALLOC(type, ptr, n) \
+(type*)realloc((void *)ptr, (size_t)(sizeof(type)*(n)))
+#endif
+#ifndef FREE
+#define FREE(a)         (void)free((void *)(a))
+#endif
 
 /* structure of shared memory */
 struct Shm {
@@ -124,9 +138,12 @@ WIN_bs winform(int32_w *, uint8_w *, WIN_sr, WIN_ch);
 uint32_w win2fix(uint8_w *, int32_w *, WIN_ch *, WIN_sr *);
 int strncmp2(char *, char *, int);
 int strcmp2(char *, char *);
-uint32_w read_onesec_win(FILE *, uint8_w **);
+WIN_bs read_onesec_win(FILE *, uint8_w **);
 void Shm_init(struct Shm *, size_t);
 void WIN_version(void);
 uint32_w win_chheader_info(const uint8_w *, WIN_ch *, WIN_sr *, int *);
+void get_mon(WIN_sr, int32_w *, int32_w (*)[]);
+uint8_w *compress_mon(int32_w *, uint8_w *);
+void make_mon(uint8_w *, uint8_w *);
 
 #endif  /* !_WIN_LIB_H_*/

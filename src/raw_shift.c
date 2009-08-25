@@ -1,4 +1,5 @@
-/* $Id: raw_shift.c,v 1.2.4.3.2.3 2008/11/18 02:27:58 uehira Exp $ */
+/* $Id: raw_shift.c,v 1.2.4.3.2.4 2009/08/25 04:00:15 uehira Exp $ */
+
 /* "raw_shift.c"    2002.4.1 - 4.1 urabe */
 /*                  modified from raw_100.c */
 /*                  2005.2.20 added fclose() in read_chfile() */
@@ -11,6 +12,7 @@
 #include <signal.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
@@ -31,11 +33,11 @@
 
 #include "winlib.h"
 
-#define DEBUG       0
+/* #define DEBUG       0 */
 #define BELL        0
 #define MAX_SR   4095
 
-unsigned char ch_table[65536];
+unsigned char ch_table[WIN_CHMAX];
 char *progname,*logfile,chfile[256];
 int n_ch,negate_channel;
 int syslog_mode = 0, exit_status;
@@ -52,8 +54,8 @@ read_chfile()
 #if DEBUG
       fprintf(stderr,"ch_file=%s\n",chfile);
 #endif
-      if(negate_channel) for(i=0;i<65536;i++) ch_table[i]=1;
-      else for(i=0;i<65536;i++) ch_table[i]=0;
+      if(negate_channel) for(i=0;i<WIN_CHMAX;i++) ch_table[i]=1;
+      else for(i=0;i<WIN_CHMAX;i++) ch_table[i]=0;
       i=j=0;
       while(fgets(tbuf,1024,fp))
         {
@@ -81,7 +83,7 @@ read_chfile()
         i++;
         }
 #if DEBUG
-      fprintf(stderr,"\n",k);
+      fprintf(stderr,"\n");
 #endif
       n_ch=j;
       if(negate_channel) sprintf(tbuf,"-%d channels",n_ch);
@@ -102,7 +104,7 @@ read_chfile()
     }
   else
     {
-    for(i=0;i<65536;i++) ch_table[i]=1;
+    for(i=0;i<WIN_CHMAX;i++) ch_table[i]=1;
     n_ch=i;
     write_log("all channels");
     }
@@ -118,8 +120,8 @@ main(argc,argv)
   int shmid_raw,shmid_mon;
   unsigned long uni;
   char tb[100];
-  unsigned char *ptr,*ptw,tm[6],*ptr_lim,*ptr_save;
-  int sr,i,j,k,size,n,size_shm,tow,rest,bits_shift;
+  unsigned char *ptr,*ptw,*ptr_lim,*ptr_save;
+  int sr,i,size,size_shm,tow,rest,bits_shift;
   uint16_w ch1;
   uint32_w sr1;
   unsigned long c_save;
@@ -127,7 +129,7 @@ main(argc,argv)
   int gs,gh,gs1;
   static int32_w buf1[MAX_SR],buf2[MAX_SR];
 
-  if(progname=strrchr(argv[0],'/')) progname++;
+  if((progname=strrchr(argv[0],'/')) != NULL) progname++;
   else progname=argv[0];
   exit_status = EXIT_SUCCESS;
   if(argc<4)
@@ -136,8 +138,7 @@ main(argc,argv)
       " usage : '%s [in_key] [out_key] [shm_size(KB)] [bits]\\\n",
       progname);
     fprintf(stderr,
-      "                       (-/[ch_file]/-[ch_file]/+[ch_file] ([log file]))'\n",
-      progname);
+      "                       (-/[ch_file]/-[ch_file]/+[ch_file] ([log file]))'\n");
     exit(1);
     }
   rawkey=atoi(argv[1]);

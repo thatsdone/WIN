@@ -1,4 +1,4 @@
-/* $Id: raw_100.c,v 1.5.4.3.2.3 2008/11/18 02:27:58 uehira Exp $ */
+/* $Id: raw_100.c,v 1.5.4.3.2.4 2009/08/25 04:00:15 uehira Exp $ */
 /* "raw_100.c"    97.6.23 - 6.30 urabe */
 /*                  modified from raw_raw.c */
 /*                  97.8.4 bug fixed (output empty block) */
@@ -17,6 +17,7 @@
 #include <signal.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
@@ -37,7 +38,7 @@
 
 #include "winlib.h"
 
-#define DEBUG       0
+/* #define DEBUG       0 */
 #define BELL        0
 #define MAX_SR   4095
 #define SR_LOWER   50
@@ -90,7 +91,7 @@ read_chfile()
         i++;
         }
 #if DEBUG
-      fprintf(stderr,"\n",k);
+      fprintf(stderr,"\n");
 #endif
       n_ch=j;
       if(negate_channel) sprintf(tbuf,"-%d channels",n_ch);
@@ -127,8 +128,8 @@ main(argc,argv)
   int shmid_raw,shmid_mon;
   unsigned long uni;
   char tb[100];
-  unsigned char *ptr,*ptw,tm[6],*ptr_lim,*ptr_save;
-  int sr,i,j,k,size,n,size_shm,tow,rest;
+  unsigned char *ptr,*ptw,*ptr_lim,*ptr_save;
+  int sr,i,j,size,size_shm,tow,rest;
   WIN_ch  ch1;
   WIN_sr  sr1;
   unsigned long c_save;
@@ -137,7 +138,7 @@ main(argc,argv)
   static int32_w buf1[MAX_SR],buf2[SR];
   float t,ds,dt;
 
-  if(progname=strrchr(argv[0],'/')) progname++;
+  if((progname=strrchr(argv[0],'/')) != NULL) progname++;
   else progname=argv[0];
   if(argc<4)
     {
@@ -145,8 +146,7 @@ main(argc,argv)
       " usage : '%s [in_key] [out_key] [shm_size(KB)] \\\n",
       progname);
     fprintf(stderr,
-      "                       (-/[ch_file]/-[ch_file]/+[ch_file] ([log file]))'\n",
-      progname);
+      "                       (-/[ch_file]/-[ch_file]/+[ch_file] ([log file]))'\n");
     exit(1);
     }
   rawkey=atoi(argv[1]);

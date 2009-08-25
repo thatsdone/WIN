@@ -17,6 +17,7 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <math.h>
+#include <unistd.h>
 
 #define SWAPL(a) a=(((a)<<24)|((a)<<8)&0xff0000|((a)>>8)&0xff00|((a)>>24)&0xff)
 #define SWAPF(a) *(long *)&(a)=(((*(long *)&(a))<<24)|\
@@ -80,8 +81,8 @@ main(argc, argv)
 int argc;
 char *argv[];
 {
-    extern int optind;
-    extern char *optarg;
+/*     extern int optind; */
+/*     extern char *optarg; */
     FILE *fp;
     int ntoken;
     int chindex[65536], id[65536];

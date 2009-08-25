@@ -1,4 +1,4 @@
-/* $Id: relaym.c,v 1.8.2.1 2008/05/17 14:22:02 uehira Exp $ */
+/* $Id: relaym.c,v 1.8.2.1.2.1 2009/08/25 04:00:15 uehira Exp $ */
 
 /*
  * 2005-06-22 MF relay.c:
@@ -18,6 +18,7 @@
 
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
 #include <netdb.h>
 #include <netinet/in.h>
 
@@ -50,13 +51,12 @@
 #define BUFNO     128    /* max. save packet */
 #define N_HOST    100    /* max. number of host */
 #define N_DHOST   128    /* max. number of destination host */
-#define WINCHNUM  65536  /* max. number of win channels : 2^16 (2 bytes) */
 
 #define MAXNAMELEN   1025
 #define MAXMSG       1025
 
 static char rcsid[] =
-  "$Id: relaym.c,v 1.8.2.1 2008/05/17 14:22:02 uehira Exp $";
+  "$Id: relaym.c,v 1.8.2.1.2.1 2009/08/25 04:00:15 uehira Exp $";
 
 /* destination host info. */
 struct hostinfo {
@@ -78,11 +78,11 @@ int  exit_status;
 
 static ssize_t        psize[BUFNO];
 static unsigned char  sbuf[BUFNO][MAXMESG];
-static unsigned char  sq[N_DHOST], sq_f[N_DHOST];
+static unsigned char  sq[N_DHOST];
 static int            sqindx[N_DHOST][BUFNO];
 static char           chfile[MAXNAMELEN];
 static int            no_pinfo, n_host, negate_channel;
-static unsigned char  ch_table[WINCHNUM];
+static unsigned char  ch_table[WIN_CHMAX];
 
 struct {
   char  host_[NI_MAXHOST];  /* host address */
@@ -129,7 +129,7 @@ main(int argc, char *argv[])
   FILE  *fp;
   int   i, j;
 
-  if (progname = strrchr(argv[0], '/'))
+  if ((progname = strrchr(argv[0], '/')) != NULL)
     progname++;
   else
     progname = argv[0];
@@ -344,7 +344,7 @@ main(int argc, char *argv[])
 	    re = sendto(hinf->sock, sbuf[bufno],
 			psize[bufno], 0, hinf->sa, hinf->salen);
 	    (void)snprintf(msg, sizeof(msg), 
-			   "resend to %s:%s #%d(#%d) as #%d, %d B",
+			   "resend to %s:%s #%d(#%d) as #%d, %ld B",
 			   hinf->host_, hinf->port_,
 			   no_f, bufno_f, sq[hinf->ID], re);
 	    write_log(msg);
@@ -567,9 +567,9 @@ read_chfile(void)
     }
 
     if (negate_channel)
-      for (i = 0; i < WINCHNUM; i++) ch_table[i] = 1;
+      for (i = 0; i < WIN_CHMAX; i++) ch_table[i] = 1;
     else
-      for (i = 0; i < WINCHNUM; i++) ch_table[i] = 0;
+      for (i = 0; i < WIN_CHMAX; i++) ch_table[i] = 0;
     ii = 0;
 
     while (fgets(tbuf, sizeof(tbuf), fp) != NULL) {
@@ -580,9 +580,9 @@ read_chfile(void)
 
       if (tbuf[0] == '*') {   /* match any channel */
 	if (negate_channel)
-	  for (i = 0; i < WINCHNUM; i++) ch_table[i] = 0;
+	  for (i = 0; i < WIN_CHMAX; i++) ch_table[i] = 0;
 	else
-	  for (i = 0; i < WINCHNUM; i++) ch_table[i] = 1;
+	  for (i = 0; i < WIN_CHMAX; i++) ch_table[i] = 1;
       } else if (n_host == 0
 		 && (strcmp(tb1, "+") == 0 || strcmp(tb1, "-") == 0)) {
 	if (tbuf[0] == '+')
@@ -659,25 +659,25 @@ read_chfile(void)
 
     j = 0;
     if (negate_channel) {
-      for (i = 0; i < WINCHNUM; i++)
+      for (i = 0; i < WIN_CHMAX; i++)
 	if (ch_table[i] == 0)
 	  j++;
-      if (j == WINCHNUM)
+      if (j == WIN_CHMAX)
 	(void)snprintf(tb, sizeof(tb), "-all channels");
       else
 	(void)snprintf(tb, sizeof(tb), "-%d channels", j);
     } else {
-      for (i = 0; i < WINCHNUM; i++)
+      for (i = 0; i < WIN_CHMAX; i++)
 	if (ch_table[i] == 1)
 	  j++;
-      if (j == WINCHNUM)
+      if (j == WIN_CHMAX)
 	(void)snprintf(tb, sizeof(tb), "all channels");
       else
 	(void)snprintf(tb, sizeof(tb), "%d channels", j);
     }
     write_log(tb);
   } else {   /* if (chfile[0] != '\0') */
-    for(i = 0; i < WINCHNUM; i++)
+    for(i = 0; i < WIN_CHMAX; i++)
       /* If there is no chfile, get all channel */
       ch_table[i] = 1;
     n_host = 0;

@@ -1,4 +1,4 @@
-/* $Id: wdiskts.c,v 1.6.2.5.2.1 2008/11/11 15:19:48 uehira Exp $ */
+/* $Id: wdiskts.c,v 1.6.2.5.2.2 2009/08/25 04:00:16 uehira Exp $ */
 /* 2005.8.10 urabe bug in strcmp2() fixed : 0-6 > 7-9 */
 
 #ifdef HAVE_CONFIG_H
@@ -13,6 +13,7 @@
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <sys/file.h>
+#include <sys/stat.h>
 
 #if TIME_WITH_SYS_TIME
 #include <sys/time.h>
@@ -414,7 +415,7 @@ main(argc,argv)
    key_t shmkey;
    struct Shm  *shm;
    
-   if(progname=strrchr(argv[0],'/')) progname++;
+   if((progname=strrchr(argv[0],'/')) != NULL) progname++;
    else progname=argv[0];
 
    daemon_mode = syslog_mode = 0;

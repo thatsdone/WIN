@@ -1,4 +1,4 @@
-/* $Id: pmon.c,v 1.14.2.5.2.3 2008/12/29 11:25:11 uehira Exp $ */
+/* $Id: pmon.c,v 1.14.2.5.2.4 2009/08/25 04:00:15 uehira Exp $ */
 /************************************************************************
 *************************************************************************
 **  program "pmon.c" for NEWS/SPARC                             *********
@@ -88,7 +88,7 @@
 #include "winlib.h"
 
 #define LONGNAME      1
-#define DEBUG         0
+/* #define DEBUG         0 */
 #define DEBUG1        0
 #define M_CH          1000   /* absolute max n of traces */
                              /* n of chs in data file is unlimited */
@@ -128,7 +128,7 @@
 /* (8 x 16) x (128-32) */
 /* start = 32, end = 126, n of codes = 126-32+1 = 95 */
 /* bitmap of 16(tate) x 96(yoko) bytes */
-  unsigned char font16[SIZE_FONT16]={
+  uint8_w font16[SIZE_FONT16]={
 0x00,0x00,0x6c,0x00,0x10,0x02,0x00,0xe0,0x02,0x80,0x00,0x00,0x00,0x00,0x00,0x02,
 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x02,0x00,0x80,0x00,
 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
@@ -226,28 +226,35 @@
 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x7c,0x00,0x00,0x38,0x00,0x00,0x00,0x00,0x00,
 0xf0,0x1e,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x40,0x00,0x06,0x10,0xc0,0x00,0x00};
 
-int fd,n_ch,min_trig[M_CH],tim[6],n_zone,n_trig[M_CH],n_stn[M_CH],
+static const char  rcsid[] =
+   "$Id: pmon.c,v 1.14.2.5.2.4 2009/08/25 04:00:15 uehira Exp $";
+
+char *progname,*logfile;
+int  syslog_mode = 0, exit_status;
+
+static int fd,min_trig[M_CH],tim[6],n_zone,n_trig[M_CH],n_stn[M_CH],
   max_trig[M_CH],rep_level,n_zone_trig,cnt_zone,req_print,
   i_zone[M_CH],n_min_trig,not_yet,m_ch,ppt_half,m_limit,made_lock_file,
   min_per_sheet,pixels_per_trace,n_rows,max_ch,max_ch_flag;
-long long_max[M_CH][SR_MON],long_min[M_CH][SR_MON];
-short idx[65536];
-unsigned char frame[HEIGHT_LBP][WIDTH_LBP],zone[M_CH][20],
-  file_trig[WIN_FILENAME_MAX],param_file[WIN_FILENAME_MAX],buf[LENGTH],
-  file_zone[WIN_FILENAME_MAX],font24[SIZE_FONT24],font32[SIZE_FONT32],
-  last_line[LEN],temp_done[WIN_FILENAME_MAX],line[LEN],
-  latest[WIN_FILENAME_MAX],ch_file[WIN_FILENAME_MAX],time_text[20],
-  file_trig_lock[WIN_FILENAME_MAX],idx2[65536];
-double dt=1.0/(double)SR_MON,time_on,time_off,time_lta,time_lta_off,
+static int32_w long_max[M_CH][SR_MON],long_min[M_CH][SR_MON];
+static short idx[WIN_CHMAX];
+static char file_trig[WIN_FILENAME_MAX],line[LEN],time_text[20],last_line[LEN],
+  file_trig_lock[WIN_FILENAME_MAX],*param_file,
+  temp_done[WIN_FILENAME_MAX],latest[WIN_FILENAME_MAX],
+  ch_file[WIN_FILENAME_MAX],file_zone[WIN_FILENAME_MAX],zone[M_CH][20];
+static unsigned char frame[HEIGHT_LBP][WIDTH_LBP],
+  buf[LENGTH],
+  font24[SIZE_FONT24],font32[SIZE_FONT32],
+  idx2[WIN_CHMAX];
+static double dt=1.0/(double)SR_MON,time_on,time_off,time_lta,time_lta_off,
   time_sta,a_sta,b_sta,a_lta,b_lta,a_lta_off,b_lta_off;
-char *progname,*logfile;
-int  syslog_mode = 0, exit_status;
+
 struct
   {
   int ch;
   int gain;
-  unsigned char name[STNLEN];
-  unsigned char comp[CMPLEN];
+  char name[STNLEN];
+  char comp[CMPLEN];
   int zone[MAX_ZONES];
   int n_zone;
   int alive;       /* 0:alive 1:dead */
@@ -258,36 +265,60 @@ struct
   double sta;      /* short term average */
   double ratio;    /* sta/lta ratio */
   double lta_save; /* lta just before trigger */
-  long max;        /* maximum deflection */
+  int32_w max;     /* maximum deflection */
   double sec_on;   /* duration time */
   double sec_off;  /* time after on->off */
   double cnt;      /* counter for initialization */
   double sec_zero; /* length of successive zeros */
   int tm[7];       /* year to sec/10 */
-  long zero;       /* offset */
+  int32_w zero;    /* offset */
   int zero_cnt;    /* counter */
   double zero_acc; /* accumulator for offset calculation */
   } tbl[M_CH];
 
-mkfont(y,ii,buf_font,width,jj,k,buf_font16,width16)
-  int y,ii,k,width,jj,width16;
-  unsigned char *buf_font;
-  unsigned short *buf_font16;
+
+/* prototypes */
+static void mkfont(int , int, uint8_w *, int, int, int, uint16_w *, int);
+static void make_fonts(uint8_w *, uint8_w *, uint8_w *);
+static void write_file(char *, char *);
+static void confirm_on(int);
+static void sprintm(char *, int *);
+static void cptm(int *, int *);
+static void confirm_off(int, int, int);
+static int find_oldest(char *, char *, char *) ;
+static int read_one_sec(int *);
+static void plot_wave(int, int);
+static void hangup(void);
+static void owari(void);
+static int check_path(char *, int);
+static void put_font(uint8_w *, int, int, int, uint8_w *, uint8_w *,
+		     int, int, int);
+static void wmemo(char *, char *, char *);
+static void insatsu(uint8_w *, uint8_w *, uint8_w *, char *, char *,
+		    int, int, char *);
+static int read_param(FILE *, char *);
+static void get_lastline(char *, char *);
+static void usage(void);
+int main(int, char *[]);
+
+static void
+mkfont(int y, int ii, uint8_w *buf_font, int width, int jj, int k,
+       uint16_w *buf_font16, int width16)
   {
   int i,j,x;
-  union { long l; char c[4]; } u;
-  static unsigned long
-    bits[2][16]={0xc0000000,0x60000000,0x18000000,0x0c000000,
-          0x03000000,0x01800000,0x00600000,0x00300000,
-          0x000c0000,0x00060000,0x00018000,0x0000c000,
-          0x00003000,0x00001800,0x00000600,0x00000300,
-          0xc0000000,0x30000000,0x0c000000,0x03000000,
-          0x00c00000,0x00300000,0x000c0000,0x00030000,
-          0x0000c000,0x00003000,0x00000c00,0x00000300,
-          0x000000c0,0x00000030,0x0000000c,0x00000003};
-  static unsigned short bit_mask[16]={0x8000,0x4000,0x2000,0x1000,
+  union { int32_w l; int8_w c[4]; } u;
+  static uint32_w
+    bits[2][16]={{0xc0000000,0x60000000,0x18000000,0x0c000000,
+		  0x03000000,0x01800000,0x00600000,0x00300000,
+		  0x000c0000,0x00060000,0x00018000,0x0000c000,
+		  0x00003000,0x00001800,0x00000600,0x00000300},
+		 {0xc0000000,0x30000000,0x0c000000,0x03000000,
+		  0x00c00000,0x00300000,0x000c0000,0x00030000,
+		  0x0000c000,0x00003000,0x00000c00,0x00000300,
+		  0x000000c0,0x00000030,0x0000000c,0x00000003}};
+  static uint16_w bit_mask[16]={0x8000,0x4000,0x2000,0x1000,
           0x800,0x400,0x200,0x100,0x80,0x40,0x20,0x10,0x8,0x4,0x2,0x1};
-  unsigned short s;
+  uint16_w s;
 
   for(j=0;j<width*2;j++) buf_font[ii*width*2+j]=0;
   j=0;
@@ -324,10 +355,11 @@ mkfont(y,ii,buf_font,width,jj,k,buf_font16,width16)
     }
   }
 
-make_fonts(buf_font16,buf_font24,buf_font32)
-  unsigned char *buf_font16,*buf_font24,*buf_font32;
+static void
+make_fonts(uint8_w *buf_font16, uint8_w *buf_font24, uint8_w *buf_font32)
   {
   int ii,y,width16,width24,width32;
+
   width16=(WIDTH_FONT16*N_CODE+15)/16;
   width24=(WIDTH_FONT24*N_CODE+15)/16;
   width32=(WIDTH_FONT32*N_CODE+15)/16;
@@ -335,47 +367,49 @@ make_fonts(buf_font16,buf_font24,buf_font32)
   ii=0;
   for(y=0;y<HEIGHT_FONT16;y++)
     {
-    mkfont(y,ii++,buf_font24,width24,3,0,(unsigned short *)buf_font16,width16);
-    mkfont(y,ii,buf_font24,width24,3,0,(unsigned short *)buf_font16,width16);
+    mkfont(y,ii++,buf_font24,width24,3,0,(uint16_w *)buf_font16,width16);
+    mkfont(y,ii,buf_font24,width24,3,0,(uint16_w *)buf_font16,width16);
     y++;
-    mkfont(y,ii++,buf_font24,width24,3,0,(unsigned short *)buf_font16,width16);
-    mkfont(y,ii++,buf_font24,width24,3,0,(unsigned short *)buf_font16,width16);
+    mkfont(y,ii++,buf_font24,width24,3,0,(uint16_w *)buf_font16,width16);
+    mkfont(y,ii++,buf_font24,width24,3,0,(uint16_w *)buf_font16,width16);
     }
 
 /* make buf_font32 */
   ii=0;
   for(y=0;y<HEIGHT_FONT16;y++)
     {
-    mkfont(y,ii++,buf_font32,width32,4,1,(unsigned short *)buf_font16,width16);
-    mkfont(y,ii++,buf_font32,width32,4,1,(unsigned short *)buf_font16,width16);
+    mkfont(y,ii++,buf_font32,width32,4,1,(uint16_w *)buf_font16,width16);
+    mkfont(y,ii++,buf_font32,width32,4,1,(uint16_w *)buf_font16,width16);
     }
   }
 
-write_file(fname,text)
-  unsigned char *fname,*text;
+static void
+write_file(char *fname, char *text)
   {
   FILE *fp;
-  char tb[100];
+  char tb[254];
+
   while((fp=fopen(fname,"a"))==NULL)
     {
-    sprintf(tb,"'%s' not open (%d)",fname,getpid());
+    snprintf(tb,sizeof(tb),"'%s' not open (%d)",fname,getpid());
     write_log(tb);
     sleep(60);
     }
   fputs(text,fp);
   while(fclose(fp)==EOF)
     {
-    sprintf(tb,"'%s' not close (%d)",fname,getpid());
+    snprintf(tb,sizeof(tb),"'%s' not close (%d)",fname,getpid());
     write_log(tb);
     sleep(60);
     }
   }
 
-confirm_on(ch)
-  int ch;
+static void
+confirm_on(int ch)
   {
-  int i,j,tm[6],z;
+  int j,tm[6],z;
   static char prev_on[15];
+
   tbl[ch].status=2;
   sprintm(time_text,tbl[ch].tm);
   sprintf(time_text+strlen(time_text),".%d",tbl[ch].tm[6]*(10/SR_MON));
@@ -430,26 +464,28 @@ confirm_on(ch)
     }
   }
 
-sprintm(tb,tm)
-  char *tb;
-  int *tm;
+static void
+sprintm(char *tb, int *tm)
   {
+
   sprintf(tb,"%02d%02d%02d.%02d%02d%02d",
     tm[0],tm[1],tm[2],tm[3],tm[4],tm[5]);
   }
 
-cptm(dst,src)
-  int *dst,*src;
+static void
+cptm(int *dst, int *src)
   {
   int i;
+
   for(i=0;i<6;i++) dst[i]=src[i];
   }
 
-confirm_off(ch,sec,i)
-  int ch,sec,i;
+static void
+confirm_off(int ch, int sec, int i)
   {
   int ii,j,tm[6],z,jj;
   static char prev_off[15];
+
   tbl[ch].status=0;
 
   for(j=0;j<tbl[ch].n_zone;j++)
@@ -499,13 +535,14 @@ confirm_off(ch,sec,i)
     }
   }
 
-find_oldest(path,oldst,latst) /* returns N of files */
-  char *path,*oldst,*latst;
+static int
+find_oldest(char *path, char *oldst, char *latst) /* returns N of files */
   {     
   int i;
   struct dirent *dir_ent;
   DIR *dir_ptr;
   char tb[100];
+
   /* find the oldest file */
   if((dir_ptr=opendir(path))==NULL)
     {
@@ -529,28 +566,28 @@ find_oldest(path,oldst,latst) /* returns N of files */
   printf("%d files in %s, oldest=%s, latest=%s\n",i,path,oldst,latst);
 #endif
   closedir(dir_ptr);
-  return i;
+  return (i);
   }
 
-read_one_sec(sec)
-  int *sec;
+static int
+read_one_sec(int *sec)
   {
   int i,j,k,lower_min,lower_max,aa,bb,kk,sys,ch,ret,size;
-  unsigned char *ptr,*ptr_lim;
-  static unsigned long upper[4][8]={
-    0x00000000,0x00000010,0x00000020,0x00000030,
-    0xffffffc0,0xffffffd0,0xffffffe0,0xfffffff0,
-    0x00000000,0x00000100,0x00000200,0x00000300,
-    0xfffffc00,0xfffffd00,0xfffffe00,0xffffff00,
-    0x00000000,0x00010000,0x00020000,0x00030000,
-    0xfffc0000,0xfffd0000,0xfffe0000,0xffff0000,
-    0x00000000,0x01000000,0x02000000,0x03000000,
-    0xfc000000,0xfd000000,0xfe000000,0xff000000};
+  uint8_w *ptr,*ptr_lim;
+  static uint32_w upper[4][8]={
+    {0x00000000,0x00000010,0x00000020,0x00000030,
+     0xffffffc0,0xffffffd0,0xffffffe0,0xfffffff0},
+    {0x00000000,0x00000100,0x00000200,0x00000300,
+     0xfffffc00,0xfffffd00,0xfffffe00,0xffffff00},
+    {0x00000000,0x00010000,0x00020000,0x00030000,
+     0xfffc0000,0xfffd0000,0xfffe0000,0xffff0000},
+    {0x00000000,0x01000000,0x02000000,0x03000000,
+     0xfc000000,0xfd000000,0xfe000000,0xff000000}};
 
-  if((ret=read(fd,buf,4))<4) return -1;
+  if((ret=read(fd,buf,4))<4) return (-1);
   size=mkuint4(buf);
-  if(size<0 || size>LENGTH) return -1;
-  if((ret=read(fd,buf+4,size-4))<size-4) return -1;
+  if(size<0 || size>LENGTH) return (-1);
+  if((ret=read(fd,buf+4,size-4))<size-4) return (-1);
   ptr=buf+9;
   ptr_lim=buf+size;
   *sec=(((*ptr)>>4)&0x0f)*10+((*ptr)&0x0f);
@@ -597,12 +634,14 @@ read_one_sec(sec)
     if(idx2[ch]) idx[ch]=j++;
     }
   /* 1-sec data prepared */
-  return j;
+  return (j);
   }
 
+static void
 get_offset()
   {
   int i,ch;
+
   for(ch=0;ch<m_ch;ch++)
     {
     tbl[ch].zero_acc=0.0;
@@ -629,13 +668,13 @@ get_offset()
   lseek(fd,0,SEEK_SET);
   }
 
-plot_wave(xbase,ybase)
-  int xbase,ybase;
+static void
+plot_wave(int xbase, int ybase)
   {
-  int x_bit,x_byte,yy,i,j,k,x,y,y_min,y_max,ch,sec;
+  int x_bit,x_byte,yy,i,x,y,y_min,y_max,ch,sec;
   double data;
   char tb[100];
-  static unsigned char bit_mask[8]={0x80,0x40,0x20,0x10,0x8,0x4,0x2,0x1};
+  static uint8_w bit_mask[8]={0x80,0x40,0x20,0x10,0x8,0x4,0x2,0x1};
 
   /* draw ticks */
   for(sec=0;sec<=60;sec+=10)
@@ -833,14 +872,18 @@ tbl[ch].status,data,tbl[ch].cnt);
   if(m_limit) printf("\n");
   }
 
+static void
 hangup()
   {
+
   req_print=1;
   signal(SIGHUP,(void *)hangup);
   }
 
+static void
 owari()
   {
+
   close(fd);
   write_log("end");
   if(made_lock_file) unlink(file_trig_lock);
@@ -851,28 +894,28 @@ owari()
 #define FILE_W 1
 #define DIR_R  2
 #define DIR_W  3
-check_path(path,idx)
-  char *path;
-  int idx;
+static int
+check_path(char *path, int idx)
   {
   DIR *dir_ptr;
   char tb[1024],tb2[100];
   FILE *fp;
+
   if(idx==DIR_R || idx==DIR_W)
     {
     if((dir_ptr=opendir(path))==NULL)
       {
-      sprintf(tb2,"directory not open '%s'",path);
+      snprintf(tb2,sizeof(tb2),"directory not open '%s'",path);
       write_log(tb2);
       owari();
       }
     else closedir(dir_ptr);
     if(idx==DIR_W)
       {
-      sprintf(tb,"%s/%s.test.%d",path,progname,getpid());
+      snprintf(tb,sizeof(tb),"%s/%s.test.%d",path,progname,getpid());
       if((fp=fopen(tb,"w+"))==NULL)
         {
-        sprintf(tb2,"directory not R/W '%s'",path);
+        snprintf(tb2,sizeof(tb2),"directory not R/W '%s'",path);
         write_log(tb2);
         owari();
         }
@@ -887,7 +930,7 @@ check_path(path,idx)
     {
     if((fp=fopen(path,"r"))==NULL)
       {
-      sprintf(tb2,"file not readable '%s'",path);
+      snprintf(tb2,sizeof(tb2),"file not readable '%s'",path);
       write_log(tb2);
       owari();
       }
@@ -897,24 +940,25 @@ check_path(path,idx)
     {
     if((fp=fopen(path,"r+"))==NULL)
       {
-      sprintf(tb2,"file not R/W '%s'",path);
+      snprintf(tb2,sizeof(tb2),"file not R/W '%s'",path);
       write_log(tb2);
       owari();
       }
     else fclose(fp);
     }
-  return 1;
+  return (1);
   }
 
-put_font(bitmap,width_byte,xbase,ybase,text,font,
-    height_font,width_font,erase)
-  unsigned char *bitmap,*text,*font;
-  int width_byte,xbase,ybase,height_font,width_font,erase;
+static void
+put_font(uint8_w *bitmap, int width_byte, int xbase, int ybase,
+	 uint8_w *text, uint8_w *font,
+	 int height_font, int width_font, int erase)
   {
-  int xx,yy,i,j,k,x_bit,x_byte,xx_bit,xx_byte,x,y;
-  static unsigned char bit_mask[8]={
+  int xx,i,j,k,x_bit,x_byte,xx_bit,xx_byte,x;
+  static uint8_w bit_mask[8]={
     0x80,0x40,0x20,0x10,0x8,0x4,0x2,0x1};
-  for(i=0;i<strlen(text);i++)
+
+  for(i=0;i<strlen((char *)text);i++)
     {
     for(j=0;j<height_font;j++)
       {
@@ -936,20 +980,21 @@ put_font(bitmap,width_byte,xbase,ybase,text,font,
     }
   }
 
-wmemo(f,c,outdir)
-  char *f,*c;
+static void
+wmemo(char *f, char *c, char *outdir)
   {  
   FILE *fp;
   char tb[256];
-  sprintf(tb,"%s/%s",outdir,f);
+
+  snprintf(tb,sizeof(tb),"%s/%s",outdir,f);
   fp=fopen(tb,"w+");
   fprintf(fp,"%s\n",c);
   fclose(fp);
   }
 
-insatsu(tb1,tb2,tb3,path_spool,printer,count,count_max,convert)
-  unsigned char *tb1,*tb2,*tb3,*path_spool,*printer,*convert;
-  int count,count_max;
+static void
+insatsu(uint8_w *tb1, uint8_w *tb2, uint8_w *tb3, char *path_spool,
+	char *printer, int count, int count_max, char *convert)
   {
   struct rasterfile {
     int ras_magic;    /* magic number */
@@ -971,17 +1016,18 @@ insatsu(tb1,tb2,tb3,path_spool,printer,count,count_max,convert)
 
   if(!isalpha(*printer) && count_max<0) return;
 
-  put_font(frame,WIDTH_LBP,X_BASE-28*max_ch_flag,
+  put_font((uint8_w *)frame,WIDTH_LBP,X_BASE-28*max_ch_flag,
     HEIGHT_LBP-HEIGHT_FONT32,tb1,font32,HEIGHT_FONT32,WIDTH_FONT32,0);
-  put_font(frame,WIDTH_LBP,WIDTH_LBP*8-(strlen(tb2)+strlen(tb3))*WIDTH_FONT32,
-    HEIGHT_LBP-HEIGHT_FONT32,tb2,font32,HEIGHT_FONT32,WIDTH_FONT32,0);
-  put_font(frame,WIDTH_LBP,WIDTH_LBP*8-strlen(tb3)*WIDTH_FONT32,
-    HEIGHT_LBP-HEIGHT_FONT32,tb3,font32,HEIGHT_FONT32,WIDTH_FONT32,1);
-  put_font(frame,WIDTH_LBP,(WIDTH_LBP*8-3*WIDTH_FONT32)/2,
-    0,"|",font32,HEIGHT_FONT32,WIDTH_FONT32,0);
+  put_font((uint8_w *)frame,WIDTH_LBP,
+	   WIDTH_LBP*8-(strlen((char *)tb2)+strlen((char *)tb3))*WIDTH_FONT32,
+	   HEIGHT_LBP-HEIGHT_FONT32,tb2,font32,HEIGHT_FONT32,WIDTH_FONT32,0);
+  put_font((uint8_w *)frame,WIDTH_LBP,WIDTH_LBP*8-strlen((char *)tb3)*WIDTH_FONT32,
+	   HEIGHT_LBP-HEIGHT_FONT32,tb3,font32,HEIGHT_FONT32,WIDTH_FONT32,1);
+  put_font((uint8_w *)frame,WIDTH_LBP,(WIDTH_LBP*8-3*WIDTH_FONT32)/2,
+	   0,(uint8_w *)"|",font32,HEIGHT_FONT32,WIDTH_FONT32,0);
 
-  sscanf(tb2,"%02d/%02d/%02d %02d:%02d",&ye,&mo,&da,&ho1,&mi1);
-  sscanf(tb3," - %02d:%02d",&ho2,&mi2);
+  sscanf((char *)tb2,"%02d/%02d/%02d %02d:%02d",&ye,&mo,&da,&ho1,&mi1);
+  sscanf((char *)tb3," - %02d:%02d",&ho2,&mi2);
 /*printf("%02d %02d %02d %02d %02d %02d %02d\n",ye,mo,da,ho1,mi1,ho2,mi2);*/
   sprintf(timename,"%02d%02d%02d.%02d%02d-%02d%02d",ye,mo,da,ho1,mi1,ho2,mi2);
   sprintf(filename,"%s/%s.ras",path_spool,timename);
@@ -1052,21 +1098,22 @@ insatsu(tb1,tb2,tb3,path_spool,printer,count,count_max,convert)
   return;
   }
 
-read_param(f_param,textbuf)
-  FILE *f_param;
-  unsigned char *textbuf;
+static int
+read_param(FILE *f_param, char *textbuf)
   {
+
   do  {
-    if(fgets(textbuf,200,f_param)==NULL) return 1;
+    if(fgets(textbuf,200,f_param)==NULL) return (1);
     } while(*textbuf=='#');
-  return 0;
+  return (0);
   }
 
-get_lastline(fname,lastline)
-  char *fname,*lastline;
+static void
+get_lastline(char *fname, char *lastline)
   {
   FILE *fp;
-  long dp,last_dp;
+  long dp,last_dp;  /* 64bit ok */
+
   if((fp=fopen(fname,"r"))==NULL)
     {
     *lastline=0;
@@ -1092,24 +1139,34 @@ get_lastline(fname,lastline)
   fclose(fp);
   }
 
-main(argc,argv)
-  int argc;
-  char *argv[];
+static void
+usage()
+{
+
+  WIN_version();
+  (void)fprintf(stderr, "%s\n", rcsid);
+  fprintf(stderr," usage of '%s' :\n", progname);
+  (void)fprintf(stderr,
+		"  '%s (-d [dly min]) (-o) (-l [log file]) [param file] ([YYMMDD] [hhmm] [length(min)])'\n",
+		progname);
+}
+
+int
+main(int argc, char *argv[])
   {
   FILE *f_param,*fp;
-  int i,j,k,maxlen,ret,m_count,x_base,y_base,y,ch,tm[6],tm1[6],minutep,hourp,c,
+  int i,j,k,maxlen,ret,m_count,x_base,y_base,y,ch,tm1[6],minutep,hourp,c,
     count,count_max,offset,wait_min;
   char *ptr,textbuf[500],textbuf1[500],fn1[200],fn2[100],conv[256],tb[100],
-    fn3[100],path_font[WIN_FILENAME_MAX],path_temp[WIN_FILENAME_MAX],
+    fn3[100],path_temp[WIN_FILENAME_MAX],
     path_mon[WIN_FILENAME_MAX],area[20],timebuf1[80],timebuf2[80],printer[40],
     name[STNLEN],comp[CMPLEN],path_mon1[WIN_FILENAME_MAX];
-  extern int optind;
-  extern char *optarg;
+  /*   extern int optind; */
+  /*   extern char *optarg; */
 
-  if(progname=strrchr(argv[0],'/')) progname++;
+  if((progname=strrchr(argv[0],'/')) != NULL) progname++;
   else progname=argv[0];
-  sprintf(tb," usage : '%s (-d [dly min]) (-o) (-l [log file]) [param file] ([YYMMDD] [hhmm] [length(min)])\n",
-    progname);
+
   offset=wait_min=0;
   logfile=NULL;
   exit_status = EXIT_SUCCESS;
@@ -1128,24 +1185,24 @@ main(argc,argv)
         break;
       default:
         fprintf(stderr," option -%c unknown\n",c);
-        fprintf(stderr,"%s\n",tb);
+	usage();
         exit(1);
       }
     }
   optind--;
   if(argc<2+optind)
     {
-    fprintf(stderr,"%s\n",tb);
+    usage();  
     exit(1);
     }
 
   write_log("start");
-  strcpy(param_file,argv[1+optind]);
+  param_file=argv[1+optind];
 
   /* open parameter file */ 
   if((f_param=fopen(param_file,"r"))==NULL)
     {
-    sprintf(tb,"'%s' not open",param_file);
+    snprintf(tb,sizeof(tb),"'%s' not open",param_file);
     write_log(tb);
     owari();
     }
@@ -1153,7 +1210,7 @@ main(argc,argv)
   fn1[strlen(fn1)-1]=0;         /* delete CR */
   read_param(f_param,textbuf1); /* (2) mon data directory */
   sscanf(textbuf1,"%s",textbuf);
-  if((ptr=strchr(textbuf,':'))==0)
+  if((ptr=strchr(textbuf,':'))==NULL)
     {
     sscanf(textbuf,"%s",path_mon);
     sscanf(textbuf,"%s",path_mon1);
@@ -1219,8 +1276,16 @@ main(argc,argv)
   sscanf(textbuf,"%s",file_zone);
   check_path(file_zone,FILE_R);
   fclose(f_param);
-  sprintf(temp_done,"%s/USED",path_mon1);
-  sprintf(latest,"%s/LATEST",path_mon);
+  if (sizeof(temp_done) <= snprintf(temp_done,sizeof(temp_done),"%s/USED",path_mon1)) {
+    snprintf(tb,sizeof(tb),"buffer overflow1");
+    write_log(tb);
+    owari();
+  }
+  if (sizeof(latest) <= snprintf(latest,sizeof(latest),"%s/LATEST",path_mon)) {
+    snprintf(tb,sizeof(tb),"buffer overflow2");
+    write_log(tb);
+    owari();
+  }
   min_per_sheet=MIN_PER_LINE*n_rows;    /* min/sheet */
 
   if(argc<5+optind)
@@ -1228,7 +1293,8 @@ main(argc,argv)
 retry:
     if((fp=fopen(temp_done,"r"))==NULL) /* read USED file for when to start */
       {
-      sprintf(tb,"'%s' not found.  Use '%s' instead.",temp_done,latest);
+      snprintf(tb,sizeof(tb),
+	       "'%s' not found.  Use '%s' instead.",temp_done,latest);
       write_log(tb);
       while((fp=fopen(latest,"r"))==NULL)
         {
@@ -1241,7 +1307,7 @@ retry:
       {
       fclose(fp);
       unlink(temp_done);
-      sprintf(tb,"'%s' illegal -  deleted.",temp_done);
+      snprintf(tb,sizeof(tb),"'%s' illegal -  deleted.",temp_done);
       write_log(tb);
       sleep(60);
       goto retry;
@@ -1326,12 +1392,12 @@ retry:
       {
       sprintf(textbuf,"%02d/%02d/%02d %02d:%02d",
         tim[0],tim[1],tim[2],tim[3],tim[4]);
-      put_font(frame,WIDTH_LBP,0,y_base-Y_SCALE-HEIGHT_FONT32,textbuf,
-        font32,HEIGHT_FONT32,WIDTH_FONT32,0);
+      put_font((uint8_w *)frame,WIDTH_LBP,0,y_base-Y_SCALE-HEIGHT_FONT32,
+	       (uint8_w *)textbuf,font32,HEIGHT_FONT32,WIDTH_FONT32,0);
       /* update channels */
       while((f_param=fopen(param_file,"r"))==NULL)
         {
-        sprintf(tb,"'%s' file not found (%d)",param_file,getpid());
+        snprintf(tb,sizeof(tb),"'%s' file not found (%d)",param_file,getpid());
         write_log(tb);
         sleep(60);
         }
@@ -1359,7 +1425,7 @@ retry:
       if(j)   /* there is no triggered channel now */
         {
         n_zone=0;
-        for(i=0;i<65536;i++) idx2[i]=0;
+        for(i=0;i<WIN_CHMAX;i++) idx2[i]=0;
         maxlen=0;
         for(i=0;i<max_ch;i++)
           {
@@ -1376,7 +1442,7 @@ retry:
           /* get sys_ch from channel table file */
           while((fp=fopen(ch_file,"r"))==NULL)
             {
-            sprintf(tb,"'%s' file not found (%d)",ch_file,getpid());
+            snprintf(tb,sizeof(tb),"'%s' file not found (%d)",ch_file,getpid());
             write_log(tb);
             sleep(60);
             }
@@ -1393,7 +1459,7 @@ retry:
           fclose(fp);
           if(ret)   /* channel not found in file */
             {
-            sprintf(tb,"'%s-%s' not found",tbl[i].name,tbl[i].comp);
+            snprintf(tb,sizeof(tb),"'%s-%s' not found",tbl[i].name,tbl[i].comp);
             write_log(tb);
             tbl[i].use=0;
             tbl[i].name[0]='*';
@@ -1401,16 +1467,18 @@ retry:
             }
           while((fp=fopen(file_zone,"r"))==NULL)
             {
-            sprintf(tb,"'%s' file not found (%d)",param_file,getpid());
+            snprintf(tb,sizeof(tb),
+		     "'%s' file not found (%d)",param_file,getpid());
             write_log(tb);
             sleep(60);
             }
-          while(ptr=fgets(textbuf,500,fp))
+          while((ptr=fgets(textbuf,500,fp)) != NULL)
             {
             if(*ptr=='#') ptr++;
             if((ptr=strtok(ptr," +/\t\n"))==NULL) continue;
             strcpy(area,ptr);
-            while(ptr=strtok(0," +/\t\n")) if(strcmp(ptr,tbl[i].name)==0) break;
+            while((ptr=strtok(0," +/\t\n")) != NULL)
+	      if(strcmp(ptr,tbl[i].name)==0) break;
             if(ptr) /* a zone for station "tbl[i].name" found */
               {
               if(tbl[i].ratio!=0.0)
@@ -1486,9 +1554,9 @@ retry:
           {
           sprintf(textbuf,"%04X ",tbl[i].ch);
 #if LONGNAME
-          put_font(frame,WIDTH_LBP,0,
+          put_font((uint8_w *)frame,WIDTH_LBP,0,
             y+(pixels_per_trace-HEIGHT_FONT16)/2+HEIGHT_FONT16/4,
-            textbuf,font16,HEIGHT_FONT16,WIDTH_FONT16,0);
+            (uint8_w *)textbuf,font16,HEIGHT_FONT16,WIDTH_FONT16,0);
           if(i==0) sprintf(textbuf,"%s",tbl[i].name);
           else
             {
@@ -1503,22 +1571,22 @@ retry:
           sprintf(textbuf+strlen(textbuf),"%s",tbl[i].comp);
           if((X_BASE-WIDTH_FONT16*(4+1))/(maxlen+1)>=WIDTH_FONT24 &&
               pixels_per_trace+4>=HEIGHT_FONT24)
-            put_font(frame,WIDTH_LBP,WIDTH_FONT16*4+
+            put_font((uint8_w *)frame,WIDTH_LBP,WIDTH_FONT16*4+
               (X_BASE-WIDTH_FONT16*(4+1)-(maxlen+1)*WIDTH_FONT24)/2,
-              y+(pixels_per_trace-HEIGHT_FONT24)/2,textbuf,font24,
+              y+(pixels_per_trace-HEIGHT_FONT24)/2,(uint8_w *)textbuf,font24,
               HEIGHT_FONT24,WIDTH_FONT24,0);
           else
-            put_font(frame,WIDTH_LBP,WIDTH_FONT16*4+
+            put_font((uint8_w *)frame,WIDTH_LBP,WIDTH_FONT16*4+
               (X_BASE-WIDTH_FONT16*(4+1)-(maxlen+1)*WIDTH_FONT16)/2,
-              y+(pixels_per_trace-HEIGHT_FONT16)/2,textbuf,font16,
+              y+(pixels_per_trace-HEIGHT_FONT16)/2,(uint8_w *)textbuf,font16,
               HEIGHT_FONT16,WIDTH_FONT16,0);
           sprintf(textbuf,"%2d",tbl[i].gain);
-          put_font(frame,WIDTH_LBP,WIDTH_FONT16*15,
-            y+(pixels_per_trace-HEIGHT_FONT16)/2+HEIGHT_FONT16/4,textbuf,font16,
-            HEIGHT_FONT16,WIDTH_FONT16,0);
+          put_font((uint8_w *)frame,WIDTH_LBP,WIDTH_FONT16*15,
+		   y+(pixels_per_trace-HEIGHT_FONT16)/2+HEIGHT_FONT16/4,
+		   (uint8_w *)textbuf,font16,HEIGHT_FONT16,WIDTH_FONT16,0);
 #else
-          put_font(frame,WIDTH_LBP,0,y+8-8*max_ch_flag,textbuf,font16,
-            HEIGHT_FONT16,WIDTH_FONT16,0);
+          put_font((uint8_w *)frame,WIDTH_LBP,0,y+8-8*max_ch_flag,
+		   (uint8_w *)textbuf,font16,HEIGHT_FONT16,WIDTH_FONT16,0);
           if(i==0) sprintf(textbuf,"%-4s",tbl[i].name);
           else
             {
@@ -1528,17 +1596,17 @@ retry:
           strcat(textbuf,"-");
           sprintf(textbuf+strlen(textbuf),"%-2s",tbl[i].comp);
           if(max_ch_flag)
-            put_font(frame,WIDTH_LBP,WIDTH_FONT16*5,y,textbuf,font16,
-              HEIGHT_FONT16,WIDTH_FONT16,0);
+            put_font((uint8_w *)frame,WIDTH_LBP,WIDTH_FONT16*5,y,
+		     (uint8_w *)textbuf,font16,HEIGHT_FONT16,WIDTH_FONT16,0);
           else
-            put_font(frame,WIDTH_LBP,WIDTH_FONT16*5,y,textbuf,font24,
+            put_font((uint8_w *)frame,WIDTH_LBP,WIDTH_FONT16*5,y,textbuf,font24,
               HEIGHT_FONT24,WIDTH_FONT24,0);
           sprintf(textbuf,"%2d",tbl[i].gain);
           if(max_ch_flag)
-            put_font(frame,WIDTH_LBP,WIDTH_FONT16*4+WIDTH_FONT16*7,y,
+            put_font((uint8_w *)frame,WIDTH_LBP,WIDTH_FONT16*4+WIDTH_FONT16*7,y,
               textbuf,font16,HEIGHT_FONT16,WIDTH_FONT16,0);
           else
-            put_font(frame,WIDTH_LBP,WIDTH_FONT16*4+WIDTH_FONT24*7,y+8,
+            put_font((uint8_w *)frame,WIDTH_LBP,WIDTH_FONT16*4+WIDTH_FONT24*7,y+8,
               textbuf,font16,HEIGHT_FONT16,WIDTH_FONT16,0);
 #endif
           }
@@ -1575,7 +1643,9 @@ retry:
           }
         if(strlen(timebuf1)>=11 && strcmp2(timebuf1,timebuf2)>=0) break;
         }
-      if(req_print) insatsu(fn1,fn2,fn3,path_temp,printer,count,count_max,conv);
+      if(req_print)
+	insatsu((uint8_w *)fn1,(uint8_w *)fn2,(uint8_w* )fn3,path_temp,
+		printer,count,count_max,conv);
       sleep(15);
       }
     sprintf(textbuf,"%s/%s",path_mon,timebuf2);
@@ -1607,18 +1677,22 @@ retry:
     x_base+=SR_MON*60;
     if(++m_count==m_limit)
       {
-      insatsu(fn1,fn2,fn3,path_temp,printer,count,count_max,conv);
+      insatsu((uint8_w *)fn1,(uint8_w *)fn2,(uint8_w *)fn3,path_temp,
+	      printer,count,count_max,conv);
       owari();
       }
     else if(m_count%min_per_sheet==0)
       {
-      insatsu(fn1,fn2,fn3,path_temp,printer,count,count_max,conv);
+      insatsu((uint8_w *)fn1,(uint8_w *)fn2,(uint8_w *)fn3,path_temp,
+	      printer,count,count_max,conv);
       x_base=X_BASE-28*max_ch_flag;
       y_base=Y_BASE;
       }
     else
       {
-      if(req_print) insatsu(fn1,fn2,fn3,path_temp,printer,count,count_max,conv);
+	if(req_print)
+	  insatsu((uint8_w *)fn1,(uint8_w *)fn2,(uint8_w *)fn3,path_temp,
+		  printer,count,count_max,conv);
       if(m_count%MIN_PER_LINE==0)
         {
         x_base=X_BASE-28*max_ch_flag;

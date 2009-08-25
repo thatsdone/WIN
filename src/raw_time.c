@@ -1,4 +1,4 @@
-/* $Id: raw_time.c,v 1.4.4.3.2.2 2008/11/13 03:03:02 uehira Exp $ */
+/* $Id: raw_time.c,v 1.4.4.3.2.3 2009/08/25 04:00:15 uehira Exp $ */
 
 /* raw_time.c -- online version of wtime(1W) */
 
@@ -18,6 +18,7 @@
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
+#include <sys/stat.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -52,7 +53,7 @@
 
 
 static char rcsid[] =
-  "$Id: raw_time.c,v 1.4.4.3.2.2 2008/11/13 03:03:02 uehira Exp $";
+  "$Id: raw_time.c,v 1.4.4.3.2.3 2009/08/25 04:00:15 uehira Exp $";
 
 char *progname, *logfile;
 int  daemon_mode, syslog_mode;
@@ -96,7 +97,7 @@ main(int argc, char *argv[])
   int   i;
 
 
-  if (progname = strrchr(argv[0], '/'))
+  if ((progname = strrchr(argv[0], '/')) != NULL)
     progname++;
   else
     progname = argv[0];
@@ -252,7 +253,7 @@ main(int argc, char *argv[])
 	    err_sys("malloc sbuf[ch]");
 	}
 	else if (sr_check[chn] != sr) {
-	  (void)snprintf(msg, sizeof(msg), "04X: %dHz-->%dHz\n",
+	  (void)snprintf(msg, sizeof(msg), "%04X: %dHz-->%dHz\n",
 			 chn, sr_check[chn], sr);
 	  write_log(msg);
 	  goto reset;
@@ -374,7 +375,7 @@ read_chtbl(void)
   while(fgets(buf, sizeof(buf), fp) != NULL) {
     if (buf[0] == '#')   /* skip comment line */
       continue;
-    if (sscanf(buf, "%x%d%d", &chtmp, &flag, &delaytmp) < 3)
+    if (sscanf(buf, "%hx%d%d", &chtmp, &flag, &delaytmp) < 3)
       continue;
     if (!flag)           /* skip if recording flag = 0 */
       continue;
@@ -408,7 +409,6 @@ read_chtbl(void)
 static time_t
 shift_sec(unsigned char *tm_bcd, int sec)
 {
-  int        tm[6];
   struct tm  *nt, mt;
   time_t     ltime;
 

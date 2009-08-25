@@ -1,4 +1,4 @@
-/* $Id: shmdump.c,v 1.21.4.6.2.9 2009/02/15 07:41:36 uehira Exp $ */
+/* $Id: shmdump.c,v 1.21.4.6.2.10 2009/08/25 04:00:16 uehira Exp $ */
 
 /*  program "shmdump.c" 6/14/94 urabe */
 /*  revised 5/29/96 */
@@ -56,20 +56,45 @@
 #define MAXMESG     2000
 #define XINETD      0
 
-static char rcsid[] =
-  "$Id: shmdump.c,v 1.21.4.6.2.9 2009/02/15 07:41:36 uehira Exp $";
+/* filter */
+#define MAX_FILT    100
+#define MAX_SR      (HEADER_5B)
+/* #define MAX_SR      20000 */
 
-char *progname,outfile[256];
-int win;
-FILE *fpout;
+struct Filter
+{
+  char kind[12];
+  double fl,fh,fp,fs,ap,as;
+  int m_filt;                  /* order of filter */
+  int n_filt;                  /* order of Butterworth function */
+  double coef[MAX_FILT*4];     /* filter coefficients */
+  double gn_filt;              /* gain factor of filter */
+};
+
+static char rcsid[] =
+  "$Id: shmdump.c,v 1.21.4.6.2.10 2009/08/25 04:00:16 uehira Exp $";
+
+static char *progname,outfile[256];
+static int win;
+static FILE *fpout;
+
+/* prototypes */
+static int time_dif(int *, int *);
+static void err_sys_local(char *);
+static int advance_s(struct Shm *, size_t *, unsigned long *, uint32_w *);
+static int bcd_dec2(int *, uint8_w *);
+static void ctrlc(void);
+static void get_filter(WIN_sr, struct Filter *);
+static void usage(void);
+int main(int, char *[]);
 
 static int
-time_dif(t1,t2) /* returns t1-t2(sec) */	/* 64 bit ok */
-  int *t1,*t2;
+time_dif(int *t1, int *t2) /* returns t1-t2(sec) */	/* 64 bit ok */
   {
-    int i,*a,*b,soda,sodb,t1_is_lager,sdif,ok;
+  int i,*a,*b,soda,sodb,t1_is_lager,sdif,ok;
+
   for(i=0;i<6;i++) if(t1[i]!=t2[i]) break;
-  if(i==6) return 0;
+  if(i==6) return (0);
   else
     {
     if(t1[i]>t2[i]) {a=t2;b=t1;t1_is_lager=1;}
@@ -81,7 +106,7 @@ time_dif(t1,t2) /* returns t1-t2(sec) */	/* 64 bit ok */
   sdif=sodb-soda;
   if(i>=3)
     {
-    if(t1_is_lager) return sdif;
+    if(t1_is_lager) return (sdif);
     else return (-sdif);
     }
   /* 'day' is different */
@@ -91,17 +116,17 @@ time_dif(t1,t2) /* returns t1-t2(sec) */	/* 64 bit ok */
   else if(i==2 && a[2]+1==b[2]) ok=1;
   else
     {
-    if(t1_is_lager) return 86400;
-    else return -86400;
+    if(t1_is_lager) return (86400);
+    else return (-86400);
     }
-  if(t1_is_lager) return 86400+sdif;
-  else return -(86400+sdif);
+  if(t1_is_lager) return (86400+sdif);
+  else return (-(86400+sdif));
   }
 
 static void
-err_sys_local(ptr)	/* 64 bit ok */
-  char *ptr;
+err_sys_local(char *ptr)	/* 64 bit ok */
   {
+
 #if XINETD
 #else
   fprintf(stderr,"%s %s\n",ptr,strerror(errno));
@@ -109,12 +134,9 @@ err_sys_local(ptr)	/* 64 bit ok */
   exit(0);
   }
 
+/* 64 bit ok */
 static int
-advance_s(shm,shp,c_save,size)	/* 64 bit ok */
-  struct Shm *shm;
-  size_t  *shp;
-  unsigned long *c_save;
-  uint32_w *size;
+advance_s(struct Shm *shm, size_t *shp, unsigned long *c_save, uint32_w *size)
   {
   long i;
   size_t shpp;
@@ -131,32 +153,31 @@ advance_s(shm,shp,c_save,size)	/* 64 bit ok */
   }
 
 static int
-bcd_dec2(dest,sour)	/* 64 bit ok */
-  uint8_w *sour;
-  int *dest;
+bcd_dec2(int *dest, uint8_w *sour)	/* 64 bit ok */
   {
   int i;
 
   i=b2d[sour[0]];
-  if(i>=0 && i<=99) dest[0]=i; else return 0;
+  if(i>=0 && i<=99) dest[0]=i; else return (0);
   i=b2d[sour[1]];
-  if(i>=1 && i<=12) dest[1]=i; else return 0;
+  if(i>=1 && i<=12) dest[1]=i; else return (0);
   i=b2d[sour[2]];
-  if(i>=1 && i<=31) dest[2]=i; else return 0;
+  if(i>=1 && i<=31) dest[2]=i; else return (0);
   i=b2d[sour[3]];
-  if(i>=0 && i<=23) dest[3]=i; else return 0;
+  if(i>=0 && i<=23) dest[3]=i; else return (0);
   i=b2d[sour[4]];
-  if(i>=0 && i<=59) dest[4]=i; else return 0;
+  if(i>=0 && i<=59) dest[4]=i; else return (0);
   i=b2d[sour[5]];
-  if(i>=0 && i<=60) dest[5]=i; else return 0;
+  if(i>=0 && i<=60) dest[5]=i; else return (0);
   if(dest[0]<70) dest[0]+=100;
-  return 1;
+  return (1);
   }
 
 static void
 ctrlc()	/* 64 bit ok */
   {
   char tb[1024];
+
   if(win) /* invoke "win" */
     {
     fclose(fpout);
@@ -167,25 +188,8 @@ ctrlc()	/* 64 bit ok */
   exit(0);
   }
 
-/* filter */
-#define MAX_FILT    100
-#define MAX_SR      (HEADER_5B)
-/* #define MAX_SR      20000 */
-
-struct Filter
-{
-  char kind[12];
-  double fl,fh,fp,fs,ap,as;
-  int m_filt;                  /* order of filter */
-  int n_filt;                  /* order of Butterworth function */
-  double coef[MAX_FILT*4];     /* filter coefficients */
-  double gn_filt;              /* gain factor of filter */
-};
-
 static void
-get_filter(sr,f)  /* 64 bit ok */
-     WIN_sr    sr;
-     struct Filter  *f;
+get_filter(WIN_sr sr, struct Filter *f)  /* 64 bit ok */
 {
    double   dt;
 
@@ -222,9 +226,7 @@ usage()
 }
 
 int
-main(argc,argv)
-  int argc;
-  char *argv[];
+main(int argc, char *argv[])
   {
   /* #define SR_MON 5 */
   key_t shm_key_in;  /* 64 bit ok */
@@ -272,8 +274,7 @@ main(argc,argv)
   float flt_fl, flt_fh, flt_fp, flt_fs, flt_ap, flt_as;
   int chid;              /* filter var end */
 
-
-  if((progname=strrchr(argv[0],'/'))) progname++;
+  if((progname=strrchr(argv[0],'/')) != NULL) progname++;
   else progname=argv[0];
   search=out=all=seconds=win=zero=mon=tout=rawdump=quiet=hexdump=0;
   fplist=stdout;

@@ -1,4 +1,4 @@
-/* $Id: wed.c,v 1.5.4.3.2.2 2008/11/13 09:36:07 uehira Exp $ */
+/* $Id: wed.c,v 1.5.4.3.2.3 2009/08/25 04:00:16 uehira Exp $ */
 /* program "wed.c"
 	"wed" edits a win format data file by time range and channles
 	6/26/91,7/13/92,3/11/93,4/20/94,8/5/94,12/8/94   urabe
@@ -23,7 +23,7 @@
 
 #include        "winlib.h"
 
-#define		DEBUG		0
+/* #define		DEBUG		0 */
 #define		DEBUG1		0
 
 unsigned char *buf,*outbuf;
@@ -98,7 +98,7 @@ get_one_record()
 read_data()
 {
    static unsigned int size;
-   int i,re;
+   int re;
    unsigned char  tmpa[4];
  
    /* if(fread(&re,1,4,stdin)==0) return 0; */
@@ -169,8 +169,8 @@ main(argc,argv)
      int argc;
      char *argv[];
 {
-   int i;
    char tb[100];
+
    signal(SIGINT,(void *)wabort);
    signal(SIGTERM,(void *)wabort);
    

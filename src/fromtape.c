@@ -1,4 +1,4 @@
-/* $Id: fromtape.c,v 1.7.2.3.2.4 2008/12/29 11:25:11 uehira Exp $ */
+/* $Id: fromtape.c,v 1.7.2.3.2.5 2009/08/25 04:00:15 uehira Exp $ */
 /*
   program "fromtape.c"
   12/10/90 - 12/13/90, 9/19/91, 10/30/91, 6/19/92  urabe
@@ -37,7 +37,7 @@
 #define   MAXSIZE   2000000
 #define   SIZE_WBUF 600000
 /* #define   SR_MON    5 */
-#define   MAX_SR    1024
+/* #define   MAX_SR    1024 */
 
 #define   TIME1   "9005151102"  /* 10 m / fm before this time */
 #define   TIME2   "9005161000"  /* no fms before this time */
@@ -51,7 +51,7 @@
   char name_file[NAMLEN],path_raw[NAMLEN],path_mon[NAMLEN],
     textbuf[80],name_time[NAMLEN],file_done[NAMLEN],param[100],
     mon_written[NAMLEN],raw_written[NAMLEN],exb_name[NAMLEN];
-  int32_w buf_raw[MAX_SR],buf_mon[SR_MON][2];
+  /* int32_w buf_raw[MAX_SR],buf_mon[SR_MON][2]; */
   FILE *fp,*f_mon,*f_raw;
   int e_ch[241]={
     0x0000,0x0001,0x0002,0x0003,0x0004,0x0005,0x0006,0x0007,
@@ -243,117 +243,6 @@ main(argc,argv)
     if(time_cmp(dec_now,dec_end,6)>0) break;
     }
   end_process(0);
-  }
-
-get_mon(gm_sr,gm_raw,gm_mon)
-  int gm_sr,*gm_raw,(*gm_mon)[2];
-  {
-  int gm_i,gm_j,gm_subr;
-  switch(gm_sr)
-    {
-    case 100:
-      gm_subr=100/SR_MON;
-      break;
-    case 20:
-      gm_subr=20/SR_MON;
-      break;
-    case 120:
-      gm_subr=120/SR_MON;
-      break;
-    default:
-      gm_subr=gm_sr/SR_MON;
-      break;
-    }
-  for(gm_i=0;gm_i<SR_MON;gm_i++)
-    {
-    gm_mon[gm_i][0]=gm_mon[gm_i][1]=(*gm_raw);
-    for(gm_j=0;gm_j<gm_subr;gm_j++)
-      {
-      if(*gm_raw<gm_mon[gm_i][0]) gm_mon[gm_i][0]=(*gm_raw);
-      else if(*gm_raw>gm_mon[gm_i][1]) gm_mon[gm_i][1]=(*gm_raw);
-      gm_raw++;
-      }
-    }
-  }
-
-unsigned char *compress_mon(peaks,ptr)
-  int *peaks;
-  unsigned char *ptr;
-  {
-  /* data compression */
-  if(((peaks[0]&0xffffffc0)==0xffffffc0 || (peaks[0]&0xffffffc0)==0) &&
-    ((peaks[1]&0xffffffc0)==0xffffffc0 ||(peaks[1]&0xffffffc0)==0))
-    {
-    *ptr++=((peaks[0]&0x70)<<1)|((peaks[1]&0x70)>>2);
-    *ptr++=((peaks[0]&0xf)<<4)|(peaks[1]&0xf);
-    }
-  else
-  if(((peaks[0]&0xfffffc00)==0xfffffc00 || (peaks[0]&0xfffffc00)==0) &&
-    ((peaks[1]&0xfffffc00)==0xfffffc00 ||(peaks[1]&0xfffffc00)==0))
-    {
-    *ptr++=((peaks[0]&0x700)>>3)|((peaks[1]&0x700)>>6)|1;
-    *ptr++=peaks[0];
-    *ptr++=peaks[1];
-    }
-  else
-  if(((peaks[0]&0xfffc0000)==0xfffc0000 ||(peaks[0]&0xfffc0000)==0) &&
-    ((peaks[1]&0xfffc0000)==0xfffc0000 ||(peaks[1]&0xfffc0000)==0))
-    {
-    *ptr++=((peaks[0]&0x70000)>>11)|((peaks[1]&0x70000)>>14)|2;
-    *ptr++=peaks[0];
-    *ptr++=peaks[0]>>8;
-    *ptr++=peaks[1];
-    *ptr++=peaks[1]>>8;
-    }
-  else
-  if(((peaks[0]&0xfc000000)==0xfc000000 || (peaks[0]&0xfc000000)==0) &&
-    ((peaks[1]&0xfc000000)==0xfc000000 ||(peaks[1]&0xfc000000)==0))
-    {
-    *ptr++=((peaks[0]&0x7000000)>>19)|((peaks[1]&0x7000000)>>22)|3;
-    *ptr++=peaks[0];
-    *ptr++=peaks[0]>>8;
-    *ptr++=peaks[0]>>16;
-    *ptr++=peaks[1];
-    *ptr++=peaks[1]>>8;
-    *ptr++=peaks[1]>>16;
-    }
-  else 
-    {
-    *ptr++=0;
-    *ptr++=0;
-    }
-  return ptr;
-  }
-
-make_mon(ptr,ptw) /* for one minute */
-  unsigned char *ptr,*ptw;
-  {
-  unsigned char *ptr_lim,*ptw_start;
-  int i,j,k;
-  WIN_ch ch;
-  WIN_sr sr;
-  unsigned long uni;
-
-  /* make mon data */
-  ptr_lim=ptr+mkuint4(ptr);
-  ptw_start=ptw;
-  ptr+=4;
-  ptw+=4;               /* size (4) */
-  for(i=0;i<6;i++) *ptw++=(*ptr++); /* YMDhms (6) */
-
-  do    /* loop for chs */
-    {
-    ptr+=win2fix(ptr,buf_raw,&ch,&sr);
-    *ptw++=ch>>8;
-    *ptw++=ch;
-    get_mon(sr,buf_raw,buf_mon);  /* get mon data from raw */
-    for(i=0;i<SR_MON;i++) ptw=compress_mon(buf_mon[i],ptw);
-    } while(ptr<ptr_lim);
-  uni=ptw-ptw_start;
-  ptw_start[0]=uni>>24; /* size (H) */
-  ptw_start[1]=uni>>16;
-  ptw_start[2]=uni>>8;
-  ptw_start[3]=uni;     /* size (L) */
   }
 
 mt_pos(fmc,blc)

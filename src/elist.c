@@ -1,4 +1,5 @@
-/* $Id: elist.c,v 1.9.4.2.2.1 2008/12/29 11:25:11 uehira Exp $ */
+/* $Id: elist.c,v 1.9.4.2.2.2 2009/08/25 04:00:15 uehira Exp $ */
+
 /* program elist.c    2/5/91 - 2/25/91 ,  4/16/92, 4/22/92  urabe */
 /*                      6/10/92, 8/18/92, 10/25/92, 6/8/93, 1/5/94  */
 /*      4/21/94,12/5/94,6/2/95 bug in dat_dir fixed */
@@ -16,6 +17,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <dirent.h>   /* opendir(), readdir() */
@@ -42,7 +44,7 @@ char *getname(name,id)
   static char t[10];
   struct passwd *pwd;
   if(*name) return name;
-  if(pwd=getpwuid(id)) return pwd->pw_name;
+  if((pwd=getpwuid(id))) return pwd->pw_name;
   else
     {
     sprintf(t,"%d",id);
@@ -80,8 +82,8 @@ main(argc,argv)
   int argc;
   char *argv[];
   {
-  extern int optind;
-  extern char *optarg;
+/*   extern int optind; */
+/*   extern char *optarg; */
   FILE *fp,*fa,*fee,*fpp;
   struct dirent *dir_ent;
   struct stat st_buf;
@@ -100,7 +102,6 @@ main(argc,argv)
     tmpfile[NAMLEN];
   int i,npick,t[6],ton[6],init,j,m,k,kk,no_file,noise,not_noise,re,search,
     npick_lim,c,reverse,hidenoise,kkk,pn,fn,sn,mn,nstn,delete;
-  long dp;
   double pt,pe,pomc,st,se,somc,mag;
 
   *ppfile=(*eefile)=0;
@@ -325,7 +326,7 @@ fprintf(fpp,"-------------------------------------------------------------------
       {
       if(strcmp(mes1,"off,")) continue;
       if(time_cmp(t,ton,6)<0) continue;
-      if(ptr=strchr(textbuf,'\n')) *ptr=0;
+      if((ptr=strchr(textbuf,'\n')) != NULL) *ptr=0;
       if(*mes2) strcpy(gbuf,strchr(textbuf,*mes2));
       else *gbuf=0;
 /*printf("OFF=%02d%02d%02d.%02d%02d%02d",t[0],t[1],t[2],t[3],t[4],t[5]);*/

@@ -1,4 +1,5 @@
-/* $Id: raw_raw.c,v 1.9.4.3.2.3 2008/12/29 11:25:11 uehira Exp $ */
+/* $Id: raw_raw.c,v 1.9.4.3.2.4 2009/08/25 04:00:15 uehira Exp $ */
+
 /* "raw_raw.c"    97.8.5 urabe */
 /*                  modified from raw_100.c */
 /*                  98.4.17 FreeBSD */
@@ -24,6 +25,7 @@
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
+#include <sys/stat.h>
 
 #if TIME_WITH_SYS_TIME
 #include <sys/time.h>
@@ -44,10 +46,10 @@
 #include "daemon_mode.h"
 #include "winlib.h"
 
-#define DEBUG       0
+/* #define DEBUG       0 */
 #define BELL        0
 
-unsigned char ch_table[65536];
+unsigned char ch_table[WIN_CHMAX];
 char *progname,*logfile,chfile[254];
 int n_ch,negate_channel;
 int  daemon_mode, syslog_mode;
@@ -65,8 +67,8 @@ read_chfile()
 #if DEBUG
       fprintf(stderr,"ch_file=%s\n",chfile);
 #endif
-      if(negate_channel) for(i=0;i<65536;i++) ch_table[i]=1;
-      else for(i=0;i<65536;i++) ch_table[i]=0;
+      if(negate_channel) for(i=0;i<WIN_CHMAX;i++) ch_table[i]=1;
+      else for(i=0;i<WIN_CHMAX;i++) ch_table[i]=0;
       i=j=0;
       while(fgets(tbuf,1024,fp))
         {
@@ -94,7 +96,7 @@ read_chfile()
         i++;
         }
 #if DEBUG
-      fprintf(stderr,"\n",k);
+      fprintf(stderr,"\n");
 #endif
       n_ch=j;
       if(negate_channel) sprintf(tbuf,"-%d channels",n_ch);
@@ -115,7 +117,7 @@ read_chfile()
     }
   else
     {
-    for(i=0;i<65536;i++) ch_table[i]=1;
+    for(i=0;i<WIN_CHMAX;i++) ch_table[i]=1;
     n_ch=i;
     write_log("all channels");
     }
@@ -131,8 +133,8 @@ main(argc,argv)
   int shmid_raw,shmid_mon;
   unsigned long uni;
   char tb[256];
-  unsigned char *ptr,*ptw,tm[6],*ptr_lim,*ptr_save;
-  int sr,i,j,k,size,n,size_shm,tow,c,shift45,eobsize_in,eobsize_out,pl_out,
+  unsigned char *ptr,*ptw,*ptr_lim,*ptr_save;
+  int sr,i,size,size_shm,tow,c,shift45,eobsize_in,eobsize_out,pl_out,
     eobsize_in_count,size2;
   unsigned long c_save;
   unsigned short ch;
@@ -141,7 +143,7 @@ main(argc,argv)
   extern char *optarg;
 
   shift45=0;
-  if(progname=strrchr(argv[0],'/')) progname++;
+  if((progname=strrchr(argv[0],'/')) != NULL) progname++;
   else progname=argv[0];
 
   daemon_mode = syslog_mode = 0;

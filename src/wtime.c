@@ -1,4 +1,4 @@
-/* $Id: wtime.c,v 1.3.2.3.2.4 2008/12/29 11:25:13 uehira Exp $ */
+/* $Id: wtime.c,v 1.3.2.3.2.5 2009/08/25 04:00:16 uehira Exp $ */
 
 /*
   program "wtime.c"
@@ -12,7 +12,9 @@
 
 #include  <stdio.h>
 #include  <stdlib.h>
+#include  <string.h>
 #include  <signal.h>
+#include  <unistd.h>
 
 #if TIME_WITH_SYS_TIME
 #include <sys/time.h>
@@ -29,11 +31,11 @@
 
 #include "winlib.h"
 
-#define   DEBUG   0
+/* #define   DEBUG   0 */
 #define   DEBUG1  0
 
 unsigned char *rbuf,*wbuf;
-int32_w *sbuf[65536];
+int32_w *sbuf[WIN_CHMAX];
 int s_add,ms_add;
 
 wabort() {exit(0);}
@@ -66,9 +68,9 @@ shift_sec(tm_bcd,sec)
   unsigned char *tm_bcd;
   int sec;
   {
-  int tm[6];
   struct tm *nt,mt;
   unsigned long ltime;
+
   memset((char *)&mt,0,sizeof(mt));
   if((mt.tm_year=b2d[tm_bcd[0]])<50) mt.tm_year+=100;
   mt.tm_mon=b2d[tm_bcd[1]]-1;
@@ -93,8 +95,8 @@ shift_sec(tm_bcd,sec)
 chloop(old_buf,new_buf)
   unsigned char *old_buf,*new_buf;
   {
-  static int32_w fixbuf1[4096],fixbuf2[4096],ltime,ltime_ch[65536];
-  int i,j,size,gsize,new_size,sr_shift;
+  static int32_w fixbuf1[4096],fixbuf2[4096],ltime,ltime_ch[WIN_CHMAX];
+  int i,size,new_size,sr_shift;
   WIN_ch  ch;
   WIN_sr  sr;
   unsigned char *ptr1,*ptr2,*ptr_lim;
@@ -137,10 +139,10 @@ main(argc,argv)
   int argc;
   char *argv[];
   {
-  int c,hours,i,re;
+  int c,hours,re;
   double fsec;
-  extern int optind;
-  extern char *optarg;
+/*   extern int optind; */
+/*   extern char *optarg; */
 
   signal(SIGINT,(void *)wabort);
   signal(SIGTERM,(void *)wabort);

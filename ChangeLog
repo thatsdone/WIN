@@ -1,4 +1,19 @@
- $Id: ChangeLog,v 1.131.2.25.2.25 2009/03/19 13:21:24 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.26 2009/08/25 04:00:14 uehira Exp $
+
+2009-08-01  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/winadd : 64 bit clean?
+	* src/evdetect.c : added. Another version of event detect.
+	* Version 2.0.6 released.
+
+2009-07-31  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/wchch : 64 bit clean
+	* src/wch : 64 bit clean
+	* src/wchasn : 64 bit check
+	* src/win2raw : 64 bit check
+
+2009-07-30  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/raw2mon : 64 bit clean
+	* src/winlib.h : added get_mon(), compress_mon(), make_mon().
 
 2009-03-19  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* src/win.c (2009.3.19) : 

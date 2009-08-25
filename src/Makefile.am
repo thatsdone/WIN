@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.38.2.10.2.3 2009/03/06 13:03:02 uehira Exp $
+# $Id: Makefile.am,v 1.38.2.10.2.4 2009/08/25 04:00:15 uehira Exp $
 #
 
 if SUNOS4
@@ -42,7 +42,7 @@ endif
 
 ONLINE_SO=recvt send_raw recvstatus recvstatus2 send_raw_old relay\
 	recvnmx $(ONL_SOL2) $(IPV6_PGM)
-TAPE_USER_MATH=pmon elist events
+TAPE_USER_MATH=pmon elist events evdetect
 ONLINE_MATH=ecore ecore2 raw_time
 OFFLINE_USER_MATH=wtime
 #OFFLINE_MATH=dewin select_stations
@@ -152,7 +152,7 @@ select_stations_LDADD = -lm
 wchch_SOURCES = wchch.c $(WIN_LIBH)
 wchch_LDADD = $(WIN_SYSTEM_LIB)
 
-wchasn_SOURCES = wchasn.c $(WIN_LIBH) $(WIN_UTIL) $(GC_CHECK_INCLUDE)
+wchasn_SOURCES = wchasn.c $(WIN_LIBH) $(GC_CHECK_INCLUDE)
 wchasn_LDADD = $(WIN_SYSTEM_LIB) $(GC_CHECK_LIB)
 
 pick2tseis_SOURCES = pick2tseis.c $(SUBFUNC_H)
@@ -181,7 +181,7 @@ wintowin_LDADD = $(WIN_SYSTEM_LIB) @LIBSHMGET@
 wtime_SOURCES = wtime.c $(WIN_LIBH)
 wtime_LDADD = $(WIN_SYSTEM_LIB) -lm
 
-winadd_SOURCES = winadd.c $(WIN_LIBH) $(WIN_UTIL) $(GC_CHECK_INCLUDE)
+winadd_SOURCES = winadd.c $(WIN_LIBH) $(GC_CHECK_INCLUDE)
 winadd_LDADD = $(WIN_SYSTEM_LIB) $(GC_CHECK_LIB)
 
 wck_wdisk_SOURCES = wck_wdisk.c $(WIN_LIBH) $(WIN_UTIL) $(GC_CHECK_INCLUDE)
@@ -208,7 +208,8 @@ file_older_SOURCES = file_older.c $(SUBFUNC_H)
 raw2mon_SOURCES = raw2mon.c $(WIN_LIBH)
 raw2mon_LDADD = $(WIN_SYSTEM_LIB)
 
-win2raw_SOURCES = win2raw.c $(WIN_LIBH) $(WIN_UTIL)  $(GC_CHECK_INCLUDE)
+#win2raw_SOURCES = win2raw.c $(WIN_LIBH) $(WIN_UTIL) $(GC_CHECK_INCLUDE)
+win2raw_SOURCES = win2raw.c $(WIN_LIBH) $(GC_CHECK_INCLUDE)
 win2raw_LDADD = $(WIN_SYSTEM_LIB) $(GC_CHECK_LIB)
 
 pmon_SOURCES = pmon.c $(WIN_LIBH)
@@ -348,4 +349,7 @@ ls7000_A8_LDADD = $(WIN_SYSTEM_LIB)
 
 ls7000_A9_SOURCES = ls7000_A9.c $(WIN_LIBH) ls7000.h
 ls7000_A9_LDADD = $(WIN_SYSTEM_LIB) 
+
+evdetect_SOURCES = evdetect.c $(WIN_LIBH)
+evdetect_LDADD = $(WIN_SYSTEM_LIB) -lm
 

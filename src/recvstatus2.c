@@ -1,4 +1,5 @@
-/* $Id: recvstatus2.c,v 1.6.8.3 2008/12/29 11:25:12 uehira Exp $ */
+/* $Id: recvstatus2.c,v 1.6.8.4 2009/08/25 04:00:15 uehira Exp $ */
+
 /* modified from "recvstatus.c" */
 /* 2002.6.19 recvstatus2 receive A8/A9 packets from Datamark LS-7000XT */
 /* 2002.7.3 fixed a bug - 'ok' deleted */
@@ -12,6 +13,7 @@
 #include <signal.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
@@ -38,10 +40,11 @@
 
 #include "winlib.h"
 
+#define NSMAX 100
 #define MAXMESG   2048
-#define DEBUG   0
+/* #define DEBUG   0 */
 
-int sock;     /* socket */
+static int sock;     /* socket */
 
 char *progname, *logfile = NULL;
 int syslog_mode = 0, exit_status = EXIT_SUCCESS;
@@ -50,12 +53,11 @@ main(argc,argv)
   int argc;
   char *argv[];
   {
-#define NSMAX 100
   unsigned char rbuf[MAXMESG];
   char tb[100],logdir[256],logxml[256];
-  int i,j,k,fromlen,n,re,ns,c,rcs;
-  extern int optind;
-  extern char *optarg;
+  int i,fromlen,n,ns,c,rcs;
+/*   extern int optind; */
+/*   extern char *optarg; */
   struct sockaddr_in to_addr,from_addr;
   unsigned short to_port;
   struct infoarray {
@@ -72,7 +74,7 @@ main(argc,argv)
   FILE *fp;
   int  chtmp;
 
-  if(progname=strrchr(argv[0],'/')) progname++;
+  if((progname=strrchr(argv[0],'/')) != NULL) progname++;
   else progname=argv[0];
   sprintf(tb," usage : '%s (-r) [port] ([log dir])'",progname);
   rcs=0;

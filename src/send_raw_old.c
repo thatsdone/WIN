@@ -1,4 +1,4 @@
-/* $Id: send_raw_old.c,v 1.9.4.3.2.3 2008/12/17 05:53:15 uehira Exp $ */
+/* $Id: send_raw_old.c,v 1.9.4.3.2.4 2009/08/25 04:00:16 uehira Exp $ */
 /*
     program "send_raw_old/send_mon_old.c"   1/24/94 - 1/25/94,5/25/94 urabe
                                     6/15/94 - 6/16/94
@@ -50,7 +50,7 @@
 
 #include "winlib.h"
 
-#define DEBUG     0
+/* #define DEBUG     0 */
 #define MAXMESG   1024
 /* #define SR_MON    5 */
 #define BUFNO     128
@@ -103,7 +103,7 @@ read_chfile()
         i++;
         }
 #if DEBUG
-      fprintf(stderr,"\n",k);
+      fprintf(stderr,"\n");
 #endif
       n_ch=j;
       sprintf(tbuf,"%d channels",n_ch);
@@ -135,13 +135,7 @@ main(argc,argv)
   int argc;
   char *argv[];
   {
-  FILE *fp;
   key_t shm_key;
-  union {
-    unsigned long i;
-    unsigned short s;
-    char c[4];
-    } un;
   struct timeval timeout;
   int i,j,k,c_save,shp,aa,bb,ii,bufno,bufno_f,fromlen;
   struct sockaddr_in to_addr,from_addr;
@@ -152,7 +146,7 @@ main(argc,argv)
     host_name[100],tbuf[100];
   struct Shm  *shm;
 
-  if(progname=strrchr(argv[0],'/')) progname++;
+  if((progname=strrchr(argv[0],'/')) != NULL) progname++;
   else progname=argv[0];
 
   exit_status = EXIT_SUCCESS;

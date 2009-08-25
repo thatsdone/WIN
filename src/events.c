@@ -1,4 +1,5 @@
-/* $Id: events.c,v 1.8.2.4.2.2 2008/12/29 11:25:11 uehira Exp $ */
+/* $Id: events.c,v 1.8.2.4.2.3 2009/08/25 04:00:15 uehira Exp $ */
+
 /****************************************************************************
 *****************************************************************************
 **     program "events.c" for NEWS                                  *********
@@ -110,7 +111,7 @@ sso     /dat/etc/sso.station    cut-jc3
 
 #include "winlib.h"
 
-#define DEBUG     0
+/* #define DEBUG     0 */
 #define CLEAN     1
 #define N_ZONES   1024
 #define WED       "wed"
@@ -448,7 +449,7 @@ main(argc,argv)
     trig_file[LEN],request_path[LEN],sys_code[20],stan[20],chs[20],
     sys[NSYS][20],stan_list[NSYS][LEN],lpr_name[NSYS][LEN],
     mess[40],mess1[40],mess2[40],raw_path[LEN],lastline[LEN],
-    file_name[LEN],param_file[LEN],tbl_path[LEN],temp_name[LEN],
+    file_name[LEN],param_file[LEN],temp_name[LEN],
     auto_path[LEN],zone_list[LEN],time_start[20],time_end[20],
     tapeunit[LEN],raw_file[20],lpr_body[LEN],
     zone_file[LEN],ch_file[LEN],nxt_file[LEN],log_file[LEN],
@@ -482,7 +483,7 @@ main(argc,argv)
     }
   optbase=optind-1;
 
-  if(progname=strrchr(argv[0],'/')) progname++;
+  if((progname=strrchr(argv[0],'/')) != NULL) progname++;
   else progname=argv[0];
   if(argc<2+optbase)
     {
@@ -677,7 +678,7 @@ printf("lastline=%s\n",lastline);
         if(*textbuf=='#') continue;
         if((ptw=strtok(textbuf," \t\n"))==NULL) continue;
         if(strncmp(ptw,ptr,7)==0) {
-          while(ptw=strtok(NULL," \t\n")) fprintf(fp,"%s\n",ptw);
+          while((ptw=strtok(NULL," \t\n")) != NULL) fprintf(fp,"%s\n",ptw);
         break;
         }
       }
@@ -696,7 +697,7 @@ printf("lastline=%s\n",lastline);
         if((ptw=strtok(textbuf," \t\n"))==NULL) continue;
         while(*ptw=='#') ptw++;
         if(strncmp(ptw,zone,7)==0) {
-          while(ptw=strtok(NULL," \t\n")) fprintf(fr,"%s\n",ptw);
+          while((ptw=strtok(NULL," \t\n")) != NULL) fprintf(fr,"%s\n",ptw);
         break;
         }
       }
@@ -788,7 +789,7 @@ printf("lastline=%s\n",lastline);
           while(1)
             {
             sprintf(textbuf,"%s/LATEST",raw_path);
-            if(fp=fopen(textbuf,"r"))
+            if((fp=fopen(textbuf,"r")) != NULL)
               {
               *textbuf=0;
               fgets(textbuf,20,fp);

@@ -1,4 +1,4 @@
-/* $Id: winrawsrv.c,v 1.1.4.6 2008/05/17 14:22:06 uehira Exp $ */
+/* $Id: winrawsrv.c,v 1.1.4.6.2.1 2009/08/25 04:00:16 uehira Exp $ */
 
 /* winrawsrv.c -- raw data request server */
 
@@ -51,7 +51,7 @@
 #define FNAMEMAX     1024
 
 static char rcsid[] =
-  "$Id: winrawsrv.c,v 1.1.4.6 2008/05/17 14:22:06 uehira Exp $";
+  "$Id: winrawsrv.c,v 1.1.4.6.2.1 2009/08/25 04:00:16 uehira Exp $";
 
 char *progname, *logfile;
 int  daemon_mode, syslog_mode;
@@ -90,7 +90,7 @@ main(int argc, char *argv[])
   char   lrawfname[FNAMEMAX];
   off_t  lasize;  /* raw file size of LATEST */
 
-  if (progname = strrchr(argv[0], '/'))
+  if ((progname = strrchr(argv[0], '/')) != NULL)
     progname++;
   else
     progname = argv[0];
@@ -350,7 +350,7 @@ do_request(const char req[], const char rawdir[])
   }
   rawsize = fi.st_size;
 #if DEBUG
-  (void)snprintf(msg, sizeof(msg), "%s %d", rawpath, rawsize);
+  (void)snprintf(msg, sizeof(msg), "%s %ld", rawpath, rawsize);
   write_log(msg);
 #endif
   if (rawsize == 0) {

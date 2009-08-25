@@ -1,4 +1,4 @@
-/* $Id: wadd2.c,v 1.4.4.3.2.2 2008/11/13 15:34:14 uehira Exp $ */
+/* $Id: wadd2.c,v 1.4.4.3.2.3 2009/08/25 04:00:16 uehira Exp $ */
 /* program "wadd2.c"
   "wadd" puts two win data files together
   7/24/91 - 7/25/91, 4/20/94,6/27/94-6/28/94,7/12/94   urabe
@@ -21,11 +21,13 @@
 #endif
 
 #include  <stdio.h>
+#include  <stdlib.h>
 #include  <string.h>
+#include  <unistd.h>
 
 #include "winlib.h"
 
-#define   DEBUG   0
+/* #define   DEBUG   0 */
 #define   MAXSIZE   5000000
 #define   NAMLEN    1024
 #define   TEMPNAME  "wadd2.tmp"
@@ -44,7 +46,7 @@ copy_ch(makelist,sys_ch,inbuf,insize,outbuf)
   unsigned char *inbuf,*outbuf;
   int *sys_ch,insize;
   {
-  int i,j,k,size,gsize,new_size,sr;
+  int i,j,k,gsize,sr;
   unsigned char *ptr,*ptw,*ptr_lim;
   unsigned int gh;
   ptr_lim=inbuf+insize;
@@ -99,7 +101,7 @@ main(argc,argv)
   int argc;
   char *argv[];
   {
-  int i,re,size,mainsize,subsize,mainend,subend,dec_sub[6],dec_main[6];
+  int re,size,mainsize,subsize,mainend,subend,dec_sub[6],dec_main[6];
   FILE *f_main,*f_sub,*f_out;
   unsigned char *ptr;
   static unsigned char tmpfile1[NAMLEN],

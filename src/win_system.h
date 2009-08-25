@@ -1,4 +1,4 @@
-/* $Id: win_system.h,v 1.7.4.3.2.2 2008/11/13 15:34:15 uehira Exp $ */
+/* $Id: win_system.h,v 1.7.4.3.2.3 2009/08/25 04:00:16 uehira Exp $ */
 
 #ifndef _WIN_SYSTEM_H_
 #define _WIN_SYSTEM_H_
@@ -17,7 +17,7 @@
 /* typedef unsigned long  WIN_sr; */
 
 /* #define WIN_BLOCKSIZE_LEN  (sizeof(WIN_blocksize))  /\* byte *\/ */
-#define WIN_TIME_LEN       6  /* byte */
+/* #define WIN_TIME_LEN       6  /\* byte *\/ */
 #define WIN_CH_LEN         (sizeof(WIN_ch))  /* byte */
 #define WIN_CHHEADER_LEN   4  /* byte */
 #define WIN_CHHEADERH_LEN  5  /* byte */
@@ -61,18 +61,6 @@
 
 #define WINADD  "winadd"
 #define WADD    "wadd"
-
-/* memory malloc utility macro */
-#ifndef MALLOC
-#define MALLOC(type, n) (type*)malloc((size_t)(sizeof(type)*(n)))
-#endif
-#ifndef REALLOC
-#define REALLOC(type, ptr, n) \
-(type*)realloc((void *)ptr, (size_t)(sizeof(type)*(n)))
-#endif
-#ifndef FREE
-#define FREE(a)         (void)free((void *)(a))
-#endif
 
 /* channel table */
 struct channel_tbl {

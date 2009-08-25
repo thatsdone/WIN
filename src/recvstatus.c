@@ -1,4 +1,5 @@
-/* $Id: recvstatus.c,v 1.6.8.2 2008/12/17 05:53:15 uehira Exp $ */
+/* $Id: recvstatus.c,v 1.6.8.3 2009/08/25 04:00:15 uehira Exp $ */
+
 /* "recvstatus.c"      5/24/95    urabe */
 /* 97.7.17 two lines of "if() continue;" in the main loop */
 /* 2000.4.24/2001.11.14 strerror() */
@@ -39,9 +40,9 @@
 
 #define MAXMESG   2048
 
-int sock;     /* socket */
-unsigned char rbuf[MAXMESG],stt[65536];
-char tb[100];
+static int sock;     /* socket */
+static unsigned char rbuf[MAXMESG],stt[WIN_CHMAX];
+static char tb[100];
 
 char *progname,*logfile;
 int  syslog_mode = 0, exit_status = EXIT_SUCCESS;
@@ -50,17 +51,11 @@ main(argc,argv)
   int argc;
   char *argv[];
   {
-  union {
-    unsigned long i;
-    unsigned short s;
-    char c[4];
-    } un;
-  unsigned char *ptr,tm[6],*ptr_size;
-  int i,j,k,size,fromlen,n,re;
+  int i,fromlen,n;
   struct sockaddr_in to_addr,from_addr;
   unsigned short to_port;
 
-  if(progname=strrchr(argv[0],'/')) progname++;
+  if((progname=strrchr(argv[0],'/')) != NULL) progname++;
   else progname=argv[0];
   if(argc<2)
     {
@@ -92,7 +87,7 @@ main(argc,argv)
   signal(SIGINT,(void *)end_program);
   signal(SIGPIPE,(void *)end_program);
 
-  for(i=0;i<65535;i++) stt[i]=0xff;
+  for(i=0;i<WIN_CHMAX;i++) stt[i]=0xff;
   while(1)
     {
     fromlen=sizeof(from_addr);

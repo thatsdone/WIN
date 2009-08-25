@@ -1,4 +1,5 @@
-/* $Id: select_stations.c,v 1.3 2004/01/29 01:58:16 urabe Exp $ */
+/* $Id: select_stations.c,v 1.3.8.1 2009/08/25 04:00:16 uehira Exp $ */
+
 /* select_stations  1999.11.9  urabe */
 /* debugged 2004.1.28  urabe */
 
@@ -12,7 +13,7 @@
 #include "subst_func.h"
 
 #define NAME_PRG "select_stations"
-#define DEBUG 0
+/* #define DEBUG 0 */
 
 /*  this program was translated from HYPOMH(HIRATA and MATSU'URA) */
 /*  PLTXY TRANSFORMS (X,Y) TO (ALAT,ALONG) IF IND.EQ.1  */
@@ -152,12 +153,10 @@ main(argc,argv)
   char *argv[];
   {
   FILE *f1,*f2;
-  int init,init2,i;
-  char ta[256],tb[256],name[100],name1[100];
-  double alat0,along0,alat,along,x00,y00,d,a,dmin,amin;
-  double alat1,along1,x,y,x0,y0,x1,y1,xa,ya,xb,yb;
-  extern int optind;
-  extern char *optarg;
+  int init,init2;
+  char ta[256],tb[256],name[100];
+  double alat0,along0,x00,y00,d,a,dmin,amin;
+  double alat1,along1,x0,y0,x1,y1,xa,ya,xb,yb;
 
   if(argc<3)
     {

@@ -1,4 +1,4 @@
-/* $Id: recvstatus4.c,v 1.1.2.2 2009/03/11 06:49:35 uehira Exp $ */
+/* $Id: recvstatus4.c,v 1.1.2.3 2009/08/25 04:00:15 uehira Exp $ */
 
 /* 
  * recvstatus4 :
@@ -48,7 +48,7 @@
 #define PATHMAX      1024
 
 static char rcsid[] =
-  "$Id: recvstatus4.c,v 1.1.2.2 2009/03/11 06:49:35 uehira Exp $";
+  "$Id: recvstatus4.c,v 1.1.2.3 2009/08/25 04:00:15 uehira Exp $";
 
 char *progname, *logfile;
 int  daemon_mode, syslog_mode;
@@ -84,7 +84,7 @@ main(int argc, char *argv[])
   char port_[NI_MAXSERV];  /* port No. */
 #endif
 
-  if ((progname = strrchr(argv[0], '/')))
+  if ((progname = strrchr(argv[0], '/')) != NULL)
     progname++;
   else
     progname = argv[0];
@@ -191,7 +191,7 @@ main(int argc, char *argv[])
       (void)getnameinfo(sa, fromlen,
 			host_, sizeof(host_), port_, sizeof(port_),
 			NI_DGRAM | NI_NUMERICHOST | NI_NUMERICSERV);
-      (void)printf("%s : %s : %d byte(s)\n", host_, port_, psize);
+      (void)printf("%s : %s : %ld byte(s)\n", host_, port_, psize);
 #endif
 
 #if DEBUG
@@ -248,14 +248,14 @@ main(int argc, char *argv[])
 	dsize = fwrite(ptr, 1, psize - LS7_PHDER_LEN, fp);
 	if (dsize != psize - LS7_PHDER_LEN) {
 	  (void)snprintf(msg, sizeof(msg),
-			 "strange A8 packet: %d bytes\n", dsize);
+			 "strange A8 packet: %ld bytes\n", dsize);
 	  write_log(msg);
 	}
       } else if (rbuf[LS7_PID] == 0xA9) {
 	dsize = fwrite(ptr, 1, psize - LS7_PHDER_LEN, fp);
 	if (dsize != psize - LS7_PHDER_LEN) {
 	  (void)snprintf(msg, sizeof(msg),
-			 "strange A9 packet: %d bytes\n", dsize);
+			 "strange A9 packet: %ld bytes\n", dsize);
 	  write_log(msg);
 	}
       }

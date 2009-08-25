@@ -1,4 +1,4 @@
-/* $Id: recvnmx.c,v 1.16.4.4.2.6 2008/12/29 11:25:12 uehira Exp $ */
+/* $Id: recvnmx.c,v 1.16.4.4.2.7 2009/08/25 04:00:15 uehira Exp $ */
 /* "recvnmx.c"    2001.7.18-19 modified from recvt.c and nmx2raw.c  urabe */
 /*                2001.8.18 */
 /*                2001.10.5 workaround for hangup */
@@ -45,7 +45,7 @@
 
 #include "winlib.h"
 
-#define DEBUG     0
+/* #define DEBUG     0 */
 #define DEBUG1    0
 #define DEBUG2    0
 #define DEBUG3    0

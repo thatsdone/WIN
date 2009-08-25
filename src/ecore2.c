@@ -1,3 +1,5 @@
+/* $Id: ecore2.c,v 1.4.4.3.2.4 2009/08/25 04:00:15 uehira Exp $ */
+
 /*
   program "ecore2.c"   4/16/93-5/13/93,7/2/93,7/5/94  urabe
                       1/6/95 bug in adj_time fixed (tm[0]--)
@@ -16,6 +18,7 @@
 /*                      2003/7/2   introduced strerror() by Urabe/Nakagawa */
 
 /*--- for config   2003/05/02  by N.Nakawaji ---*/
+
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -24,6 +27,7 @@
 #include <signal.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
@@ -83,7 +87,7 @@ void read_chtbl( dmy )
 int dmy;
 {
 	FILE	*fp;
-	int	i,j,nch;
+	int	i,nch;
 	if ((fp = fopen(file_list, "r")) == NULL) {
 		sprintf(Tbuf, "channel table file '%s' not open", file_list);
 		write_log(Tbuf);
@@ -122,7 +126,7 @@ main(argc, argv)
 	char	**argv;
 {
 	double	dbuf[512], dt;
-	int		i, j, sr, pos, shmid_in, shmid_out;
+	int	j, sr, pos, shmid_in, shmid_out;
 	long	dl;
 	int32_w lbuf[512], work[512];
 	unsigned long	shp_in, shp_in_save, ch_size, size_in,
@@ -136,7 +140,7 @@ main(argc, argv)
 		unsigned short	s_size_rate;
 	} ch_header;
   
-	if (progname = strrchr(argv[0], '/'))
+	if ((progname = strrchr(argv[0], '/')) != NULL)
 		progname++;
 	else
 		progname = argv[0];

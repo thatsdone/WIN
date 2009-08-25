@@ -1,4 +1,4 @@
-/* $Id: wadd.c,v 1.6.4.3.2.2 2008/11/13 15:34:14 uehira Exp $ */
+/* $Id: wadd.c,v 1.6.4.3.2.3 2009/08/25 04:00:16 uehira Exp $ */
 /* program "wadd.c"
   "wadd" puts two win data files together
   7/24/91 - 7/25/91, 4/20/94,6/27/94-6/28/94,7/12/94   urabe
@@ -19,11 +19,13 @@
 #endif
 
 #include  <stdio.h>
+#include  <stdlib.h>
 #include  <string.h>
+#include  <unistd.h>
 
 #include "winlib.h"
 
-#define   DEBUG   0
+/* #define   DEBUG   0 */
 #define   MAXSIZE   5000000
 #define   NAMLEN    256
 #define   TEMPNAME  "wadd.tmp"
@@ -67,7 +69,7 @@ make_skel(old_buf,new_buf)
   unsigned char *old_buf,*new_buf;
   {
   int i,size,gsize,new_size,sr;
-  unsigned char *ptr,*new_ptr,*ptr_lim,*ptr1;
+  unsigned char *ptr,*new_ptr,*ptr_lim;
   unsigned int gh;
   size=mkuint4(old_buf);
   ptr_lim=old_buf+size;

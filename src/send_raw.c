@@ -1,4 +1,4 @@
-/* $Id: send_raw.c,v 1.24.2.4.2.4 2008/12/29 11:25:12 uehira Exp $ */
+/* $Id: send_raw.c,v 1.24.2.4.2.5 2009/08/25 04:00:16 uehira Exp $ */
 /*
     program "send_raw/send_mon.c"   1/24/94 - 1/25/94,5/25/94 urabe
                                     6/15/94 - 6/16/94
@@ -60,6 +60,7 @@
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
+#include <sys/stat.h>
 
 #if TIME_WITH_SYS_TIME
 #include <sys/time.h>
@@ -85,8 +86,8 @@
 #include "daemon_mode.h"
 #include "winlib.h"
 
+/* #define DEBUG       0 */
 #define DEBUG0      0
-#define DEBUG       0
 #define DEBUG1      0
 #define DEBUG2      0  /* -f */
 #define TEST_RESEND 0
@@ -115,7 +116,6 @@ shift_sec(tm_bcd,sec)
   unsigned char *tm_bcd;
   int sec;
   {
-  int tm[6];
   struct tm *nt,mt;
   time_t ltime;
   memset((char *)&mt,0,sizeof(mt));
@@ -194,7 +194,7 @@ read_chfile()
         i++;
         }
 #if DEBUG
-      fprintf(stderr,"\n",k);
+      fprintf(stderr,"\n");
 #endif
       n_ch=j;
       if(negate_channel) sprintf(tbuf,"-%d channels",n_ch);
@@ -366,7 +366,7 @@ main(argc,argv)
   time_t watch,time_req,ltime;
   key_t shm_key,shw_key;
   unsigned long uni;
-  int i,j,k,c_save,shp,aa,bb,ii,jj,kk,bufno,fromlen,hours_shift,sec_shift,c,
+  int i,j,k,c_save,shp,aa,bb,ii,jj,bufno,hours_shift,sec_shift,c,
     nw,eobsize,eobsize_count,size2,size,gs,sr,re,shmid,shwid,atm,c_save_w,
     standby,ttl,single,seq_exp,n_seq_exp,req_timo;
   struct sockaddr_in to_addr,from_addr;
@@ -376,12 +376,12 @@ main(argc,argv)
   unsigned char *ptr,*ptr1,*ptr_save,*ptr_lim,*ptw,*ptw_size,
     no,host_name[256],tbuf[1024];
   struct Shm  *shm,*shw;
-  extern int optind;
-  extern char *optarg;
+/*   extern int optind; */
+/*   extern char *optarg; */
   char interface[256]; /* multicast interface */
   unsigned long mif; /* multicast interface address */
 
-  if(progname=strrchr(argv[0],'/')) progname++;
+  if((progname=strrchr(argv[0],'/')) != NULL) progname++;
   else progname=argv[0];
 
   tow=all=hours_shift=sec_shift=0;

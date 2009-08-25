@@ -1,4 +1,5 @@
-/* $Id: ecore.c,v 1.4.4.2.2.3 2008/11/13 05:06:53 uehira Exp $ */
+/* $Id: ecore.c,v 1.4.4.2.2.4 2009/08/25 04:00:15 uehira Exp $ */
+
 /* ddr news program "ecore.c"
   "ecore.c" works with "fromtape.c"
   "ecore.c" makes continuously filtered and decimated data
@@ -19,6 +20,9 @@
 #endif
 
 #include  <stdio.h>
+#include  <stdlib.h>
+#include  <string.h>
+#include  <unistd.h>
 #include  <sys/file.h>
 #include  <sys/types.h>
 #include  <sys/stat.h>
@@ -453,7 +457,7 @@ get_data(dp,buf,idx)
   ddp=(*dp);
   s_rate=(gh=mkuint4(ddp))&0xfff;
   ddp+=4;
-  if(b_size=(gh>>12)&0xf) g_size=b_size*(s_rate-1)+4;
+  if((b_size=(gh>>12)&0xf)) g_size=b_size*(s_rate-1)+4;
   else g_size=(s_rate>>1)+4;
   *dp+=4+g_size;
   sys_ch=gh>>16;

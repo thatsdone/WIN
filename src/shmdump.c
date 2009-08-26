@@ -1,4 +1,4 @@
-/* $Id: shmdump.c,v 1.21.4.6.2.10 2009/08/25 04:00:16 uehira Exp $ */
+/* $Id: shmdump.c,v 1.21.4.6.2.11 2009/08/26 01:38:08 uehira Exp $ */
 
 /*  program "shmdump.c" 6/14/94 urabe */
 /*  revised 5/29/96 */
@@ -72,7 +72,7 @@ struct Filter
 };
 
 static char rcsid[] =
-  "$Id: shmdump.c,v 1.21.4.6.2.10 2009/08/25 04:00:16 uehira Exp $";
+  "$Id: shmdump.c,v 1.21.4.6.2.11 2009/08/26 01:38:08 uehira Exp $";
 
 static char *progname,outfile[256];
 static int win;
@@ -244,7 +244,7 @@ main(int argc, char *argv[])
   uint32_w  gs=0;
   WIN_ch ch;
   WIN_sr sr;
-  int32_w abuf[HEADER_5B];  /* 64 bit ok */
+  static int32_w abuf[HEADER_5B];  /* 64 bit ok */
   time_t tow,time_end,time_now;    /* 64 bit ok */
   long wsize;         /* 64 bit ok */
   uint32_w  wsize4;   /* 64 bit ok */
@@ -270,7 +270,7 @@ main(int argc, char *argv[])
   struct Filter *flt=NULL;
   int chindex[WIN_CHMAX];
   double (*uv)[MAX_FILT*4];
-  double dbuf[MAX_SR];
+  static double dbuf[MAX_SR];
   float flt_fl, flt_fh, flt_fp, flt_fs, flt_ap, flt_as;
   int chid;              /* filter var end */
 

@@ -1,4 +1,7 @@
- $Id: ChangeLog,v 1.131.2.25.2.26 2009/08/25 04:00:14 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.27 2009/08/26 01:38:08 uehira Exp $
+
+2009-08-26  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/shmdump : avoid stack memory overflow. (exp. MacOSX, OBS266)
 
 2009-08-01  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* src/winadd : 64 bit clean?

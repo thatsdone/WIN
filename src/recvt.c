@@ -1,4 +1,4 @@
-/* $Id: recvt.c,v 1.29.2.3.2.16 2009/01/08 06:35:56 uehira Exp $ */
+/* $Id: recvt.c,v 1.29.2.3.2.17 2009/08/28 07:12:16 uehira Exp $ */
 /*-
  "recvt.c"      4/10/93 - 6/2/93,7/2/93,1/25/94    urabe
                 2/3/93,5/25/94,6/16/94 
@@ -109,7 +109,7 @@
 #define N_PNOS    62    /* length of packet nos. history >=2 */
 
 static char rcsid[] =
-  "$Id: recvt.c,v 1.29.2.3.2.16 2009/01/08 06:35:56 uehira Exp $";
+  "$Id: recvt.c,v 1.29.2.3.2.17 2009/08/28 07:12:16 uehira Exp $";
 
 static uint8_w rbuf[MAXMESG],ch_table[WIN_CHMAX];
 static char chfile[N_CHFILE][256];
@@ -138,10 +138,18 @@ struct ch_hist {
   int p[WIN_CHMAX];
 };
 
+static time_t check_ts(uint8_w *, time_t, time_t);
+static void read_chfile(void);
+static int check_pno(struct sockaddr_in *, unsigned int, unsigned int,
+		     int, socklen_t, int, int, int);
+static int wincpy2(uint8_w *, time_t, uint8_w *, ssize_t, int,
+		   struct ch_hist *, struct sockaddr_in *);
+static void send_req(int, struct sockaddr_in *);
+static void usage(void);
+int main(int, char *[]);
+
 static time_t
-check_ts(ptr,pre,post)   /* 64bit ok */
-  uint8_w *ptr;
-  time_t pre,post;
+check_ts(uint8_w *ptr, time_t pre, time_t post)   /* 64bit ok */
   {
   int tm[6];
   time_t ts,rt,diff;
@@ -340,14 +348,15 @@ read_chfile()
 
 /* returns -1 if dup */
 static int
-check_pno(from_addr,pn,pn_f,sock,fromlen,n,nr,req_delay)
-  struct sockaddr_in *from_addr;  /* sender address */
-  unsigned int pn,pn_f;           /* present and former packet Nos. */
-  int sock;                       /* socket */
-  socklen_t fromlen;              /* length of from_addr */
-  int n;                          /* size of packet */
-  int nr;                         /* no resend request if 1 */
-  int req_delay;                  /* packet count for delayed resend-request */
+check_pno(struct sockaddr_in *from_addr, unsigned int pn, unsigned int pn_f,
+	  int sock, socklen_t fromlen, int n, int nr, int req_delay)
+/* struct sockaddr_in *from_addr;   sender address */
+/*  unsigned int pn,pn_f;           present and former packet Nos. */
+/*  int sock;                       socket */
+/*  socklen_t fromlen;              length of from_addr */
+/*  int n;                          size of packet */
+/*  int nr;                         no resend request if 1 */
+/*  int req_delay;                  packet count for delayed resend-request */
   {
   int i,j,k,seg,ppnos_prev,ppnos_now,pn_prev,pn_now,dup;
   int host_;  /* 32-bit-long host address in network byte-order */
@@ -509,13 +518,8 @@ check_pno(from_addr,pn,pn_f,sock,fromlen,n,nr,req_delay)
   }
 
 static int
-wincpy2(ptw,ts,ptr,size,mon,chhist,from_addr)   /* 64bit ok */
-  uint8_w *ptw,*ptr;
-  time_t ts;
-  ssize_t size;
-  int mon;
-  struct ch_hist *chhist;
-  struct sockaddr_in *from_addr;
+wincpy2(uint8_w *ptw, time_t ts, uint8_w *ptr, ssize_t size, int mon,
+	struct ch_hist *chhist, struct sockaddr_in *from_addr)   /* 64bit ok */
   {
 #define MAX_SR 500
 #define MAX_SS 4
@@ -611,9 +615,9 @@ wincpy2(ptw,ts,ptr,size,mon,chhist,from_addr)   /* 64bit ok */
   }
 
 static void
-send_req(sock,host_addr)
-  struct sockaddr_in *host_addr;  /* sender address */
-  int sock;                       /* socket */
+send_req(int sock, struct sockaddr_in *host_addr)
+/* struct sockaddr_in *host_addr;    sender address */
+/* int sock;                          socket */
   {
   int i,j;
   /*-
@@ -698,9 +702,7 @@ usage()
 }
 
 int
-main(argc,argv)
-  int argc;
-  char *argv[];
+main(int argc, char *argv[])
   {
   key_t shm_key;  /*- 64bit ok -*/
   int shmid;      /*- 64bit ok -*/
@@ -787,7 +789,7 @@ main(argc,argv)
         if((ptr=(uint8_w *)strchr(tb2,':')))
           {
           *ptr=0;
-          host_port=(uint16_t)atoi(ptr+1);
+          host_port=(uint16_t)atoi((char *)(ptr+1));
           }
         else
           {

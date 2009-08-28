@@ -1,4 +1,4 @@
-/* $Id: wck.c,v 1.5.4.1.2.6 2009/08/25 04:00:16 uehira Exp $ */
+/* $Id: wck.c,v 1.5.4.1.2.7 2009/08/28 07:12:16 uehira Exp $ */
 /*- 
    program "wck.c"
 	"wck" checks a win format data file
@@ -37,10 +37,14 @@
 #define DEBUG1  0
 
 static char rcsid[] =
-  "$Id: wck.c,v 1.5.4.1.2.6 2009/08/25 04:00:16 uehira Exp $";
+  "$Id: wck.c,v 1.5.4.1.2.7 2009/08/28 07:12:16 uehira Exp $";
 
 char *progname;
 static unsigned long count[WIN_CHMAX];
+
+static void ctrlc(void);
+static void usage(void);
+int main(int, char *[]);
 
 static void
 ctrlc()
@@ -61,9 +65,7 @@ usage()
 }
 
 int
-main(argc,argv)
-   int argc;
-   char *argv[];
+main(int argc, char *argv[])
 {
    int i,j,k,ii,chs,chs16,mode,c,nch;
    uint32_w mainsize,gs;

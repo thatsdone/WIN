@@ -1,5 +1,5 @@
 dnl ------------------------------------------------------------------------- 
-dnl $Id: configure.in,v 1.98.2.17.2.11 2009/08/25 04:00:14 uehira Exp $
+dnl $Id: configure.in,v 1.98.2.17.2.12 2009/08/28 07:12:15 uehira Exp $
 dnl -------------------------------------------------------------------------
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT(src/win.c)
@@ -162,8 +162,8 @@ AC_ARG_ENABLE(debug,
 	[ts_cv_debug="yes"], [ts_cv_debug="no"])
 if test "$ts_cv_debug" = yes; then
 	AC_DEFINE(DEBUG)
-	CFLAGS+=" -Wall -g"
-	FFLAGS+=" -g -fno-automatic -finit-local-zero"
+	CFLAGS=" -Wall -g"
+	FFLAGS=" -g -fno-automatic -finit-local-zero"
 fi
 AC_MSG_RESULT($ts_cv_debug)
 

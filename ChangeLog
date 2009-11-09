@@ -1,4 +1,9 @@
- $Id: ChangeLog,v 1.156 2009/02/27 10:57:58 uehira Exp $
+ $Id: ChangeLog,v 1.157 2009/11/09 10:13:18 uehira Exp $
+
+2009-11-09  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 1.1.92 released.
+	* src/winrandsimu6.c : added WIN random simulater, real-time version.
+	* src/select_bylatlon.c : added.
 
 2009-02-19  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* prog/win_m : do not use "-kanjifont". comment out.

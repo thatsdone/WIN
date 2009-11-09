@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.38 2006/08/29 01:53:03 nakagawa Exp $
+# $Id: Makefile.am,v 1.39 2009/11/09 10:13:18 uehira Exp $
 #
 
 if SUNOS4
@@ -52,12 +52,13 @@ OFFLINE_F77=hypomh
 OFFLINE_USER=$(OFFLINE_X) $(OFFLINE_F77) wed wck wadd $(OFFLINE_MATH) wchch pick2tseis \
              wch pick2finalb pick2final finalb2final final2finalb finalb2seis \
              wform wintowin $(OFFLINE_USER_MATH) winadd wck_wdisk wadd2 \
-             win2raw wchasn ls8tel16_win ls8tel_STM ls8tel_STS
+             win2raw wchasn ls8tel16_win ls8tel_STM ls8tel_STS select_bylatlon
 TAPE_USER=rtape fromtape wdisk wdiskts ras2rpdl ras2lips file_older raw2mon \
           $(TAPE_USER_MATH)
 ONLINE=order raw_mon wtape setexb timeout raw_raw raw_100 cormeisei shmdump \
-       raw_ch extraw insert_raw insert_trg find_picks raw_shift ls8tel16_raw\
-       $(ONLINE_SO) $(ONLINE_MATH) $(ONL_FREEBSD)
+	raw_ch extraw insert_raw insert_trg find_picks raw_shift ls8tel16_raw\
+	winrandsimu6\
+	$(ONLINE_SO) $(ONLINE_MATH) $(ONL_FREEBSD)
 
 ONL_OPT_=robot
 OTHR=cpdat sepline joint order_raw
@@ -302,3 +303,10 @@ winrawsrvd_LDADD = @LIBNSL@ @LIBSOCKET@
 
 winrawcli_test_SOURCES = winrawcli_test.c $(DAEMON_MODE) $(WIN_LOG) $(TCP_UTILITY) winraw_bp.h
 winrawcli_test_LDADD = @LIBNSL@ @LIBSOCKET@
+
+winrandsimu6_SOURCES = winrandsimu6.c $(SUBFUNC_H)
+winrandsimu6_LDADD = @LIBSHMGET@ -lm
+
+select_bylatlon_SOURCES = select_bylatlon.c $(SUBFUNC_H)
+select_bylatlon_LDADD = -lm
+

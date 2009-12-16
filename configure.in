@@ -1,5 +1,5 @@
 dnl ------------------------------------------------------------------------- 
-dnl $Id: configure.in,v 1.82.2.26 2009/02/27 08:11:19 uehira Exp $
+dnl $Id: configure.in,v 1.82.2.27 2009/12/16 08:32:07 uehira Exp $
 dnl -------------------------------------------------------------------------
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT(src/win.c)

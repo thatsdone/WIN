@@ -1,7 +1,11 @@
- $Id: ChangeLog,v 1.113.2.36 2009/02/27 08:11:19 uehira Exp $
+ $Id: ChangeLog,v 1.113.2.37 2009/12/16 08:32:07 uehira Exp $
+
+2009-12-16  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 1.1.92 released.
+	* src/winrandsimu6.c : added WIN random simulater, real-time version.
+	* src/select_bylatlon.c : added.
 
 2009-02-27  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
-	* Version 1.1.92 released.
 	* configure.in : FFLAGS added "-fno-automatic -finit-local-zero"
 
 2009-02-19  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>

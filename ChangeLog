@@ -1,4 +1,10 @@
- $Id: ChangeLog,v 1.131.2.25.2.27 2009/08/26 01:38:08 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.28 2009/12/16 09:04:20 uehira Exp $
+
+2009-12-16  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* MF head. Just imported the following sources.
+	* src/winrandsimu6.c : added WIN random simulater, real-time version.
+	* src/select_bylatlon.c : added.
+	* Version 2.0.7 released.
 
 2009-08-26  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* src/shmdump : avoid stack memory overflow. (exp. MacOSX, OBS266)

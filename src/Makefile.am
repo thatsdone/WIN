@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.38.2.10.2.4 2009/08/25 04:00:15 uehira Exp $
+# $Id: Makefile.am,v 1.38.2.10.2.5 2009/12/16 09:04:20 uehira Exp $
 #
 
 if SUNOS4
@@ -43,10 +43,10 @@ endif
 ONLINE_SO=recvt send_raw recvstatus recvstatus2 send_raw_old relay\
 	recvnmx $(ONL_SOL2) $(IPV6_PGM)
 TAPE_USER_MATH=pmon elist events evdetect
-ONLINE_MATH=ecore ecore2 raw_time
+ONLINE_MATH=ecore ecore2 raw_time winrandsimu6
 OFFLINE_USER_MATH=wtime
 #OFFLINE_MATH=dewin select_stations
-OFFLINE_MATH=dewin select_stations hypomhc wintosac
+OFFLINE_MATH=dewin select_stations hypomhc wintosac select_bylatlon
 OFFLINE_F77=hypomh
 
 OFFLINE_USER=$(OFFLINE_X) $(OFFLINE_F77) wed wck wadd $(OFFLINE_MATH) wchch pick2tseis \
@@ -352,4 +352,10 @@ ls7000_A9_LDADD = $(WIN_SYSTEM_LIB)
 
 evdetect_SOURCES = evdetect.c $(WIN_LIBH)
 evdetect_LDADD = $(WIN_SYSTEM_LIB) -lm
+
+winrandsimu6_SOURCES = winrandsimu6.c $(SUBFUNC_H)
+winrandsimu6_LDADD = @LIBSHMGET@ -lm
+
+select_bylatlon_SOURCES = select_bylatlon.c $(SUBFUNC_H)
+select_bylatlon_LDADD = -lm
 

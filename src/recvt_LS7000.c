@@ -1,4 +1,4 @@
-/* $Id: recvt_LS7000.c,v 1.1.2.3.2.6 2009/03/06 13:03:03 uehira Exp $ */
+/* $Id: recvt_LS7000.c,v 1.1.2.3.2.7 2009/12/18 11:33:44 uehira Exp $ */
 /* "recvt_LS7000.c"  uehira */
 /*   2007-11-02  imported from recvt.c 1.29.2.1 */
 
@@ -51,7 +51,7 @@
 #define N_CHFILE  30    /* N of channel files */
 #define N_PNOS    62    /* length of packet nos. history >=2 */
 
-unsigned char rbuff[MAXMESG],rbuf[MAXMESG],ch_table[65536];
+unsigned char rbuff[MAXMESG],rbuf[MAXMESG],ch_table[WIN_CHMAX];
 char *progname,*logfile,chfile[N_CHFILE][256];
 int n_ch,negate_channel,hostlist[N_HOST][3],n_host,no_pinfo,n_chfile;
 int  daemon_mode, syslog_mode, exit_status;
@@ -70,8 +70,8 @@ struct {
 
 struct channel_hist {
   int n;
-  time_t (*ts)[65536];
-  int p[65536];
+  time_t (*ts)[WIN_CHMAX];
+  int p[WIN_CHMAX];
 };
 
 time_t check_ts(ptr,pre,post)
@@ -117,8 +117,8 @@ read_chfile()
 #if DEBUG
       fprintf(stderr,"ch_file=%s\n",chfile[0]);
 #endif
-      if(negate_channel) for(i=0;i<65536;i++) ch_table[i]=1;
-      else for(i=0;i<65536;i++) ch_table[i]=0;
+      if(negate_channel) for(i=0;i<WIN_CHMAX;i++) ch_table[i]=1;
+      else for(i=0;i<WIN_CHMAX;i++) ch_table[i]=0;
       ii=0;
       while(fgets(tbuf,1024,fp))
         {
@@ -127,8 +127,8 @@ read_chfile()
         if(*host_name==0 || *host_name=='#') continue;
         if(*tbuf=='*') /* match any channel */
           {
-          if(negate_channel) for(i=0;i<65536;i++) ch_table[i]=0;
-          else for(i=0;i<65536;i++) ch_table[i]=1;
+          if(negate_channel) for(i=0;i<WIN_CHMAX;i++) ch_table[i]=0;
+          else for(i=0;i<WIN_CHMAX;i++) ch_table[i]=1;
           }
         else if(n_host==0 && (*tbuf=='+' || *tbuf=='-'))
           {
@@ -207,7 +207,7 @@ read_chfile()
     }
   else
     {
-    for(i=0;i<65536;i++) ch_table[i]=1;
+    for(i=0;i<WIN_CHMAX;i++) ch_table[i]=1;
     n_host=0;
     }
 
@@ -241,9 +241,9 @@ read_chfile()
     }
 
   n_ch=0;
-  for(i=0;i<65536;i++) if(ch_table[i]==1) n_ch++;
-  if(n_ch==65536) sprintf(tb,"all channels");
-  else sprintf(tb,"%d (-%d) channels",n_ch,65536-n_ch);
+  for(i=0;i<WIN_CHMAX;i++) if(ch_table[i]==1) n_ch++;
+  if(n_ch==WIN_CHMAX) sprintf(tb,"all channels");
+  else sprintf(tb,"%d (-%d) channels",n_ch,WIN_CHMAX-n_ch);
   write_log(tb);
 
   time(&ltime);
@@ -713,11 +713,11 @@ main(argc,argv)
     }
 
   if((chhist.ts=
-      (time_t (*)[65536])malloc(65536*chhist.n*sizeof(time_t)))==NULL)
+      (time_t (*)[WIN_CHMAX])malloc(WIN_CHMAX*chhist.n*sizeof(time_t)))==NULL)
     {
     chhist.n=N_HIST;
     if((chhist.ts=
-        (time_t (*)[65536])malloc(65536*chhist.n*sizeof(time_t)))==NULL)
+        (time_t (*)[WIN_CHMAX])malloc(WIN_CHMAX*chhist.n*sizeof(time_t)))==NULL)
       {
       fprintf(stderr,"malloc failed (chhist.ts)\n");
       exit(1);
@@ -731,7 +731,7 @@ main(argc,argv)
    }
 
   sprintf(tb,"n_hist=%d size=%d req_delay=%d",chhist.n,
-    65536*chhist.n*sizeof(time_t),req_delay);
+    WIN_CHMAX*chhist.n*sizeof(time_t),req_delay);
   write_log(tb);
   
   /* status packets */
@@ -848,7 +848,7 @@ main(argc,argv)
         memcpy(ptr,rbuf+2,nn=n-2);
         }
       ptr+=nn;
-      uni=time(0);
+      uni=time(NULL);
       ptr_size[4]=uni>>24;  /* tow (H) */
       ptr_size[5]=uni>>16;
       ptr_size[6]=uni>>8;
@@ -892,7 +892,7 @@ main(argc,argv)
         {
         nn=wincpy2(ptr,ts,rbuf+8,n-8,mon,&chhist,&from_addr);
         ptr+=nn;
-        uni=time(0);
+        uni=time(NULL);
         ptr_size[4]=uni>>24;  /* tow (H) */
         ptr_size[5]=uni>>16;
         ptr_size[6]=uni>>8;
@@ -921,7 +921,7 @@ main(argc,argv)
             sh->pl,pl);
 #endif
 #if DEBUG1
-          printf("(%d)",time(0));
+          printf("(%d)",time(NULL));
           for(i=8;i<14;i++) printf("%02X",ptr_size[i]);
           printf(" : %d > %d\n",uni,ptr_size-sh->d);
 #endif
@@ -955,7 +955,7 @@ main(argc,argv)
           nn=wincpy2(ptr,ts,rbuf+8,n-8,mon,&chhist,&from_addr);
           ptr+=nn;
           memcpy(tm,rbuf+2,6);
-          uni=time(0);
+          uni=time(NULL);
           ptr_size[4]=uni>>24;  /* tow (H) */
           ptr_size[5]=uni>>16;
           ptr_size[6]=uni>>8;

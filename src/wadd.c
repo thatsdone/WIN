@@ -1,4 +1,4 @@
-/* $Id: wadd.c,v 1.6.4.3.2.3 2009/08/25 04:00:16 uehira Exp $ */
+/* $Id: wadd.c,v 1.6.4.3.2.4 2009/12/18 11:33:45 uehira Exp $ */
 /* program "wadd.c"
   "wadd" puts two win data files together
   7/24/91 - 7/25/91, 4/20/94,6/27/94-6/28/94,7/12/94   urabe
@@ -162,7 +162,7 @@ main(argc,argv)
     textbuf[NAMLEN],new_file[NAMLEN],tmpfile3[NAMLEN],
     chfile1[NAMLEN],chfile2[NAMLEN],tmpfile2[NAMLEN];
   static  unsigned char *mainbuf=NULL,*selbuf=NULL;
-  static int sysch[65536];
+  static int sysch[WIN_CHMAX];
 
   if(argc<3)
     {

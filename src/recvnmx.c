@@ -1,4 +1,4 @@
-/* $Id: recvnmx.c,v 1.16.4.4.2.7 2009/08/25 04:00:15 uehira Exp $ */
+/* $Id: recvnmx.c,v 1.16.4.4.2.8 2009/12/18 11:33:44 uehira Exp $ */
 /* "recvnmx.c"    2001.7.18-19 modified from recvt.c and nmx2raw.c  urabe */
 /*                2001.8.18 */
 /*                2001.10.5 workaround for hangup */
@@ -62,7 +62,7 @@
 char *progname,*logfile,chmapfile[1024];
 int  syslog_mode = 0, exit_status;
 struct ip_mreq stMreq;
-unsigned short station,chmap[65536];
+unsigned short station,chmap[WIN_CHMAX];
 int use_chmap;
 char *model[32]={"HRD","ORION","RM3","RM4","LYNX","CYGNUS","EUROPA","CARINA",
     "TimeServer","TRIDENT","JANUS","TAURUS",
@@ -109,7 +109,7 @@ write_shm(int ch,int sr,time_t tim,int *buf,struct Shm *shm,int eobsize,int pl)
   if(ch<0) return 0;
   ptw=ptw_save=shm->d+shm->p;
   ptw+=4;          /* size (4) */
-  uni=time(0);
+  uni=time(NULL);
   *ptw++=uni>>24;  /* tow (H) */
   *ptw++=uni>>16;
   *ptw++=uni>>8;
@@ -461,7 +461,7 @@ read_ch_map()
   if(*chmapfile){
     if((fp=fopen(chmapfile,"r"))!=NULL) {
       k=0;
-      for(i=0;i<65536;i++) chmap[i]=0xffff;
+      for(i=0;i<WIN_CHMAX;i++) chmap[i]=0xffff;
       while(fgets(tb,256,fp)) {
         if(*tb=='#') continue;
         sscanf(tb,"%s%d%x",mdl,&serno,&ch);

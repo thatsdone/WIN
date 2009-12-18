@@ -1,4 +1,4 @@
-/* $Id: recvs.c,v 1.6.2.1.2.5 2008/12/29 11:25:12 uehira Exp $ */
+/* $Id: recvs.c,v 1.6.2.1.2.6 2009/12/18 11:33:44 uehira Exp $ */
 /* "recvs.c"    receive sync frames      2000.3.14       urabe */
 /* 2000.3.21 */
 /* 2000.4.17 */
@@ -465,7 +465,7 @@ main(argc,argv)
     ptr_size[1]=uni>>16;
     ptr_size[2]=uni>>8;
     ptr_size[3]=uni;      /* size (L) */
-    uni=time(0);
+    uni=time(NULL);
     ptr_size[4]=uni>>24;  /* tow (H) */
     ptr_size[5]=uni>>16;
     ptr_size[6]=uni>>8;

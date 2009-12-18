@@ -1,4 +1,4 @@
-/* $Id: rtape.c,v 1.9.2.3.2.3 2009/08/25 04:00:16 uehira Exp $ */
+/* $Id: rtape.c,v 1.9.2.3.2.4 2009/12/18 11:33:44 uehira Exp $ */
 /*
   program "rtape.c"
   9/16/89 - 11/06/90, 6/26/91, 10/30/91, 6/26/92  urabe
@@ -46,7 +46,7 @@
 
   unsigned char buf[MAXSIZE],outbuf[MAXSIZE];
   int fd_exb,f_get,leng,dec_start[6],dec_end[6],dec_begin[6],
-    dec_buf1[6],dec_now[6],ext,fm_type,nch,sysch[65536],old_format;
+    dec_buf1[6],dec_now[6],ext,fm_type,nch,sysch[WIN_CHMAX],old_format;
   char name_file[NAMLEN],path[NAMLEN],textbuf[80],
     param_file[NAMLEN],name_prev[NAMLEN],dev_file[NAMLEN];
   FILE *f_param;
@@ -411,7 +411,7 @@ main(argc,argv)
     end_process(0);
     }
 
-  for(i=0;i<65536;i++) sysch[i]=1;
+  for(i=0;i<WIN_CHMAX;i++) sysch[i]=1;
   if(argc>2+optbase) sscanf(argv[2+optbase],"%s",path);
   else strcpy(path,".");
   if(argc>3+optbase)
@@ -421,7 +421,7 @@ main(argc,argv)
       perror("fopen");
       end_process(1);
       }
-    for(i=0;i<65536;i++) sysch[i]=0;
+    for(i=0;i<WIN_CHMAX;i++) sysch[i]=0;
     while(fscanf(f_param,"%x",&i)!=EOF)
       {
       i&=0xffff;
@@ -429,7 +429,7 @@ main(argc,argv)
       printf(" %03X",i);
       }
     nch=0;
-    for(i=0;i<65536;i++) if(sysch[i]) nch++;
+    for(i=0;i<WIN_CHMAX;i++) if(sysch[i]) nch++;
     printf("\n  <- %d chs according to '%s'\n",nch,argv[3+optbase]);
     fclose(f_param);
     }

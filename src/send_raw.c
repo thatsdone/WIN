@@ -1,4 +1,4 @@
-/* $Id: send_raw.c,v 1.24.2.4.2.5 2009/08/25 04:00:16 uehira Exp $ */
+/* $Id: send_raw.c,v 1.24.2.4.2.6 2009/12/18 11:33:44 uehira Exp $ */
 /*
     program "send_raw/send_mon.c"   1/24/94 - 1/25/94,5/25/94 urabe
                                     6/15/94 - 6/16/94
@@ -106,8 +106,8 @@
 
 int sock,raw,tow,all,psize[NBUF],n_ch,negate_channel,mtu,nbuf,slptime,
     n_bytes,n_packets,no_resend;
-unsigned char *sbuf[NBUF],ch_table[65536],rbuf[RSIZE],ch_req[65536],
-    ch_req_tmp[65536],pbuf[RSIZE];
+unsigned char *sbuf[NBUF],ch_table[WIN_CHMAX],rbuf[RSIZE],ch_req[WIN_CHMAX],
+    ch_req_tmp[WIN_CHMAX],pbuf[RSIZE];
      /* sbuf[NBUF][mtu-28+8] ; +8 for overrun by "size" and "time" */
 char *progname,*logfile,chfile[1024],file_req[1024];
 int  daemon_mode, syslog_mode, exit_status;
@@ -165,8 +165,8 @@ read_chfile()
 #if DEBUG
       fprintf(stderr,"ch_file=%s\n",chfile);
 #endif
-      if(negate_channel) memset(ch_table,1,65536);
-      else memset(ch_table,0,65536);
+      if(negate_channel) memset(ch_table,1,WIN_CHMAX);
+      else memset(ch_table,0,WIN_CHMAX);
       i=j=0;
       while(fgets(tbuf,1024,fp))
         {
@@ -216,7 +216,7 @@ read_chfile()
     }
   else
     {
-    memset(ch_table,1,65536);
+    memset(ch_table,1,WIN_CHMAX);
     n_ch=i;
     write_log("all channels");
     }
@@ -294,7 +294,7 @@ recv_pkts(sock,to_addr,no,bufno,standby,seq_exp,n_seq_exp,time_req,req_timo)
         n_ch_req=0;
         if(len==8 && seq==0 && n_seq==0) /* all channels */
           {
-          for(i=0;i<65536;i++)
+          for(i=0;i<WIN_CHMAX;i++)
             {
             if(ch_req[i]==0)
               {
@@ -312,7 +312,7 @@ recv_pkts(sock,to_addr,no,bufno,standby,seq_exp,n_seq_exp,time_req,req_timo)
             for(i=8;i<len;i+=2) ch_req_tmp[mkuint2(rbuf+i)]=1;
             if(seq==n_seq)
               {
-              for(i=0;i<65536;i++)
+              for(i=0;i<WIN_CHMAX;i++)
                 {
                 if(ch_req[i]!=ch_req_tmp[i])
                   {
@@ -345,7 +345,7 @@ recv_pkts(sock,to_addr,no,bufno,standby,seq_exp,n_seq_exp,time_req,req_timo)
               file_req);
             exit(1);
             }
-          for(i=0;i<65536;i++) if(ch_req[i]) fprintf(fp,"%04X\n",i);
+          for(i=0;i<WIN_CHMAX;i++) if(ch_req[i]) fprintf(fp,"%04X\n",i);
           fclose(fp);
           sprintf(tbuf,"req < %s:%d (%d) > %s",
             inet_ntoa(from_addr.sin_addr),ntohs(from_addr.sin_port),
@@ -619,8 +619,8 @@ main(argc,argv)
     }
   nbuf=i;
   no=bufno=n_packets=n_bytes=0;
-  if(*file_req) {memset(ch_req,0,65536);memset(ch_req_tmp,0,65536);}
-  else memset(ch_req,1,65536);
+  if(*file_req) {memset(ch_req,0,WIN_CHMAX);memset(ch_req_tmp,0,WIN_CHMAX);}
+  else memset(ch_req,1,WIN_CHMAX);
 
 reset:
   while(shm->r==(-1)) sleep(1);
@@ -811,7 +811,7 @@ send_packet:
           time(&ltime);
           if(*file_req && time_req && !req_timo && ltime-time_req>REQ_TIMO)
             {
-            memset(ch_req,0,65536);
+            memset(ch_req,0,WIN_CHMAX);
             req_timo=1;
             write_log("request timeout");
             }

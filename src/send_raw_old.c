@@ -1,4 +1,4 @@
-/* $Id: send_raw_old.c,v 1.9.4.3.2.4 2009/08/25 04:00:16 uehira Exp $ */
+/* $Id: send_raw_old.c,v 1.9.4.3.2.5 2009/12/18 11:33:44 uehira Exp $ */
 /*
     program "send_raw_old/send_mon_old.c"   1/24/94 - 1/25/94,5/25/94 urabe
                                     6/15/94 - 6/16/94
@@ -56,7 +56,7 @@
 #define BUFNO     128
 
 int sock,raw,mon,tow,psize[BUFNO],n_ch;
-unsigned char sbuf[BUFNO][MAXMESG],ch_table[65536],rbuf[MAXMESG];
+unsigned char sbuf[BUFNO][MAXMESG],ch_table[WIN_CHMAX],rbuf[MAXMESG];
 char *progname,*logfile,chfile[256];
 int  syslog_mode=0, exit_status;
 
@@ -86,7 +86,7 @@ read_chfile()
 #if DEBUG
       fprintf(stderr,"ch_file=%s\n",chfile);
 #endif
-      for(i=0;i<65536;i++) ch_table[i]=0;
+      for(i=0;i<WIN_CHMAX;i++) ch_table[i]=0;
       i=j=0;
       while(fgets(tbuf,1024,fp))
         {
@@ -124,7 +124,7 @@ read_chfile()
     }
   else
     {
-    for(i=0;i<65536;i++) ch_table[i]=1;
+    for(i=0;i<WIN_CHMAX;i++) ch_table[i]=1;
     n_ch=i;
     write_log("all channels");
     }

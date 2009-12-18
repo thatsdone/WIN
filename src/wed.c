@@ -1,4 +1,4 @@
-/* $Id: wed.c,v 1.5.4.3.2.3 2009/08/25 04:00:16 uehira Exp $ */
+/* $Id: wed.c,v 1.5.4.3.2.4 2009/12/18 11:33:45 uehira Exp $ */
 /* program "wed.c"
 	"wed" edits a win format data file by time range and channles
 	6/26/91,7/13/92,3/11/93,4/20/94,8/5/94,12/8/94   urabe
@@ -27,7 +27,7 @@
 #define		DEBUG1		0
 
 unsigned char *buf,*outbuf;
-int leng,dec_start[6],dec_end[6],dec_now[6],nch,sysch[65536];
+int leng,dec_start[6],dec_end[6],dec_now[6],nch,sysch[WIN_CHMAX];
 FILE *f_param;
 
 /* bcd_dec(dest,sour) */

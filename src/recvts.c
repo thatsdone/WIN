@@ -46,7 +46,7 @@ extern const int sys_nerr;
 extern const char *const sys_errlist[];
 extern int errno;
 
-unsigned char rbuf[MAXMESG],ch_table[65536];
+unsigned char rbuf[MAXMESG],ch_table[WIN_CHMAX];
 char tb[256],*progname,*logfile,chfile[256];
 int n_ch,negate_channel;
 int syslog_mode = 0, exit_status;
@@ -63,8 +63,8 @@ read_chfile()
 #if DEBUG
       fprintf(stderr,"ch_file=%s\n",chfile);
 #endif
-      if(negate_channel) for(i=0;i<65536;i++) ch_table[i]=1;
-      else for(i=0;i<65536;i++) ch_table[i]=0;
+      if(negate_channel) for(i=0;i<WIN_CHMAX;i++) ch_table[i]=1;
+      else for(i=0;i<WIN_CHMAX;i++) ch_table[i]=0;
       i=j=0;
       while(fgets(tbuf,1024,fp))
         {
@@ -114,7 +114,7 @@ read_chfile()
     }
   else
     {
-    for(i=0;i<65536;i++) ch_table[i]=1;
+    for(i=0;i<WIN_CHMAX;i++) ch_table[i]=1;
     n_ch=i;
     write_log("all channels");
     }
@@ -347,7 +347,7 @@ main(argc,argv)
         {
         if((nn=wincpy(ptr,rbuf+7,n-7))>0) sh->c++;
         ptr+=nn;
-        uni=time(0);
+        uni=time(NULL);
         ptr_size[4]=uni>>24;  /* tow (H) */
         ptr_size[5]=uni>>16;
         ptr_size[6]=uni>>8;
@@ -365,7 +365,7 @@ main(argc,argv)
           ptr_size[2]=uni>>8;
           ptr_size[3]=uni;      /* size (L) */
 #if DEBUG
-          printf("(%d)",time(0));
+          printf("(%d)",time(NULL));
           for(i=8;i<14;i++) printf("%02X",ptr_size[i]);
           printf(" : %d > %d\n",uni,ptr_size-sh->d);
 #endif
@@ -398,7 +398,7 @@ main(argc,argv)
           if((nn=wincpy(ptr,rbuf+7,n-7))>0) sh->c++;
           ptr+=nn;
           memcpy(tm,rbuf+1,6);
-          uni=time(0);
+          uni=time(NULL);
           ptr_size[4]=uni>>24;  /* tow (H) */
           ptr_size[5]=uni>>16;
           ptr_size[6]=uni>>8;

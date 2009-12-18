@@ -1,4 +1,9 @@
- $Id: ChangeLog,v 1.131.2.25.2.28 2009/12/16 09:04:20 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.29 2009/12/18 11:33:43 uehira Exp $
+
+2009-12-18  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/order : 64 bit clean?
+	* time(0) --> time(NULL)
+	* 65536 --> WIN_CHMAX
 
 2009-12-16  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* MF head. Just imported the following sources.

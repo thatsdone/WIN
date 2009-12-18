@@ -1,4 +1,4 @@
-/* $Id: raw_raw.c,v 1.9.4.3.2.4 2009/08/25 04:00:15 uehira Exp $ */
+/* $Id: raw_raw.c,v 1.9.4.3.2.5 2009/12/18 11:33:44 uehira Exp $ */
 
 /* "raw_raw.c"    97.8.5 urabe */
 /*                  modified from raw_100.c */
@@ -285,7 +285,7 @@ reset:
   /* make output data */
     ptw=shm->d+shm->p;
     ptw+=4;               /* size (4) */
-    uni=time(0);
+    uni=time(NULL);
     i=uni-mkuint4(ptr);
     if(i>=0 && i<1440)   /* with tow */
       {

@@ -1,4 +1,4 @@
-/* $Id: extraw.c,v 1.3.4.3.2.3 2008/11/18 02:27:58 uehira Exp $ */
+/* $Id: extraw.c,v 1.3.4.3.2.4 2009/12/18 11:33:44 uehira Exp $ */
 /* "extraw.c"    2000.3.17 urabe */
 /* 2000.4.24/2001.11.14 strerror() */
 
@@ -127,7 +127,7 @@ reset:
       {
       ptw=shdat->d+shdat->p;
       ptw+=4;               /* size (4) */
-      uni=time(0);
+      uni=time(NULL);
       *ptw++=uni>>24;  /* tow (H) */
       *ptw++=uni>>16;
       *ptw++=uni>>8;
@@ -153,7 +153,7 @@ reset:
       {
       ptw=shctl->d+shctl->p;
       ptw+=4;               /* size (4) */
-      uni=time(0);
+      uni=time(NULL);
       *ptw++=uni>>24;  /* tow (H) */
       *ptw++=uni>>16;
       *ptw++=uni>>8;

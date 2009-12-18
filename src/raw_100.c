@@ -1,4 +1,4 @@
-/* $Id: raw_100.c,v 1.5.4.3.2.4 2009/08/25 04:00:15 uehira Exp $ */
+/* $Id: raw_100.c,v 1.5.4.3.2.5 2009/12/18 11:33:44 uehira Exp $ */
 /* "raw_100.c"    97.6.23 - 6.30 urabe */
 /*                  modified from raw_raw.c */
 /*                  97.8.4 bug fixed (output empty block) */
@@ -45,7 +45,7 @@
 #define SR        100
 
 long buf_raw[MAX_SR];
-unsigned char ch_table[65536];
+unsigned char ch_table[WIN_CHMAX];
 char *progname,*logfile,chfile[256];
 int n_ch,negate_channel;
 int syslog_mode=0, exit_status;
@@ -62,8 +62,8 @@ read_chfile()
 #if DEBUG
       fprintf(stderr,"ch_file=%s\n",chfile);
 #endif
-      if(negate_channel) for(i=0;i<65536;i++) ch_table[i]=1;
-      else for(i=0;i<65536;i++) ch_table[i]=0;
+      if(negate_channel) for(i=0;i<WIN_CHMAX;i++) ch_table[i]=1;
+      else for(i=0;i<WIN_CHMAX;i++) ch_table[i]=0;
       i=j=0;
       while(fgets(tbuf,1024,fp))
         {
@@ -112,7 +112,7 @@ read_chfile()
     }
   else
     {
-    for(i=0;i<65536;i++) ch_table[i]=1;
+    for(i=0;i<WIN_CHMAX;i++) ch_table[i]=1;
     n_ch=i;
     write_log("all channels");
     }
@@ -222,7 +222,7 @@ reset:
   /* make output data */
     ptw=shm->d+shm->p;
     ptw+=4;               /* size (4) */
-    uni=time(0);
+    uni=time(NULL);
     i=uni-mkuint4(ptr);
     if(i>=0 && i<1440)   /* with tow */
       {

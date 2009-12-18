@@ -1,4 +1,4 @@
-/* $Id: cormeisei.c,v 1.6.4.5.2.3 2008/11/18 02:27:58 uehira Exp $ */
+/* $Id: cormeisei.c,v 1.6.4.5.2.4 2009/12/18 11:33:44 uehira Exp $ */
 /* "cormeisei.c"    June'97 Ide changed from*/
 /* "raw_raw.c"      3/4/96 urabe */
 /*                  revised on 5/20/96 */
@@ -67,7 +67,7 @@
 #define IBL       27
 #define TDLYL     1.35
 
-short ch_tableh[65536], ch_tablel[65536];
+short ch_tableh[WIN_CHMAX], ch_tablel[WIN_CHMAX];
 char *progname,*logfile,chfile[256];
 int n_chh, ch_orderh[CH_TOTAL], n_chl, ch_orderl[CH_TOTAL];
 int syslog_mode=0, exit_status=0;
@@ -83,8 +83,8 @@ char tbuf[256];
 #endif
     n_chh=0;
     n_chl=0;
-    for(i=0;i<65536;i++) ch_tableh[i]=(-1);
-    for(i=0;i<65536;i++) ch_tablel[i]=(-1);
+    for(i=0;i<WIN_CHMAX;i++) ch_tableh[i]=(-1);
+    for(i=0;i<WIN_CHMAX;i++) ch_tablel[i]=(-1);
     i=jh=jl=0;
     while(fgets(tbuf,256,fp)) {
       if(*tbuf=='#') continue;

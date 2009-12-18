@@ -1,4 +1,4 @@
-/* $Id: ls8tel16_raw.c,v 1.3.2.2.2.4 2008/11/18 02:56:25 uehira Exp $ */
+/* $Id: ls8tel16_raw.c,v 1.3.2.2.2.5 2009/12/18 11:33:44 uehira Exp $ */
 
 /*
  * Copyright (c) 2005
@@ -57,7 +57,7 @@
 /*  #define DEBUG       0 */
 
 static char rcsid[] =
-  "$Id: ls8tel16_raw.c,v 1.3.2.2.2.4 2008/11/18 02:56:25 uehira Exp $";
+  "$Id: ls8tel16_raw.c,v 1.3.2.2.2.5 2009/12/18 11:33:44 uehira Exp $";
 
 char *progname, *logfile;
 int  daemon_mode, syslog_mode;
@@ -210,7 +210,7 @@ reset:
     /* make output data */
     ptw = shm->d + shm->p;
     ptw += 4;			/* size (4) */
-    uni = time(0);
+    uni = time(NULL);
     i = uni - mkuint4(ptr);
     if (i >= 0 && i < 1440) {	/* with tow */
       if (tow != 1) {

@@ -1,4 +1,4 @@
-/* $Id: raw_ch.c,v 1.4.4.3.2.3 2009/08/25 04:00:15 uehira Exp $ */
+/* $Id: raw_ch.c,v 1.4.4.3.2.4 2009/12/18 11:33:44 uehira Exp $ */
 /* "raw_ch.c"    99.12.8 urabe */
 /*                  modified from raw_raw.c */
 /*                  byte-order-free */
@@ -38,7 +38,7 @@
 /* #define DEBUG       0 */
 #define BELL        0
 
-int ch_table[65536];
+int ch_table[WIN_CHMAX];
 char *progname,*logfile,chfile[256];
 int n_ch,negate_channel;
 int syslog_mode=0, exit_status;
@@ -55,8 +55,8 @@ read_chfile()
 #if DEBUG
       fprintf(stderr,"ch_file=%s\n",chfile);
 #endif
-      if(negate_channel) for(i=0;i<65536;i++) ch_table[i]=(-1);
-      else for(i=0;i<65536;i++) ch_table[i]=i;
+      if(negate_channel) for(i=0;i<WIN_CHMAX;i++) ch_table[i]=(-1);
+      else for(i=0;i<WIN_CHMAX;i++) ch_table[i]=i;
       j=0;
       while(fgets(tbuf,1024,fp))
         {
@@ -92,7 +92,7 @@ read_chfile()
     }
   else
     {
-    for(i=0;i<65536;i++) ch_table[i]=i;
+    for(i=0;i<WIN_CHMAX;i++) ch_table[i]=i;
     n_ch=i;
     write_log("all channels");
     }
@@ -193,7 +193,7 @@ reset:
   /* make output data */
     ptw=shm->d+shm->p;
     ptw+=4;               /* size (4) */
-    uni=time(0);
+    uni=time(NULL);
     i=uni-mkuint4(ptr);
     if(i>=0 && i<1440)   /* with tow */
       {

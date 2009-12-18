@@ -1,4 +1,4 @@
-/* $Id: relay.c,v 1.15.4.3.2.3 2009/08/25 04:00:15 uehira Exp $ */
+/* $Id: relay.c,v 1.15.4.3.2.4 2009/12/18 11:33:44 uehira Exp $ */
 /* "relay.c"      5/23/94-5/25/94,6/15/94-6/16/94,6/23/94,3/16/95 urabe */
 /*                3/26/95 check_packet_no; port# */
 /*                5/24/96 added processing of "host table full" */
@@ -73,7 +73,7 @@
 #define N_HOST    100   /* max N of hosts */  
 
 int sock_in,sock_out;   /* socket */
-unsigned char sbuf[BUFNO][MAXMESG],sbuf_in[MAXMESG],ch_table[65536];
+unsigned char sbuf[BUFNO][MAXMESG],sbuf_in[MAXMESG],ch_table[WIN_CHMAX];
 int psize[BUFNO],psize_in,negate_channel,hostlist[N_HOST][2],n_host,no_pinfo,
     n_ch;
 char *progname,host_name[100],logfile[256],chfile[256];
@@ -104,8 +104,8 @@ read_chfile()
 #if DEBUG
       fprintf(stderr,"ch_file=%s\n",chfile);
 #endif
-      if(negate_channel) for(i=0;i<65536;i++) ch_table[i]=1;
-      else for(i=0;i<65536;i++) ch_table[i]=0;
+      if(negate_channel) for(i=0;i<WIN_CHMAX;i++) ch_table[i]=1;
+      else for(i=0;i<WIN_CHMAX;i++) ch_table[i]=0;
       ii=0;
       while(fgets(tbuf,1024,fp))
         {
@@ -114,8 +114,8 @@ read_chfile()
         if(*host_name==0 || *host_name=='#') continue;
         if(*tbuf=='*') /* match any channel */
           {
-          if(negate_channel) for(i=0;i<65536;i++) ch_table[i]=0;
-          else for(i=0;i<65536;i++) ch_table[i]=1;
+          if(negate_channel) for(i=0;i<WIN_CHMAX;i++) ch_table[i]=0;
+          else for(i=0;i<WIN_CHMAX;i++) ch_table[i]=1;
           }
         else if(n_host==0 && (*tbuf=='+' || *tbuf=='-'))
           {
@@ -172,14 +172,14 @@ read_chfile()
       j=0;
       if(negate_channel)
         {
-        for(i=0;i<65536;i++) if(ch_table[i]==0) j++;
-        if((n_ch=j)==65536) sprintf(tb,"-all channels");
+        for(i=0;i<WIN_CHMAX;i++) if(ch_table[i]==0) j++;
+        if((n_ch=j)==WIN_CHMAX) sprintf(tb,"-all channels");
         else sprintf(tb,"-%d channels",n_ch=j);
         }
       else
         {
-        for(i=0;i<65536;i++) if(ch_table[i]==1) j++;
-        if((n_ch=j)==65536) sprintf(tb,"all channels");
+        for(i=0;i<WIN_CHMAX;i++) if(ch_table[i]==1) j++;
+        if((n_ch=j)==WIN_CHMAX) sprintf(tb,"all channels");
         else sprintf(tb,"%d channels",n_ch=j);
         }
       write_log(tb);
@@ -198,7 +198,7 @@ read_chfile()
     }
   else
     {
-    for(i=0;i<65536;i++) ch_table[i]=1;
+    for(i=0;i<WIN_CHMAX;i++) ch_table[i]=1;
     n_ch=i;
     n_host=0;
     write_log("all channels");

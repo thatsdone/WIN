@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.46.2.6.2.9 2009/04/10 10:54:24 uehira Exp $
+   $Id: win.c,v 1.46.2.6.2.10 2009/12/18 11:33:45 uehira Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -21,7 +21,7 @@
 #else
 #define NAME_PRG      "win32"
 #endif
-#define WIN_VERSION   "2009.3.29(+Hi-net) 64bit"
+#define WIN_VERSION   "2009.8.28(+Hi-net) 64bit"
 #define DEBUG_AP      0   /* for debugging auto-pick */
 /* 5:sr, 4:ch, 3:sec, 2:find_pick, 1:all */
 /************ HOW TO COMPILE THE PROGRAM **************************
@@ -1086,7 +1086,8 @@ static void put_init_depth(void);
 static void put_function_mecha(void);
 static void put_function_psup(void);
 static int put_main(void);
-static void get_screen_type(int *, int *, int *, int *, int *);
+static void get_screen_type(int *, unsigned int *, unsigned int *,
+			    int *, int *);
 static void draw_ellipse(int, int, double, double, double, int,
 			 unsigned char, lBitmap *, int, int, int, int);
 static void draw_circle(int, int, int, int, unsigned char, lBitmap *);
@@ -4683,9 +4684,10 @@ main(int argc, char *argv[])
   short i2p;
   int x,y;
   unsigned int w,h,d;
+  unsigned int ui, uj;
   Window root,parent;
-  extern int optind;
-  extern char *optarg;
+/*   extern int optind; */
+/*   extern char *optarg; */
 
 #if (defined(__FreeBSD__) && (__FreeBSD__ < 4))
 #include <floatingpoint.h>
@@ -4968,8 +4970,8 @@ main(int argc, char *argv[])
   XSetGraphicsExposures(disp,gc_memi,False);
 
 /* define cursor */
-  XQueryBestCursor(disp,dpy.drw,SIZE_CURSOR,SIZE_CURSOR,&i,&j);
-  if((s_cursor=i)>j) s_cursor=j;
+  XQueryBestCursor(disp,dpy.drw,SIZE_CURSOR,SIZE_CURSOR,&ui,&uj);
+  if((s_cursor=ui)>uj) s_cursor=uj;
   if(s_cursor%2==0) s_cursor--;
   define_bm(&cursor,BM_MEM,s_cursor,s_cursor,0);
   put_bitblt(&cursor,0,0,s_cursor,s_cursor,&cursor,0,0,BF_SDX);
@@ -6829,7 +6831,7 @@ if(background==0) XSync(disp,0);
   }
 
 static void
-get_screen_type(int *np, int *w_dpy, int *h_dpy, int *w_frame, int *h_frame)
+get_screen_type(int *np, unsigned int *w_dpy, unsigned int *h_dpy, int *w_frame, int *h_frame)
   {
 
   if(background)
@@ -10499,7 +10501,7 @@ read_final(char *final_file, struct Hypo *hypo)
     &hypo->along,&hypo->dep,&hypo->mag)<9) return 0;
   hypo->valid=1;
   if(fgets(textbuf,LINELEN,fp)==NULL) return 1;
-  sscanf(textbuf,"%s%*lf%lf%lf%lf",hypo->diag,&hypo->ye,&hypo->xe,&hypo->ze);
+  sscanf(textbuf,"%s%*f%lf%lf%lf",hypo->diag,&hypo->ye,&hypo->xe,&hypo->ze);
   if(fgets(textbuf,LINELEN,fp)==NULL) return 1;
   if(strchr(textbuf,'*')==0)
     {

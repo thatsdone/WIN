@@ -1,4 +1,4 @@
-/* $Id: winrawreq.c,v 1.1.2.4.2.2 2009/08/25 04:00:16 uehira Exp $ */
+/* $Id: winrawreq.c,v 1.1.2.4.2.3 2009/12/18 11:33:50 uehira Exp $ */
 
 /* winrawreq.c -- raw data request client */
 
@@ -41,7 +41,6 @@
 #define DEBUG_NET    0
 
 #define N_SERV       100     /* max. number of server list */
-#define CHMAXNUM     65536   /* 2^16 */
 #define MTU          1500     /* default MTU */
 #define IPV4U          28     /* IPv4 header + UDP header (20 + 8) */
 #define IPV6U          48     /* IPv6 header + UDP header (40 + 8) */
@@ -49,7 +48,7 @@
 #define MAXMSG       1025
 
 static char rcsid[] =
-  "$Id: winrawreq.c,v 1.1.2.4.2.2 2009/08/25 04:00:16 uehira Exp $";
+  "$Id: winrawreq.c,v 1.1.2.4.2.3 2009/12/18 11:33:50 uehira Exp $";
 
 char *progname, *logfile;
 int  daemon_mode, syslog_mode;
@@ -62,7 +61,7 @@ struct {
   char host[NI_MAXHOST];
   char port[NI_MAXSERV];
 } static srvlist[N_SERV];     /* hostname and port of server */
-static int8_t ch_indx[CHMAXNUM];
+static int8_t ch_indx[WIN_CHMAX];
 
 static int  stat_check;   /* stat_check */
 static int  para_mode;   /* parallel mode */
@@ -751,7 +750,7 @@ read_srvlist(void)
 
   /* initialize */
   srvnum = 0;
-  for (i = 0; i < CHMAXNUM; ++i)
+  for (i = 0; i < WIN_CHMAX; ++i)
     ch_indx[i] = -1;
 
   /*** read parameter file ***/
@@ -798,7 +797,7 @@ read_srvlist(void)
   /*  (void)signal(SIGHUP, (void *)read_srvlist); */
 
 #if DEBUG1
-  for (i = 0; i < CHMAXNUM; ++i) {
+  for (i = 0; i < WIN_CHMAX; ++i) {
     if (ch_indx[i] < 0)
       continue;
     /*  fprintf(stderr, "%04X  %d\n", i, ch_indx[i]); */

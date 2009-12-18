@@ -1,4 +1,4 @@
-/* $Id: wadd2.c,v 1.4.4.3.2.3 2009/08/25 04:00:16 uehira Exp $ */
+/* $Id: wadd2.c,v 1.4.4.3.2.4 2009/12/18 11:33:45 uehira Exp $ */
 /* program "wadd2.c"
   "wadd" puts two win data files together
   7/24/91 - 7/25/91, 4/20/94,6/27/94-6/28/94,7/12/94   urabe
@@ -55,7 +55,7 @@ copy_ch(makelist,sys_ch,inbuf,insize,outbuf)
   if(makelist)
     {
     for(i=0;i<6;i++) *ptw++=(*ptr++);
-    for(j=0;j<65536;j++) sys_ch[j]=0;
+    for(j=0;j<WIN_CHMAX;j++) sys_ch[j]=0;
     }
   else ptr+=6;
   k=0;
@@ -107,7 +107,7 @@ main(argc,argv)
   static unsigned char tmpfile1[NAMLEN],
     textbuf[NAMLEN],new_file[NAMLEN],selbuf[MAXSIZE];
   static unsigned char *mainbuf=NULL,*subbuf=NULL;
-  static int sysch[65536];
+  static int sysch[WIN_CHMAX];
 
   if(argc<3)
     {

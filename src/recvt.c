@@ -1,4 +1,4 @@
-/* $Id: recvt.c,v 1.29.2.3.2.17 2009/08/28 07:12:16 uehira Exp $ */
+/* $Id: recvt.c,v 1.29.2.3.2.18 2009/12/18 11:33:44 uehira Exp $ */
 /*-
  "recvt.c"      4/10/93 - 6/2/93,7/2/93,1/25/94    urabe
                 2/3/93,5/25/94,6/16/94 
@@ -109,7 +109,7 @@
 #define N_PNOS    62    /* length of packet nos. history >=2 */
 
 static char rcsid[] =
-  "$Id: recvt.c,v 1.29.2.3.2.17 2009/08/28 07:12:16 uehira Exp $";
+  "$Id: recvt.c,v 1.29.2.3.2.18 2009/12/18 11:33:44 uehira Exp $";
 
 static uint8_w rbuf[MAXMESG],ch_table[WIN_CHMAX];
 static char chfile[N_CHFILE][256];
@@ -1005,7 +1005,7 @@ main(int argc, char *argv[])
         memcpy(ptr,rbuf+2,nn=n-2);
         }
       ptr+=nn;
-      uni=(uint32_w)(time(0)-TIME_OFFSET);
+      uni=(uint32_w)(time(NULL)-TIME_OFFSET);
       ptr_size[4]=uni>>24;  /* tow (H) */
       ptr_size[5]=uni>>16;
       ptr_size[6]=uni>>8;
@@ -1049,7 +1049,7 @@ main(int argc, char *argv[])
         {
         nn=wincpy2(ptr,ts,rbuf+8,n-8,mon,&chhist,&from_addr);
         ptr+=nn;
-        uni=(uint32_w)(time(0)-TIME_OFFSET);
+        uni=(uint32_w)(time(NULL)-TIME_OFFSET);
         ptr_size[4]=uni>>24;  /* tow (H) */
         ptr_size[5]=uni>>16;
         ptr_size[6]=uni>>8;
@@ -1078,7 +1078,7 @@ main(int argc, char *argv[])
             sh->pl,pl);
 #endif
 #if DEBUG1
-          printf("(%d)",time(0));
+          printf("(%d)",time(NULL));
           for(i=8;i<14;i++) printf("%02X",ptr_size[i]);
           printf(" : %d > %d\n",uni2,ptr_size-sh->d);
 #endif
@@ -1113,7 +1113,7 @@ main(int argc, char *argv[])
           nn=wincpy2(ptr,ts,rbuf+8,n-8,mon,&chhist,&from_addr);
           ptr+=nn;
           memcpy(tm,rbuf+2,6);
-          uni=(uint32_w)(time(0)-TIME_OFFSET);
+          uni=(uint32_w)(time(NULL)-TIME_OFFSET);
           ptr_size[4]=uni>>24;  /* tow (H) */
           ptr_size[5]=uni>>16;
           ptr_size[6]=uni>>8;
@@ -1150,7 +1150,7 @@ main(int argc, char *argv[])
           {
           nn=wincpy2(ptr,ts,rbuf+j+6,n-8,mon,&chhist,&from_addr);
           ptr+=nn;
-          uni=(uint32_w)(time(0)-TIME_OFFSET);
+          uni=(uint32_w)(time(NULL)-TIME_OFFSET);
           ptr_size[4]=uni>>24;  /* tow (H) */
           ptr_size[5]=uni>>16;
           ptr_size[6]=uni>>8;
@@ -1179,7 +1179,7 @@ main(int argc, char *argv[])
             sh->pl,pl);
 #endif
 #if DEBUG1
-            printf("(%d)",time(0));
+            printf("(%d)",time(NULL));
             for(i=8;i<14;i++) printf("%02X",ptr_size[i]);
             printf(" : %d > %d\n",uni2,ptr_size-sh->d);
 #endif
@@ -1214,7 +1214,7 @@ main(int argc, char *argv[])
             nn=wincpy2(ptr,ts,rbuf+j+6,n-8,mon,&chhist,&from_addr);
             ptr+=nn;
             memcpy(tm,rbuf+j,6);
-            uni=(uint32_w)(time(0)-TIME_OFFSET);
+            uni=(uint32_w)(time(NULL)-TIME_OFFSET);
             ptr_size[4]=uni>>24;  /* tow (H) */
             ptr_size[5]=uni>>16;
             ptr_size[6]=uni>>8;
@@ -1264,7 +1264,7 @@ main(int argc, char *argv[])
           ptr_size2[3]=ptr_size[3];  /* size (L) */
           }
         memcpy(tm,rbuf+3,6);
-        uni=(uint32_w)(time(0)-TIME_OFFSET);
+        uni=(uint32_w)(time(NULL)-TIME_OFFSET);
         ptr_size[4]=uni>>24;  /* tow (H) */
         ptr_size[5]=uni>>16;
         ptr_size[6]=uni>>8;

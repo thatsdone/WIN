@@ -1,4 +1,4 @@
-/* $Id: order.c,v 1.12 2008/12/31 08:03:56 uehira Exp $ */
+/* $Id: order.c,v 1.13 2009/12/18 11:40:04 uehira Exp $ */
 /*  program "order.c" 1/26/94 - 2/7/94, 6/14/94 urabe */
 /*                              1/6/95 bug in adj_time(tm[0]--) fixed */
 /*                              3/17/95 write_log() */
@@ -288,11 +288,11 @@ main(argc,argv)
   key_t shm_key_in,shm_key_out,shm_key_late;
   unsigned long uni;
   time_t t,t_out,t_bottom,tow,ts,rt,rt_next;
-  int tm_out[6],c_save_in,shp_in,sec,sec_1,size,sizej,shmid_in,late,c,pl_out,
+  int c_save_in,shp_in,sec,sec_1,size,sizej,shmid_in,late,c,pl_out,
     shmid_out,shmid_late,size_in,shp,c_save,n_sec,no_data,sysclk,sysclk_org,
     timeout_flag,size_next,eobsize_in,eobsize_out,i,eobsize_in_count,size2;
   unsigned char *ptr,*ptr_save,*ptw,*ptw_save,*ptw_late,
-    tbuf[NAMELEN],tb[NAMELEN],*ptr_prev;
+    tbuf[NAMELEN],tb[NAMELEN],*ptr_prev,tm_out[6];
   struct Shm *shm_in,*shm_out,*shm_late;
   unsigned int shp_busy_save;
   extern int optind;
@@ -672,7 +672,7 @@ reset:
         ptr=shm_in->d+shp_in+8;
         t_bcd(t_out,tm_out);
         sprintf(tbuf,
-"passing %02X%02X%02X.%02X%02X%02X:%02X%02X(out=%02d%02d%02d.%02d%02d%02d)",
+"passing %02X%02X%02X.%02X%02X%02X:%02X%02X(out=%02X%02X%02X.%02X%02X%02X)",
           ptr[0],ptr[1],ptr[2],ptr[3],ptr[4],ptr[5],ptr[6],ptr[7],
           tm_out[0],tm_out[1],tm_out[2],tm_out[3],tm_out[4],tm_out[5]);
         write_log(logfile,tbuf);

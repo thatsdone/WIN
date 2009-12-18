@@ -1,4 +1,8 @@
- $Id: ChangeLog,v 1.157 2009/11/09 10:13:18 uehira Exp $
+ $Id: ChangeLog,v 1.158 2009/12/18 11:40:04 uehira Exp $
+
+2009-12-18  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 1.1.93 released.
+	* src/order.c : bug fixed.
 
 2009-11-09  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* Version 1.1.92 released.

@@ -1,4 +1,4 @@
-/* $Id: recvs.c,v 1.6.2.1.2.6 2009/12/18 11:33:44 uehira Exp $ */
+/* $Id: recvs.c,v 1.6.2.1.2.7 2009/12/21 10:00:13 uehira Exp $ */
 /* "recvs.c"    receive sync frames      2000.3.14       urabe */
 /* 2000.3.21 */
 /* 2000.4.17 */
@@ -378,7 +378,7 @@ main(argc,argv)
 
   /* shared memory */
   if((shmid=shmget(shm_key,size,IPC_CREAT|0666))<0) err_sys("shmget");
-  if((sh=(struct Shm *)shmat(shmid,(char *)0,0))==(struct Shm *)-1)
+  if((sh=(struct Shm *)shmat(shmid,(void *)0,0))==(struct Shm *)-1)
     err_sys("shmat");
 
   /* initialize buffer */

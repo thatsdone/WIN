@@ -1,4 +1,4 @@
-/* $Id: raw_time.c,v 1.4.4.3.2.3 2009/08/25 04:00:15 uehira Exp $ */
+/* $Id: raw_time.c,v 1.4.4.3.2.4 2009/12/21 10:00:13 uehira Exp $ */
 
 /* raw_time.c -- online version of wtime(1W) */
 
@@ -53,7 +53,7 @@
 
 
 static char rcsid[] =
-  "$Id: raw_time.c,v 1.4.4.3.2.3 2009/08/25 04:00:15 uehira Exp $";
+  "$Id: raw_time.c,v 1.4.4.3.2.4 2009/12/21 10:00:13 uehira Exp $";
 
 char *progname, *logfile;
 int  daemon_mode, syslog_mode;
@@ -164,7 +164,7 @@ main(int argc, char *argv[])
   /* input */
   if ((shmid_in = shmget(shm_key_in, 0, 0)) == -1)
     err_sys("shmget");
-  if ((shm_in = (struct Shm *)shmat(shmid_in, 0, 0)) == (struct Shm *)-1)
+  if ((shm_in = (struct Shm *)shmat(shmid_in, (void *)0, 0)) == (struct Shm *)-1)
     err_sys("shmat");
   (void)snprintf(msg, sizeof(msg), "in : shm_key_in=%d id=%d",
 		 shm_key_in, shmid_in);
@@ -173,7 +173,7 @@ main(int argc, char *argv[])
   /* output */
   if ((shmid_out = shmget(shm_key_out, size, IPC_CREAT | 0644)) == -1)
     err_sys("shmget");
-  if ((shm_out = (struct Shm *)shmat(shmid_out, 0, 0)) == (struct Shm *)-1)
+  if ((shm_out = (struct Shm *)shmat(shmid_out, (void *)0, 0)) == (struct Shm *)-1)
     err_sys("shmat");
   (void)snprintf(msg, sizeof(msg), "shm_key_out=%d id=%d size=%d",
 		 shm_key_out, shmid_out, size);

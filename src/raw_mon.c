@@ -1,4 +1,4 @@
-/* $Id: raw_mon.c,v 1.6.4.4.2.5 2009/08/25 04:00:15 uehira Exp $ */
+/* $Id: raw_mon.c,v 1.6.4.4.2.6 2009/12/21 10:00:13 uehira Exp $ */
 /* "raw_mon.c"      7/2/93,6/17/94,6/28/94    urabe */
 /*                  3/17/95 write_log(), 4/17/95 MAX_SR safety */
 /*                  usleep -> sleep */
@@ -200,12 +200,12 @@ main(argc,argv)
 
   /* raw shared memory */
   if((shmid_raw=shmget(rawkey,0,0))<0) err_sys("shmget raw");
-  if((shr=(struct Shm *)shmat(shmid_raw,(char *)0,0))==
+  if((shr=(struct Shm *)shmat(shmid_raw,(void *)0,0))==
       (struct Shm *)-1) err_sys("shmat raw");
 
   /* mon shared memory */
   if((shmid_mon=shmget(monkey,size_shm,IPC_CREAT|0666))<0) err_sys("shmget mon");
-  if((shm=(struct Shm *)shmat(shmid_mon,(char *)0,0))==(struct Shm *)-1)
+  if((shm=(struct Shm *)shmat(shmid_mon,(void *)0,0))==(struct Shm *)-1)
     err_sys("shmat mon");
 
   sprintf(tb,"start raw_key=%d id=%d mon_key=%d id=%d size=%d",

@@ -1,4 +1,4 @@
-/* $Id: ls8tel16_raw.c,v 1.3.2.2.2.5 2009/12/18 11:33:44 uehira Exp $ */
+/* $Id: ls8tel16_raw.c,v 1.3.2.2.2.6 2009/12/21 10:00:13 uehira Exp $ */
 
 /*
  * Copyright (c) 2005
@@ -57,7 +57,7 @@
 /*  #define DEBUG       0 */
 
 static char rcsid[] =
-  "$Id: ls8tel16_raw.c,v 1.3.2.2.2.5 2009/12/18 11:33:44 uehira Exp $";
+  "$Id: ls8tel16_raw.c,v 1.3.2.2.2.6 2009/12/21 10:00:13 uehira Exp $";
 
 char *progname, *logfile;
 int  daemon_mode, syslog_mode;
@@ -165,13 +165,13 @@ main(int argc, char *argv[])
   /* in shared memory */
   if ((shmid_in = shmget(inkey, 0, 0)) == -1)
     err_sys("shmget in");
-  if ((shr = (struct Shm *)shmat(shmid_in, 0, 0)) == (struct Shm *)-1)
+  if ((shr = (struct Shm *)shmat(shmid_in, (void *)0, 0)) == (struct Shm *)-1)
     err_sys("shmat in");
 
   /* out shared memory */
   if ((shmid_out = shmget(outkey, size_shm, IPC_CREAT | 0644)) == -1)
     err_sys("shmget out");
-  if ((shm = (struct Shm *)shmat(shmid_out, 0, 0)) == (struct Shm *)-1)
+  if ((shm = (struct Shm *)shmat(shmid_out, (void *)0, 0)) == (struct Shm *)-1)
     err_sys("shmat out");
 
   (void)snprintf(tb, sizeof(tb),

@@ -1,4 +1,4 @@
-/* $Id: wdiskts.c,v 1.6.2.5.2.2 2009/08/25 04:00:16 uehira Exp $ */
+/* $Id: wdiskts.c,v 1.6.2.5.2.3 2009/12/21 10:00:14 uehira Exp $ */
 /* 2005.8.10 urabe bug in strcmp2() fixed : 0-6 > 7-9 */
 
 #ifdef HAVE_CONFIG_H
@@ -457,7 +457,7 @@ main(argc,argv)
 
    *latest=(*oldest)=(*busy)=0;
    if((shmid=shmget(shmkey,0,0))<0) err_sys("shmget");
-   if((shm=(struct Shm *)shmat(shmid,(char *)0,0))==(struct Shm *)-1)
+   if((shm=(struct Shm *)shmat(shmid,(void *)0,0))==(struct Shm *)-1)
      err_sys("shmat");
    
    sprintf(tbuf,"start, shm_key=%d sh=%d",shmkey,shm);

@@ -1,4 +1,4 @@
-/* $Id: winrandsimu6.c,v 1.1.4.1 2009/12/16 09:04:20 uehira Exp $ */
+/* $Id: winrandsimu6.c,v 1.1.4.2 2009/12/21 10:00:14 uehira Exp $ */
 
 /*  WIN random simulater, real-time version
      write 100Hz 3000ch data to stdout as WIN-text or shared memory
@@ -113,7 +113,7 @@ int main(int argc, char **argv){
   if(shm_size>0){
     if((shmid_out=shmget(shmkey_out, shm_size, IPC_CREAT | 0666))<0)
       fprintf(stderr, "error shmget_out\n");
-    if((shm_out=(struct Shm *)shmat(shmid_out,(char *)0,0))==(struct Shm *)-1)
+    if((shm_out=(struct Shm *)shmat(shmid_out,(void *)0,0))==(struct Shm *)-1)
       fprintf(stderr, "error shmget_out\n");
     /* initialize output buffer */
     shm_out->p = shm_out->c = 0;
@@ -260,7 +260,7 @@ int out_data(time_t tnow,int del,int sch,int sta,int nch,int samp,int *ev,int *d
         06.30  bug fix & add fflush
    2004.10.10  writing to share memory option
  */
-/* $Id: winrandsimu6.c,v 1.1.4.1 2009/12/16 09:04:20 uehira Exp $ */
+/* $Id: winrandsimu6.c,v 1.1.4.2 2009/12/21 10:00:14 uehira Exp $ */
 /* winform.c  4/30/91,99.4.19   urabe */
 /* winform converts fixed-sample-size-data into win's format */
 /* winform returns the length in bytes of output data */

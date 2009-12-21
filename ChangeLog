@@ -1,4 +1,8 @@
- $Id: ChangeLog,v 1.131.2.25.2.29 2009/12/18 11:33:43 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.30 2009/12/21 10:00:12 uehira Exp $
+
+2009-12-21  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/wdisk : 64 bit clean?
+	* 2nd arg of shmat() : (void *)0
 
 2009-12-18  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* src/order : 64 bit clean?

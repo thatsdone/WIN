@@ -1,4 +1,4 @@
-/* $Id: wdisk.c,v 1.17.2.8.2.2 2009/08/25 04:00:16 uehira Exp $ */
+/* $Id: wdisk.c,v 1.17.2.8.2.3 2009/12/21 10:00:13 uehira Exp $ */
 /*
   program "wdisk.c"   4/16/93-5/13/93,7/2/93,7/5/94  urabe
                       1/6/95 bug in adj_time fixed (tm[0]--)
@@ -22,6 +22,7 @@
                       2006.12.5 use double in calculating space_raw
                       2007.1.15 i<1000000 -> 5000000,
                                 BUFSZ 500000->1000000, BUFLIM 1000000->5000000
+		      2009.12.21 64bit clean? (uehira)
 */
 
 #ifdef HAVE_CONFIG_H
@@ -33,14 +34,14 @@
 #define _LARGEFILE64_SOURCE
 #endif
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <sys/file.h>
 #include <sys/stat.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #if TIME_WITH_SYS_TIME
 #include <sys/time.h>
@@ -83,18 +84,29 @@
 
 #define   NAMELEN  1025
 
-char tbuf[NAMELEN],latest[NAMELEN],oldest[NAMELEN],busy[NAMELEN],
-  outdir[NAMELEN];
-char *progname,*logfile;
-unsigned char *buf;
-int count,count_max,mode;
-FILE *fd;
-int  nflag, smode, daemon_mode, syslog_mode, exit_status;
+static char rcsid[] =
+  "$Id: wdisk.c,v 1.17.2.8.2.3 2009/12/21 10:00:13 uehira Exp $";
 
-long
-check_space(path,fsbsize)
-     char *path;
-     long *fsbsize;
+char *progname,*logfile;
+int  daemon_mode, syslog_mode, exit_status;
+
+static char tbuf[NAMELEN],latest[NAMELEN],oldest[NAMELEN],busy[NAMELEN],
+  outdir[NAMELEN];
+/* static unsigned char *buf; */
+static int count,count_max,mode;
+static FILE *fd;
+static int  nflag, smode;
+
+/* prototypes */
+static long check_space(char *, long *);
+static int switch_file(int *);
+static int find_oldest(char *, char *);
+static void wmemo(char *, char *);
+static void usage(void);
+int main(int , char *[]);
+
+static long
+check_space(char *path, long *fsbsize)  /* 64bit ok? */
 {
 #if USE_LARGE_FS
   struct statfs64 fsbuf;
@@ -119,28 +131,28 @@ check_space(path,fsbsize)
   return (fsbuf.f_bavail);
 }
 
-switch_file(tm)
-  int *tm;
+static int
+switch_file(int *tm)
 {
    FILE *fp;
    char oldst[NAMELEN];
-   long freeb, fsbsize, space_raw;
+   long freeb, fsbsize, space_raw;  /* 64bit ok */
 
    if(fd!=NULL){  /* if file is open, close last file */
       fclose(fd);
       fd=NULL;
 #if DEBUG
-      printf("closed fd=%d\n",fd);
+      printf("closed fd=%p\n",fd);
 #endif
       if (!nflag) {
 	strcpy(latest,busy);
-	wmemo("LATEST",latest);
+	wmemo(WDISK_LATEST,latest);
       }
    }
 
    /* delete oldest file */
    if (smode) {
-     if (snprintf(tbuf,sizeof(tbuf),"%s/MAX",outdir) >= sizeof(tbuf)) {
+     if (snprintf(tbuf,sizeof(tbuf),"%s/%s",outdir,WDISK_MAX) >= sizeof(tbuf)) {
        write_log("tbuf[]: buffer overflow");
        end_program();
      }
@@ -155,7 +167,7 @@ switch_file(tm)
        space_raw =(long)((1048576.0*(double)count_max) / (double)fsbsize);
        count = find_oldest(outdir,oldst);
 #if DEBUG
-       printf("freeb, space_raw: %d %d (%d)\n",
+       printf("freeb, space_raw: %ld %ld (%ld)\n",
 	      freeb, space_raw, fsbsize);
 #endif
        if (space_raw < freeb || count == 0)
@@ -174,10 +186,10 @@ switch_file(tm)
 
      if (!nflag) {
        strcpy(oldest,oldst);
-       wmemo("OLDEST",oldest);
+       wmemo(WDISK_OLDEST,oldest);
      }
-   } else {
-     if (snprintf(tbuf,sizeof(tbuf),"%s/MAX",outdir) >= sizeof(tbuf)) {
+   } else {  /* !smode */
+     if (snprintf(tbuf,sizeof(tbuf),"%s/%s",outdir,WDISK_MAX) >= sizeof(tbuf)) {
        write_log("tbuf[]: buffer overflow");
        end_program();
      }
@@ -198,7 +210,7 @@ switch_file(tm)
      }
      if (!nflag) {
        strcpy(oldest,oldst);
-       wmemo("OLDEST",oldest);
+       wmemo(WDISK_OLDEST,oldest);
      }
    }
    /* make new file name */
@@ -209,24 +221,25 @@ switch_file(tm)
    if((fd=fopen(tbuf,"a+"))==NULL) err_sys(tbuf);
    count++;
 #if DEBUG
-   if(fd!=NULL) printf("%s opened fd=%d\n",tbuf,fd);
+   if(fd!=NULL) printf("%s opened fd=%p\n",tbuf,fd);
 #endif
    if (!nflag) {
-     wmemo("BUSY",busy);
-     sprintf(tbuf,"%s/COUNT",outdir);
+     wmemo(WDISK_BUSY,busy);
+     sprintf(tbuf,"%s/%s",outdir,WDISK_COUNT);
      fp=fopen(tbuf,"w+");
      fprintf(fp,"%d\n",count);
      fclose(fp);
    }
-   return 0;
+   return (0);
 }
 
-find_oldest(path,oldst) /* returns N of files */
-     char *path,*oldst;
+static int
+find_oldest(char *path, char *oldst) /* returns N of files */
 {
    int i;
    struct dirent *dir_ent;
    DIR *dir_ptr;
+
    /* find the oldest file */
    if((dir_ptr=opendir(path))==NULL) err_sys("opendir");
    i=0;
@@ -240,22 +253,26 @@ find_oldest(path,oldst) /* returns N of files */
    printf("%d files in %s, oldest=%s\n",i,path,oldst);
 #endif
    closedir(dir_ptr);
-   return i;
+   return (i);
 }
 
-wmemo(f,c)
-     char *f,*c;
+static void
+wmemo(char *f, char *c)
 {
    FILE *fp;
+
    sprintf(tbuf,"%s/%s",outdir,f);
    fp=fopen(tbuf,"w+");
    fprintf(fp,"%s\n",c);
    fclose(fp);
 }
 
+static void
 usage()
 {
 
+  WIN_version();
+  fprintf(stderr, "%s\n", rcsid);
   if(daemon_mode)
     fprintf(stderr,
 	    " usage : '%s (-ns) [shm_key]/- [out dir] ([N of files]/[freespace in MB(-s)] ([log file]))'\n",
@@ -266,21 +283,23 @@ usage()
 	    progname);
 }
 
-main(argc,argv)
-     int argc;
-     char **argv;
+int
+main(int argc, char *argv[])
 {
 #define BUFSZ 1000000
 #define BUFLIM 5000000
    FILE *fp;
-   int i,shmid,tm[6],tm_last[6],eobsize,eobsize_count,bufsiz;
-   unsigned long shp,shp_save,size,c_save,size2;
-   unsigned char *ptr,*ptr_save,ptw[4],*buf;
+   int shmid,tm[6],tm_last[6],eobsize,eobsize_count=0;
+   long  i;    /* 64bit ok */
+   unsigned long c_save=0;  /* 64bit ok */
+   WIN_bs  size, size2, bufsiz;
+   size_t  shp=0,shp_save;
+   uint8_w  *ptr,*ptr_save=NULL,ptw[4],*buf=NULL;
    key_t shmkey;
    int c;
-   struct Shm  *shm;
+   struct Shm  *shm=NULL;
    
-   if(progname=strrchr(argv[0],'/')) progname++;
+   if((progname=strrchr(argv[0],'/')) != NULL) progname++;
    else progname=argv[0];
 
    daemon_mode = syslog_mode = smode = nflag = 0;
@@ -315,7 +334,7 @@ main(argc,argv)
      exit(1);
    }
    
-   if(strcmp(argv[0],"-")) shmkey=atoi(argv[0]);
+   if(strcmp(argv[0],"-")) shmkey=atol(argv[0]);
    else
      {
      if (daemon_mode)
@@ -325,12 +344,12 @@ main(argc,argv)
 	 exit(1);
        }
      shmkey=0;
-     buf=(unsigned char *)malloc(bufsiz=BUFSZ);
+     buf=(uint8_w *)malloc((size_t)(bufsiz=BUFSZ));
      }
    strcpy(outdir,argv[1]);
    if(argc>2) count_max=atoi(argv[2]);
    else count_max=0;
-   sprintf(tbuf,"%s/MAX",outdir);
+   sprintf(tbuf,"%s/%s",outdir,WDISK_MAX);
    fp=fopen(tbuf,"w+");
    if (smode)
      fprintf(fp,"%d MB\n",count_max);
@@ -356,10 +375,10 @@ main(argc,argv)
    if(shmkey)
      {
      if((shmid=shmget(shmkey,0,0))<0) err_sys("shmget");
-     if((shm=(struct Shm *)shmat(shmid,(char *)0,0))==(struct Shm *)-1)
+     if((shm=(struct Shm *)shmat(shmid,(void *)0,0))==(struct Shm *)-1)
        err_sys("shmat");
    
-     sprintf(tbuf,"start, shm_key=%d sh=%d",shmkey,shm);
+     sprintf(tbuf,"start, shm_key=%ld sh=%p",shmkey,shm);
      write_log(tbuf);
      }
    
@@ -390,7 +409,7 @@ main(argc,argv)
      size=mkuint4(buf);
      if(size>bufsiz)
        {
-       if(size>BUFLIM || (buf=realloc(buf,size))==NULL)
+	 if(size>BUFLIM || (buf=realloc(buf,(size_t)size))==NULL)
          {
          sprintf(tbuf,"malloc size=%d",size);
          write_log(tbuf);
@@ -444,7 +463,7 @@ main(argc,argv)
 
 #if DEBUG
       for(i=0;i<6;i++) printf("%02d",tm[i]);
-      printf(" : %d r=%d\n",size,shp);
+      printf(" : %d r=%ld\n",size,shp);
 #endif
 #if BELL
       printf("\007");fflush(stdout);
@@ -458,7 +477,7 @@ main(argc,argv)
       if(mode==60) fflush(fd);
 	   
 #if DEBUG
-      printf("%d>(fd=%d) r=%d\n",size2,fd,shp);
+      printf("%d>(fd=%p) r=%ld\n",size2,fd,shp);
 #endif
       if(shmkey)
         {
@@ -482,10 +501,10 @@ main(argc,argv)
         size=mkuint4(buf);
         if(size>bufsiz)
           {
-          if(size>BUFLIM || (buf=realloc(buf,size))==NULL)
+          if(size>BUFLIM || (buf=realloc(buf,(size_t)size))==NULL)
             {
             sprintf(tbuf,"malloc size=%d",size);
-            write_log(tbuf);
+	    write_log(tbuf);
             end_program();
             }
           else bufsiz=size;

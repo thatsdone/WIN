@@ -309,7 +309,7 @@ main(argc,argv)
 
   /* shared memory */
   if((shmid=shmget(shm_key,size,IPC_CREAT|0666))<0) err_sys("shmget");
-  if((sh=(struct Shm *)shmat(shmid,(char *)0,0))==(struct Shm *)-1)
+  if((sh=(struct Shm *)shmat(shmid,(void *)0,0))==(struct Shm *)-1)
     err_sys("shmat");
 
   /* initialize buffer */

@@ -1,4 +1,4 @@
-/* $Id: extraw.c,v 1.3.4.3.2.4 2009/12/18 11:33:44 uehira Exp $ */
+/* $Id: extraw.c,v 1.3.4.3.2.5 2009/12/21 10:00:13 uehira Exp $ */
 /* "extraw.c"    2000.3.17 urabe */
 /* 2000.4.24/2001.11.14 strerror() */
 
@@ -73,19 +73,19 @@ main(argc,argv)
     
   /* in shared memory */
   if((shmid_in=shmget(inkey,0,0))<0) err_sys("shmget in");
-  if((shin=(struct Shm *)shmat(shmid_in,(char *)0,0))==
+  if((shin=(struct Shm *)shmat(shmid_in,(void *)0,0))==
       (struct Shm *)-1) err_sys("shmat in");
 
   /* dat(out) shared memory */
   if((shmid_dat=shmget(datkey,size_shdat,IPC_CREAT|0666))<0)
     err_sys("shmget dat");
-  if((shdat=(struct Shm *)shmat(shmid_dat,(char *)0,0))==(struct Shm *)-1)
+  if((shdat=(struct Shm *)shmat(shmid_dat,(void *)0,0))==(struct Shm *)-1)
     err_sys("shmat dat");
 
   /* ctl(out) shared memory */
   if((shmid_ctl=shmget(ctlkey,size_shctl,IPC_CREAT|0666))<0)
     err_sys("shmget ctl");
-  if((shctl=(struct Shm *)shmat(shmid_ctl,(char *)0,0))==(struct Shm *)-1)
+  if((shctl=(struct Shm *)shmat(shmid_ctl,(void *)0,0))==(struct Shm *)-1)
     err_sys("shmat ctl");
 
   sprintf(tb,"start in_key=%d id=%d dat_key=%d id=%d size=%d ctl_key=%d id=%d size=%d ",

@@ -1,4 +1,4 @@
-/* $Id: ecore2.c,v 1.4.4.3.2.4 2009/08/25 04:00:15 uehira Exp $ */
+/* $Id: ecore2.c,v 1.4.4.3.2.5 2009/12/21 10:00:13 uehira Exp $ */
 
 /*
   program "ecore2.c"   4/16/93-5/13/93,7/2/93,7/5/94  urabe
@@ -170,7 +170,7 @@ main(argc, argv)
 	/* shered memory */
 	if ((shmid_in = shmget(shmkey_in, 0, 0)) < 0)
 		err_sys("shmget_in");
-	if ((shm_in = (struct Shm *)shmat(shmid_in, (char *)0, SHM_RDONLY)) ==
+	if ((shm_in = (struct Shm *)shmat(shmid_in, (void *)0, SHM_RDONLY)) ==
 		(struct Shm *)-1)
 		err_sys("shmat_in");
 
@@ -179,7 +179,7 @@ main(argc, argv)
 
 	if ((shmid_out = shmget(shmkey_out, shm_size, IPC_CREAT|0666)) < 0)
 		err_sys("shmget_out");
-	if ((shm_out = (struct Shm *)shmat(shmid_out, (char *)0, 0)) ==
+	if ((shm_out = (struct Shm *)shmat(shmid_out, (void *)0, 0)) ==
 		(struct Shm *)-1)
 		err_sys("shmat_out");
 

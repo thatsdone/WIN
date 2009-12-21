@@ -117,7 +117,7 @@ char *argv[];
     if (shm_size > 0) {
 	if ((shmid_out = shmget(shmkey_out, shm_size, IPC_CREAT | 0666)) < 0)
 	    fprintf(stderr, "error shmget_out\n");
-	if ((shm_out = (struct Shm *) shmat(shmid_out, (char *) 0, 0)) == (struct Shm *) -1)
+	if ((shm_out = (struct Shm *) shmat(shmid_out, (void *) 0, 0)) == (struct Shm *) -1)
 	    fprintf(stderr, "error shmget_out\n");
 	/* initialize output buffer */
 	Shm_init(shm_out, shm_size);

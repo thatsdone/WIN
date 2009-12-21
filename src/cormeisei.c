@@ -1,4 +1,4 @@
-/* $Id: cormeisei.c,v 1.6.4.5.2.4 2009/12/18 11:33:44 uehira Exp $ */
+/* $Id: cormeisei.c,v 1.6.4.5.2.5 2009/12/21 10:00:12 uehira Exp $ */
 /* "cormeisei.c"    June'97 Ide changed from*/
 /* "raw_raw.c"      3/4/96 urabe */
 /*                  revised on 5/20/96 */
@@ -211,12 +211,12 @@ char *argv[];
 
   /* in shared memory */
   if((shmid_raw=shmget(rawkey,0,0))<0) err_sys("shmget in");
-  if((shr=(struct Shm *)shmat(shmid_raw,(char *)0,0))==
+  if((shr=(struct Shm *)shmat(shmid_raw,(void *)0,0))==
       (struct Shm *)-1) err_sys("shmat in");
 
   /* out shared memory */
   if((shmid_mon=shmget(monkey,size_shm,IPC_CREAT|0666))<0) err_sys("shmget out");
-  if((shm=(struct Shm *)shmat(shmid_mon,(char *)0,0))==(struct Shm *)-1)
+  if((shm=(struct Shm *)shmat(shmid_mon,(void *)0,0))==(struct Shm *)-1)
     err_sys("shmat out");
 
   sprintf(tb,"start in_key=%d id=%d out_key=%d id=%d size=%d",

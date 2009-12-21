@@ -1,4 +1,4 @@
-/* $Id: recvt.c,v 1.29.2.3.2.18 2009/12/18 11:33:44 uehira Exp $ */
+/* $Id: recvt.c,v 1.29.2.3.2.19 2009/12/21 10:00:13 uehira Exp $ */
 /*-
  "recvt.c"      4/10/93 - 6/2/93,7/2/93,1/25/94    urabe
                 2/3/93,5/25/94,6/16/94 
@@ -109,7 +109,7 @@
 #define N_PNOS    62    /* length of packet nos. history >=2 */
 
 static char rcsid[] =
-  "$Id: recvt.c,v 1.29.2.3.2.18 2009/12/18 11:33:44 uehira Exp $";
+  "$Id: recvt.c,v 1.29.2.3.2.19 2009/12/21 10:00:13 uehira Exp $";
 
 static uint8_w rbuf[MAXMESG],ch_table[WIN_CHMAX];
 static char chfile[N_CHFILE][256];
@@ -887,7 +887,7 @@ main(int argc, char *argv[])
 
   /* shared memory */
   if((shmid=shmget(shm_key,size,IPC_CREAT|0666))<0) err_sys("shmget");
-  if((sh=(struct Shm *)shmat(shmid,(char *)0,0))==(struct Shm *)-1)
+  if((sh=(struct Shm *)shmat(shmid,(void *)0,0))==(struct Shm *)-1)
     err_sys("shmat");
 
   /* initialize buffer */

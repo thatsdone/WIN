@@ -1,4 +1,4 @@
-/* $Id: send_raw_old.c,v 1.9.4.3.2.5 2009/12/18 11:33:44 uehira Exp $ */
+/* $Id: send_raw_old.c,v 1.9.4.3.2.6 2009/12/21 10:00:13 uehira Exp $ */
 /*
     program "send_raw_old/send_mon_old.c"   1/24/94 - 1/25/94,5/25/94 urabe
                                     6/15/94 - 6/16/94
@@ -179,7 +179,7 @@ main(argc,argv)
 
   /* shared memory */
   if((shmid=shmget(shm_key,0,0))<0) err_sys("shmget");
-  if((shm=(struct Shm *)shmat(shmid,(char *)0,0))==(struct Shm *)-1)
+  if((shm=(struct Shm *)shmat(shmid,(void *)0,0))==(struct Shm *)-1)
     err_sys("shmat");
 
   sprintf(tbuf,"start shm_key=%d id=%d",shm_key,shmid);

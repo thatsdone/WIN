@@ -1,4 +1,4 @@
-/* $Id: recvt_LS7000.c,v 1.1.2.3.2.7 2009/12/18 11:33:44 uehira Exp $ */
+/* $Id: recvt_LS7000.c,v 1.1.2.3.2.8 2009/12/21 10:00:13 uehira Exp $ */
 /* "recvt_LS7000.c"  uehira */
 /*   2007-11-02  imported from recvt.c 1.29.2.1 */
 
@@ -749,7 +749,7 @@ main(argc,argv)
 
   /* shared memory */
   if((shmid=shmget(shm_key,size,IPC_CREAT|0666))<0) err_sys("shmget");
-  if((sh=(struct Shm *)shmat(shmid,(char *)0,0))==(struct Shm *)-1)
+  if((sh=(struct Shm *)shmat(shmid,(void *)0,0))==(struct Shm *)-1)
     err_sys("shmat");
 
   /* initialize buffer */

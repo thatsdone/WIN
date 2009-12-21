@@ -1,4 +1,4 @@
-/* $Id: sends.c,v 1.6.4.3.2.4 2008/12/29 11:25:12 uehira Exp $ */
+/* $Id: sends.c,v 1.6.4.3.2.5 2009/12/21 10:00:13 uehira Exp $ */
 /*   program "sends"   2000.3.20 urabe                   */
 /*   2000.3.21 */
 /*   2000.4.17 */
@@ -330,7 +330,7 @@ main(argc,argv)
     
   /* shared memory */
   if((shmid=shmget(shm_key,0,0))<0) err_sys("shmget");
-  if((shm=(struct Shm *)shmat(shmid,(char *)0,0))==(struct Shm *)-1)
+  if((shm=(struct Shm *)shmat(shmid,(void *)0,0))==(struct Shm *)-1)
     err_sys("shmat");
 
   sprintf(tbuf,"start shm_key=%d id=%d",shm_key,shmid);

@@ -1,4 +1,4 @@
-/* $Id: winlib.h,v 1.1.2.7.2.13 2009/08/25 04:00:16 uehira Exp $ */
+/* $Id: winlib.h,v 1.1.2.7.2.14 2009/12/21 10:00:14 uehira Exp $ */
 
 #ifndef _WIN_LIB_H_
 #define _WIN_LIB_H_
@@ -61,6 +61,13 @@ typedef uint32_w  WIN_sr;
 #define  WIN_CHMAX    65536   /* Max. number of channel: 2^16 */
 #define  SR_MON       5   /* sampling rate of MON */
 #define  TIME_OFFSET ((time_t)0)  /* time(0) offset */
+
+/* 'wdisk' process makes the following files */
+#define WDISK_OLDEST  "OLDEST"
+#define WDISK_LATEST  "LATEST"
+#define WDISK_BUSY    "BUSY"
+#define WDISK_COUNT   "COUNT"
+#define WDISK_MAX     "MAX"
 
 #define  SWAPL(a)  a = ((((a) << 24)) | (((a) << 8) & 0xff0000) |	\
 			(((a) >> 8) & 0xff00) | (((a) >> 24) & 0xff))

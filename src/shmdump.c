@@ -1,4 +1,4 @@
-/* $Id: shmdump.c,v 1.21.4.6.2.11 2009/08/26 01:38:08 uehira Exp $ */
+/* $Id: shmdump.c,v 1.21.4.6.2.12 2009/12/21 10:00:13 uehira Exp $ */
 
 /*  program "shmdump.c" 6/14/94 urabe */
 /*  revised 5/29/96 */
@@ -72,7 +72,7 @@ struct Filter
 };
 
 static char rcsid[] =
-  "$Id: shmdump.c,v 1.21.4.6.2.11 2009/08/26 01:38:08 uehira Exp $";
+  "$Id: shmdump.c,v 1.21.4.6.2.12 2009/12/21 10:00:13 uehira Exp $";
 
 static char *progname,outfile[256];
 static int win;
@@ -413,7 +413,7 @@ main(int argc, char *argv[])
     {
     shm_key_in=atoi(argv[1+optind]); /* shared memory */
     if((shmid_in=shmget(shm_key_in,0,0))<0) err_sys_local("shmget");
-    if((shm_in=(struct Shm *)shmat(shmid_in,(char *)0,0))==(struct Shm *)-1)
+    if((shm_in=(struct Shm *)shmat(shmid_in,(void *)0,0))==(struct Shm *)-1)
       err_sys_local("shmat");
     /*fprintf(stderr,"in : shm_key_in=%d id=%d\n",shm_key_in,shmid_in);*/
     }

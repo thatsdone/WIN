@@ -1,4 +1,4 @@
-/* $Id: order.c,v 1.11.4.5.2.4 2009/12/18 11:33:44 uehira Exp $ */
+/* $Id: order.c,v 1.11.4.5.2.5 2009/12/21 10:00:13 uehira Exp $ */
 /*  program "order.c" 1/26/94 - 2/7/94, 6/14/94 urabe */
 /*                              1/6/95 bug in adj_time(tm[0]--) fixed */
 /*                              3/17/95 write_log() */
@@ -57,7 +57,7 @@
 #define NAMELEN  1025
 
 static char rcsid[] =
-  "$Id: order.c,v 1.11.4.5.2.4 2009/12/18 11:33:44 uehira Exp $";
+  "$Id: order.c,v 1.11.4.5.2.5 2009/12/21 10:00:13 uehira Exp $";
 
 char *progname,*logfile;
 int  daemon_mode, syslog_mode, exit_status;
@@ -290,13 +290,13 @@ main(int argc, char *argv[])
    
   /* shared memory */
   if((shmid_in=shmget(shm_key_in,0,0))<0) err_sys("shmget");
-  if((shm_in=(struct Shm *)shmat(shmid_in,(char *)0,0))==(struct Shm *)-1)
+  if((shm_in=(struct Shm *)shmat(shmid_in,(void *)0,0))==(struct Shm *)-1)
     err_sys("shmat");
   sprintf(tbuf,"in : shm_key_in=%ld id=%d",shm_key_in,shmid_in);
   write_log(tbuf);
    
   if((shmid_out=shmget(shm_key_out,sizei,IPC_CREAT|0666))<0) err_sys("shmget");
-  if((shm_out=(struct Shm *)shmat(shmid_out,(char *)0,0))==(struct Shm *)-1)
+  if((shm_out=(struct Shm *)shmat(shmid_out,(void *)0,0))==(struct Shm *)-1)
     err_sys("shmat");
   sprintf(tbuf,"out: shm_key_out=%ld id=%d size=%ld",
 	  shm_key_out,shmid_out,sizei);
@@ -312,7 +312,7 @@ main(int argc, char *argv[])
   if(late) {
     if((shmid_late=shmget(shm_key_late,sizej,IPC_CREAT|0666))<0)
       err_sys("shmget");
-    if((shm_late=(struct Shm *)shmat(shmid_late,(char *)0,0))==(struct Shm *)-1)
+    if((shm_late=(struct Shm *)shmat(shmid_late,(void *)0,0))==(struct Shm *)-1)
       err_sys("shmat");
     sprintf(tbuf,"late: shm_key_late=%ld id=%d size=%ld",
           shm_key_late,shmid_late,sizej);
@@ -528,7 +528,7 @@ reset:
 	  if(t<t_out){
 	    /* output late data */
 	    ptr=shm_in->d+shp;
-	    memcpy(ptw_late,ptr,size2);
+	    memcpy(ptw_late,ptr,(size_t)size2);
 	    ptw_late[0]=size2>>24;
 	    ptw_late[1]=size2>>16;
 	    ptw_late[2]=size2>>8;

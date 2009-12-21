@@ -1,4 +1,4 @@
-/* $Id: raw_shift.c,v 1.2.4.3.2.5 2009/12/18 11:33:44 uehira Exp $ */
+/* $Id: raw_shift.c,v 1.2.4.3.2.6 2009/12/21 10:00:13 uehira Exp $ */
 
 /* "raw_shift.c"    2002.4.1 - 4.1 urabe */
 /*                  modified from raw_100.c */
@@ -176,12 +176,12 @@ main(argc,argv)
 
   /* in shared memory */
   if((shmid_raw=shmget(rawkey,0,0))<0) err_sys("shmget in");
-  if((shr=(struct Shm *)shmat(shmid_raw,(char *)0,0))==
+  if((shr=(struct Shm *)shmat(shmid_raw,(void *)0,0))==
       (struct Shm *)-1) err_sys("shmat in");
 
   /* out shared memory */
   if((shmid_mon=shmget(monkey,size_shm,IPC_CREAT|0666))<0) err_sys("shmget out");
-  if((shm=(struct Shm *)shmat(shmid_mon,(char *)0,0))==(struct Shm *)-1)
+  if((shm=(struct Shm *)shmat(shmid_mon,(void *)0,0))==(struct Shm *)-1)
     err_sys("shmat out");
 
   sprintf(tb,"start in_key=%d id=%d out_key=%d id=%d size=%d",

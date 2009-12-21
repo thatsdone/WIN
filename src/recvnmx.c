@@ -1,4 +1,4 @@
-/* $Id: recvnmx.c,v 1.16.4.4.2.8 2009/12/18 11:33:44 uehira Exp $ */
+/* $Id: recvnmx.c,v 1.16.4.4.2.9 2009/12/21 10:00:13 uehira Exp $ */
 /* "recvnmx.c"    2001.7.18-19 modified from recvt.c and nmx2raw.c  urabe */
 /*                2001.8.18 */
 /*                2001.10.5 workaround for hangup */
@@ -605,7 +605,7 @@ main(argc,argv)
 
   /* out shared memory */
   if((shmid=shmget(shm_key,size_shm,IPC_CREAT|0666))<0) err_sys("shmget");
-  if((shm=(struct Shm *)shmat(shmid,(char *)0,0))==(struct Shm *)-1)
+  if((shm=(struct Shm *)shmat(shmid,(void *)0,0))==(struct Shm *)-1)
     err_sys("shmat");
 
   sprintf(tb,"start out_key=%d id=%d size=%d",shm_key,shmid,size_shm);

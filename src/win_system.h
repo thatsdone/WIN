@@ -1,4 +1,4 @@
-/* $Id: win_system.h,v 1.7.4.3.2.3 2009/08/25 04:00:16 uehira Exp $ */
+/* $Id: win_system.h,v 1.7.4.3.2.4 2009/12/21 10:00:14 uehira Exp $ */
 
 #ifndef _WIN_SYSTEM_H_
 #define _WIN_SYSTEM_H_
@@ -39,12 +39,13 @@
 
 #define TRG_CHFILE_SUFIX ".ch"
 
-/* 'wdisk' process makes the following files */
-#define WDISK_OLDEST  "OLDEST"
-#define WDISK_LATEST  "LATEST"
-#define WDISK_BUSY    "BUSY"
-#define WDISK_COUNT   "COUNT"
-#define WDISK_MAX     "MAX"
+/* moved to winlib.h */
+/* /\* 'wdisk' process makes the following files *\/ */
+/* #define WDISK_OLDEST  "OLDEST" */
+/* #define WDISK_LATEST  "LATEST" */
+/* #define WDISK_BUSY    "BUSY" */
+/* #define WDISK_COUNT   "COUNT" */
+/* #define WDISK_MAX     "MAX" */
 
 /* 'wdiskt' process makes the following files */
 #define WDISKT_OLDEST  "OLDEST"

@@ -1,6 +1,7 @@
- $Id: ChangeLog,v 1.131.2.25.2.30 2009/12/21 10:00:12 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.31 2009/12/21 11:00:03 uehira Exp $
 
 2009-12-21  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/raw_mon : 64 bit clean?
 	* src/wdisk : 64 bit clean?
 	* 2nd arg of shmat() : (void *)0
 

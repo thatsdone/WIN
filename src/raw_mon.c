@@ -1,4 +1,4 @@
-/* $Id: raw_mon.c,v 1.6.4.4.2.6 2009/12/21 10:00:13 uehira Exp $ */
+/* $Id: raw_mon.c,v 1.6.4.4.2.7 2009/12/21 11:00:03 uehira Exp $ */
 /* "raw_mon.c"      7/2/93,6/17/94,6/28/94    urabe */
 /*                  3/17/95 write_log(), 4/17/95 MAX_SR safety */
 /*                  usleep -> sleep */
@@ -15,19 +15,20 @@
 /*                  2001.11.14 strerror()*/
 /*                  2004.10.27 daemon mode (Uehira) */
 /*                  2005.2.20 added fclose() in read_chfile() */
+/*                  2009.12.21 64bit clean? (Uehira) */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
 
-#include <stdio.h>
-#include <signal.h>
-#include <stdlib.h>
-#include <string.h>
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <sys/stat.h>
+#include <stdio.h>
+#include <signal.h>
+#include <stdlib.h>
+#include <string.h>
 
 #if TIME_WITH_SYS_TIME
 #include <sys/time.h>
@@ -50,23 +51,32 @@
 
 /* #define DEBUG       0 */
 #define BELL        0
-#define MAX_SR      4096
+#define MAX_SR      HEADER_4B
 /* #define SR_MON      5 */
+
+static char rcsid[] =
+  "$Id: raw_mon.c,v 1.6.4.4.2.7 2009/12/21 11:00:03 uehira Exp $";
 
 char *progname,*logfile;
 int  daemon_mode, syslog_mode;
 int  exit_status;
 
 static int32_w buf_raw[MAX_SR],buf_mon[SR_MON][2];
-static unsigned char ch_table[WIN_CHMAX];
+static uint8_w  ch_table[WIN_CHMAX];
 static char chfile[256];
 static int n_ch,negate_channel;
 
+/* prototypes */
+static void read_chfile(void);
+int main(int argc,char *argv[]);
+
+static void
 read_chfile()
   {
   FILE *fp;
   int i,j,k;
   char tbuf[1024];
+
   if(*chfile)
     {
     if((fp=fopen(chfile,"r"))!=NULL)
@@ -77,7 +87,7 @@ read_chfile()
       if(negate_channel) for(i=0;i<WIN_CHMAX;i++) ch_table[i]=1;
       else for(i=0;i<WIN_CHMAX;i++) ch_table[i]=0;
       i=j=0;
-      while(fgets(tbuf,1024,fp))
+      while(fgets(tbuf,sizeof(tbuf),fp))
         {
         if(*tbuf=='#' || sscanf(tbuf,"%x",&k)<0) continue;
         k&=0xffff;
@@ -131,20 +141,22 @@ read_chfile()
   signal(SIGHUP,(void *)read_chfile);
   }
 
-main(argc,argv)
-  int argc;
-  char *argv[];
+int
+main(int argc, char *argv[])
   {
   struct Shm  *shr,*shm;
   key_t rawkey,monkey;
   int shmid_raw,shmid_mon;
-  unsigned long uni;
+  WIN_bs  uni;  /* 64bit ok */
   char tb[100];
-  unsigned char *ptr,*ptw,*ptr_lim,*ptr_save;
-  int i,size,size_shm,re;
+  uint8_w   *ptr,*ptw,*ptr_lim,*ptr_save;
+  int i;
+  uint32_w  re;
+  WIN_bs  size;
+  size_t  size_shm;
   WIN_ch ch;
   WIN_sr sr;
-  unsigned long c_save;
+  unsigned long c_save;  /* 64bit ok */
 
   if((progname=strrchr(argv[0],'/')) != NULL) progname++;
   else progname=argv[0];
@@ -156,14 +168,16 @@ main(argc,argv)
 
   if(argc<4)
     {
+      WIN_version();
+      fprintf(stderr, "%s\n", rcsid);
       fprintf(stderr,
 	      " usage : '%s [raw_key] [mon_key] [shm_size(KB)] ([ch_file]/- ([log file]))'\n",
 	      progname);
       exit(1);
     }
-  rawkey=atoi(argv[1]);
-  monkey=atoi(argv[2]);
-  size_shm=atoi(argv[3])*1000;
+  rawkey=atol(argv[1]);
+  monkey=atol(argv[2]);
+  size_shm=atol(argv[3])*1000;
   *chfile=0;
   if(argc>4)
     {
@@ -208,7 +222,7 @@ main(argc,argv)
   if((shm=(struct Shm *)shmat(shmid_mon,(void *)0,0))==(struct Shm *)-1)
     err_sys("shmat mon");
 
-  sprintf(tb,"start raw_key=%d id=%d mon_key=%d id=%d size=%d",
+  sprintf(tb,"start raw_key=%ld id=%d mon_key=%ld id=%d size=%ld",
     rawkey,shmid_raw,monkey,shmid_mon,size_shm);
   write_log(tb);
 
@@ -260,7 +274,7 @@ reset:
         }
       } while((ptr+=re)<ptr_lim);
 
-    uni=ptw-(shm->d+shm->p);
+    uni=(WIN_bs)(ptw-(shm->d+shm->p));
     shm->d[shm->p  ]=uni>>24; /* size (H) */
     shm->d[shm->p+1]=uni>>16;
     shm->d[shm->p+2]=uni>>8;

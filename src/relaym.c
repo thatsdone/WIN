@@ -1,4 +1,4 @@
-/* $Id: relaym.c,v 1.7.2.1 2005/06/22 03:19:02 uehira Exp $ */
+/* $Id: relaym.c,v 1.7.2.2 2009/12/25 01:06:19 uehira Exp $ */
 
 /*
  * 2005-06-22 MF relay.c:
@@ -58,7 +58,7 @@
 #define MAXMSG       1025
 
 static char rcsid[] =
-  "$Id: relaym.c,v 1.7.2.1 2005/06/22 03:19:02 uehira Exp $";
+  "$Id: relaym.c,v 1.7.2.2 2009/12/25 01:06:19 uehira Exp $";
 
 /* destination host info. */
 struct hostinfo {
@@ -113,9 +113,11 @@ main(int argc, char *argv[])
 {
   struct conntable  *ct, *ct_top = NULL;
   char *input_port;
-  struct sockaddr_storage  ss;
-  struct sockaddr *sa = (struct sockaddr *)&ss;
-  socklen_t   fromlen;
+  struct sockaddr_storage  ss, ss1;
+  struct sockaddr *sa = (struct sockaddr *)&ss, *sa1 = (struct sockaddr *)&ss1;
+  socklen_t   fromlen, fromlen1;
+  char host_[NI_MAXHOST];  /* host address */
+  char port_[NI_MAXSERV];  /* port No. */
   ssize_t     re;
   int  maxsoc, maxsoc1;
   struct hostinfo  *hinf, *hinf_top = NULL;
@@ -332,8 +334,10 @@ main(int argc, char *argv[])
 	for (hinf = hinf_top; hinf != NULL; hinf = hinf->next) {
 	  if (!FD_ISSET(hinf->sock, &rset1))
 	    continue;
+	  memset(&ss1, 0, sizeof(ss1));   /* need not ? */
+	  fromlen1 = sizeof(ss1);
 	  if (recvfrom(hinf->sock, sbuf[bufno],
-		       MAXMESG, 0, hinf->sa, &hinf->salen) != 1)
+		       MAXMESG, 0, sa1, &fromlen1) != 1)
 	    continue;
 
 	  no_f = sbuf[bufno][0];
@@ -345,8 +349,12 @@ main(int argc, char *argv[])
 	    sbuf[bufno][1] = no_f;            /* old packet no. */
 	    re = sendto(hinf->sock, sbuf[bufno],
 			psize[bufno], 0, hinf->sa, hinf->salen);
+	    (void)getnameinfo(sa1, fromlen1,
+			      host_, sizeof(host_), port_, sizeof(port_),
+			      NI_DGRAM | NI_NUMERICHOST | NI_NUMERICSERV);
 	    (void)snprintf(msg, sizeof(msg), 
-			   "resend to %s:%s #%d(#%d) as #%d, %d B",
+			   "request from %s:%s and resend to %s:%s #%d(#%d) as #%d, %d B",
+			   host_, port_,
 			   hinf->host_, hinf->port_,
 			   no_f, bufno_f, sq[hinf->ID], re);
 	    write_log(msg);

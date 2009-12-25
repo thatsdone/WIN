@@ -1,4 +1,8 @@
- $Id: ChangeLog,v 1.158 2009/12/18 11:40:04 uehira Exp $
+ $Id: ChangeLog,v 1.159 2009/12/25 00:43:26 uehira Exp $
+
+2009-12-25  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 1.1.94 released.
+	* src/relaym.c : bug fixed.
 
 2009-12-18  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* Version 1.1.93 released.

@@ -1,4 +1,4 @@
-/* $Id: win_log.c,v 1.2.4.1.4.1 2008/11/13 09:36:07 uehira Exp $ */
+/* $Id: win_log.c,v 1.2.4.1.4.2 2009/12/26 00:56:59 uehira Exp $ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -67,3 +67,4 @@ end_program(void)
   /*  printf("%d\n", status); */
   exit(exit_status);
 }
+

@@ -1,4 +1,4 @@
-/* $Id: wdisk.c,v 1.17.2.8.2.3 2009/12/21 10:00:13 uehira Exp $ */
+/* $Id: wdisk.c,v 1.17.2.8.2.4 2009/12/26 00:56:59 uehira Exp $ */
 /*
   program "wdisk.c"   4/16/93-5/13/93,7/2/93,7/5/94  urabe
                       1/6/95 bug in adj_time fixed (tm[0]--)
@@ -85,7 +85,7 @@
 #define   NAMELEN  1025
 
 static char rcsid[] =
-  "$Id: wdisk.c,v 1.17.2.8.2.3 2009/12/21 10:00:13 uehira Exp $";
+  "$Id: wdisk.c,v 1.17.2.8.2.4 2009/12/26 00:56:59 uehira Exp $";
 
 char *progname,*logfile;
 int  daemon_mode, syslog_mode, exit_status;
@@ -100,7 +100,6 @@ static int  nflag, smode;
 /* prototypes */
 static long check_space(char *, long *);
 static int switch_file(int *);
-static int find_oldest(char *, char *);
 static void wmemo(char *, char *);
 static void usage(void);
 int main(int , char *[]);
@@ -231,29 +230,6 @@ switch_file(int *tm)
      fclose(fp);
    }
    return (0);
-}
-
-static int
-find_oldest(char *path, char *oldst) /* returns N of files */
-{
-   int i;
-   struct dirent *dir_ent;
-   DIR *dir_ptr;
-
-   /* find the oldest file */
-   if((dir_ptr=opendir(path))==NULL) err_sys("opendir");
-   i=0;
-   while((dir_ent=readdir(dir_ptr))!=NULL){
-      if(*dir_ent->d_name=='.') continue;
-      if(!isdigit(*dir_ent->d_name)) continue;
-      if(i++==0 || strcmp2(dir_ent->d_name,oldst)<0)
-	strcpy(oldst,dir_ent->d_name);
-   }
-#if DEBUG
-   printf("%d files in %s, oldest=%s\n",i,path,oldst);
-#endif
-   closedir(dir_ptr);
-   return (i);
 }
 
 static void

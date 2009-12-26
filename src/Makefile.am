@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.38.2.10.2.5 2009/12/16 09:04:20 uehira Exp $
+# $Id: Makefile.am,v 1.38.2.10.2.6 2009/12/26 00:56:58 uehira Exp $
 #
 
 if SUNOS4
@@ -67,7 +67,7 @@ SUB=winform win2fix
 WIN_UTIL = win_system.h win_system.c
 SUBFUNC_H = subst_func.h
 DAEMON_MODE = daemon_mode.h daemon_mode.c
-WIN_LOG = win_log.h win_log.c win_externs.h
+WIN_LOG = win_log.h win_log.c win_externs.h winlib_log.c
 UDP_UTILITY = udpu.h udp_accept.c udp_dest.c
 TCP_UTILITY = tcpu.h tcp_connect.c
 

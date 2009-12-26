@@ -1,5 +1,9 @@
- $Id: ChangeLog,v 1.131.2.25.2.32 2009/12/25 01:31:59 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.33 2009/12/26 00:56:57 uehira Exp $
 
+2009-12-26  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/winlib.c : added get_sysch() [moved from win_system.c], t_bcd(), bcd_t(), bcd2time(), time2bcd(), time_cmpq()
+	* src/winlib_log.c : created. added find_oldest().
+	
 2009-12-25  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* MF head.
 	* src/relaym.c : bug fixed.

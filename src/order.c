@@ -1,4 +1,4 @@
-/* $Id: order.c,v 1.11.4.5.2.5 2009/12/21 10:00:13 uehira Exp $ */
+/* $Id: order.c,v 1.11.4.5.2.6 2009/12/26 00:56:59 uehira Exp $ */
 /*  program "order.c" 1/26/94 - 2/7/94, 6/14/94 urabe */
 /*                              1/6/95 bug in adj_time(tm[0]--) fixed */
 /*                              3/17/95 write_log() */
@@ -57,93 +57,16 @@
 #define NAMELEN  1025
 
 static char rcsid[] =
-  "$Id: order.c,v 1.11.4.5.2.5 2009/12/21 10:00:13 uehira Exp $";
+  "$Id: order.c,v 1.11.4.5.2.6 2009/12/26 00:56:59 uehira Exp $";
 
 char *progname,*logfile;
 int  daemon_mode, syslog_mode, exit_status;
 
 /* prototypes */
-static void t_bcd(time_t, uint8_w *);
-static time_t mktime2(struct tm *);
-static time_t bcd_t(uint8_w *);
 static int check_time(uint8_w *);
 static int32_w advance(struct Shm *, size_t *, unsigned long *, uint32_w *,
 		       time_t *, size_t *);
 int main(int argc, char *argv[]);
-
-
-static void
-t_bcd(time_t t, uint8_w *ptr)
-{
-  struct tm *nt;
-
-  nt=localtime(&t);
-  ptr[0]=d2b[nt->tm_year%100];
-  ptr[1]=d2b[nt->tm_mon+1];
-  ptr[2]=d2b[nt->tm_mday];
-  ptr[3]=d2b[nt->tm_hour];
-  ptr[4]=d2b[nt->tm_min];
-  ptr[5]=d2b[nt->tm_sec];
-}
-
-static time_t
-mktime2(struct tm *mt) /* high-speed version of mktime() */
-  {
-  static struct tm *m;
-  time_t t;
-  register int i,j,ye;
-  static int dm[]={31,28,31,30,31,30,31,31,30,31,30,31};
-  static int dy[]={365,365,366,365,365,365,366,365,365,365,366,365, /* 1970-81 */
-                   365,365,366,365,365,365,366,365,365,365,366,365, /* 1982-93 */
-                   365,365,366,365,365,365,366,365,365,365,366,365, /* 1994-2005 */
-                   365,365,366,365,365,365,366,365,365,365,366,365, /* 2006-17 */
-                   365,365,366,365,365,365,366,365,365,365,366,365, /* 2018-2029 */
-                   365,365,366,365,365,365,366,365,365,365,366,365};/* 2030-2041 */
-#if defined(__SVR4)
-  extern time_t timezone;
-#endif
-  if(m==NULL) m=localtime(&t);
-  ye=mt->tm_year-70;
-  j=0;
-  for(i=0;i<ye;i++) j+=dy[i]; /* days till the previous year */
-  for(i=0;i<mt->tm_mon;i++) j+=dm[i]; /* days till the previous month */
-  if(!(mt->tm_year&0x3) && mt->tm_mon>1) j++;  /* in a leap year */
-  j+=mt->tm_mday-1; /* days */
-#if defined(__SVR4)
-  return (j*86400+mt->tm_hour*3600+mt->tm_min*60+mt->tm_sec+timezone);
-#endif
-#if defined(HAVE_STRUCT_TM_GMTOFF)
-  return (j*86400+mt->tm_hour*3600+mt->tm_min*60+mt->tm_sec-m->tm_gmtoff);
-#endif
-#if defined(__CYGWIN__)
-  tzset();
-  return (j*86400+mt->tm_hour*3600+mt->tm_min*60+mt->tm_sec+_timezone);
-#endif
-  }
-
-static time_t
-bcd_t(uint8_w *ptr)  /* 64bit ok*/
-  {
-  int tm[6];
-  time_t ts;
-  struct tm mt;
-
-  if(!bcd_dec(tm,ptr)) return (0); /* out of range */
-  memset(&mt,0,sizeof(mt));
-  if((mt.tm_year=tm[0])<50) mt.tm_year+=100;
-  mt.tm_mon=tm[1]-1;
-  mt.tm_mday=tm[2];
-  mt.tm_hour=tm[3];
-  mt.tm_min=tm[4];
-  mt.tm_sec=tm[5];
-  mt.tm_isdst=0;
-#if defined(__SVR4) || defined(HAVE_STRUCT_TM_GMTOFF) || defined(__CYGWIN__)
-  ts=mktime2(&mt);
-#else
-  ts=mktime(&mt);
-#endif
-  return (ts);
-  }
 
 static int
 check_time(uint8_w *ptr)  /* 64bit ok*/
@@ -196,9 +119,8 @@ usage()
 	    " usage : '%s (-aBD) (-l [shm_key_late]:[shm_size_late(KB)]) [shm_key_in] \\\n\
            [shm_key_out] [shm_size(KB)] [limit_sec] ([log file])'", progname);
 
-
+  fprintf(stderr,"\n");
 }
-
 
 int
 main(int argc, char *argv[])

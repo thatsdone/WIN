@@ -1,4 +1,4 @@
-/* $Id: winlib.c,v 1.1.2.4.2.11 2009/08/28 07:12:16 uehira Exp $ */
+/* $Id: winlib.c,v 1.1.2.4.2.12 2009/12/26 00:56:59 uehira Exp $ */
 
 /*-
  * winlib.c  (Uehira Kenji)
@@ -26,6 +26,56 @@
 #endif				/* !TIME_WITH_SYS_TIME */
 
 #include "winlib.h"
+
+/**********************************************************
+ * Local function
+ ********************************************************** */
+
+static time_t mktime2(struct tm *);
+
+static time_t
+mktime2(struct tm *mt) /* high-speed version of mktime() */
+{
+  static struct tm *m;
+  time_t t;
+  register int i,j,ye;
+  static int dm[] = {
+    31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+  static int dy[] = {
+    365, 365, 366, 365, 365, 365, 366, 365, 365, 365, 366, 365, /* 1970-81 */
+    365, 365, 366, 365, 365, 365, 366, 365, 365, 365, 366, 365, /* 1982-93 */
+    365, 365, 366, 365, 365, 365, 366, 365, 365, 365, 366, 365, /* 1994-2005 */
+    365, 365, 366, 365, 365, 365, 366, 365, 365, 365, 366, 365, /* 2006-17 */
+    365, 365, 366, 365, 365, 365, 366, 365, 365, 365, 366, 365, /* 2018-2029 */
+    365, 365, 366, 365, 365, 365, 366, 365, 365, 365, 366, 365};/* 2030-2041 */
+#if defined(__SVR4)
+  extern time_t timezone;
+#endif
+
+  if (m == NULL)
+    m = localtime(&t);
+  ye = mt->tm_year - 70;
+  j = 0;
+  for (i = 0; i < ye; i++)
+    j += dy[i]; /* days till the previous year */
+  for (i = 0; i < mt->tm_mon; i++)
+    j += dm[i]; /* days till the previous month */
+  if (!(mt->tm_year & 0x3) && mt->tm_mon > 1)
+    j++;  /* in a leap year */
+  j += mt->tm_mday - 1; /* days */
+
+#if defined(__SVR4)
+  return (j * 86400 + mt->tm_hour * 3600 + mt->tm_min * 60 + mt->tm_sec + timezone);
+#endif
+#if defined(HAVE_STRUCT_TM_GMTOFF)
+  return (j * 86400 + mt->tm_hour * 3600 + mt->tm_min * 60 + mt->tm_sec - m->tm_gmtoff);
+#endif
+#if defined(__CYGWIN__)
+  tzset();
+  return (j * 86400 + mt->tm_hour * 3600 + mt->tm_min * 60 + mt->tm_sec + _timezone);
+#endif
+}
+/******- End of Local function -******/
 
 void
 get_time(int rt[])
@@ -648,6 +698,29 @@ win_chheader_info(const uint8_w *ptr, WIN_ch *ch, WIN_sr *sr, int *ss)
 /*   return (gsize); */
 /* } */
 
+/* same as win_chheader_info(), but retuen only channel number info. */
+uint32_w
+get_sysch(const uint8_w *buf, WIN_ch *ch)
+{
+  /* uint8_w  gh[4]; */
+  WIN_sr   sr;
+  uint32_w gsize;
+  int  i;
+  
+  /* for(i=0;i<4;++i) gh[i]=buf[i]; */
+  /*   /\* channel number *\/ */
+  /*   *ch=(((WIN_ch)gh[0])<<8)+(WIN_ch)gh[1]; */
+  /*   /\* sampling rate *\/ */
+  /*   sr=(((WIN_sr)(gh[2]&0x0f))<<8)+(WIN_sr)gh[3]; */
+  /*   /\* sample size *\/ */
+  /*   if((gh[2]>>4)&0x7) gsize=((gh[2]>>4)&0x7)*(sr-1)+8; */
+  /*   else gsize=(sr>>1)+8; */
+
+  gsize = win_chheader_info(buf, ch, &sr, &i);
+
+  return(gsize);
+}
+
 /*** make mon data ***/
 void
 get_mon(WIN_sr gm_sr, int32_w *gm_raw, int32_w (*gm_mon)[2])
@@ -763,3 +836,112 @@ make_mon(uint8_w *ptr, uint8_w *ptw) /* for one minute(second?) */
   ptw_start[2] = uni4 >> 8;
   ptw_start[3] = uni4;		/* size (L) */
 }
+
+void
+t_bcd(time_t t, uint8_w *ptr)
+{
+  struct tm      *nt;
+
+  nt = localtime(&t);
+  ptr[0] = d2b[nt->tm_year % 100];
+  ptr[1] = d2b[nt->tm_mon + 1];
+  ptr[2] = d2b[nt->tm_mday];
+  ptr[3] = d2b[nt->tm_hour];
+  ptr[4] = d2b[nt->tm_min];
+  ptr[5] = d2b[nt->tm_sec];
+}
+
+time_t
+bcd_t(uint8_w *ptr)
+{				/* 64bit ok */
+  int		  tm[6];
+  time_t	  ts;
+  struct tm	  mt;
+
+  if (!bcd_dec(tm, ptr))
+    return (0);			/* out of range */
+  memset(&mt, 0, sizeof(mt));
+  if ((mt.tm_year = tm[0]) < 50)
+    mt.tm_year += 100;
+  mt.tm_mon = tm[1] - 1;
+  mt.tm_mday = tm[2];
+  mt.tm_hour = tm[3];
+  mt.tm_min = tm[4];
+  mt.tm_sec = tm[5];
+  mt.tm_isdst = 0;
+#if defined(__SVR4) || defined(HAVE_STRUCT_TM_GMTOFF) || defined(__CYGWIN__)
+  ts = mktime2(&mt);
+#else
+  if ((ts = mktime(&mt)) == (time_t)-1) {
+    (void)fputs("mktime error.\n", stderr);
+    exit(1);
+  }
+#endif
+
+  return (ts);
+}
+
+/*** This function will be replaced by bcd_t() */
+time_t
+bcd2time(uint8_w *bcd)
+{
+  int  t[6];
+  struct tm  time_str;
+  time_t     time;
+
+  memset(&time_str, 0, sizeof(time_str));
+  bcd_dec(t,bcd);
+  if (t[0] >= 70)
+    time_str.tm_year = t[0];
+  else
+    time_str.tm_year = 100 + t[0]; /* 2000+t[0]-1900 */
+  time_str.tm_mon = t[1] - 1;
+  time_str.tm_mday = t[2];
+  time_str.tm_hour = t[3];
+  time_str.tm_min = t[4];
+  time_str.tm_sec = t[5];
+  time_str.tm_isdst = 0;
+
+  if ((time = mktime(&time_str)) == (time_t)-1) {
+    (void)fputs("mktime error.\n", stderr);
+    exit(1);
+  }
+  return (time);
+}
+
+/*** This function will be replaced by t_bcd */
+void
+time2bcd(time_t time, uint8_w *bcd)
+{
+  int          t[6];
+  struct tm    time_str;
+
+  time_str = *localtime(&time);
+  if (time_str.tm_year >= 100)
+    t[0] = time_str.tm_year - 100;
+  else
+    t[0] = time_str.tm_year;
+  t[1] = time_str.tm_mon + 1;
+  t[2] = time_str.tm_mday;
+  t[3] = time_str.tm_hour;
+  t[4] = time_str.tm_min;
+  t[5] = time_str.tm_sec;
+  dec_bcd(bcd,t);
+}
+
+int
+time_cmpq(const void *_a, const void *_b)   /* for qsort() */
+{
+  unsigned long  a, b;
+
+  a = *(unsigned long *)_a;
+  b = *(unsigned long *)_b;
+
+  if (a < b)
+    return (-1);
+  else if (a > b)
+    return (1);
+  else
+    return (0);
+}
+

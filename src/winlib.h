@@ -1,4 +1,4 @@
-/* $Id: winlib.h,v 1.1.2.7.2.14 2009/12/21 10:00:14 uehira Exp $ */
+/* $Id: winlib.h,v 1.1.2.7.2.15 2009/12/26 00:56:59 uehira Exp $ */
 
 #ifndef _WIN_LIB_H_
 #define _WIN_LIB_H_
@@ -6,6 +6,17 @@
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
+
+#if TIME_WITH_SYS_TIME
+#include <sys/time.h>
+#include <time.h>
+#else				/* !TIME_WITH_SYS_TIME */
+#if HAVE_SYS_TIME_H
+#include <sys/time.h>
+#else				/* !HAVE_SYS_TIME_H */
+#include <time.h>
+#endif				/* !HAVE_SYS_TIME_H */
+#endif				/* !TIME_WITH_SYS_TIME */
 
 #include "filter.h"
 #include "win_log.h"
@@ -149,8 +160,17 @@ WIN_bs read_onesec_win(FILE *, uint8_w **);
 void Shm_init(struct Shm *, size_t);
 void WIN_version(void);
 uint32_w win_chheader_info(const uint8_w *, WIN_ch *, WIN_sr *, int *);
+uint32_w get_sysch(const uint8_w *, WIN_ch *);
 void get_mon(WIN_sr, int32_w *, int32_w (*)[]);
 uint8_w *compress_mon(int32_w *, uint8_w *);
 void make_mon(uint8_w *, uint8_w *);
+void t_bcd(time_t, uint8_w *);
+time_t bcd_t(uint8_w *);
+void time2bcd(time_t, uint8_w *);
+time_t bcd2time(uint8_w *);
+int time_cmpq(const void *, const void *);
+
+/* winlib_log.c */
+int find_oldest(char *, char *);
 
 #endif  /* !_WIN_LIB_H_*/

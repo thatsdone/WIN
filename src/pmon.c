@@ -1,4 +1,4 @@
-/* $Id: pmon.c,v 1.14.2.5.2.4 2009/08/25 04:00:15 uehira Exp $ */
+/* $Id: pmon.c,v 1.14.2.5.2.5 2009/12/26 00:56:59 uehira Exp $ */
 /************************************************************************
 *************************************************************************
 **  program "pmon.c" for NEWS/SPARC                             *********
@@ -227,7 +227,7 @@
 0xf0,0x1e,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x40,0x00,0x06,0x10,0xc0,0x00,0x00};
 
 static const char  rcsid[] =
-   "$Id: pmon.c,v 1.14.2.5.2.4 2009/08/25 04:00:15 uehira Exp $";
+   "$Id: pmon.c,v 1.14.2.5.2.5 2009/12/26 00:56:59 uehira Exp $";
 
 char *progname,*logfile;
 int  syslog_mode = 0, exit_status;
@@ -285,7 +285,7 @@ static void confirm_on(int);
 static void sprintm(char *, int *);
 static void cptm(int *, int *);
 static void confirm_off(int, int, int);
-static int find_oldest(char *, char *, char *) ;
+static int find_oldest_pmon(char *, char *, char *) ;
 static int read_one_sec(int *);
 static void plot_wave(int, int);
 static void hangup(void);
@@ -536,7 +536,7 @@ confirm_off(int ch, int sec, int i)
   }
 
 static int
-find_oldest(char *path, char *oldst, char *latst) /* returns N of files */
+find_oldest_pmon(char *path, char *oldst, char *latst) /* returns N of files */
   {     
   int i;
   struct dirent *dir_ent;
@@ -1075,7 +1075,7 @@ insatsu(uint8_w *tb1, uint8_w *tb2, uint8_w *tb3, char *path_spool,
       system(tb);
       unlink(filename);
       }
-    while((count=find_oldest(path_spool,oldst,latst))>count_max && count_max)
+    while((count=find_oldest_pmon(path_spool,oldst,latst))>count_max && count_max)
       {
       sprintf(tb,"%s/%s",path_spool,oldst);
       unlink(tb);

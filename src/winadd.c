@@ -1,4 +1,4 @@
-/* $Id: winadd.c,v 1.4.4.3.2.3 2009/08/25 04:00:16 uehira Exp $ */
+/* $Id: winadd.c,v 1.4.4.3.2.4 2009/12/26 00:56:59 uehira Exp $ */
 
 /*
  * winadd.c  (Uehira Kenji)
@@ -57,7 +57,7 @@ typedef struct data_index  INDX;
 
 /* global variables */
 static const char rcsid[] =
-   "$Id: winadd.c,v 1.4.4.3.2.3 2009/08/25 04:00:16 uehira Exp $";
+   "$Id: winadd.c,v 1.4.4.3.2.4 2009/12/26 00:56:59 uehira Exp $";
 static int  dummy_flag, verbose_flag;
 
 /* prototypes */
@@ -73,9 +73,6 @@ static void get_index(char *, INDX **, WIN_ch *, int,
 		      time_t *, int);
 static void win_file_read(char *, WIN_ch **, int *, int *,
 			  time_t **, int *, int *);
-static int time_cmpq(const void *, const void *);
-static void time2bcd(time_t, uint8_w *);
-static time_t bcd2time(uint8_w *);
 static void memory_error(void);
 static void usage(void);
 int main(int, char *[]);
@@ -141,67 +138,6 @@ memory_error(void)
 
   (void)fputs("Cannot allocate memory!\n", stderr);
   exit(1);
-}
-
-static time_t
-bcd2time(uint8_w *bcd)
-{
-  int  t[6];
-  struct tm  time_str;
-  time_t     time;
-
-  bcd_dec(t,bcd);
-  if (t[0] >= 70)
-    time_str.tm_year = t[0];
-  else
-    time_str.tm_year = 100 + t[0]; /* 2000+t[0]-1900 */
-  time_str.tm_mon = t[1] - 1;
-  time_str.tm_mday = t[2];
-  time_str.tm_hour = t[3];
-  time_str.tm_min = t[4];
-  time_str.tm_sec = t[5];
-  time_str.tm_isdst = 0;
-
-  if ((time = mktime(&time_str)) == (time_t)-1) {
-    (void)fputs("mktime error.\n", stderr);
-    exit(1);
-  }
-  return (time);
-}
-
-static void
-time2bcd(time_t time, uint8_w *bcd)
-{
-  int          t[6];
-  struct tm    time_str;
-
-  time_str = *localtime(&time);
-  if (time_str.tm_year >= 100)
-    t[0] = time_str.tm_year - 100;
-  else
-    t[0] = time_str.tm_year;
-  t[1] = time_str.tm_mon + 1;
-  t[2] = time_str.tm_mday;
-  t[3] = time_str.tm_hour;
-  t[4] = time_str.tm_min;
-  t[5] = time_str.tm_sec;
-  dec_bcd(bcd,t);
-}
-
-static int
-time_cmpq(const void *_a, const void *_b)
-{
-  unsigned long  a, b;
-
-  a = *(unsigned long *)_a;
-  b = *(unsigned long *)_b;
-
-  if (a < b)
-    return (-1);
-  else if (a > b)
-    return (1);
-  else
-    return (0);
 }
 
 /*

@@ -1,4 +1,4 @@
-/* $Id: wadd.c,v 1.6.4.3.2.4 2009/12/18 11:33:45 uehira Exp $ */
+/* $Id: wadd.c,v 1.6.4.3.2.5 2009/12/26 00:56:59 uehira Exp $ */
 /* program "wadd.c"
   "wadd" puts two win data files together
   7/24/91 - 7/25/91, 4/20/94,6/27/94-6/28/94,7/12/94   urabe
@@ -39,7 +39,7 @@
 /*     dest[cntr]=((sour[cntr]>>4)&0xf)*10+(sour[cntr]&0xf); */
 /*   } */
 
-get_sysch(buf,sys_ch)
+get_syschnum(buf,sys_ch)
   unsigned char *buf;
   int *sys_ch;
   {
@@ -219,7 +219,7 @@ main(argc,argv)
   else
     {
     bcd_dec(dec_start,(char *)mainbuf+4);
-    nch=get_sysch(mainbuf,sysch);
+    nch=get_syschnum(mainbuf,sysch);
 #if DEBUG
     printf("nch=%d\n",nch);
 #endif

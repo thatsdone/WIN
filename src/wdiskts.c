@@ -1,19 +1,21 @@
-/* $Id: wdiskts.c,v 1.6.2.5.2.3 2009/12/21 10:00:14 uehira Exp $ */
+/* $Id: wdiskts.c,v 1.6.2.5.2.4 2009/12/26 00:56:59 uehira Exp $ */
+
 /* 2005.8.10 urabe bug in strcmp2() fixed : 0-6 > 7-9 */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <sys/types.h>
-#include <unistd.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <sys/file.h>
 #include <sys/stat.h>
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 
 #if TIME_WITH_SYS_TIME
 #include <sys/time.h>
@@ -44,97 +46,33 @@
 #define   DEBUG3  0
 #define   BELL    0
 
-/* memory malloc utility macro */
-#define MALLOC(type, n) (type*)malloc((size_t)(sizeof(type)*(n)))
-#define REALLOC(type, ptr, n) \
-(type*)realloc((void *)ptr, (size_t)(sizeof(type)*(n)))
-#define FREE(a)         (void)free((void *)(a))
+#define   NAMELEN  1025
 
-char tbuf[256],latest[20],oldest[20],busy[20],outdir[80];
+/* memory malloc utility macro */
+/* #define MALLOC(type, n) (type*)malloc((size_t)(sizeof(type)*(n))) */
+/* #define REALLOC(type, ptr, n) \ */
+/* (type*)realloc((void *)ptr, (size_t)(sizeof(type)*(n))) */
+/* #define FREE(a)         (void)free((void *)(a)) */
+
+static char rcsid[] =
+  "$Id: wdiskts.c,v 1.6.2.5.2.4 2009/12/26 00:56:59 uehira Exp $";
+
 char *progname,*logfile;
-int count,count_max,mode;
-FILE *fd;
-static unsigned char  *datbuf,*sortbuf,*datbuf_tmp;
-unsigned long  dat_num,sort_num,array_num_datbuf;
-jmp_buf  mx;
 int  daemon_mode, syslog_mode, exit_status;
 
-static time_t
-bcd2time(bcd)
-     unsigned char *bcd;
-{
-   unsigned int  t[6];
-   struct tm     tim_str;
-   time_t        tim;
+static char tbuf[NAMELEN],latest[NAMELEN],oldest[NAMELEN],busy[NAMELEN],
+  outdir[NAMELEN];
+static int count,count_max,mode;
+static FILE *fd;
+static unsigned char  *datbuf,*sortbuf,*datbuf_tmp;
+static unsigned long  dat_num,sort_num,array_num_datbuf;
+static jmp_buf  mx;
 
-   memset(&tim_str, 0, sizeof(tim_str));
-   bcd_dec(t,bcd);
-   if(t[0]>=70)
-      tim_str.tm_year=t[0];
-   else
-      tim_str.tm_year=100+t[0]; /* 2000+t[0]-1900 */
-   tim_str.tm_mon=t[1]-1;
-   tim_str.tm_mday=t[2];
-   tim_str.tm_hour=t[3];
-   tim_str.tm_min=t[4];
-   tim_str.tm_sec=t[5];
-   tim_str.tm_isdst=0;
-   if((tim=mktime(&tim_str))==(time_t)-1){
-      fputs("mktime error.\n",stderr);
-      exit(1);
-   }
-   return(tim);
-}
-
-static void
-time2bcd(time,bcd)
-     time_t         time;
-     unsigned char  *bcd;
-{
-   unsigned int t[6];
-   struct tm    time_str;
-
-   time_str=*localtime(&time);
-   if(time_str.tm_year>=100)
-      t[0]=time_str.tm_year-100;
-   else
-      t[0]=time_str.tm_year;
-   t[1]=time_str.tm_mon+1;
-   t[2]=time_str.tm_mday;
-   t[3]=time_str.tm_hour;
-   t[4]=time_str.tm_min;
-   t[5]=time_str.tm_sec;
-   dec_bcd(bcd,t);
-}
-
-static unsigned long
-get_sysch(unsigned char *buf, unsigned short *ch)
-{
-  unsigned char  gh[4];
-  unsigned long  sr;
-  unsigned long  gsize;
-  int  i;
-  
-  for(i=0;i<4;++i) gh[i]=buf[i];
-  /* channel number */
-  *ch=(((unsigned short)gh[0])<<8)+(unsigned short)gh[1];
-  /* sampling rate */
-  sr=(((unsigned long)(gh[2]&0x0f))<<8)+(unsigned long)gh[3];
-  /* sample size */
-  if((gh[2]>>4)&0x7) gsize=((gh[2]>>4)&0x7)*(sr-1)+8;
-  else gsize=(sr>>1)+8;
-
-  return(gsize);
-}
-
-static int
-time_cmpq(a,b)
-     unsigned long  *a,*b;
-{
-  if(*a<*b) return(-1);
-  else if(*a==*b) return(0);
-  else return(1);
-}
+/* prototypes */
+static int sort_buf(void);
+static int switch_file(int *);
+static void wmemo(char *, char *);
+int main(int, char *[]);
 
 static int
 sort_buf()
@@ -293,8 +231,8 @@ end_1:
    return(status);
    }
 
-switch_file(tm)
-  int *tm;
+static int
+switch_file(int *tm)
 {
    FILE *fp;
    char oldst[20];
@@ -329,14 +267,14 @@ switch_file(tm)
       fd=NULL;
       
 #if DEBUG
-      printf("closed fd=%d\n",fd);
+      printf("closed fd=%p\n",fd);
 #endif
       strcpy(latest,busy);
       wmemo("LATEST",latest);
    }
    /* delete oldest file */
    sprintf(tbuf,"%s/MAX",outdir);
-   if(fp=fopen(tbuf,"r")){
+   if((fp=fopen(tbuf,"r")) != NULL){
       fscanf(fp,"%d",&count_max);
       fclose(fp);
       if(count_max>0 && count_max<3) count_max=3;
@@ -362,51 +300,29 @@ switch_file(tm)
    if((fd=fopen(tbuf,"a+"))==NULL) err_sys(tbuf);
    count++;
 #if DEBUG
-   if(fd!=NULL) printf("%s opened fd=%d\n",tbuf,fd);
+   if(fd!=NULL) printf("%s opened fd=%p\n",tbuf,fd);
 #endif
    wmemo("BUSY",busy);
    sprintf(tbuf,"%s/COUNT",outdir);
    fp=fopen(tbuf,"w+");
    fprintf(fp,"%d\n",count);
    fclose(fp);
-   return 0;
+   return (0);
 }
 
-find_oldest(path,oldst) /* returns N of files */
-     char *path,*oldst;
-{
-   int i;
-   struct dirent *dir_ent;
-   DIR *dir_ptr;
-   /* find the oldest file */
-   if((dir_ptr=opendir(path))==NULL) err_sys("opendir");
-   i=0;
-   while((dir_ent=readdir(dir_ptr))!=NULL){
-      if(*dir_ent->d_name=='.') continue;
-      if(!isdigit(*dir_ent->d_name)) continue;
-      if(i++==0 || strcmp2(dir_ent->d_name,oldst)<0)
-	strcpy(oldst,dir_ent->d_name);
-   }
-#if DEBUG
-   printf("%d files in %s, oldest=%s\n",i,path,oldst);
-#endif
-   closedir(dir_ptr);
-   return i;
-}
-
-wmemo(f,c)
-     char *f,*c;
+static void
+wmemo(char *f, char *c)
 {
    FILE *fp;
+
    sprintf(tbuf,"%s/%s",outdir,f);
    fp=fopen(tbuf,"w+");
    fprintf(fp,"%s\n",c);
    fclose(fp);
 }
 
-main(argc,argv)
-     int argc;
-     char **argv;
+int
+main(int argc, char *argv[])
 {
    FILE *fp;
    int i,j,shmid,tm[6],tm_save[6];
@@ -426,10 +342,12 @@ main(argc,argv)
    else if(strcmp(progname,"wdisktsd")==0) {mode=1;daemon_mode=1;}
    
    if(argc<3){
-      fprintf(stderr,
-      " usage : '%s [shm_key] [out dir] ([N of files] ([log file]))'\n",
-	      progname);
-      exit(0);
+     WIN_version();
+     fprintf(stderr, "%s\n", rcsid);
+     fprintf(stderr,
+	     " usage : '%s [shm_key] [out dir] ([N of files] ([log file]))'\n",
+	     progname);
+     exit(0);
    }
    
    shmkey=atoi(argv[1]);

@@ -1,4 +1,4 @@
-/* $Id: win_system.c,v 1.10.4.1.4.2 2008/11/13 15:34:15 uehira Exp $ */
+/* $Id: win_system.c,v 1.10.4.1.4.3 2009/12/26 00:56:59 uehira Exp $ */
 /* win system utility functions */
 
 #ifdef HAVE_CONFIG_H
@@ -78,26 +78,6 @@ wmemo5(char name[], int tm[])
   fprintf(fp,"%02d%02d%02d%02d.%02d\n",tm[0],tm[1],tm[2],tm[3],tm[4]);
   fclose(fp);
   return(0);
-}
-
-static WIN_blocksize
-get_sysch(unsigned char *buf, WIN_ch *ch)
-{
-  unsigned char  gh[WIN_CHHEADER_LEN];
-  WIN_sr  sr;
-  WIN_blocksize  gsize;
-  int  i;
-  
-  for(i=0;i<WIN_CHHEADER_LEN;++i) gh[i]=buf[i];
-  /* channel number */
-  *ch=(((WIN_ch)gh[0])<<8)+(WIN_ch)gh[1];
-  /* sampling rate */
-  sr=(((WIN_sr)(gh[2]&0x0f))<<8)+(WIN_sr)gh[3];
-  /* sample size */
-  if((gh[2]>>4)&0x7) gsize=((gh[2]>>4)&0x7)*(sr-1)+8;
-  else gsize=(sr>>1)+8;
-
-  return(gsize);
 }
 
 /* get channel list from buffer */

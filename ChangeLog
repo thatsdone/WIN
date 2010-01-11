@@ -1,4 +1,8 @@
- $Id: ChangeLog,v 1.131.2.25.2.33 2009/12/26 00:56:57 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.34 2010/01/11 07:07:25 uehira Exp $
+
+2010-01-04  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/wdiskts : 64 bit clean?
+	* src/winlib.h : introduced macro: WIN_YEAR.
 
 2009-12-26  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* src/winlib.c : added get_sysch() [moved from win_system.c], t_bcd(), bcd_t(), bcd2time(), time2bcd(), time_cmpq()

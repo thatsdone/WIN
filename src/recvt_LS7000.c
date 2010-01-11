@@ -1,4 +1,4 @@
-/* $Id: recvt_LS7000.c,v 1.1.2.3.2.8 2009/12/21 10:00:13 uehira Exp $ */
+/* $Id: recvt_LS7000.c,v 1.1.2.3.2.9 2010/01/11 07:07:26 uehira Exp $ */
 /* "recvt_LS7000.c"  uehira */
 /*   2007-11-02  imported from recvt.c 1.29.2.1 */
 
@@ -83,7 +83,7 @@ time_t check_ts(ptr,pre,post)
   struct tm mt;
   if(!bcd_dec(tm,(unsigned char *)ptr)) return 0; /* out of range */
   memset((char *)&mt,0,sizeof(mt));
-  if((mt.tm_year=tm[0])<50) mt.tm_year+=100;
+  if((mt.tm_year=tm[0])<WIN_YEAR) mt.tm_year+=100;
   mt.tm_mon=tm[1]-1;
   mt.tm_mday=tm[2];
   mt.tm_hour=tm[3];

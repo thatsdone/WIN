@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.46.2.6.2.10 2009/12/18 11:33:45 uehira Exp $
+   $Id: win.c,v 1.46.2.6.2.11 2010/01/11 07:07:26 uehira Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -1357,7 +1357,7 @@ time2lsec(int *tarray)
   static struct tm tm;
 
   tm.tm_year=tarray[0];
-  if(tm.tm_year<70) tm.tm_year+=100;
+  if(tm.tm_year<WIN_YEAR) tm.tm_year+=100;
   tm.tm_mon=tarray[1]-1;
   tm.tm_mday=tarray[2];
   tm.tm_hour=tarray[3];

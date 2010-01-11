@@ -1,4 +1,4 @@
-/* $Id: winlib.h,v 1.1.2.7.2.15 2009/12/26 00:56:59 uehira Exp $ */
+/* $Id: winlib.h,v 1.1.2.7.2.16 2010/01/11 07:07:27 uehira Exp $ */
 
 #ifndef _WIN_LIB_H_
 #define _WIN_LIB_H_
@@ -60,6 +60,8 @@ typedef uint32_w  WIN_bs;
 typedef uint16_w  WIN_ch;
 typedef uint32_w  WIN_sr;
 
+#define WIN_YEAR  70   /* 1970 -- 2069 */
+
 #define WIN_BSLEN  (sizeof(WIN_bs))  /* WIN block size length in byte */
 #define WIN_BLOCKSIZE_LEN  WIN_BSLEN
 #define WIN_TM_LEN       6  /* byte */
@@ -79,6 +81,13 @@ typedef uint32_w  WIN_sr;
 #define WDISK_BUSY    "BUSY"
 #define WDISK_COUNT   "COUNT"
 #define WDISK_MAX     "MAX"
+
+/* 'wdiskt' process makes the following files */
+#define WDISKT_OLDEST  "OLDEST"
+#define WDISKT_LATEST  "LATEST"
+#define WDISKT_BUSY    "BUSY"
+#define WDISKT_COUNT   "COUNT"
+#define WDISKT_MAX     "MAX"
 
 #define  SWAPL(a)  a = ((((a) << 24)) | (((a) << 8) & 0xff0000) |	\
 			(((a) >> 8) & 0xff00) | (((a) >> 24) & 0xff))

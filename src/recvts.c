@@ -218,7 +218,7 @@ time_t check_ts(ptr,pre,post)
   struct tm mt;
   if(!bcd_dec(tm,ptr)) return 0; /* out of range */
   memset((char *)&mt,0,sizeof(mt));
-  if((mt.tm_year=tm[0])<50) mt.tm_year+=100;   
+  if((mt.tm_year=tm[0])<WIN_YEAR) mt.tm_year+=100;   
   mt.tm_mon=tm[1]-1;
   mt.tm_mday=tm[2];
   mt.tm_hour=tm[3];

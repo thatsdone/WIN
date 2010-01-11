@@ -1,4 +1,4 @@
-/* $Id: win_system.c,v 1.10.4.1.4.3 2009/12/26 00:56:59 uehira Exp $ */
+/* $Id: win_system.c,v 1.10.4.1.4.4 2010/01/11 07:07:27 uehira Exp $ */
 /* win system utility functions */
 
 #ifdef HAVE_CONFIG_H

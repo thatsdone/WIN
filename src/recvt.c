@@ -1,4 +1,4 @@
-/* $Id: recvt.c,v 1.29.2.3.2.19 2009/12/21 10:00:13 uehira Exp $ */
+/* $Id: recvt.c,v 1.29.2.3.2.20 2010/01/11 07:07:26 uehira Exp $ */
 /*-
  "recvt.c"      4/10/93 - 6/2/93,7/2/93,1/25/94    urabe
                 2/3/93,5/25/94,6/16/94 
@@ -109,7 +109,7 @@
 #define N_PNOS    62    /* length of packet nos. history >=2 */
 
 static char rcsid[] =
-  "$Id: recvt.c,v 1.29.2.3.2.19 2009/12/21 10:00:13 uehira Exp $";
+  "$Id: recvt.c,v 1.29.2.3.2.20 2010/01/11 07:07:26 uehira Exp $";
 
 static uint8_w rbuf[MAXMESG],ch_table[WIN_CHMAX];
 static char chfile[N_CHFILE][256];
@@ -158,7 +158,7 @@ check_ts(uint8_w *ptr, time_t pre, time_t post)   /* 64bit ok */
   if(!bcd_dec(tm,ptr)) return 0; /* out of range */
   /* memset((char *)&mt,0,sizeof(mt)); */
   memset(&mt,0,sizeof(mt));
-  if((mt.tm_year=tm[0])<50) mt.tm_year+=100;
+  if((mt.tm_year=tm[0])<WIN_YEAR) mt.tm_year+=100;
   mt.tm_mon=tm[1]-1;
   mt.tm_mday=tm[2];
   mt.tm_hour=tm[3];

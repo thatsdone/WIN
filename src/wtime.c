@@ -1,4 +1,4 @@
-/* $Id: wtime.c,v 1.3.2.3.2.5 2009/08/25 04:00:16 uehira Exp $ */
+/* $Id: wtime.c,v 1.3.2.3.2.6 2010/01/11 07:07:27 uehira Exp $ */
 
 /*
   program "wtime.c"
@@ -72,7 +72,7 @@ shift_sec(tm_bcd,sec)
   unsigned long ltime;
 
   memset((char *)&mt,0,sizeof(mt));
-  if((mt.tm_year=b2d[tm_bcd[0]])<50) mt.tm_year+=100;
+  if((mt.tm_year=b2d[tm_bcd[0]])<WIN_YEAR) mt.tm_year+=100;
   mt.tm_mon=b2d[tm_bcd[1]]-1;
   mt.tm_mday=b2d[tm_bcd[2]];
   mt.tm_hour=b2d[tm_bcd[3]];

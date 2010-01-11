@@ -1,4 +1,4 @@
-/* $Id: raw_time.c,v 1.4.4.3.2.4 2009/12/21 10:00:13 uehira Exp $ */
+/* $Id: raw_time.c,v 1.4.4.3.2.5 2010/01/11 07:07:25 uehira Exp $ */
 
 /* raw_time.c -- online version of wtime(1W) */
 
@@ -53,7 +53,7 @@
 
 
 static char rcsid[] =
-  "$Id: raw_time.c,v 1.4.4.3.2.4 2009/12/21 10:00:13 uehira Exp $";
+  "$Id: raw_time.c,v 1.4.4.3.2.5 2010/01/11 07:07:25 uehira Exp $";
 
 char *progname, *logfile;
 int  daemon_mode, syslog_mode;
@@ -413,7 +413,7 @@ shift_sec(unsigned char *tm_bcd, int sec)
   time_t     ltime;
 
   memset(&mt, 0, sizeof(mt));
-  if ((mt.tm_year = b2d[tm_bcd[0]]) < 50)
+  if ((mt.tm_year = b2d[tm_bcd[0]]) < WIN_YEAR)
     mt.tm_year += 100;
   mt.tm_mon = b2d[tm_bcd[1]] - 1;
   mt.tm_mday = b2d[tm_bcd[2]];

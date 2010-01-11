@@ -1,6 +1,10 @@
-/* $Id: wdiskts.c,v 1.6.2.5.2.4 2009/12/26 00:56:59 uehira Exp $ */
+/* $Id: wdiskts.c,v 1.6.2.5.2.5 2010/01/11 07:07:26 uehira Exp $ */
 
-/* 2005.8.10 urabe bug in strcmp2() fixed : 0-6 > 7-9 */
+/*-
+  2005.8.10 urabe bug in strcmp2() fixed : 0-6 > 7-9 
+  2009.1.4  64bit clean? (Uehira)
+  -*/
+
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -38,6 +42,7 @@
 #ifdef GC_MEMORY_LEAK_TEST
 #include "gc_leak_detector.h"
 #endif
+
 #include "daemon_mode.h"
 #include "winlib.h"
 
@@ -55,7 +60,7 @@
 /* #define FREE(a)         (void)free((void *)(a)) */
 
 static char rcsid[] =
-  "$Id: wdiskts.c,v 1.6.2.5.2.4 2009/12/26 00:56:59 uehira Exp $";
+  "$Id: wdiskts.c,v 1.6.2.5.2.5 2010/01/11 07:07:26 uehira Exp $";
 
 char *progname,*logfile;
 int  daemon_mode, syslog_mode, exit_status;
@@ -64,8 +69,8 @@ static char tbuf[NAMELEN],latest[NAMELEN],oldest[NAMELEN],busy[NAMELEN],
   outdir[NAMELEN];
 static int count,count_max,mode;
 static FILE *fd;
-static unsigned char  *datbuf,*sortbuf,*datbuf_tmp;
-static unsigned long  dat_num,sort_num,array_num_datbuf;
+static uint8_w  *datbuf,*sortbuf,*datbuf_tmp;
+static size_t  dat_num, sort_num, array_num_datbuf;
 static jmp_buf  mx;
 
 /* prototypes */
@@ -77,23 +82,25 @@ int main(int, char *[]);
 static int
 sort_buf()
 {
-   unsigned long  re,gsize;
-   unsigned char  *ptr,*ptr_dat,tt[6],*ptw,*ptw_size;
-   unsigned long  *tim_list,tim_num,tim_tmp,tim_sfx,*tim_sort,*sortin;
-   unsigned short *ch_list,ch_num,ch_tmp,ch_sfx;
+   uint32_w  re,gsize;
+   uint8_w  *ptr,*ptr_dat,tt[6],*ptw,*ptw_size;
+   time_t  *tim_list,tim_tmp, *tim_sort;
+   size_t  tim_num, tim_sfx, *sortin;
+   WIN_ch   *ch_list,ch_num,ch_tmp,ch_sfx;
    int  status;
-   unsigned long  i,j,secbuf_len;
+   size_t  i,j;
+   WIN_bs  secbuf_len;
    struct data_index{
      int flag;
-     unsigned long point;
-     unsigned long len;
+     size_t point;
+     size_t len;
    } **indx;
 
    status=0;
-   tim_num=(unsigned long)0;
-   ch_num=(unsigned short)0;
-   tim_list=(unsigned long *)NULL;
-   ch_list=(unsigned short *)NULL;
+   tim_num=(size_t)0;
+   ch_num=(WIN_ch)0;
+   tim_list=(time_t *)NULL;
+   ch_list=(WIN_ch *)NULL;
 
    /** sweep buf **/
    ptr=datbuf;
@@ -108,7 +115,7 @@ sort_buf()
        if(tim_tmp==tim_list[i]) break;
      if(i==tim_num){ /* new time stamp */
        tim_num++;
-       if((tim_list=REALLOC(unsigned long,tim_list,tim_num))==NULL){
+       if((tim_list=REALLOC(time_t,tim_list,tim_num))==NULL){
 	 status=1;
 	 goto end_1;
        }
@@ -121,7 +128,7 @@ sort_buf()
 	 if(ch_tmp==ch_list[i]) break;
        if(i==ch_num){ /* new channel */
 	 ch_num++;
-	 if((ch_list=REALLOC(unsigned short,ch_list,ch_num))==NULL){
+	 if((ch_list=REALLOC(WIN_ch,ch_list,ch_num))==NULL){
 	   status=1;
 	   goto end_1;
 	 }
@@ -131,7 +138,7 @@ sort_buf()
      } /* while(ptr<ptr_dat+re) */
    } while(ptr<datbuf+dat_num);
 #if DEBUG1
-   fprintf(stderr,"time_num=%d ch_num=%d\n",tim_num,ch_num);
+   fprintf(stderr,"time_num=%ld ch_num=%d\n",tim_num,ch_num);
 #endif
 
    /** make index **/
@@ -175,16 +182,16 @@ sort_buf()
    } while(ptr<datbuf+dat_num);
 
    /** sort by time **/
-   if((tim_sort=MALLOC(unsigned long,tim_num))==NULL){
+   if((tim_sort=MALLOC(time_t,tim_num))==NULL){
      status=3;
      goto end_3;
    }
-   if((sortin=MALLOC(unsigned long,tim_num))==NULL){
+   if((sortin=MALLOC(size_t,tim_num))==NULL){
      status=4;
      goto end_4;
    }
    for(i=0;i<tim_num;++i) tim_sort[i]=tim_list[i];
-   qsort(tim_sort,tim_num,sizeof(unsigned long),time_cmpq);
+   qsort(tim_sort,tim_num,sizeof(size_t),time_cmpq);
    for(j=0;j<tim_num;++j){
      for(i=0;i<tim_num;++i){
        if(tim_sort[j]==tim_list[i]){
@@ -235,11 +242,11 @@ static int
 switch_file(int *tm)
 {
    FILE *fp;
-   char oldst[20];
+   char oldst[NAMELEN];
 
    if(fd!=NULL){  /* if file is open, close last file */
       if(datbuf!=NULL) {
-	if((sortbuf=MALLOC(unsigned char,dat_num))==NULL){
+	if((sortbuf=MALLOC(uint8_w,dat_num))==NULL){
 	  FREE(datbuf);
 	  write_log("malloc sort");
 	  longjmp(mx,-1);  /* jump to reset */
@@ -270,10 +277,10 @@ switch_file(int *tm)
       printf("closed fd=%p\n",fd);
 #endif
       strcpy(latest,busy);
-      wmemo("LATEST",latest);
+      wmemo(WDISKT_LATEST,latest);
    }
    /* delete oldest file */
-   sprintf(tbuf,"%s/MAX",outdir);
+   sprintf(tbuf,"%s/%s",outdir,WDISKT_MAX);
    if((fp=fopen(tbuf,"r")) != NULL){
       fscanf(fp,"%d",&count_max);
       fclose(fp);
@@ -290,7 +297,7 @@ switch_file(int *tm)
 #endif
    }
    strcpy(oldest,oldst);
-   wmemo("OLDEST",oldest);
+   wmemo(WDISKT_OLDEST,oldest);
    
    /* make new file name */
    if(mode==60) sprintf(busy,"%02d%02d%02d%02d",tm[0],tm[1],tm[2],tm[3]);
@@ -302,8 +309,8 @@ switch_file(int *tm)
 #if DEBUG
    if(fd!=NULL) printf("%s opened fd=%p\n",tbuf,fd);
 #endif
-   wmemo("BUSY",busy);
-   sprintf(tbuf,"%s/COUNT",outdir);
+   wmemo(WDISKT_BUSY,busy);
+   sprintf(tbuf,"%s/%s",outdir,WDISKT_COUNT);
    fp=fopen(tbuf,"w+");
    fprintf(fp,"%d\n",count);
    fclose(fp);
@@ -326,8 +333,10 @@ main(int argc, char *argv[])
 {
    FILE *fp;
    int i,j,shmid,tm[6],tm_save[6];
-   unsigned long shp,size,size_save,c_save;
-   unsigned char *ptr,size_out[4],*ptw;
+   unsigned long c_save;   /* 64bit ok */
+   size_t  shp;
+   WIN_bs  size, size_save;
+   uint8_w *ptr,size_out[4],*ptw;
    key_t shmkey;
    struct Shm  *shm;
    
@@ -347,14 +356,14 @@ main(int argc, char *argv[])
      fprintf(stderr,
 	     " usage : '%s [shm_key] [out dir] ([N of files] ([log file]))'\n",
 	     progname);
-     exit(0);
+     exit(1);
    }
    
-   shmkey=atoi(argv[1]);
+   shmkey=atol(argv[1]);
    strcpy(outdir,argv[2]);
    if(argc>3) count_max=atoi(argv[3]);
    else count_max=0;
-   sprintf(tbuf,"%s/MAX",outdir);
+   sprintf(tbuf,"%s/%s",outdir,WDISKT_MAX);
    fp=fopen(tbuf,"w+");
    fprintf(fp,"%d\n",count_max);
    fclose(fp);
@@ -378,7 +387,7 @@ main(int argc, char *argv[])
    if((shm=(struct Shm *)shmat(shmid,(void *)0,0))==(struct Shm *)-1)
      err_sys("shmat");
    
-   sprintf(tbuf,"start, shm_key=%d sh=%d",shmkey,shm);
+   sprintf(tbuf,"start, shm_key=%ld sh=%p",shmkey,shm);
    write_log(tbuf);
    
    signal(SIGTERM,(void *)end_program);
@@ -394,7 +403,7 @@ main(int argc, char *argv[])
    for(i=0;i<6;i++) tm_save[i]=(-1);
    c_save=shm->c;
 #if  DEBUG3
-   printf("c_save=%d\n",c_save);
+   printf("c_save=%lu\n",c_save);
 #endif
    while(1){
       get_time(tm); /* get system clock */
@@ -420,7 +429,7 @@ main(int argc, char *argv[])
 	size_out[2]=size>>8;
 	size_out[3]=size;
 #if DEBUG3
-	printf("shm->c=%d c_save=%d\n",shm->c,c_save);
+	printf("shm->c=%lu c_save=%lu\n",shm->c,c_save);
 #endif
 	if(shm->c<c_save){  /* check counter before output */
 	  write_log("reset");
@@ -430,7 +439,7 @@ main(int argc, char *argv[])
 	dat_num+=size;
 	if (array_num_datbuf < dat_num) {
 	  array_num_datbuf = dat_num << 1;
-	  datbuf_tmp=REALLOC(unsigned char,datbuf,array_num_datbuf);
+	  datbuf_tmp=REALLOC(uint8_w,datbuf,array_num_datbuf);
 	  if(datbuf_tmp==NULL){ 
 	    FREE(datbuf);
 	    write_log("realloc");
@@ -444,7 +453,7 @@ main(int argc, char *argv[])
 	size-=4;
 	ptr=shm->d+shp+8;
 #if DEBUG
-	printf("size=%5d\t dat_num=%d\t array_num_datbuf=%d\n",
+	printf("size=%5d\t dat_num=%lu\t array_num_datbuf=%lu\n",
 	       size,dat_num,array_num_datbuf);
 #endif
 	while((size--)>0) *ptw++=(*ptr++);

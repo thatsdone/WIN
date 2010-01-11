@@ -1,4 +1,4 @@
-/* $Id: send_raw.c,v 1.24.2.4.2.7 2009/12/21 10:00:13 uehira Exp $ */
+/* $Id: send_raw.c,v 1.24.2.4.2.8 2010/01/11 07:07:26 uehira Exp $ */
 /*
     program "send_raw/send_mon.c"   1/24/94 - 1/25/94,5/25/94 urabe
                                     6/15/94 - 6/16/94
@@ -119,7 +119,7 @@ shift_sec(tm_bcd,sec)
   struct tm *nt,mt;
   time_t ltime;
   memset((char *)&mt,0,sizeof(mt));
-  if((mt.tm_year=b2d[tm_bcd[0]])<50) mt.tm_year+=100;
+  if((mt.tm_year=b2d[tm_bcd[0]])<WIN_YEAR) mt.tm_year+=100;
   mt.tm_mon=b2d[tm_bcd[1]]-1;
   mt.tm_mday=b2d[tm_bcd[2]];
   mt.tm_hour=b2d[tm_bcd[3]];

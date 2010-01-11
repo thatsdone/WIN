@@ -1,4 +1,4 @@
-/* $Id: win_system.h,v 1.7.4.3.2.4 2009/12/21 10:00:14 uehira Exp $ */
+/* $Id: win_system.h,v 1.7.4.3.2.5 2010/01/11 07:07:27 uehira Exp $ */
 
 #ifndef _WIN_SYSTEM_H_
 #define _WIN_SYSTEM_H_
@@ -47,12 +47,13 @@
 /* #define WDISK_COUNT   "COUNT" */
 /* #define WDISK_MAX     "MAX" */
 
-/* 'wdiskt' process makes the following files */
-#define WDISKT_OLDEST  "OLDEST"
-#define WDISKT_LATEST  "LATEST"
-#define WDISKT_BUSY    "BUSY"
-#define WDISKT_COUNT   "COUNT"
-#define WDISKT_MAX     "MAX"
+/* moved to winlib.h (2010/1/4) */
+/* /\* 'wdiskt' process makes the following files *\/ */
+/* #define WDISKT_OLDEST  "OLDEST" */
+/* #define WDISKT_LATEST  "LATEST" */
+/* #define WDISKT_BUSY    "BUSY" */
+/* #define WDISKT_COUNT   "COUNT" */
+/* #define WDISKT_MAX     "MAX" */
 
 /* 'insert_raw' process makes the following file */
 #define INSERT_RAW_USED  "USED_RAW"

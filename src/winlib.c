@@ -1,4 +1,4 @@
-/* $Id: winlib.c,v 1.1.2.4.2.12 2009/12/26 00:56:59 uehira Exp $ */
+/* $Id: winlib.c,v 1.1.2.4.2.13 2010/01/11 07:07:27 uehira Exp $ */
 
 /*-
  * winlib.c  (Uehira Kenji)
@@ -362,9 +362,9 @@ time_cmp(int *t1, int *t2, int i)
   int		  cntr;
 
   cntr = 0;
-  if (t1[cntr] < 70 && t2[cntr] > 70)
+  if (t1[cntr] < WIN_YEAR && t2[cntr] > WIN_YEAR)
     return (1);
-  if (t1[cntr] > 70 && t2[cntr] < 70)
+  if (t1[cntr] > WIN_YEAR && t2[cntr] < WIN_YEAR)
     return (-1);
   for (; cntr < i; cntr++) {
     if (t1[cntr] > t2[cntr])
@@ -861,7 +861,7 @@ bcd_t(uint8_w *ptr)
   if (!bcd_dec(tm, ptr))
     return (0);			/* out of range */
   memset(&mt, 0, sizeof(mt));
-  if ((mt.tm_year = tm[0]) < 50)
+  if ((mt.tm_year = tm[0]) < WIN_YEAR)
     mt.tm_year += 100;
   mt.tm_mon = tm[1] - 1;
   mt.tm_mday = tm[2];
@@ -891,7 +891,7 @@ bcd2time(uint8_w *bcd)
 
   memset(&time_str, 0, sizeof(time_str));
   bcd_dec(t,bcd);
-  if (t[0] >= 70)
+  if (t[0] >= WIN_YEAR)
     time_str.tm_year = t[0];
   else
     time_str.tm_year = 100 + t[0]; /* 2000+t[0]-1900 */

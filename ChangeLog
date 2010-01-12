@@ -1,4 +1,7 @@
- $Id: ChangeLog,v 1.131.2.25.2.34 2010/01/11 07:07:25 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.35 2010/01/12 09:36:04 uehira Exp $
+
+2010-01-12  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/winlib.c, src/winadd.c, src/wdiskts : bcd2time()-->bcd_t(), time2bcd()-->t_bcd()
 
 2010-01-04  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* src/wdiskts : 64 bit clean?

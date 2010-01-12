@@ -1,8 +1,9 @@
-/* $Id: wdiskts.c,v 1.6.2.5.2.5 2010/01/11 07:07:26 uehira Exp $ */
+/* $Id: wdiskts.c,v 1.6.2.5.2.6 2010/01/12 09:36:05 uehira Exp $ */
 
 /*-
   2005.8.10 urabe bug in strcmp2() fixed : 0-6 > 7-9 
   2009.1.4  64bit clean? (Uehira)
+  2010/1/12 bcd2time()-->bcd_t(), time2bcd()-->t_bcd()
   -*/
 
 
@@ -60,7 +61,7 @@
 /* #define FREE(a)         (void)free((void *)(a)) */
 
 static char rcsid[] =
-  "$Id: wdiskts.c,v 1.6.2.5.2.5 2010/01/11 07:07:26 uehira Exp $";
+  "$Id: wdiskts.c,v 1.6.2.5.2.6 2010/01/12 09:36:05 uehira Exp $";
 
 char *progname,*logfile;
 int  daemon_mode, syslog_mode, exit_status;
@@ -110,7 +111,7 @@ sort_buf()
      ptr+=4;
      ptr_dat=ptr;
      for(i=0;i<6;++i) tt[i]=(*ptr++);
-     tim_tmp=bcd2time(tt);
+     tim_tmp=bcd_t(tt);
      for(i=0;i<tim_num;++i)
        if(tim_tmp==tim_list[i]) break;
      if(i==tim_num){ /* new time stamp */
@@ -162,7 +163,7 @@ sort_buf()
      ptr+=4;
      ptr_dat=ptr;
      for(i=0;i<6;++i) tt[i]=(*ptr++);
-     tim_tmp=bcd2time(tt);
+     tim_tmp=bcd_t(tt);
      for(i=0;i<tim_num;++i)
        if(tim_tmp==tim_list[i]) break;
      tim_sfx=i;
@@ -208,7 +209,7 @@ sort_buf()
      sort_num+=10;
      ptw_size=ptw;
      ptw+=4;
-     time2bcd(tim_list[sortin[j]],tt);
+     t_bcd(tim_list[sortin[j]],tt);
      memcpy(ptw,tt,6);
      ptw+=6;
      for(i=0;i<ch_num;++i){

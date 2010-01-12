@@ -1,4 +1,4 @@
-/* $Id: winlib.c,v 1.1.2.4.2.13 2010/01/11 07:07:27 uehira Exp $ */
+/* $Id: winlib.c,v 1.1.2.4.2.14 2010/01/12 09:36:05 uehira Exp $ */
 
 /*-
  * winlib.c  (Uehira Kenji)
@@ -881,53 +881,53 @@ bcd_t(uint8_w *ptr)
   return (ts);
 }
 
-/*** This function will be replaced by bcd_t() */
-time_t
-bcd2time(uint8_w *bcd)
-{
-  int  t[6];
-  struct tm  time_str;
-  time_t     time;
+/*** This function was replaced by bcd_t() [2010/1/12] ***/
+/* time_t */
+/* bcd2time(uint8_w *bcd) */
+/* { */
+/*   int  t[6]; */
+/*   struct tm  time_str; */
+/*   time_t     time; */
 
-  memset(&time_str, 0, sizeof(time_str));
-  bcd_dec(t,bcd);
-  if (t[0] >= WIN_YEAR)
-    time_str.tm_year = t[0];
-  else
-    time_str.tm_year = 100 + t[0]; /* 2000+t[0]-1900 */
-  time_str.tm_mon = t[1] - 1;
-  time_str.tm_mday = t[2];
-  time_str.tm_hour = t[3];
-  time_str.tm_min = t[4];
-  time_str.tm_sec = t[5];
-  time_str.tm_isdst = 0;
+/*   memset(&time_str, 0, sizeof(time_str)); */
+/*   bcd_dec(t,bcd); */
+/*   if (t[0] >= WIN_YEAR) */
+/*     time_str.tm_year = t[0]; */
+/*   else */
+/*     time_str.tm_year = 100 + t[0]; /\* 2000+t[0]-1900 *\/ */
+/*   time_str.tm_mon = t[1] - 1; */
+/*   time_str.tm_mday = t[2]; */
+/*   time_str.tm_hour = t[3]; */
+/*   time_str.tm_min = t[4]; */
+/*   time_str.tm_sec = t[5]; */
+/*   time_str.tm_isdst = 0; */
 
-  if ((time = mktime(&time_str)) == (time_t)-1) {
-    (void)fputs("mktime error.\n", stderr);
-    exit(1);
-  }
-  return (time);
-}
+/*   if ((time = mktime(&time_str)) == (time_t)-1) { */
+/*     (void)fputs("mktime error.\n", stderr); */
+/*     exit(1); */
+/*   } */
+/*   return (time); */
+/* } */
 
-/*** This function will be replaced by t_bcd */
-void
-time2bcd(time_t time, uint8_w *bcd)
-{
-  int          t[6];
-  struct tm    time_str;
+/*** This function was replaced by t_bcd() [2010/1/12] ***/
+/* void */
+/* time2bcd(time_t time, uint8_w *bcd) */
+/* { */
+/*   int          t[6]; */
+/*   struct tm    time_str; */
 
-  time_str = *localtime(&time);
-  if (time_str.tm_year >= 100)
-    t[0] = time_str.tm_year - 100;
-  else
-    t[0] = time_str.tm_year;
-  t[1] = time_str.tm_mon + 1;
-  t[2] = time_str.tm_mday;
-  t[3] = time_str.tm_hour;
-  t[4] = time_str.tm_min;
-  t[5] = time_str.tm_sec;
-  dec_bcd(bcd,t);
-}
+/*   time_str = *localtime(&time); */
+/*   if (time_str.tm_year >= 100) */
+/*     t[0] = time_str.tm_year - 100; */
+/*   else */
+/*     t[0] = time_str.tm_year; */
+/*   t[1] = time_str.tm_mon + 1; */
+/*   t[2] = time_str.tm_mday; */
+/*   t[3] = time_str.tm_hour; */
+/*   t[4] = time_str.tm_min; */
+/*   t[5] = time_str.tm_sec; */
+/*   dec_bcd(bcd,t); */
+/* } */
 
 int
 time_cmpq(const void *_a, const void *_b)   /* for qsort() */

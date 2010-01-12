@@ -1,4 +1,4 @@
-/* $Id: winadd.c,v 1.4.4.3.2.4 2009/12/26 00:56:59 uehira Exp $ */
+/* $Id: winadd.c,v 1.4.4.3.2.5 2010/01/12 09:36:05 uehira Exp $ */
 
 /*
  * winadd.c  (Uehira Kenji)
@@ -9,7 +9,7 @@
  *  2000/2/29  bye-order free. delete NR code.
  *  2003/11/2-3  memory mode.
  *  2009/8/1  64bit clean?
- *
+ *  2010/1/12 bcd2time()-->bcd_t(), time2bcd()-->t_bcd()
  */
 
 #ifdef HAVE_CONFIG_H
@@ -57,7 +57,7 @@ typedef struct data_index  INDX;
 
 /* global variables */
 static const char rcsid[] =
-   "$Id: winadd.c,v 1.4.4.3.2.4 2009/12/26 00:56:59 uehira Exp $";
+   "$Id: winadd.c,v 1.4.4.3.2.5 2010/01/12 09:36:05 uehira Exp $";
 static int  dummy_flag, verbose_flag;
 
 /* prototypes */
@@ -182,7 +182,7 @@ win_file_read(char *name, WIN_ch **ch, int *ch_num, int *ch_num_arr,
     /* read & compare time */
     for (i = 0; i < WIN_TIME_LEN; ++i)
       tt[i] = *ptr++;
-    time_tmp = bcd2time(tt);
+    time_tmp = bcd_t(tt);
     for (i = 0; i < *time_num; ++i)
       if (time_tmp == (*time)[i])
 	break;
@@ -261,7 +261,7 @@ get_index(char *name, INDX **indx, WIN_ch *ch, int ch_num,
     /* read & compare time */
     for (i = 0; i < WIN_TIME_LEN; ++i)
       tt[i] = *ptr++;
-    time_tmp = bcd2time(tt);
+    time_tmp = bcd_t(tt);
     for (i = 0; i < time_num; ++i)
       if (time_tmp == time[i])
 	break;
@@ -397,7 +397,7 @@ file_mode_run(int argcc, char *argvv[])
   ptr[2] = secbuf_len >> 8;
   ptr[3] = secbuf_len;
   ptr += WIN_BLOCKSIZE_LEN;
-  time2bcd((*time)[sortin[0]], tt);
+  t_bcd((*time)[sortin[0]], tt);
   memcpy(ptr, tt, WIN_TIME_LEN);  /* copy time stamp */
   ptr += WIN_TIME_LEN;
   for (i = 0; i < ch_num; ++i){
@@ -440,7 +440,7 @@ file_mode_run(int argcc, char *argvv[])
       ptr[2] = secbuf_len >> 8;
       ptr[3] = secbuf_len;
       ptr += WIN_BLOCKSIZE_LEN;
-      time2bcd((*time)[sortin[j - 1]] + 1, tt);
+      t_bcd((*time)[sortin[j - 1]] + 1, tt);
       memcpy(ptr, tt, WIN_TIME_LEN);  /* copy time stamp */
       ptr += WIN_TIME_LEN;
       outbuf[0] = (*ch)[0] >> 8;
@@ -471,7 +471,7 @@ file_mode_run(int argcc, char *argvv[])
     ptr[2] = secbuf_len >> 8;
     ptr[3] = secbuf_len;
     ptr += WIN_BLOCKSIZE_LEN;
-    time2bcd((*time)[sortin[j]], tt);
+    t_bcd((*time)[sortin[j]], tt);
     memcpy(ptr, tt, WIN_TIME_LEN);  /* copy time stamp */
     ptr += WIN_TIME_LEN;
     for (i = 0; i < ch_num; ++i)
@@ -534,7 +534,7 @@ win_file_read_from_buf(uint8_w *rawbuf, off_t rawsize,
     /* read & compare time */
     for (i = 0; i < WIN_TIME_LEN; ++i)
       tt[i] = *ptr++;
-    time_tmp = bcd2time(tt);
+    time_tmp = bcd_t(tt);
     for (i = 0; i < *time_num; ++i)
       if (time_tmp == (*time)[i])
 	break;
@@ -602,7 +602,7 @@ get_index_from_buf(uint8_w *rawbuf, off_t rawsize, int main_sfx,
       tt[i] = *ptr++;
       point++;
     }
-    time_tmp = bcd2time(tt);
+    time_tmp = bcd_t(tt);
     for (i = 0; i < time_num; ++i)
       if (time_tmp == time[i])
 	break;
@@ -792,7 +792,7 @@ memory_mode_run(int argcc, char *argvv[])
   hbuf[1] = (uint8_w)(secbuf_len >> 16);
   hbuf[2] = (uint8_w)(secbuf_len >> 8);
   hbuf[3] = (uint8_w)secbuf_len;
-  time2bcd((*time)[sortin[0]], tt);
+  t_bcd((*time)[sortin[0]], tt);
   memcpy(&hbuf[4], tt, WIN_TIME_LEN);  /* copy time stamp */
   (void)fwrite(hbuf, 1, 10, stdout);   /* output secsize and time stamp */
 
@@ -823,7 +823,7 @@ memory_mode_run(int argcc, char *argvv[])
       hbuf[1] = (uint8_w)(secbuf_len >> 16);
       hbuf[2] = (uint8_w)(secbuf_len >> 8);
       hbuf[3] = (uint8_w)secbuf_len;
-      time2bcd((*time)[sortin[j - 1]] + 1, tt);
+      t_bcd((*time)[sortin[j - 1]] + 1, tt);
       memcpy(&hbuf[4], tt, WIN_TIME_LEN);  /* copy time stamp */
       (void)fwrite(hbuf, 1, 10, stdout);   /* output secsize and time stamp */
 
@@ -843,7 +843,7 @@ memory_mode_run(int argcc, char *argvv[])
     hbuf[1] = (uint8_w)(secbuf_len >> 16);
     hbuf[2] = (uint8_w)(secbuf_len >> 8);
     hbuf[3] = (uint8_w)secbuf_len;
-    time2bcd((*time)[sortin[j]], tt);
+    t_bcd((*time)[sortin[j]], tt);
     memcpy(&hbuf[4], tt, WIN_TIME_LEN);  /* copy time stamp */
     (void)fwrite(hbuf, 1, 10, stdout);   /* output secsize and time stamp */
 

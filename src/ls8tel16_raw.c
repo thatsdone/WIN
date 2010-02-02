@@ -1,4 +1,4 @@
-/* $Id: ls8tel16_raw.c,v 1.3.2.2.2.6 2009/12/21 10:00:13 uehira Exp $ */
+/* $Id: ls8tel16_raw.c,v 1.3.2.2.2.7 2010/02/02 10:57:22 uehira Exp $ */
 
 /*
  * Copyright (c) 2005
@@ -46,9 +46,10 @@
 #ifdef GC_MEMORY_LEAK_TEST
 #include "gc_leak_detector.h"
 #endif
+
 #include "daemon_mode.h"
 #include "winlib.h"
-#include "win_system.h"
+/* #include "win_system.h" */
 #include "ls8tel.h"
 
 #define MAX_SR      HEADER_4B
@@ -57,7 +58,7 @@
 /*  #define DEBUG       0 */
 
 static char rcsid[] =
-  "$Id: ls8tel16_raw.c,v 1.3.2.2.2.6 2009/12/21 10:00:13 uehira Exp $";
+  "$Id: ls8tel16_raw.c,v 1.3.2.2.2.7 2010/02/02 10:57:22 uehira Exp $";
 
 char *progname, *logfile;
 int  daemon_mode, syslog_mode;
@@ -85,7 +86,7 @@ main(int argc, char *argv[])
   unsigned long	  c_save;
   WIN_ch          ch, ch1;
   WIN_sr          sr, sr1;
-  WIN_blocksize   gs, gs1;
+  WIN_bs          gs, gs1;
   static int32_w  fixbuf[MAX_SR];
   char		  tb[1024];
   int             tow, size;

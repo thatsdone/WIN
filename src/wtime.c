@@ -1,4 +1,4 @@
-/* $Id: wtime.c,v 1.3.2.3.2.6 2010/01/11 07:07:27 uehira Exp $ */
+/* $Id: wtime.c,v 1.3.2.3.2.7 2010/02/02 10:57:23 uehira Exp $ */
 
 /*
   program "wtime.c"

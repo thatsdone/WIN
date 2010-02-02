@@ -1,4 +1,10 @@
- $Id: ChangeLog,v 1.131.2.25.2.35 2010/01/12 09:36:04 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.36 2010/02/02 10:57:21 uehira Exp $
+
+2010-02-02  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/insert_raw : 64 bit clean?
+	* src/win_system.c : merged into src/winlib.c
+	* src/win_system.h : merged into src/winlib.h
+ 	* Version 2.0.9 released.
 
 2010-01-12  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* src/winlib.c, src/winadd.c, src/wdiskts : bcd2time()-->bcd_t(), time2bcd()-->t_bcd()

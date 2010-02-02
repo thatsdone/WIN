@@ -1,4 +1,4 @@
-/* $Id: winlib.h,v 1.1.2.7.2.16 2010/01/11 07:07:27 uehira Exp $ */
+/* $Id: winlib.h,v 1.1.2.7.2.17 2010/02/02 10:57:23 uehira Exp $ */
 
 #ifndef _WIN_LIB_H_
 #define _WIN_LIB_H_
@@ -6,6 +6,8 @@
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
+
+#include <stdio.h>
 
 #if TIME_WITH_SYS_TIME
 #include <sys/time.h>
@@ -55,8 +57,8 @@ typedef unsigned int    uint32_w;  /* unsigned 4 byte integer */
 #endif
 /******************************/
 
-typedef uint32_w  WIN_blocksize;
-typedef uint32_w  WIN_bs;
+/* typedef uint32_w  WIN_blocksize; */
+typedef uint32_w  WIN_bs;   /* win blocksize */
 typedef uint16_w  WIN_ch;
 typedef uint32_w  WIN_sr;
 
@@ -68,12 +70,16 @@ typedef uint32_w  WIN_sr;
 #define WIN_TIME_LEN     WIN_TM_LEN
 
 /* High sampling rate format */
-#define  HEADER_4B    4096     /* SR<2^12  (   1 Hz --    4095 Hz) */
-#define  HEADER_5B    1048576  /* SR<2^20  (4096 Hz -- 1048575 Hz) */
+#define HEADER_4B    4096     /* SR<2^12  (   1 Hz --    4095 Hz) */
+#define HEADER_5B    1048576  /* SR<2^20  (4096 Hz -- 1048575 Hz) */
 
-#define  WIN_CHMAX    65536   /* Max. number of channel: 2^16 */
-#define  SR_MON       5   /* sampling rate of MON */
-#define  TIME_OFFSET ((time_t)0)  /* time(0) offset */
+#define WIN_CHMAX    65536   /* Max. number of channel: 2^16 */
+#define WIN_CH_MAX_NUM  WIN_CHMAX   /* 2^16 */
+#define WIN_STANAME_LEN    11   /* (length of station code)+1 */
+#define WIN_STACOMP_LEN     7   /* (length of component code)+1 */
+
+#define SR_MON       5   /* sampling rate of MON */
+#define TIME_OFFSET ((time_t)0)  /* time(0) offset */
 
 /* 'wdisk' process makes the following files */
 #define WDISK_OLDEST  "OLDEST"
@@ -88,6 +94,21 @@ typedef uint32_w  WIN_sr;
 #define WDISKT_BUSY    "BUSY"
 #define WDISKT_COUNT   "COUNT"
 #define WDISKT_MAX     "MAX"
+
+/* 'events' process makes the following files */
+#define EVENTS_OLDEST  "OLDEST"
+#define EVENTS_LATEST  "LATEST"
+#define EVENTS_BUSY    "BUSY"
+#define EVENTS_COUNT   "COUNT"
+#define EVENTS_FREESPACE "FREESPACE"
+
+#define TRG_CHFILE_SUFIX ".ch"
+
+/* 'insert_raw' process makes the following file */
+#define INSERT_RAW_USED  "USED_RAW"
+
+/* 'insert_trg' process makes the following file */
+#define INSERT_TRG_USED  "USED_TRG"
 
 #define  SWAPL(a)  a = ((((a) << 24)) | (((a) << 8) & 0xff0000) |	\
 			(((a) >> 8) & 0xff00) | (((a) >> 24) & 0xff))
@@ -116,6 +137,28 @@ struct Shm {
   size_t  r;         /* latest */
   unsigned long  c;  /* counter */
   uint8_w  d[1];     /* data buffer */
+};
+
+/* channel table */
+struct channel_tbl {
+  WIN_ch  sysch;                  /* channel number [2byte hex] */
+  int     flag;                   /* record flag */
+  int     delay;                  /* line delay [ms] */
+  char    name[WIN_STANAME_LEN];  /* station name */
+  char    comp[WIN_STACOMP_LEN];  /* component name */
+  int     scale;                  /* display scale */
+  char    bit[256];                    /* bit value of A/D converter */
+  double  sens;                   /* sensitivity of instruments */
+  char    unit[256];              /* unit of sensitivity */
+  double  t0;                     /* natural period [s] */
+  double  h;                      /* damping factor */
+  double  gain;                   /* gain [dB] */
+  double  adc;                    /* [V/LSB] */
+  double  lat;                    /* latitude of station */
+  double  lng;                    /* longitude of station */
+  double  higt;                   /* height of station */
+  double  stcp;                   /* station correction of P phase */
+  double  stcs;                   /* station correction of P phase */
 };
 
 /* BCD to DEC */
@@ -169,6 +212,7 @@ WIN_bs read_onesec_win(FILE *, uint8_w **);
 void Shm_init(struct Shm *, size_t);
 void WIN_version(void);
 uint32_w win_chheader_info(const uint8_w *, WIN_ch *, WIN_sr *, int *);
+uint32_w win_get_chhdr(const uint8_w *, WIN_ch *, WIN_sr *);
 uint32_w get_sysch(const uint8_w *, WIN_ch *);
 void get_mon(WIN_sr, int32_w *, int32_w (*)[]);
 uint8_w *compress_mon(int32_w *, uint8_w *);
@@ -178,6 +222,16 @@ time_t bcd_t(uint8_w *);
 void time2bcd(time_t, uint8_w *);
 time_t bcd2time(uint8_w *);
 int time_cmpq(const void *, const void *);
+void rmemo5(char [], int []);
+void rmemo6(char [], int []);
+int  wmemo5(char [], int []);
+int **i_matrix(int, int);
+WIN_bs get_merge_data(uint8_w *, uint8_w *, WIN_bs *, uint8_w *, WIN_bs *);
+WIN_ch get_sysch_list(uint8_w *, WIN_bs, WIN_ch []);
+WIN_ch  get_chlist_chfile(FILE *, WIN_ch []);
+WIN_bs get_select_data(uint8_w *, WIN_ch [], WIN_ch, uint8_w *, WIN_bs);
+int WIN_time_hani(char [], int [], int []);
+int read_channel_file(FILE *, struct channel_tbl [], int);
 
 /* winlib_log.c */
 int find_oldest(char *, char *);

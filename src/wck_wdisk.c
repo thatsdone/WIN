@@ -1,5 +1,5 @@
 /*
- * $Id: wck_wdisk.c,v 1.1.4.3.2.1 2008/11/13 15:34:15 uehira Exp $
+ * $Id: wck_wdisk.c,v 1.1.4.3.2.2 2010/02/02 10:57:22 uehira Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -12,10 +12,11 @@
 #include <unistd.h>
 
 #include "winlib.h"
-#include "win_system.h"
+/* #include "win_system.h" */
 
 static const char  rcsid[] =
-   "$Id: wck_wdisk.c,v 1.1.4.3.2.1 2008/11/13 15:34:15 uehira Exp $";
+   "$Id: wck_wdisk.c,v 1.1.4.3.2.2 2010/02/02 10:57:22 uehira Exp $";
+
 char  *progname;
 
 static void usage();
@@ -31,7 +32,7 @@ main(int argc, char *argv[])
   static int  **index;
   static unsigned char  *mainbuf;
   static WIN_ch  trg_ch[WIN_CH_MAX_NUM], trg_chnum;
-  WIN_blocksize  mainsize;
+  WIN_bs  mainsize;
   int  chnum, sec, tim[WIN_TIME_LEN], cflag, secsave, lflag;
   char  nsave[WIN_STANAME_LEN];
   char *rname;
@@ -88,7 +89,7 @@ main(int argc, char *argv[])
 #endif
 
   /* initialize */
-  index = imatrix(chnum, MIN + 1);
+  index = i_matrix(chnum, MIN + 1);
   mainbuf = NULL;
   sec = 0;
 

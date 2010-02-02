@@ -1,4 +1,4 @@
-/* $Id: ls8tel.h,v 1.2.2.2.2.3 2009/03/06 13:03:03 uehira Exp $ */
+/* $Id: ls8tel.h,v 1.2.2.2.2.4 2010/02/02 10:57:22 uehira Exp $ */
 
 /*
  * Copyright (c) 2005
@@ -19,8 +19,6 @@
 #endif
 
 #include "winlib.h"
-/* #include "win_system.h" */
-
 
 #define LS8_PHDER_LEN  5     /* LS8000SH packet header length */
 #define LS8_PID        4     /* position of packet ID (A1, A8 or A9) */

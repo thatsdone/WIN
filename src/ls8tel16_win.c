@@ -1,4 +1,4 @@
-/* $Id: ls8tel16_win.c,v 1.2.4.2.2.1 2008/11/13 09:36:06 uehira Exp $ */
+/* $Id: ls8tel16_win.c,v 1.2.4.2.2.2 2010/02/02 10:57:22 uehira Exp $ */
 
 /*
  * Copyright (c) 2005
@@ -26,12 +26,13 @@
 #ifdef GC_MEMORY_LEAK_TEST
 #include "gc_leak_detector.h"
 #endif
+
 #include "ls8tel.h"
 #include "winlib.h"
-#include "win_system.h"
+/* #include "win_system.h" */
 
 static const char  rcsid[] =
-   "$Id: ls8tel16_win.c,v 1.2.4.2.2.1 2008/11/13 09:36:06 uehira Exp $";
+   "$Id: ls8tel16_win.c,v 1.2.4.2.2.2 2010/02/02 10:57:22 uehira Exp $";
 
 static char  *progname;
 

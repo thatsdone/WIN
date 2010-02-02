@@ -1,4 +1,4 @@
-/* $Id: recvt_LS7000.c,v 1.1.2.3.2.9 2010/01/11 07:07:26 uehira Exp $ */
+/* $Id: recvt_LS7000.c,v 1.1.2.3.2.10 2010/02/02 10:57:22 uehira Exp $ */
 /* "recvt_LS7000.c"  uehira */
 /*   2007-11-02  imported from recvt.c 1.29.2.1 */
 

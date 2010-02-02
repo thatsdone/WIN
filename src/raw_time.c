@@ -1,4 +1,4 @@
-/* $Id: raw_time.c,v 1.4.4.3.2.5 2010/01/11 07:07:25 uehira Exp $ */
+/* $Id: raw_time.c,v 1.4.4.3.2.6 2010/02/02 10:57:22 uehira Exp $ */
 
 /* raw_time.c -- online version of wtime(1W) */
 
@@ -44,16 +44,17 @@
 #ifdef GC_MEMORY_LEAK_TEST
 #include "gc_leak_detector.h"
 #endif
+
 #include "daemon_mode.h"
 #include "winlib.h"
-#include "win_system.h"
+/* #include "win_system.h" */
 
 
 #define MAXMESG   2048
 
 
 static char rcsid[] =
-  "$Id: raw_time.c,v 1.4.4.3.2.5 2010/01/11 07:07:25 uehira Exp $";
+  "$Id: raw_time.c,v 1.4.4.3.2.6 2010/02/02 10:57:22 uehira Exp $";
 
 char *progname, *logfile;
 int  daemon_mode, syslog_mode;
@@ -81,7 +82,7 @@ main(int argc, char *argv[])
   struct Shm  *shm_in, *shm_out;
   unsigned char  *ptr, *ptr_save, *ptw;
   unsigned char  *ptr1, *ptr1_lim, *ptr2;
-  WIN_blocksize  sizein, sizein2;
+  WIN_bs  sizein, sizein2;
   unsigned long  c_save;
   int32_w  *fixbuf1 = NULL, *fixbuf2 = NULL;
   WIN_sr fixbuf_num;
@@ -89,7 +90,7 @@ main(int argc, char *argv[])
   char        msg[MAXMESG];
   WIN_ch         chn;
   WIN_sr         sr, sr_check[WIN_CH_MAX_NUM];
-  WIN_blocksize  gsize, new_size;
+  WIN_bs         gsize, new_size;
   static int32_w   *sbuf[WIN_CH_MAX_NUM];
   uint16_w  chdum;
   uint32_w  srdum;

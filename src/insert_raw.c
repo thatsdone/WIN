@@ -1,5 +1,6 @@
+/* $Id: insert_raw.c,v 1.6.4.2.2.2 2010/02/02 10:57:21 uehira Exp $ */
+
 /*
- * $Id: insert_raw.c,v 1.6.4.2.2.1 2008/11/11 15:19:47 uehira Exp $
  * Insert sorted timeout data to raw data.
  *
  *------------ sample of parameter file ------------
@@ -22,6 +23,7 @@
 #endif
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <signal.h>
 #include <sys/types.h>
@@ -30,10 +32,12 @@
 #ifdef GC_MEMORY_LEAK_TEST
 #include "gc_leak_detector.h"
 #endif
-#include "winlib.h"
-#include "win_system.h"
 
-#define DEBUG  0
+#include "winlib.h"
+#include "subst_func.h"
+/* #include "win_system.h" */
+
+/* #define DEBUG  0 */
 
 #define TMP_ADD_NAME   "insert_raw.add"
 #define DEFAULT_WAIT_MIN   0  /* minute */
@@ -41,8 +45,10 @@
 #define WIN_FILENAME_MAX 1024
 #define BUF_SIZE 1024
 
+static char rcsid[] =
+  "$Id: insert_raw.c,v 1.6.4.2.2.2 2010/02/02 10:57:21 uehira Exp $";
+
 char *progname;
-static char rcsid[]="$Id: insert_raw.c,v 1.6.4.2.2.1 2008/11/11 15:19:47 uehira Exp $";
 
 struct Cnt_file {
   char  raw_dir[WIN_FILENAME_MAX];    /* raw data directory */
@@ -56,10 +62,19 @@ struct Cnt_file {
   int   wait_min;                 /* wait time(min.) from raw LATEST */
 };
 
+/* prototypes */
+static void end_prog(int);
+static void memory_error(void);
+static void print_usage(void);
+static int read_param(char [], struct Cnt_file *);
+static void do_insert(int [], struct Cnt_file *);
+int main(int, char *[]);
+
 /* exit program with status */
 static void
 end_prog(int status)
 {
+
   printf("*****  %s end  *****\n",progname);
   exit(status);
 }
@@ -67,6 +82,7 @@ end_prog(int status)
 static void
 memory_error()
 {
+
   fprintf(stderr,"'%s': cannot allocate memory.\n",progname);
   end_prog(-3);
 }
@@ -75,6 +91,8 @@ memory_error()
 static void
 print_usage()
 {
+
+  WIN_version();
   fprintf(stderr,"%s\n",rcsid);
   fprintf(stderr,"Usage of %s :\n",progname);
   fprintf(stderr,"\t%s [param file] ([YYMMDDhh.mm(1)] [YYMMDDhh.mm(2)])\n",
@@ -104,7 +122,7 @@ read_param(char filename[], struct Cnt_file *Cnt_file)
   count=0;
   status=1;
   Cnt_file->wait_min=DEFAULT_WAIT_MIN;
-  while(fgets(buf,BUF_SIZE,fp)!=NULL){
+  while(fgets(buf,sizeof(buf),fp)!=NULL){
     if(buf[0]=='#') continue;  /* skip comment line */
     if(sscanf(buf,"%s",out)<1) break;
     if(count==0) strcpy(Cnt_file->raw_dir,out);
@@ -122,23 +140,24 @@ read_param(char filename[], struct Cnt_file *Cnt_file)
   fclose(fp);
   if(status)
     fprintf(stderr,"Parameter is not enough. Please check %s\n",filename);
+
   return(status);
 }
 
-void
+static void
 do_insert(int tim[], struct Cnt_file *cnt)
 {
   FILE  *fp,*fpraw,*fpadd;
-  long  fpt;
-  WIN_blocksize  a;
-  WIN_blocksize  size,size_save;
-  WIN_blocksize  sizer;
-  WIN_blocksize  sizem,sizew;
-  WIN_blocksize  data_num,data_num_save;
-  WIN_blocksize  array_size_of_data;
-  unsigned char  *data,*datam,*datar,*tmpbuf;
-  unsigned char  size_arr[WIN_BLOCKSIZE_LEN];
-  unsigned char  *ptrd;
+  long  fpt;  /* 64bit ok */
+  WIN_bs  a;
+  WIN_bs  size,size_save;
+  WIN_bs  sizer;
+  WIN_bs  sizem,sizew;
+  WIN_bs  data_num,data_num_save;
+  WIN_bs  array_size_of_data;
+  uint8_w  *data,*datam,*datar,*tmpbuf;
+  uint8_w  size_arr[WIN_BLOCKSIZE_LEN];
+  uint8_w  *ptrd;
   int  dtime[WIN_TIME_LEN],drtime[WIN_TIME_LEN],dtime_tmp[WIN_TIME_LEN];
   int  tim_raw_latest[5],tim_raw_oldest[5];
   char  data_name[WIN_FILENAME_MAX];
@@ -148,15 +167,19 @@ do_insert(int tim[], struct Cnt_file *cnt)
   int  wait_flag;
   int  i=0,j;
 
-  sprintf(data_name,"%s/%02d%02d%02d%02d.%02d",
-	  cnt->junk_dir,tim[0],tim[1],tim[2],tim[3],tim[4]);
+  if (snprintf(data_name,sizeof(data_name)-1,"%s/%02d%02d%02d%02d.%02d",
+	       cnt->junk_dir,tim[0],tim[1],tim[2],tim[3],tim[4])
+      > sizeof(data_name)-1) {
+    fprintf(stderr, "Error : data is too large!¥ü\n");
+    exit(1);
+  }
   if((fp=fopen(data_name,"r"))==NULL) return;
 
   while(fread(&a,1,WIN_BLOCKSIZE_LEN,fp)==WIN_BLOCKSIZE_LEN){  /*(1)*/
     /*** copy same minute data to data[] ***/
-    data_num_save=data_num=size=(WIN_blocksize)mkuint4((unsigned char *)&a);
+    data_num_save=data_num=size=(WIN_bs)mkuint4((uint8_w *)&a);
     array_size_of_data = data_num << 2;
-    if((data=MALLOC(unsigned char,array_size_of_data))==NULL) memory_error();
+    if((data=MALLOC(uint8_w,array_size_of_data))==NULL) memory_error();
     memcpy(data,&a,WIN_BLOCKSIZE_LEN);
     size-=WIN_BLOCKSIZE_LEN;
     if(fread(data+WIN_BLOCKSIZE_LEN,1,size,fp)!=size){
@@ -169,8 +192,8 @@ do_insert(int tim[], struct Cnt_file *cnt)
     }
     fpt=ftell(fp);
     while(fread(&a,1,WIN_BLOCKSIZE_LEN,fp)==WIN_BLOCKSIZE_LEN){  /*(2)*/
-      size_save=size=(WIN_blocksize)mkuint4((unsigned char *)&a);
-      if((tmpbuf=MALLOC(unsigned char,size))==NULL) memory_error();
+      size_save=size=(WIN_bs)mkuint4((uint8_w *)&a);
+      if((tmpbuf=MALLOC(uint8_w,size))==NULL) memory_error();
       memcpy(tmpbuf,&a,WIN_BLOCKSIZE_LEN);
       size-=WIN_BLOCKSIZE_LEN;
       if(fread(tmpbuf+WIN_BLOCKSIZE_LEN,1,size,fp)!=size){
@@ -190,7 +213,7 @@ do_insert(int tim[], struct Cnt_file *cnt)
       data_num+=size_save;
       if (array_size_of_data < data_num) {
 	array_size_of_data = data_num << 1;
-	if((data=REALLOC(unsigned char,data,array_size_of_data))==NULL)
+	if((data=REALLOC(uint8_w,data,array_size_of_data))==NULL)
 	  memory_error();
       }
       memcpy(data+data_num_save,tmpbuf,size_save);
@@ -253,14 +276,14 @@ do_insert(int tim[], struct Cnt_file *cnt)
     /* read raw data file */
     else{
       while(fread(&a,1,WIN_BLOCKSIZE_LEN,fpraw)==WIN_BLOCKSIZE_LEN){
-	sizer=(WIN_blocksize)mkuint4((unsigned char *)&a);
+	sizer=(WIN_bs)mkuint4((uint8_w *)&a);
 	sizer-=WIN_BLOCKSIZE_LEN;
-	if((datar=MALLOC(unsigned char,sizer))==NULL){
+	if((datar=MALLOC(uint8_w,sizer))==NULL){
 	  memory_error();
 	}
 	if(fread(datar,1,sizer,fpraw)!=sizer){
 	  FREE(datar);
-	  fwrite(ptrd,1,data_num-(WIN_blocksize)(ptrd-data),fpadd);
+	  fwrite(ptrd,1,data_num-(WIN_bs)(ptrd-data),fpadd);
 	  break; /* exit loop in case of raw file broken */
 	}
 	if(!bcd_dec(drtime,datar)){
@@ -274,9 +297,9 @@ do_insert(int tim[], struct Cnt_file *cnt)
 	}
 	/* In case of time stamp same */
 	else{
-	  size=(WIN_blocksize)mkuint4(ptrd)-WIN_BLOCKSIZE_LEN;
+	  size=(WIN_bs)mkuint4(ptrd)-WIN_BLOCKSIZE_LEN;
 	  ptrd+=WIN_BLOCKSIZE_LEN;
-	  if((datam=MALLOC(unsigned char,size))==NULL) memory_error();
+	  if((datam=MALLOC(uint8_w,size))==NULL) memory_error();
 	  sizem=get_merge_data(datam,datar,&sizer,ptrd,&size);
 	  sizew=WIN_BLOCKSIZE_LEN+sizer+sizem;
 	  size_arr[0]=sizew>>24;

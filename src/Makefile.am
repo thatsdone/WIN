@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.38.2.10.2.6 2009/12/26 00:56:58 uehira Exp $
+# $Id: Makefile.am,v 1.38.2.10.2.7 2010/02/02 10:57:21 uehira Exp $
 #
 
 if SUNOS4
@@ -64,7 +64,8 @@ OTHR=cpdat sepline joint order_raw
 OTHR_=rund
 SUB=winform win2fix
 
-WIN_UTIL = win_system.h win_system.c
+#WIN_UTIL = win_system.h win_system.c
+WIN_UTIL =
 SUBFUNC_H = subst_func.h
 DAEMON_MODE = daemon_mode.h daemon_mode.c
 WIN_LOG = win_log.h win_log.c win_externs.h winlib_log.c

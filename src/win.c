@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.46.2.6.2.11 2010/01/11 07:07:26 uehira Exp $
+   $Id: win.c,v 1.46.2.6.2.12 2010/02/02 10:57:22 uehira Exp $
 
    High Samping rate
      9/12/96 read_one_sec 

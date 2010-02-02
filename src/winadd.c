@@ -1,4 +1,4 @@
-/* $Id: winadd.c,v 1.4.4.3.2.5 2010/01/12 09:36:05 uehira Exp $ */
+/* $Id: winadd.c,v 1.4.4.3.2.6 2010/02/02 10:57:23 uehira Exp $ */
 
 /*
  * winadd.c  (Uehira Kenji)
@@ -57,7 +57,7 @@ typedef struct data_index  INDX;
 
 /* global variables */
 static const char rcsid[] =
-   "$Id: winadd.c,v 1.4.4.3.2.5 2010/01/12 09:36:05 uehira Exp $";
+   "$Id: winadd.c,v 1.4.4.3.2.6 2010/02/02 10:57:23 uehira Exp $";
 static int  dummy_flag, verbose_flag;
 
 /* prototypes */
@@ -150,7 +150,7 @@ win_file_read(char *name, WIN_ch **ch, int *ch_num, int *ch_num_arr,
   FILE            *fp;
   uint8_w   tt[WIN_TIME_LEN], re_c[4];
   uint8_w   *ptr, *buf;
-  WIN_blocksize   re, re_debug, gsize;
+  WIN_bs   re, re_debug, gsize;
   WIN_sr          srdummy;
   time_t          time_tmp;
   WIN_ch  ch_tmp;
@@ -230,7 +230,7 @@ get_index(char *name, INDX **indx, WIN_ch *ch, int ch_num,
   uint8_w  tt[WIN_TIME_LEN], re_c[4];
   uint8_w  *ptr, *buf;
   unsigned long  point;
-  WIN_blocksize  re, gsize;
+  WIN_bs  re, gsize;
   WIN_sr         srdummy;
   time_t         time_tmp;
   WIN_ch ch_tmp;
@@ -515,7 +515,7 @@ win_file_read_from_buf(uint8_w *rawbuf, off_t rawsize,
 {
   uint8_w   tt[WIN_TIME_LEN];
   uint8_w   *ptr, *ptr_limit, *buf;
-  WIN_blocksize   re, gsize;
+  WIN_bs   re, gsize;
   WIN_sr          srdummy;
   time_t          time_tmp;
   WIN_ch          ch_tmp;
@@ -579,7 +579,7 @@ get_index_from_buf(uint8_w *rawbuf, off_t rawsize, int main_sfx,
   uint8_w  tt[WIN_TIME_LEN];
   uint8_w  *ptr, *ptr_limit, *buf;
   WIN_sr         srdummy;
-  WIN_blocksize  re, gsize;
+  WIN_bs  re, gsize;
   time_t         time_tmp;
   WIN_ch         ch_tmp;
   int            i, ss;

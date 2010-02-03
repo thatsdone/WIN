@@ -1,4 +1,4 @@
-/* $Id: raw2mon.c,v 1.4.4.3.2.5 2010/02/03 10:09:22 uehira Exp $ */
+/* $Id: raw2mon.c,v 1.4.4.3.2.6 2010/02/03 12:35:14 uehira Exp $ */
 /*
   program "raw2mon.c"
 
@@ -38,9 +38,15 @@ main(int argc, char *argv[])
       (void)fprintf(stderr, "Buffer overflow. Exit!!\n");
       exit(1);
     }
-    (void)fread(buf + 4, 1, mkuint4(buf) - 4, stdin);
+    if (fread(buf + 4, 1, mkuint4(buf) - 4, stdin) < mkuint4(buf) - 4) {
+      (void)fprintf(stderr, "fread error!!\n");
+      exit(1);
+    }
     make_mon(buf, wbuf);
-    (void)fwrite(wbuf, 1, mkuint4(wbuf), stdout);
+    if (fwrite(wbuf, 1, mkuint4(wbuf), stdout) < mkuint4(wbuf)) {
+      (void)fprintf(stderr, "fwrite error!!\n");
+      exit(1);
+    }
   }
   exit(0);
 }

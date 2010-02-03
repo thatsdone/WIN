@@ -1,4 +1,4 @@
-/* $Id: insert_raw.c,v 1.6.4.2.2.2 2010/02/02 10:57:21 uehira Exp $ */
+/* $Id: insert_raw.c,v 1.6.4.2.2.3 2010/02/03 01:39:55 uehira Exp $ */
 
 /*
  * Insert sorted timeout data to raw data.
@@ -16,6 +16,7 @@
 
 /*-
  * 2005/3/12   memory leak bug fixed.
+ * 2010/2/2    64bit check
  */
 
 #ifdef HAVE_CONFIG_H
@@ -46,7 +47,7 @@
 #define BUF_SIZE 1024
 
 static char rcsid[] =
-  "$Id: insert_raw.c,v 1.6.4.2.2.2 2010/02/02 10:57:21 uehira Exp $";
+  "$Id: insert_raw.c,v 1.6.4.2.2.3 2010/02/03 01:39:55 uehira Exp $";
 
 char *progname;
 

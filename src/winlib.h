@@ -1,4 +1,4 @@
-/* $Id: winlib.h,v 1.1.2.7.2.17 2010/02/02 10:57:23 uehira Exp $ */
+/* $Id: winlib.h,v 1.1.2.7.2.18 2010/02/03 01:39:55 uehira Exp $ */
 
 #ifndef _WIN_LIB_H_
 #define _WIN_LIB_H_
@@ -224,11 +224,11 @@ time_t bcd2time(uint8_w *);
 int time_cmpq(const void *, const void *);
 void rmemo5(char [], int []);
 void rmemo6(char [], int []);
-int  wmemo5(char [], int []);
+int wmemo5(char [], int []);
 int **i_matrix(int, int);
 WIN_bs get_merge_data(uint8_w *, uint8_w *, WIN_bs *, uint8_w *, WIN_bs *);
 WIN_ch get_sysch_list(uint8_w *, WIN_bs, WIN_ch []);
-WIN_ch  get_chlist_chfile(FILE *, WIN_ch []);
+WIN_ch get_chlist_chfile(FILE *, WIN_ch []);
 WIN_bs get_select_data(uint8_w *, WIN_ch [], WIN_ch, uint8_w *, WIN_bs);
 int WIN_time_hani(char [], int [], int []);
 int read_channel_file(FILE *, struct channel_tbl [], int);

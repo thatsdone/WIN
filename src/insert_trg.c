@@ -1,5 +1,5 @@
 /*
- * $Id: insert_trg.c,v 1.6.4.4.2.2 2010/02/02 10:57:22 uehira Exp $
+ * $Id: insert_trg.c,v 1.6.4.4.2.3 2010/02/03 01:39:55 uehira Exp $
  * Insert sorted timeout data to event data.
  *
  *------------ sample of parameter file ------------
@@ -33,6 +33,7 @@
 #ifdef GC_MEMORY_LEAK_TEST
 #include "gc_leak_detector.h"
 #endif
+
 #include "winlib.h"
 /* #include "win_system.h" */
 
@@ -49,7 +50,7 @@
 #define BUF_SIZE 1024
 
 char *progname;
-static char rcsid[]="$Id: insert_trg.c,v 1.6.4.4.2.2 2010/02/02 10:57:22 uehira Exp $";
+static char rcsid[]="$Id: insert_trg.c,v 1.6.4.4.2.3 2010/02/03 01:39:55 uehira Exp $";
 
 struct Cnt_file {
   char  trg_dir[WIN_FILENAME_MAX];    /* trg data directory */

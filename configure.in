@@ -1,5 +1,5 @@
 dnl ------------------------------------------------------------------------- 
-dnl $Id: configure.in,v 1.98.2.17.2.15 2010/02/02 10:57:21 uehira Exp $
+dnl $Id: configure.in,v 1.98.2.17.2.16 2010/02/03 03:48:28 uehira Exp $
 dnl -------------------------------------------------------------------------
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT(src/win.c)
@@ -269,6 +269,18 @@ dnl -------------------------------------------------------------------------
 dnl X src compile or not
 dnl -------------------------------------------------------------------------
 AM_CONDITIONAL(NO_X_SRC, test x$no_x = xyes)
+
+dnl -------------------------------------------------------------------------
+dnl MT device check. check sys/mtio.h exists or not. (for fromtape, rtape, wtape)
+dnl -------------------------------------------------------------------------
+AM_CONDITIONAL(MT_HEADER, false)
+AC_CHECK_HEADER(sys/mtio.h, [have_mt_header="yes"], [have_mt_header="no"])
+if test x$have_mt_header = "xno"; then
+	AC_MSG_WARN(sys/mtio.h does not exist.)
+	AC_MSG_WARN(Fllowing programs are not compiled :fromtape rtape wtape)
+else
+	AM_CONDITIONAL(MT_HEADER, true)
+fi
 
 dnl -------------------------------------------------------------------------
 dnl output Makefile

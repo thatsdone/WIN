@@ -1,9 +1,10 @@
- $Id: ChangeLog,v 1.131.2.25.2.37 2010/02/03 03:48:28 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.38 2010/02/03 10:09:22 uehira Exp $
 
 2010-02-03  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* configure.in : check sys/mtio.h (for fromtape, rtape, wtape).
 	If sys/mtio.h does not exist, these programs are not compiled
 	(ex. Mac OS X 10.6).
+	* src/raw2mon : check buffer overflow.
 
 2010-02-02  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* src/insert_raw : 64 bit clean?

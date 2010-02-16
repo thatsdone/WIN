@@ -1,4 +1,8 @@
- $Id: ChangeLog,v 1.159 2009/12/25 00:43:26 uehira Exp $
+ $Id: ChangeLog,v 1.160 2010/02/16 11:15:58 uehira Exp $
+
+2010-02-16  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 1.1.95 released.
+	* src/wtape.c, src/setexb.c : fixed some potential bugs.
 
 2009-12-25  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* Version 1.1.94 released.
@@ -38,7 +42,7 @@
  	  src/sends.c :
 	   include arpa/inet.h if exists.
 	* configure.in : check arpa/inet.h.
-	
+
 2008-04-24  Shigeki Nakagawa  <nakagawa@eri.u-tokyo.ac.jp>
 	* Version 1.1.87 released.
 	* src/events.c, src/wdisk.c : add USE_LARGE_FS option.
@@ -53,7 +57,7 @@
 	* src/win.c, src/hypomhc.c : check FreeBSD OS version.
 
 2008-04-13  Shigeki Nakagawa  <nakagawa@eri.u-tokyo.ac.jp>
-	* src/wdisk.c (main): bug fix: initialize eobsize=0 
+	* src/wdisk.c (main): bug fix: initialize eobsize=0
 	                           (reported by M. Sato)
 
 2008-04-07  Urabe Taku <urabe@eri.u-tokyo.ac.jp>
@@ -126,7 +130,7 @@
 	  winrawsrvd : raw data server started by inetd.
 	  winrawcli_test : test code of raw data client.
 	* Version 1.1.79 released.
-	
+
 2006-03-27  Tsuruoka Hiroshi <tsuru@eri.u-tokyo.ac.jp>
 	* wintowin: BUG FIX (appealed by T. UEMURA)
 	* Version 1.1.78 released.
@@ -206,16 +210,16 @@
 	                : close security hall.
 	* added 'mkpicknoise'
 	* Version 1.1.64 released.
-	  
+
 2005-04-26 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* added 'recvstatus3'. receive A8/A9 packets from Daramark
 	  LS-8000SH of LS8TEL14/16 firmware
 	* Version 1.1.63 released.
-	  
+
 2005-04-20 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* win.1, pickfile.1, pick2pick.1 : updated.
 	* Version 1.1.62 released.
-	  
+
 2005-04-14 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
 	* recvnmx, recvnmx.1 : -n (NP packet) added.
 	* raw_shift.1 : bug fixed.
@@ -224,7 +228,7 @@
 2005-03-18 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* insert_raw.c, insert_trg.c, wdiskts.c, raw_time.c
 	  - memory leak check code
-	  
+
 2005-03-17 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* raw_time : time shift filter (raw format version of wtime)
 	* added configure option: --enable-memory-leak-check
@@ -329,9 +333,9 @@
 2004-11-24 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* pick2final, pick2finalb : get owner information from pickfile
 	* Version 1.1.47 released.
-	
+
 2004-11-17 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
-	* relay : check_pno() and read_chfile() brought from recvt.c 
+	* relay : check_pno() and read_chfile() brought from recvt.c
 		with host contol but without channel control (option -f)
 		write host statistics on HUP signal
 		no packet info option -n
@@ -341,54 +345,54 @@
 
 2004-11-13 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* relaym : MacOSX need #include <sys/time.h>
-	
+
 2004-11-11 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* relaym : multi destination verson of 'relay'. IPv4 & IPv6 support.
 	* Version 1.1.46 released.
-	
+
 2004-10-27 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* raw_mon : added daemon mode (raw_mond)
-	
+
 2004-10-26 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* recvt : added option -D : daemon mode (recvtd)
 	* relay : added option -D : daemon mode (relayd)
 	* send_raw : added option -D : daemon mode (send_rawd, ...)
 	* Version 1.1.45 released.
-	
+
 2004-10-21 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* order : added option -D : daemon mode (orderd)
 	* wdiskd   : Daemon mode of wdisk
 	* wdisk60d : Daemon mode of wdisk60
 	* Version 1.1.44 released.
-	
+
 2004-10-20 Tsuruoka Hiroshi <tsuru@eri.u-tokyo.ac.jp>
 	* add program of winsimu
 	* Version 1.1.43 released.
-	
+
 2004-10-14 Tsuruoka Hiroshi <tsuru@eri.u-tokyo.ac.jp>
 	* wintowin: writing to shared memory option
 	* shmdump: XINETD compile option
-	
+
 2004-10-04 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* wdisk : added option -D : Daemon mode
 	* Version 1.1.42 released.
-	
+
 2004-09-13 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* win2raw : bug fixed.
 	* Version 1.1.41 released.
-	
+
 2004-09-09 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
 	* relay : fixed a bug in -s option ("sinterface")
 	* Version 1.1.40 released.
-	
+
 2004-09-08 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
 	* win : allow initial depth  down to -3 km
 	* Version 1.1.39 released.
-	
+
 2004-09-07 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* wdisk : added option -s : Freespace mode
 	* Version 1.1.38 released.
-	
+
 2004-09-05 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
 	* stopped restriction of N of chs for selection
 	* Version 1.1.37 released.
@@ -396,7 +400,7 @@
 2004-08-30 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* order2 : remove
 	* Version 1.1.36 released.
-	
+
 2004-08-29 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
 	* man/winformat.1, man/win.1 : fixed gtbl error
 
@@ -411,29 +415,29 @@
 2004-08-01 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* wdisk : added option -n
 	* Version 1.1.33 released.
-	
+
 2004-07-30 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* If there are no X libraries or X includes, or if you set
 	--without-x option in 'configure' command, don't compile program
 	with X library (i.e. win)
 	* Version 1.1.32 released.
-	
+
 2004-04-22 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* make md5 target in Makefile.am
 	* Version 1.1.31 released.
-	
+
 2004-03-07 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* add pick2pick filter (perl script)
 	* Version 1.1.30 released.
-	
+
 2004-03-03 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* win_m : options can be set in latest mode
 	* Version 1.1.29 released.
-	
+
 2004-02-29 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* win2raw : added option -m
 	* Version 1.1.28 released.
-	
+
 2004-01-29 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
 	* select_stations.c : fatal bug fixed !
 	* wtape.c : avoid odd byte block size for some SCSI cards
@@ -499,14 +503,14 @@
 	* Version 1.1.19 released.
 
 2003-06-09 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
-	* hypomh.f, hypomhc.c : bug fixed by Honda/Nagai for initialization of IYEAR 
+	* hypomh.f, hypomhc.c : bug fixed by Honda/Nagai for initialization of IYEAR
 	* Version 1.1.18 released.
 
 2003-06-03 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
 	* ecore2.c : replaced err-related ext defs with '#include <errno.h>'
 
 2003-06-01 Tsuruoka Hiroshi  <tsuru@eri.u-tokyo.ac.jp>
-	* shmdump.c : add filtering option 
+	* shmdump.c : add filtering option
                     : bug fix -f option
 
 2003-05-25 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
@@ -531,7 +535,7 @@
 2003-05-11 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
 	* ecore.c : Fixed version by N.Nakakawaji
 	* ecore2.c : Fixed version by N.Nakakawaji (and added to CVS)
-	
+
 2003-04-29 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* if cygwin environment, check libcygipc.a
 	* add one tip in win_hack.txt
@@ -541,7 +545,7 @@
 2003-04-25 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* Version 1.1.14 released.
 	* WIN_pkg now supports Cygwin environment.
-	
+
 2003-04-16 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
         * shmdump.c : bug fix (last sec not outputted in stdin mode)
 
@@ -567,7 +571,7 @@
 2002-12-17 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* recvstatus2.c : bug fix
 	* Version 1.1.12 released.
-	
+
 2002-12-10 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
 	* relay.c : added options -i, -p, -t(-T) and in_port=0 for stdin
 
@@ -596,16 +600,16 @@
 
 2002-08-09 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* edit AUTHORS (add Dr. TSURUOKA)
-	
+
 2002-08-09 Urabe Taku <urabe@eri.u-tokyo.ac.jp>
 	* wed.c 1.4  Ignore illegal lines in ch list
 	* recvnmx.c 1.15  process re-tx packets properly using frag-dir (-d)
-	
+
 2002-08-08 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* Version 1.1.7 released.
 	* import 'shmx' and 'shmx2'
 	  written by TSURUOKA Hiroshi (tsuru@eri.u-tokyo.ac.jp).
-	
+
 2002-07-23 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
         * Version 1.1.4 released.
 	* add win2raw.c
@@ -631,10 +635,10 @@
 2002-01-25 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* recvts はX86マシンの時だけコンパイルする．
 
-2002-01-23 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>	
+2002-01-23 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* Version 1.0.1 released.
 	  Don't use 'BUFSIZ' and 'FILENAME_MAX' system macros.
-	
+
 2002-01-18 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* Version 1.0.0 released.
 	* configure.in
@@ -649,7 +653,7 @@
 	* join 'autoconf branch' to 'main branch'
 	* suppress compile warnning
 	  recvstatus.c relay.c send_raw_old.c recvnmx.c
-	
+
 2002-01-08 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
 	* send_raw.c : added option '-b' for set max IP packet size or mtu
 	* recvt.c : max packet size increased to 32KB
@@ -665,7 +669,7 @@
 	  加しておかないとチャンネル番号以外にもマッチングすることがあり
 	  (例えば緯度の値など)，必要なチャンネルがマージしたチャンネルファ
 	  イルから抜けることがある．
-	
+
 2001-11-19 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* use strerror(3)
 	  order2.c wdiskts.c
@@ -674,16 +678,16 @@
 	* MFC: output to current dir if not specified
 	  rtape.c
 	* MFC: fixed bug in port no. with ntohs()
-	  recvnmx.c recvs.c recvstatus.c recvt.c relay.c send_raw.c 
-	  send_raw_old.c sends.c 
+	  recvnmx.c recvs.c recvstatus.c recvt.c relay.c send_raw.c
+	  send_raw_old.c sends.c
 	* MFC: fixed write_log(strerror()) bug
-	  cormeisei.c extraw.c order.c raw_100.c raw_ch.c raw_mon.c 
-	  raw_raw.c recvnmx.c recvs.c recvstatus.c recvt.c relay.c 
+	  cormeisei.c extraw.c order.c raw_100.c raw_ch.c raw_mon.c
+	  raw_raw.c recvnmx.c recvs.c recvstatus.c recvt.c relay.c
 	  send_raw.c send_raw_old.c sends.c
-	
+
 2001-11-2 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* autmake-1.5 と autoconf-2.13 にとりあえず対応．
-	* 代替関数は subst_func.h で与える予定．現在，strerror(3) と 
+	* 代替関数は subst_func.h で与える予定．現在，strerror(3) と
 	mktime(3) がある．
 	* FreeBSD-2,3,4，Soralis2.5.1 for sparc (gccのみ)，SunOS-4.1.4
 	(gcc のみ)，Vine Linux 2.0CR ではコンパイル出来た．

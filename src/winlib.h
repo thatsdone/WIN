@@ -1,4 +1,4 @@
-/* $Id: winlib.h,v 1.1.2.7.2.18 2010/02/03 01:39:55 uehira Exp $ */
+/* $Id: winlib.h,v 1.1.2.7.2.19 2010/02/16 10:24:42 uehira Exp $ */
 
 #ifndef _WIN_LIB_H_
 #define _WIN_LIB_H_
@@ -103,6 +103,14 @@ typedef uint32_w  WIN_sr;
 #define EVENTS_FREESPACE "FREESPACE"
 
 #define TRG_CHFILE_SUFIX ".ch"
+
+/* 'wtape' process makes the following files */
+#define WTAPE_UNITS    "UNITS"
+#define WTAPE__UNITS   "_UNITS"
+#define WTAPE_USED     "USED"
+#define WTAPE_EXABYTE  "EXABYTE"
+#define WTAPE_TOTAL    "TOTAL"
+#define N_EXABYTE      8
 
 /* 'insert_raw' process makes the following file */
 #define INSERT_RAW_USED  "USED_RAW"

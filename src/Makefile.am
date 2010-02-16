@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.38.2.10.2.8 2010/02/03 03:48:28 uehira Exp $
+# $Id: Makefile.am,v 1.38.2.10.2.9 2010/02/16 10:24:42 uehira Exp $
 #
 
 if SUNOS4
@@ -242,6 +242,7 @@ wtape_SOURCES = wtape.c $(WIN_LIBH)
 wtape_LDADD = $(WIN_SYSTEM_LIB)
 
 setexb_SOURCES = setexb.c $(SUBFUNC_H)
+setexb_LDADD = $(WIN_SYSTEM_LIB)
 
 timeout_SOURCES = timeout.c $(SUBFUNC_H)
 

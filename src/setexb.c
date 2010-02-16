@@ -1,4 +1,4 @@
-/* $Id: setexb.c,v 1.5 2002/01/23 06:06:13 uehira Exp $ */
+/* $Id: setexb.c,v 1.5.2.1 2010/02/16 11:23:06 uehira Exp $ */
 /* program "setexb.c"
 	2/27/90, 3/8/93,1/17/94,5/27/94  urabe
         2001.6.22  add options '-p' and '-?'  uehira */
@@ -29,7 +29,7 @@ read_param(f_param,textbuf)
         unsigned char *textbuf;
         {
         do      {
-                if(fgets(textbuf,(WIN_FILENAME_MAX<<1)+32,f_param)==NULL)
+                if(fgets(textbuf,WIN_FILENAME_MAX,f_param)==NULL)
 		  return 1;
                 } while(*textbuf=='#');
         return 0;
@@ -71,7 +71,7 @@ write_units(file)
 
 init_param()
         {
-	char tb[(WIN_FILENAME_MAX<<1)+32],*ptr;
+	char tb[WIN_FILENAME_MAX],*ptr;
         FILE *fp;
 
         if((fp=fopen(param_name,"r"))==NULL)

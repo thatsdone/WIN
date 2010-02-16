@@ -1,4 +1,4 @@
-/* $Id: setexb.c,v 1.5.8.1 2010/02/16 10:24:42 uehira Exp $ */
+/* $Id: setexb.c,v 1.5.8.2 2010/02/16 10:47:37 uehira Exp $ */
 /*-
   program "setexb.c"
     2/27/90, 3/8/93,1/17/94,5/27/94  urabe
@@ -24,7 +24,7 @@
 #define         WIN_FILENAME_MAX 1024
 
 static char rcsid[] = 
-  "$Id: setexb.c,v 1.5.8.1 2010/02/16 10:24:42 uehira Exp $";
+  "$Id: setexb.c,v 1.5.8.2 2010/02/16 10:47:37 uehira Exp $";
 
 static int  exb_status[N_EXABYTE], n_exb;
 static char exb_name[N_EXABYTE][20],
@@ -44,7 +44,7 @@ read_param(FILE *f_param, char textbuf[])
 {
 
   do {
-    if (fgets(textbuf, sizeof(textbuf), f_param) == NULL)
+    if (fgets(textbuf, WIN_FILENAME_MAX, f_param) == NULL)
       return (1);
   } while (*textbuf == '#');
   return (0);
@@ -92,7 +92,7 @@ write_units(char *file)
 static void
 init_param()
 {
-  char tb[(WIN_FILENAME_MAX << 1) + 32], *ptr;
+  char tb[WIN_FILENAME_MAX], *ptr;
   FILE *fp;
 
   if ((fp = fopen(param_name, "r")) == NULL) {

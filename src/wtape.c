@@ -1,4 +1,4 @@
-/* $Id: wtape.c,v 1.12.2.4.2.2 2010/02/16 10:24:42 uehira Exp $ */
+/* $Id: wtape.c,v 1.12.2.4.2.3 2010/02/16 10:47:37 uehira Exp $ */
 /*
   program "wtape.c"
   8/23/89 - 8/8/90, 6/27/91, 12/24/91, 2/29/92  urabe
@@ -56,7 +56,7 @@
 #define   WIN_FILENAME_MAX 1024
 
 static char rcsid[] = 
-  "$Id: wtape.c,v 1.12.2.4.2.2 2010/02/16 10:24:42 uehira Exp $";
+  "$Id: wtape.c,v 1.12.2.4.2.3 2010/02/16 10:47:37 uehira Exp $";
 
 static uint8_w buf[SIZE_MAX];
 static int init_flag,wfm,new_tape,switch_req,fd_exb,exb_status[N_EXABYTE],
@@ -147,7 +147,7 @@ read_param(FILE *f_param, char textbuf[])
   {
 
   do      {
-    if(fgets(textbuf,sizeof(textbuf),f_param)==NULL) return (1);
+    if(fgets(textbuf,WIN_FILENAME_MAX,f_param)==NULL) return (1);
     } while(textbuf[0]=='#');
   return (0);
   }
@@ -155,7 +155,7 @@ read_param(FILE *f_param, char textbuf[])
 static void
 init_param()
   {
-  char tb[(WIN_FILENAME_MAX<<1)+32],*ptr;
+  char tb[WIN_FILENAME_MAX],*ptr;
   FILE *fp;
 
   if((fp=fopen(param_name,"r"))==NULL)

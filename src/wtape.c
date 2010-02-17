@@ -1,4 +1,4 @@
-/* $Id: wtape.c,v 1.12.2.4.2.3 2010/02/16 10:47:37 uehira Exp $ */
+/* $Id: wtape.c,v 1.12.2.4.2.4 2010/02/17 10:13:33 uehira Exp $ */
 /*
   program "wtape.c"
   8/23/89 - 8/8/90, 6/27/91, 12/24/91, 2/29/92  urabe
@@ -22,14 +22,18 @@
 #include "config.h"
 #endif
 
+#include  <sys/types.h>
+#include  <sys/uio.h>
+#include  <sys/ioctl.h>
+#include  <sys/stat.h>
+#include  <sys/mtio.h>
+
 #include  <stdio.h>
 #include  <stdlib.h>
 #include  <string.h>
 #include  <fcntl.h>
-#include  <sys/types.h>
 #include  <signal.h>
-#include  <sys/ioctl.h>
-#include  <sys/stat.h>
+#include  <unistd.h>
 
 #if TIME_WITH_SYS_TIME
 #include <sys/time.h>
@@ -42,9 +46,6 @@
 #endif  /* !HAVE_SYS_TIME_H */
 #endif  /* !TIME_WITH_SYS_TIME */
 
-#include  <sys/mtio.h>
-#include  <unistd.h>
-
 #include "winlib.h"
 
 #define   DEBUGFLAG 1
@@ -56,7 +57,7 @@
 #define   WIN_FILENAME_MAX 1024
 
 static char rcsid[] = 
-  "$Id: wtape.c,v 1.12.2.4.2.3 2010/02/16 10:47:37 uehira Exp $";
+  "$Id: wtape.c,v 1.12.2.4.2.4 2010/02/17 10:13:33 uehira Exp $";
 
 static uint8_w buf[SIZE_MAX];
 static int init_flag,wfm,new_tape,switch_req,fd_exb,exb_status[N_EXABYTE],

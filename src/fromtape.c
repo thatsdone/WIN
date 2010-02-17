@@ -1,4 +1,4 @@
-/* $Id: fromtape.c,v 1.7.2.3.2.6 2010/02/17 08:33:20 uehira Exp $ */
+/* $Id: fromtape.c,v 1.7.2.3.2.7 2010/02/17 10:13:33 uehira Exp $ */
 /*
   program "fromtape.c"
   12/10/90 - 12/13/90, 9/19/91, 10/30/91, 6/19/92  urabe
@@ -13,20 +13,24 @@
   2005.3.15 introduced blpersec (blocks/sec) factor
             MAXSIZE : 1M -> 2M, TRY_LIMIT : 10 -> 16, SIZE_WBUF 300K->600K
   2005.8.10 bug in strcmp2() fixed : 0-6 > 7-9
+  2010.2.17 64bit clean? (Uehira)
 */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
 
-#include  <stdio.h>
-#include  <string.h>
-#include  <stdlib.h>
 #include  <sys/types.h>
+#include  <sys/uio.h>
 #include  <sys/fcntl.h>
 #include  <sys/ioctl.h>
 #include  <sys/stat.h>
 #include  <sys/mtio.h>
+
+#include  <stdio.h>
+#include  <string.h>
+#include  <stdlib.h>
+#include  <unistd.h>
 
 #include "winlib.h"
 
@@ -44,15 +48,19 @@
                     /* 60 m / fm after this time */
 #define   TIME3   "9008031718"  /* 10 m / fm after this time */
 
-  unsigned char wbuf[SIZE_WBUF],buf[MAXSIZE];
-  int fd_exb,dec_start[6],dec_end[6],min_reserve,dp,
-    dec_buf[6],dec_now[6],dec_done[6],fm_type,old_format,
-    n_file;
-  char name_file[NAMLEN],path_raw[NAMLEN],path_mon[NAMLEN],
-    textbuf[80],name_time[NAMLEN],file_done[NAMLEN],param[100],
-    mon_written[NAMLEN],raw_written[NAMLEN],exb_name[NAMLEN];
-  /* int32_w buf_raw[MAX_SR],buf_mon[SR_MON][2]; */
-  FILE *fp,*f_mon,*f_raw;
+static char rcsid[] =
+  "$Id: fromtape.c,v 1.7.2.3.2.7 2010/02/17 10:13:33 uehira Exp $";
+
+static uint8_w wbuf[SIZE_WBUF],buf[MAXSIZE];
+static int fd_exb,dec_start[6],dec_end[6],min_reserve,
+  dec_buf[6],dec_now[6],dec_done[6],fm_type,old_format,
+  n_file;
+static char name_file[NAMLEN],path_raw[NAMLEN],path_mon[NAMLEN],
+  textbuf[80],name_time[NAMLEN],file_done[NAMLEN],
+  mon_written[NAMLEN],raw_written[NAMLEN],exb_name[NAMLEN];
+/* int32_w buf_raw[MAX_SR],buf_mon[SR_MON][2]; */
+static FILE *fp,*f_mon,*f_raw;
+
 /* moved to winlib.h */
 /*  int e_ch[241]={
     0x0000,0x0001,0x0002,0x0003,0x0004,0x0005,0x0006,0x0007,
@@ -87,9 +95,19 @@
     0x00ED,0x00EE,0x00EF,0x00F0,0x00F1,0x00F2,0x00F3,0x00F4,
     0x00F5};*/
 
-end_process(value)
-  int value;
+/* prototypes */
+static void end_process(int);
+static void print_usage(void);
+static int mt_pos(int, int);
+static void get_pos(void);
+static void change_file(int, int, int);
+static int read_exb(void);
+int main(int, char *[]);
+
+static void
+end_process(int value)
   {
+
   close(fd_exb);
   if(f_raw!=NULL)
     {
@@ -109,23 +127,23 @@ end_process(value)
   exit(value);
   }
 
+static void
 print_usage()
   {
-  printf("usage of 'fromtape' :\n");
-  printf(" 'fromtape ([-options]) [YYMMDD.HHMM(1)] [YYMMDD.HHMM(2)] [raw dir] ([mon dir])'\n");
-  printf("         options: -f [tape device name]\n");
-  printf("                  -n [N of buffer files(>=5)]\n");  
-  printf("                  -s      - control by 'USED' file\n");  
+
+  WIN_version();
+  fprintf(stderr,"%s\n",rcsid);
+  fprintf(stderr,"usage of 'fromtape' :\n");
+  fprintf(stderr," 'fromtape ([-options]) [YYMMDD.HHMM(1)] [YYMMDD.HHMM(2)] [raw dir] ([mon dir])'\n");
+  fprintf(stderr,"         options: -f [tape device name]\n");
+  fprintf(stderr,"                  -n [N of buffer files(>=5)]\n");  
+  fprintf(stderr,"                  -s      - control by 'USED' file\n");  
   }
 
-main(argc,argv)
-  int argc;
-  char *argv[];
+int
+main(int argc, char *argv[])
   {
-  char *ptr;
-  extern int optind;
-  extern char *optarg;
-  int i,c,optbase,max_file,handshake;
+  int c,optbase,max_file,handshake;
 
   printf("***** fromtape start *****\n");
 /* open exabyte device */
@@ -170,7 +188,7 @@ main(argc,argv)
   f_mon=f_raw=NULL;
   /* read one block */
   read_exb();
-  bcd_dec(dec_now,(char *)buf+4);
+  bcd_dec(dec_now,buf+4);
   printf("\r%02x%02x%02x %02x%02x%02x  %5d",buf[4],buf[5],
     buf[6],buf[7],buf[8],buf[9],mkuint4(buf));
   fflush(stdout);
@@ -205,15 +223,15 @@ main(argc,argv)
     dec_end[0],dec_end[1],dec_end[2],
     dec_end[3],dec_end[4],dec_end[5]);
   printf("output directory (raw) : %s\n",path_raw);
-  sprintf(raw_written,"%s/LATEST",path_raw);
+  sprintf(raw_written,"%s/%s",path_raw,FROMTAPE_LATEST);
   if(argc>4+optbase)
     {
     sscanf(argv[4+optbase],"%s",path_mon);
     printf("output directory (mon) : %s\n",path_mon);
-    sprintf(mon_written,"%s/LATEST",path_mon);
-    sprintf(file_done,"%s/USED",path_mon);
+    sprintf(mon_written,"%s/%s",path_mon,FROMTAPE_LATEST);
+    sprintf(file_done,"%s/%s",path_mon,PMON_USED);
     }
-  else sprintf(file_done,"%s/USED",path_raw);
+  else sprintf(file_done,"%s/%s",path_raw,ECORE_USED);
   if(max_file>0)
     {
     printf("N of files buffered = %d ",max_file);
@@ -237,7 +255,7 @@ main(argc,argv)
       }
     if(time_cmp(dec_now,dec_end,6)==0) break;
     read_exb();
-    bcd_dec(dec_now,(char *)buf+4);
+    bcd_dec(dec_now,buf+4);
     printf("\r%02x%02x%02x %02x%02x%02x  %5d",buf[4],buf[5],
       buf[6],buf[7],buf[8],buf[9],mkuint4(buf));
     fflush(stdout);
@@ -246,11 +264,12 @@ main(argc,argv)
   end_process(0);
   }
 
-mt_pos(fmc,blc)
-  int fmc,blc;
+static int
+mt_pos(int fmc, int blc)
   {
   struct mtop exb_param;
   int re;
+
   re=0;
   if(fmc)
     {
@@ -269,7 +288,7 @@ mt_pos(fmc,blc)
       perror("error in space fms");
       printf("processing continues ... ");
       fflush(stdout);
-      return re;
+      return (re);
       }
     }
   if(blc)
@@ -289,24 +308,26 @@ mt_pos(fmc,blc)
       perror("error in space records");
       printf("processing continues ... ");
       fflush(stdout);
-      return re;
+      return (re);
       }
     }
-  return re;
+  return (re);
   }
 
+static void
 get_pos()
   {
   int i,try_count,fm_count,bl_count,bl_count_last,advanced,
     sec_togo,sec_togo_last;
   static double blpersec=1.0;
+
   try_count=0;
   do
     {
     if(try_count++==TRY_LIMIT)
       {
       printf("specified time not found !\n");
-      return(1);
+      return;
       }
 
   /* obtain space counts */
@@ -372,17 +393,18 @@ get_pos()
     mt_pos(fm_count,bl_count);    /* positioning */
     printf("\n");
     read_exb();           /* read one block */
-    bcd_dec(dec_now,(char *)buf+4);
+    bcd_dec(dec_now,buf+4);
     printf("\r%02x%02x%02x %02x%02x%02x  %5d",buf[4],buf[5],
       buf[6],buf[7],buf[8],buf[9],mkuint4(buf));
     fflush(stdout);
     } while(time_cmp(dec_start,dec_now,6));
   }
 
-change_file(argc,max_file,handshake)
-  int argc,max_file,handshake;
+static void
+change_file(int argc, int max_file, int handshake)
   {
   int i,j;
+
   if(f_raw!=NULL)
     {
     fclose(f_raw);
@@ -477,15 +499,18 @@ change_file(argc,max_file,handshake)
     }
   }
 
+static int
 read_exb()
   {
-  int cnt,re,size,blocking,dec[6];
-  struct mtop exb_param;
-  char *ptr;
+  int cnt,blocking,dec[6];
+  ssize_t re;
+  uint32_w  size;
+  uint8_w *ptr;
+
   cnt=0;
   while(1)
     {
-    while((re=read(fd_exb,(char *)buf,MAXSIZE))==0)
+    while((re=read(fd_exb,buf,MAXSIZE))==0)
       { /* file mark */
       close(fd_exb);
       if((fd_exb=open(exb_name,O_RDONLY))==-1)
@@ -498,18 +523,18 @@ read_exb()
       {
       blocking=1;
       size=mkuint4(buf);
-      if(size<0) continue;
-      if(bcd_dec(dec,(char *)buf+4)==0) continue;
+      /* if(size<0) continue; */  /* nonsense! */
+      if(bcd_dec(dec,buf+4)==0) continue;
 #if DEBUG
-      printf("(%d/%d)",re,size);
+      printf("(%ld/%u)",re,size);
 #endif
-      ptr=(char *)buf;
+      ptr=buf;
       while(size>re)
         {
         re=read(fd_exb,ptr+=re,size-=re);
         blocking++;
 #if DEBUG
-        printf("(%d/%d)",re,size);
+        printf("(%ld/%u)",re,size);
 #endif
         }
       if(re>0) break;
@@ -520,5 +545,5 @@ read_exb()
     if(cnt==TRY_LIMIT/2) mt_pos(-2,0); /* overrun ? */
     else if(cnt==TRY_LIMIT) end_process(1);
     }
-  return blocking;
+  return (blocking);
   }

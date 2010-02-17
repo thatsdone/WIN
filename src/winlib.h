@@ -1,4 +1,4 @@
-/* $Id: winlib.h,v 1.1.2.7.2.20 2010/02/17 08:33:21 uehira Exp $ */
+/* $Id: winlib.h,v 1.1.2.7.2.21 2010/02/17 10:13:33 uehira Exp $ */
 
 #ifndef _WIN_LIB_H_
 #define _WIN_LIB_H_
@@ -111,6 +111,15 @@ typedef uint32_w  WIN_sr;
 #define WTAPE_EXABYTE  "EXABYTE"
 #define WTAPE_TOTAL    "TOTAL"
 #define N_EXABYTE      8
+
+/* 'fromtape' process makes the following files */
+#define FROMTAPE_LATEST  "LATEST"
+
+/* 'pmon' process makes the following files */
+#define PMON_USED   "USED"
+
+/* 'ecore' process makes the following files */
+#define ECORE_USED  "USED"
 
 /* 'insert_raw' process makes the following file */
 #define INSERT_RAW_USED  "USED_RAW"

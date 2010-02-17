@@ -1,4 +1,7 @@
- $Id: ChangeLog,v 1.131.2.25.2.39 2010/02/16 10:24:42 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.40 2010/02/17 08:33:20 uehira Exp $
+
+2010-02-17  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* e_ch[241] array moved to 'winlib.h'. (for old format)
 
 2010-02-16  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* src/wtape.c : 64 bit clean?

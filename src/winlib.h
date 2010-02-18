@@ -1,4 +1,4 @@
-/* $Id: winlib.h,v 1.1.2.7.2.21 2010/02/17 10:13:33 uehira Exp $ */
+/* $Id: winlib.h,v 1.1.2.7.2.22 2010/02/18 07:05:31 uehira Exp $ */
 
 #ifndef _WIN_LIB_H_
 #define _WIN_LIB_H_
@@ -80,6 +80,14 @@ typedef uint32_w  WIN_sr;
 
 #define SR_MON       5   /* sampling rate of MON */
 #define TIME_OFFSET ((time_t)0)  /* time(0) offset */
+
+/* MT device */
+#define   TRY_LIMIT 16
+#define   TIME1   "9005151102"  /* 10 m / fm before this time */
+#define   TIME2   "9005161000"  /* no fms before this time */
+                    /* 60 m / fm after this time */
+#define   TIME3   "9008031718"  /* 10 m / fm after this time */
+
 
 /* 'wdisk' process makes the following files */
 #define WDISK_OLDEST  "OLDEST"
@@ -219,7 +227,8 @@ static uint8_w d2b[] = {
    (3) not differential data, 
    (4) epo channel 0-241 (not real ch)
 
-   used in win.c. rtape.c fromtape.c
+   used in 'win.c', 'rtape.c'.
+   defined in 'fromtape.c', but not used.
    -*/
 static int e_ch[241] = {
   0x0000, 0x0001, 0x0002, 0x0003, 0x0004, 0x0005, 0x0006, 0x0007,
@@ -291,6 +300,12 @@ WIN_ch get_chlist_chfile(FILE *, WIN_ch []);
 WIN_bs get_select_data(uint8_w *, WIN_ch [], WIN_ch, uint8_w *, WIN_bs);
 int WIN_time_hani(char [], int [], int []);
 int read_channel_file(FILE *, struct channel_tbl [], int);
+
+/* MT device */
+#if HAVE_SYS_MTIO_H
+int mt_pos(int, int, int);
+int read_exb1(char [], int, uint8_w *, size_t);
+#endif
 
 /* winlib_log.c */
 int find_oldest(char *, char *);

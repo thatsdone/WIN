@@ -1,4 +1,4 @@
-/* $Id: rtape.c,v 1.9.2.3.2.5 2010/02/17 08:33:20 uehira Exp $ */
+/* $Id: rtape.c,v 1.9.2.3.2.6 2010/02/18 07:05:31 uehira Exp $ */
 /*
   program "rtape.c"
   9/16/89 - 11/06/90, 6/26/91, 10/30/91, 6/26/92  urabe
@@ -35,14 +35,15 @@
 #include "winlib.h"
 
 /* #define   DEBUG     0 */
-#define   TRY_LIMIT 16
+/* #define   TRY_LIMIT 16 */  /* moved to winlib.h */
 #define   NAMLEN    256
 #define   MAXSIZE   2000000
 
-#define   TIME1   "9005151102"  /* 10 m / fm before this time */
-#define   TIME2   "9005161000"  /* no fms before this time */
+/* moved to winlib.h */
+/* #define   TIME1   "9005151102" */  /* 10 m / fm before this time */
+/* #define   TIME2   "9005161000" */  /* no fms before this time */
                     /* 60 m / fm after this time */
-#define   TIME3   "9008031718"  /* 10 m / fm after this time */
+/* #define   TIME3   "9008031718" */  /* 10 m / fm after this time */
 
   unsigned char buf[MAXSIZE],outbuf[MAXSIZE];
   int fd_exb,f_get,leng,dec_start[6],dec_end[6],dec_begin[6],
@@ -102,55 +103,6 @@ print_usage()
   printf("        '920724 035750 60'\n");
   printf("     example of channel list file (in hexadecimal):\n");
   printf("         '101d 101e 101f 1020 1021 1022 1029 102a 102b'\n");
-  }
-
-mt_pos(fmc,blc)
-  int fmc,blc;
-  {
-  struct mtop exb_param;
-  int re;
-  re=0;
-  if(fmc)
-    {
-    if(fmc>0)
-      {
-      exb_param.mt_op=MTFSF;
-      exb_param.mt_count=fmc;
-      }
-    else
-      {
-      exb_param.mt_op=MTBSF;
-      exb_param.mt_count=(-fmc);
-      }
-    if((re=ioctl(fd_exb,MTIOCTOP,(char *)&exb_param))==-1)
-      {
-      perror("error in space fms");
-      printf("processing continues ... ");
-      fflush(stdout);
-      return re;
-      }
-    }
-  if(blc)
-    {
-    if(blc>0)
-      {
-      exb_param.mt_op=MTFSR;
-      exb_param.mt_count=blc;
-      }
-    else
-      {
-      exb_param.mt_op=MTBSR;
-      exb_param.mt_count=(-blc);
-      }
-    if((re=ioctl(fd_exb,MTIOCTOP,(char *)&exb_param))==-1)
-      {
-      perror("error in space records");
-      printf("processing continues ... ");
-      fflush(stdout);
-      return re;
-      }
-    }
-  return re;
   }
 
 get_one_record(blocking)
@@ -240,8 +192,9 @@ get_one_record(blocking)
     bl_count_last=bl_count;
     printf(" skipping %d fms and %d blks ...",fm_count,bl_count);
     fflush(stdout);
-    mt_pos(fm_count,bl_count);  /* positioning */
-    read_exb();  /* read one block */
+    mt_pos(fm_count,bl_count,fd_exb);  /* positioning */
+    if (read_exb1(dev_file, fd_exb, buf, sizeof(buf)) < 0)  /* read one block */
+      end_process(1);
     bcd_dec(dec_now,(char *)buf+4);
     printf("\n%02x%02x%02x %02x%02x%02x  %5d",buf[4],buf[5],
       buf[6],buf[7],buf[8],buf[9],mkuint4(buf));
@@ -261,7 +214,8 @@ get_one_record(blocking)
     re=write(f_get,(char *)outbuf,mkuint4(outbuf));
     if(time_cmp(dec_now,dec_end,6)==0) break;
   /* read one sec */
-    read_exb();
+    if (read_exb1(dev_file, fd_exb, buf, sizeof(buf)) < 0)
+      end_process(1);
     bcd_dec(dec_now,(char *)buf+4);
     if(time_cmp(dec_now,dec_end,6)>0) break;
     printf("\r%02x%02x%02x %02x%02x%02x  %5d",buf[4],buf[5],
@@ -271,50 +225,50 @@ get_one_record(blocking)
   printf(" : done\n");
   }
 
-read_exb()
-  {
-  int cnt,re,size,blocking,dec[6];
-  char *ptr;
-  cnt=0;
-  while(1)
-    {
-    while((re=read(fd_exb,(char *)buf,MAXSIZE))==0)
-      { /* file mark */
-      close(fd_exb);
-      if((fd_exb=open(dev_file,O_RDONLY))==-1)
-        {
-        perror("exabyte unit cannot open : ");
-        exit(1);
-        }
-      }
-    if(re>0)
-      {
-      blocking=1;
-      size=mkuint4(buf);
-      if(size<0) continue;
-      if(bcd_dec(dec,(char *)buf+4)==0) continue;
-#if DEBUG
-      printf("(%d/%d)",re,size);
-#endif
-      ptr=(char *)buf;
-      while(size>re)
-        {
-        re=read(fd_exb,ptr+=re,size-=re);
-        blocking++;
-#if DEBUG
-        printf("(%d/%d)",re,size);
-#endif
-        }
-      if(re>0) break;
-      }
-    /* error */
-    perror("exabyte");
-    cnt++;
-    if(cnt==TRY_LIMIT/2) mt_pos(-2,0); /* overrun ? */
-    else if(cnt==TRY_LIMIT) end_process(1);
-    }
-  return blocking;
-  }
+/* read_exb() */
+/*   { */
+/*   int cnt,re,size,blocking,dec[6]; */
+/*   char *ptr; */
+/*   cnt=0; */
+/*   while(1) */
+/*     { */
+/*     while((re=read(fd_exb,(char *)buf,MAXSIZE))==0) */
+/*       { /\* file mark *\/ */
+/*       close(fd_exb); */
+/*       if((fd_exb=open(dev_file,O_RDONLY))==-1) */
+/*         { */
+/*         perror("exabyte unit cannot open : "); */
+/*         exit(1); */
+/*         } */
+/*       } */
+/*     if(re>0) */
+/*       { */
+/*       blocking=1; */
+/*       size=mkuint4(buf); */
+/*       if(size<0) continue; */
+/*       if(bcd_dec(dec,(char *)buf+4)==0) continue; */
+/* #if DEBUG */
+/*       printf("(%d/%d)",re,size); */
+/* #endif */
+/*       ptr=(char *)buf; */
+/*       while(size>re) */
+/*         { */
+/*         re=read(fd_exb,ptr+=re,size-=re); */
+/*         blocking++; */
+/* #if DEBUG */
+/*         printf("(%d/%d)",re,size); */
+/* #endif */
+/*         } */
+/*       if(re>0) break; */
+/*       } */
+/*     /\* error *\/ */
+/*     perror("exabyte"); */
+/*     cnt++; */
+/*     if(cnt==TRY_LIMIT/2) mt_pos(-2,0,fd_exb); /\* overrun ? *\/ */
+/*     else if(cnt==TRY_LIMIT) end_process(1); */
+/*     } */
+/*   return blocking; */
+/*   } */
 
 select_ch(old_buf,new_buf,old_form)
   unsigned char *old_buf,*new_buf;
@@ -390,7 +344,8 @@ main(argc,argv)
     }
 
   /* read one block */
-  if((blocking=read_exb())<=0) blocking=1;
+  /* if((blocking=read_exb1(dev_file, fd_exb, buf, sizeof(buf)))<=0) blocking=1; */
+  if((blocking=read_exb1(dev_file, fd_exb, buf, sizeof(buf)))==0) blocking=1;
   bcd_dec(dec_begin,(char *)buf+4);
   for(i=0;i<6;i++) dec_now[i]=dec_begin[i];
   sprintf(textbuf,"%02x%02x%02x%02x%02x",buf[4],buf[5],buf[6],buf[7],buf[8]);

@@ -1,4 +1,9 @@
- $Id: ChangeLog,v 1.131.2.25.2.41 2010/02/17 10:13:33 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.42 2010/02/18 07:05:30 uehira Exp $
+
+2010-02-18  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/fromtape.c, src/rtape.c :
+	  mt_pos(), read_exb() [renamed read_exb1()] : moved to 'winlib.c'.
+	  some macros also moved to 'winlib.c'.
 
 2010-02-17  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* e_ch[241] array moved to 'winlib.h'. (for old format)

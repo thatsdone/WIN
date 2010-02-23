@@ -1,4 +1,4 @@
-/* $Id: pmon.c,v 1.14.2.5.2.5 2009/12/26 00:56:59 uehira Exp $ */
+/* $Id: pmon.c,v 1.14.2.5.2.6 2010/02/23 07:28:45 uehira Exp $ */
 /************************************************************************
 *************************************************************************
 **  program "pmon.c" for NEWS/SPARC                             *********
@@ -227,7 +227,7 @@
 0xf0,0x1e,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x40,0x00,0x06,0x10,0xc0,0x00,0x00};
 
 static const char  rcsid[] =
-   "$Id: pmon.c,v 1.14.2.5.2.5 2009/12/26 00:56:59 uehira Exp $";
+   "$Id: pmon.c,v 1.14.2.5.2.6 2010/02/23 07:28:45 uehira Exp $";
 
 char *progname,*logfile;
 int  syslog_mode = 0, exit_status;
@@ -1276,7 +1276,8 @@ main(int argc, char *argv[])
   sscanf(textbuf,"%s",file_zone);
   check_path(file_zone,FILE_R);
   fclose(f_param);
-  if (sizeof(temp_done) <= snprintf(temp_done,sizeof(temp_done),"%s/USED",path_mon1)) {
+  if (sizeof(temp_done) <= snprintf(temp_done,sizeof(temp_done),
+				    "%s/%s",path_mon1,PMON_USED)) {
     snprintf(tb,sizeof(tb),"buffer overflow1");
     write_log(tb);
     owari();

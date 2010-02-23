@@ -1,4 +1,4 @@
-/* $Id: ecore.c,v 1.4.4.2.2.4 2009/08/25 04:00:15 uehira Exp $ */
+/* $Id: ecore.c,v 1.4.4.2.2.5 2010/02/23 07:28:45 uehira Exp $ */
 
 /* ddr news program "ecore.c"
   "ecore.c" works with "fromtape.c"
@@ -168,8 +168,8 @@ main(argc,argv)
   /* read input directory */
   sscanf(argv[3],"%s",path_raw);
   printf("input directory (raw) : %s\n",path_raw);
-  sprintf(file_written,"%s/LATEST",path_raw);
-  sprintf(file_done,"%s/USED",path_raw);
+  sprintf(file_written,"%s/%s",path_raw,WDISK_LATEST); /* or FROMTAPE_LATEST */
+  sprintf(file_done,"%s/%s",path_raw,ECORE_USED);
 
   /* read channel list */
   sscanf(argv[4],"%s",file_list);

@@ -1,4 +1,4 @@
-/* $Id: winlib.h,v 1.1.2.7.2.22 2010/02/18 07:05:31 uehira Exp $ */
+/* $Id: winlib.h,v 1.1.2.7.2.23 2010/02/23 07:28:45 uehira Exp $ */
 
 #ifndef _WIN_LIB_H_
 #define _WIN_LIB_H_
@@ -81,17 +81,19 @@ typedef uint32_w  WIN_sr;
 #define SR_MON       5   /* sampling rate of MON */
 #define TIME_OFFSET ((time_t)0)  /* time(0) offset */
 
-/* MT device */
+/* MT device (fromtape.c rtape.c) */
 #define   TRY_LIMIT 16
 #define   TIME1   "9005151102"  /* 10 m / fm before this time */
 #define   TIME2   "9005161000"  /* no fms before this time */
                     /* 60 m / fm after this time */
 #define   TIME3   "9008031718"  /* 10 m / fm after this time */
 
+/*** process control file ***/
+#define N_LATEST     "LATEST"
 
 /* 'wdisk' process makes the following files */
 #define WDISK_OLDEST  "OLDEST"
-#define WDISK_LATEST  "LATEST"
+#define WDISK_LATEST  N_LATEST
 #define WDISK_BUSY    "BUSY"
 #define WDISK_COUNT   "COUNT"
 #define WDISK_MAX     "MAX"
@@ -121,7 +123,8 @@ typedef uint32_w  WIN_sr;
 #define N_EXABYTE      8
 
 /* 'fromtape' process makes the following files */
-#define FROMTAPE_LATEST  "LATEST"
+/* #define FROMTAPE_LATEST  "LATEST" */
+#define FROMTAPE_LATEST  N_LATEST
 
 /* 'pmon' process makes the following files */
 #define PMON_USED   "USED"

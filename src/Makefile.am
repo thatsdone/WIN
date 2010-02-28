@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.35.2.8 2009/12/16 08:32:07 uehira Exp $
+# $Id: Makefile.am,v 1.35.2.9 2010/02/28 08:59:16 uehira Exp $
 #
 
 if SUNOS4
@@ -32,6 +32,16 @@ else
 IPV6_PGM =
 endif
 
+if MT_HEADER
+FROMTAPE = fromtape
+RTAPE = rtape
+WTAPE = wtape
+else
+FROMTAPE =
+RTAPE =
+WTAPE =
+endif
+
 if GC_MEMORY_LEAK_TEST
 GC_CHECK_INCLUDE = gc_leak_detector.h
 GC_CHECK_LIB = -lgc
@@ -54,9 +64,9 @@ OFFLINE_USER=$(OFFLINE_X) $(OFFLINE_F77) wed wck wadd $(OFFLINE_MATH) wchch pick
              pick2finalb_SEVO \
              wform wintowin $(OFFLINE_USER_MATH) winadd wck_wdisk wadd2 \
              win2raw wchasn ls8tel16_win ls8tel_STM ls8tel_STS select_bylatlon
-TAPE_USER=rtape fromtape wdisk wdiskts ras2rpdl ras2lips file_older raw2mon \
+TAPE_USER=$(RTAPE) $(FROMTAPE) wdisk wdiskts ras2rpdl ras2lips file_older raw2mon \
           $(TAPE_USER_MATH)
-ONLINE=order raw_mon wtape setexb timeout raw_raw raw_100 cormeisei shmdump \
+ONLINE=order raw_mon $(WTAPE) setexb timeout raw_raw raw_100 cormeisei shmdump \
 	raw_ch extraw insert_raw insert_trg find_picks raw_shift ls8tel16_raw\
 	winrandsimu6\
 	raw_clip \

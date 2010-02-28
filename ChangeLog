@@ -1,4 +1,10 @@
- $Id: ChangeLog,v 1.160 2010/02/16 11:15:58 uehira Exp $
+ $Id: ChangeLog,v 1.161 2010/02/28 08:58:44 uehira Exp $
+
+2010-02-28  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 1.1.96 released.
+	* configure.in : check sys/mtio.h (for fromtape, rtape, wtape).
+	If sys/mtio.h does not exist, these programs are not compiled
+	(ex. Mac OS X 10.6).
 
 2010-02-16  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* Version 1.1.95 released.

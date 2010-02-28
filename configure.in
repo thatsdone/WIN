@@ -1,9 +1,9 @@
 dnl ------------------------------------------------------------------------- 
-dnl $Id: configure.in,v 1.118 2010/02/16 11:15:58 uehira Exp $
+dnl $Id: configure.in,v 1.119 2010/02/28 08:58:45 uehira Exp $
 dnl -------------------------------------------------------------------------
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT(src/win.c)
-AM_INIT_AUTOMAKE(WIN_pkg, 1.1.95)
+AM_INIT_AUTOMAKE(WIN_pkg, 1.1.96)
 AM_CONFIG_HEADER(config.h)
 AC_ARG_PROGRAM
 AC_CANONICAL_TARGET
@@ -70,7 +70,7 @@ AC_PATH_X
 AC_PATH_XTRA
 AC_HEADER_DIRENT
 AC_HEADER_STDC
-AC_CHECK_HEADERS(fcntl.h sys/file.h sys/ioctl.h sys/time.h syslog.h unistd.h stdarg.h varargs.h sys/param.h sys/mount.h sys/vfs.h sys/statvfs.h sys/statvfs.h arpa/inet.h)
+AC_CHECK_HEADERS(fcntl.h sys/file.h sys/ioctl.h sys/time.h syslog.h unistd.h stdarg.h varargs.h sys/param.h sys/mount.h sys/vfs.h sys/statvfs.h sys/statvfs.h arpa/inet.h sys/mtio.h)
 
 dnl Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
@@ -260,6 +260,19 @@ dnl -------------------------------------------------------------------------
 dnl X src compile or not
 dnl -------------------------------------------------------------------------
 AM_CONDITIONAL(NO_X_SRC, test x$no_x = xyes)
+
+dnl -------------------------------------------------------------------------
+dnl MT device check. check sys/mtio.h exists or not.
+dnl     (for fromtape, rtape, wtape)
+dnl -------------------------------------------------------------------------
+AM_CONDITIONAL(MT_HEADER, false)
+AC_CHECK_HEADER(sys/mtio.h, [have_mt_header="yes"], [have_mt_header="no"])
+if test x$have_mt_header = "xno"; then
+	AC_MSG_WARN(sys/mtio.h does not exist.)
+	AC_MSG_WARN(Fllowing programs are not compiled :fromtape rtape wtape)
+else
+	AM_CONDITIONAL(MT_HEADER, true)
+fi
 
 dnl -------------------------------------------------------------------------
 dnl output Makefile

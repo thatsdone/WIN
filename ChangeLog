@@ -1,4 +1,10 @@
- $Id: ChangeLog,v 1.131.2.25.2.43 2010/02/23 07:28:44 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.44 2010/02/28 09:09:05 uehira Exp $
+
+2010-02-28  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/pltxy.[ch] : created.
+	* hypomhc.c, select_bylatlon.c, select_stations.c, win.c :
+	  pltxy() moved to 'pltxy.c'.
+	* Version 2.0.10 released.
 
 2010-02-18  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* src/fromtape.c, src/rtape.c :

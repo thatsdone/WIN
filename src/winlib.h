@@ -1,4 +1,4 @@
-/* $Id: winlib.h,v 1.1.2.7.2.23 2010/02/23 07:28:45 uehira Exp $ */
+/* $Id: winlib.h,v 1.1.2.7.2.24 2010/02/28 09:09:07 uehira Exp $ */
 
 #ifndef _WIN_LIB_H_
 #define _WIN_LIB_H_
@@ -21,6 +21,7 @@
 #endif				/* !TIME_WITH_SYS_TIME */
 
 #include "filter.h"
+#include "pltxy.h"
 #include "win_log.h"
 
 #include "subst_func.h"

@@ -1,4 +1,4 @@
-/* $Id: wtape.c,v 1.12.2.4.2.5 2010/02/18 07:05:31 uehira Exp $ */
+/* $Id: wtape.c,v 1.12.2.4.2.6 2010/02/28 09:09:07 uehira Exp $ */
 /*
   program "wtape.c"
   8/23/89 - 8/8/90, 6/27/91, 12/24/91, 2/29/92  urabe
@@ -57,7 +57,7 @@
 #define   WIN_FILENAME_MAX 1024
 
 static char rcsid[] = 
-  "$Id: wtape.c,v 1.12.2.4.2.5 2010/02/18 07:05:31 uehira Exp $";
+  "$Id: wtape.c,v 1.12.2.4.2.6 2010/02/28 09:09:07 uehira Exp $";
 
 static uint8_w buf[SIZE_MAX];
 static int init_flag,wfm,new_tape,switch_req,fd_exb,exb_status[N_EXABYTE],
@@ -497,7 +497,7 @@ main(int argc, char *argv[])
   {
   FILE *fp;
   char tb[100];
-  int i,io_error,unit,f_get,last_min,tm[5];
+  int i,io_error,unit,f_get,last_min=0,tm[5];
   uint32_w  j;
   size_t  cnt;
   ssize_t  re;

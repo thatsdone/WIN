@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.38.2.10.2.9 2010/02/16 10:24:42 uehira Exp $
+# $Id: Makefile.am,v 1.38.2.10.2.10 2010/02/28 09:09:06 uehira Exp $
 #
 
 if SUNOS4
@@ -82,8 +82,8 @@ WIN_LOG = win_log.h win_log.c win_externs.h winlib_log.c
 UDP_UTILITY = udpu.h udp_accept.c udp_dest.c
 TCP_UTILITY = tcpu.h tcp_connect.c
 
-WIN_LIBH=winlib.h win_log.h filter.h $(SUBFUNC_H)
-WIN_LIBC=winlib.c
+WIN_LIBH=winlib.h win_log.h filter.h pltxy.h $(SUBFUNC_H)
+WIN_LIBC=winlib.c filter.c pltxy.c
 
 WIN_SYSTEM_LIB = libwinsystem.a
 #WIN_SYSTEM_LIB2 = libwinsystem2.a
@@ -126,7 +126,7 @@ install-exec-hook:
 	(rm -f @bindir@/recvstatus4d; cd @bindir@ && @LN_S@ recvstatus4 recvstatus4d)
 	(rm -f @bindir@/ls8tel16_rawd; cd @bindir@ && @LN_S@ ls8tel16_raw ls8tel16_rawd)
 	(rm -f @bindir@/recvt_LS7000d; cd @bindir@ && @LN_S@ recvt_LS7000 recvt_LS7000d)
-libwinsystem_a_SOURCES = $(WIN_LIBH) $(WIN_LIBC) filter.c $(WIN_LOG)
+libwinsystem_a_SOURCES = $(WIN_LIBH) $(WIN_LIBC) $(WIN_LOG)
 #libwinsystem2_a_SOURCES = $(WIN_UTIL) $(DAEMON_MODE) $(WIN_LOG) $(UDP_UTILITY) $(TCP_UTILITY)
 
 win_SOURCES = win.c $(WIN_LIBH)
@@ -157,7 +157,7 @@ dewin_LDADD = $(WIN_SYSTEM_LIB) -lm
 wintosac_SOURCES = wintosac.c
 wintosac_LDADD = -lm
 
-select_stations_SOURCES = select_stations.c $(SUBFUNC_H)
+select_stations_SOURCES = select_stations.c pltxy.c pltxy.h $(SUBFUNC_H)
 select_stations_LDADD = -lm
 
 wchch_SOURCES = wchch.c $(WIN_LIBH)
@@ -311,7 +311,7 @@ recvts_LDADD = $(WIN_SYSTEM_LIB)
 
 hypomh_SOURCES = hypomh.f
 
-hypomhc_SOURCES = hypomhc.c $(SUBFUNC_H)
+hypomhc_SOURCES = hypomhc.c pltxy.c pltxy.h $(SUBFUNC_H)
 hypomhc_LDADD = -lm
 
 sends_SOURCES = sends.c $(WIN_LIBH)
@@ -368,6 +368,6 @@ evdetect_LDADD = $(WIN_SYSTEM_LIB) -lm
 winrandsimu6_SOURCES = winrandsimu6.c $(SUBFUNC_H)
 winrandsimu6_LDADD = @LIBSHMGET@ -lm
 
-select_bylatlon_SOURCES = select_bylatlon.c $(SUBFUNC_H)
+select_bylatlon_SOURCES = select_bylatlon.c pltxy.c pltxy.h $(SUBFUNC_H)
 select_bylatlon_LDADD = -lm
 

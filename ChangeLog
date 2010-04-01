@@ -1,4 +1,8 @@
- $Id: ChangeLog,v 1.131.2.25.2.45 2010/04/01 09:24:06 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.46 2010/04/01 14:03:31 uehira Exp $
+
+2010-04-01  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* use libtool (ver.2.2.6b) for shared library.
+	* Version 2.0.11 released.
 
 2010-03-06  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* src/cvt.[ch] : created. u-law audio format.

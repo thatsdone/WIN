@@ -1,4 +1,8 @@
- $Id: ChangeLog,v 1.131.2.25.2.44 2010/02/28 09:09:05 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.45 2010/04/01 09:24:06 uehira Exp $
+
+2010-03-06  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/cvt.[ch] : created. u-law audio format.
+	* src/dewin.c : cvt() moved to 'cvt.c'.
 
 2010-02-28  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* src/pltxy.[ch] : created.

@@ -1,4 +1,5 @@
-/* $Id: dewin.c,v 1.4.4.3.2.5 2009/08/25 04:00:15 uehira Exp $ */
+/* $Id: dewin.c,v 1.4.4.3.2.6 2010/04/01 09:16:24 uehira Exp $ */
+
 /* program dewin  1994.4.11-4.20  urabe */
 /*                1996.2.23 added -n option */
 /*                1996.9.12 added -8 option */
@@ -19,10 +20,12 @@
 #include  <string.h>
 #include  <signal.h>
 #include  <unistd.h>
+#include  <limits.h>
 
 #include  <math.h>
 
 #include "winlib.h"
+
 
 /* #define   DEBUG   0 */
 
@@ -31,10 +34,13 @@
 /* #define MAX_SR      20000 */
 #define MAX_SR      HEADER_5B
 
-  int buf[MAX_SR];
-  double dbuf[MAX_SR];
-  long au_header[]={0x2e736e64,0x00000020,0xffffffff,0x00000001,
-                    0x00001f40,0x00000001,0x00000000,0x00000000};
+static const char  rcsid[] =
+   "$Id: dewin.c,v 1.4.4.3.2.6 2010/04/01 09:16:24 uehira Exp $";
+
+static int32_w buf[MAX_SR];
+static double dbuf[MAX_SR];
+static long au_header[]={0x2e736e64,0x00000020,0xffffffff,0x00000001,
+		  0x00001f40,0x00000001,0x00000000,0x00000000};
 
 struct Filter
 {
@@ -46,6 +52,14 @@ struct Filter
    double gn_filt;     /* gain factor of filter */ 
 };
 
+/* prototypes */
+static void wabort(void);
+static void print_usage(void);
+static WIN_sr read_one_sec(uint8_w *, WIN_ch, register int32_w *);
+static void get_filter(WIN_sr, struct Filter *);
+int main(int, char *[]);
+
+static void
 wabort() {exit(0);}
 
 /* bcd_dec(dest,sour) */
@@ -57,8 +71,12 @@ wabort() {exit(0);}
 /*     dest[cntr]=((sour[cntr]>>4)&0xf)*10+(sour[cntr]&0xf); */
 /*   } */
 
+static void
 print_usage()
   {
+
+  WIN_version();
+  (void)fprintf(stderr, "%s\n", rcsid);
   fprintf(stderr,"usage: dewin (-camn) (-f [filter file]) [ch no.(in hex)] ([input file])\n");
   fprintf(stderr,"        -c  character output\n");
   fprintf(stderr,"        -a  audio format (u-law) output\n");
@@ -67,100 +85,31 @@ print_usage()
   fprintf(stderr,"        -f  [filter file] filter paramter file\n");
   }
 
-read_one_sec(ptr,ch,abuf)
-  uint8_w            *ptr; /* input */
-  uint16_w             ch; /* input */
-  register int32_w  *abuf; /* output */
+static WIN_sr
+read_one_sec(uint8_w *ptr, WIN_ch ch, register int32_w *abuf)
+  /* uint8_w            *ptr; /\* input *\/ */
+  /* WIN_ch              ch; /\* input *\/ */
+  /* register int32_w  *abuf; /\* output *\/ */
   {
-  uint32_w g_size,s_rate;
+  uint32_w g_size;
+  WIN_sr   s_rate;
   register uint8_w *dp;
   uint8_w *ddp;
-  uint16_w  sys_ch;
+  WIN_ch   sys_ch;
 
   dp=ptr+10;
   ddp=ptr+mkuint4(ptr);
   while(1)
     {
-    if((g_size=win2fix(dp,abuf,&sys_ch,&s_rate))==0) return 0;
-    if(sys_ch==ch) return s_rate;
-    if((dp+=g_size)>=ddp) return 0;
+    if((g_size=win2fix(dp,abuf,&sys_ch,&s_rate))==0) return (0);
+    if(sys_ch==ch) return (s_rate);
+    if((dp+=g_size)>=ddp) return (0);
     }
-  return 0;
+  return (0);
   }
 
-/************************************************************************/
-/*      Copyright 1989 by Rich Gopstein and Harris Corporation          */
-/*                                                                      */
-/*      Permission to use, copy, modify, and distribute this software   */
-/*      and its documentation for any purpose and without fee is        */
-/*      hereby granted, provided that the above copyright notice        */
-/*      appears in all copies and that both that copyright notice and   */
-/*      this permission notice appear in supporting documentation, and  */
-/*      that the name of Rich Gopstein and Harris Corporation not be    */
-/*      used in advertising or publicity pertaining to distribution     */
-/*      of the software without specific, written prior permission.     */
-/*      Rich Gopstein and Harris Corporation make no representations    */
-/*      about the suitability of this software for any purpose.  It     */
-/*      provided "as is" without express or implied warranty.           */
-/************************************************************************/
-
-/************************************************************************/
-/* sound2sun.c - Convert sampled audio files into uLAW format for the   */
-/*               Sparcstation 1.                                        */
-/*               Send comments to ..!rutgers!soleil!gopstein            */
-/************************************************************************/
-/*									*/
-/*  Modified November 27, 1989 to convert to 8000 samples/sec           */
-/*   (contrary to man page)                                             */
-/*  Modified December 13, 1992 to write standard Sun .au header with	*/
-/*   unspecified length.  Also made miscellaneous changes for 		*/
-/*   VMS port.  (K. S. Kubo, ken@hmcvax.claremont.edu)			*/
-/*  Fixed Bug with converting slow sample speeds			*/
-/*									*/
-/************************************************************************/
-
-/* convert two's complement ch into uLAW format */
-
-unsigned int
-cvt(ch)
-     int ch;
-{
-
-  int mask;
-
-  if (ch < 0) {
-    ch = -ch;
-    mask = 0x7f;
-  } else {
-    mask = 0xff;
-  }
-
-  if (ch < 32) {
-    ch = 0xF0 | 15 - (ch / 2);
-  } else if (ch < 96) {
-    ch = 0xE0 | 15 - (ch - 32) / 4;
-  } else if (ch < 224) {
-    ch = 0xD0 | 15 - (ch - 96) / 8;
-  } else if (ch < 480) {
-    ch = 0xC0 | 15 - (ch - 224) / 16;
-  } else if (ch < 992) {
-    ch = 0xB0 | 15 - (ch - 480) / 32;
-  } else if (ch < 2016) {
-    ch = 0xA0 | 15 - (ch - 992) / 64;
-  } else if (ch < 4064) {
-    ch = 0x90 | 15 - (ch - 2016) / 128;
-  } else if (ch < 8160) {
-    ch = 0x80 | 15 - (ch - 4064) /  256;
-  } else {
-    ch = 0x80;
-  }
-return (mask & ch);
-}
-    /*ulaw = cvt(chr * 16);*/
-
-get_filter(sr,f)
-     int    sr;
-     struct Filter  *f;
+static void
+get_filter(WIN_sr sr, struct Filter *f)
 {
    double   dt;
 
@@ -181,18 +130,18 @@ get_filter(sr,f)
    }
 }
 
-main(argc,argv)
-  int argc;
-  char *argv[];
+int
+main(int argc, char *argv[])
   {
-  int i,j,k,sec,mainsize,sr,sr_save,c,form,nofill,zero,minblock,
+  int j,k,c,form,nofill,zero=0,minblock,
     time1[6],time2[6],time3[6];
-  unsigned long sysch;
-  static unsigned char *mainbuf;
+  unsigned long  i, sec;   /* 64bit ok */
+  WIN_bs  mainsize;
+  WIN_sr  sr, sr_save;
+  WIN_ch sysch;
+  static uint8_w *mainbuf=NULL;
   FILE *f_main,*f_filter;
-  unsigned char cc;
-  extern int optind;
-  extern char *optarg;
+  uint8_w cc;
   char  txtbuf[LINELEN];
   int   filter_flag;
   struct Filter flt;
@@ -291,7 +240,7 @@ main(argc,argv)
      exit(1);
   }
 
-  sysch=strtol(argv[optind+1],0,16);
+  sysch=(WIN_ch)strtol(argv[optind+1],0,16);
 
   if(argc<3+optind) f_main=stdin;
   else if((f_main=fopen(argv[2+optind],"r"))==NULL){
@@ -299,7 +248,8 @@ main(argc,argv)
      exit(1);
   }
 
-  sec=sr_save=i=0;
+  sr_save=0;
+  sec=i=0;
   while((mainsize=read_onesec_win(f_main,&mainbuf))){
      if((sr=read_one_sec(mainbuf,sysch,buf))==0) continue;
      bcd_dec(time3,mainbuf+4);
@@ -370,7 +320,7 @@ main(argc,argv)
         }
 	for(j=0;j<sr;j++){
 	   buf[j]-=zero;
-	   cc=cvt(buf[j]*256);
+	   cc=(uint8_w)cvt(buf[j]*256);
 	   /*        fprintf(stderr,"%d %d\n",buf[j],cc);*/
 	   fwrite(&cc,1,1,stdout);
         }
@@ -382,7 +332,7 @@ main(argc,argv)
      bcd_dec(time2,mainbuf+4);
      sec++;
   }
-  fprintf(stderr,"%02d%02d%02d.%02d%02d%02d (%d[%d] blks)\n",
+  fprintf(stderr,"%02d%02d%02d.%02d%02d%02d (%lu[%lu] blks)\n",
 	  time3[0],time3[1],time3[2],time3[3],time3[4],time3[5],i,sec);
   exit(0);
 }

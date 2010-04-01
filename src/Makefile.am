@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.38.2.10.2.10 2010/02/28 09:09:06 uehira Exp $
+# $Id: Makefile.am,v 1.38.2.10.2.11 2010/04/01 09:16:24 uehira Exp $
 #
 
 if SUNOS4
@@ -82,8 +82,8 @@ WIN_LOG = win_log.h win_log.c win_externs.h winlib_log.c
 UDP_UTILITY = udpu.h udp_accept.c udp_dest.c
 TCP_UTILITY = tcpu.h tcp_connect.c
 
-WIN_LIBH=winlib.h win_log.h filter.h pltxy.h $(SUBFUNC_H)
-WIN_LIBC=winlib.c filter.c pltxy.c
+WIN_LIBH=winlib.h win_log.h filter.h pltxy.h cvt.h $(SUBFUNC_H)
+WIN_LIBC=winlib.c filter.c pltxy.c cvt.c
 
 WIN_SYSTEM_LIB = libwinsystem.a
 #WIN_SYSTEM_LIB2 = libwinsystem2.a

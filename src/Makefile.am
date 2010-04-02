@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.38.2.10.2.12 2010/04/01 14:03:32 uehira Exp $
+# $Id: Makefile.am,v 1.38.2.10.2.13 2010/04/02 03:32:05 uehira Exp $
 #
 
 if SUNOS4
@@ -42,6 +42,12 @@ RTAPE =
 WTAPE =
 endif
 
+if NO_FORTRAN
+OFFLINE_F77=
+else
+OFFLINE_F77=hypomh
+endif
+
 if GC_MEMORY_LEAK_TEST
 GC_CHECK_INCLUDE = gc_leak_detector.h
 GC_CHECK_LIB = -lgc
@@ -57,7 +63,6 @@ ONLINE_MATH=ecore ecore2 raw_time winrandsimu6
 OFFLINE_USER_MATH=wtime
 #OFFLINE_MATH=dewin select_stations
 OFFLINE_MATH=dewin select_stations hypomhc wintosac select_bylatlon
-OFFLINE_F77=hypomh
 
 OFFLINE_USER=$(OFFLINE_X) $(OFFLINE_F77) wed wck wadd $(OFFLINE_MATH) wchch pick2tseis \
              wch pick2finalb pick2final finalb2final final2finalb finalb2seis \
@@ -133,10 +138,41 @@ install-exec-hook:
 	(rm -f @bindir@/ls8tel16_rawd; cd @bindir@ && @LN_S@ ls8tel16_raw ls8tel16_rawd)
 	(rm -f @bindir@/recvt_LS7000d; cd @bindir@ && @LN_S@ recvt_LS7000 recvt_LS7000d)
 
+uninstall-hook:
+	rm -f @bindir@/send_mon
+	rm -f @bindir@/sendt_raw
+	rm -f @bindir@/sendt_mon
+	rm -f @bindir@/send_rawd
+	rm -f @bindir@/send_mond
+	rm -f @bindir@/sendt_rawd
+	rm -f @bindir@/sendt_mond
+	rm -f @bindir@/send_mon_old;
+	rm -f @bindir@/sendt_raw_old;
+	rm -f @bindir@/sendt_mon_old;
+	rm -f @bindir@/wdiskd
+	rm -f @bindir@/wdisk60
+	rm -f @bindir@/wdisk60d
+	rm -f @bindir@/orderd
+	rm -f @bindir@/recvtd
+	rm -f @bindir@/relayd
+	rm -f @bindir@/relaymd
+	rm -f @bindir@/raw_mond
+	rm -f @bindir@/raw_timed
+	rm -f @bindir@/raw_rawd
+	rm -f @bindir@/wdisktsd
+	rm -f @bindir@/recvstatus3d
+	rm -f @bindir@/recvstatus4d
+	rm -f @bindir@/ls8tel16_rawd
+	rm -f @bindir@/recvt_LS7000d
+
 ######----- Libraries -----
 ### static library
 libwinsystem_a_SOURCES = $(WIN_LIBH) $(WIN_LIBC) $(WIN_LOG)
+libwinsystem_a_CFLAGS = $(AM_CFLAGS)
+
 libwinlog_a_SOURCES =  $(WIN_LOG) $(DAEMON_MODE) $(UDP_UTILITY) $(TCP_UTILITY)
+libwinlog_a_CFLAGS = $(AM_CFLAGS)
+
 #libwinsystem2_a_SOURCES = $(WIN_UTIL) $(DAEMON_MODE) $(WIN_LOG) $(UDP_UTILITY) $(TCP_UTILITY)
 
 ### shared library
@@ -179,6 +215,7 @@ wintosac_LDADD = -lm
 
 select_stations_SOURCES = select_stations.c pltxy.c pltxy.h $(SUBFUNC_H)
 select_stations_LDADD = -lm
+select_stations_CFLAGS = $(AM_CFLAGS)
 
 wchch_SOURCES = wchch.c $(WIN_LIBH)
 wchch_LDADD = $(WIN_SYSTEM_LTLIB)
@@ -333,6 +370,7 @@ hypomh_SOURCES = hypomh.f
 
 hypomhc_SOURCES = hypomhc.c pltxy.c pltxy.h $(SUBFUNC_H)
 hypomhc_LDADD = -lm
+hypomhc_CFLAGS = $(AM_CFLAGS)
 
 sends_SOURCES = sends.c $(WIN_LIBH)
 sends_LDADD = $(WIN_SYSTEM_LTLIB) @LIBNSL@ @LIBSOCKET@
@@ -390,4 +428,4 @@ winrandsimu6_LDADD = @LIBSHMGET@ -lm
 
 select_bylatlon_SOURCES = select_bylatlon.c pltxy.c pltxy.h $(SUBFUNC_H)
 select_bylatlon_LDADD = -lm
-
+select_bylatlon_CFLAGS = $(AM_CFLAGS)

@@ -1,4 +1,10 @@
- $Id: ChangeLog,v 1.131.2.25.2.46 2010/04/01 14:03:31 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.47 2010/04/02 03:32:04 uehira Exp $
+
+2010-04-02  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* configure.in : added option '--disable-fortran'.
+	* compatible with automake-1.10.
+	* mkinstalldirs : you can remove, if you use automake-1.10.
+	* Version 2.0.12 released.
 
 2010-04-01  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* use libtool (ver.2.2.6b) for shared library.

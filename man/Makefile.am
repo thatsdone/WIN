@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.27.2.2.4.1 2009/03/06 13:03:02 uehira Exp $
+# $Id: Makefile.am,v 1.27.2.2.4.2 2010/04/02 03:32:04 uehira Exp $
 #
 #  Makefile.am in man subdirectory.
 #
@@ -57,3 +57,29 @@ install-data-hook:
 	(rm -f $(man1dir)/recvstatus4d.1; cd $(man1dir) && @LN_S@ recvstatus4.1 recvstatus4d.1)
 	(rm -f $(man1dir)/ls8tel16_rawd.1; cd $(man1dir) && @LN_S@ ls8tel16_raw.1 ls8tel16_rawd.1)
 	(rm -f $(man1dir)/recvt_LS7000d.1; cd $(man1dir) && @LN_S@ recvt_LS7000.1 recvt_LS7000d.1)
+
+uninstall-hook:
+	rm -f $(man1dir)/eventsrtape.1
+
+	rm -f $(man1dir)/send_mon.1
+	rm -f $(man1dir)/sendt_mon.1
+	rm -f $(man1dir)/sendt_raw.1
+	rm -f $(man1dir)/send_rawd.1
+	rm -f $(man1dir)/send_mond.1
+	rm -f $(man1dir)/sendt_mond.1
+	rm -f $(man1dir)/sendt_rawd.1
+	rm -f $(man1dir)/wdisk60.1
+	rm -f $(man1dir)/wdiskd.1
+	rm -f $(man1dir)/wdisk60d.1
+	rm -f $(man1dir)/orderd.1
+	rm -f $(man1dir)/recvtd.1
+	rm -f $(man1dir)/relayd.1
+	rm -f $(man1dir)/relaymd.1
+	rm -f $(man1dir)/raw_mond.1
+	rm -f $(man1dir)/raw_rawd.1
+	rm -f $(man1dir)/wdisktsd.1
+	rm -f $(man1dir)/raw_timed.1
+	rm -f $(man1dir)/recvstatus3d.1
+	rm -f $(man1dir)/recvstatus4d.1
+	rm -f $(man1dir)/ls8tel16_rawd.1
+	rm -f $(man1dir)/recvt_LS7000d.1

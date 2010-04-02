@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.38.2.10.2.13 2010/04/02 03:32:05 uehira Exp $
+# $Id: Makefile.am,v 1.38.2.10.2.14 2010/04/02 04:55:48 uehira Exp $
 #
 
 if SUNOS4
@@ -90,10 +90,10 @@ TCP_UTILITY = tcpu.h tcp_connect.c
 WIN_LIBH=winlib.h win_log.h filter.h pltxy.h cvt.h daemon_mode.h udpu.h tcpu.h $(SUBFUNC_H)
 WIN_LIBC=winlib.c filter.c pltxy.c cvt.c
 
-WIN_SYSTEM_LIB = libwinsystem.a
+#WIN_SYSTEM_LIB = libwinsystem.a
 WIN_SYSTEM_LTLIB = libwinsystem.la
 
-WIN_LOG_LIB = libwinlog.a
+#WIN_LOG_LIB = libwinlog.a
 WIN_LOG_LTLIB = libwinlog.la
 
 #WIN_SYSTEM_LIB2 = libwinsystem2.a
@@ -104,8 +104,8 @@ if IPV6
 libexec_PROGRAMS = winrawsrvd
 noinst_PROGRAMS = winrawcli_test
 endif
-lib_LIBRARIES = $(WIN_SYSTEM_LIB) $(WIN_LOG_LIB)
-lib_LTLIBRARIES = $(WIN_SYSTEM_LTLIB) $(WIN_LOG_LTLIB)
+#lib_LIBRARIES = $(WIN_SYSTEM_LIB) $(WIN_LOG_LIB)
+lib_LTLIBRARIES = $(WIN_LOG_LTLIB) $(WIN_SYSTEM_LTLIB)
 include_HEADERS = $(WIN_LIBH)
 
 install-exec-hook:
@@ -167,21 +167,21 @@ uninstall-hook:
 
 ######----- Libraries -----
 ### static library
-libwinsystem_a_SOURCES = $(WIN_LIBH) $(WIN_LIBC) $(WIN_LOG)
-libwinsystem_a_CFLAGS = $(AM_CFLAGS)
+#libwinsystem_a_SOURCES = $(WIN_LIBH) $(WIN_LIBC) $(WIN_LOG)
+#libwinsystem_a_CFLAGS = $(AM_CFLAGS)
 
-libwinlog_a_SOURCES =  $(WIN_LOG) $(DAEMON_MODE) $(UDP_UTILITY) $(TCP_UTILITY)
-libwinlog_a_CFLAGS = $(AM_CFLAGS)
+#libwinlog_a_SOURCES =  $(WIN_LOG) $(DAEMON_MODE) $(UDP_UTILITY) $(TCP_UTILITY)
+#libwinlog_a_CFLAGS = $(AM_CFLAGS)
 
 #libwinsystem2_a_SOURCES = $(WIN_UTIL) $(DAEMON_MODE) $(WIN_LOG) $(UDP_UTILITY) $(TCP_UTILITY)
 
 ### shared library
 libwinsystem_la_SOURCES = $(WIN_LIBH) $(WIN_LIBC)
-#libwinsystem_la_LDFLAGS = -version-info 1
+libwinsystem_la_LDFLAGS = -version-info 0:0:0
 libwinsystem_la_LIBADD = -lm
 
 libwinlog_la_SOURCES =  $(WIN_LOG) $(DAEMON_MODE) $(UDP_UTILITY) $(TCP_UTILITY)
-#libwinlog_la_LDFLAGS = -version-info 1
+libwinlog_la_LDFLAGS = -version-info 0:0:0
 libwinlog_la_LIBADD =
 
 #####----- Sources -----
@@ -262,10 +262,10 @@ fromtape_SOURCES = fromtape.c $(WIN_LIBH)
 fromtape_LDADD = $(WIN_SYSTEM_LTLIB)
 
 wdisk_SOURCES = wdisk.c $(WIN_LIBH)
-wdisk_LDADD = $(WIN_SYSTEM_LTLIB) $(WIN_LOG_LTLIB) @LIBSHMGET@
+wdisk_LDADD = $(WIN_LOG_LTLIB) $(WIN_SYSTEM_LTLIB) @LIBSHMGET@
 
 wdiskts_SOURCES = wdiskts.c $(WIN_LIBH) $(GC_CHECK_INCLUDE)
-wdiskts_LDADD = $(WIN_SYSTEM_LTLIB) $(WIN_LOG_LTLIB) @LIBSHMGET@ $(GC_CHECK_LIB)
+wdiskts_LDADD = $(WIN_LOG_LTLIB) $(WIN_SYSTEM_LTLIB) @LIBSHMGET@ $(GC_CHECK_LIB)
 
 ras2rpdl_SOURCES = ras2rpdl.c $(WIN_LIBH)
 
@@ -281,7 +281,7 @@ win2raw_SOURCES = win2raw.c $(WIN_LIBH) $(GC_CHECK_INCLUDE)
 win2raw_LDADD = $(WIN_SYSTEM_LTLIB) $(GC_CHECK_LIB)
 
 pmon_SOURCES = pmon.c $(WIN_LIBH)
-pmon_LDADD = $(WIN_SYSTEM_LTLIB) $(WIN_LOG_LTLIB) -lm
+pmon_LDADD = $(WIN_LOG_LTLIB) $(WIN_SYSTEM_LTLIB) -lm
 
 elist_SOURCES = elist.c $(WIN_LIBH)
 elist_LDADD = $(WIN_SYSTEM_LTLIB) -lm
@@ -290,10 +290,10 @@ events_SOURCES = events.c $(WIN_LIBH)
 events_LDADD = $(WIN_SYSTEM_LTLIB) -lm
 
 order_SOURCES = order.c $(WIN_LIBH)
-order_LDADD = $(WIN_SYSTEM_LTLIB) $(WIN_LOG_LTLIB) @LIBSHMGET@
+order_LDADD = $(WIN_LOG_LTLIB) $(WIN_SYSTEM_LTLIB) @LIBSHMGET@
 
 raw_mon_SOURCES = raw_mon.c $(WIN_LIBH)
-raw_mon_LDADD = $(WIN_SYSTEM_LTLIB) $(WIN_LOG_LTLIB) @LIBSHMGET@
+raw_mon_LDADD = $(WIN_LOG_LTLIB) $(WIN_SYSTEM_LTLIB) @LIBSHMGET@
 
 wtape_SOURCES = wtape.c $(WIN_LIBH)
 wtape_LDADD = $(WIN_SYSTEM_LTLIB)
@@ -304,25 +304,25 @@ setexb_LDADD = $(WIN_SYSTEM_LTLIB)
 timeout_SOURCES = timeout.c $(SUBFUNC_H)
 
 raw_raw_SOURCES = raw_raw.c $(WIN_LIBH)
-raw_raw_LDADD = $(WIN_SYSTEM_LTLIB) $(WIN_LOG_LTLIB) @LIBSHMGET@
+raw_raw_LDADD = $(WIN_LOG_LTLIB) $(WIN_SYSTEM_LTLIB) @LIBSHMGET@
 
 raw_shift_SOURCES = raw_shift.c $(WIN_LIBH)
-raw_shift_LDADD = $(WIN_SYSTEM_LTLIB) $(WIN_LOG_LTLIB) @LIBSHMGET@
+raw_shift_LDADD = $(WIN_LOG_LTLIB) $(WIN_SYSTEM_LTLIB) @LIBSHMGET@
 
 raw_100_SOURCES = raw_100.c $(WIN_LIBH)
-raw_100_LDADD = $(WIN_SYSTEM_LTLIB) $(WIN_LOG_LTLIB) @LIBSHMGET@
+raw_100_LDADD = $(WIN_LOG_LTLIB) $(WIN_SYSTEM_LTLIB) @LIBSHMGET@
 
 cormeisei_SOURCES = cormeisei.c $(WIN_LIBH)
-cormeisei_LDADD = $(WIN_SYSTEM_LTLIB) $(WIN_LOG_LTLIB) @LIBSHMGET@
+cormeisei_LDADD = $(WIN_LOG_LTLIB) $(WIN_SYSTEM_LTLIB) @LIBSHMGET@
 
 shmdump_SOURCES = shmdump.c $(WIN_LIBH)
 shmdump_LDADD = $(WIN_SYSTEM_LTLIB) @LIBSHMGET@ -lm
 
 raw_ch_SOURCES = raw_ch.c $(WIN_LIBH)
-raw_ch_LDADD = $(WIN_SYSTEM_LTLIB) $(WIN_LOG_LTLIB) @LIBSHMGET@
+raw_ch_LDADD = $(WIN_LOG_LTLIB) $(WIN_SYSTEM_LTLIB) @LIBSHMGET@
 
 extraw_SOURCES = extraw.c $(WIN_LIBH)
-extraw_LDADD = $(WIN_SYSTEM_LTLIB) $(WIN_LOG_LTLIB) @LIBSHMGET@
+extraw_LDADD = $(WIN_LOG_LTLIB) $(WIN_SYSTEM_LTLIB) @LIBSHMGET@
 
 insert_raw_SOURCES = insert_raw.c $(WIN_LIBH) $(WIN_UTIL) $(GC_CHECK_INCLUDE)
 insert_raw_LDADD = $(WIN_SYSTEM_LTLIB) $(GC_CHECK_LIB)
@@ -334,37 +334,37 @@ find_picks_SOURCES = find_picks.c $(WIN_LIBH)
 find_picks_LDADD = $(WIN_SYSTEM_LTLIB)
 
 recvt_SOURCES = recvt.c $(WIN_LIBH)
-recvt_LDADD = $(WIN_SYSTEM_LTLIB) $(WIN_LOG_LTLIB) @LIBNSL@ @LIBSOCKET@ @LIBSHMGET@
+recvt_LDADD = $(WIN_LOG_LTLIB) $(WIN_SYSTEM_LTLIB) @LIBNSL@ @LIBSOCKET@ @LIBSHMGET@
 
 send_raw_SOURCES = send_raw.c $(WIN_LIBH)
-send_raw_LDADD = $(WIN_SYSTEM_LTLIB) $(WIN_LOG_LTLIB) @LIBNSL@ @LIBSOCKET@ @LIBSHMGET@
+send_raw_LDADD = $(WIN_LOG_LTLIB) $(WIN_SYSTEM_LTLIB) @LIBNSL@ @LIBSOCKET@ @LIBSHMGET@
 
 send_raw_old_SOURCES = send_raw_old.c $(WIN_LIBH)
-send_raw_old_LDADD = $(WIN_SYSTEM_LTLIB) $(WIN_LOG_LTLIB) @LIBNSL@ @LIBSOCKET@ @LIBSHMGET@
+send_raw_old_LDADD = $(WIN_LOG_LTLIB) $(WIN_SYSTEM_LTLIB) @LIBNSL@ @LIBSOCKET@ @LIBSHMGET@
 
 recvstatus_SOURCES = recvstatus.c $(WIN_LIBH)
-recvstatus_LDADD = $(WIN_SYSTEM_LTLIB) $(WIN_LOG_LTLIB) @LIBNSL@ @LIBSOCKET@
+recvstatus_LDADD = $(WIN_LOG_LTLIB) $(WIN_SYSTEM_LTLIB) @LIBNSL@ @LIBSOCKET@
 
 recvstatus2_SOURCES = recvstatus2.c $(WIN_LIBH)
-recvstatus2_LDADD = $(WIN_SYSTEM_LTLIB) $(WIN_LOG_LTLIB) @LIBNSL@ @LIBSOCKET@
+recvstatus2_LDADD = $(WIN_LOG_LTLIB) $(WIN_SYSTEM_LTLIB) @LIBNSL@ @LIBSOCKET@
 
 relay_SOURCES = relay.c $(WIN_LIBH)
-relay_LDADD = $(WIN_SYSTEM_LTLIB) $(WIN_LOG_LTLIB) @LIBNSL@ @LIBSOCKET@
+relay_LDADD = $(WIN_LOG_LTLIB) $(WIN_SYSTEM_LTLIB) @LIBNSL@ @LIBSOCKET@
 
 relaym_SOURCES = relaym.c $(WIN_LIBH)
-relaym_LDADD = $(WIN_SYSTEM_LTLIB) $(WIN_LOG_LTLIB) @LIBNSL@ @LIBSOCKET@
+relaym_LDADD = $(WIN_LOG_LTLIB) $(WIN_SYSTEM_LTLIB) @LIBNSL@ @LIBSOCKET@
 
 recvnmx_SOURCES = recvnmx.c $(WIN_LIBH)
-recvnmx_LDADD = $(WIN_SYSTEM_LTLIB) $(WIN_LOG_LTLIB) @LIBNSL@ @LIBSOCKET@ @LIBSHMGET@
+recvnmx_LDADD = $(WIN_LOG_LTLIB) $(WIN_SYSTEM_LTLIB) @LIBNSL@ @LIBSOCKET@ @LIBSHMGET@
 
 ecore_SOURCES = ecore.c $(WIN_LIBH)
 ecore_LDADD = $(WIN_SYSTEM_LTLIB) -lm
 
 ecore2_SOURCES = ecore2.c $(WIN_LIBH)
-ecore2_LDADD = $(WIN_SYSTEM_LTLIB) $(WIN_LOG_LTLIB) -lm @LIBSHMGET@
+ecore2_LDADD = $(WIN_LOG_LTLIB) $(WIN_SYSTEM_LTLIB) -lm @LIBSHMGET@
 
 recvts_SOURCES = recvts.c $(WIN_LIBH)
-recvts_LDADD = $(WIN_SYSTEM_LTLIB) $(WIN_LOG_LTLIB)
+recvts_LDADD = $(WIN_LOG_LTLIB) $(WIN_SYSTEM_LTLIB)
 
 hypomh_SOURCES = hypomh.f
 
@@ -379,19 +379,19 @@ recvs_SOURCES = recvs.c $(WIN_LIBH)
 recvs_LDADD = $(WIN_SYSTEM_LTLIB) @LIBNSL@ @LIBSOCKET@
 
 raw_time_SOURCES = raw_time.c $(WIN_LIBH) $(GC_CHECK_INCLUDE)
-raw_time_LDADD = $(WIN_SYSTEM_LTLIB) $(WIN_LOG_LTLIB) -lm @LIBSHMGET@ $(GC_CHECK_LIB)
+raw_time_LDADD = $(WIN_LOG_LTLIB) $(WIN_SYSTEM_LTLIB) -lm @LIBSHMGET@ $(GC_CHECK_LIB)
 
 recvstatus3_SOURCES = recvstatus3.c $(WIN_LIBH) ls8tel.h
-recvstatus3_LDADD = $(WIN_SYSTEM_LTLIB) $(WIN_LOG_LTLIB) @LIBNSL@ @LIBSOCKET@
+recvstatus3_LDADD = $(WIN_LOG_LTLIB) $(WIN_SYSTEM_LTLIB) @LIBNSL@ @LIBSOCKET@
 
 recvstatus4_SOURCES = recvstatus4.c $(WIN_LIBH) ls7000.h
-recvstatus4_LDADD = $(WIN_SYSTEM_LTLIB) $(WIN_LOG_LTLIB) @LIBNSL@ @LIBSOCKET@
+recvstatus4_LDADD = $(WIN_LOG_LTLIB) $(WIN_SYSTEM_LTLIB) @LIBNSL@ @LIBSOCKET@
 
 ls8tel16_win_SOURCES = ls8tel16_win.c $(WIN_LIBH) $(GC_CHECK_INCLUDE) ls8tel.h ls8tel.c
 ls8tel16_win_LDADD = $(WIN_SYSTEM_LTLIB) $(GC_CHECK_LIB)
 
 ls8tel16_raw_SOURCES = ls8tel16_raw.c ls8tel.h ls8tel.c $(WIN_LIBH) $(GC_CHECK_INCLUDE)
-ls8tel16_raw_LDADD = $(WIN_SYSTEM_LTLIB) $(WIN_LOG_LTLIB) @LIBSHMGET@ $(GC_CHECK_LIB)
+ls8tel16_raw_LDADD = $(WIN_LOG_LTLIB) $(WIN_SYSTEM_LTLIB) @LIBSHMGET@ $(GC_CHECK_LIB)
 
 ls8tel_STM_SOURCES = ls8tel_STM.c $(SUBFUNC_H) $(GC_CHECK_INCLUDE) ls8tel.h
 ls8tel_STM_LDADD = $(GC_CHECK_LIB)
@@ -400,19 +400,19 @@ ls8tel_STS_SOURCES = ls8tel_STS.c $(SUBFUNC_H) $(GC_CHECK_INCLUDE) ls8tel.h
 ls8tel_STS_LDADD = $(GC_CHECK_LIB)
 
 winrawsrvd_SOURCES = winrawsrv.c $(WIN_LIBH) winraw_bp.h
-winrawsrvd_LDADD = $(WIN_SYSTEM_LTLIB) $(WIN_LOG_LTLIB) @LIBNSL@ @LIBSOCKET@
+winrawsrvd_LDADD = $(WIN_LOG_LTLIB) $(WIN_SYSTEM_LTLIB) @LIBNSL@ @LIBSOCKET@
 
 winrawcli_test_SOURCES = winrawcli_test.c $(WIN_LIBH) winraw_bp.h
-winrawcli_test_LDADD = $(WIN_SYSTEM_LTLIB) $(WIN_LOG_LTLIB) @LIBNSL@ @LIBSOCKET@
+winrawcli_test_LDADD = $(WIN_LOG_LTLIB) $(WIN_SYSTEM_LTLIB) @LIBNSL@ @LIBSOCKET@
 
 winrawreq_SOURCES = winrawreq.c $(WIN_LIBH) winraw_bp.h
-winrawreq_LDADD = $(WIN_SYSTEM_LTLIB) $(WIN_LOG_LTLIB) @LIBNSL@ @LIBSOCKET@
+winrawreq_LDADD = $(WIN_LOG_LTLIB) $(WIN_SYSTEM_LTLIB) @LIBNSL@ @LIBSOCKET@
 
 rawsrv_info_SOURCES = rawsrv_info.c $(WIN_LIBH) winraw_bp.h
-rawsrv_info_LDADD = $(WIN_SYSTEM_LTLIB) $(WIN_LOG_LTLIB) @LIBNSL@ @LIBSOCKET@
+rawsrv_info_LDADD = $(WIN_LOG_LTLIB) $(WIN_SYSTEM_LTLIB) @LIBNSL@ @LIBSOCKET@
 
 recvt_LS7000_SOURCES = recvt_LS7000.c $(WIN_LIBH) ls7000.h
-recvt_LS7000_LDADD = $(WIN_SYSTEM_LTLIB) $(WIN_LOG_LTLIB) @LIBNSL@ @LIBSOCKET@ @LIBSHMGET@
+recvt_LS7000_LDADD = $(WIN_LOG_LTLIB) $(WIN_SYSTEM_LTLIB) @LIBNSL@ @LIBSOCKET@ @LIBSHMGET@
 
 ls7000_A8_SOURCES = ls7000_A8.c $(WIN_LIBH) ls7000.h
 ls7000_A8_LDADD = $(WIN_SYSTEM_LTLIB) 
@@ -421,7 +421,7 @@ ls7000_A9_SOURCES = ls7000_A9.c $(WIN_LIBH) ls7000.h
 ls7000_A9_LDADD = $(WIN_SYSTEM_LTLIB) 
 
 evdetect_SOURCES = evdetect.c $(WIN_LIBH)
-evdetect_LDADD = $(WIN_SYSTEM_LTLIB) $(WIN_LOG_LTLIB) -lm
+evdetect_LDADD = $(WIN_LOG_LTLIB) $(WIN_SYSTEM_LTLIB) -lm
 
 winrandsimu6_SOURCES = winrandsimu6.c $(SUBFUNC_H)
 winrandsimu6_LDADD = @LIBSHMGET@ -lm

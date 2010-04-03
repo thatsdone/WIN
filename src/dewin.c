@@ -1,4 +1,4 @@
-/* $Id: dewin.c,v 1.4.4.3.2.6 2010/04/01 09:16:24 uehira Exp $ */
+/* $Id: dewin.c,v 1.4.4.3.2.7 2010/04/03 07:37:44 uehira Exp $ */
 
 /* program dewin  1994.4.11-4.20  urabe */
 /*                1996.2.23 added -n option */
@@ -10,6 +10,7 @@
 /*                2000.3.10 abort->wabort */
 /*                2000.3.10 added -m option */
 /*                2003.10.29 exit()->exit(0) */
+/*                2010.04.03 64bit? */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -35,7 +36,7 @@
 #define MAX_SR      HEADER_5B
 
 static const char  rcsid[] =
-   "$Id: dewin.c,v 1.4.4.3.2.6 2010/04/01 09:16:24 uehira Exp $";
+   "$Id: dewin.c,v 1.4.4.3.2.7 2010/04/03 07:37:44 uehira Exp $";
 
 static int32_w buf[MAX_SR];
 static double dbuf[MAX_SR];

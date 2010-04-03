@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.46.2.6.2.14 2010/02/28 09:09:06 uehira Exp $
+   $Id: win.c,v 1.46.2.6.2.15 2010/04/03 07:37:44 uehira Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -1011,9 +1011,9 @@ typedef struct
 
 /*********************** prototypes **********************/
 static void xgetorigin(Display *, Window, int *, int *, unsigned int *,
-		       unsigned int *, unsigned int *, Window *, Window*);
-static char *get_time_win(struct YMDhms *, int);
-static int invert_dpy(int, int, int);
+		       unsigned int *, unsigned int *, Window *, Window*);   /* check ok 2010.4.3 */
+static char *get_time_win(struct YMDhms *, int);   /* check ok 2010.4.3 */
+static int invert_dpy(int, int, int);   /* check ok 2010.4.3 */
 static char *getname(uid_t);
 static FILE *open_file(char *, char *);
 static int get_func(int);
@@ -1184,14 +1184,14 @@ static void writelog(char *);
 /*********************** END prototypes **********************/
 
 static void
-xgetorigin(Display *d, Window w, int *x, int *y, unsigned int *wi,
+xgetorigin(Display  *d, Window w, int *x, int *y, unsigned int *wi,
 	   unsigned int *h, unsigned int *de, Window *ro, Window *pa)
   {
   Window child,*children;
   int xx,yy;
   unsigned int b,nchildren;
 
-  XGetGeometry(d,w,ro,&xx,&yy,wi,h,&b,de);
+  XGetGeometry(d,(Drawable)w,ro,&xx,&yy,wi,h,&b,de);
   XQueryTree(d,w,ro,pa,&children,&nchildren);
   XFree((void *)children);
   XTranslateCoordinates(d,*pa,*ro,xx,yy,x,y,&child);
@@ -1216,25 +1216,26 @@ get_time_win(struct YMDhms *rt, int addsec)
     rt->mo=nt->tm_mon+1;
     rt->ye=nt->tm_year%100;
     }
-  sprintf(c,"%02d/%02d/%02d %02d:%02d:%02d",nt->tm_year%100,nt->tm_mon+1,
-    nt->tm_mday,nt->tm_hour,nt->tm_min,nt->tm_sec);
-  return c;
+  snprintf(c,sizeof(c),"%02d/%02d/%02d %02d:%02d:%02d",
+	   nt->tm_year%100,nt->tm_mon+1,
+	   nt->tm_mday,nt->tm_hour,nt->tm_min,nt->tm_sec);
+  return (c);
   }
 
 static int
 invert_dpy(int sbmtype, int dbmtype, int func)
   {
 
-  if(black) return func;  /* if black>0, return */
+  if(black) return (func);  /* if black>0, return */
   if(dbmtype==BM_FB)
     switch(func)
       {
-      case BF_SDXI: return BF_SDX;
-      case BF_SDX:  return BF_SDXI;
-      case BF_SIDA: return BF_SIDO;
-      case BF_SDO:  return BF_SDA;
+      case BF_SDXI: return (BF_SDX);
+      case BF_SDX:  return (BF_SDXI);
+      case BF_SIDA: return (BF_SIDO);
+      case BF_SDO:  return (BF_SDA);
       }
-  return func;
+  return (func);
   }
 
 /* alternative to 'getlogin()' which doesn't work in 'su' */
@@ -3507,6 +3508,8 @@ auto_pick_range(Evdet_Tbl *tbl)
   struct Pick_Time *p;
   int i,j,sec,msec,period;
 
+  sec = msec = 0; /* for supress warnings */
+
   /* (1) measure predominant period and set P range */
   period=j=0;
   for(i=0;i<ft.n_trigch;i++)
@@ -3962,11 +3965,12 @@ static int
 pick_s(int idx, int sec_now, int hint)
   {
   struct Pick_Time pt,pt_s,pt1,pt_ss;
-  int n,done,sec,msec,idxs,width_s,idx_s,period,ms,n_max,n_min,
+  int n,done,sec,msec,idxs,width_s=0,idx_s,period,ms,n_max,n_min,
     c_max,c_min,i,j;
   char *name,*comp;
   double *db,zero;
 
+  memset(&pt_ss, 0, sizeof(pt_ss));  /* for supress warning */
   done=0;
   idx_s=(-1);
   if(ft.pick[idx][P].valid==0) return -1;
@@ -5167,6 +5171,7 @@ skip_mon:
     }
   window_main_loop();
   }
+/***** end of main() *****/
 
 static void
 bye_process()
@@ -5780,6 +5785,7 @@ proc_main()
   char textbuf[LINELEN],textbuf1[LINELEN],tbuf[20],unit[10];
   char cmdbuf[LINELEN];
 
+  j=kk=0;  /* for supress warnings */
   xx=x_zero;
   yy=y_zero;
   x=event.mse_data.md_x;
@@ -6856,7 +6862,7 @@ draw_ellipse(int xzero, int yzero, double s1, double s2, double roh, int lptn,
   {
   lPoint pts[200];
   int i,j,jj;
-  double u,v,a,s1km,s2km,dx,dy,dxp,dyp;
+  double u=0.0,v,a=0.0,s1km,s2km,dx,dy,dxp=0.0,dyp=0.0;
 
   if(xzero>=x1 && xzero<=x2 && yzero>=y1 && yzero<=y2)
     {
@@ -8354,14 +8360,14 @@ put_map(int idx)  /* 0:redraw all, 1:plot only hypocenters, */
     *ptr,tbuf1[20],tbuf2[20];
   typedef struct {float x,y;} MapData;
   static MapData *mapdata;
-  int i,j,xzero,yzero,xi,yi,zi_y,zi_x,ye,mo,da,ho,mi,farout,
-    x1,x2,y1,y2,lptn,conv,radi,x,y,xt,yt,it,tim[6],t,istep,
-    width_map,height_map,length_map,length_vert,length_horiz;
+  int i,j,xzero,yzero,xi,yi,zi_y=0,zi_x=0,ye,mo,da,ho,mi,farout,
+    x1,x2,y1,y2,lptn,conv,radi,x,y,xt=0,yt,it,tim[6],t=0,istep,
+    width_map,height_map,length_map,length_vert=0,length_horiz;
   long jj;    /* 64bit ok */
   long size,t1,t2,t1a,t2a;   /* 64bit ok */
   double xd,yd,alat,along,ala[6],alo[6],se,x_cent,y_cent,
-    alat1,alat2,along1,along2,cs,sn,arg,step,s1,s2,roh,step0;
-  float mag,dep_base;
+    alat1=0.0,alat2=0.0,along1=0.0,along2=0.0,cs,sn,arg,step,s1,s2,roh,step0;
+  float mag,dep_base=0.0;
   HypoData hypo;
   double mat_r[3][3],mat_ri[3][3],mat_error[3][3];
   static int n_hypo;
@@ -9451,8 +9457,9 @@ proc_map()
   char ulat,ulon;
   struct YMDhms tm;
 
+  arg=cs=sn=0.0; /* for supress warning */
   if(map_dir)
-    {
+    {  /* Thses variables never use in this function. (added by uehira) */
     arg=PI*(double)map_dir/180.0;
     cs=cos(arg);
     sn=sin(arg);
@@ -11025,10 +11032,10 @@ proc_psup()
 static int
 put_psup()
   {
-  int i,j,k,n;
+  int i,j,k,n=0;
   char textbuf[LINELEN];
   double xd,yd,alat1,along1;
-  float delta_max,delta_min;
+  float delta_max=0.0,delta_min=0.0;
 
   fflush(stderr);
   put_white(&dpy,0,0,width_dpy,height_dpy); /* clear */
@@ -11156,7 +11163,7 @@ static void
 plot_psup(int idx)
   {
   double x0,uv[MAX_FILT*4],tred;
-  int yy0,ylim1,ylim2,zero,sr,i,j,start,join,np,np_last,sec,xzero,
+  int yy0,ylim1,ylim2,zero=0,sr,i,j,start,join,np,np_last=0,sec,xzero,
     tm[6],tm1[7],tm2[7],sr_start,sr_end,y,
     tred_s,tred_ms,cp1,cp2;
   char textbuf[30],textbuf1[30];

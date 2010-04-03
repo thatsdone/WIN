@@ -1,5 +1,5 @@
 /*-
-  $Id: hypomhc.c,v 1.7.2.2.2.2 2010/04/03 02:11:21 uehira Exp $
+  $Id: hypomhc.c,v 1.7.2.2.2.3 2010/04/03 07:37:44 uehira Exp $
    hypomhc.c    : main program for hypocenter location
      original version was made on March 13, 1984 and
      modified by N.H. on Feb. 8, 1985, May 8, 1985.
@@ -123,20 +123,33 @@ struct station_for_calc_data {
 };
 typedef struct station_for_calc_data FOR_CALC;
 
-str2double(t, n, m, d)
-  char           *t;
-  int		  n       , m;
-  double         *d;
+/* prototypes */
+static void str2double(char *, int, int, double *);
+static void where(STRUCT *, double, int *);
+static void rxinc(int, double, double, int,
+		  double, int, double *, double *, STRUCT *);
+static void rtinc(double, double, int, double, int, double *, STRUCT *);
+static void rpcod(double, int, double, int, double *, double *, STRUCT *);
+static void rxcod(double, int, double, int, double, double *,
+		  double *, STRUCT *);
+static void trvel(double, int, double, int, double, double *, STRUCT *);
+static void travel(double, double, double, int *, double *, double *,
+		   double *, STRUCT *);
+static void usage(void);
+static void end_hypomhc(int);
+static void memory_error(void);
+int main(int, char *[]);
+
+static void
+str2double(char *t, int n, int m, double *d)
 {
   char           *tb;
 
   if (strlen(t) < n + m)
     *d = 9999.0;
   else {
-    if (NULL == (tb = (char *)malloc(sizeof(char) * (m + 1)))) {
-      fputs("hypomhc : Allocation failure !!\n", stderr);
-      exit(0);
-    }
+    if (NULL == (tb = (char *)malloc(sizeof(char) * (m + 1))))
+      memory_error();
     strncpy(tb, t + n, m);
     tb[m] = '\0';
     *d = atof(tb);
@@ -151,10 +164,8 @@ str2double(t, n, m, d)
    yy : Depth
    *ln : Layer number of the given depth
 */
-where(strc, yy, ln)
-  int            *ln;
-  double	  yy;
-  STRUCT         *strc;
+static void
+where(STRUCT *strc, double yy, int *ln)
 {
   int		  i;
 
@@ -168,36 +179,34 @@ where(strc, yy, ln)
    IF ID=0, Y1 TO Y2 (Y1.GT.Y2)
    IF ID=1, Y2 TO Y1 (Y2.GT.Y1)
 */
-rxinc(id, pp, y1, l1, y2, l2, x, a, strc)
-  int		  id      , l1, l2;
-  double	  pp    , y1, y2, *x, *a;
-  STRUCT         *strc;
+static void
+rxinc(int id, double pp, double y1, int l1,
+      double y2, int l2, double *x, double *a, STRUCT *strc)
 {
-  int		  k1      , lm, i, j;
+  int		  k1, lm = -1, i, j;
   double         *sn, *cn, *rn;
 
   *x = *a = 0.0;
   if (y1 == y2)
     return;
 
-  if (NULL == (sn = (double *)malloc(sizeof(double) * (strc->n1 + 1)))) {
-    fputs("hypomhc : Allocation failure !!\n", stderr);
-    exit(0);
-  }
-  if (NULL == (cn = (double *)malloc(sizeof(double) * (strc->n1 + 1)))) {
-    fputs("hypomhc : Allocation failure !!\n", stderr);
-    exit(0);
-  }
-  if (NULL == (rn = (double *)malloc(sizeof(double) * (strc->n1 + 1)))) {
-    fputs("hypomhc : Allocation failure !!\n", stderr);
-    exit(0);
-  }
   k1 = l2 - 1;
   if (id == 0)
     lm = l1 + 1;
   else if (id == 1)
     lm = l2 + 1;
+  else {
+    fputs("hypomhc : rxinc() error !!\n", stderr);
+    end_hypomhc(1);
+  }
   /* printf("k1=%d  l1=%d\n",k1,l1); OK */
+
+  if (NULL == (sn = (double *)malloc(sizeof(double) * (strc->n1 + 1))))
+    memory_error();
+  if (NULL == (cn = (double *)malloc(sizeof(double) * (strc->n1 + 1))))
+    memory_error();
+  if (NULL == (rn = (double *)malloc(sizeof(double) * (strc->n1 + 1))))
+    memory_error();
   for (i = k1; i <= l1; ++i) {
     j = i + 1;
     if (i == l1)
@@ -237,10 +246,8 @@ rxinc(id, pp, y1, l1, y2, l2, x, a, strc)
   free(rn);
 }
 
-rtinc(pp, y1, l1, y2, l2, tt, strc)
-  double	  pp    , y1, y2, *tt;
-  int		  l1      , l2;
-  STRUCT         *strc;
+static void
+rtinc(double pp, double y1, int l1, double y2, int l2, double *tt, STRUCT *strc)
 {
   double         *sn, *cn, cnr;
   int		  k1      , i, j;
@@ -249,14 +256,10 @@ rtinc(pp, y1, l1, y2, l2, tt, strc)
   if (y1 == y2)
     return;
 
-  if (NULL == (sn = (double *)malloc(sizeof(double) * (strc->n1 + 1)))) {
-    fputs("hypomhc : Allocation failure !!\n", stderr);
-    exit(0);
-  }
-  if (NULL == (cn = (double *)malloc(sizeof(double) * (strc->n1 + 1)))) {
-    fputs("hypomhc : Allocation failure !!\n", stderr);
-    exit(0);
-  }
+  if (NULL == (sn = (double *)malloc(sizeof(double) * (strc->n1 + 1))))
+    memory_error();
+  if (NULL == (cn = (double *)malloc(sizeof(double) * (strc->n1 + 1))))
+    memory_error();
   k1 = l2 - 1;
   for (i = k1; i <= l1; ++i) {
     j = i + 1;
@@ -288,10 +291,9 @@ rtinc(pp, y1, l1, y2, l2, tt, strc)
   free(cn);
 }
 
-rpcod(y1, l1, y2, l2, xc, tac, strc)
-  double	  y1    , y2, *xc, *tac;
-  int		  l1      , l2;
-  STRUCT         *strc;
+static void
+rpcod(double y1, int l1, double y2, int l2, double *xc, double *tac,
+      STRUCT *strc)
 {
   int		  i       , j;
   double	  pp    , xa, xb, sc, a, b;
@@ -312,10 +314,9 @@ rpcod(y1, l1, y2, l2, xc, tac, strc)
   }
 }
 
-rxcod(y1, l1, y2, l2, ta, x, a, strc)
-  double	  y1    , y2, ta, *x, *a;
-  int		  l1      , l2;
-  STRUCT         *strc;
+static void
+rxcod(double y1, int l1, double y2, int l2, double ta, double *x,
+      double *a, STRUCT *strc)
 {
   double	  pp    , pn, xd, b, yn;
   int		  nl;
@@ -338,10 +339,8 @@ rxcod(y1, l1, y2, l2, ta, x, a, strc)
 }
 
 /* COMPUTATION OF TRAVEL TIME */
-trvel(y1, l1, y2, l2, ta, tt, strc)
-  double	  y1    , y2, ta, *tt;
-  int		  l1      , l2;
-  STRUCT         *strc;
+static void
+trvel(double y1, int l1, double y2, int l2, double ta, double *tt, STRUCT *strc)
 {
   double	  pp    , pn, yn, td;
   int		  nl;
@@ -375,27 +374,24 @@ trvel(y1, l1, y2, l2, ta, tt, strc)
    TRV : TRAVEL TIMES
    BNG : INCIDENT ANGLES FROM DOWNWARD
 */
-travel(rr, ya, yb, np, ang, trv, bng, strc)
-  double	  rr    , ya, yb, *ang, *trv, *bng;
-  int            *np;
-  STRUCT         *strc;
+static void
+travel(double rr, double ya, double yb, int *np, double *ang, double *trv,
+       double *bng, STRUCT *strc)
 {
-  double	  y1    , y2;
+  double	  y1, y2;
   double         *xc, *tac;
-  int		  l1      , l2;
-  int		  i       , j, k;
-  double	  t1    , t2, x1, x2, ta1, ta2, xr, ta0, t0, x0, a0, dt0, dta, tag;
-  double	  dtc   , sang;
+  int		  l1, l2;
+  int		  i, j, k;
+  double	  t1, t2, x1, x2, ta1, ta2, xr, ta0, t0, x0, a0, dt0, dta, tag;
+  double	  dtc, sang;
 
+  ta0 = 0.0;  /* supress warnning */
   /* First, malloc */
-  if (NULL == (xc = (double *)malloc(sizeof(double) * (strc->n1 + 1)))) {
-    fputs("hypomhc : Allocation failure !!\n", stderr);
-    exit(0);
-  }
-  if (NULL == (tac = (double *)malloc(sizeof(double) * (strc->n1 + 1)))) {
-    fputs("hypomhc : Allocation failure !!\n", stderr);
-    exit(0);
-  }
+  if (NULL == (xc = (double *)malloc(sizeof(double) * (strc->n1 + 1))))
+    memory_error();
+  if (NULL == (tac = (double *)malloc(sizeof(double) * (strc->n1 + 1))))
+    memory_error();
+
   /* begin */
   if (ya >= yb) {
     y1 = ya;
@@ -472,14 +468,17 @@ line55:
   free(tac);
 }
 
+static void
 usage()
 {
+
   fputs("Usage : hypomhc <STATION, STRUCTURE> <ARRIVAL TIME DATA> <FINAL RESULTS> <REPORT> (<INITIAL GUESS>)\n", stderr);
 }
 
-end_hypomhc(status)
-  int		  status;
+static void
+end_hypomhc(int status)
 {
+
 #if (defined(__FreeBSD__) && (__FreeBSD__ < 4))
   fpresetsticky(FP_X_DZ | FP_X_INV);
   fpsetmask(FP_X_DZ | FP_X_INV);
@@ -487,16 +486,17 @@ end_hypomhc(status)
   exit(status);
 }
 
+static void
 memory_error()
 {
+
   fputs("hypomhc : Allocation failure !!\n", stderr);
   end_hypomhc(2);
 }
 
 /****** Begin MAIN ******/
-main(argc, argv)
-  int		  argc;
-  char          **argv;
+int
+main(int argc, char *argv[])
 {
   FILE           *fp_11, *fp_init, *fp_13, *fp_21, *fp_22;
   double	  alat00, alng00, dept00, elat00, elng00, edpt00;
@@ -520,7 +520,7 @@ main(argc, argv)
   double	  ccp   , al2, alp, vxm[3], xm1[3], as;
   int		  jj      , ln, ln1, np, np1;
   double         *ang, *trv, *bng;
-  double         *ang1, *trv1, *bng1;
+  double         *ang1 = NULL, *trv1 = NULL, *bng1 = NULL; /* supress warning */
   double	  sn    , cn, vre, srb, src, wpt, wst, bcp;
   double	  xw     [3], rmx, rvx[3], aa, sra;	/* sra=0.0 need? */
   double	  zm1   , zm2, xmc[3] /* shokika? */ , acp /* shokika? */ ;
@@ -542,9 +542,9 @@ main(argc, argv)
 
   int		  cflag = 0, sflag = 0, smode = 0;
   char		  sstrname[1024], schname[1024];
-  FILE           *fp_sstr, *fp_sch;
-  int		  sstanum;
-  char          **ssta;
+  FILE           *fp_sstr = NULL, *fp_sch;
+  int		  sstanum = 0;
+  char          **ssta = NULL;
 
 #if (defined(__FreeBSD__) && (__FreeBSD__ < 4))
   /* allow divide by zero -- Inf */
@@ -617,6 +617,7 @@ main(argc, argv)
     smode = 1;
 
   sra = acp = xmc[0] = xmc[1] = xmc[2] = 0.0;
+  rsl[0] = rsl[1] = rsl[2] = 0.0;  /* supress warning */
 
   printf("************ HYPOMH ***********\n");
 

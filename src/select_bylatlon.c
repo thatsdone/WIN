@@ -1,4 +1,4 @@
-/* $Id: select_bylatlon.c,v 1.1.4.2 2010/02/28 09:09:06 uehira Exp $ */
+/* $Id: select_bylatlon.c,v 1.1.4.3 2010/04/03 02:11:21 uehira Exp $ */
 
 /* Imported from $WIN: select_stations.c,v 1.3 2004/01/29 01:58:16 urabe Exp $ */
 /* select_stations  1999.11.9  urabe */
@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <math.h>
 
+#include "pltxy.h"
 #include "subst_func.h"
 
 #define NAME_PRG "select_bylatlon"

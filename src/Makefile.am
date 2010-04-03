@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.38.2.10.2.14 2010/04/02 04:55:48 uehira Exp $
+# $Id: Makefile.am,v 1.38.2.10.2.15 2010/04/03 02:11:21 uehira Exp $
 #
 
 if SUNOS4
@@ -186,12 +186,14 @@ libwinlog_la_LIBADD =
 
 #####----- Sources -----
 win_SOURCES = win.c $(WIN_LIBH)
-win_CFLAGS = @X_CFLAGS@ $(AM_CFLAGS)
+#win_CFLAGS = @X_CFLAGS@ $(AM_CFLAGS)
+win_CFLAGS = @X_CFLAGS@
 win_LDFLAGS = @X_LIBS@
 win_LDADD = $(WIN_SYSTEM_LTLIB) @LIBNSL@ @LIBSOCKET@ -lm -lX11
 
 win32_SOURCES = win.c $(WIN_LIBH)
-win32_CFLAGS = @X_CFLAGS@ $(AM_CFLAGS) -DHINET_WIN32=1
+#win32_CFLAGS = @X_CFLAGS@ $(AM_CFLAGS) -DHINET_WIN32=1
+win32_CFLAGS = @X_CFLAGS@ -DHINET_WIN32=1
 win32_LDFLAGS = @X_LIBS@
 win32_LDADD = $(WIN_SYSTEM_LTLIB) @LIBNSL@ @LIBSOCKET@ -lm -lX11
 
@@ -213,9 +215,9 @@ dewin_LDADD = $(WIN_SYSTEM_LTLIB) -lm
 wintosac_SOURCES = wintosac.c
 wintosac_LDADD = -lm
 
-select_stations_SOURCES = select_stations.c pltxy.c pltxy.h $(SUBFUNC_H)
-select_stations_LDADD = -lm
-select_stations_CFLAGS = $(AM_CFLAGS)
+select_stations_SOURCES = select_stations.c pltxy.h $(SUBFUNC_H)
+select_stations_LDADD = $(WIN_SYSTEM_LTLIB) -lm
+#select_stations_CFLAGS = $(AM_CFLAGS)
 
 wchch_SOURCES = wchch.c $(WIN_LIBH)
 wchch_LDADD = $(WIN_SYSTEM_LTLIB)
@@ -368,9 +370,9 @@ recvts_LDADD = $(WIN_LOG_LTLIB) $(WIN_SYSTEM_LTLIB)
 
 hypomh_SOURCES = hypomh.f
 
-hypomhc_SOURCES = hypomhc.c pltxy.c pltxy.h $(SUBFUNC_H)
-hypomhc_LDADD = -lm
-hypomhc_CFLAGS = $(AM_CFLAGS)
+hypomhc_SOURCES = hypomhc.c pltxy.h $(SUBFUNC_H)
+hypomhc_LDADD = $(WIN_SYSTEM_LTLIB) -lm
+#hypomhc_CFLAGS = $(AM_CFLAGS)
 
 sends_SOURCES = sends.c $(WIN_LIBH)
 sends_LDADD = $(WIN_SYSTEM_LTLIB) @LIBNSL@ @LIBSOCKET@
@@ -426,6 +428,6 @@ evdetect_LDADD = $(WIN_LOG_LTLIB) $(WIN_SYSTEM_LTLIB) -lm
 winrandsimu6_SOURCES = winrandsimu6.c $(SUBFUNC_H)
 winrandsimu6_LDADD = @LIBSHMGET@ -lm
 
-select_bylatlon_SOURCES = select_bylatlon.c pltxy.c pltxy.h $(SUBFUNC_H)
-select_bylatlon_LDADD = -lm
-select_bylatlon_CFLAGS = $(AM_CFLAGS)
+select_bylatlon_SOURCES = select_bylatlon.c pltxy.h $(SUBFUNC_H)
+select_bylatlon_LDADD = $(WIN_SYSTEM_LTLIB) -lm
+#select_bylatlon_CFLAGS = $(AM_CFLAGS)

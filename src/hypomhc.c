@@ -1,5 +1,5 @@
 /*-
-  $Id: hypomhc.c,v 1.7.2.2.2.1 2010/02/28 09:09:06 uehira Exp $
+  $Id: hypomhc.c,v 1.7.2.2.2.2 2010/04/03 02:11:21 uehira Exp $
    hypomhc.c    : main program for hypocenter location
      original version was made on March 13, 1984 and
      modified by N.H. on Feb. 8, 1985, May 8, 1985.
@@ -50,6 +50,7 @@
 #include <floatingpoint.h>
 #endif
 
+#include "pltxy.h"
 #include "subst_func.h"
 
 #define    VPVS2   3.0		/* (Vp/Vs)^2 */

@@ -1,4 +1,4 @@
-/* $Id: relay.c,v 1.15.4.3.2.4 2009/12/18 11:33:44 uehira Exp $ */
+/* $Id: relay.c,v 1.15.4.3.2.5 2010/04/15 10:53:53 uehira Exp $ */
 /* "relay.c"      5/23/94-5/25/94,6/15/94-6/16/94,6/23/94,3/16/95 urabe */
 /*                3/26/95 check_packet_no; port# */
 /*                5/24/96 added processing of "host table full" */
@@ -76,7 +76,7 @@ int sock_in,sock_out;   /* socket */
 unsigned char sbuf[BUFNO][MAXMESG],sbuf_in[MAXMESG],ch_table[WIN_CHMAX];
 int psize[BUFNO],psize_in,negate_channel,hostlist[N_HOST][2],n_host,no_pinfo,
     n_ch;
-char *progname,host_name[100],logfile[256],chfile[256];
+char *progname,host_name[100],*logfile,chfile[256];
 int  daemon_mode, syslog_mode, exit_status;
 
 struct {
@@ -452,10 +452,10 @@ main(argc,argv)
     }
   strcpy(host_name,argv[2+optind]);
   host_port=atoi(argv[3+optind]);
-  if(argc>4+optind) strcpy(logfile,argv[4+optind]);
+  if(argc>4+optind) logfile=argv[4+optind];
   else
     {
-      *logfile=0;
+      logfile=NULL;
       if (daemon_mode)
 	syslog_mode = 1;
     }

@@ -1,4 +1,8 @@
- $Id: ChangeLog,v 1.131.2.25.2.49 2010/04/03 07:37:44 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.50 2010/04/15 10:53:53 uehira Exp $
+
+2010-04-15  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/relay.c : bug fixed.
+	* Version 2.1.1 released.
 
 2010-04-03  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* use pltxy() from library : hypomhc, select_bylatlon, select_stations

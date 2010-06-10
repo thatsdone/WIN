@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.46.2.6.2.15 2010/04/03 07:37:44 uehira Exp $
+   $Id: win.c,v 1.46.2.6.2.16 2010/06/10 00:27:27 uehira Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -1014,10 +1014,10 @@ static void xgetorigin(Display *, Window, int *, int *, unsigned int *,
 		       unsigned int *, unsigned int *, Window *, Window*);   /* check ok 2010.4.3 */
 static char *get_time_win(struct YMDhms *, int);   /* check ok 2010.4.3 */
 static int invert_dpy(int, int, int);   /* check ok 2010.4.3 */
-static char *getname(uid_t);
-static FILE *open_file(char *, char *);
-static int get_func(int);
-static void put_funcs(char **, int);
+static char *getname(uid_t);  /* check ok 2010.4.6 */
+static FILE *open_file(char *, char *);  /* check ok 2010.4.6 */
+static int get_func(int);  /* check ok 2010.4.6 */
+static void put_funcs(char **, int);  /* check 2010.4.9 */
 static void put_func(char *, int, int, int, int);
 static int x_func(int);
 static void put_fill(lBitmap *, int, int, int, int, int);
@@ -1245,8 +1245,8 @@ getname(uid_t  uid)
   struct passwd *pwd;
 
   pwd=getpwuid(uid);
-  if(pwd) return pwd->pw_name;
-  else return NULL;
+  if(pwd!=NULL) return (pwd->pw_name);
+  else return (NULL);
   }
 
 static FILE *
@@ -1256,7 +1256,7 @@ open_file(char *fn, char *fs)
 
   if((fp=fopen(fn,"r"))==NULL)
     fprintf(stderr,"%s file '%s' not found\007\n",fs,fn);
-  return fp;
+  return (fp);
   }
 
 static int
@@ -1264,16 +1264,16 @@ get_func(int x)
   {
   int xx,i;
 
-  if(x<WB) return 0;
+  if(x<WB) return (0);
   xx=width_dpy-WB;
   i=1;
   while(xx>0)
     {
-    if(x>=xx) return i;
+    if(x>=xx) return (i);
     xx-=WB+HW;
     i++;
     }
-  return -1;
+  return (-1);
   }
 
 static void

@@ -1,4 +1,4 @@
-/* $Id: relaym.c,v 1.8.2.1.2.2 2009/12/25 01:31:59 uehira Exp $ */
+/* $Id: relaym.c,v 1.8.2.1.2.3 2010/06/13 04:14:33 uehira Exp $ */
 
 /*
  * 2005-06-22 MF relay.c:
@@ -49,14 +49,15 @@
 #define MAXMESG   2048
 #define N_PACKET  64     /* N of old packets to be requested */  
 #define BUFNO     128    /* max. save packet */
+#define MAXSQ     256    /* squence number (0 - 255) [unsigned char : 0xff] */
 #define N_HOST    100    /* max. number of host */
 #define N_DHOST   128    /* max. number of destination host */
 
 #define MAXNAMELEN   1025
 #define MAXMSG       1025
 
-static char rcsid[] =
-  "$Id: relaym.c,v 1.8.2.1.2.2 2009/12/25 01:31:59 uehira Exp $";
+static const char rcsid[] =
+  "$Id: relaym.c,v 1.8.2.1.2.3 2010/06/13 04:14:33 uehira Exp $";
 
 /* destination host info. */
 struct hostinfo {
@@ -77,12 +78,12 @@ int  daemon_mode, syslog_mode;
 int  exit_status;
 
 static ssize_t        psize[BUFNO];
-static unsigned char  sbuf[BUFNO][MAXMESG];
-static unsigned char  sq[N_DHOST];
-static int            sqindx[N_DHOST][BUFNO];
+static uint8_w        sbuf[BUFNO][MAXMESG];
+static uint8_w        sq[N_DHOST];
+static int            sqindx[N_DHOST][MAXSQ];
 static char           chfile[MAXNAMELEN];
 static int            no_pinfo, n_host, negate_channel;
-static unsigned char  ch_table[WIN_CHMAX];
+static uint8_w        ch_table[WIN_CHMAX];
 
 struct {
   char  host_[NI_MAXHOST];  /* host address */
@@ -94,8 +95,8 @@ struct {
   char port[NI_MAXSERV];
   int  no;
   unsigned char nos[256/8];
-  unsigned int n_bytes;
-  unsigned int n_packets;
+  unsigned long n_bytes;
+  unsigned long n_packets;
 } static ht[N_HOST];
 
 static void usage(void);
@@ -118,7 +119,7 @@ main(int argc, char *argv[])
   char port_[NI_MAXSERV];  /* port No. */
   ssize_t     re;
   int  maxsoc, maxsoc1;
-  struct hostinfo  *hinf, *hinf_top = NULL;
+  struct hostinfo  *hinf, *hinf2, *hinf_top = NULL;
   fd_set  rset, rset1;
   struct timeval  timeout, tv1, tv2;
   double  idletime;
@@ -248,7 +249,7 @@ main(int argc, char *argv[])
     psize[i] = 2;
   bufno = 0;
   for (i = 0; i < N_DHOST; ++i)
-    for (j = 0; j < BUFNO; ++j)
+    for (j = 0; j < MAXSQ; ++j)
       sqindx[i][j] = -1;
 
   read_chfile();
@@ -307,19 +308,21 @@ main(int argc, char *argv[])
 	if (sendto(hinf->sock, sbuf[bufno],
 		   psize[bufno], 0, hinf->sa, hinf->salen) < 0)
 	  err_sys("main: sendto");
-	
-	for (i = 0; i < BUFNO; ++i)
+
+	/* clear and set index */
+	for (i = 0; i < MAXSQ; ++i)
 	  if (sqindx[hinf->ID][i] == bufno) {
 	    sqindx[hinf->ID][i] = -1;
 	    break;
 	  }
 	sqindx[hinf->ID][sq[hinf->ID]] = bufno;
+
 	sq[hinf->ID]++;
-      }
+      }  /* end of send data */
       
       if (++bufno == BUFNO)
 	bufno = 0;
-    }  /* for (ct = ct_top; ct != NULL; ct = ct->next) */
+    }  /* end of read data [for (ct = ct_top; ct != NULL; ct = ct->next)] */
 
     /*** accept resend request packet ***/
     /*  printf("Go resend request check!!!!\n\n"); */
@@ -353,14 +356,19 @@ main(int argc, char *argv[])
 			   hinf->host_, hinf->port_,
 			   no_f, bufno_f, sq[hinf->ID], re);
 	    write_log(msg);
-	    
-	    for (i = 0; i < BUFNO; ++i)
-	      if (sqindx[hinf->ID][i] == bufno) {
-		sqindx[hinf->ID][i] = -1;
-		break;
-	      }	  
+
+	    /* clear and set index */
+	    for (hinf2 = hinf_top; hinf2 != NULL; hinf2 = hinf2->next) {
+	      for (i = 0; i < MAXSQ; ++i)
+		if (sqindx[hinf2->ID][i] == bufno) {
+		  sqindx[hinf2->ID][i] = -1;
+		  break;
+		}
+	    }
 	    sqindx[hinf->ID][sq[hinf->ID]] = bufno;
+
 	    sq[hinf->ID]++;
+
 	    if (++bufno == BUFNO)
 	      bufno = 0;
 	  }
@@ -701,7 +709,7 @@ read_chfile(void)
     if (ht[i].host[0] == '\0')
       break;
     (void)snprintf(tb, sizeof(tb),
-		   "src %s:%s   %u %u %u %u",
+		   "src %s:%s   %lu %lu %lu %lu",
 		   ht[i].host, ht[i].port, ht[i].n_packets, ht[i].n_bytes,
 		   (ht[i].n_packets + k) / j, (ht[i].n_bytes + k) / j);
     write_log(tb);

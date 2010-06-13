@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.46.2.6.2.16 2010/06/10 00:27:27 uehira Exp $
+   $Id: win.c,v 1.46.2.6.2.17 2010/06/13 03:57:39 uehira Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -763,7 +763,7 @@ char patterns[N_LPTN][2]={{1,0}, {1,1}, {2,2}, {4,4}, {1,7}, {1,15}};
   struct File_Ptr
     {
     size_t        offset,size;  /* 64bit ok? */
-    unsigned char time[8];  /* last 2 bytes are padding */
+    uint8_w       time[WIN_TM_LEN + 2];  /* last 2 bytes are padding */
     };
   struct Pick_Time
     {
@@ -849,8 +849,8 @@ char patterns[N_LPTN][2]={{1,0}, {1,1}, {2,2}, {4,4}, {1,7}, {1,15}};
     char label_file[NAMLEN];  /* label file */
     int fd;                   /* fd for data file */
     int fd_save;              /* fd for save file */
-    int len;                  /* data length in sec */
-    int n_ch;                 /* number of channels */
+    int32_w len;                  /* data length in sec (old: int) */
+    int32_w n_ch;                 /* number of channels (old: int) */
     int len_mon;              /* normal width of mon in sec */
     int w_mon;                /* normal width of mon pixels */
     int n_mon;                /* n of mon bitmaps */
@@ -866,7 +866,7 @@ char patterns[N_LPTN][2]={{1,0}, {1,1}, {2,2}, {4,4}, {1,7}, {1,15}};
     struct Filter filt[N_FILTERS];  /* filter parameters */
     int ch2idx[N_CH_NAME];    /* index for each sys_ch */
     short ch_use[N_CH_NAME];  /* use(1) or not use(0) */
-    unsigned short *idx2ch;   /* sys_ch for each index
+    WIN_ch *idx2ch;   /* sys_ch for each index
                   (from the order in the first sec) */
     struct Stn *stn;          /* station parameters */
     short *pos2idx;           /* index for each position */
@@ -1018,11 +1018,11 @@ static char *getname(uid_t);  /* check ok 2010.4.6 */
 static FILE *open_file(char *, char *);  /* check ok 2010.4.6 */
 static int get_func(int);  /* check ok 2010.4.6 */
 static void put_funcs(char **, int);  /* check 2010.4.9 */
-static void put_func(char *, int, int, int, int);
-static int x_func(int);
-static void put_fill(lBitmap *, int, int, int, int, int);
-static time_t time2lsec(int *);
-static void lsec2time(time_t, int *);
+static void put_func(char *, int, int, int, int);  /* check 2010.6.10 */
+static int x_func(int);  /* check 2010.6.10 */
+static void put_fill(lBitmap *, int, int, int, int, int);  /* check 2010.6.10 */
+static time_t time2lsec(int *);  /* check 2010.6.10 */
+static void lsec2time(time_t, int *);  /* check 2010.6.10 */
 static void make_sec_table(void);
 static int read_one_sec(long, long, register long *, int);
 static int read_one_sec_mon(long, long, register long *, long);
@@ -1327,8 +1327,8 @@ static int
 x_func(int n)
   {
 
-  if(n==0) return 0;
-  else return width_dpy-(WB+HW)*(n-1)-WB;
+  if(n==0) return (0);
+  else return (width_dpy-(WB+HW)*(n-1)-WB);
   }
 
 static void
@@ -1349,7 +1349,8 @@ put_fill(lBitmap *bm, int xzero, int yzero, int xsize, int ysize, int blk)
     else gc=(&gc_memi);
     }
   XSetFunction(disp,*gc,BF_S);
-  XFillRectangle(disp,bm->drw,*gc,xzero,yzero,xsize,ysize);
+  XFillRectangle(disp,bm->drw,*gc,xzero,yzero,
+		 (unsigned int)xsize,(unsigned int)ysize);
   XFlush(disp);
   }
 
@@ -1365,7 +1366,7 @@ time2lsec(int *tarray)
   tm.tm_hour=tarray[3];
   tm.tm_min=tarray[4];
   tm.tm_sec=tarray[5];
-  return mktime(&tm);
+  return (mktime(&tm));
 }
 
 static void
@@ -1385,13 +1386,14 @@ lsec2time(time_t sec, int *tarray)
 static void
 make_sec_table()
   {
-  int i,ii,j,size,ptr,size_max,sr,tm[6];
+  int i,ii,j,size,ptr,sr,tm[WIN_TM_LEN];
+  WIN_bs  size_max;
   time_t lsec_done=0,lsec;  /* just for suppress warning */
-  unsigned char c[4],t[6];
+  uint8_w   c[4],t[WIN_TM_LEN];
 #if OLD_FORMAT
-   unsigned int gh;
+   uint32_w gh;
 #else
-   unsigned char gh[5];
+   uint8_w  gh[5];
 #endif
 
   if(flag_save==1)  /* LOAD */
@@ -1399,7 +1401,7 @@ make_sec_table()
     read(ft.fd_save,&ft.len,sizeof(ft.len));
     read(ft.fd_save,&ft.n_ch,sizeof(ft.n_ch));
     read(ft.fd_save,&size_max,sizeof(size_max));
-    if((ft.idx2ch=(unsigned short *)malloc(sizeof(*ft.idx2ch)*ft.n_ch))==0)
+    if((ft.idx2ch=(WIN_ch *)malloc(sizeof(*ft.idx2ch)*ft.n_ch))==0)
       emalloc("ft.idx2ch");
     if((ft.sr=(short *)malloc(sizeof(*ft.sr)*ft.n_ch))==0) emalloc("ft.sr");
     if((ft.ptr=(struct File_Ptr *)malloc(sizeof(*ft.ptr)*ft.len))==0)
@@ -1422,7 +1424,7 @@ reset_blockmode:
     ptr+=4;
     while(read(ft.fd,c,1))
       {
-      read(ft.fd,(char *)ft.ptr[ft.len].time,6);
+      read(ft.fd,(char *)ft.ptr[ft.len].time,WIN_TM_LEN);
       lseek(ft.fd,(off_t)5,1);
       read(ft.fd,c,4);
       size=(c[0]<<24)+(c[1]<<16)+(c[2]<<8)+c[3];
@@ -1437,7 +1439,7 @@ reset_blockmode:
       size=(c[0]<<24)+(c[1]<<16)+(c[2]<<8)+c[3];
       if(size==0) break;
       else if(size>size_max) size_max=size;
-      read(ft.fd,(char *)ft.ptr[ft.len].time,6);
+      read(ft.fd,(char *)ft.ptr[ft.len].time,WIN_TM_LEN);
 #endif
       bcd_dec(tm,ft.ptr[ft.len].time);
       if(sec_block && ft.ptr[ft.len].time[5]==0){
@@ -1454,7 +1456,7 @@ reset_blockmode:
         {
         if(lsec_done<lsec-1)
           {
-          memcpy(t,ft.ptr[ft.len].time,6);
+          memcpy(t,ft.ptr[ft.len].time,WIN_TM_LEN);
           while(lsec_done<lsec-1)
             {
             lsec2time(++lsec_done,tm);
@@ -1465,7 +1467,7 @@ reset_blockmode:
               if((ft.ptr=(struct File_Ptr *)realloc((char *)ft.ptr,
                 sizeof(*(ft.ptr))*(ft.len+100)))==0) emalloc("ft.ptr");
             }
-          memcpy(ft.ptr[ft.len].time,t,6);
+          memcpy(ft.ptr[ft.len].time,t,WIN_TM_LEN);
           }
         }
       lsec_done=lsec;
@@ -1541,7 +1543,7 @@ reset_blockmode:
       if(ii==0)
         {
         for(i=0;i<N_CH_NAME;i++) ft.ch2idx[i]=(-1);
-        if((ft.idx2ch=(unsigned short *)malloc(sizeof(*ft.idx2ch)*ft.n_ch))==0)
+        if((ft.idx2ch=(WIN_ch *)malloc(sizeof(*ft.idx2ch)*ft.n_ch))==0)
           emalloc("ft.idx2ch");
         if((ft.sr=(short *)malloc(sizeof(*ft.sr)*ft.n_ch))==0)
           emalloc("ft.sr");
@@ -2676,7 +2678,7 @@ just_map:
     rewind(fp);
 
     if(just_hypo)
-      if((ft.idx2ch=(unsigned short *)malloc(sizeof(*ft.idx2ch)*kk))==0)
+      if((ft.idx2ch=(WIN_ch *)malloc(sizeof(*ft.idx2ch)*kk))==0)
         emalloc("ft.idx2ch");
 
     if(kk>ft.n_ch)  /* if larger than already allocated */

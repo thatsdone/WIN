@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.46.2.6.2.17 2010/06/13 03:57:39 uehira Exp $
+   $Id: win.c,v 1.46.2.6.2.18 2010/06/14 10:21:59 uehira Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -849,16 +849,16 @@ char patterns[N_LPTN][2]={{1,0}, {1,1}, {2,2}, {4,4}, {1,7}, {1,15}};
     char label_file[NAMLEN];  /* label file */
     int fd;                   /* fd for data file */
     int fd_save;              /* fd for save file */
-    int32_w len;                  /* data length in sec (old: int) */
-    int32_w n_ch;                 /* number of channels (old: int) */
+    int32_w len;              /* data length in sec (old: int) */
+    int32_w n_ch;             /* number of channels (old: int) */
     int len_mon;              /* normal width of mon in sec */
     int w_mon;                /* normal width of mon pixels */
     int n_mon;                /* n of mon bitmaps */
-    unsigned char *secbuf;    /* one sec buffer */
+    uint8_w *secbuf;          /* one sec buffer */
     int ptr_secbuf;           /* one sec buffer pointer */
     struct File_Ptr *ptr;     /* location & time of each sec */
     int n_ch_ex;              /* number of channels (inc. no data )*/
-    int sr_max;               /* max of sampling rate */
+    WIN_sr sr_max;            /* max of sampling rate (old: int) */
     int n_filt;               /* n of filters */
     int n_label;              /* n of labels */
     int label_idx;            /* label index */
@@ -871,7 +871,7 @@ char patterns[N_LPTN][2]={{1,0}, {1,1}, {2,2}, {4,4}, {1,7}, {1,15}};
     struct Stn *stn;          /* station parameters */
     short *pos2idx;           /* index for each position */
     short *idx2pos;           /* position for each index */
-    short *sr;                /* SR */
+    WIN_sr *sr;               /* SR (old: short!! .sv format changed!!) */
     char label[N_LABELS][20]; /* labels */
     struct Pick_Time (*pick)[4];  /* phase times : P,S,X times */
     struct Pick_Time (*pick_save)[4]; /* phase times : P,S,X times */
@@ -1023,7 +1023,7 @@ static int x_func(int);  /* check 2010.6.10 */
 static void put_fill(lBitmap *, int, int, int, int, int);  /* check 2010.6.10 */
 static time_t time2lsec(int *);  /* check 2010.6.10 */
 static void lsec2time(time_t, int *);  /* check 2010.6.10 */
-static void make_sec_table(void);
+static void make_sec_table(void);  /* check 2010.6.14??? */
 static int read_one_sec(long, long, register long *, int);
 static int read_one_sec_mon(long, long, register long *, long);
 static void print_usage(void);
@@ -1386,8 +1386,11 @@ lsec2time(time_t sec, int *tarray)
 static void
 make_sec_table()
   {
-  int i,ii,j,size,ptr,sr,tm[WIN_TM_LEN];
-  WIN_bs  size_max;
+  int i,ii,j,tm[WIN_TM_LEN];
+  size_t  ptr;
+  WIN_ch  chtmp;
+  WIN_sr  sr;
+  WIN_bs  size,size_max;
   time_t lsec_done=0,lsec;  /* just for suppress warning */
   uint8_w   c[4],t[WIN_TM_LEN];
 #if OLD_FORMAT
@@ -1403,7 +1406,7 @@ make_sec_table()
     read(ft.fd_save,&size_max,sizeof(size_max));
     if((ft.idx2ch=(WIN_ch *)malloc(sizeof(*ft.idx2ch)*ft.n_ch))==0)
       emalloc("ft.idx2ch");
-    if((ft.sr=(short *)malloc(sizeof(*ft.sr)*ft.n_ch))==0) emalloc("ft.sr");
+    if((ft.sr=(WIN_sr *)malloc(sizeof(*ft.sr)*ft.n_ch))==0) emalloc("ft.sr");
     if((ft.ptr=(struct File_Ptr *)malloc(sizeof(*ft.ptr)*ft.len))==0)
       emalloc("ft.ptr");
     read(ft.fd_save,ft.ptr,sizeof(*ft.ptr)*ft.len);
@@ -1424,10 +1427,10 @@ reset_blockmode:
     ptr+=4;
     while(read(ft.fd,c,1))
       {
-      read(ft.fd,(char *)ft.ptr[ft.len].time,WIN_TM_LEN);
+      read(ft.fd,(uint8_w *)ft.ptr[ft.len].time,WIN_TM_LEN);
       lseek(ft.fd,(off_t)5,1);
       read(ft.fd,c,4);
-      size=(c[0]<<24)+(c[1]<<16)+(c[2]<<8)+c[3];
+      size=(WIN_bs)mkuint4(&c[0]);
       if(size==0) break;
       else if((size+16)>size_max) size_max=size+16;
       size+=16;
@@ -1436,10 +1439,10 @@ reset_blockmode:
     ft.len=ptr=size_max=i=ii=0;
     while(read(ft.fd,c,4))
       {
-      size=(c[0]<<24)+(c[1]<<16)+(c[2]<<8)+c[3];
+      size=(WIN_bs)mkuint4(&c[0]);
       if(size==0) break;
       else if(size>size_max) size_max=size;
-      read(ft.fd,(char *)ft.ptr[ft.len].time,WIN_TM_LEN);
+      read(ft.fd,(uint8_w *)ft.ptr[ft.len].time,WIN_TM_LEN);
 #endif
       bcd_dec(tm,ft.ptr[ft.len].time);
       if(sec_block && ft.ptr[ft.len].time[5]==0){
@@ -1509,26 +1512,10 @@ reset_blockmode:
           ptr+=((gh>>12)&0xf)*sr+4;
 #else  /* OLD_FORMAT */
 	  read(ft.fd,&gh[0],5);
-	  i=gh[1]+(((long)gh[0])<<8);
-	  /* channel header = 4 byte */
-	  if((gh[2]&0x80)==0x0){
-	       if((sr=gh[3]+(((long)(gh[2]&0x0f))<<8))>ft.sr_max)
-		 ft.sr_max=sr;
-	       if((gh[2]>>4)&0x7)
-		 ptr+=((gh[2]>>4)&0xf)*(sr-1)+8;
-	       else
-		 ptr+=(sr>>1)+8;
-	  }
-	  /* channel header = 5 byte */
-	  else{
-	       if((sr=gh[4]+(((long)gh[3])<<8)+(((long)(gh[2]&0x0f))<<16))
-		  >ft.sr_max)
-		 ft.sr_max=sr;
-	       if((gh[2]>>4)&0x7)
-		 ptr+=((gh[2]>>4)&0x7)*(sr-1)+9;
-	       else
-		 ptr+=(sr>>1)+9;
-	  }
+	  ptr += win_get_chhdr(&gh[0], &chtmp, &sr);
+	  i = chtmp;
+	  if (sr > ft.sr_max)
+	    ft.sr_max=sr;
 #endif  /* OLD_FORMAT */
           if(sr<SR_LOW) continue;   /* exclude ch with sr<SR_LOW */
           if(ft.ch_exclusive && ft.ch_use[i]==0) continue;
@@ -1545,7 +1532,7 @@ reset_blockmode:
         for(i=0;i<N_CH_NAME;i++) ft.ch2idx[i]=(-1);
         if((ft.idx2ch=(WIN_ch *)malloc(sizeof(*ft.idx2ch)*ft.n_ch))==0)
           emalloc("ft.idx2ch");
-        if((ft.sr=(short *)malloc(sizeof(*ft.sr)*ft.n_ch))==0)
+        if((ft.sr=(WIN_sr *)malloc(sizeof(*ft.sr)*ft.n_ch))==0)
           emalloc("ft.sr");
         }
       }
@@ -1577,7 +1564,7 @@ reset_blockmode:
   ft.pick_calc_ot.valid=0;
 
 /* make one second buffer */
-  if((ft.secbuf=(unsigned char *)malloc(size_max))==0) emalloc("ft.secbuf");
+  if((ft.secbuf=(uint8_w *)malloc(size_max))==0) emalloc("ft.secbuf");
   ft.ptr_secbuf=(-1);
   }
 

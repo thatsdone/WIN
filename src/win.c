@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.46.2.6.2.19 2010/06/15 03:16:54 uehira Exp $
+   $Id: win.c,v 1.46.2.6.2.20 2010/06/15 04:46:05 uehira Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -855,7 +855,7 @@ char patterns[N_LPTN][2]={{1,0}, {1,1}, {2,2}, {4,4}, {1,7}, {1,15}};
     int w_mon;                /* normal width of mon pixels */
     int n_mon;                /* n of mon bitmaps */
     uint8_w *secbuf;          /* one sec buffer */
-    int ptr_secbuf;           /* one sec buffer pointer */
+    int32_w ptr_secbuf;       /* one sec buffer pointer */
     struct File_Ptr *ptr;     /* location & time of each sec */
     int n_ch_ex;              /* number of channels (inc. no data )*/
     WIN_sr sr_max;            /* max of sampling rate (old: int) */
@@ -1025,8 +1025,8 @@ static time_t time2lsec(int *);  /* check 2010.6.10 */
 static void lsec2time(time_t, int *);  /* check 2010.6.10 */
 static void make_sec_table(void);  /* check?? 2010.6.14 */
 static WIN_sr read_one_sec(int32_w, int32_w, register int32_w *, int);  /* check?? 2010.6.15 */
-static int read_one_sec_mon(long, long, register long *, long);
-static void print_usage(void);
+static int read_one_sec_mon(int32_w, int32_w, register int32_w *, int32_w);  /* check?? 2010.6.15 */
+static void print_usage(void);  /* check 2010.6.15 */
 static int init_process(int, char *[], int);
 static int refresh(int);    /* Is return value really OK? */
 static void set_period(int, struct Pick_Time *);
@@ -1588,7 +1588,7 @@ read_one_sec(int32_w ptr, int32_w sys_ch, register int32_w *abuf, int spike)
   WIN_ch sys_channel;
 #endif
   int b_size;
-  uint32_w g_size;
+  uint32_w g_size;  /* OLD: int */
   register int i,j;
   WIN_sr s_rate;
   register uint8_w *dp;
@@ -1786,24 +1786,30 @@ read_one_sec(int32_w ptr, int32_w sys_ch, register int32_w *abuf, int spike)
   }
 
 static int
-read_one_sec_mon(long ptr, long sys_ch, register long *abuf, long ppsm)
+read_one_sec_mon(int32_w ptr, int32_w sys_ch, register int32_w *abuf, int32_w ppsm)
   /* long ptr,sys_ch,ppsm;   sys_ch = sys*256 + ch */
   {
-  register int i,k,now,y_min,y_max,s_rate,sub_rate;
-  register unsigned char *dp;
-  long *abuf_save;
+  register int i,k;
+  register int32_w  now,y_min,y_max;
+  register WIN_sr  sub_rate;  /* OLD : int */
+  WIN_sr  s_rate;  /* OLD : int */
+  register uint8_w *dp;
+  int32_w *abuf_save;
 #if OLD_FORMAT
   int sys_channel;
-#endif
-  int b_size,g_size;
-#if OLD_FORMAT
-  unsigned int gh;
 #else
-  unsigned char gh[5];
+  WIN_ch sys_channel;
 #endif
-  unsigned char *ddp;
-  short shreg;
-  int inreg;
+  int b_size;
+  uint32_w  g_size;  /* OLD: int */
+#if OLD_FORMAT
+  uint32_w gh;
+#else
+  uint8_w gh[5];
+#endif
+  uint8_w *ddp;
+  int16_w shreg;
+  int32_w inreg;
 
   if(ptr>=ft.len || ft.ptr[ptr].size==0) return (0);
   abuf_save=abuf;
@@ -1871,7 +1877,7 @@ read_one_sec_mon(long ptr, long sys_ch, register long *abuf, long ppsm)
         {
         for(i=0;i<s_rate;i++)
           {
-          now=(*(char *)(dp++));
+          now=(*(int8_w *)(dp++));
           if(k++==0) y_max=y_min=now;
           else
             {
@@ -1957,35 +1963,23 @@ read_one_sec_mon(long ptr, long sys_ch, register long *abuf, long ppsm)
   gh[1]=dp[1];
   gh[2]=dp[2];
   gh[3]=dp[3];
-  
-  /* channel header = 4 byte */
-  if((gh[2]&0x80)==0x0)
-    {
-    s_rate=gh[3]+(((long)(gh[2]&0x0f))<<8);
-    if((b_size=(gh[2]>>4)&0x7)) g_size=b_size*(s_rate-1)+8;
-    else g_size=(s_rate>>1)+8;
-    dp+=4;
-    }
-  /* channel header = 5 byte */
+  gh[4]=dp[4];
+  g_size = win_chheader_info(&gh[0], &sys_channel, &s_rate, &b_size);
+
+  if ((gh[2] & 0x80) == 0x0)
+    dp += 4;  /* channel header = 4 byte */
   else
-    {
-    gh[4]=dp[4];
-    s_rate=gh[4]+(((long)gh[3])<<8)+(((long)(gh[2]&0x0f))<<16);   
-    if((b_size=(gh[2]>>4)&0x7)) g_size=b_size*(s_rate-1)+9;
-    else g_size=(s_rate>>1)+9;
-    dp+=5;
-    }
+    dp += 5;  /* channel header = 5 byte */
+
   /*    printf("mon: sys_ch=%04X ch=%04X ch_1=%02X%02X sr=%d gsize=%d\n", */
   /* 	  sys_ch,gh[1]+gh[0]*256,gh[0],gh[1],s_rate,g_size); */
   
-  if((gh[1]+(((long)gh[0])<<8))!=sys_ch)
-    {
+  if(sys_channel!=sys_ch) {
     dp=ft.secbuf+10;
 #if HINET_WIN32
     dp+=6;
 #endif
-    while(1)
-      {
+    while(1) {
 #if HINET_WIN32
       dp+=2;
 #endif
@@ -1993,38 +1987,19 @@ read_one_sec_mon(long ptr, long sys_ch, register long *abuf, long ppsm)
       gh[1]=dp[1];
       gh[2]=dp[2];
       gh[3]=dp[3];
-	    
-    /* channel header = 4 byte */
-      if((gh[2]&0x80)==0x0)
-        {
-        s_rate=gh[3]+(((long)(gh[2]&0x0f))<<8);
-        if((b_size=(gh[2]>>4)&0x7)) g_size=b_size*(s_rate-1)+8;
-        else g_size=(s_rate>>1)+8;
-        if((gh[1]+(((long)gh[0])<<8))==sys_ch)
-          {
-    /* advance pointer and exit */
-          dp+=4;
-          break;
-          }
-        else if((dp+=g_size)>=ddp) return (0);
-        }
-    /* channel header = 5 byte */
-      else
-        { 
-        gh[4]=dp[4];
-        s_rate=gh[4]+(((long)gh[3])<<8)+(((long)(gh[2]&0x0f))<<16);
-        if((b_size=(gh[2]>>4)&0x7)) g_size=b_size*(s_rate-1)+9;
-        else g_size=(s_rate>>1)+9;
-        if((gh[1]+(((long)gh[0])<<8))==sys_ch)
-          {
-    /* advance pointer and exit */
-          dp+=5;
-          break;
-          }
-        else if((dp+=g_size)>=ddp) return (0);
-        }
-      }
-    }
+      gh[4]=dp[4];
+
+      g_size = win_chheader_info(&gh[0], &sys_channel, &s_rate, &b_size);
+      if (sys_channel == sys_ch) { /* advance pointer and break */
+	if ((gh[2] & 0x80) == 0x0)
+	  dp += 4;    /* channel header = 4 byte */
+	else
+	  dp += 5;    /* channel header = 5 byte */
+	break;
+      } else if ((dp += g_size) >= ddp)
+	return (0);
+    }  /* while(1) */
+  }  /* if(sys_channel!=sys_ch) */
   /* read group */
   sub_rate=s_rate/ppsm;
 
@@ -2037,7 +2012,7 @@ read_one_sec_mon(long ptr, long sys_ch, register long *abuf, long ppsm)
     case 0:
       for(i=1;i<s_rate;i+=2)
         {
-        now+=((*(char *)dp)>>4);
+        now+=((*(int8_w *)dp)>>4);
         if(k++==0) y_max=y_min=now;
         else
           {
@@ -2050,7 +2025,7 @@ read_one_sec_mon(long ptr, long sys_ch, register long *abuf, long ppsm)
             k=0;
             }
           }
-        now+=(((char)(*(dp++)<<4))>>4);
+        now+=(((int8_w)(*(dp++)<<4))>>4);
         if(k++==0) y_max=y_min=now;
         else
           {
@@ -2068,7 +2043,7 @@ read_one_sec_mon(long ptr, long sys_ch, register long *abuf, long ppsm)
     case 1:
       for(i=1;i<s_rate;i++)
         {
-        now+=(*(char *)(dp++));
+        now+=(*(int8_w *)(dp++));
         if(k++==0) y_max=y_min=now;
         else
           {

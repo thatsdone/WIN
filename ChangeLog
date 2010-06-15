@@ -1,4 +1,8 @@
- $Id: ChangeLog,v 1.131.2.25.2.51 2010/06/13 04:14:33 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.52 2010/06/15 09:30:54 uehira Exp $
+
+2010-06-15  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/win.c : bug fixed [in get_trigch()]. (MFH)
+	  malloc return check : 0 --> NULL.
 
 2010-06-13  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* src/relay.c : bug fixed.

@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.50 2008/12/31 08:03:56 uehira Exp $
+   $Id: win.c,v 1.51 2010/06/15 08:34:04 uehira Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -21,7 +21,7 @@
 #else
 #define NAME_PRG      "win32"
 #endif
-#define WIN_VERSION   "2008.2.20(+Hi-net)"
+#define WIN_VERSION   "2010.6.15(+Hi-net)"
 #define DEBUG_AP      0   /* for debugging auto-pick */
 /* 5:sr, 4:ch, 3:sec, 2:find_pick, 1:all */
 /************ HOW TO COMPILE THE PROGRAM **************************
@@ -3868,7 +3868,7 @@ get_trigch()
   {
   int i,k,j,jj;
   if(ft.trigch==0)
-    if((ft.trigch=(short *)malloc(sizeof(ft.trigch)*ft.n_ch))==0)
+    if((ft.trigch=(short *)malloc(sizeof(*ft.trigch)*ft.n_ch))==0)
       emalloc("ft.trigch");
   /* select V/VH chs */
   k=j=0;

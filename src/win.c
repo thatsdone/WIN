@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.46.2.6.2.18 2010/06/14 10:21:59 uehira Exp $
+   $Id: win.c,v 1.46.2.6.2.19 2010/06/15 03:16:54 uehira Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -692,7 +692,7 @@ char patterns[N_LPTN][2]={{1,0}, {1,1}, {2,2}, {4,4}, {1,7}, {1,15}};
 	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x7c,0x00,0x00,0x38,0x00,0x00,0x00,0x00,0x00,
 	0xf0,0x1e,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x40,0x00,0x06,0x10,0xc0,0x00,0x00}};
 #if OLD_FORMAT
-  short e_table[256]={
+  int16_w e_table[256]={
     0x0000,0x0001,0x0002,0x0003,0x0004,0x0005,0x0006,0x0007,
     0x0008,0x0009,0x000A,0x000B,0x000C,0x000D,0x000E,0x000F,
     0x0010,0x0011,0x0012,0x0013,0x0014,0x0015,0x0016,0x0017,
@@ -1007,7 +1007,7 @@ typedef struct
     map_period_unit,dot;
   double pixels_per_km,lat_cent,lon_cent,mec_rc,alat0,along0,pdpi;
   static double  *dbuf,*dbuf2;
-  static long *buf,*buf2;
+  static int32_w *buf,*buf2;
 
 /*********************** prototypes **********************/
 static void xgetorigin(Display *, Window, int *, int *, unsigned int *,
@@ -1023,8 +1023,8 @@ static int x_func(int);  /* check 2010.6.10 */
 static void put_fill(lBitmap *, int, int, int, int, int);  /* check 2010.6.10 */
 static time_t time2lsec(int *);  /* check 2010.6.10 */
 static void lsec2time(time_t, int *);  /* check 2010.6.10 */
-static void make_sec_table(void);  /* check 2010.6.14??? */
-static int read_one_sec(long, long, register long *, int);
+static void make_sec_table(void);  /* check?? 2010.6.14 */
+static WIN_sr read_one_sec(int32_w, int32_w, register int32_w *, int);  /* check?? 2010.6.15 */
 static int read_one_sec_mon(long, long, register long *, long);
 static void print_usage(void);
 static int init_process(int, char *[], int);
@@ -1568,43 +1568,47 @@ reset_blockmode:
   ft.ptr_secbuf=(-1);
   }
 
-static int
-read_one_sec(long ptr, long sys_ch, register long *abuf, int spike)
+static WIN_sr
+read_one_sec(int32_w ptr, int32_w sys_ch, register int32_w *abuf, int spike)
   /* long ptr,sys_ch;    sys_ch = sys*256 + ch */
   /* int spike;           if 1, eliminate spikes */
   {
 #define N_SBUF   600
 #define SR_SBUF  100
-  static long *sbuf[N_SBUF];
+  static int32_w *sbuf[N_SBUF];
   static struct Sbuf_Index {
-    unsigned short ch;
-    unsigned short sec;
-    short sr;
+    int32_w sec;  /* OLD : unsigned short */
+    WIN_sr sr;    /* OLD : short */
+    WIN_ch ch;
     } *sbuf_index;
   static int n_sbuf,i_sbuf;
 #if OLD_FORMAT
   int sys_channel;
-#endif
-  int b_size,g_size;
-  register int i,j,s_rate;
-  register unsigned char *dp;
-#if OLD_FORMAT
-  unsigned int gh;
 #else
-  unsigned char gh[5];
+  WIN_ch sys_channel;
 #endif
-  unsigned char *ddp;
-  short shreg;
-  int inreg;
-  long dmax,dmin,drange;
+  int b_size;
+  uint32_w g_size;
+  register int i,j;
+  WIN_sr s_rate;
+  register uint8_w *dp;
+#if OLD_FORMAT
+  uint32_w gh;
+#else
+  uint8_w  gh[5];
+#endif
+  uint8_w *ddp;
+  int16_w shreg;
+  int32_w inreg;
+  int32_w dmax,dmin,drange;
 
   if(n_sbuf==0)
     {
     sbuf_index=(struct Sbuf_Index *)malloc(sizeof(*sbuf_index)*N_SBUF);
     for(i=0;i<N_SBUF;i++)
       {
-      sbuf_index[i].sr=(-1);
-      if((sbuf[i]=(long *)malloc(sizeof(long)*SR_SBUF))==NULL) break;
+      sbuf_index[i].sr=0;  /* OLD : (short)(-1) */
+      if((sbuf[i]=(int32_w *)malloc(sizeof(int32_w)*SR_SBUF))==NULL) break;
       }
     n_sbuf=i;
     }
@@ -1617,13 +1621,13 @@ read_one_sec(long ptr, long sys_ch, register long *abuf, int spike)
         {
         s_rate=sbuf_index[i].sr;
         for(j=0;j<s_rate;j++) abuf[j]=sbuf[i][j];
-        return s_rate;
+        return (s_rate);
         }
       if(--i<0) i=n_sbuf-1;
       }
     }
 
-  if(ptr>=ft.len || ft.ptr[ptr].size==0) return 0;
+  if(ptr>=ft.len || ft.ptr[ptr].size==0) return (0);
   if(ft.ptr_secbuf!=ptr)
     {
     lseek(ft.fd,(off_t)(ft.ptr[ptr].offset),0);
@@ -1645,7 +1649,7 @@ read_one_sec(long ptr, long sys_ch, register long *abuf, int spike)
     sys_channel=gh>>16;
     if((sys_channel&0xff00)==0) sys_channel=e_ch[sys_channel%241];
     if(sys_channel==sys_ch) break;
-    else if((dp+=g_size)>=ddp) return 0;
+    else if((dp+=g_size)>=ddp) return (0);
     }
 /*  if(s_rate!=ft.sr[ft.ch2idx[sys_ch]]) return 0;*/
   /* read group */
@@ -1655,7 +1659,7 @@ read_one_sec(long ptr, long sys_ch, register long *abuf, int spike)
       if((sys_channel&0xff00)==0)
         for(i=0;i<s_rate;i++) abuf[i]=e_table[*dp++];
       else
-        for(i=0;i<s_rate;i++) abuf[i]=(*(char *)(dp++));
+        for(i=0;i<s_rate;i++) abuf[i]=(*(int8_w *)(dp++));
       break;
     case 2:
       for(i=0;i<s_rate;i++)
@@ -1681,7 +1685,7 @@ read_one_sec(long ptr, long sys_ch, register long *abuf, int spike)
         }
       break;
     default:
-      return 0; /* bad header */
+      return (0); /* bad header */
     }
 #else  /* from "#if OLD_FORMAT" */
   while(1)
@@ -1693,36 +1697,18 @@ read_one_sec(long ptr, long sys_ch, register long *abuf, int spike)
     gh[1]=dp[1];
     gh[2]=dp[2];
     gh[3]=dp[3];
+    gh[4]=dp[4];
+    g_size = win_chheader_info(&gh[0], &sys_channel, &s_rate, &b_size);
 
-    /* channel header = 4 byte */
-    if((gh[2]&0x80)==0x0)
-      {
-      s_rate=gh[3]+(((long)(gh[2]&0x0f))<<8);
-      if((b_size=(gh[2]>>4)&0x7)) g_size=b_size*(s_rate-1)+8;
-      else g_size=(s_rate>>1)+8;
-      if((gh[1]+(((long)gh[0])<<8))==sys_ch)
-        { /* advance pointer and break */
-        dp+=4;
-        break;
-        }
-      else if((dp+=g_size)>=ddp) return 0;
-      }
-    /* channel header = 5 byte */
-    else
-      {
-      gh[4]=dp[4];
-      s_rate=gh[4]+(((long)gh[3])<<8)+(((long)(gh[2]&0x0f))<<16);
-      if((b_size=(gh[2]>>4)&0x7)) g_size=b_size*(s_rate-1)+9;
-      else g_size=(s_rate>>1)+9;
-      if((gh[1]+(((long)gh[0])<<8))==sys_ch)
-        {
-     /* advance pointer and break */
-        dp+=5;
-        break;
-        }
-      else if((dp+=g_size)>=ddp) return 0;
-      }
-    
+    if (sys_channel == sys_ch) { /* advance pointer and break */
+      if ((gh[2] & 0x80) == 0x0)
+	dp += 4;    /* channel header = 4 byte */
+      else
+	dp += 5;    /* channel header = 5 byte */
+      break;
+    } else if ((dp += g_size) >= ddp)
+      return (0);
+
     /*	 printf("sys_ch=%04X ch=%04X sr=%d b_size=%d gsize=%d\n",
 		sys_ch,gh[1]+(((long)gh[0])<<8),s_rate,b_size,g_size);*/
     }
@@ -1735,12 +1721,12 @@ read_one_sec(long ptr, long sys_ch, register long *abuf, int spike)
     case 0:
       for(i=1;i<s_rate;i+=2)
         {
-        abuf[i]=abuf[i-1]+((*(char *)dp)>>4);
-        abuf[i+1]=abuf[i]+(((char)(*(dp++)<<4))>>4);
+        abuf[i]=abuf[i-1]+((*(int8_w *)dp)>>4);
+        abuf[i+1]=abuf[i]+(((int8_w)(*(dp++)<<4))>>4);
         }
       break;
     case 1:
-      for(i=1;i<s_rate;i++) abuf[i]=abuf[i-1]+(*(char *)(dp++));
+      for(i=1;i<s_rate;i++) abuf[i]=abuf[i-1]+(*(int8_w *)(dp++));
       break;
     case 2:
       for(i=1;i<s_rate;i++)
@@ -1767,7 +1753,7 @@ read_one_sec(long ptr, long sys_ch, register long *abuf, int spike)
         }
       break;
     default:
-      return 0; /* bad header */
+      return (0); /* bad header */
     }
 
   if(spike) for(i=2;i<s_rate-2;i++)
@@ -1796,7 +1782,7 @@ read_one_sec(long ptr, long sys_ch, register long *abuf, int spike)
     for(j=0;j<s_rate;j++) sbuf[i_sbuf][j]=abuf[j];
     if(++i_sbuf==n_sbuf) i_sbuf=0;
     }
-  return s_rate;  /* normal return */
+  return (s_rate);  /* normal return */
   }
 
 static int
@@ -1819,7 +1805,7 @@ read_one_sec_mon(long ptr, long sys_ch, register long *abuf, long ppsm)
   short shreg;
   int inreg;
 
-  if(ptr>=ft.len || ft.ptr[ptr].size==0) return 0;
+  if(ptr>=ft.len || ft.ptr[ptr].size==0) return (0);
   abuf_save=abuf;
   if(ft.ptr_secbuf!=ptr)
     {
@@ -1852,7 +1838,7 @@ read_one_sec_mon(long ptr, long sys_ch, register long *abuf, long ppsm)
       sys_channel=gh>>16;
       if((sys_channel&0xff00)==0) sys_channel=e_ch[sys_channel%241];
       if(sys_channel==sys_ch) break;
-      else if((dp+=g_size)>=ddp) return 0;
+      else if((dp+=g_size)>=ddp) return (0);
       }
     }
   /* read group */
@@ -1961,7 +1947,7 @@ read_one_sec_mon(long ptr, long sys_ch, register long *abuf, long ppsm)
         }
       break;
     default:
-      return 0; /* bad header */
+      return (0); /* bad header */
     }
 #else  /* from "#if OLD_FORMAT" */
 #if HINET_WIN32
@@ -2020,7 +2006,7 @@ read_one_sec_mon(long ptr, long sys_ch, register long *abuf, long ppsm)
           dp+=4;
           break;
           }
-        else if((dp+=g_size)>=ddp) return 0;
+        else if((dp+=g_size)>=ddp) return (0);
         }
     /* channel header = 5 byte */
       else
@@ -2035,7 +2021,7 @@ read_one_sec_mon(long ptr, long sys_ch, register long *abuf, long ppsm)
           dp+=5;
           break;
           }
-        else if((dp+=g_size)>=ddp) return 0;
+        else if((dp+=g_size)>=ddp) return (0);
         }
       }
     }
@@ -2158,7 +2144,7 @@ read_one_sec_mon(long ptr, long sys_ch, register long *abuf, long ppsm)
         }
       break;
     default:
-      return 0; /* bad header */
+      return (0); /* bad header */
     }
 #endif  /* OLD_FORMAT */
   if(ft.stn[ft.ch2idx[sys_ch]].invert) while((abuf-=2)>=abuf_save)
@@ -2167,7 +2153,7 @@ read_one_sec_mon(long ptr, long sys_ch, register long *abuf, long ppsm)
     *abuf=(-(*(abuf+1)));
     *(abuf+1)=now;
     }
-  return 1; /* normal return */
+  return (1); /* normal return */
   }
 
 static void
@@ -3002,7 +2988,7 @@ getdata(int idx, struct Pick_Time pt, double **dbp, int *ip)
   /*  int sec,n1,n2,n3,n,i,j,sr,i1,ii;*/
   int n1,n2,n3,n,i,j,sr,i1=0,ii;  /* just for suppress warning */
   double dmax,dmin,drange,*db;
-  long sec;
+  int32_w sec;
 
   *ip=0;
   if(pt.sec1<0) pt.sec1=pt.msec1=0;
@@ -3015,7 +3001,7 @@ getdata(int idx, struct Pick_Time pt, double **dbp, int *ip)
   else n=(sr-n1)+n2+n3;
   *dbp=(double *)alloc_mem((size_t)sizeof(double)*n,"dbp");
   db=(*dbp);
-  if(read_one_sec(sec++,(long)ft.idx2ch[idx],buf2,NOT_KILL_SPIKE)==0)
+  if(read_one_sec(sec++,(int32_w)ft.idx2ch[idx],buf2,NOT_KILL_SPIKE)==0)
     fill((int *)buf2,ft.sr[idx],0);
   j=0;
   if(n2<0) for(i=n1;i<n3;i++) db[j++]=(double)buf2[i];
@@ -3024,11 +3010,11 @@ getdata(int idx, struct Pick_Time pt, double **dbp, int *ip)
     for(i=n1;i<sr;i++) db[j++]=(double)buf2[i];
     while(sec<pt.sec2)
       {
-      if(read_one_sec(sec++,(long)ft.idx2ch[idx],buf2,NOT_KILL_SPIKE)==0)
+      if(read_one_sec(sec++,(int32_w)ft.idx2ch[idx],buf2,NOT_KILL_SPIKE)==0)
         fill((int *)buf2,ft.sr[idx],0);
       for(i=0;i<sr;i++) db[j++]=(double)buf2[i];
       }
-    if(read_one_sec(sec++,(long)ft.idx2ch[idx],buf2,NOT_KILL_SPIKE)==0)
+    if(read_one_sec(sec++,(int32_w)ft.idx2ch[idx],buf2,NOT_KILL_SPIKE)==0)
       fill((int *)buf2,ft.sr[idx],0);
     for(i=0;i<n3;i++) db[j++]=(double)buf2[i];
     }
@@ -4465,7 +4451,7 @@ confirm_off(int ch, int sec, int msec, Evdet_Tbl *tbl, Evdet *ev)
 static void
 plot_mon(int base_sec, int mon_len, register int wmb, unsigned char *buf_mon)
   {
-  register long *ptr;
+  register int32_w *ptr;
   register int x_byte,y,y_min,y_max,x,yy,ofs;
   double dy;
   int i,j,kk,xx;
@@ -4863,11 +4849,11 @@ main(int argc, char *argv[])
      fprintf(stderr, "Cannot malloc dbuf2\n");
      exit(1);
   }
-  if(NULL == (buf   =  (long *)malloc((ft.sr_max+1)*sizeof(long)))){
+  if(NULL == (buf   =  (int32_w *)malloc((ft.sr_max+1)*sizeof(int32_w)))){
      fprintf(stderr, "Cannot malloc buf\n");
      exit(1);
   }
-  if(NULL == (buf2  =  (long *)malloc((ft.sr_max+1)*sizeof(long)))){
+  if(NULL == (buf2  =  (int32_w *)malloc((ft.sr_max+1)*sizeof(int32_w)))){
      fprintf(stderr, "Cannot malloc buf2\n");
      exit(1);
   }
@@ -5409,7 +5395,7 @@ plot_zoom(int izoom, int leng, struct Pick_Time *pt, int put)
   if(pt) pt->valid=0;
   for(i=0;i<zoom_win[izoom].length;i++)
     {
-    sr=read_one_sec((long)zoom_win[izoom].sec+i,(long)zoom_win[izoom].sys_ch,
+    sr=read_one_sec((int32_w)zoom_win[izoom].sec+i,(int32_w)zoom_win[izoom].sys_ch,
       buf,NOT_KILL_SPIKE);
     if(i==0)
       {
@@ -11196,7 +11182,7 @@ plot_psup(int idx)
     sec=(int)(time2lsec(tm)-time2lsec(tm1));
     xzero=pu.xx1+pu.pixels_per_sec*sec-pu.pixels_per_sec*tm1[6]/1000;
 
-    sr=read_one_sec((long)i,(long)ft.idx2ch[idx],buf,NOT_KILL_SPIKE);
+    sr=read_one_sec((int32_w)i,(int32_w)ft.idx2ch[idx],buf,NOT_KILL_SPIKE);
     if(sr>0)
       {
       if(cp1==0) {sr_start=sr*tm1[6]/1000;sr_end=sr;}

@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.46.2.6.2.23 2010/06/16 05:36:17 uehira Exp $
+   $Id: win.c,v 1.46.2.6.2.24 2010/06/16 09:32:31 uehira Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -464,7 +464,7 @@ char patterns[N_LPTN][2]={{1,0}, {1,1}, {2,2}, {4,4}, {1,7}, {1,15}};
   GC gc_line[N_LPTN],gc_line_mem[N_LPTN],gc_fb,gc_mem,gc_fbi,gc_memi;
   XID ttysw;
   char *marks[]={"P","S","F","!"};
-  unsigned char bbm[16][N_BM];  /* text bitmap buffer */
+  uint8_w bbm[16][N_BM];  /* text bitmap buffer */
   float depsteps[]=
     {-6400,-10,-5,-3,-2,-1,0,1,2,3,4,5,6,7,8,9,10,12,15,20,25,30,35,40,
      50,60,70,80,90,100,120,150,200,250,300,350,400,500,600,700,6400};
@@ -594,7 +594,7 @@ char patterns[N_LPTN][2]={{1,0}, {1,1}, {2,2}, {4,4}, {1,7}, {1,15}};
 /* (8 x 16) x (128-32) */
 /* start = 32, end = 126, n of codes = 126-32+1 = 95 */
 /* bitmap of 16(tate) x 96(yoko) bytes */
-    unsigned char font16[16][96]=
+    uint8_w font16[16][96]=
       {{0x00,0x00,0x6c,0x00,0x10,0x02,0x00,0xe0,0x02,0x80,0x00,0x00,0x00,0x00,0x00,0x02,
 	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x02,0x00,0x80,0x00,
 	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
@@ -762,7 +762,8 @@ char patterns[N_LPTN][2]={{1,0}, {1,1}, {2,2}, {4,4}, {1,7}, {1,15}};
 
   struct File_Ptr
     {
-    size_t        offset,size;  /* 64bit ok? */
+    size_t        offset;  /* 64bit ok? */
+    WIN_bs        size;  
     uint8_w       time[WIN_TM_LEN + 2];  /* last 2 bytes are padding */
     };
   struct Pick_Time
@@ -788,21 +789,21 @@ char patterns[N_LPTN][2]={{1,0}, {1,1}, {2,2}, {4,4}, {1,7}, {1,15}};
     char name[STNLEN],comp[CMPLEN];
     char unit[9];       /* "m", "m/s", "m/s/s" or "*****" */
     char invert;
-    short scale;
+    int16_w scale;
     uint16_w rflag;
     int order;
     int ch_order;
     int32_w offset;     /* offset */
     float north,east;   /* lat & long in deg */
     float x,y;          /* in km */
-    long z;             /* in m */
+    long z;             /* in m */   /* 64bit ok */
     float stcp,stcs;    /* in s */
     float units_per_bit;/* units/LSB */
-    short psup;         /* 1 for paste-up, otherwise 0 */
-    short psup_done;    /* 1 for done */
-    short psup_scale;   /* scale for paste-up */
+    int16_w psup;       /* 1 for paste-up, otherwise 0 */
+    int16_w psup_done;  /* 1 for done */
+    int16_w psup_scale; /* scale for paste-up */
     float delta;        /* epicentral distance (km) */
-    short azimuth;      /* azimuth from the epicentre */ 
+    int16_w azimuth;    /* azimuth from the epicentre */ 
     float ratio;        /* maximum STA/LTA */
     };
   struct Fnl {
@@ -865,7 +866,7 @@ char patterns[N_LPTN][2]={{1,0}, {1,1}, {2,2}, {4,4}, {1,7}, {1,15}};
     int ch_exclusive;         /* label index */
     struct Filter filt[N_FILTERS];  /* filter parameters */
     int ch2idx[N_CH_NAME];    /* index for each sys_ch */
-    short ch_use[N_CH_NAME];  /* use(1) or not use(0) */
+    int16_w ch_use[N_CH_NAME];  /* use(1) or not use(0) */
     WIN_ch *idx2ch;   /* sys_ch for each index
                   (from the order in the first sec) */
     struct Stn *stn;          /* station parameters */
@@ -1114,29 +1115,30 @@ static void get_calc(void);
 static int load_data_prep(int);
 #endif  /* HINET_EXTENTION_3>=2 */
 #if HINET_EXTENTION_3
-static int replot_mon(int);
-static int reorder(void);
-static int get_delta(void);
+static int replot_mon(int);   /* check?? 2010.6.16 */
+static int reorder(void);   /* check?? 2010.6.16 */
+static int get_delta(void);  /* check?? 2010.6.16 */
 #endif  /* HINET_EXTENTION_3 */
-static void locate(int, int);
-static void list_picks(int);
-static void list_finl(int);
-static void output_all(FILE *);
-static void output_pick(FILE *);
-static void wait_mouse(void);
-static void hard_copy(int);
-static void draw_ticks(int, int, int, int, int, int, int);
+static void locate(int, int);   /* check?? 2010.6.16 */
+static void list_picks(int);   /* check?? 2010.6.16 */
+static void list_finl(int);   /* check?? 2010.6.16 */
+static void output_all(FILE *);   /* check?? 2010.6.16 */
+static void output_pick(FILE *);   /* check?? 2010.6.16 */
+static void wait_mouse(void);   /* check?? 2010.6.16 */
+static void hard_copy(int);   /* check?? 2010.6.16 */
+static void draw_ticks(int, int, int, int, int, int, int);   /* check?? 2010.6.16 */
+/* some macros */
 static void draw_coord(int, int, double, double, double, double, int, int,
 		       int, double, double, double, double);
 static int km2pixel(int, int, int, int, int, int, int, double,
 		    double, double, double, int *, int *, double, double);
 static void phypo(int, int, HypoData *);
 static void put_time1(long, long, long *, long *, int, int, int, int, int,
-		      char *);
+		      char *);   /* check?? 2010.6.16 */
 static void put_time2(long, long, long *, long *, int, int, int, int, int,
-		      char *);
-static int draw_ticks_ts(int, long, int, int, int);
-static int draw_ticks_ts2(int, long, int, int, int *, int);
+		      char *);  /* check?? 2010.6.16 */
+static int draw_ticks_ts(int, long, int, int, int);  /* check?? 2010.6.16 */
+static int draw_ticks_ts2(int, long, int, int, int *, int);  /* check?? 2010.6.16 */
 static int put_map(int);
 static void init_map(int);
 static int check(int, int *, int, int);
@@ -1167,20 +1169,20 @@ static void autcor(double *, int, int, double *, double *);
 static void smeadl(double *,int, double *);
 static void crosco(double *, double *, int, double *, int);
 static void fpeaut(int, int, int, double *, double *, double *,
-		   int *, double *);
-static int getar(double *, int, double *, int *, double *, double *, int);
-static void digfil(double *, double *, int, double *, int, double *, double *);
-static void mat_sym(double (*)[3]);
-static void mat_copy(double (*)[3], double(*)[3]);
-static void mat_mul(double (*)[3], double (*)[3], double (*)[3]);
+		   int *, double *);  /* check?? 2010.6.16 */
+static int getar(double *, int, double *, int *, double *, double *, int);  /* check?? 2010.6.16 */
+static void digfil(double *, double *, int, double *, int, double *, double *);  /* check?? 2010.6.16 */
+static void mat_sym(double (*)[3]);  /* check?? 2010.6.16 */
+static void mat_copy(double (*)[3], double(*)[3]);  /* check?? 2010.6.16 */
+static void mat_mul(double (*)[3], double (*)[3], double (*)[3]);  /* check?? 2010.6.16 */
 /* static void mat_print(char *, double (*)[3]); */
-static void get_mat(double, double, double (*)[3]);
-static long time2long(int, int, int, int, int);
-static void long2time(struct YMDhms *, long *);
-static int time_cmp_win(int *, int *, int);
-static void fill(int *, int, int);
-static void emalloc(char *);
-static void writelog(char *);
+static void get_mat(double, double, double (*)[3]);  /* check?? 2010.6.16 */
+static long time2long(int, int, int, int, int);  /* check?? 2010.6.16 */
+static void long2time(struct YMDhms *, long *);  /* check?? 2010.6.16 */
+static int time_cmp_win(int *, int *, int);  /* check?? 2010.6.16 */
+static void fill(int *, int, int);  /* check?? 2010.6.16 */
+static void emalloc(char *);  /* check?? 2010.6.16 */
+static void writelog(char *);  /* check?? 2010.6.16 */
 /*********************** END prototypes **********************/
 
 static void
@@ -2718,7 +2720,7 @@ just_map:
           {
           ft.stn[ft.ch2idx[sys_ch]].north=north;
           ft.stn[ft.ch2idx[sys_ch]].east=east;
-          ft.stn[ft.ch2idx[sys_ch]].z=height;
+          ft.stn[ft.ch2idx[sys_ch]].z=(long)height;
           alat=(double)north;
           along=(double)east;
           if(alat0>99.0)
@@ -2745,7 +2747,7 @@ just_map:
           strcpy(ft.stn[ft.n_ch_ex].comp,comp);
           ft.stn[ft.n_ch_ex].north=north;
           ft.stn[ft.n_ch_ex].east=east;
-          ft.stn[ft.n_ch_ex].z=height;
+          ft.stn[ft.n_ch_ex].z=(long)height;
           alat=(double)north;
           along=(double)east;
           pltxy(alat0,along0,&alat,&along,&x,&y,0);
@@ -5248,7 +5250,7 @@ static void
 open_save()
   {
 #define MAGIC 601
-  int magic;
+  int32_w magic;
 
   /* flag_save: 0-none, 1-load, 2-save */
   sprintf(ft.mon_file,"%s.sv",ft.data_file);
@@ -7845,7 +7847,7 @@ static void
 output_all(FILE *fp)
   {
   int i,idx,tm_base[6];
-  char stn[20];
+  char stn[STNLEN];
 
   bcd_dec(tm_base,ft.ptr[0].time);
   fprintf(fp,"%02d/%02d/%02d %02d:%02d                   %14s\n",
@@ -7871,7 +7873,7 @@ output_all(FILE *fp)
 static void
 output_pick(FILE *fp)
   {
-  long minu,time1,time2,sec,msec,sec_err,msec_err;
+  long minu,time1,time2,sec,msec,sec_err,msec_err;  /* 64bit ok */
   int i,j,k,init,tm_base[6],tm[6],pos[4],sys_ch;
   double err,rat;
   time_t lsec_base;
@@ -8032,7 +8034,7 @@ static void
 hard_copy(int ratio)
   {
   int x,y,ratio1,format;
-  unsigned int i,j,d;
+  unsigned int i,j,d;  /* 64bit ok */
   char textbuf[200],printer[30],*ptr;
 #define FMT_XWD   1
 #define FMT_RASTER  2
@@ -8259,7 +8261,7 @@ draw_ticks_ts(int j, long jj, int it, int step, int k)
     draw_seg(x,map_f2y,x,map_f2y-HW*it,LPTN_FF,BF_SDO,&dpy);
     if(it==2)
       {
-      long2time((struct YMDhms *)tim,(long *)&jj);
+      long2time((struct YMDhms *)tim,&jj);
       sprintf(textbuf,"%d",tim[k]);
       put_text(&dpy,x-WIDTH_TEXT*strlen(textbuf)/2,
         map_f2y+Y_LINE1,textbuf,BF_SDO);
@@ -11659,9 +11661,11 @@ fpeaut(int l, int n, int lagh, double *cxx, double *ofpe, double *osd,
   /* int *mo;        model order for minimum FPE */
   /* double *ao;     coefficients of AR process, ao[0]-ao[mo-1] */
   {
-  double sd,an,anp1,anm1,oofpe,se,d,orfpe,a[500],d2,fpe,rfpe,chi2,
-    b[500];
+  double sd,an,anp1,anm1,oofpe,se,d,orfpe,d2,fpe,rfpe,chi2;
+  double  *a, *b;  /* OLD : a[500], b[500] */
+  int  abnum;
   int np1,nm1,m,mp1,i,im,lm;
+
 
   sd=cxx[0];
   an=n;
@@ -11676,6 +11680,17 @@ fpeaut(int l, int n, int lagh, double *cxx, double *ofpe, double *osd,
   oofpe=1.0/(*ofpe);
   orfpe=1.0;
   se=cxx[1];
+
+  if (l > 0)
+    abnum = l;
+  else
+    abnum = 8;
+  /* fprintf(stderr,"l=%d abnum=%d\n", l,abnum); */
+  if ((a = (double *)malloc(sizeof(double) * abnum)) == NULL)
+      emalloc("fpeaut : a");
+  if ((b = (double *)malloc(sizeof(double) * abnum)) == NULL)
+      emalloc("fpeaut : b");
+
   for(m=1;m<=l;m++)
     {
     mp1=m+1;
@@ -11714,6 +11729,8 @@ fpeaut(int l, int n, int lagh, double *cxx, double *ofpe, double *osd,
       }
     }
 /*fprintf(stderr,"\n");*/
+  free(a);
+  free(b);
   }
 
 static int
@@ -11731,11 +11748,12 @@ getar(double *x, int n, double *sd, int *m, double *c, double *z, int lh)
 
   lagh=(int)(3.0*sqrt((double)n));
   if(lh>0 && lh<lagh) lagh=lh;
-  cxx=(double *)malloc(sizeof(*cxx)*(lagh+1));
+  if ((cxx=(double *)malloc(sizeof(double)*(lagh+1))) == NULL)
+    emalloc("getar:cxx");
   autcor(x,n,lagh,cxx,z);
   fpeaut(lagh,n,lagh,cxx,&fpe,sd,m,c);
   if(*sd<0.0) *sd=0.0;
-  free((char *)cxx);
+  free(cxx);
   if(*m==lagh) return (-1);
   return (*m);
   }

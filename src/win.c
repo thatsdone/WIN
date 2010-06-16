@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.46.2.6.2.21 2010/06/15 09:30:54 uehira Exp $
+   $Id: win.c,v 1.46.2.6.2.22 2010/06/16 01:28:47 uehira Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -5637,7 +5637,7 @@ plot_zoom(int izoom, int leng, struct Pick_Time *pt, int put)
         else if(!strcmp(fmt,"C"))  /* numerical characters */
           for(j=0;j<sr;j++)
             {
-            if(fprintf(fp,"%ld\n",buf[j])==EOF) goto write_error;
+            if(fprintf(fp,"%d\n",buf[j])==EOF) goto write_error;
             }
         else if(!strcmp(fmt,"A"))    /* u-law */
           {

@@ -1,7 +1,10 @@
- $Id: ChangeLog,v 1.113.2.43 2010/06/15 08:38:00 uehira Exp $
+ $Id: ChangeLog,v 1.113.2.44 2010/06/16 03:17:50 uehira Exp $
+
+2010-06-16  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 1.1.98 released.
+	* src/win.c : fixed buffer overrun bug.
 
 2010-06-15  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
-	* Version 1.1.98 released.
 	* src/win.c : bug fixed [in get_trigch()].
 
 2010-06-13  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>

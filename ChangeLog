@@ -1,4 +1,7 @@
- $Id: ChangeLog,v 1.131.2.25.2.52 2010/06/15 09:30:54 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.53 2010/06/16 05:36:17 uehira Exp $
+
+2010-06-16  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/win.c : fixed buffer overrun bug.
 
 2010-06-15  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* src/win.c : bug fixed [in get_trigch()]. (MFH)

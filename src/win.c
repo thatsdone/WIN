@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.46.2.6.2.22 2010/06/16 01:28:47 uehira Exp $
+   $Id: win.c,v 1.46.2.6.2.23 2010/06/16 05:36:17 uehira Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -21,7 +21,7 @@
 #else
 #define NAME_PRG      "win32"
 #endif
-#define WIN_VERSION   "2010.6.15(+Hi-net) 64bit"
+#define WIN_VERSION   "2010.6.16(+Hi-net) 64bit"
 #define DEBUG_AP      0   /* for debugging auto-pick */
 /* 5:sr, 4:ch, 3:sec, 2:find_pick, 1:all */
 /************ HOW TO COMPILE THE PROGRAM **************************
@@ -306,7 +306,7 @@ LOCAL
 #define S             1     /* mark index : S */
 #define X             2     /* mark index : X or F */
 #define MD            3     /* mark index : max defl. */
-#define LINELEN     256     /* size of line buffer */
+#define LINELEN     1024    /* size of line buffer (OLD : 256) */
 #define PDPI        100.0   /* default of printer's DPI */
 #define PPK_INIT      1     /* initial ppk_idx */
 #define PPK_HYPO      2     /* ppk_idx for hypo */
@@ -497,7 +497,7 @@ char patterns[N_LPTN][2]={{1,0}, {1,1}, {2,2}, {4,4}, {1,7}, {1,15}};
      {31,0,23,11,11}, {0,31,27,13,13}, {0,0,31,15,15}};
   int size_sym_stn[N_SYM_STN][5]=
     {{1,1,5,2,3}, {8,0,7,3,4}, {0,8,7,3,4}, {7,7,9,4,5}};
-  unsigned char
+  uint8_w
     buf_epi_s[]=
       {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x03,0x80,0x07,0xc0,
        0x0f,0xe0,0x0f,0xe0,0x0f,0xe0,0x07,0xc0,0x03,0x80,0x00,0x00,
@@ -792,7 +792,7 @@ char patterns[N_LPTN][2]={{1,0}, {1,1}, {2,2}, {4,4}, {1,7}, {1,15}};
     uint16_w rflag;
     int order;
     int ch_order;
-    long offset;        /* offset */
+    int32_w offset;     /* offset */
     float north,east;   /* lat & long in deg */
     float x,y;          /* in km */
     long z;             /* in m */
@@ -1100,8 +1100,8 @@ static void put_mark_zoom(int, int, struct Pick_Time *, int);
 static void put_mon(int, int);
 static void put_bitblt(lBitmap *, int, int, int, int,
 		       lBitmap *, int, int, unsigned char);
-static void define_bm(lBitmap *, char, unsigned int, unsigned int, char *);
-static void invert_bits(unsigned char *, register int);
+static void define_bm(lBitmap *, char, unsigned int, unsigned int, char *);  /* check?? 2010.6.16 */
+static void invert_bits(uint8_w *, register int);  /* check?? 2010.6.16 */
 static void put_text(lBitmap *, int, int, char *, unsigned char);
 static int put_mark(int, int, int);
 static void put_mark_mon(int, int);
@@ -4430,7 +4430,8 @@ static void
 plot_mon(int base_sec, int mon_len, register int wmb, uint8_w *buf_mon)
   {
   register int32_w *ptr;
-  register int x_byte,y,y_min,y_max,x,yy,ofs;
+  register int x_byte,y,y_min,y_max,x,yy;
+  register int32_w ofs;
   double dy;
   int i,j,kk,xx;
   uint8_w ymask;
@@ -4452,7 +4453,7 @@ plot_mon(int base_sec, int mon_len, register int wmb, uint8_w *buf_mon)
           dy=0.0;
           ptr=buf;
           for(kk=0;kk<PIXELS_PER_SEC_MON*2;kk++) dy+=(double)(*ptr++);
-          ofs=ft.stn[j].offset=dy/(double)kk;
+          ofs=ft.stn[j].offset=(int32_w)(dy/(double)kk);
           }
         else ofs=ft.stn[j].offset;
         ptr=buf;
@@ -4525,7 +4526,7 @@ mapconv(int argc, char *argv[], int args)
   fwrite(c,1,4,stdout);
 
   flag=0;
-  while(fgets(tb,80,stdin)!=NULL && flag==0)
+  while(fgets(tb,sizeof(tb),stdin)!=NULL && flag==0)
     {
     if(*tb=='#') continue;
     sscanf(tb,"%lf%lf",&alat,&along);
@@ -4640,10 +4641,10 @@ main(int argc, char *argv[])
   char textbuf[LINELEN],tbuf[LINELEN],chstr[100],file_exclusive[LINELEN];
   uint8_w *buf_mon;
   char  *ptr;
-  short i2p;
+  int16_w i2p;
   int x,y;
-  unsigned int w,h,d;
-  unsigned int ui, uj;
+  unsigned int w,h,d;  /* 64bit ok */
+  unsigned int ui, uj;  /* 64bit ok */
   Window root,parent;
 /*   extern int optind; */
 /*   extern char *optarg; */
@@ -4659,7 +4660,7 @@ main(int argc, char *argv[])
 
   if((ptr=getenv("WIN_PICK_SERVER"))) strcpy(ft.pick_server,ptr);
   else *ft.pick_server=0;
-  if((ptr=getenv("WIN_PICK_SERVER_PORT"))) ft.pick_server_port=atoi(ptr);
+  if((ptr=getenv("WIN_PICK_SERVER_PORT"))) ft.pick_server_port=(unsigned short)atoi(ptr);
   else ft.pick_server_port=PICK_SERVER_PORT;
   sprintf(ft.param_file,"%s.prm",NAME_PRG);
   background=map_only=mc=bye=auto_flag=auto_flag_hint=not_save=autpk_but_off=calc_line_off=0;
@@ -4720,7 +4721,7 @@ main(int argc, char *argv[])
         if((ptr=strchr(tbuf,':')))
           {
           *ptr=0;
-          ft.pick_server_port=atoi(ptr+1);
+          ft.pick_server_port=(unsigned short)atoi(ptr+1);
           }
         strcpy(ft.pick_server,tbuf);
         break;
@@ -4791,7 +4792,7 @@ main(int argc, char *argv[])
         {
         if((fp=fopen(file_exclusive,"r"))!=NULL)
           {
-          while(fgets(tbuf,1024,fp))
+	   while(fgets(tbuf,sizeof(tbuf),fp))
             {
             if(*tbuf=='#') continue;
             if(sscanf(tbuf,"%x",&k)!=1) continue;
@@ -4868,7 +4869,7 @@ main(int argc, char *argv[])
   writelog(textbuf);
   invert_bits(buf_epi_s,sizeof(buf_epi_s));
   invert_bits(buf_epi_l,sizeof(buf_epi_l));
-  invert_bits((unsigned char *)font16,sizeof(font16));
+  invert_bits((uint8_w *)font16,sizeof(font16));
   define_bm(&dpy,BM_FB,width_dpy,height_dpy,0);
 
 /* make patterns */
@@ -5040,7 +5041,7 @@ bg: if(map_only) goto skip_mon;
     if(flag_save==1 && mon_offset==0)
       {
       if(i_mon==0) for(j=0;j<ft.n_ch;j++)
-        read(ft.fd_save,(char *)&(ft.stn[j].offset),sizeof(long));
+        read(ft.fd_save,(char *)&(ft.stn[j].offset),sizeof(int32_w));
       for(j=0;j<ft.n_ch;j++)
         {
         read(ft.fd_save,&i2p,2);
@@ -5064,7 +5065,7 @@ bg: if(map_only) goto skip_mon;
     if(flag_save==2)
       {
       if(i_mon==0) for(j=0;j<ft.n_ch;j++)
-        write(ft.fd_save,(char *)&(ft.stn[j].offset),sizeof(long));
+        write(ft.fd_save,(char *)&(ft.stn[j].offset),sizeof(int32_w));
       write(ft.fd_save,ft.idx2pos,2*ft.n_ch);
       invert_bits(buf_mon,p2w(width_mon)*height_mon*2);
       write(ft.fd_save,buf_mon,(width_mon+15)/16*height_mon*2);
@@ -7050,17 +7051,17 @@ define_bm(lBitmap *bm, char type, unsigned int xsize, unsigned int ysize,
   }
 
 static void
-invert_bits(unsigned char *base, register int bytes)
+invert_bits(uint8_w *base, register int bytes)
   {
-  static unsigned char bit_conv[256]; /* conversion table */
+  static uint8_w bit_conv[256]; /* conversion table */
   static int flag=0;
-  static unsigned char bit_mask[8]={0x80,0x40,0x20,0x10,0x8,0x4,0x2,0x1};
+  static uint8_w bit_mask[8]={0x80,0x40,0x20,0x10,0x8,0x4,0x2,0x1};
   register int i,j;
 
   if(flag==0)   /* for the first call */
     {
     for(i=0;i<256;i++) for(j=0;j<8;j++)
-        if((char)i&bit_mask[j]) bit_conv[i]|=bit_mask[7-j];
+        if((int8_w)i&bit_mask[j]) bit_conv[i]|=bit_mask[7-j];  /* uint8_w?? */
     flag=1;
     }
   for(i=0;i<bytes;i++) base[i]=bit_conv[base[i]];

@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.51 2010/06/15 08:34:04 uehira Exp $
+   $Id: win.c,v 1.52 2010/06/16 03:15:49 uehira Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -4375,7 +4375,7 @@ mapconv(argc,argv,args)
   fwrite(c,1,4,stdout);
 
   flag=0;
-  while(fgets(tb,80,stdin)!=NULL && flag==0)
+  while(fgets(tb,sizeof(tb),stdin)!=NULL && flag==0)
     {
     if(*tb=='#') continue;
     sscanf(tb,"%lf%lf",&alat,&along);
@@ -4635,7 +4635,7 @@ main(argc,argv)
         {
         if((fp=fopen(file_exclusive,"r"))!=NULL)
           {
-          while(fgets(tbuf,1024,fp))
+          while(fgets(tbuf,sizeof(tbuf),fp))
             {
             if(*tbuf=='#') continue;
             if(sscanf(tbuf,"%x",&k)!=1) continue;

@@ -1,4 +1,8 @@
- $Id: ChangeLog,v 1.131.2.25.2.53 2010/06/16 05:36:17 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.54 2010/06/17 14:20:21 uehira Exp $
+
+2010-06-17  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/ulaw.[ch] : cvt.[ch] renamed.
+	* src/win.c : ulaw() moved to 'ulaw.c'. use win2fix().
 
 2010-06-16  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* src/win.c : fixed buffer overrun bug.

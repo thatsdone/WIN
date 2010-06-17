@@ -1,4 +1,4 @@
-/* $Id: dewin.c,v 1.4.4.3.2.7 2010/04/03 07:37:44 uehira Exp $ */
+/* $Id: dewin.c,v 1.4.4.3.2.8 2010/06/17 14:20:22 uehira Exp $ */
 
 /* program dewin  1994.4.11-4.20  urabe */
 /*                1996.2.23 added -n option */
@@ -36,7 +36,7 @@
 #define MAX_SR      HEADER_5B
 
 static const char  rcsid[] =
-   "$Id: dewin.c,v 1.4.4.3.2.7 2010/04/03 07:37:44 uehira Exp $";
+   "$Id: dewin.c,v 1.4.4.3.2.8 2010/06/17 14:20:22 uehira Exp $";
 
 static int32_w buf[MAX_SR];
 static double dbuf[MAX_SR];
@@ -321,7 +321,7 @@ main(int argc, char *argv[])
         }
 	for(j=0;j<sr;j++){
 	   buf[j]-=zero;
-	   cc=(uint8_w)cvt(buf[j]*256);
+	   cc=(uint8_w)ulaw(buf[j]*256);
 	   /*        fprintf(stderr,"%d %d\n",buf[j],cc);*/
 	   fwrite(&cc,1,1,stdout);
         }

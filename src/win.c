@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.46.2.6.2.25 2010/06/17 07:50:48 uehira Exp $
+   $Id: win.c,v 1.46.2.6.2.26 2010/06/17 14:20:22 uehira Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -1076,7 +1076,7 @@ static void proc_alarm(void);
 static void do_map(void);
 static void window_main_loop(void);
 static void open_save(void);
-static int ulaw(int);
+/* static int ulaw(int); */
 static void plot_zoom(int, int, struct Pick_Time *, int);
 static void close_zoom(int);
 static void proc_main(void);
@@ -1589,19 +1589,14 @@ read_one_sec(int32_w ptr, int32_w sys_ch, register int32_w *abuf, int spike)
 #else
   WIN_ch sys_channel;
 #endif
-  int b_size;
   uint32_w g_size;  /* OLD: int */
   register int i,j;
   WIN_sr s_rate;
   register uint8_w *dp;
 #if OLD_FORMAT
   uint32_w gh;
-#else
-  uint8_w  gh[5];
 #endif
   uint8_w *ddp;
-  int16_w shreg;
-  int32_w inreg;
   int32_w dmax,dmin,drange;
 
   if(n_sbuf==0)
@@ -1695,68 +1690,18 @@ read_one_sec(int32_w ptr, int32_w sys_ch, register int32_w *abuf, int spike)
 #if HINET_WIN32
     dp+=2;
 #endif
-    gh[0]=dp[0];
-    gh[1]=dp[1];
-    gh[2]=dp[2];
-    gh[3]=dp[3];
-    gh[4]=dp[4];
-    g_size = win_chheader_info(&gh[0], &sys_channel, &s_rate, &b_size);
-
-    if (sys_channel == sys_ch) { /* advance pointer and break */
-      if ((gh[2] & 0x80) == 0x0)
-	dp += 4;    /* channel header = 4 byte */
-      else
-	dp += 5;    /* channel header = 5 byte */
+    g_size = get_sysch(dp, &sys_channel);
+    
+    /* advance pointer or break */
+    if (sys_channel == sys_ch)
       break;
-    } else if ((dp += g_size) >= ddp)
+    else if ((dp += g_size) >= ddp)
       return (0);
-
-    /*	 printf("sys_ch=%04X ch=%04X sr=%d b_size=%d gsize=%d\n",
-		sys_ch,gh[1]+(((long)gh[0])<<8),s_rate,b_size,g_size);*/
     }
-/*  if(s_rate!=ft.sr[ft.ch2idx[sys_ch]]) return 0;*/
   /* read group */
-  abuf[0]=(dp[0]<<24)+(dp[1]<<16)+(dp[2]<<8)+dp[3];
-  dp+=4;
-  if(s_rate>1) switch(b_size)
-    {
-    case 0:
-      for(i=1;i<s_rate;i+=2)
-        {
-        abuf[i]=abuf[i-1]+((*(int8_w *)dp)>>4);
-        abuf[i+1]=abuf[i]+(((int8_w)(*(dp++)<<4))>>4);
-        }
-      break;
-    case 1:
-      for(i=1;i<s_rate;i++) abuf[i]=abuf[i-1]+(*(int8_w *)(dp++));
-      break;
-    case 2:
-      for(i=1;i<s_rate;i++)
-        {
-        shreg=(dp[0]<<8)+dp[1];
-        dp+=2;
-        abuf[i]=abuf[i-1]+shreg;
-        }
-      break;
-    case 3:
-      for(i=1;i<s_rate;i++)
-        {
-        inreg=(dp[0]<<24)+(dp[1]<<16)+(dp[2]<<8);
-        dp+=3;
-        abuf[i]=abuf[i-1]+(inreg>>8);
-        }
-      break;
-    case 4:
-      for(i=1;i<s_rate;i++)
-        {
-        inreg=(dp[0]<<24)+(dp[1]<<16)+(dp[2]<<8)+dp[3];
-        dp+=4;
-        abuf[i]=abuf[i-1]+inreg;
-        }
-      break;
-    default:
-      return (0); /* bad header */
-    }
+  if (win2fix(dp, abuf, &sys_channel, &s_rate) == 0)    /* bad header */
+    return (0);
+  /*  if(s_rate!=ft.sr[ft.ch2idx[sys_ch]]) return 0;*/
 
   if(spike) for(i=2;i<s_rate-2;i++)
     {
@@ -2027,6 +1972,8 @@ read_one_sec_mon(int32_w ptr, int32_w sys_ch, register int32_w *abuf, int32_w pp
             k=0;
             }
           }
+	if (i == s_rate -1)
+	  break;
         now+=(((int8_w)(*(dp++)<<4))>>4);
         if(k++==0) y_max=y_min=now;
         else
@@ -5276,36 +5223,13 @@ open_save()
   else flag_save=0;
   }
 
-static int
-ulaw(int c)
-  {
-  int mask;
-
-  if(c<0)
-    {
-    c=(-c);
-    mask=0x7f;
-    }
-  else mask=0xff;
-  if(c<32) c=0xF0|(15-(c>>1));
-  else if(c<96) c=0xE0|(15-((c-32)>>2));
-  else if(c<224) c=0xD0|(15-((c-96)>>3));
-  else if(c<480) c=0xC0|(15-((c-224)>>4));
-  else if(c<992) c=0xB0|(15-((c-480)>>5));
-  else if(c<2016) c=0xA0|(15-((c-992)>>6));
-  else if(c<4064) c=0x90|(15-((c-2016)>>7));
-  else if(c<8160) c=0x80|(15-((c-4064)>>8));
-  else c=0x80;
-  return(mask&c);
-  }
-
 static void
 plot_zoom(int izoom, int leng, struct Pick_Time *pt, int put)
   {
   FILE *fp=NULL;
   char path[NAMLEN],filename[NAMLEN],text_buf[LINELEN], fmt[5];
-  char cc;
-  short ss;
+  int8_w cc;
+  int16_w ss;
   int32_w ll;
   int xzero,yzero,i,j,k,buf0=0,i_map,xz,join,start,np,np_last=0,x,y,xp=0,ymax=0,ymin=0;  /* just for suppress warning */
   WIN_sr sr;
@@ -5650,7 +5574,7 @@ plot_zoom(int izoom, int leng, struct Pick_Time *pt, int put)
           else k=0;
           for(j=0;j<sr;j++)
             {
-            cc=ulaw(buf[j]<<k);
+            cc=(int8_w)ulaw(buf[j]<<k);
             if(!fwrite(&cc,1,1,fp)) goto write_error;
             }
           }

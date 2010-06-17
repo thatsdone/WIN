@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.46.2.6.2.24 2010/06/16 09:32:31 uehira Exp $
+   $Id: win.c,v 1.46.2.6.2.25 2010/06/17 07:50:48 uehira Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -923,7 +923,7 @@ char patterns[N_LPTN][2]={{1,0}, {1,1}, {2,2}, {4,4}, {1,7}, {1,15}};
     int w_scale;     /* amplitude scale */
     int nounit;      /* if 1, show raw amplitude */
     int offset;      /* offset nulling,  1:on, 0:off */
-    int zero;        /* offset level */
+    int32_w zero;    /* offset level */
     int integ;       /* integral flag */
     int sr;          /* sampling rate */
     int sys_ch;      /* sys & ch */
@@ -1162,12 +1162,12 @@ static int save_data(int);
 static int read_parameter(int, char *);
 static int read_filter_file(void);
 static int read_label_file(void);
-static void get_filter(int, struct Filt *, int, int);
-static int form2(double, char *);
+static void get_filter(int, struct Filt *, WIN_sr, int);  /* check 2010.6.17 */
+static int form2(double, char *);  /* check 2010.6.17 */
 /* static void pltxy(double, double, double *, double *, double *, double *, int); */
-static void autcor(double *, int, int, double *, double *);
-static void smeadl(double *,int, double *);
-static void crosco(double *, double *, int, double *, int);
+static void autcor(double *, int, int, double *, double *);  /* check 2010.6.17 */
+static void smeadl(double *,int, double *);  /* check 2010.6.17 */
+static void crosco(double *, double *, int, double *, int);  /* check 2010.6.17 */
 static void fpeaut(int, int, int, double *, double *, double *,
 		   int *, double *);  /* check?? 2010.6.16 */
 static int getar(double *, int, double *, int *, double *, double *, int);  /* check?? 2010.6.16 */
@@ -5306,8 +5306,9 @@ plot_zoom(int izoom, int leng, struct Pick_Time *pt, int put)
   char path[NAMLEN],filename[NAMLEN],text_buf[LINELEN], fmt[5];
   char cc;
   short ss;
-  long ll;
-  int xzero,yzero,i,j,k,sr,buf0=0,i_map,xz,join,start,np,np_last=0,x,y,xp=0,ymax=0,ymin=0;  /* just for suppress warning */
+  int32_w ll;
+  int xzero,yzero,i,j,k,buf0=0,i_map,xz,join,start,np,np_last=0,x,y,xp=0,ymax=0,ymin=0;  /* just for suppress warning */
+  WIN_sr sr;
   char tbuf[100],tbuf1[STNLEN+CMPLEN];
   double uv[MAX_FILT*4],rec[MAX_FILT*4],sd,dk;
   lPoint pts[5];
@@ -5454,7 +5455,7 @@ plot_zoom(int izoom, int leng, struct Pick_Time *pt, int put)
         buf0=0;
         dk=0.0;
         for(j=0;j<sr;j++) dk+=(double)buf[j];
-        zoom_win[izoom].zero=(long)(dk/(double)sr+0.5);
+        zoom_win[izoom].zero=(int32_w)(dk/(double)sr+0.5);
         /* set up filter memory */
         if(zoom_win[izoom].filt>0 && zoom_win[izoom].f.n_filt>0)
           {
@@ -5522,19 +5523,19 @@ plot_zoom(int izoom, int leng, struct Pick_Time *pt, int put)
           tandem(dbuf,dbuf,sr,zoom_win[izoom].f.coef,
             zoom_win[izoom].f.m_filt,1,uv);
           for(j=0;j<sr;j++)
-            buf[j]=(long)(dbuf[j]*zoom_win[izoom].f.gn_filt+0.5);
+            buf[j]=(int32_w)(dbuf[j]*zoom_win[izoom].f.gn_filt+0.5);
           }
         else if(zoom_win[izoom].filt>0 && zoom_win[izoom].f.n_filt==0)
           {           /* coefs given */
           digfil(dbuf,dbuf2,sr,zoom_win[izoom].f.coef,
             zoom_win[izoom].f.m_filt,rec,&sd);
-          for(j=0;j<sr;j++) buf[j]=(long)(dbuf2[j]+0.5);
+          for(j=0;j<sr;j++) buf[j]=(int32_w)(dbuf2[j]+0.5);
           }
         else            /* AR filter */
           {
           digfil(dbuf,dbuf2,sr,zoom_win[izoom].f.coef,
             zoom_win[izoom].f.m_filt,rec,&sd);
-          for(j=0;j<sr;j++) buf[j]=(long)(dbuf[j]-dbuf2[j]+0.5);
+          for(j=0;j<sr;j++) buf[j]=(int32_w)(dbuf[j]-dbuf2[j]+0.5);
           }
         }
       /* plot */
@@ -11120,9 +11121,10 @@ static void
 plot_psup(int idx)
   {
   double x0,uv[MAX_FILT*4],tred;
-  int yy0,ylim1,ylim2,zero=0,sr,i,j,start,join,np,np_last=0,sec,xzero,
-    tm[6],tm1[7],tm2[7],sr_start,sr_end,y,
+  int yy0,ylim1,ylim2,zero=0,i,j,start,join,np,np_last=0,sec,xzero,
+    tm[6],tm1[7],tm2[7],y,
     tred_s,tred_ms,cp1,cp2;
+  WIN_sr  sr,sr_start,sr_end;
   char textbuf[30],textbuf1[30];
 
   x0=ft.stn[idx].delta;
@@ -11192,7 +11194,7 @@ plot_psup(int idx)
         {
         for(j=0;j<sr;j++) dbuf[j]=(double)buf[j];
         tandem(dbuf,dbuf,sr,pu.f.coef,pu.f.m_filt,1,uv);
-        for(j=0;j<sr;j++) buf[j]=(long)(dbuf[j]*pu.f.gn_filt);
+        for(j=0;j<sr;j++) buf[j]=(int32_w)(dbuf[j]*pu.f.gn_filt);
         }
       /* plot */
       for(j=sr_start;j<sr_end;j++)
@@ -11528,7 +11530,7 @@ read_label_file()
   }
 
 static void
-get_filter(int filt, struct Filt *f, int sr, int iz)
+get_filter(int filt, struct Filt *f, WIN_sr sr, int iz)
   {
   double dt,*x,zero;
   struct Pick_Time pt;

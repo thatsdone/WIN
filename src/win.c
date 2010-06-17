@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.46.2.6.2.26 2010/06/17 14:20:22 uehira Exp $
+   $Id: win.c,v 1.46.2.6.2.27 2010/06/17 15:47:34 uehira Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -21,7 +21,7 @@
 #else
 #define NAME_PRG      "win32"
 #endif
-#define WIN_VERSION   "2010.6.16(+Hi-net) 64bit"
+#define WIN_VERSION   "2010.6.17(+Hi-net) 64bit"
 #define DEBUG_AP      0   /* for debugging auto-pick */
 /* 5:sr, 4:ch, 3:sec, 2:find_pick, 1:all */
 /************ HOW TO COMPILE THE PROGRAM **************************
@@ -858,7 +858,7 @@ char patterns[N_LPTN][2]={{1,0}, {1,1}, {2,2}, {4,4}, {1,7}, {1,15}};
     uint8_w *secbuf;          /* one sec buffer */
     int32_w ptr_secbuf;       /* one sec buffer pointer */
     struct File_Ptr *ptr;     /* location & time of each sec */
-    int n_ch_ex;              /* number of channels (inc. no data )*/
+    int32_w n_ch_ex;          /* number of channels (inc. no data ) (OLD:int) */
     WIN_sr sr_max;            /* max of sampling rate (old: int) */
     int n_filt;               /* n of filters */
     int n_label;              /* n of labels */
@@ -925,8 +925,8 @@ char patterns[N_LPTN][2]={{1,0}, {1,1}, {2,2}, {4,4}, {1,7}, {1,15}};
     int offset;      /* offset nulling,  1:on, 0:off */
     int32_w zero;    /* offset level */
     int integ;       /* integral flag */
-    int sr;          /* sampling rate */
-    int sys_ch;      /* sys & ch */
+    WIN_sr sr;       /* sampling rate (OLD : int) */
+    WIN_ch sys_ch;   /* sys & ch (OLD : int) */
     int pos;         /* trace position in mon */
     int pos_save;    /* trace position in mon (to be saved) */
     int pixels;      /* pixels per sec */
@@ -1025,8 +1025,8 @@ static void put_fill(lBitmap *, int, int, int, int, int);  /* check 2010.6.10 */
 static time_t time2lsec(int *);  /* check 2010.6.10 */
 static void lsec2time(time_t, int *);  /* check 2010.6.10 */
 static void make_sec_table(void);  /* check?? 2010.6.14 */
-static WIN_sr read_one_sec(int32_w, int32_w, register int32_w *, int);  /* check?? 2010.6.15 */
-static int read_one_sec_mon(int32_w, int32_w, register int32_w *, int32_w);  /* check?? 2010.6.15 */
+static WIN_sr read_one_sec(int32_w, WIN_ch, register int32_w *, int);  /* check?? 2010.6.15 */
+static int read_one_sec_mon(int32_w, WIN_ch, register int32_w *, int32_w);  /* check?? 2010.6.15 */
 static void print_usage(void);  /* check 2010.6.15 */
 static int init_process(int, char *[], int);  /* check?? 2010.6.15 */
 static int refresh(int);    /* Is return value really OK? */
@@ -1068,49 +1068,48 @@ static void set_geometry(void);   /* check?? 2010.6.15 */
 /*--------------- main()--------------------*/
 int main(int, char *[]);
 /*--------------- main()--------------------*/
-static void bye_process(void);
-static void do_auto_pick(void);
-static void do_auto_pick_hint(void);
-static void do_just_hypo(void);
-static void proc_alarm(void);
-static void do_map(void);
-static void window_main_loop(void);
-static void open_save(void);
-/* static int ulaw(int); */
+static void bye_process(void);  /* check 2010.6.17 */
+static void do_auto_pick(void);  /* check 2010.6.17 */
+static void do_auto_pick_hint(void);  /* check 2010.6.17 */
+static void do_just_hypo(void);  /* check 2010.6.17 */
+static void proc_alarm(void);  /* check 2010.6.17 */
+static void do_map(void);  /* check 2010.6.17 */
+static void window_main_loop(void);  /* check 2010.6.17 */
+static void open_save(void);  /* check 2010.6.17 */
 static void plot_zoom(int, int, struct Pick_Time *, int);
-static void close_zoom(int);
+static void close_zoom(int);  /* check 2010.6.17 */
 static void proc_main(void);
-static int measure_max_zoom(int);
-static int get_max(double *, int, int *, int *, int *, int *);
-static void put_function(void);
-static void put_function_map(void);
-static void put_init_depth(void);
-static void put_function_mecha(void);
-static void put_function_psup(void);
-static int put_main(void);
+static int measure_max_zoom(int);  /* check 2010.6.17 */
+static int get_max(double *, int, int *, int *, int *, int *);  /* check 2010.6.17 */
+static void put_function(void);  /* check 2010.6.17 */
+static void put_function_map(void);  /* check 2010.6.17 */
+static void put_init_depth(void);  /* check 2010.6.17 */
+static void put_function_mecha(void);  /* check 2010.6.17 */
+static void put_function_psup(void);  /* check 2010.6.17 */
+static int put_main(void);  /* check 2010.6.17 */
 static void get_screen_type(int *, unsigned int *, unsigned int *,
-			    int *, int *);
+			    int *, int *);  /* check 2010.6.17 */
 static void draw_ellipse(int, int, double, double, double, int,
-			 unsigned char, lBitmap *, int, int, int, int);
-static void draw_circle(int, int, int, int, unsigned char, lBitmap *);
-static void draw_seg(int, int, int, int, int, unsigned char, lBitmap *);
-static void draw_rect(int, int, int, int, int, unsigned char, lBitmap *);
+			 unsigned char, lBitmap *, int, int, int, int);  /* check 2010.6.17 */
+static void draw_circle(int, int, int, int, unsigned char, lBitmap *);  /* check 2010.6.17 */
+static void draw_seg(int, int, int, int, int, unsigned char, lBitmap *);  /* check 2010.6.17 */
+static void draw_rect(int, int, int, int, int, unsigned char, lBitmap *);  /* check 2010.6.17 */
 static void draw_line(lPoint *, int, int,
-		      unsigned char, lBitmap *, int, int, int, int, int);
-static void put_mark_zoom(int, int, struct Pick_Time *, int);
-static void put_mon(int, int);
+		      unsigned char, lBitmap *, int, int, int, int, int);  /* check 2010.6.17 */
+static void put_mark_zoom(int, int, struct Pick_Time *, int);  /* check 2010.6.17 */
+static void put_mon(int, int);  /* check 2010.6.17 */
 static void put_bitblt(lBitmap *, int, int, int, int,
-		       lBitmap *, int, int, unsigned char);
+		       lBitmap *, int, int, unsigned char);  /* check 2010.6.17 */
 static void define_bm(lBitmap *, char, unsigned int, unsigned int, char *);  /* check?? 2010.6.16 */
 static void invert_bits(uint8_w *, register int);  /* check?? 2010.6.16 */
-static void put_text(lBitmap *, int, int, char *, unsigned char);
-static int put_mark(int, int, int);
-static void put_mark_mon(int, int);
-static void make_visible(int);
-static void list_line(void);
-static void raise_ttysw(int);
-static void adj_sec(int *, double *, int *, double *);
-static void get_calc(void);
+static void put_text(lBitmap *, int, int, char *, unsigned char);  /* check 2010.6.17 */
+static int put_mark(int, int, int);  /* check 2010.6.17 */
+static void put_mark_mon(int, int);  /* check 2010.6.17 */
+static void make_visible(int);  /* check 2010.6.17 */
+static void list_line(void);  /* check 2010.6.17 */
+static void raise_ttysw(int);  /* check 2010.6.17 */
+static void adj_sec(int *, double *, int *, double *);  /* check 2010.6.17 */
+static void get_calc(void);  /* check 2010.6.17 */
 #if HINET_EXTENTION_3>=2
 static int load_data_prep(int);
 #endif  /* HINET_EXTENTION_3>=2 */
@@ -1144,24 +1143,25 @@ static void init_map(int);
 static int check(int, int *, int, int);
 static int check_year(int, int *, int, int);
 static void proc_map(void);
-static int open_sock(char *, unsigned short);
+static int open_sock(char *, unsigned short);  /* check 2010.6.17 */
 static int load_data(int);
 static void init_mecha(void);
 static void proc_mecha(void);
 static void xy_pt(int *, int *, double *, double *, int);
 static int read_final(char *, struct Hypo *);
-static void str2double(char *, int, int, double *);
+static void str2double(char *, int, int, double *);  /* check 2010.6.17 */
 static int put_mecha(void);
 static void switch_psup(int, int);
-static void init_psup(void);
-static void bell(void);
+static void init_psup(void);  /* check 2010.6.17 */
+static void bell(void);  /* check 2010.6.17 */
+/* some macros */
 static void proc_psup(void);
 static int put_psup(void);
 static void plot_psup(int);
 static int save_data(int);
-static int read_parameter(int, char *);
-static int read_filter_file(void);
-static int read_label_file(void);
+static int read_parameter(int, char *);  /* check 2010.6.17 */
+static int read_filter_file(void);  /* check 2010.6.17 */
+static int read_label_file(void);  /* check 2010.6.17 */
 static void get_filter(int, struct Filt *, WIN_sr, int);  /* check 2010.6.17 */
 static int form2(double, char *);  /* check 2010.6.17 */
 /* static void pltxy(double, double, double *, double *, double *, double *, int); */
@@ -1571,7 +1571,7 @@ reset_blockmode:
   }
 
 static WIN_sr
-read_one_sec(int32_w ptr, int32_w sys_ch, register int32_w *abuf, int spike)
+read_one_sec(int32_w ptr, WIN_ch sys_ch, register int32_w *abuf, int spike)
   /* long ptr,sys_ch;    sys_ch = sys*256 + ch */
   /* int spike;           if 1, eliminate spikes */
   {
@@ -1733,7 +1733,7 @@ read_one_sec(int32_w ptr, int32_w sys_ch, register int32_w *abuf, int spike)
   }
 
 static int
-read_one_sec_mon(int32_w ptr, int32_w sys_ch, register int32_w *abuf, int32_w ppsm)
+read_one_sec_mon(int32_w ptr, WIN_ch sys_ch, register int32_w *abuf, int32_w ppsm)
   /* long ptr,sys_ch,ppsm;   sys_ch = sys*256 + ch */
   {
   register int i,k;
@@ -2926,7 +2926,7 @@ getdata(int idx, struct Pick_Time pt, double **dbp, int *ip)
   else n=(sr-n1)+n2+n3;
   *dbp=(double *)alloc_mem((size_t)sizeof(double)*n,"dbp");
   db=(*dbp);
-  if(read_one_sec(sec++,(int32_w)ft.idx2ch[idx],buf2,NOT_KILL_SPIKE)==0)
+  if(read_one_sec(sec++,ft.idx2ch[idx],buf2,NOT_KILL_SPIKE)==0)
     fill((int *)buf2,ft.sr[idx],0);
   j=0;
   if(n2<0) for(i=n1;i<n3;i++) db[j++]=(double)buf2[i];
@@ -2935,11 +2935,11 @@ getdata(int idx, struct Pick_Time pt, double **dbp, int *ip)
     for(i=n1;i<sr;i++) db[j++]=(double)buf2[i];
     while(sec<pt.sec2)
       {
-      if(read_one_sec(sec++,(int32_w)ft.idx2ch[idx],buf2,NOT_KILL_SPIKE)==0)
+      if(read_one_sec(sec++,ft.idx2ch[idx],buf2,NOT_KILL_SPIKE)==0)
         fill((int *)buf2,ft.sr[idx],0);
       for(i=0;i<sr;i++) db[j++]=(double)buf2[i];
       }
-    if(read_one_sec(sec++,(int32_w)ft.idx2ch[idx],buf2,NOT_KILL_SPIKE)==0)
+    if(read_one_sec(sec++,ft.idx2ch[idx],buf2,NOT_KILL_SPIKE)==0)
       fill((int *)buf2,ft.sr[idx],0);
     for(i=0;i<n3;i++) db[j++]=(double)buf2[i];
     }
@@ -5302,7 +5302,7 @@ plot_zoom(int izoom, int leng, struct Pick_Time *pt, int put)
   if(pt) pt->valid=0;
   for(i=0;i<zoom_win[izoom].length;i++)
     {
-    sr=read_one_sec((int32_w)zoom_win[izoom].sec+i,(int32_w)zoom_win[izoom].sys_ch,
+    sr=read_one_sec((int32_w)zoom_win[izoom].sec+i,(WIN_ch)zoom_win[izoom].sys_ch,
       buf,NOT_KILL_SPIKE);
     if(i==0)
       {
@@ -11090,7 +11090,7 @@ plot_psup(int idx)
     sec=(int)(time2lsec(tm)-time2lsec(tm1));
     xzero=pu.xx1+pu.pixels_per_sec*sec-pu.pixels_per_sec*tm1[6]/1000;
 
-    sr=read_one_sec((int32_w)i,(int32_w)ft.idx2ch[idx],buf,NOT_KILL_SPIKE);
+    sr=read_one_sec((int32_w)i,ft.idx2ch[idx],buf,NOT_KILL_SPIKE);
     if(sr>0)
       {
       if(cp1==0) {sr_start=sr*tm1[6]/1000;sr_end=sr;}

@@ -1,4 +1,4 @@
-/* $Id: final2finalb.c,v 1.3.4.2 2008/05/17 14:21:59 uehira Exp $ */
+/* $Id: final2finalb.c,v 1.3.4.2.2.1 2010/06/18 09:50:11 uehira Exp $ */
 /******************************************************************/
 /*    final2finalb.c              9/21/94 urabe                   */
 /*    97.10.3 FreeBSD  99.4.19 byte-order-free                    */
@@ -38,11 +38,12 @@ main(argc,argv)
   int i,tm[6],tmc[7];
   double se,sec,mag;
   char tbuf[256],owner[20],diag[20];
-  struct {
-    char time[8]; /* Y,M,D,h,m,s,s10,mag10 */
-    float alat,along,dep;
-    char diag[4],owner[4];
-    } d;      /* 28 bytes / event */
+  /* struct { */
+  /*   char time[8]; /\* Y,M,D,h,m,s,s10,mag10 *\/ */
+  /*   float alat,along,dep; */
+  /*   char diag[4],owner[4]; */
+  /*   } d; */
+  struct FinalB  d;  /* 28 bytes / event */
 
   while(fgets(tbuf,256,stdin)!=NULL)
     {

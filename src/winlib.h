@@ -1,4 +1,4 @@
-/* $Id: winlib.h,v 1.1.2.7.2.27 2010/06/18 06:56:49 uehira Exp $ */
+/* $Id: winlib.h,v 1.1.2.7.2.28 2010/06/18 09:50:13 uehira Exp $ */
 
 #ifndef _WIN_LIB_H_
 #define _WIN_LIB_H_
@@ -167,6 +167,16 @@ struct Shm {
   size_t  r;         /* latest */
   unsigned long  c;  /* counter */
   uint8_w  d[1];     /* data buffer */
+};
+
+/* structure of binary hypo file (28 bytes / event) */
+struct FinalB {
+  int8_w time[8];  /* Y,M,D,h,m,s,s10,mag10 (in binary, not in BCD) */
+  float  alat;     /* latitude */
+  float  along;    /* longitude */
+  float  dep;      /* depth */
+  char   diag[4];  /* label */
+  char   owner[4]; /* picker name */
 };
 
 /* channel table */

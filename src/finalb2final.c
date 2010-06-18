@@ -1,4 +1,4 @@
-/* $Id: finalb2final.c,v 1.3.4.1 2008/05/17 14:21:59 uehira Exp $ */
+/* $Id: finalb2final.c,v 1.3.4.1.2.1 2010/06/18 09:50:11 uehira Exp $ */
 /******************************************************************/
 /*    finalb2final.c              6/10/94 urabe                   */
 /*    97.10.3 FreeBSD    99.4.19 byte-order-free                  */
@@ -19,11 +19,12 @@ main(argc,argv)
   char fname[100];
   int i,j,no,start,year;
   unsigned char b[16];
-  struct {
-    char time[8]; /* Y,M,D,h,m,s,s10,mag10 */
-    float alat,along,dep;
-    char diag[4],owner[4];
-    } d;      /* 28 bytes / event */
+  /* struct { */
+  /*   char time[8]; /\* Y,M,D,h,m,s,s10,mag10 *\/ */
+  /*   float alat,along,dep; */
+  /*   char diag[4],owner[4]; */
+  /*   } d; */
+  struct FinalB  d;      /* 28 bytes / event */
 
   while(fread(&d,sizeof(d),1,stdin)>0)
     {

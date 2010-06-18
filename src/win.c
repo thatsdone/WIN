@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.46.2.6.2.29 2010/06/18 06:56:47 uehira Exp $
+   $Id: win.c,v 1.46.2.6.2.30 2010/06/18 09:50:11 uehira Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -84,7 +84,7 @@ upper                        -12- upper or lower hemisphere projection
 #   which is made by program 'pick2final' as
 #   '(cd [pick dir] ; ls -l | pick2final) > [text hypo file]'
 #   or
-# 'struct HypoB', which is made by program 'pick2finalb' as
+# 'struct FinalB', which is made by program 'pick2finalb' as
 #   '(cd [pick dir] ; ls -l | pick2finalb) > [binary hypo file]'
 #
 
@@ -1111,7 +1111,7 @@ static void raise_ttysw(int);  /* check 2010.6.17 */
 static void adj_sec(int *, double *, int *, double *);  /* check 2010.6.17 */
 static void get_calc(void);  /* check 2010.6.17 */
 #if HINET_EXTENTION_3>=2
-static int load_data_prep(int);
+static int load_data_prep(int);  /* check 2010.6.18 */
 #endif  /* HINET_EXTENTION_3>=2 */
 #if HINET_EXTENTION_3
 static int replot_mon(int);   /* check?? 2010.6.16 */
@@ -1128,37 +1128,37 @@ static void hard_copy(int);   /* check?? 2010.6.16 */
 static void draw_ticks(int, int, int, int, int, int, int);   /* check?? 2010.6.16 */
 /* some macros */
 static void draw_coord(int, int, double, double, double, double, int, int,
-		       int, double, double, double, double);
+		       int, double, double, double, double);  /* check 2010.6.18 */
 static int km2pixel(int, int, int, int, int, int, int, double,
-		    double, double, double, int *, int *, double, double);
-static void phypo(int, int, HypoData *);
+		    double, double, double, int *, int *, double, double);  /* check 2010.6.18 */
+static void phypo(int, int, HypoData *);  /* check 2010.6.18 */
 static void put_time1(long, long, long *, long *, int, int, int, int, int,
 		      char *);   /* check?? 2010.6.16 */
 static void put_time2(long, long, long *, long *, int, int, int, int, int,
 		      char *);  /* check?? 2010.6.16 */
 static int draw_ticks_ts(int, long, int, int, int);  /* check?? 2010.6.16 */
 static int draw_ticks_ts2(int, long, int, int, int *, int);  /* check?? 2010.6.16 */
-static int put_map(int);
-static void init_map(int);
-static int check(int, int *, int, int);
-static int check_year(int, int *, int, int);
-static void proc_map(void);
+static int put_map(int);  /* check 2010.6.18 */
+static void init_map(int);  /* check 2010.6.18 */
+static int check(int, int *, int, int);  /* check 2010.6.18 */
+static int check_year(int, int *, int, int);  /* check 2010.6.19 */
+static void proc_map(void);  /* check 2010.6.18 */
 static int open_sock(char *, unsigned short);  /* check 2010.6.17 */
-static int load_data(int);
-static void init_mecha(void);
-static void proc_mecha(void);
-static void xy_pt(int *, int *, double *, double *, int);
-static int read_final(char *, struct Hypo *);
+static int load_data(int);  /* check 2010.6.18 */
+static void init_mecha(void);  /* check 2010.6.18 */
+static void proc_mecha(void);  /* check 2010.6.18 */
+static void xy_pt(int *, int *, double *, double *, int);  /* check 2010.6.18 */
+static int read_final(char *, struct Hypo *);  /* check 2010.6.18 */
 static void str2double(char *, int, int, double *);  /* check 2010.6.17 */
-static int put_mecha(void);
-static void switch_psup(int, int);
+static int put_mecha(void);  /* check 2010.6.18 */
+static void switch_psup(int, int);  /* check 2010.6.18 */
 static void init_psup(void);  /* check 2010.6.17 */
 static void bell(void);  /* check 2010.6.17 */
 /* some macros */
-static void proc_psup(void);
-static int put_psup(void);
-static void plot_psup(int);
-static int save_data(int);
+static void proc_psup(void);  /* check 2010.6.18 */
+static int put_psup(void);  /* check 2010.6.18 */
+static void plot_psup(int);  /* check 2010.6.18 */
+static int save_data(int);  /* check 2010.6.18 */
 static int read_parameter(int, char *);  /* check 2010.6.17 */
 static int read_filter_file(void);  /* check 2010.6.17 */
 static int read_label_file(void);  /* check 2010.6.17 */
@@ -1469,7 +1469,7 @@ reset_blockmode:
             ft.ptr[ft.len].size=0;
             ft.ptr[ft.len++].offset=ptr;
             if(ft.len%100==0)
-              if((ft.ptr=(struct File_Ptr *)realloc((char *)ft.ptr,
+              if((ft.ptr=(struct File_Ptr *)realloc(ft.ptr,
                 sizeof(*(ft.ptr))*(ft.len+100)))==NULL) emalloc("ft.ptr");
             }
           memcpy(ft.ptr[ft.len].time,t,WIN_TM_LEN);
@@ -1479,7 +1479,7 @@ reset_blockmode:
       ft.ptr[ft.len].size=size;
       ft.ptr[ft.len++].offset=ptr;
       if(ft.len%100==0)
-        if((ft.ptr=(struct File_Ptr *)realloc((char *)ft.ptr,
+        if((ft.ptr=(struct File_Ptr *)realloc(ft.ptr,
           sizeof(*(ft.ptr))*(ft.len+100)))==NULL) emalloc("ft.ptr");
       lseek(ft.fd,(off_t)(ptr+=size),0);
       }
@@ -2580,7 +2580,7 @@ just_map:
 
     if(kk>ft.n_ch)  /* if larger than already allocated */
       {
-      if((ft.stn=(struct Stn *)realloc((char *)ft.stn,
+      if((ft.stn=(struct Stn *)realloc(ft.stn,
         sizeof(*ft.stn)*kk))==NULL) emalloc("ft.stn");
       for(i=ft.n_ch;i<kk;i++)
         {
@@ -4312,7 +4312,8 @@ fprintf(stderr,"ch=%04X sr=%d\n",ft.idx2ch[ft.trigch[ch]],ft.sr[ft.trigch[ch]]);
       {
       x2=(double)ft.stn[ft.trigch[j]].x;
       y2=(double)ft.stn[ft.trigch[j]].y;
-      d=sqrt((x2-x1)*(x2-x1)+(y2-y1)*(y2-y1));
+      /* d=sqrt((x2-x1)*(x2-x1)+(y2-y1)*(y2-y1)); */
+      d = hypot(x2-x1, y2-y1);
       if(d<ev->dist1 && tbl[j].dis==(-1)) /* 'too near' station */
         {
         tbl[j].flag=0;        /*  is disabled */
@@ -4359,7 +4360,8 @@ confirm_off(int ch, int sec, int msec, Evdet_Tbl *tbl, Evdet *ev)
       {
       x2=(double)ft.stn[ft.trigch[j]].x;
       y2=(double)ft.stn[ft.trigch[j]].y;
-      d=sqrt((x2-x1)*(x2-x1)+(y2-y1)*(y2-y1));
+      /* d=sqrt((x2-x1)*(x2-x1)+(y2-y1)*(y2-y1)); */
+      d = hypot(x2-x1, y2-y1);
       if(d<ev->dist1 && tbl[j].dis==ch) /* 'too near' station */
         {
         tbl[j].flag=1;      /* is enabled */
@@ -8080,7 +8082,7 @@ static int
 km2pixel(int conv, int xzero, int yzero, int x1, int y1, int x2, int y2,
 	 double x_cent, double y_cent, double xd, double yd, int *xi, int *yi,
 	 double cs, double sn)
-  {
+{
 
   if(conv)
     {
@@ -8253,11 +8255,12 @@ put_map(int idx)  /* 0:redraw all, 1:plot only hypocenters, */
   HypoData hypo;
   double mat_r[3][3],mat_ri[3][3],mat_error[3][3];
   static int n_hypo;
-  struct HypoB {
-    char time[8]; /* Y,M,D,h,m,s,s10,mag10 (in binary, not in BCD) */
-    float alat,along,dep;
-    char diag[4],owner[4];
-    } hypob;      /* 28 bytes / event */
+  /* struct HypoB { */
+  /*   int8_w time[8]; /\* Y,M,D,h,m,s,s10,mag10 (in binary, not in BCD) *\/ */
+  /*   float alat,along,dep; */
+  /*   char diag[4],owner[4]; */
+  /*   } hypob;  */
+  struct FinalB hypob;   /* 28 bytes / event */
   struct YMDhms tim1;
   union Swp {
     float f;
@@ -9341,7 +9344,7 @@ proc_map()
 
   arg=cs=sn=0.0; /* for supress warning */
   if(map_dir)
-    {  /* Thses variables never use in this function. (added by uehira) */
+    {
     arg=PI*(double)map_dir/180.0;
     cs=cos(arg);
     sn=sin(arg);
@@ -10353,7 +10356,8 @@ xy_pt(int *x, int *y, double *p, double *t, int idx)
     {
     xx=(double)((*x)-mec_xzero);
     yy=(double)((*y)-mec_yzero);
-    r=sqrt(xx*xx+yy*yy);
+    /* r=sqrt(xx*xx+yy*yy); */
+    r = hypot(xx, yy);
     *p=atan2(yy,xx)+HP;
     if(*p<0.0) *p+=PI*2.0;
     *t=2.0*asin(r/(mec_rc*sqrt(2.0)));  /* 0 <= (*t) <= PI/2 */
@@ -10410,7 +10414,7 @@ read_final(char *final_file, struct Hypo *hypo)
   sscanf(textbuf,"%d",&hypo->ndata);
   if(hypo->fnl==0)
     hypo->fnl=(struct Fnl *)malloc(sizeof(*hypo->fnl)*hypo->ndata);
-  else hypo->fnl=(struct Fnl *)realloc((char *)hypo->fnl,
+  else hypo->fnl=(struct Fnl *)realloc(hypo->fnl,
          sizeof(*hypo->fnl)*hypo->ndata);
   if(hypo->fnl==0) emalloc("hypo->fnl");
   for(i=0;i<hypo->ndata;i++)
@@ -10935,7 +10939,8 @@ put_psup()
       along1=(double)ft.stn[ft.pos2idx[j]].east;
       }
     pltxy(ft.hypo.alat,ft.hypo.along,&alat1,&along1,&xd,&yd,0);
-    ft.stn[ft.pos2idx[j]].delta=(float)sqrt(xd*xd+yd*yd);
+    /* ft.stn[ft.pos2idx[j]].delta=(float)sqrt(xd*xd+yd*yd); */
+    ft.stn[ft.pos2idx[j]].delta=(float)hypot(xd, yd);
     if((i=450-(int)(180.0*atan2(yd,xd)/PI))>=360) i-=360;
     ft.stn[ft.pos2idx[j]].azimuth=i;
     ft.stn[ft.pos2idx[j]].psup_done=0;
@@ -11118,7 +11123,7 @@ plot_psup(int idx)
       if(pu.filt)
         {
         for(j=0;j<sr;j++) dbuf[j]=(double)buf[j];
-        tandem(dbuf,dbuf,sr,pu.f.coef,pu.f.m_filt,1,uv);
+        tandem(dbuf,dbuf,(int)sr,pu.f.coef,pu.f.m_filt,1,uv);
         for(j=0;j<sr;j++) buf[j]=(int32_w)(dbuf[j]*pu.f.gn_filt);
         }
       /* plot */

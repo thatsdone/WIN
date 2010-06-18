@@ -1,4 +1,4 @@
-/* $Id: finalb2seis.c,v 1.3.4.1 2008/05/17 14:21:59 uehira Exp $ */
+/* $Id: finalb2seis.c,v 1.3.4.1.2.1 2010/06/18 09:50:11 uehira Exp $ */
 /******************************************************************/
 /*    finalb2seis.c                8/19/92-6/1/93 urabe           */
 /*    How to use (for example),                                   */
@@ -22,11 +22,12 @@ main(argc,argv)
   int i,j,no,start,year;
   unsigned char b[16];
   FILE *fp;
-  struct {
-    char time[8]; /* Y,M,D,h,m,s,s10,mag10 */
-    float alat,along,dep;
-    char diag[4],owner[4];
-    } d;      /* 28 bytes / event */
+  /* struct { */
+  /*   char time[8]; /\* Y,M,D,h,m,s,s10,mag10 *\/ */
+  /*   float alat,along,dep; */
+  /*   char diag[4],owner[4]; */
+  /*   } d; */
+  struct FinalB  d;    /* 28 bytes / event */
 
   if(argc<2)
     {

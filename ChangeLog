@@ -1,7 +1,11 @@
- $Id: ChangeLog,v 1.131.2.25.2.55 2010/06/18 06:56:47 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.56 2010/06/18 09:50:11 uehira Exp $
 
 2010-06-18  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* src/winlib.h : WIN_sr : uint32_w --> int32_w
+	* src/winlib.h : added structure for binary hypo file : 'struct FinalB'
+	  delete declaration in final2finalb.c, finalb2final.c,	finalb2seis.c,
+	  pick2finalb.c, win.c.
+	* src/win.c : use hypot().
 	* Version 2.1.3 released.
 
 2010-06-17  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>

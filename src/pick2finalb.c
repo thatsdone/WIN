@@ -1,4 +1,4 @@
-/* $Id: pick2finalb.c,v 1.4.4.2 2008/05/17 14:22:00 uehira Exp $ */
+/* $Id: pick2finalb.c,v 1.4.4.2.2.1 2010/06/18 09:50:11 uehira Exp $ */
 /* pick2finalb.c */
 /* 8/22/91, 5/22/92, 7/9/92, 8/19/92, 5/25/93, 6/1/93 urabe */
 /* 97.10.3 FreeBSD */
@@ -47,11 +47,12 @@ main()
   unsigned int ye,mo,da,ho,mi;
   int i,tm[6],tmc[7];
   double se,sec,mag;
-  struct {
-    char time[8]; /* Y,M,D,h,m,s,s10,mag10 */
-    float alat,along,dep;
-    char diag[4],owner[4];
-    } d;      /* 28 bytes / event */
+  /* struct { */
+  /*   char time[8]; /\* Y,M,D,h,m,s,s10,mag10 *\/ */
+  /*   float alat,along,dep; */
+  /*   char diag[4],owner[4]; */
+  /*   } d; */
+  struct FinalB  d;      /* 28 bytes / event */
 
   while(fgets(tbuf,sizeof(tbuf),stdin))
     {

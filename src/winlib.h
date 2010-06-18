@@ -1,4 +1,4 @@
-/* $Id: winlib.h,v 1.1.2.7.2.26 2010/06/17 14:20:23 uehira Exp $ */
+/* $Id: winlib.h,v 1.1.2.7.2.27 2010/06/18 06:56:49 uehira Exp $ */
 
 #ifndef _WIN_LIB_H_
 #define _WIN_LIB_H_
@@ -62,7 +62,7 @@ typedef unsigned int    uint32_w;  /* unsigned 4 byte integer */
 /* typedef uint32_w  WIN_blocksize; */
 typedef uint32_w  WIN_bs;   /* win blocksize */
 typedef uint16_w  WIN_ch;
-typedef uint32_w  WIN_sr;
+typedef  int32_w  WIN_sr;   /* 0 < sr < 2^20 */
 
 #define WIN_YEAR  70   /* 1970 -- 2069 */
 

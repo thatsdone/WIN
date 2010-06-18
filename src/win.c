@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.46.2.6.2.28 2010/06/18 02:37:29 uehira Exp $
+   $Id: win.c,v 1.46.2.6.2.29 2010/06/18 06:56:47 uehira Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -11045,9 +11045,10 @@ static void
 plot_psup(int idx)
   {
   double x0,uv[MAX_FILT*4],tred;
-  int yy0,ylim1,ylim2,zero=0,i,j,start,join,np,np_last=0,sec,xzero,
+  int yy0,ylim1,ylim2,i,j,start,join,np,np_last=0,sec,xzero,
     tm[6],tm1[7],tm2[7],y,
     tred_s,tred_ms,cp1,cp2;
+  int32_w  zero=0;
   WIN_sr  sr,sr_start,sr_end;
   char textbuf[30],textbuf1[30];
 
@@ -11105,7 +11106,7 @@ plot_psup(int idx)
           {
           zero=0;
           for(j=0;j<sr;j++) zero+=buf[j];
-          zero/=sr;
+          zero/=sr;  /* if sr is unsinged and zero < 0 , must (int)sr. */
           }
         else zero=0;
         start=0;

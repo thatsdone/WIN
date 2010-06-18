@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.46.2.6.2.27 2010/06/17 15:47:34 uehira Exp $
+   $Id: win.c,v 1.46.2.6.2.28 2010/06/18 02:37:29 uehira Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -21,7 +21,7 @@
 #else
 #define NAME_PRG      "win32"
 #endif
-#define WIN_VERSION   "2010.6.17(+Hi-net) 64bit"
+#define WIN_VERSION   "2010.6.18(+Hi-net) 64bit"
 #define DEBUG_AP      0   /* for debugging auto-pick */
 /* 5:sr, 4:ch, 3:sec, 2:find_pick, 1:all */
 /************ HOW TO COMPILE THE PROGRAM **************************
@@ -1090,19 +1090,19 @@ static int put_main(void);  /* check 2010.6.17 */
 static void get_screen_type(int *, unsigned int *, unsigned int *,
 			    int *, int *);  /* check 2010.6.17 */
 static void draw_ellipse(int, int, double, double, double, int,
-			 unsigned char, lBitmap *, int, int, int, int);  /* check 2010.6.17 */
-static void draw_circle(int, int, int, int, unsigned char, lBitmap *);  /* check 2010.6.17 */
-static void draw_seg(int, int, int, int, int, unsigned char, lBitmap *);  /* check 2010.6.17 */
-static void draw_rect(int, int, int, int, int, unsigned char, lBitmap *);  /* check 2010.6.17 */
+			 int, lBitmap *, int, int, int, int);  /* check 2010.6.18 */
+static void draw_circle(int, int, int, int, int, lBitmap *);  /* check 2010.6.18 */
+static void draw_seg(int, int, int, int, int, int, lBitmap *);  /* check 2010.6.18 */
+static void draw_rect(int, int, int, int, int, int, lBitmap *);  /* check 2010.6.18 */
 static void draw_line(lPoint *, int, int,
-		      unsigned char, lBitmap *, int, int, int, int, int);  /* check 2010.6.17 */
+		      int, lBitmap *, int, int, int, int, int);  /* check 2010.6.18 */
 static void put_mark_zoom(int, int, struct Pick_Time *, int);  /* check 2010.6.17 */
 static void put_mon(int, int);  /* check 2010.6.17 */
 static void put_bitblt(lBitmap *, int, int, int, int,
-		       lBitmap *, int, int, unsigned char);  /* check 2010.6.17 */
+ 		       lBitmap *, int, int, int);  /* check 2010.6.18 */
 static void define_bm(lBitmap *, char, unsigned int, unsigned int, char *);  /* check?? 2010.6.16 */
 static void invert_bits(uint8_w *, register int);  /* check?? 2010.6.16 */
-static void put_text(lBitmap *, int, int, char *, unsigned char);  /* check 2010.6.17 */
+static void put_text(lBitmap *, int, int, char *, int);  /* check 2010.6.18 */
 static int put_mark(int, int, int);  /* check 2010.6.17 */
 static void put_mark_mon(int, int);  /* check 2010.6.17 */
 static void make_visible(int);  /* check 2010.6.17 */
@@ -6740,7 +6740,7 @@ get_screen_type(int *np, unsigned int *w_dpy, unsigned int *h_dpy, int *w_frame,
 
 static void
 draw_ellipse(int xzero, int yzero, double s1, double s2, double roh, int lptn,
-	     unsigned char func, lBitmap *bm, int x1, int x2, int y1, int y2)
+	     int func, lBitmap *bm, int x1, int x2, int y1, int y2)
   {
   lPoint pts[200];
   int i,j,jj;
@@ -6806,7 +6806,7 @@ draw_ellipse(int xzero, int yzero, double s1, double s2, double roh, int lptn,
 
 static void
 draw_circle(int xzero, int yzero, int r,
-	    int lptn, unsigned char func, lBitmap *bm)
+	    int lptn, int func, lBitmap *bm)
   {
   lPoint pts[100];
   int i;
@@ -6827,7 +6827,7 @@ draw_circle(int xzero, int yzero, int r,
 
 static void
 draw_seg(int x1, int y1, int x2, int y2,
-	 int lptn, unsigned char func, lBitmap *bm)
+	 int lptn, int func, lBitmap *bm)
   {
   lPoint pts[2];
 
@@ -6839,7 +6839,7 @@ draw_seg(int x1, int y1, int x2, int y2,
 
 static void
 draw_rect(int x1, int y1, int x2, int y2, int lptn,
-	  unsigned char func, lBitmap *bm)
+	  int func, lBitmap *bm)
   {
   lPoint pts[5];
 
@@ -6853,7 +6853,7 @@ draw_rect(int x1, int y1, int x2, int y2, int lptn,
   }
 
 static void
-draw_line(lPoint *pts, int np, int lptn, unsigned char func,
+draw_line(lPoint *pts, int np, int lptn, int func,
 	  lBitmap *bm, int xzero, int yzero, int xsize, int ysize, int disjoin)
   {
   GC *gc;
@@ -6938,7 +6938,7 @@ put_mon(int xzero, int yzero)
 
 static void
 put_bitblt(lBitmap *sbm, int xzero, int yzero, int xsize, int ysize,
-	   lBitmap *dbm, int x, int y, unsigned char func)
+	   lBitmap *dbm, int x, int y, int func)
   {
   GC *gc;
 
@@ -6995,7 +6995,7 @@ invert_bits(uint8_w *base, register int bytes)
   }
 
 static void
-put_text(lBitmap *bm, int xzero, int yzero, char *text, unsigned char func)
+put_text(lBitmap *bm, int xzero, int yzero, char *text, int func)
   {
   register int i,j,code,len;
 

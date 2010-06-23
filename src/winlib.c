@@ -1,4 +1,4 @@
-/* $Id: winlib.c,v 1.1.2.4.2.16 2010/02/18 07:05:31 uehira Exp $ */
+/* $Id: winlib.c,v 1.1.2.4.2.17 2010/06/23 08:13:05 uehira Exp $ */
 
 /*-
  * winlib.c  (Uehira Kenji)
@@ -1267,9 +1267,28 @@ read_channel_file(FILE *fp, struct channel_tbl tbl[], int arrynum)
   return (i);
 }
 
+void
+str2double(char *t, int n, int m, double *d)
+{
+  char  *tb;
+
+  /* May be need length of 't'.*/
+  /* if (strlen(t) < n + m) {....} */
+  if ((tb = (char *)malloc(sizeof(char) * (m + 1))) == NULL) {
+    (void)fprintf(stderr, "str2double : malloc error\n");
+    exit(1);
+  }
+  strncpy(tb, t + n, m);
+  tb[m] = '\0';
+  if (tb[0] == '*')
+    *d = 100.0;
+  else
+    *d = atof(tb);
+  free(tb);
+}
+
 /* function(s) related with MT device */
 #if HAVE_SYS_MTIO_H
-
 int
 mt_pos(int fmc, int blc, int fd)
 {
@@ -1358,5 +1377,4 @@ read_exb1(char dev_name[], int fd, uint8_w *dbuf, size_t maxsize)
 
   return (blocking);
 }
-
 #endif  /* #if HAVE_SYS_MTIO_H */

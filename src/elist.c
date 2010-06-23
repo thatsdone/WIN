@@ -1,4 +1,4 @@
-/* $Id: elist.c,v 1.9.4.2.2.2 2009/08/25 04:00:15 uehira Exp $ */
+/* $Id: elist.c,v 1.9.4.2.2.3 2010/06/23 08:13:03 uehira Exp $ */
 
 /* program elist.c    2/5/91 - 2/25/91 ,  4/16/92, 4/22/92  urabe */
 /*                      6/10/92, 8/18/92, 10/25/92, 6/8/93, 1/5/94  */
@@ -66,17 +66,17 @@ print_usage()
   exit(1);
   }
 
-str2double(t,n,m,d)
-  char *t;
-  int n,m;
-  double *d;
-  { 
-  char tb[20];
-  strncpy(tb,t+n,m);
-  tb[m]=0;
-  if(tb[0]=='*') *d=100.0;
-  else *d=atof(tb);
-  }
+/* str2double(t,n,m,d) */
+/*   char *t; */
+/*   int n,m; */
+/*   double *d; */
+/*   {  */
+/*   char tb[20]; */
+/*   strncpy(tb,t+n,m); */
+/*   tb[m]=0; */
+/*   if(tb[0]=='*') *d=100.0; */
+/*   else *d=atof(tb); */
+/*   } */
 
 main(argc,argv)
   int argc;

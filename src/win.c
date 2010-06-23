@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.46.2.6.2.30 2010/06/18 09:50:11 uehira Exp $
+   $Id: win.c,v 1.46.2.6.2.31 2010/06/23 08:13:03 uehira Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -22,6 +22,10 @@
 #define NAME_PRG      "win32"
 #endif
 #define WIN_VERSION   "2010.6.18(+Hi-net) 64bit"
+
+static const char rcsid[] =
+  "$Id: win.c,v 1.46.2.6.2.31 2010/06/23 08:13:03 uehira Exp $";
+
 #define DEBUG_AP      0   /* for debugging auto-pick */
 /* 5:sr, 4:ch, 3:sec, 2:find_pick, 1:all */
 /************ HOW TO COMPILE THE PROGRAM **************************
@@ -161,17 +165,17 @@ LOCAL
 #include "winlib.h"
 
   typedef XPoint lPoint;    /* short ! */
-  XSizeHints sizehints;
+  static  XSizeHints sizehints;
 
   typedef struct {
     lPoint  origin;
     lPoint  extent;
     } lRectangle;
   typedef struct {
-    char type;   /* BM_FB or BM_MEM */
-    char depth;  /* bitmap depth */
+    int8_w type;   /* BM_FB or BM_MEM */
+    int    depth;  /* bitmap depth (OLD : char) */
     lRectangle rect; /* defined area */
-    char *base;  /* for BM_MEM */
+    /* char *base; */  /* for BM_MEM */
     XID drw;     /* Window or Pixmap */
     } lBitmap;
 
@@ -229,11 +233,11 @@ LOCAL
 #define BF_SDIA   GXandReverse   /* src & ~dst */
 #define BF_SDA    GXand          /* src & dst */
 #define BF_SDAI   GXnand         /* ~(src & dst) */
-  Display *disp;
-  Cursor x11_cursor;
-  XColor c_black,c_white,c_cursor,c_c;
-  Colormap colormap;
-  XSetWindowAttributes att;
+  static Display *disp;
+  static Cursor x11_cursor;
+  static XColor c_black,c_white,c_cursor,c_c;
+  static Colormap colormap;
+  /* static XSetWindowAttributes att; */
 
 /*#define OLD_FORMAT      0 */
                /* 1 for data before May, 1990 ;
@@ -275,8 +279,8 @@ LOCAL
 #else
   #define NAMLEN       80
 #endif
-#define STNLEN       11 /* (length of station code)+1 */
-#define CMPLEN       7  /* (length of component code)+1 */
+#define STNLEN   WIN_STANAME_LEN /* (length of station code)+1 */
+#define CMPLEN   WIN_STACOMP_LEN /* (length of component code)+1 */
 #define WIDTH_INFO_C 18
 #define WIDTH_INFO      (WIDTH_TEXT*WIDTH_INFO_C)
 #define WIDTH_INFO_ZOOM (WIDTH_TEXT*WIDTH_INFO_C)
@@ -430,7 +434,7 @@ LOCAL
 #define   LEVEL_2   0.030   /* good sharpness */
 #define   LEVEL_3   0.100   /* lower limit of (aic_all-aic) */
 
-  char cursor_color[20]={"blue"},
+  static char cursor_color[20]={"blue"},
     *func_main[]={"OPEN" ,"EVDET","AUTPK","HYPO","SAVE","","    ","    ","$"},
     *func_main2[]={"","RFSH","QUIT","COPY","MAP","FINL","LIST","LOAD","UNLD",
             "CLER","MECH","PSTUP","$"},
@@ -456,26 +460,26 @@ LOCAL
 #define mktime timelocal
 #endif
 */
-  lBitmap dpy,*mon,info,cursor,cursor_mask,zoom,epi_s,epi_l,arrows_ud,
+  static lBitmap dpy,*mon,info,cursor,cursor_mask,zoom,epi_s,epi_l,arrows_ud,
     arrows_lr,arrows_lr_zoom,arrows_leng,arrows_scale,bbuf,sym,sym_stn;
-  lPoint *points;
+  static lPoint *points;
 
-char patterns[N_LPTN][2]={{1,0}, {1,1}, {2,2}, {4,4}, {1,7}, {1,15}};
-  GC gc_line[N_LPTN],gc_line_mem[N_LPTN],gc_fb,gc_mem,gc_fbi,gc_memi;
-  XID ttysw;
-  char *marks[]={"P","S","F","!"};
-  uint8_w bbm[16][N_BM];  /* text bitmap buffer */
-  float depsteps[]=
+static char patterns[N_LPTN][2]={{1,0}, {1,1}, {2,2}, {4,4}, {1,7}, {1,15}};
+  static GC gc_line[N_LPTN],gc_line_mem[N_LPTN],gc_fb,gc_mem,gc_fbi,gc_memi;
+  static XID ttysw;
+  static char *marks[]={"P","S","F","!"};
+  static uint8_w bbm[16][N_BM];  /* text bitmap buffer */
+  static float depsteps[]=
     {-6400,-10,-5,-3,-2,-1,0,1,2,3,4,5,6,7,8,9,10,12,15,20,25,30,35,40,
      50,60,70,80,90,100,120,150,200,250,300,350,400,500,600,700,6400};
-  float magsteps[]=
+  static float magsteps[]=
     {-9.0,-2.0,-1.5,-1.0,-0.5,0.0,0.5,1.0,1.5,2.0,2.5,3.0,3.5,
      4.0,4.5,5.0,5.5,6.0,6.5,7.0,9.5};
-  double mapsteps[]={800.0,500.0,300.0,200.0,100.0,50.0,20.0,10.0,5.0,2.5,1.0};
+  static double mapsteps[]={800.0,500.0,300.0,200.0,100.0,50.0,20.0,10.0,5.0,2.5,1.0};
   struct YMDhms {
     int ye,mo,da,ho,mi,se;
     };
-  struct Sel {
+static struct Sel {
     char o[8];
     int no_blast;
     long t1,t2;   /* 64bit ok */
@@ -491,13 +495,13 @@ char patterns[N_LPTN][2]={{1,0}, {1,1}, {2,2}, {4,4}, {1,7}, {1,15}};
     0.0,0.0,  0,0,0,
     0.0,0.0,  0,0,1};
   /* (X0,Y0,size,center-offset,radius) */
-  int size_sym[N_SYM][5]=
+  static int size_sym[N_SYM][5]=
     {{36,23,3,1,1}, {54,7,3,1,1}, {41,25,4,1,2}, {31,23,5,2,3},
      {54,0,7,3,4}, {46,38,11,5,5}, {46,23,15,7,7}, {27,31,19,9,9},
      {31,0,23,11,11}, {0,31,27,13,13}, {0,0,31,15,15}};
-  int size_sym_stn[N_SYM_STN][5]=
+  static int size_sym_stn[N_SYM_STN][5]=
     {{1,1,5,2,3}, {8,0,7,3,4}, {0,8,7,3,4}, {7,7,9,4,5}};
-  uint8_w
+  static uint8_w
     buf_epi_s[]=
       {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x03,0x80,0x07,0xc0,
        0x0f,0xe0,0x0f,0xe0,0x0f,0xe0,0x07,0xc0,0x03,0x80,0x00,0x00,
@@ -594,7 +598,7 @@ char patterns[N_LPTN][2]={{1,0}, {1,1}, {2,2}, {4,4}, {1,7}, {1,15}};
 /* (8 x 16) x (128-32) */
 /* start = 32, end = 126, n of codes = 126-32+1 = 95 */
 /* bitmap of 16(tate) x 96(yoko) bytes */
-    uint8_w font16[16][96]=
+    static uint8_w font16[16][96]=
       {{0x00,0x00,0x6c,0x00,0x10,0x02,0x00,0xe0,0x02,0x80,0x00,0x00,0x00,0x00,0x00,0x02,
 	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x02,0x00,0x80,0x00,
 	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
@@ -692,7 +696,7 @@ char patterns[N_LPTN][2]={{1,0}, {1,1}, {2,2}, {4,4}, {1,7}, {1,15}};
 	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x7c,0x00,0x00,0x38,0x00,0x00,0x00,0x00,0x00,
 	0xf0,0x1e,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x40,0x00,0x06,0x10,0xc0,0x00,0x00}};
 #if OLD_FORMAT
-  int16_w e_table[256]={
+  static int16_w e_table[256]={
     0x0000,0x0001,0x0002,0x0003,0x0004,0x0005,0x0006,0x0007,
     0x0008,0x0009,0x000A,0x000B,0x000C,0x000D,0x000E,0x000F,
     0x0010,0x0011,0x0012,0x0013,0x0014,0x0015,0x0016,0x0017,
@@ -818,7 +822,7 @@ char patterns[N_LPTN][2]={{1,0}, {1,1}, {2,2}, {4,4}, {1,7}, {1,15}};
       alat0,along0,dep0,xe0,ye0,ze0,pomc_rms,somc_rms;
     struct Fnl *fnl;
     };
-  struct File_Table     /* Data File Information */
+static struct File_Table     /* Data File Information */
     {
     char data_file[NAMLEN];   /* data file name */
     char dat_file[NAMLEN];    /* temporary data file name */
@@ -897,7 +901,7 @@ char patterns[N_LPTN][2]={{1,0}, {1,1}, {2,2}, {4,4}, {1,7}, {1,15}};
     double gn_filt;   /* gain factor of filter */
     double coef[MAX_FILT*4]; /* filter coefficients */
     };
-  struct Psup
+static struct Psup
     {
     int valid;
     int x1,x2;
@@ -912,7 +916,7 @@ char patterns[N_LPTN][2]={{1,0}, {1,1}, {2,2}, {4,4}, {1,7}, {1,15}};
     int ot[7];
     struct Filt f;
     } pu,pu_new;
-  struct Zoom_Window
+static struct Zoom_Window
     {
     int valid;       /* 1: valid, 0:invalid */
     int length;      /* in sec */
@@ -984,7 +988,7 @@ typedef struct
     double uv[MAX_FILT*4];
     } Evdet_Tbl;
 
-  int eventmask,readfds,fd_mouse,fd_fb,n_zoom_max,n_zoom,main_mode,
+static int n_zoom_max,n_zoom,main_mode,
     loop,loop_stack[5],loop_stack_ptr,x_zero_max,
     y_zero_max,width_win_mon,height_win_mon,width_mon,mailer_flag,
     width_mon_max,height_mon,flag_change,width_info,height_info,
@@ -995,20 +999,24 @@ typedef struct
     map_name,ppk_idx,map_true,map_vstn,map_ellipse,bye,got_hup,
     s_cursor,flag_hypo,flag_mech,nplane,black,pixels_per_trace,ppt_half,
     width_frame,height_frame,width_zoom,height_zoom,mech_name,
-    map_mode,x_time_file,x_time_now,x_cursor,y_cursor,init_dep,
+    map_mode,x_time_file,x_time_now,init_dep,
     init_depe,init_dep_init,init_depe_init,com_dep1,com_dep2,
     com_depe1,com_depe2,mec_xzero,mec_yzero,map_period,first_map,
     first_map_others,map_update,com_diag1,map_all,map_period_save,
     com_diag2,mecha_mode,hypo_use_ratio,map_f1x,map_f1y,map_f2x,map_f2y,
     map_n_find,map_line,fit_height,read_hypo,map_interval,mon_offset,
     just_hypo,just_hypo_offset,list_on_map,phypo_format,sec_block,autpk_but_off,calc_line_off;
-  unsigned int  width_dpy,height_dpy;
-  float init_lat_init,init_lon_init,init_late_init,init_lone_init;
-  char mec_hemi[10],diagnos[50],apbuf[20],monbuf[20],mapbuf[20],
+
+/* removed by Uehira. (2010/06/23) */
+/* static int eventmask,readfds,fd_mouse,fd_fb,x_cursor,y_cursor; */
+
+static unsigned int  width_dpy,height_dpy;
+static float init_lat_init,init_lon_init,init_late_init,init_lone_init;
+static char mec_hemi[10],diagnos[50],apbuf[20],monbuf[20],mapbuf[20],
     map_period_unit,dot;
-  double pixels_per_km,lat_cent,lon_cent,mec_rc,alat0,along0,pdpi;
-  static double  *dbuf,*dbuf2;
-  static int32_w *buf,*buf2;
+static double pixels_per_km,lat_cent,lon_cent,mec_rc,alat0,along0,pdpi;
+static double  *dbuf,*dbuf2;
+static int32_w *buf,*buf2;
 
 /*********************** prototypes **********************/
 static void xgetorigin(Display *, Window, int *, int *, unsigned int *,
@@ -1066,7 +1074,7 @@ static void bye_entry(void);   /* check?? 2010.6.15 */
 static void end_process(int);   /* check?? 2010.6.15 */
 static void set_geometry(void);   /* check?? 2010.6.15 */
 /*--------------- main()--------------------*/
-int main(int, char *[]);
+int main(int, char *[]);  /* check 2010.6.23 */
 /*--------------- main()--------------------*/
 static void bye_process(void);  /* check 2010.6.17 */
 static void do_auto_pick(void);  /* check 2010.6.17 */
@@ -1076,9 +1084,9 @@ static void proc_alarm(void);  /* check 2010.6.17 */
 static void do_map(void);  /* check 2010.6.17 */
 static void window_main_loop(void);  /* check 2010.6.17 */
 static void open_save(void);  /* check 2010.6.17 */
-static void plot_zoom(int, int, struct Pick_Time *, int);
+static void plot_zoom(int, int, struct Pick_Time *, int);  /* check 2010.6.23 */
 static void close_zoom(int);  /* check 2010.6.17 */
-static void proc_main(void);
+static void proc_main(void);  /* check 2010.6.23 */
 static int measure_max_zoom(int);  /* check 2010.6.17 */
 static int get_max(double *, int, int *, int *, int *, int *);  /* check 2010.6.17 */
 static void put_function(void);  /* check 2010.6.17 */
@@ -1149,7 +1157,7 @@ static void init_mecha(void);  /* check 2010.6.18 */
 static void proc_mecha(void);  /* check 2010.6.18 */
 static void xy_pt(int *, int *, double *, double *, int);  /* check 2010.6.18 */
 static int read_final(char *, struct Hypo *);  /* check 2010.6.18 */
-static void str2double(char *, int, int, double *);  /* check 2010.6.17 */
+/* static void str2double(char *, int, int, double *); */
 static int put_mecha(void);  /* check 2010.6.18 */
 static void switch_psup(int, int);  /* check 2010.6.18 */
 static void init_psup(void);  /* check 2010.6.17 */
@@ -4657,6 +4665,7 @@ main(int argc, char *argv[])
         break;
       case 'o':   /* remove offset in MON traces */
         mon_offset=1;
+        flag_save=0;   /* don't use MON bitmap */
         break;
       case 'p':   /* specify parameter file name */
         strcpy(ft.param_file,optarg);
@@ -4718,6 +4727,8 @@ main(int argc, char *argv[])
   signal(SIGTERM,(void *)end_process);
   signal(SIGHUP,(void *)bye_entry);
   fprintf(stderr,"***  %s  (%s)  ***\n",NAME_PRG,WIN_VERSION);
+  WIN_version();
+  /* fprintf(stderr, "%s\n", rcsid); */
 
   lat_cent=lon_cent=200.0;  /* unrealistic position */
   first_map=first_map_others=1;
@@ -10454,16 +10465,16 @@ read_final(char *final_file, struct Hypo *hypo)
   return (1);
   }
 
-static void
-str2double(char *t, int n, int m, double *d)
-  {
-  char tb[20];
+/* static void */
+/* str2double(char *t, int n, int m, double *d) */
+/*   { */
+/*   char tb[20]; */
 
-  strncpy(tb,t+n,m);
-  tb[m]=0;
-  if(tb[0]=='*') *d=100.0;
-  else *d=atof(tb);
-  }
+/*   strncpy(tb,t+n,m); */
+/*   tb[m]=0; */
+/*   if(tb[0]=='*') *d=100.0; */
+/*   else *d=atof(tb); */
+/*   } */
 
 static int
 put_mecha()

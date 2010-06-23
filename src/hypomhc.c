@@ -1,5 +1,5 @@
 /*-
-  $Id: hypomhc.c,v 1.7.2.2.2.3 2010/04/03 07:37:44 uehira Exp $
+  $Id: hypomhc.c,v 1.7.2.2.2.4 2010/06/23 08:13:03 uehira Exp $
    hypomhc.c    : main program for hypocenter location
      original version was made on March 13, 1984 and
      modified by N.H. on Feb. 8, 1985, May 8, 1985.
@@ -124,7 +124,7 @@ struct station_for_calc_data {
 typedef struct station_for_calc_data FOR_CALC;
 
 /* prototypes */
-static void str2double(char *, int, int, double *);
+static void str2double_h(char *, int, int, double *);
 static void where(STRUCT *, double, int *);
 static void rxinc(int, double, double, int,
 		  double, int, double *, double *, STRUCT *);
@@ -141,7 +141,7 @@ static void memory_error(void);
 int main(int, char *[]);
 
 static void
-str2double(char *t, int n, int m, double *d)
+str2double_h(char *t, int n, int m, double *d)
 {
   char           *tb;
 
@@ -851,17 +851,17 @@ main(int argc, char *argv[])
     sta[i].sa1[10] = '\0';
     strncpy(sta[i].pola1, txtbuf + 11, 1);
     sta[i].pola1[1] = '\0';
-    str2double(txtbuf, 12, 8, &sta[i].pt1);
-    str2double(txtbuf, 20, 6, &sta[i].pe1);
-    str2double(txtbuf, 26, 8, &sta[i].st1);
-    str2double(txtbuf, 34, 6, &sta[i].se1);
-    str2double(txtbuf, 40, 6, &xt);
-    str2double(txtbuf, 46, 9, &sta[i].amp);
-    str2double(txtbuf, 55, 11, &sta[i].alat);
-    str2double(txtbuf, 66, 11, &sta[i].alng);
-    str2double(txtbuf, 77, 7, &sta[i].ahgt);
-    str2double(txtbuf, 84, 7, &sta[i].stcp);
-    str2double(txtbuf, 91, 7, &sta[i].stcs);
+    str2double_h(txtbuf, 12, 8, &sta[i].pt1);
+    str2double_h(txtbuf, 20, 6, &sta[i].pe1);
+    str2double_h(txtbuf, 26, 8, &sta[i].st1);
+    str2double_h(txtbuf, 34, 6, &sta[i].se1);
+    str2double_h(txtbuf, 40, 6, &xt);
+    str2double_h(txtbuf, 46, 9, &sta[i].amp);
+    str2double_h(txtbuf, 55, 11, &sta[i].alat);
+    str2double_h(txtbuf, 66, 11, &sta[i].alng);
+    str2double_h(txtbuf, 77, 7, &sta[i].ahgt);
+    str2double_h(txtbuf, 84, 7, &sta[i].stcp);
+    str2double_h(txtbuf, 91, 7, &sta[i].stcs);
 
     if (sta[i].stcp == 9999.0)
       sta[i].stcp = 0.0;

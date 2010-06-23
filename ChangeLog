@@ -1,8 +1,10 @@
- $Id: ChangeLog,v 1.131.2.25.2.57 2010/06/23 08:13:02 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.58 2010/06/23 09:25:08 uehira Exp $
 
 2010-06-23  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* use str2double() from library : win.c, elist.c
 	  hypomhc : rename str2double() --> str2double_h()
+	* src/win.c : 64bit clean?
+	* Version 2.1.4 released.
 
 2010-06-18  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* src/winlib.h : WIN_sr : uint32_w --> int32_w

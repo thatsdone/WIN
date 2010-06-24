@@ -1,4 +1,4 @@
-/* $Id: winlib.c,v 1.1.2.4.2.17 2010/06/23 08:13:05 uehira Exp $ */
+/* $Id: winlib.c,v 1.1.2.4.2.18 2010/06/24 02:54:13 uehira Exp $ */
 
 /*-
  * winlib.c  (Uehira Kenji)
@@ -637,11 +637,21 @@ read_onesec_win(FILE *fp, uint8_w **rbuf)
 void
 Shm_init(struct Shm *sh, size_t size)
 {
+  size_t  remain;
+
+  remain = (size - sizeof(*sh)) / 10;
+  if (remain > MAX_REMAIN_SHM)
+    remain = MAX_REMAIN_SHM;
 
   sh->p = 0; 
-  sh->pl = (size - sizeof(*sh)) / 10 * 9;
+  /* sh->pl = (size - sizeof(*sh)) / 10 * 9; */
+  sh->pl = size - sizeof(*sh) - remain;
   sh->c = 0;
   sh->r = (-1);
+#if DEBUG
+  (void)fprintf(stderr, "size = %ld, sh->pl = %ld(%ld), remain = %ld\n",
+		size, sh->pl, (size - sizeof(*sh)) / 10 * 9, remain);
+#endif
 }
 
 /* print version */

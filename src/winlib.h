@@ -1,4 +1,4 @@
-/* $Id: winlib.h,v 1.1.2.7.2.29 2010/06/23 08:13:05 uehira Exp $ */
+/* $Id: winlib.h,v 1.1.2.7.2.30 2010/06/24 02:54:13 uehira Exp $ */
 
 #ifndef _WIN_LIB_H_
 #define _WIN_LIB_H_
@@ -89,6 +89,9 @@ typedef  int32_w  WIN_sr;   /* 0 < sr < 2^20 */
 #define   TIME2   "9005161000"  /* no fms before this time */
                     /* 60 m / fm after this time */
 #define   TIME3   "9008031718"  /* 10 m / fm after this time */
+
+/* Max. remain size of shared memory */
+#define  MAX_REMAIN_SHM  ((size_t)10000000)   /* 10 MB */
 
 /*** process control file ***/
 #define N_LATEST     "LATEST"

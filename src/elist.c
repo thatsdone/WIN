@@ -1,4 +1,4 @@
-/* $Id: elist.c,v 1.9.4.2.2.3 2010/06/23 08:13:03 uehira Exp $ */
+/* $Id: elist.c,v 1.9.4.2.2.4 2010/06/24 02:54:13 uehira Exp $ */
 
 /* program elist.c    2/5/91 - 2/25/91 ,  4/16/92, 4/22/92  urabe */
 /*                      6/10/92, 8/18/92, 10/25/92, 6/8/93, 1/5/94  */
@@ -37,24 +37,36 @@
 #define   TAIL    "tail -r"
 #endif
 
-char *getname(name,id)
-  char *name;
-  int id;
+static const char rcsid[] =
+  "$Id: elist.c,v 1.9.4.2.2.4 2010/06/24 02:54:13 uehira Exp $";
+
+/* prototypes */
+static char *getname(char *, int);
+static void print_usage(void);
+int main(int, char *[]);
+/* end of prototypes */
+
+static char 
+*getname(char *name, int id)
   {
   static char t[10];
   struct passwd *pwd;
-  if(*name) return name;
-  if((pwd=getpwuid(id))) return pwd->pw_name;
+
+  if(*name) return (name);
+  if((pwd=getpwuid(id))) return (pwd->pw_name);
   else
     {
     sprintf(t,"%d",id);
-    return t;
+    return (t);
     }
 /*  else return ".";*/
   }
 
+static void
 print_usage()
   {
+
+  WIN_version();
   fprintf(stderr,"Usage :  elist (-hupon) [pick dir] [pmon.out file] ([data dir] ([request dir] ..))\n");
   fprintf(stderr,"    If 'data dir' is specified, 'NOISE' files will be deleted.\n");
   fprintf(stderr,"    -h  hide 'NOISE only' events\n");
@@ -78,9 +90,8 @@ print_usage()
 /*   else *d=atof(tb); */
 /*   } */
 
-main(argc,argv)
-  int argc;
-  char *argv[];
+int
+main(int argc,char *argv[])
   {
 /*   extern int optind; */
 /*   extern char *optarg; */
@@ -91,7 +102,7 @@ main(argc,argv)
   struct Pk {
     char dfname[14],diagnos[20],fname[18],name[10],near[12];
     uid_t user;
-    u_short mode;
+    mode_t mode;  /* OLD : u_short */
     int hypo,mech,pick,np,ns,nm;
     float lat,lon,dep,mag;
     } *pk;
@@ -172,7 +183,7 @@ main(argc,argv)
     }
 
   npick_lim=NPICK;
-  if((pk=(struct Pk *)malloc(sizeof(*pk)*npick_lim))==0)
+  if((pk=(struct Pk *)malloc(sizeof(*pk)*npick_lim))==NULL)
     {
     fprintf(stderr,"malloc (Npicks=%d) failed !\n",npick_lim);
     exit(1);
@@ -194,14 +205,14 @@ main(argc,argv)
     stat(filename,&st_buf);
     pk[i].user=st_buf.st_uid;
     pk[i].mode=st_buf.st_mode;
-    fgets(textbuf,LINELEN,fp);
+    fgets(textbuf,sizeof(textbuf),fp);
     pk[i].diagnos[0]=pk[i].name[0]=0;
     sscanf(textbuf,"%*s%s%s%s",pk[i].dfname,pk[i].diagnos,pk[i].name);
     pk[i].diagnos[5]=pk[i].name[5]=0;
     pk[i].pick=pk[i].hypo=pk[i].mech=pk[i].np=pk[i].ns=pk[i].nm=0;
     pk[i].mag=9.9;
     pn=sn=fn=mn=0;
-    while(fgets(textbuf,LINELEN,fp)!=NULL)
+    while(fgets(textbuf,sizeof(textbuf),fp)!=NULL)
       {
       if(strncmp(textbuf,"#p",2)==0)
         {
@@ -248,7 +259,7 @@ main(argc,argv)
 
     if(++i==npick_lim)
       {
-      if((pk=(struct Pk *)realloc((char *)pk,sizeof(*pk)*(npick_lim+NPICK)))==0)
+      if((pk=(struct Pk *)realloc((char *)pk,sizeof(*pk)*(npick_lim+NPICK)))==NULL)
         {
         fprintf(stderr,"realloc failed !  Npicks=%d (size=%d)\n",
           npick_lim,sizeof(*pk)*npick_lim);
@@ -305,7 +316,7 @@ fprintf(fpp,"-------------------------------------------------------------------
 #define ON 1
 #define OFF 0
   search=ON;
-  while(fgets(textbuf,LINELEN,fp))
+  while(fgets(textbuf,sizeof(textbuf),fp))
     {
     if(*textbuf==' ') continue;
     *mes1=(*mes2)=(*mes3)=0;

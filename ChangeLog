@@ -1,4 +1,8 @@
- $Id: ChangeLog,v 1.131.2.25.2.58 2010/06/23 09:25:08 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.59 2010/06/24 02:54:12 uehira Exp $
+
+2010-06-24  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/winlib.c : Shm_init() : set max. remain size of shared memory.
+	* Version 2.1.5 released.
 
 2010-06-23  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* use str2double() from library : win.c, elist.c

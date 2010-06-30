@@ -1,4 +1,4 @@
-/* $Id: dewin.c,v 1.4.4.3.2.8 2010/06/17 14:20:22 uehira Exp $ */
+/* $Id: dewin.c,v 1.4.4.3.2.9 2010/06/30 08:00:54 uehira Exp $ */
 
 /* program dewin  1994.4.11-4.20  urabe */
 /*                1996.2.23 added -n option */
@@ -36,11 +36,11 @@
 #define MAX_SR      HEADER_5B
 
 static const char  rcsid[] =
-   "$Id: dewin.c,v 1.4.4.3.2.8 2010/06/17 14:20:22 uehira Exp $";
+   "$Id: dewin.c,v 1.4.4.3.2.9 2010/06/30 08:00:54 uehira Exp $";
 
 static int32_w buf[MAX_SR];
 static double dbuf[MAX_SR];
-static long au_header[]={0x2e736e64,0x00000020,0xffffffff,0x00000001,
+static uint32_w au_header[]={0x2e736e64,0x00000020,0xffffffff,0x00000001,
 		  0x00001f40,0x00000001,0x00000000,0x00000000};
 
 struct Filter

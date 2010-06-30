@@ -1,4 +1,7 @@
- $Id: ChangeLog,v 1.131.2.25.2.59 2010/06/24 02:54:12 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.60 2010/06/30 08:00:54 uehira Exp $
+
+2010-06-30  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/dewni.c : fixed bug.
 
 2010-06-24  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* src/winlib.c : Shm_init() : set max. remain size of shared memory.

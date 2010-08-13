@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.38.2.10.2.16 2010/06/17 14:20:22 uehira Exp $
+# $Id: Makefile.am,v 1.38.2.10.2.17 2010/08/13 14:33:38 uehira Exp $
 #
 
 if SUNOS4
@@ -67,7 +67,7 @@ OFFLINE_MATH=dewin select_stations hypomhc wintosac select_bylatlon
 OFFLINE_USER=$(OFFLINE_X) $(OFFLINE_F77) wed wck wadd $(OFFLINE_MATH) wchch pick2tseis \
              wch pick2finalb pick2final finalb2final final2finalb finalb2seis \
              wform wintowin $(OFFLINE_USER_MATH) winadd wck_wdisk wadd2 \
-             win2raw wchasn ls8tel16_win ls8tel_STM ls8tel_STS ls7000_A8 ls7000_A9
+             win2raw wchasn ls8tel16_win ls8tel_STM ls8tel_STS ls7000_A8 ls7000_A9 split_win
 TAPE_USER=$(RTAPE) $(FROMTAPE) wdisk wdiskts ras2rpdl ras2lips file_older raw2mon \
           $(TAPE_USER_MATH)
 ONLINE=order raw_mon $(WTAPE) setexb timeout raw_raw raw_100 cormeisei shmdump \
@@ -431,3 +431,6 @@ winrandsimu6_LDADD = @LIBSHMGET@ -lm
 select_bylatlon_SOURCES = select_bylatlon.c pltxy.h $(SUBFUNC_H)
 select_bylatlon_LDADD = $(WIN_SYSTEM_LTLIB) -lm
 #select_bylatlon_CFLAGS = $(AM_CFLAGS)
+
+split_win_SOURCES = split_win.c $(WIN_LIBH) $(GC_CHECK_INCLUDE)
+split_win_LDADD = $(WIN_SYSTEM_LTLIB) $(GC_CHECK_LIB)

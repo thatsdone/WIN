@@ -1,4 +1,8 @@
- $Id: ChangeLog,v 1.131.2.25.2.60 2010/06/30 08:00:54 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.61 2010/08/13 14:33:37 uehira Exp $
+
+2010-08-13  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/split_win.c : added.
+	* Version 2.1.6 released.
 
 2010-06-30  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* src/dewni.c : fixed bug.

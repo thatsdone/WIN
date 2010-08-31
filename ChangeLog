@@ -1,11 +1,11 @@
- $Id: ChangeLog,v 1.131.2.25.2.61 2010/08/13 14:33:37 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.62 2010/08/31 08:25:16 uehira Exp $
 
 2010-08-13  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* src/split_win.c : added.
 	* Version 2.1.6 released.
 
 2010-06-30  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
-	* src/dewni.c : fixed bug.
+	* src/dewin.c : fixed bug.
 
 2010-06-24  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* src/winlib.c : Shm_init() : set max. remain size of shared memory.

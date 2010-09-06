@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.27.2.2.4.3 2010/08/13 14:33:37 uehira Exp $
+# $Id: Makefile.am,v 1.27.2.2.4.4 2010/09/06 05:30:59 uehira Exp $
 #
 #  Makefile.am in man subdirectory.
 #
@@ -58,7 +58,7 @@ install-data-hook:
 	(rm -f $(man1dir)/ls8tel16_rawd.1; cd $(man1dir) && @LN_S@ ls8tel16_raw.1 ls8tel16_rawd.1)
 	(rm -f $(man1dir)/recvt_LS7000d.1; cd $(man1dir) && @LN_S@ recvt_LS7000.1 recvt_LS7000d.1)
 
-uninstall-hook:
+uninstall-local:
 	rm -f $(man1dir)/eventsrtape.1
 
 	rm -f $(man1dir)/send_mon.1

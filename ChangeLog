@@ -1,9 +1,11 @@
- $Id: ChangeLog,v 1.131.2.25.2.63 2010/09/06 02:18:49 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.64 2010/09/06 05:30:59 uehira Exp $
 
 2010-09-06  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* Version 2.1.7 released.
 	* prog/ee_manager, prog/wincd : The $* variables has been removed
 	  in perl 5.10.
+	* [src][man*]/Makefile.am : uninstall symblic links.
+	  uninstall-hook --> uninstall-local
 
 2010-08-13  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* src/split_win.c : added.

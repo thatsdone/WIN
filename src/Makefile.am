@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.38.2.10.2.17 2010/08/13 14:33:38 uehira Exp $
+# $Id: Makefile.am,v 1.38.2.10.2.18 2010/09/06 05:30:59 uehira Exp $
 #
 
 if SUNOS4
@@ -138,7 +138,7 @@ install-exec-hook:
 	(rm -f @bindir@/ls8tel16_rawd; cd @bindir@ && @LN_S@ ls8tel16_raw ls8tel16_rawd)
 	(rm -f @bindir@/recvt_LS7000d; cd @bindir@ && @LN_S@ recvt_LS7000 recvt_LS7000d)
 
-uninstall-hook:
+uninstall-local:
 	rm -f @bindir@/send_mon
 	rm -f @bindir@/sendt_raw
 	rm -f @bindir@/sendt_mon

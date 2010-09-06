@@ -1,8 +1,7 @@
 #! @PERL@
-  eval "exec @PERL@ -S $0 $*"
-  if $running_under_some_shell;
+
 #
-# $Id: ee_manager.in,v 1.1.2.1 2009/01/08 12:34:15 uehira Exp $
+# $Id: ee_manager.in,v 1.1.2.2 2010/09/06 02:12:40 uehira Exp $
 #   Uehira Kenji (1996.5.28)
 # 
 $WINDIR = $ENV{'WINDIR'};

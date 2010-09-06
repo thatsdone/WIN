@@ -1,4 +1,9 @@
- $Id: ChangeLog,v 1.131.2.25.2.62 2010/08/31 08:25:16 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.63 2010/09/06 02:18:49 uehira Exp $
+
+2010-09-06  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 2.1.7 released.
+	* prog/ee_manager, prog/wincd : The $* variables has been removed
+	  in perl 5.10.
 
 2010-08-13  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* src/split_win.c : added.

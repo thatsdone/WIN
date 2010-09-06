@@ -1,4 +1,10 @@
- $Id: ChangeLog,v 1.164 2010/06/16 03:15:48 uehira Exp $
+ $Id: ChangeLog,v 1.165 2010/09/06 02:05:01 uehira Exp $
+
+2010-09-06  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 1.1.99 released.
+	* prog/ee_manager, prog/wincd : The $* variables has been removed
+	  in perl 5.10.
+	* src/win.c : '*base' of 'lBitmap' never used. comment out.
 
 2010-06-16  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* Version 1.1.98 released.

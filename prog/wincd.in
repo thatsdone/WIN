@@ -1,9 +1,7 @@
 #! @PERL@
-  eval "exec @PERL@ -S $0 $*"
-  if $running_under_some_shell;
 
 #
-# $Id: wincd.in,v 1.1 2002/01/17 13:59:18 uehira Exp $
+# $Id: wincd.in,v 1.2 2010/09/06 02:05:02 uehira Exp $
 # wincd
 #     1995.12.18     Uehira Kenji
 #     1998.2.27      version up

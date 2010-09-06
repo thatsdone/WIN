@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.53 2010/06/16 03:24:21 uehira Exp $
+   $Id: win.c,v 1.54 2010/09/06 02:05:02 uehira Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -171,7 +171,7 @@ LOCAL
     char type;   /* BM_FB or BM_MEM */
     char depth;  /* bitmap depth */
     lRectangle rect; /* defined area */
-    char *base;  /* for BM_MEM */
+    /* char *base; */ /* for BM_MEM */
     XID drw;     /* Window or Pixmap */
     } lBitmap;
 

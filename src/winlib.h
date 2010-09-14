@@ -1,4 +1,4 @@
-/* $Id: winlib.h,v 1.1.2.7.2.30 2010/06/24 02:54:13 uehira Exp $ */
+/* $Id: winlib.h,v 1.1.2.7.2.31 2010/09/14 15:00:00 uehira Exp $ */
 
 #ifndef _WIN_LIB_H_
 #define _WIN_LIB_H_
@@ -308,6 +308,7 @@ time_t bcd_t(uint8_w *);
 void time2bcd(time_t, uint8_w *);
 time_t bcd2time(uint8_w *);
 int time_cmpq(const void *, const void *);
+int ch_cmpq(const void *, const void *);
 void rmemo5(char [], int []);
 void rmemo6(char [], int []);
 int wmemo5(char [], int []);

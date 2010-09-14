@@ -1,4 +1,4 @@
-/* $Id: winlib.c,v 1.1.2.4.2.19 2010/09/14 09:11:21 uehira Exp $ */
+/* $Id: winlib.c,v 1.1.2.4.2.20 2010/09/14 15:00:00 uehira Exp $ */
 
 /*-
  * winlib.c  (Uehira Kenji)
@@ -998,6 +998,22 @@ time_cmpq(const void *_a, const void *_b)   /* for qsort() */
 
   a = *(time_t *)_a;
   b = *(time_t *)_b;
+
+  if (a < b)
+    return (-1);
+  else if (a > b)
+    return (1);
+  else
+    return (0);
+}
+
+int
+ch_cmpq(const void *_a, const void *_b)   /* for qsort() */
+{
+  WIN_ch  a, b;
+
+  a = *(WIN_ch *)_a;
+  b = *(WIN_ch *)_b;
 
   if (a < b)
     return (-1);

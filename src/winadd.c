@@ -1,4 +1,4 @@
-/* $Id: winadd.c,v 1.4.4.3.2.7 2010/09/14 09:11:21 uehira Exp $ */
+/* $Id: winadd.c,v 1.4.4.3.2.8 2010/09/14 15:00:00 uehira Exp $ */
 
 /*
  * winadd.c  (Uehira Kenji)
@@ -41,7 +41,11 @@
 #include "winlib.h"
 /* #include "win_system.h" */
 
-/*  #define   DEBUG  0 */
+#define   DEBUG2  0
+#define   DEBUG2  0
+#define   DEBUG3  0
+#define   DEBUG5  0
+
 #define  CH_INC     1000
 #define  TIME_INC   3600
 #define  MIN_LEN    8  /* minimum channel block length */
@@ -57,14 +61,14 @@ typedef struct data_index  INDX;
 
 /* global variables */
 static const char rcsid[] =
-   "$Id: winadd.c,v 1.4.4.3.2.7 2010/09/14 09:11:21 uehira Exp $";
-static int  dummy_flag, verbose_flag;
+   "$Id: winadd.c,v 1.4.4.3.2.8 2010/09/14 15:00:00 uehira Exp $";
+static int  dummy_flag, verbose_flag, chsort_flag;
 
 /* prototypes */
 static void memory_mode_run(int, char *[]);
 static void get_index_from_buf(uint8_w *, off_t, int,
 			       INDX **, WIN_ch *, int,
-			       time_t *, int);
+			       time_t *, int, char *[]);
 static void win_file_read_from_buf(uint8_w *, off_t,
 				   WIN_ch **, int *, int *,
 				   time_t **, int *, int *);
@@ -81,13 +85,21 @@ int
 main(int argc, char *argv[])
 {
   int  c;
+  int  f_mode;
 
   dummy_flag = 1;
-  verbose_flag = 0;
-  while ((c = getopt(argc, argv, "nvh")) != -1) {
+  verbose_flag =  chsort_flag = 0;
+  f_mode = 0;
+  while ((c = getopt(argc, argv, "fnsvh")) != -1) {
     switch (c) {
+    case 'f':   /* force file mode */
+      f_mode = 1;
+      break;
     case 'n':   /* don't append dummy data */
       dummy_flag = 0;
+      break;
+    case 's':   /* channnel sort mode */
+      chsort_flag = 1;
       break;
     case 'v':   /* verbose mode */
       verbose_flag = 1;
@@ -111,7 +123,8 @@ main(int argc, char *argv[])
 	  verbose_flag, dummy_flag);
 #endif
 
-  memory_mode_run(argc, argv);
+  if (!f_mode)
+    memory_mode_run(argc, argv);
 
   file_mode_run(argc, argv);
 
@@ -126,8 +139,10 @@ usage(void)
   WIN_version();
   (void)fprintf(stderr, "%s\n", rcsid);
   (void)fputs("Usage : winadd [options] file1 file2 ... > output\n", stderr);
-  (void)fputs("  options : -n         : do not append dummy headers.\n",
+  (void)fputs("  options : -f         : force file mode.\n", stderr);
+  (void)fputs("            -n         : do not append dummy headers.\n",
 	      stderr);
+  (void)fputs("            -s         : channel sort mode.\n", stderr);
   (void)fputs("            -v         : verbose mode.\n", stderr);
   (void)fputs("            -h         : print this message.\n", stderr);
 }
@@ -282,13 +297,17 @@ get_index(char *name, INDX **indx, WIN_ch *ch, int ch_num,
 	strcpy(indx[ch_sfx][time_sfx].name, name);
 	indx[ch_sfx][time_sfx].point = point + ptr - buf + 4;
 	indx[ch_sfx][time_sfx].len = gsize;
-#if DEBUG > 5
-	   fprintf(stdout,"indx[%d][%d]-->%d  name=%s  point=%d  len=%d\n",
-		   ch_sfx,time_sfx,indx[ch_sfx][time_sfx].flag,
-		   indx[ch_sfx][time_sfx].name,indx[ch_sfx][time_sfx].point,
-		   indx[ch_sfx][time_sfx].len);
+#if DEBUG5
+	fprintf(stderr, "indx[%d][%d]-->%d  name=%s  point=%d  len=%d\n",
+		ch_sfx,time_sfx,indx[ch_sfx][time_sfx].flag,
+		indx[ch_sfx][time_sfx].name,indx[ch_sfx][time_sfx].point,
+		indx[ch_sfx][time_sfx].len);
 #endif
-      }
+      } else if (verbose_flag)
+	fprintf(stderr,
+		"Duplicate data in %s: %02X%02X%02X.%02X%02X%02X(%04X)\n", 
+		name, tt[0], tt[1], tt[2], tt[3], tt[4], tt[5], ch_tmp);
+
       ptr += gsize;
     }  /* while (ptr < buf + re) */
     point = (unsigned long)ftell(fp);
@@ -305,8 +324,9 @@ file_mode_run(int argcc, char *argvv[])
   int  ch_num = 0, time_num = 0, ch_num_arr, time_num_arr;
   size_t  i, j, max_name_len;
   INDX   **indx;
-  size_t  *sortin;
-  time_t   *time_sort;
+  size_t  *sortin, *sortin_ch;
+  time_t  *time_sort;
+  WIN_ch  *ch_sort;
   unsigned long secbuf_len, len_max;
   uint8_w *outbuf, *secbuf, *ptr;
   uint8_w tt[WIN_TIME_LEN];
@@ -366,7 +386,7 @@ file_mode_run(int argcc, char *argvv[])
       }
     }
   }
-#if DEBUG > 1
+#if DEBUG2
   for(i=0;i<time_num;++i){
     fprintf(stderr,"%ld  %ld:  %ld\n",
 	    (*time)[i],time_sort[i],(*time)[sortin[i]]);
@@ -375,14 +395,54 @@ file_mode_run(int argcc, char *argvv[])
 #endif
   FREE(time_sort);
 
+  /* sort channel if chsort_flag == 1 */
+  if (NULL == (sortin_ch = MALLOC(size_t, ch_num)))
+    memory_error();
+  if (chsort_flag) {
+    if (NULL == (ch_sort = MALLOC(WIN_ch, ch_num)))
+      memory_error();
+    for (i = 0; i < ch_num; ++i)
+      ch_sort[i] = (*ch)[i];
+    qsort(ch_sort, ch_num, sizeof(WIN_ch), ch_cmpq);
+    for (i = 0; i < ch_num; ++i) {
+      for (j = 0; j < ch_num; ++j) {
+	if (ch_sort[i] == (*ch)[j]) {
+	  sortin_ch[i] = j;
+	  break;
+	}
+      }
+    }
+#if DEBUG3
+    for(i=0;i<ch_num;++i){
+      fprintf(stderr,"%04X  %04X:  %04X\n",
+	      (*ch)[i], ch_sort[i], (*ch)[sortin_ch[i]]);
+      /* sleep(1); */
+    }
+#endif
+    FREE(ch_sort);
+  } else {  /* not sort */
+    for (i = 0; i < ch_num; ++i)
+      sortin_ch[i] = i;
+#if DEBUG3
+    for(i=0;i<ch_num;++i){
+      fprintf(stderr,"%04X  %04X\n",
+	      (*ch)[i], (*ch)[sortin_ch[i]]);
+      /* sleep(1); */
+    }
+#endif
+  }/* if (chsort_flag) */
+
+  /*
+   *  output data 
+   */
   /* make first time data */
   len_max = MIN_LEN;
   secbuf_len = 10;
   for (i = 0; i < ch_num; ++i) {
-    if (indx[i][sortin[0]].flag) {
-      secbuf_len += indx[i][sortin[0]].len;
-      if (len_max < indx[i][sortin[0]].len)
-	len_max = indx[i][sortin[0]].len;
+    if (indx[sortin_ch[i]][sortin[0]].flag) {
+      secbuf_len += indx[sortin_ch[i]][sortin[0]].len;
+      if (len_max < indx[sortin_ch[i]][sortin[0]].len)
+	len_max = indx[sortin_ch[i]][sortin[0]].len;
     } else {
       if (dummy_flag)
 	secbuf_len += MIN_LEN;
@@ -402,17 +462,17 @@ file_mode_run(int argcc, char *argvv[])
   memcpy(ptr, tt, WIN_TIME_LEN);  /* copy time stamp */
   ptr += WIN_TIME_LEN;
   for (i = 0; i < ch_num; ++i){
-    if (indx[i][sortin[0]].flag) {
-      fp_in = fopen(indx[i][sortin[0]].name, "r");
-      (void)fseek(fp_in, indx[i][sortin[0]].point, 0);
-      (void)fread(outbuf, 1, indx[i][sortin[0]].len, fp_in);
-      memcpy(ptr, outbuf, indx[i][sortin[0]].len);
-      ptr += indx[i][sortin[0]].len;
+    if (indx[sortin_ch[i]][sortin[0]].flag) {
+      fp_in = fopen(indx[sortin_ch[i]][sortin[0]].name, "r");
+      (void)fseek(fp_in, indx[sortin_ch[i]][sortin[0]].point, 0);
+      (void)fread(outbuf, 1, indx[sortin_ch[i]][sortin[0]].len, fp_in);
+      memcpy(ptr, outbuf, indx[sortin_ch[i]][sortin[0]].len);
+      ptr += indx[sortin_ch[i]][sortin[0]].len;
       (void)fclose(fp_in);
     } else {
       if (dummy_flag) {
-	outbuf[0] = (*ch)[i] >> 8;
-	outbuf[1] = (*ch)[i];
+	outbuf[0] = (*ch)[sortin_ch[i]] >> 8;
+	outbuf[1] = (*ch)[sortin_ch[i]];
 	outbuf[2] = 0;
 	outbuf[3] = 1;
 	outbuf[4] = outbuf[5] = outbuf[6] = outbuf[7] = 0;
@@ -444,8 +504,8 @@ file_mode_run(int argcc, char *argvv[])
       t_bcd((*time)[sortin[j - 1]] + 1, tt);
       memcpy(ptr, tt, WIN_TIME_LEN);  /* copy time stamp */
       ptr += WIN_TIME_LEN;
-      outbuf[0] = (*ch)[0] >> 8;
-      outbuf[1] = (*ch)[0];
+      outbuf[0] = (*ch)[sortin_ch[0]] >> 8;
+      outbuf[1] = (*ch)[sortin_ch[0]];
       outbuf[2] = 0;
       outbuf[3] = 1;
       outbuf[4] = outbuf[5] = outbuf[6] = outbuf[7] = 0;
@@ -457,10 +517,10 @@ file_mode_run(int argcc, char *argvv[])
     len_max = MIN_LEN;
     secbuf_len = 10;
     for (i = 0; i < ch_num; ++i)
-      if (indx[i][sortin[j]].flag) {
-	secbuf_len += indx[i][sortin[j]].len;
-	if (len_max < indx[i][sortin[j]].len)
-	  len_max = indx[i][sortin[j]].len;
+      if (indx[sortin_ch[i]][sortin[j]].flag) {
+	secbuf_len += indx[sortin_ch[i]][sortin[j]].len;
+	if (len_max < indx[sortin_ch[i]][sortin[j]].len)
+	  len_max = indx[sortin_ch[i]][sortin[j]].len;
       }
     if (NULL == (secbuf = MALLOC(uint8_w, secbuf_len)))
       memory_error();
@@ -476,12 +536,12 @@ file_mode_run(int argcc, char *argvv[])
     memcpy(ptr, tt, WIN_TIME_LEN);  /* copy time stamp */
     ptr += WIN_TIME_LEN;
     for (i = 0; i < ch_num; ++i)
-      if (indx[i][sortin[j]].flag) {
-	fp_in = fopen(indx[i][sortin[j]].name, "r");
-	(void)fseek(fp_in, indx[i][sortin[j]].point, 0);
-	(void)fread(outbuf, 1, indx[i][sortin[j]].len, fp_in);
-	memcpy(ptr, outbuf,indx[i][sortin[j]].len);
-	ptr += indx[i][sortin[j]].len;
+      if (indx[sortin_ch[i]][sortin[j]].flag) {
+	fp_in = fopen(indx[sortin_ch[i]][sortin[j]].name, "r");
+	(void)fseek(fp_in, indx[sortin_ch[i]][sortin[j]].point, 0);
+	(void)fread(outbuf, 1, indx[sortin_ch[i]][sortin[j]].len, fp_in);
+	memcpy(ptr, outbuf,indx[sortin_ch[i]][sortin[j]].len);
+	ptr += indx[sortin_ch[i]][sortin[j]].len;
 	(void)fclose(fp_in);
       }
     (void)fwrite(secbuf, 1, secbuf_len, stdout);
@@ -575,7 +635,7 @@ win_file_read_from_buf(uint8_w *rawbuf, off_t rawsize,
 static void
 get_index_from_buf(uint8_w *rawbuf, off_t rawsize, int main_sfx,
 		   INDX **indx, WIN_ch *ch, int ch_num,
-		   time_t *time, int time_num)
+		   time_t *time, int time_num, char *argvv[])
 {
   uint8_w  tt[WIN_TIME_LEN];
   uint8_w  *ptr, *ptr_limit, *buf;
@@ -631,7 +691,12 @@ get_index_from_buf(uint8_w *rawbuf, off_t rawsize, int main_sfx,
 		   indx[ch_sfx][time_sfx].fnum,indx[ch_sfx][time_sfx].point,
 		   indx[ch_sfx][time_sfx].len);
 #endif
-      }
+      } else if (verbose_flag)
+	fprintf(stderr,
+		"Duplicate data in %s: %02X%02X%02X.%02X%02X%02X(%04X)\n", 
+		argvv[main_sfx], tt[0], tt[1], tt[2], tt[3], tt[4], tt[5],
+		ch_tmp);
+
       ptr += gsize;
       point += gsize;
     }  /* while (ptr < buf + re) */
@@ -653,8 +718,9 @@ memory_mode_run(int argcc, char *argvv[])
   int  *fopen_flag;
   size_t  i, j;
   INDX   **indx;
-  size_t  *sortin;
+  size_t  *sortin, *sortin_ch;
   time_t  *time_sort;
+  WIN_ch  *ch_sort;
   unsigned long  secbuf_len;
   uint8_w  hbuf[10]; /* WIN_BLOCKSIZE_LEN + WIN_TIME_LEN */
   uint8_w tt[WIN_TIME_LEN];
@@ -749,7 +815,7 @@ memory_mode_run(int argcc, char *argvv[])
     if (!fopen_flag[i])
       continue;
     get_index_from_buf(rawbuf[i], raw_size[i], i,
-		       indx, *ch, ch_num, *time, time_num);
+		       indx, *ch, ch_num, *time, time_num, argvv);
   }
 
   /* sort time */
@@ -768,7 +834,7 @@ memory_mode_run(int argcc, char *argvv[])
       }
     }
   }
-#if DEBUG > 2
+#if DEBUG2
   for(i=0;i<time_num;++i){
     fprintf(stderr,"%ld  %ld:  %ld\n",
 	    (*time)[i],time_sort[i],(*time)[sortin[i]]);
@@ -777,14 +843,51 @@ memory_mode_run(int argcc, char *argvv[])
 #endif
   FREE(time_sort);
 
+  /* sort channel if chsort_flag == 1 */
+  if (NULL == (sortin_ch = MALLOC(size_t, ch_num)))
+    memory_error();
+  if (chsort_flag) {
+    if (NULL == (ch_sort = MALLOC(WIN_ch, ch_num)))
+      memory_error();
+    for (i = 0; i < ch_num; ++i)
+      ch_sort[i] = (*ch)[i];
+    qsort(ch_sort, ch_num, sizeof(WIN_ch), ch_cmpq);
+    for (i = 0; i < ch_num; ++i) {
+      for (j = 0; j < ch_num; ++j) {
+	if (ch_sort[i] == (*ch)[j]) {
+	  sortin_ch[i] = j;
+	  break;
+	}
+      }
+    }
+#if DEBUG3
+    for(i=0;i<ch_num;++i){
+      fprintf(stderr,"%04X  %04X:  %04X\n",
+	      (*ch)[i], ch_sort[i], (*ch)[sortin_ch[i]]);
+      /* sleep(1); */
+    }
+#endif
+    FREE(ch_sort);
+  } else {  /* not sort */
+    for (i = 0; i < ch_num; ++i)
+      sortin_ch[i] = i;
+#if DEBUG3
+    for(i=0;i<ch_num;++i){
+      fprintf(stderr,"%04X  %04X\n",
+	      (*ch)[i], (*ch)[sortin_ch[i]]);
+      /* sleep(1); */
+    }
+#endif
+  }/* if (chsort_flag) */
+
   /*
    *  output data 
    */
   /** make first time data **/
   secbuf_len = 10;
   for (i = 0; i < ch_num; ++i) {
-    if (indx[i][sortin[0]].flag)
-      secbuf_len += indx[i][sortin[0]].len;
+    if (indx[sortin_ch[i]][sortin[0]].flag)
+      secbuf_len += indx[sortin_ch[i]][sortin[0]].len;
     else {
       if (dummy_flag)
 	secbuf_len += MIN_LEN;
@@ -800,14 +903,14 @@ memory_mode_run(int argcc, char *argvv[])
 
   /* output wave data */
   for (i = 0; i < ch_num; ++i) {
-    if (indx[i][sortin[0]].flag)
+    if (indx[sortin_ch[i]][sortin[0]].flag)
       (void)
-	fwrite(&rawbuf[indx[i][sortin[0]].fnum][indx[i][sortin[0]].point],
-	       1, indx[i][sortin[0]].len, stdout);
+	fwrite(&rawbuf[indx[sortin_ch[i]][sortin[0]].fnum][indx[sortin_ch[i]][sortin[0]].point],
+	       1, indx[sortin_ch[i]][sortin[0]].len, stdout);
     else {
       if (dummy_flag) {
-	hbuf[0] = (*ch)[i] >> 8;
-	hbuf[1] = (*ch)[i];
+	hbuf[0] = (*ch)[sortin_ch[i]] >> 8;
+	hbuf[1] = (*ch)[sortin_ch[i]];
 	hbuf[2] = 0;
 	hbuf[3] = 1;
 	hbuf[4] = hbuf[5] = hbuf[6] = hbuf[7] = 0;
@@ -829,8 +932,8 @@ memory_mode_run(int argcc, char *argvv[])
       memcpy(&hbuf[4], tt, WIN_TIME_LEN);  /* copy time stamp */
       (void)fwrite(hbuf, 1, 10, stdout);   /* output secsize and time stamp */
 
-      hbuf[0] = (*ch)[0] >> 8;
-      hbuf[1] = (*ch)[0];
+      hbuf[0] = (*ch)[sortin_ch[0]] >> 8;
+      hbuf[1] = (*ch)[sortin_ch[0]];
       hbuf[2] = 0;
       hbuf[3] = 1;
       hbuf[4] = hbuf[5] = hbuf[6] = hbuf[7] = 0;
@@ -839,8 +942,8 @@ memory_mode_run(int argcc, char *argvv[])
 
     secbuf_len = 10;
     for (i = 0; i < ch_num; ++i)
-      if (indx[i][sortin[j]].flag)
-	secbuf_len += indx[i][sortin[j]].len;
+      if (indx[sortin_ch[i]][sortin[j]].flag)
+	secbuf_len += indx[sortin_ch[i]][sortin[j]].len;
     hbuf[0] = (uint8_w)(secbuf_len >> 24);
     hbuf[1] = (uint8_w)(secbuf_len >> 16);
     hbuf[2] = (uint8_w)(secbuf_len >> 8);
@@ -850,10 +953,10 @@ memory_mode_run(int argcc, char *argvv[])
     (void)fwrite(hbuf, 1, 10, stdout);   /* output secsize and time stamp */
 
     for (i = 0; i < ch_num; ++i)
-      if (indx[i][sortin[j]].flag)
+      if (indx[sortin_ch[i]][sortin[j]].flag)
 	(void)
-	  fwrite(&rawbuf[indx[i][sortin[j]].fnum][indx[i][sortin[j]].point],
-		 1, indx[i][sortin[j]].len, stdout);
+	  fwrite(&rawbuf[indx[sortin_ch[i]][sortin[j]].fnum][indx[sortin_ch[i]][sortin[j]].point],
+		 1, indx[sortin_ch[i]][sortin[j]].len, stdout);
   }  /* for (j = 1; j < time_num; ++j) */
 
 #if DEBUG 

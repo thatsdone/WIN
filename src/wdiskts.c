@@ -1,4 +1,4 @@
-/* $Id: wdiskts.c,v 1.6.2.5.2.6 2010/01/12 09:36:05 uehira Exp $ */
+/* $Id: wdiskts.c,v 1.6.2.5.2.7 2010/09/14 09:11:21 uehira Exp $ */
 
 /*-
   2005.8.10 urabe bug in strcmp2() fixed : 0-6 > 7-9 
@@ -61,7 +61,7 @@
 /* #define FREE(a)         (void)free((void *)(a)) */
 
 static char rcsid[] =
-  "$Id: wdiskts.c,v 1.6.2.5.2.6 2010/01/12 09:36:05 uehira Exp $";
+  "$Id: wdiskts.c,v 1.6.2.5.2.7 2010/09/14 09:11:21 uehira Exp $";
 
 char *progname,*logfile;
 int  daemon_mode, syslog_mode, exit_status;
@@ -192,7 +192,7 @@ sort_buf()
      goto end_4;
    }
    for(i=0;i<tim_num;++i) tim_sort[i]=tim_list[i];
-   qsort(tim_sort,tim_num,sizeof(size_t),time_cmpq);
+   qsort(tim_sort,tim_num,sizeof(time_t),time_cmpq);
    for(j=0;j<tim_num;++j){
      for(i=0;i<tim_num;++i){
        if(tim_sort[j]==tim_list[i]){

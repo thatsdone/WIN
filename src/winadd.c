@@ -1,4 +1,4 @@
-/* $Id: winadd.c,v 1.4.4.3.2.6 2010/02/02 10:57:23 uehira Exp $ */
+/* $Id: winadd.c,v 1.4.4.3.2.7 2010/09/14 09:11:21 uehira Exp $ */
 
 /*
  * winadd.c  (Uehira Kenji)
@@ -57,7 +57,7 @@ typedef struct data_index  INDX;
 
 /* global variables */
 static const char rcsid[] =
-   "$Id: winadd.c,v 1.4.4.3.2.6 2010/02/02 10:57:23 uehira Exp $";
+   "$Id: winadd.c,v 1.4.4.3.2.7 2010/09/14 09:11:21 uehira Exp $";
 static int  dummy_flag, verbose_flag;
 
 /* prototypes */
@@ -303,9 +303,10 @@ file_mode_run(int argcc, char *argvv[])
   static time_t  *time[1];
   static WIN_ch  *ch[1];
   int  ch_num = 0, time_num = 0, ch_num_arr, time_num_arr;
-  int  i, j, max_name_len;
+  size_t  i, j, max_name_len;
   INDX   **indx;
-  unsigned long  *sortin, *time_sort;
+  size_t  *sortin;
+  time_t   *time_sort;
   unsigned long secbuf_len, len_max;
   uint8_w *outbuf, *secbuf, *ptr;
   uint8_w tt[WIN_TIME_LEN];
@@ -350,13 +351,13 @@ file_mode_run(int argcc, char *argvv[])
     get_index(argvv[i], indx, *ch, ch_num, *time, time_num);
    
   /* sort time */
-  if (NULL == (time_sort = MALLOC(unsigned long, time_num)))
+  if (NULL == (time_sort = MALLOC(time_t, time_num)))
     memory_error();
-  if (NULL == (sortin = MALLOC(unsigned long, time_num)))
+  if (NULL == (sortin = MALLOC(size_t, time_num)))
     memory_error();
   for (i = 0; i < time_num; ++i)
     time_sort[i] = (*time)[i];
-  qsort(time_sort, time_num, sizeof(unsigned long), time_cmpq);
+  qsort(time_sort, time_num, sizeof(time_t), time_cmpq);
   for (i = 0; i < time_num; ++i) {
     for (j = 0; j < time_num; ++j) {
       if (time_sort[i] == (*time)[j]) {
@@ -367,7 +368,7 @@ file_mode_run(int argcc, char *argvv[])
   }
 #if DEBUG > 1
   for(i=0;i<time_num;++i){
-    fprintf(stderr,"%d  %d:  %d\n",
+    fprintf(stderr,"%ld  %ld:  %ld\n",
 	    (*time)[i],time_sort[i],(*time)[sortin[i]]);
     /* sleep(1); */
   }
@@ -650,9 +651,10 @@ memory_mode_run(int argcc, char *argvv[])
   static uint8_w  **rawbuf;
   off_t  *raw_size;
   int  *fopen_flag;
-  int  i, j;
+  size_t  i, j;
   INDX   **indx;
-  unsigned long  *sortin, *time_sort;
+  size_t  *sortin;
+  time_t  *time_sort;
   unsigned long  secbuf_len;
   uint8_w  hbuf[10]; /* WIN_BLOCKSIZE_LEN + WIN_TIME_LEN */
   uint8_w tt[WIN_TIME_LEN];
@@ -751,13 +753,13 @@ memory_mode_run(int argcc, char *argvv[])
   }
 
   /* sort time */
-  if (NULL == (time_sort = MALLOC(unsigned long, time_num)))
+  if (NULL == (time_sort = MALLOC(time_t, time_num)))
     memory_error();
-  if (NULL == (sortin = MALLOC(unsigned long, time_num)))
+  if (NULL == (sortin = MALLOC(size_t, time_num)))
     memory_error();
   for (i = 0; i < time_num; ++i)
     time_sort[i] = (*time)[i];
-  qsort(time_sort, time_num, sizeof(unsigned long), time_cmpq);
+  qsort(time_sort, time_num, sizeof(time_t), time_cmpq);
   for (i = 0; i < time_num; ++i) {
     for (j = 0; j < time_num; ++j) {
       if (time_sort[i] == (*time)[j]) {
@@ -768,7 +770,7 @@ memory_mode_run(int argcc, char *argvv[])
   }
 #if DEBUG > 2
   for(i=0;i<time_num;++i){
-    fprintf(stderr,"%d  %d:  %d\n",
+    fprintf(stderr,"%ld  %ld:  %ld\n",
 	    (*time)[i],time_sort[i],(*time)[sortin[i]]);
     /* sleep(1); */
   }

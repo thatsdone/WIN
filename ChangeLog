@@ -1,7 +1,8 @@
- $Id: ChangeLog,v 1.131.2.25.2.67 2010/09/16 09:09:11 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.68 2010/09/16 09:43:07 uehira Exp $
 
 2010-09-16  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* src/wadd : 64 bit clean.
+	* src/wed : 64 bit clean.
 	* src/winadd : added a option (-m).
 	  -m : only try memory mode.
 

@@ -1,15 +1,20 @@
-/* $Id: winadd.c,v 1.4.4.3.2.8 2010/09/14 15:00:00 uehira Exp $ */
+/* $Id: winadd.c,v 1.4.4.3.2.9 2010/09/16 09:09:11 uehira Exp $ */
 
 /*
  * winadd.c  (Uehira Kenji)
- *  last modified  2003/11/3
+ *  last modified  2010/09/16
  *
- *  98/12/23  malloc bug (indx[i][j].name)
- *  99/1/6    skip no data file
- *  2000/2/29  bye-order free. delete NR code.
- *  2003/11/2-3  memory mode.
- *  2009/8/1  64bit clean?
- *  2010/1/12 bcd2time()-->bcd_t(), time2bcd()-->t_bcd()
+ *  1998/12/23  malloc bug (indx[i][j].name)
+ *  1999/01/06  skip no data file
+ *  2000/02/29  bye-order free. delete NR code.
+ *  2003/11/2-3 memory mode.
+ *  2009/08/01  64bit clean?
+ *  2010/01/12  bcd2time()-->bcd_t(), time2bcd()-->t_bcd()
+ *  2010/09/14  added two options (-f, -s).
+ *               -f : force file mode.
+ *               -s : channel sort mode.
+ *  2010/09/16  added a option (-m).
+ *               -m : only try memory mode.
  */
 
 #ifdef HAVE_CONFIG_H
@@ -61,7 +66,7 @@ typedef struct data_index  INDX;
 
 /* global variables */
 static const char rcsid[] =
-   "$Id: winadd.c,v 1.4.4.3.2.8 2010/09/14 15:00:00 uehira Exp $";
+   "$Id: winadd.c,v 1.4.4.3.2.9 2010/09/16 09:09:11 uehira Exp $";
 static int  dummy_flag, verbose_flag, chsort_flag;
 
 /* prototypes */
@@ -85,15 +90,18 @@ int
 main(int argc, char *argv[])
 {
   int  c;
-  int  f_mode;
+  int  f_mode, m_mode;
 
   dummy_flag = 1;
   verbose_flag =  chsort_flag = 0;
-  f_mode = 0;
-  while ((c = getopt(argc, argv, "fnsvh")) != -1) {
+  f_mode = m_mode = 0;
+  while ((c = getopt(argc, argv, "fnmsvh")) != -1) {
     switch (c) {
     case 'f':   /* force file mode */
       f_mode = 1;
+      break;
+    case 'm':   /* only try memory mode */
+      m_mode = 1;
       break;
     case 'n':   /* don't append dummy data */
       dummy_flag = 0;
@@ -126,7 +134,8 @@ main(int argc, char *argv[])
   if (!f_mode)
     memory_mode_run(argc, argv);
 
-  file_mode_run(argc, argv);
+  if (!m_mode)
+    file_mode_run(argc, argv);
 
   exit(0);
 }
@@ -140,6 +149,7 @@ usage(void)
   (void)fprintf(stderr, "%s\n", rcsid);
   (void)fputs("Usage : winadd [options] file1 file2 ... > output\n", stderr);
   (void)fputs("  options : -f         : force file mode.\n", stderr);
+  (void)fputs("            -m         : only try memory mode.\n", stderr);
   (void)fputs("            -n         : do not append dummy headers.\n",
 	      stderr);
   (void)fputs("            -s         : channel sort mode.\n", stderr);

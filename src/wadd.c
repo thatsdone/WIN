@@ -1,4 +1,4 @@
-/* $Id: wadd.c,v 1.6.4.3.2.6 2010/09/16 04:02:03 uehira Exp $ */
+/* $Id: wadd.c,v 1.6.4.3.2.7 2010/09/16 08:45:27 uehira Exp $ */
 /* program "wadd.c"
   "wadd" puts two win data files together
   7/24/91 - 7/25/91, 4/20/94,6/27/94-6/28/94,7/12/94   urabe
@@ -32,12 +32,12 @@
 #define   TEMPNAME  "wadd.tmp"
 
 static const char  rcsid[] =
-   "$Id: wadd.c,v 1.6.4.3.2.6 2010/09/16 04:02:03 uehira Exp $";
+   "$Id: wadd.c,v 1.6.4.3.2.7 2010/09/16 08:45:27 uehira Exp $";
 
 /* prototypes */
 static int get_syschnum(uint8_w *, WIN_ch []);
 static void make_skel(uint8_w *, uint8_w *);
-static int elim_ch(WIN_ch [], int, uint8_w *, uint8_w []);
+static WIN_bs elim_ch(WIN_ch [], int, uint8_w *, uint8_w []);
 static void werror(void);
 int main(int, char *[]);
 
@@ -63,7 +63,8 @@ static void
 make_skel(uint8_w *old_buf, uint8_w *new_buf)
   {
   int i;
-  uint32_w  gsize,new_size;
+  uint32_w  gsize;
+  WIN_bs  new_size;
   uint8_w *ptr,*new_ptr,*ptr_lim;
   WIN_ch  chtmp;
   uint8_w  skelbuf[8];  /* dummy data buffer */
@@ -96,11 +97,12 @@ make_skel(uint8_w *old_buf, uint8_w *new_buf)
   new_buf[3]=new_size;
   }
 
-static int
+static WIN_bs
 elim_ch(WIN_ch sys_ch[], int n_ch, uint8_w *old_buf, uint8_w new_buf[])
   {
   int i,j;
-  uint32_w  gsize,new_size;
+  uint32_w  gsize;
+  WIN_bs  new_size;
   uint8_w *ptr,*new_ptr,*ptr_lim;
   WIN_ch  chtmp;
 
@@ -146,8 +148,9 @@ werror()
 int
 main(int argc, char *argv[])
   {
-  int i,re,size,mainsize,subsize,init,mainend,subend,nch,
+  int i,re,init,mainend,subend,nch,
     dec_start[6],dec_now[6];
+  WIN_bs  size,mainsize,subsize;
   FILE *f_main,*f_sub,*f_out,*fp;
   char *ptr;
   static uint8_w subbuf[MAXSIZE];

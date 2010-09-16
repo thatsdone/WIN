@@ -1,4 +1,7 @@
- $Id: ChangeLog,v 1.131.2.25.2.65 2010/09/14 14:59:59 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.66 2010/09/16 04:02:02 uehira Exp $
+
+2010-09-16  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/wadd : 64 bit clean.
 
 2010-09-14  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* src/winadd : added options (-f, -s).

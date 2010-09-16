@@ -1,4 +1,4 @@
-/* $Id: wadd.c,v 1.6.4.3.2.5 2009/12/26 00:56:59 uehira Exp $ */
+/* $Id: wadd.c,v 1.6.4.3.2.6 2010/09/16 04:02:03 uehira Exp $ */
 /* program "wadd.c"
   "wadd" puts two win data files together
   7/24/91 - 7/25/91, 4/20/94,6/27/94-6/28/94,7/12/94   urabe
@@ -12,6 +12,7 @@
   2002.4.30 MAXSIZE 300K->1M
   2003.1.22 eliminate blank line from ch file
   2007.1.15 MAXSIZE 1M->5M
+  2010.9.16 64bit and high sampling rate compatibility (Uehira)
 */
 
 #ifdef HAVE_CONFIG_H
@@ -27,78 +28,67 @@
 
 /* #define   DEBUG   0 */
 #define   MAXSIZE   5000000
-#define   NAMLEN    256
+#define   NAMLEN    1024
 #define   TEMPNAME  "wadd.tmp"
 
-/* bcd_dec(dest,sour) */
-/*   char *sour; */
-/*   int *dest; */
-/*   { */
-/*   int cntr; */
-/*   for(cntr=0;cntr<6;cntr++) */
-/*     dest[cntr]=((sour[cntr]>>4)&0xf)*10+(sour[cntr]&0xf); */
-/*   } */
+static const char  rcsid[] =
+   "$Id: wadd.c,v 1.6.4.3.2.6 2010/09/16 04:02:03 uehira Exp $";
 
-get_syschnum(buf,sys_ch)
-  unsigned char *buf;
-  int *sys_ch;
+/* prototypes */
+static int get_syschnum(uint8_w *, WIN_ch []);
+static void make_skel(uint8_w *, uint8_w *);
+static int elim_ch(WIN_ch [], int, uint8_w *, uint8_w []);
+static void werror(void);
+int main(int, char *[]);
+
+static int
+get_syschnum(uint8_w *buf, WIN_ch sys_ch[])
   {
-  int i,size,gsize,sr;
-  unsigned char *ptr,*ptr_lim;
-  unsigned int gh;
-  size=mkuint4(buf);
-  ptr_lim=buf+size;
+  int i;
+  uint32_w gsize;
+  uint8_w *ptr,*ptr_lim;
+
+  ptr_lim=buf+mkuint4(buf);
   ptr=buf+10;
   i=0;
   do
     {
-    gh=mkuint4(ptr);
-    sys_ch[i++]=gh>>16;
-    sr=gh&0xfff;
-    if((gh>>12)&0xf) gsize=((gh>>12)&0xf)*(sr-1)+8;
-    else gsize=(sr>>1)+8;
-#if DEBUG
-    printf("gh=%08x sr=%d gs=%d\n",gh,sr,gsize); 
-#endif
+    gsize = get_sysch(ptr, &sys_ch[i++]);
     ptr+=gsize;
     } while(ptr<ptr_lim);
-  return i;
+  return (i);
   }
 
-make_skel(old_buf,new_buf)
-  unsigned char *old_buf,*new_buf;
+static void
+make_skel(uint8_w *old_buf, uint8_w *new_buf)
   {
-  int i,size,gsize,new_size,sr;
-  unsigned char *ptr,*new_ptr,*ptr_lim;
-  unsigned int gh;
-  size=mkuint4(old_buf);
-  ptr_lim=old_buf+size;
+  int i;
+  uint32_w  gsize,new_size;
+  uint8_w *ptr,*new_ptr,*ptr_lim;
+  WIN_ch  chtmp;
+  uint8_w  skelbuf[8];  /* dummy data buffer */
+
+  /* 1Hz dummy data */
+  skelbuf[2] = 0;
+  skelbuf[3] = 1;
+  /* Value of (first) sample = 0 */
+  skelbuf[4] = skelbuf[5] = skelbuf[6] = skelbuf[7] = 0;
+
+  ptr_lim=old_buf+mkuint4(old_buf);
   ptr=old_buf+4;
   new_ptr=new_buf+4;
   for(i=0;i<6;i++) *new_ptr++=(*ptr++);
   new_size=10;
   do
     {
-    gh=mkuint4(ptr);
-    i=gh>>16;
-    sr=gh&0xfff;
-    if((gh>>12)&0xf) gsize=((gh>>12)&0xf)*(sr-1)+8;
-    else gsize=(sr>>1)+8;
-#if DEBUG
-    printf("gh=%08x sr=%d gs=%d\n",gh,sr,gsize); 
-#endif
+    gsize = get_sysch(ptr, &chtmp);
     ptr+=gsize;
-    gh&=0xffff0fff;
-    gsize=(sr>>1)+8;
-#if DEBUG
-    printf("gh=%08x sr=%d gs=%d\n",gh,sr,gsize); 
-#endif
-    *new_ptr++=gh>>24;
-    *new_ptr++=gh>>16;
-    *new_ptr++=gh>>8;
-    *new_ptr++=gh;
-    for(i=0;i<gsize-4;i++) *new_ptr++=0;
-    new_size+=gsize;
+    /* channel ID */
+    skelbuf[0] = (uint8_w)(chtmp >> 8);
+    skelbuf[1] = (uint8_w)chtmp;
+    (void)memcpy(new_ptr, skelbuf, sizeof(skelbuf));
+    new_ptr += sizeof(skelbuf);
+    new_size+=sizeof(skelbuf);
     } while(ptr<ptr_lim);
   new_buf[0]=new_size>>24;
   new_buf[1]=new_size>>16;
@@ -106,30 +96,31 @@ make_skel(old_buf,new_buf)
   new_buf[3]=new_size;
   }
 
-elim_ch(sys_ch,n_ch,old_buf,new_buf)
-  unsigned char *old_buf,*new_buf;
-  int *sys_ch,n_ch;
+static int
+elim_ch(WIN_ch sys_ch[], int n_ch, uint8_w *old_buf, uint8_w new_buf[])
   {
-  int i,j,size,gsize,new_size,sr;
-  unsigned char *ptr,*new_ptr,*ptr_lim;
-  unsigned int gh;
-  size=mkuint4(old_buf);
-  ptr_lim=old_buf+size;
+  int i,j;
+  uint32_w  gsize,new_size;
+  uint8_w *ptr,*new_ptr,*ptr_lim;
+  WIN_ch  chtmp;
+
+  ptr_lim=old_buf+mkuint4(old_buf);
   ptr=old_buf+4;
   new_ptr=new_buf+4;
   for(i=0;i<6;i++) *new_ptr++=(*ptr++);
   new_size=10;
   do
     {
-    gh=mkuint4(ptr);
-    i=gh>>16;
-    sr=gh&0xfff;
-    if((gh>>12)&0xf) gsize=((gh>>12)&0xf)*(sr-1)+8;
-    else gsize=(sr>>1)+8;
-    for(j=0;j<n_ch;j++) if(i==sys_ch[j]) break;
+    gsize = get_sysch(ptr, &chtmp);
+    for(j=0;j<n_ch;j++) if(chtmp==sys_ch[j]) break;
     if(n_ch==0 || j==n_ch)
       {
       new_size+=gsize;
+      if (new_size >= MAXSIZE) {
+	(void)fprintf(stderr, "buffer max. size exceeded! new_size=%d > %d\n",
+		      new_size, MAXSIZE);
+	exit(1);
+      }
       while(gsize-->0) *new_ptr++=(*ptr++);
       }
     else ptr+=gsize;
@@ -141,31 +132,35 @@ elim_ch(sys_ch,n_ch,old_buf,new_buf)
 #if DEBUG
   printf("new size=%d\n",new_size); 
 #endif
-  return new_size;
+  return (new_size);
   }
 
+static void
 werror()
   {
+
   perror("fwrite");
   exit(1);
   }
 
-main(argc,argv)
-  int argc;
-  char *argv[];
+int
+main(int argc, char *argv[])
   {
   int i,re,size,mainsize,subsize,init,mainend,subend,nch,
     dec_start[6],dec_now[6];
   FILE *f_main,*f_sub,*f_out,*fp;
   char *ptr;
-  static unsigned char subbuf[MAXSIZE],tmpfile1[NAMLEN],
-    textbuf[NAMLEN],new_file[NAMLEN],tmpfile3[NAMLEN],
-    chfile1[NAMLEN],chfile2[NAMLEN],tmpfile2[NAMLEN];
-  static  unsigned char *mainbuf=NULL,*selbuf=NULL;
-  static int sysch[WIN_CHMAX];
+  static uint8_w subbuf[MAXSIZE];
+  static char  tmpfile1[NAMLEN],tmpfile2[NAMLEN], tmpfile3[NAMLEN],
+    textbuf[NAMLEN],new_file[NAMLEN],chfile1[NAMLEN],chfile2[NAMLEN];
+  static  uint8_w *mainbuf=NULL,*selbuf=NULL;
+  static WIN_ch sysch[WIN_CHMAX];
+  int  slen;
 
   if(argc<3)
     {
+    WIN_version();
+    fprintf(stderr, "%s\n", rcsid);
     fprintf(stderr," usage of 'wadd' :\n");
     fprintf(stderr,"   'wadd [main file] [sub file] ([output directory])\n");
     fprintf(stderr,"   output file has the same name as 'main file'\n");
@@ -177,7 +172,10 @@ main(argc,argv)
     perror("fopen");
     exit(1);
     }
-  sprintf(chfile1,"%s.ch",argv[1]);
+  if (snprintf(chfile1,sizeof(chfile1),"%s.ch",argv[1]) >= sizeof(chfile1)) {
+    (void)fprintf(stderr, "buffer overrun.\n");
+    exit(1);
+  }
   if((fp=fopen(chfile1,"r"))==NULL) *chfile1=0;
   else fclose(fp);
 
@@ -186,21 +184,54 @@ main(argc,argv)
     perror("fopen");
     exit(1);
     }
-  sprintf(chfile2,"%s.ch",argv[2]);
+  if (snprintf(chfile2,sizeof(chfile2),"%s.ch",argv[2]) >= sizeof(chfile2)) {
+    (void)fprintf(stderr, "buffer overrun.\n");
+    exit(1);
+  }
   if((fp=fopen(chfile2,"r"))==NULL) *chfile2=0;
   else fclose(fp);
 
   if(argc>3)
     {
-    sprintf(tmpfile1,"%s/%s.%d",argv[3],TEMPNAME,getpid());
-    sprintf(tmpfile2,"%s/%s_ch.%d",argv[3],TEMPNAME,getpid());
-    sprintf(tmpfile3,"%s/%s_chs.%d",argv[3],TEMPNAME,getpid());
+    if (snprintf(tmpfile1,sizeof(tmpfile1),
+		 "%s/%s.%d",argv[3],TEMPNAME,getpid()) >= sizeof(tmpfile1))
+      {
+	(void)fprintf(stderr, "buffer overrun.\n");
+	exit(1);
+      }
+    if (snprintf(tmpfile2,sizeof(tmpfile2),
+		 "%s/%s_ch.%d",argv[3],TEMPNAME,getpid()) >= sizeof(tmpfile2))
+      {
+	(void)fprintf(stderr, "buffer overrun.\n");
+	exit(1);
+      }
+    if (snprintf(tmpfile3,sizeof(tmpfile3),
+		 "%s/%s_chs.%d",argv[3],TEMPNAME,getpid()) >= sizeof(tmpfile3))
+      {
+	(void)fprintf(stderr, "buffer overrun.\n");
+	exit(1);
+      }
     }
   else
     {
-    sprintf(tmpfile1,"%s.%d",TEMPNAME,getpid());
-    sprintf(tmpfile2,"%s_ch.%d",TEMPNAME,getpid());
-    sprintf(tmpfile3,"%s_chs.%d",TEMPNAME,getpid());
+    if (snprintf(tmpfile1,sizeof(tmpfile1),
+		 "%s.%d",TEMPNAME,getpid()) >= sizeof(tmpfile1))
+      {
+	(void)fprintf(stderr, "buffer overrun.\n");
+	exit(1);
+      }
+    if (snprintf(tmpfile2,sizeof(tmpfile2),
+		 "%s_ch.%d",TEMPNAME,getpid()) >= sizeof(tmpfile2))
+      {
+	(void)fprintf(stderr, "buffer overrun.\n");
+	exit(1);
+      }
+    if (snprintf(tmpfile3,sizeof(tmpfile3),
+		 "%s_chs.%d",TEMPNAME,getpid()) >= sizeof(tmpfile3))
+      {
+	(void)fprintf(stderr, "buffer overrun.\n");
+	exit(1);
+      }
     }
 
   if((f_out=fopen(tmpfile1,"w+"))==NULL)
@@ -218,7 +249,7 @@ main(argc,argv)
     }
   else
     {
-    bcd_dec(dec_start,(char *)mainbuf+4);
+    bcd_dec(dec_start,mainbuf+4);
     nch=get_syschnum(mainbuf,sysch);
 #if DEBUG
     printf("nch=%d\n",nch);
@@ -228,7 +259,7 @@ main(argc,argv)
   else
     {
     if((subsize=elim_ch(sysch,nch,selbuf,subbuf))<=10) subend=1;
-    else bcd_dec(dec_now,(char *)subbuf+4);
+    else bcd_dec(dec_now,subbuf+4);
     }
 #if DEBUG
   printf("%02x%02x%02x%02x%02x%02x\n",mainbuf[4],mainbuf[5],mainbuf[6],
@@ -265,7 +296,7 @@ main(argc,argv)
       if((re=fwrite(mainbuf,1,mainsize,f_out))==0) werror();
       init=0;
       if((mainsize=read_onesec_win(f_main,&mainbuf))==0) mainend=1;
-      else bcd_dec(dec_start,(char *)mainbuf+4);
+      else bcd_dec(dec_start,mainbuf+4);
       }     
     else if(mainend || re==1) /* skip sub until main */
       {
@@ -277,7 +308,7 @@ main(argc,argv)
       else
         {
         if((subsize=elim_ch(sysch,nch,selbuf,subbuf))<=10) subend=1;
-        else bcd_dec(dec_now,(char *)subbuf+4);
+        else bcd_dec(dec_now,subbuf+4);
         }
       }
     else             /* start together */
@@ -289,12 +320,12 @@ main(argc,argv)
       if((re=fwrite(subbuf+10,1,subsize-10,f_out))==0) werror();
       init=0;
       if((mainsize=read_onesec_win(f_main,&mainbuf))==0) mainend=1;
-      else bcd_dec(dec_start,(char *)mainbuf+4);
+      else bcd_dec(dec_start,mainbuf+4);
       if((subsize=read_onesec_win(f_sub,&selbuf))<=10) subend=1;
       else
         {
         if((subsize=elim_ch(sysch,nch,selbuf,subbuf))<=10) subend=1;
-        else bcd_dec(dec_now,(char *)subbuf+4);
+        else bcd_dec(dec_now,subbuf+4);
         }
       }
 #if DEBUG
@@ -303,19 +334,32 @@ main(argc,argv)
     printf("%02x%02x%02x%02x%02x%02x\n",subbuf[4],subbuf[5],subbuf[6],
       subbuf[7],subbuf[8],subbuf[9]);
 #endif
-    }
+    }  /* while(mainend==0 || subend==0) */
 
   fclose(f_out);
   if((ptr=strrchr(argv[1],'/'))==NULL) ptr=argv[1];
   else ptr++;
-  if(argc>3) sprintf(new_file,"%s/%s",argv[3],ptr);
-  else strcpy(new_file,ptr);
-  sprintf(textbuf,"%s.sv",new_file);
+  if(argc>3)
+    slen = snprintf(new_file,sizeof(new_file),"%s/%s",argv[3],ptr);
+  else
+    slen = snprintf(new_file,sizeof(new_file),"%s",ptr);
+  if (slen >= sizeof(new_file)) {
+    (void)fprintf(stderr, "buffer overrun.\n");
+    exit(1);
+  }
+  if (snprintf(textbuf,sizeof(textbuf),"%s.sv",new_file) >= sizeof(textbuf)) {
+    (void)fprintf(stderr, "buffer overrun.\n");
+    exit(1);
+  }
   unlink(textbuf);  /* remove bitmap file if exists */
   if(strcmp(argv[1],new_file)) rename(tmpfile1,new_file);
   else
     {
-    sprintf(textbuf,"cp %s %s",tmpfile1,argv[1]);
+    if (snprintf(textbuf,sizeof(textbuf),
+		 "cp %s %s",tmpfile1,argv[1]) >= sizeof(textbuf)) {
+      (void)fprintf(stderr, "buffer overrun.\n");
+      exit(1);
+    }
     system(textbuf);
     unlink(tmpfile1);
     }
@@ -323,30 +367,56 @@ main(argc,argv)
   if(*chfile1==0 && *chfile2==0) exit(0);
   else if(*chfile1)
     {
-    sprintf(textbuf,"cp %s %s",chfile1,tmpfile2);
+    if (snprintf(textbuf,sizeof(textbuf),
+		 "cp %s %s",chfile1,tmpfile2) >= sizeof(textbuf)) {
+      (void)fprintf(stderr, "buffer overrun.\n");
+      exit(1);
+    }
     system(textbuf);
     if(*chfile2)
       {
-      sprintf(textbuf,"egrep -v '^#|^$' %s|awk '{print \"^\" $1}'>%s",
-        tmpfile2,tmpfile3);
+      if (snprintf(textbuf,sizeof(textbuf),
+		   "egrep -v '^#|^$' %s|awk '{print \"^\" $1}'>%s",
+		   tmpfile2,tmpfile3) >= sizeof(textbuf)) {
+	(void)fprintf(stderr, "buffer overrun.\n");
+	exit(1);
+      }
       system(textbuf);
-      sprintf(textbuf,"egrep -f %s -v %s >> %s",tmpfile3,chfile2,tmpfile2);
+      if (snprintf(textbuf,sizeof(textbuf),
+		   "egrep -f %s -v %s >> %s",
+		   tmpfile3,chfile2,tmpfile2) >= sizeof(textbuf)) {
+	(void)fprintf(stderr, "buffer overrun.\n");
+	exit(1);
+      }
       system(textbuf);
       }
     }
   else if(*chfile2)
     {
-    sprintf(textbuf,"cp %s %s",chfile2,tmpfile2);
+    if (snprintf(textbuf,sizeof(textbuf),
+		 "cp %s %s",chfile2,tmpfile2) >= sizeof(textbuf)) {
+      (void)fprintf(stderr, "buffer overrun.\n");
+      exit(1);
+    }
     system(textbuf);
     }
   if(strcmp(argv[1],new_file))
     {
-    strcat(new_file,".ch");
+    /* strcat(new_file,".ch"); */
+    if (snprintf(new_file, sizeof(new_file), "%s.ch", new_file)
+	>= sizeof(new_file)) {
+      (void)fprintf(stderr, "buffer overrun.\n");
+      exit(1);
+    }
     rename(tmpfile2,new_file);
     }
   else
     {
-    sprintf(textbuf,"cp %s %s",tmpfile2,chfile1);
+    if (snprintf(textbuf,sizeof(textbuf),
+		 "cp %s %s",tmpfile2,chfile1) >= sizeof(textbuf)) {
+      (void)fprintf(stderr, "buffer overrun.\n");
+      exit(1);
+    }
     system(textbuf);
     unlink(tmpfile2);
     }

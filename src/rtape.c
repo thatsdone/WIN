@@ -1,4 +1,4 @@
-/* $Id: rtape.c,v 1.9.2.3.2.6 2010/02/18 07:05:31 uehira Exp $ */
+/* $Id: rtape.c,v 1.9.2.3.2.7 2010/09/17 04:38:00 uehira Exp $ */
 /*
   program "rtape.c"
   9/16/89 - 11/06/90, 6/26/91, 10/30/91, 6/26/92  urabe
@@ -16,21 +16,23 @@
   2005.3.15 introduced blpersec (blocks/sec) factor
             MAXSIZE : 1M -> 2M, TRY_LIMIT : 10 -> 16
   2005.8.10 bug in strcmp2() fixed : 0-6 > 7-9
+  2010.9.17 64bit check (Uehira)
 */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
 
-#include  <stdio.h>
-#include  <stdlib.h>
-#include  <string.h>
-#include  <unistd.h>
 #include  <sys/types.h>
 #include  <sys/fcntl.h>
 #include  <sys/ioctl.h>
 #include  <sys/stat.h>
 #include  <sys/mtio.h>
+
+#include  <stdio.h>
+#include  <stdlib.h>
+#include  <string.h>
+#include  <unistd.h>
 
 #include "winlib.h"
 
@@ -45,12 +47,16 @@
                     /* 60 m / fm after this time */
 /* #define   TIME3   "9008031718" */  /* 10 m / fm after this time */
 
-  unsigned char buf[MAXSIZE],outbuf[MAXSIZE];
-  int fd_exb,f_get,leng,dec_start[6],dec_end[6],dec_begin[6],
-    dec_buf1[6],dec_now[6],ext,fm_type,nch,sysch[WIN_CHMAX],old_format;
-  char name_file[NAMLEN],path[NAMLEN],textbuf[80],
-    param_file[NAMLEN],name_prev[NAMLEN],dev_file[NAMLEN];
-  FILE *f_param;
+static const char  rcsid[] =
+   "$Id: rtape.c,v 1.9.2.3.2.7 2010/09/17 04:38:00 uehira Exp $";
+
+static uint8_w buf[MAXSIZE],outbuf[MAXSIZE];
+static int fd_exb,f_get,leng,dec_start[6],dec_end[6],dec_begin[6],
+  dec_buf1[6],dec_now[6],ext,fm_type,nch,sysch[WIN_CHMAX],old_format;
+static char name_file[NAMLEN],path[NAMLEN],textbuf[80],
+  param_file[NAMLEN],name_prev[NAMLEN],dev_file[NAMLEN];
+static FILE *f_param;
+
 /* moved to winlib.h */
 /*  int e_ch[241]={
     0x0000,0x0001,0x0002,0x0003,0x0004,0x0005,0x0006,0x0007,
@@ -85,16 +91,28 @@
     0x00ED,0x00EE,0x00EF,0x00F0,0x00F1,0x00F2,0x00F3,0x00F4,
     0x00F5};*/
 
-end_process(value)
-  int value;
+/* prototypes */
+static void end_process(int);
+static void print_usage(void);
+static int get_one_record(int);
+static void select_ch(uint8_w *, uint8_w *, int);
+int main(int, char *[]);
+
+static void
+end_process(int value)
   {
+
   close(fd_exb);
   printf("***** rtape end *****\n");
   exit(value);
   }
 
+static void
 print_usage()
   {
+
+  WIN_version();
+  printf("%s\n", rcsid);
   printf("   usage of 'rtape' :\n");
   printf("     'rtape (-f [tape device]) [schedule file] [output path] ([ch list file])'\n");
   printf("     example of schedule file :\n");
@@ -105,12 +123,13 @@ print_usage()
   printf("         '101d 101e 101f 1020 1021 1022 1029 102a 102b'\n");
   }
 
-get_one_record(blocking)
-  int blocking;
+static int
+get_one_record(int blocking)
   {
   int i,re,try_count,fm_count,bl_count,bl_count_last,advanced,
     sec_togo,sec_togo_last;
   static double blpersec=1.0;
+
   for(i=0;i<6;i++) dec_end[i]=dec_start[i];
   for(i=leng-1;i>0;i--)
     {
@@ -195,7 +214,7 @@ get_one_record(blocking)
     mt_pos(fm_count,bl_count,fd_exb);  /* positioning */
     if (read_exb1(dev_file, fd_exb, buf, sizeof(buf)) < 0)  /* read one block */
       end_process(1);
-    bcd_dec(dec_now,(char *)buf+4);
+    bcd_dec(dec_now,buf+4);
     printf("\n%02x%02x%02x %02x%02x%02x  %5d",buf[4],buf[5],
       buf[6],buf[7],buf[8],buf[9],mkuint4(buf));
     fflush(stdout);
@@ -216,13 +235,15 @@ get_one_record(blocking)
   /* read one sec */
     if (read_exb1(dev_file, fd_exb, buf, sizeof(buf)) < 0)
       end_process(1);
-    bcd_dec(dec_now,(char *)buf+4);
+    bcd_dec(dec_now,buf+4);
     if(time_cmp(dec_now,dec_end,6)>0) break;
     printf("\r%02x%02x%02x %02x%02x%02x  %5d",buf[4],buf[5],
       buf[6],buf[7],buf[8],buf[9],mkuint4(buf));
     fflush(stdout);
     }
   printf(" : done\n");
+
+  return(0);
   }
 
 /* read_exb() */
@@ -270,36 +291,36 @@ get_one_record(blocking)
 /*   return blocking; */
 /*   } */
 
-select_ch(old_buf,new_buf,old_form)
-  unsigned char *old_buf,*new_buf;
-  int old_form;
+static void
+select_ch(uint8_w *old_buf, uint8_w *new_buf, int old_form)
   {
-  int i,size,gsize,new_size,sr;
-  unsigned char *ptr,*new_ptr,*ptr_lim;
-  unsigned int gh;
-  size=mkuint4(old_buf);
-  ptr_lim=old_buf+size;
+  int i,sr;
+  uint32_w  gsize;
+  WIN_bs  new_size;
+  uint8_w *ptr,*new_ptr,*ptr_lim;
+  uint32_w  gh;
+  WIN_ch  chtmp;
+
+  ptr_lim=old_buf+mkuint4(old_buf);
   ptr=old_buf+4;
   new_ptr=new_buf+4;
   for(i=0;i<6;i++) *new_ptr++=(*ptr++);
   new_size=10;
   do
     {
-    gh=mkuint4(ptr);
-    i=gh>>16;
     if(old_form)
       {
-      if((i&0xff00)==0) i=e_ch[i%241];  /* sys_ch */
+      gh=mkuint4(ptr);
+      chtmp=gh>>16;
+      if((chtmp&0xff00)==0) chtmp=e_ch[chtmp%241];  /* sys_ch */
       sr=gh&0xfff;
       gsize=((gh>>12)&0xf)*sr+4;
       }
     else
       {
-      sr=gh&0xfff;
-      if((gh>>12)&0xf) gsize=((gh>>12)&0xf)*(sr-1)+8;
-      else gsize=(sr>>1)+8;
+      gsize = get_sysch(ptr, &chtmp);
       }
-    if(sysch[i])
+    if(sysch[chtmp])
       {
       new_size+=gsize;
       while(gsize-->0) *new_ptr++=(*ptr++);
@@ -312,9 +333,8 @@ select_ch(old_buf,new_buf,old_form)
   new_buf[3]=new_size;
   }
 
-main(argc,argv)
-  int argc;
-  char *argv[];
+int
+main(int argc, char *argv[])
   {
   int i,c,optbase,blocking;
 
@@ -346,7 +366,7 @@ main(argc,argv)
   /* read one block */
   /* if((blocking=read_exb1(dev_file, fd_exb, buf, sizeof(buf)))<=0) blocking=1; */
   if((blocking=read_exb1(dev_file, fd_exb, buf, sizeof(buf)))==0) blocking=1;
-  bcd_dec(dec_begin,(char *)buf+4);
+  bcd_dec(dec_begin,buf+4);
   for(i=0;i<6;i++) dec_now[i]=dec_begin[i];
   sprintf(textbuf,"%02x%02x%02x%02x%02x",buf[4],buf[5],buf[6],buf[7],buf[8]);
   old_format=0;
@@ -396,7 +416,7 @@ main(argc,argv)
     end_process(1);
     }
   ext=0;
-  while(fgets(textbuf,80,f_param)!=NULL)
+  while(fgets(textbuf,sizeof(textbuf),f_param)!=NULL)
     {
     if(*textbuf=='#') continue;
     sscanf(textbuf,"%2d%2d%2d %2d%2d%2d %d",
@@ -410,7 +430,7 @@ main(argc,argv)
     else ext=0;
     printf("output file name = %s\n",name_file);
     strcpy(name_prev,name_file);
-    get_one_record(blocking);
+    (void)get_one_record(blocking);
     close(f_get);
     }
   fclose(f_param);

@@ -1,20 +1,21 @@
- $Id: ChangeLog,v 1.131.2.25.2.70 2010/09/17 03:38:47 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.71 2010/09/17 04:37:59 uehira Exp $
 
 2010-09-17  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
-	* src/wadd2 : 64 bit clean.
+	* src/wadd2.c : 64 bit clean.
+	* src/rtape.c : 64 bit clean.
 	* rename MACROs
 	  SWAPL --> SWAP32
 	  SWAPS --> SWAP16
 	  MKSWAPS --> MKSWAP16
 
 2010-09-16  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
-	* src/wadd : 64 bit clean.
-	* src/wed : 64 bit clean.
-	* src/winadd : added a option (-m).
+	* src/wadd.c : 64 bit clean.
+	* src/wed.c : 64 bit clean.
+	* src/winadd.c : added a option (-m).
 	  -m : only try memory mode.
 
 2010-09-14  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
-	* src/winadd : added options (-f, -s).
+	* src/winadd.c : added options (-f, -s).
 	  -f : force file mode.
  	  -s : channel sort mode.
 

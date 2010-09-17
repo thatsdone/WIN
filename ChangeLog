@@ -1,9 +1,10 @@
- $Id: ChangeLog,v 1.131.2.25.2.73 2010/09/17 10:22:51 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.74 2010/09/17 11:06:21 uehira Exp $
 
 2010-09-17  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* src/wadd2.c : 64 bit clean.
 	* src/rtape.c : 64 bit clean.
 	* src/wtime.c : 64 bit clean.
+	* src/wck_wdisk.c : 64 bit clean.
 	* rename MACROs
 	  SWAPL --> SWAP32
 	  SWAPS --> SWAP16

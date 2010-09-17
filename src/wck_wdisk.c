@@ -1,5 +1,10 @@
 /*
- * $Id: wck_wdisk.c,v 1.1.4.3.2.2 2010/02/02 10:57:22 uehira Exp $
+ * $Id: wck_wdisk.c,v 1.1.4.3.2.3 2010/09/17 11:06:21 uehira Exp $
+ */
+
+/*
+ * 2002.03.03  Uehira.
+ * 2010.09.17  64bit check
  */
 
 #ifdef HAVE_CONFIG_H
@@ -15,7 +20,7 @@
 /* #include "win_system.h" */
 
 static const char  rcsid[] =
-   "$Id: wck_wdisk.c,v 1.1.4.3.2.2 2010/02/02 10:57:22 uehira Exp $";
+   "$Id: wck_wdisk.c,v 1.1.4.3.2.3 2010/09/17 11:06:21 uehira Exp $";
 
 char  *progname;
 
@@ -30,7 +35,7 @@ main(int argc, char *argv[])
   FILE  *chfp, *fp;
   static struct channel_tbl  tbl[WIN_CH_MAX_NUM];
   static int  **index;
-  static unsigned char  *mainbuf;
+  static uint8_w  *mainbuf;
   static WIN_ch  trg_ch[WIN_CH_MAX_NUM], trg_chnum;
   WIN_bs  mainsize;
   int  chnum, sec, tim[WIN_TIME_LEN], cflag, secsave, lflag;
@@ -225,6 +230,7 @@ static void
 usage()
 {
 
+  WIN_version();
   (void)fprintf(stderr, "%s\n", rcsid);
   (void)fprintf(stderr, "Usage : %s [-r] [chfile] ([file])\n", progname);
 }

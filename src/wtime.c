@@ -1,4 +1,4 @@
-/* $Id: wtime.c,v 1.3.2.3.2.10 2010/09/17 11:47:36 uehira Exp $ */
+/* $Id: wtime.c,v 1.3.2.3.2.11 2010/09/17 11:55:53 uehira Exp $ */
 
 /*
   program "wtime.c"
@@ -37,7 +37,7 @@
 #define   DEBUG1  0
 
 static const char  rcsid[] =
-   "$Id: wtime.c,v 1.3.2.3.2.10 2010/09/17 11:47:36 uehira Exp $";
+   "$Id: wtime.c,v 1.3.2.3.2.11 2010/09/17 11:55:53 uehira Exp $";
 
 static uint8_w *rbuf=NULL,*wbuf;
 static int32_w *sbuf[WIN_CHMAX];
@@ -45,44 +45,12 @@ static int s_add,ms_add;
 
 /* prototypes */
 static void wabort(void);
-static time_t shift_sec(uint8_w *, int);
 static WIN_bs chloop(uint8_w *, uint8_w *);
 static void print_usage(void);
 int main(int, char *[]);
 
 static void
 wabort() {exit(0);}
-
-static time_t
-shift_sec(uint8_w *tm_bcd, int sec)
-  {
-  struct tm *nt,mt;
-  time_t ltime;
-
-  memset(&mt,0,sizeof(mt));
-  if((mt.tm_year=b2d[tm_bcd[0]])<WIN_YEAR) mt.tm_year+=100;
-  mt.tm_mon=b2d[tm_bcd[1]]-1;
-  mt.tm_mday=b2d[tm_bcd[2]];
-  mt.tm_hour=b2d[tm_bcd[3]];
-  mt.tm_min=b2d[tm_bcd[4]];
-  mt.tm_sec=b2d[tm_bcd[5]];
-  mt.tm_isdst=0;
-  ltime=mktime(&mt);
-  if (ltime == -1) {
-    fprintf(stderr,"mktime error!\n");
-    exit(1);
-  }
-  if(sec) ltime+=sec;
-  else return (ltime);
-  nt=localtime(&ltime);
-  tm_bcd[0]=d2b[nt->tm_year%100];
-  tm_bcd[1]=d2b[nt->tm_mon+1];
-  tm_bcd[2]=d2b[nt->tm_mday];
-  tm_bcd[3]=d2b[nt->tm_hour];
-  tm_bcd[4]=d2b[nt->tm_min];
-  tm_bcd[5]=d2b[nt->tm_sec];
-  return (ltime);
-  }
 
 static WIN_bs
 chloop(uint8_w *old_buf, uint8_w *new_buf)

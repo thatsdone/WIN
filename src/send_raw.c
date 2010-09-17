@@ -1,4 +1,4 @@
-/* $Id: send_raw.c,v 1.24.2.4.2.9 2010/02/02 10:57:22 uehira Exp $ */
+/* $Id: send_raw.c,v 1.24.2.4.2.10 2010/09/17 11:55:53 uehira Exp $ */
 /*
     program "send_raw/send_mon.c"   1/24/94 - 1/25/94,5/25/94 urabe
                                     6/15/94 - 6/16/94
@@ -111,30 +111,6 @@ unsigned char *sbuf[NBUF],ch_table[WIN_CHMAX],rbuf[RSIZE],ch_req[WIN_CHMAX],
      /* sbuf[NBUF][mtu-28+8] ; +8 for overrun by "size" and "time" */
 char *progname,*logfile,chfile[1024],file_req[1024];
 int  daemon_mode, syslog_mode, exit_status;
-
-shift_sec(tm_bcd,sec)
-  unsigned char *tm_bcd;
-  int sec;
-  {
-  struct tm *nt,mt;
-  time_t ltime;
-  memset((char *)&mt,0,sizeof(mt));
-  if((mt.tm_year=b2d[tm_bcd[0]])<WIN_YEAR) mt.tm_year+=100;
-  mt.tm_mon=b2d[tm_bcd[1]]-1;
-  mt.tm_mday=b2d[tm_bcd[2]];
-  mt.tm_hour=b2d[tm_bcd[3]];
-  mt.tm_min=b2d[tm_bcd[4]];
-  mt.tm_sec=b2d[tm_bcd[5]];
-  mt.tm_isdst=0;
-  ltime=mktime(&mt)+sec;
-  nt=localtime(&ltime);
-  tm_bcd[0]=d2b[nt->tm_year%100];
-  tm_bcd[1]=d2b[nt->tm_mon+1];
-  tm_bcd[2]=d2b[nt->tm_mday];
-  tm_bcd[3]=d2b[nt->tm_hour];
-  tm_bcd[4]=d2b[nt->tm_min];
-  tm_bcd[5]=d2b[nt->tm_sec];
-  }
 
 get_packet(bufno,no)
   int bufno;  /* present(next) bufno */

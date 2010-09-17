@@ -1,4 +1,4 @@
-/* $Id: winlib.h,v 1.1.2.7.2.33 2010/09/17 10:20:52 uehira Exp $ */
+/* $Id: winlib.h,v 1.1.2.7.2.34 2010/09/17 11:55:53 uehira Exp $ */
 
 #ifndef _WIN_LIB_H_
 #define _WIN_LIB_H_
@@ -321,6 +321,7 @@ WIN_bs get_select_data(uint8_w *, WIN_ch [], WIN_ch, uint8_w *, WIN_bs);
 int WIN_time_hani(char [], int [], int []);
 int read_channel_file(FILE *, struct channel_tbl [], int);
 void str2double(char *, int, int, double *);
+time_t shift_sec(uint8_w *, int);
 
 /* MT device */
 #if HAVE_SYS_MTIO_H

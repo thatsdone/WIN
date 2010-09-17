@@ -1,4 +1,4 @@
-/* $Id: raw_time.c,v 1.4.4.3.2.6 2010/02/02 10:57:22 uehira Exp $ */
+/* $Id: raw_time.c,v 1.4.4.3.2.7 2010/09/17 11:55:53 uehira Exp $ */
 
 /* raw_time.c -- online version of wtime(1W) */
 
@@ -54,7 +54,7 @@
 
 
 static char rcsid[] =
-  "$Id: raw_time.c,v 1.4.4.3.2.6 2010/02/02 10:57:22 uehira Exp $";
+  "$Id: raw_time.c,v 1.4.4.3.2.7 2010/09/17 11:55:53 uehira Exp $";
 
 char *progname, *logfile;
 int  daemon_mode, syslog_mode;
@@ -67,7 +67,6 @@ static int     ch_mask[WIN_CH_MAX_NUM];
 /* prototypes */
 static void usage(void);
 static void read_chtbl(void);
-static time_t shift_sec(unsigned char *, int);
 int main(int, char *[]);
 
 
@@ -405,38 +404,6 @@ read_chtbl(void)
   write_log(buf);
   
   signal(SIGHUP, (void *)read_chtbl);
-}
-
-static time_t
-shift_sec(unsigned char *tm_bcd, int sec)
-{
-  struct tm  *nt, mt;
-  time_t     ltime;
-
-  memset(&mt, 0, sizeof(mt));
-  if ((mt.tm_year = b2d[tm_bcd[0]]) < WIN_YEAR)
-    mt.tm_year += 100;
-  mt.tm_mon = b2d[tm_bcd[1]] - 1;
-  mt.tm_mday = b2d[tm_bcd[2]];
-  mt.tm_hour = b2d[tm_bcd[3]];
-  mt.tm_min = b2d[tm_bcd[4]];
-  mt.tm_sec = b2d[tm_bcd[5]];
-  mt.tm_isdst = 0;
-  ltime=mktime(&mt);
-
-  if (sec)
-    ltime += sec;
-  else
-    return (ltime);
-    
-  nt = localtime(&ltime);
-  tm_bcd[0] = d2b[nt->tm_year % 100];
-  tm_bcd[1] = d2b[nt->tm_mon + 1];
-  tm_bcd[2] = d2b[nt->tm_mday];
-  tm_bcd[3] = d2b[nt->tm_hour];
-  tm_bcd[4] = d2b[nt->tm_min];
-  tm_bcd[5] = d2b[nt->tm_sec];
-  return (ltime);
 }
 
 /* print usage & exit */

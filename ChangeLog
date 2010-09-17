@@ -1,4 +1,4 @@
- $Id: ChangeLog,v 1.131.2.25.2.74 2010/09/17 11:06:21 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.75 2010/09/17 11:55:53 uehira Exp $
 
 2010-09-17  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* src/wadd2.c : 64 bit clean.
@@ -11,6 +11,8 @@
 	  MKSWAPS --> MKSWAP16
 	* replace read_data() with read_onesec_win2() [src/winlib.c]
 	  src/wch.c, src/wchch.c, src/wed.c, src/wtime.c
+	* shift_sec() moved to 'src/winlib.c'.
+	  src/raw_time.c, src/send_raw.c, src/wtime.c
 
 2010-09-16  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* src/wadd.c : 64 bit clean.

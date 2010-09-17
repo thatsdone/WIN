@@ -1,4 +1,4 @@
-/* $Id: winlib.c,v 1.1.2.4.2.21 2010/09/17 10:20:52 uehira Exp $ */
+/* $Id: winlib.c,v 1.1.2.4.2.22 2010/09/17 11:55:53 uehira Exp $ */
 
 /*-
  * winlib.c  (Uehira Kenji)
@@ -1343,6 +1343,42 @@ str2double(char *t, int n, int m, double *d)
   else
     *d = atof(tb);
   free(tb);
+}
+
+time_t
+shift_sec(uint8_w *tm_bcd, int sec)
+{
+  struct tm  *nt, mt;
+  time_t     ltime;
+
+  memset(&mt, 0, sizeof(mt));
+  if ((mt.tm_year = b2d[tm_bcd[0]]) < WIN_YEAR)
+    mt.tm_year += 100;
+  mt.tm_mon = b2d[tm_bcd[1]] - 1;
+  mt.tm_mday = b2d[tm_bcd[2]];
+  mt.tm_hour = b2d[tm_bcd[3]];
+  mt.tm_min = b2d[tm_bcd[4]];
+  mt.tm_sec = b2d[tm_bcd[5]];
+  mt.tm_isdst = 0;
+  ltime=mktime(&mt);
+  if (ltime == -1) {
+    fprintf(stderr,"mktime error!\n");
+    exit(1);
+  }
+
+  if (sec)
+    ltime += sec;
+  else
+    return (ltime);
+    
+  nt = localtime(&ltime);
+  tm_bcd[0] = d2b[nt->tm_year % 100];
+  tm_bcd[1] = d2b[nt->tm_mon + 1];
+  tm_bcd[2] = d2b[nt->tm_mday];
+  tm_bcd[3] = d2b[nt->tm_hour];
+  tm_bcd[4] = d2b[nt->tm_min];
+  tm_bcd[5] = d2b[nt->tm_sec];
+  return (ltime);
 }
 
 /* function(s) related with MT device */

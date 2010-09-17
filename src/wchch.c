@@ -1,4 +1,4 @@
-/* $Id: wchch.c,v 1.5.4.2.2.5 2010/09/17 10:20:52 uehira Exp $ */
+/* $Id: wchch.c,v 1.5.4.2.2.6 2010/09/17 10:33:42 uehira Exp $ */
 
 /*
 program "wchch.c"
@@ -26,7 +26,7 @@ program "wchch.c"
 #define   DEBUG1  0
 
 static char rcsid[] =
-  "$Id: wchch.c,v 1.5.4.2.2.5 2010/09/17 10:20:52 uehira Exp $";
+  "$Id: wchch.c,v 1.5.4.2.2.6 2010/09/17 10:33:42 uehira Exp $";
 
 static uint8_w *buf=NULL,*outbuf;
 static WIN_ch ch_table[WIN_CHMAX];
@@ -35,7 +35,6 @@ static WIN_ch ch_table[WIN_CHMAX];
 static void wabort(void);
 static int read_chfile(char *);
 static void get_one_record(void);
-static WIN_bs read_data(void);
 static WIN_bs select_ch(WIN_ch *, uint8_w *, uint8_w *);
 static void usage(void);
 int main(int, char *[]);
@@ -101,43 +100,6 @@ get_one_record()
 #if DEBUG1
   fprintf(stderr," : done\n");
 #endif
-  }
-
-static WIN_bs
-read_data()
-  {
-  static size_t size;
-  WIN_bs  re;
-  int i;
-
-  if(fread(&re,1,WIN_BSLEN,stdin)==0) return (0);
-  i=1;if(*(char *)&i) SWAP32(re);
-  if(buf==NULL)
-    {
-    buf=(uint8_w *)malloc(size=re*2);
-    outbuf=(uint8_w *)malloc(size=re*2);
-    if ((buf == NULL) || (outbuf == NULL))
-      {
-	fprintf(stderr, "Cannot malloc memory\n");
-	exit(1);
-      }
-    }
-  else if(re>size)
-    {
-    buf=(uint8_w *)realloc(buf,size=re*2);
-    outbuf=(uint8_w *)realloc(outbuf,size=re*2);
-    if ((buf == NULL) || (outbuf == NULL))
-      {
-	fprintf(stderr, "Cannot realloc memory\n");
-	exit(1);
-      }
-    }
-  buf[0]=re>>24;
-  buf[1]=re>>16;
-  buf[2]=re>>8;
-  buf[3]=re;
-  re=fread(buf+WIN_BSLEN,1,re-WIN_BSLEN,stdin);
-  return (re);
   }
 
 static WIN_bs

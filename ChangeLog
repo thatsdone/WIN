@@ -1,4 +1,10 @@
- $Id: ChangeLog,v 1.131.2.25.2.68 2010/09/16 09:43:07 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.69 2010/09/17 01:02:03 uehira Exp $
+
+2010-09-17  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* rename MACROs
+	  SWAPL --> SWAP32
+	  SWAPS --> SWAP16
+	  MKSWAPS --> MKSWAP16
 
 2010-09-16  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* src/wadd : 64 bit clean.

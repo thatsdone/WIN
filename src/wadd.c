@@ -1,4 +1,4 @@
-/* $Id: wadd.c,v 1.6.4.3.2.7 2010/09/16 08:45:27 uehira Exp $ */
+/* $Id: wadd.c,v 1.6.4.3.2.8 2010/09/17 01:02:04 uehira Exp $ */
 /* program "wadd.c"
   "wadd" puts two win data files together
   7/24/91 - 7/25/91, 4/20/94,6/27/94-6/28/94,7/12/94   urabe
@@ -32,7 +32,7 @@
 #define   TEMPNAME  "wadd.tmp"
 
 static const char  rcsid[] =
-   "$Id: wadd.c,v 1.6.4.3.2.7 2010/09/16 08:45:27 uehira Exp $";
+   "$Id: wadd.c,v 1.6.4.3.2.8 2010/09/17 01:02:04 uehira Exp $";
 
 /* prototypes */
 static int get_syschnum(uint8_w *, WIN_ch []);
@@ -289,7 +289,7 @@ main(int argc, char *argv[])
           {
           make_skel(subbuf,selbuf);
           size=mainsize+mkuint4(selbuf)-10;
-          i=1;if(*(char *)&i) SWAPL(size);
+          i=1;if(*(char *)&i) SWAP32(size);
           if((re=fwrite(&size,4,1,f_out))==0) werror();
           if((re=fwrite(mainbuf+4,1,mainsize-4,f_out))==0) werror();
           if((re=fwrite(selbuf+10,1,mkuint4(selbuf)-10,f_out))==0) werror();
@@ -317,7 +317,7 @@ main(int argc, char *argv[])
     else             /* start together */
       {
       size=mainsize+subsize-10;
-      i=1;if(*(char *)&i) SWAPL(size);
+      i=1;if(*(char *)&i) SWAP32(size);
       if((re=fwrite(&size,4,1,f_out))==0) werror();
       if((re=fwrite(mainbuf+4,1,mainsize-4,f_out))==0) werror();
       if((re=fwrite(subbuf+10,1,subsize-10,f_out))==0) werror();

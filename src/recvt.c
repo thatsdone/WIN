@@ -1,4 +1,4 @@
-/* $Id: recvt.c,v 1.29.2.3.2.21 2010/02/02 10:57:22 uehira Exp $ */
+/* $Id: recvt.c,v 1.29.2.3.2.22 2010/09/17 01:02:04 uehira Exp $ */
 /*-
  "recvt.c"      4/10/93 - 6/2/93,7/2/93,1/25/94    urabe
                 2/3/93,5/25/94,6/16/94 
@@ -109,7 +109,7 @@
 #define N_PNOS    62    /* length of packet nos. history >=2 */
 
 static char rcsid[] =
-  "$Id: recvt.c,v 1.29.2.3.2.21 2010/02/02 10:57:22 uehira Exp $";
+  "$Id: recvt.c,v 1.29.2.3.2.22 2010/09/17 01:02:04 uehira Exp $";
 
 static uint8_w rbuf[MAXMESG],ch_table[WIN_CHMAX];
 static char chfile[N_CHFILE][256];
@@ -634,12 +634,12 @@ send_req(int sock, struct sockaddr_in *host_addr)
     seq=1;
     if(n_ch==0) n_seq=1;
     else n_seq=(n_ch-1)/512+1;
-    sendbuf.seq[1]=MKSWAPS(n_seq);
+    sendbuf.seq[1]=MKSWAP16(n_seq);
     j=0;
     for(i=0;i<WIN_CHMAX;i++)
       {
-      sendbuf.seq[0]=MKSWAPS(seq);
-      if(ch_table[i]) sendbuf.chlist[j++]=MKSWAPS(i);
+      sendbuf.seq[0]=MKSWAP16(seq);
+      if(ch_table[i]) sendbuf.chlist[j++]=MKSWAP16(i);
       if(j==512)
         {
         sendto(sock,&sendbuf,8+2*j,0,(struct sockaddr *)host_addr,
@@ -647,8 +647,8 @@ send_req(int sock, struct sockaddr_in *host_addr)
 #if DEBUG3
         printf("send channel list to %s:%d (%d): %s %d/%d %04X %04X %04X ...\n",
           inet_ntoa(host_addr->sin_addr),ntohs(host_addr->sin_port),
-          n_ch,sendbuf.mn,MKSWAPS(sendbuf.seq[0]),MKSWAPS(sendbuf.seq[1]),
-          MKSWAPS(sendbuf.chlist[0]),MKSWAPS(sendbuf.chlist[1]),MKSWAPS(sendbuf.chlist[2]));
+          n_ch,sendbuf.mn,MKSWAP16(sendbuf.seq[0]),MKSWAP16(sendbuf.seq[1]),
+          MKSWAP16(sendbuf.chlist[0]),MKSWAP16(sendbuf.chlist[1]),MKSWAP16(sendbuf.chlist[2]));
 #endif
         j=0;
         seq++;
@@ -661,8 +661,8 @@ send_req(int sock, struct sockaddr_in *host_addr)
 #if DEBUG3
         printf("send channel list to %s:%d (%d): %s %d/%d %04X %04X %04X ...\n",
           inet_ntoa(host_addr->sin_addr),ntohs(host_addr->sin_port),
-          n_ch,sendbuf.mn,MKSWAPS(sendbuf.seq[0]),MKSWAPS(sendbuf.seq[1]),
-          MKSWAPS(sendbuf.chlist[0]),MKSWAPS(sendbuf.chlist[1]),MKSWAPS(sendbuf.chlist[2]));
+          n_ch,sendbuf.mn,MKSWAP16(sendbuf.seq[0]),MKSWAP16(sendbuf.seq[1]),
+          MKSWAP16(sendbuf.chlist[0]),MKSWAP16(sendbuf.chlist[1]),MKSWAP16(sendbuf.chlist[2]));
 #endif
       seq++;
       }
@@ -674,7 +674,7 @@ send_req(int sock, struct sockaddr_in *host_addr)
 #if DEBUG3
     printf("send channel list to %s:%d (%d): %s %d/%d\n",
       inet_ntoa(host_addr->sin_addr),ntohs(host_addr->sin_port),
-      n_ch,sendbuf.mn,MKSWAPS(sendbuf.seq[0]),MKSWAPS(sendbuf.seq[1]));
+      n_ch,sendbuf.mn,MKSWAP16(sendbuf.seq[0]),MKSWAP16(sendbuf.seq[1]));
 #endif
     }
   }

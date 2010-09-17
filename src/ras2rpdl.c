@@ -1,4 +1,4 @@
-/* $Id: ras2rpdl.c,v 1.3.4.1 2008/05/17 14:22:00 uehira Exp $ */
+/* $Id: ras2rpdl.c,v 1.3.4.1.2.1 2010/09/17 01:02:04 uehira Exp $ */
 /********************************************************/
 /*  ras2rpdl.c   97.10.31-97.11.27             urabe    */
 /*               98.3.4      LITTLE ENDIAN    uehira    */
@@ -30,27 +30,27 @@ read_header(fp,height,width)
 /* header */
   if(fread(&buf,4,1,fp)<1) return(1);  /* magic */
   i=1;
-  if(*(char *)&i) SWAPL(buf);
+  if(*(char *)&i) SWAP32(buf);
   if(buf!=0x59a66a95) return(0);
   if(fread(&buf,4,1,fp)<1) return(1);  /* width */
-  if(*(char *)&i) SWAPL(buf);
+  if(*(char *)&i) SWAP32(buf);
   *width=buf;
   if(fread(&buf,4,1,fp)<1) return(1);  /* height */
-  if(*(char *)&i) SWAPL(buf);
+  if(*(char *)&i) SWAP32(buf);
   *height=buf;
   if(fread(&buf,4,1,fp)<1) return(1);  /* depth */
-  if(*(char *)&i) SWAPL(buf);
+  if(*(char *)&i) SWAP32(buf);
   if(buf!=1) return(1);
   if(fread(&buf,4,1,fp)<1) return(1);  /* length */
-  if(*(char *)&i) SWAPL(buf);
+  if(*(char *)&i) SWAP32(buf);
   length=buf;
   if(fread(&buf,4,1,fp)<1) return(1);  /* type */
-  if(*(char *)&i) SWAPL(buf);
+  if(*(char *)&i) SWAP32(buf);
   type=buf;
   if(type>1) return(1);    /* only RT_OLD and RT_STANDARD */
   if(fread(&buf,4,1,fp)<1) return(1);  /* maptype */
   if(fread(&buf,4,1,fp)<1) return(1);  /* maplength */
-  if(*(char *)&i) SWAPL(buf);
+  if(*(char *)&i) SWAP32(buf);
   maplength=buf;
   for(i=0;i<maplength;i++) if(fgetc(fp)==EOF) return(1);  /* color map */
 /* size */

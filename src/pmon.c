@@ -1,4 +1,4 @@
-/* $Id: pmon.c,v 1.14.2.5.2.6 2010/02/23 07:28:45 uehira Exp $ */
+/* $Id: pmon.c,v 1.14.2.5.2.7 2010/09/17 01:02:03 uehira Exp $ */
 /************************************************************************
 *************************************************************************
 **  program "pmon.c" for NEWS/SPARC                             *********
@@ -227,7 +227,7 @@
 0xf0,0x1e,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x40,0x00,0x06,0x10,0xc0,0x00,0x00};
 
 static const char  rcsid[] =
-   "$Id: pmon.c,v 1.14.2.5.2.6 2010/02/23 07:28:45 uehira Exp $";
+   "$Id: pmon.c,v 1.14.2.5.2.7 2010/09/17 01:02:03 uehira Exp $";
 
 char *progname,*logfile;
 int  syslog_mode = 0, exit_status;
@@ -332,7 +332,7 @@ mkfont(int y, int ii, uint8_w *buf_font, int width, int jj, int k,
       u.c[1]=buf_font[ii*width*2+j+2];
       u.c[0]=buf_font[ii*width*2+j+3];
       s=buf_font16[y*width16+x];
-      SWAPS(s);
+      SWAP16(s);
       for(i=0;i<16;i++) if(s&bit_mask[i]) u.l|=bits[k][i];
       buf_font[ii*width*2+j]  =u.c[3];
       buf_font[ii*width*2+j+1]=u.c[2];
@@ -1042,14 +1042,14 @@ insatsu(uint8_w *tb1, uint8_w *tb2, uint8_w *tb3, char *path_spool,
   ras.ras_maplength=0;
   i=1;if(*(char *)&i)
     {
-    SWAPL(ras.ras_magic);
-    SWAPL(ras.ras_width);
-    SWAPL(ras.ras_height);
-    SWAPL(ras.ras_depth);
-    SWAPL(ras.ras_length);
-    SWAPL(ras.ras_type);
-    SWAPL(ras.ras_maptype);
-    SWAPL(ras.ras_maplength);
+    SWAP32(ras.ras_magic);
+    SWAP32(ras.ras_width);
+    SWAP32(ras.ras_height);
+    SWAP32(ras.ras_depth);
+    SWAP32(ras.ras_length);
+    SWAP32(ras.ras_type);
+    SWAP32(ras.ras_maptype);
+    SWAP32(ras.ras_maplength);
     }
   fwrite((char *)&ras,1,sizeof(ras),lbp);   /* output header */
   fwrite(frame,1,HEIGHT_LBP*WIDTH_LBP,lbp); /* output image */

@@ -1,4 +1,4 @@
-/* $Id: wtime.c,v 1.3.2.3.2.7 2010/02/02 10:57:23 uehira Exp $ */
+/* $Id: wtime.c,v 1.3.2.3.2.8 2010/09/17 01:02:04 uehira Exp $ */
 
 /*
   program "wtime.c"
@@ -45,7 +45,7 @@ read_data()
   static unsigned int size;
   int re,i;
   if(fread(&re,1,4,stdin)==0) return 0;
-  i=1;if(*(char *)&i) SWAPL(re);
+  i=1;if(*(char *)&i) SWAP32(re);
   if(rbuf==0)
     {
     rbuf=(unsigned char *)malloc(size=re*2);

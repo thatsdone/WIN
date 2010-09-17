@@ -1,4 +1,4 @@
-/* $Id: wchch.c,v 1.5.4.2.2.3 2009/08/25 04:00:16 uehira Exp $ */
+/* $Id: wchch.c,v 1.5.4.2.2.4 2010/09/17 01:02:04 uehira Exp $ */
 
 /*
 program "wchch.c"
@@ -25,7 +25,7 @@ program "wchch.c"
 #define   DEBUG1  0
 
 static char rcsid[] =
-  "$Id: wchch.c,v 1.5.4.2.2.3 2009/08/25 04:00:16 uehira Exp $";
+  "$Id: wchch.c,v 1.5.4.2.2.4 2010/09/17 01:02:04 uehira Exp $";
 
 static uint8_w *buf=NULL,*outbuf;
 static WIN_ch ch_table[WIN_CHMAX];
@@ -110,7 +110,7 @@ read_data()
   int i;
 
   if(fread(&re,1,WIN_BSLEN,stdin)==0) return (0);
-  i=1;if(*(char *)&i) SWAPL(re);
+  i=1;if(*(char *)&i) SWAP32(re);
   if(buf==NULL)
     {
     buf=(uint8_w *)malloc(size=re*2);

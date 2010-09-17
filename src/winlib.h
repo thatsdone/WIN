@@ -1,4 +1,4 @@
-/* $Id: winlib.h,v 1.1.2.7.2.31 2010/09/14 15:00:00 uehira Exp $ */
+/* $Id: winlib.h,v 1.1.2.7.2.32 2010/09/17 01:02:04 uehira Exp $ */
 
 #ifndef _WIN_LIB_H_
 #define _WIN_LIB_H_
@@ -143,10 +143,10 @@ typedef  int32_w  WIN_sr;   /* 0 < sr < 2^20 */
 /* 'insert_trg' process makes the following file */
 #define INSERT_TRG_USED  "USED_TRG"
 
-#define  SWAPL(a)  a = ((((a) << 24)) | (((a) << 8) & 0xff0000) |	\
+#define  SWAP32(a)  a = ((((a) << 24)) | (((a) << 8) & 0xff0000) |	\
 			(((a) >> 8) & 0xff00) | (((a) >> 24) & 0xff))
-#define  SWAPS(a)  a = ((((a) << 8) & 0xff00) | (((a) >> 8) & 0xff))
-#define  MKSWAPS(a)  (uint16_w)((((a) << 8) & 0xff00) | (((a) >> 8) & 0xff))
+#define  SWAP16(a)  a = ((((a) << 8) & 0xff00) | (((a) >> 8) & 0xff))
+#define  MKSWAP16(a)  (uint16_w)((((a) << 8) & 0xff00) | (((a) >> 8) & 0xff))
 #define  SWAPF(a)  *(int32_w *)&(a) =\
     (((*(int32_w *)&(a)) << 24) | ((*(int32_w *)&(a)) << 8) & 0xff0000 |\
      ((*(int32_w *)&(a)) >> 8) & 0xff00 | ((*(int32_w *)&(a)) >> 24) & 0xff)

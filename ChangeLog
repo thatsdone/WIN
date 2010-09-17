@@ -1,6 +1,7 @@
- $Id: ChangeLog,v 1.131.2.25.2.69 2010/09/17 01:02:03 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.70 2010/09/17 03:38:47 uehira Exp $
 
 2010-09-17  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/wadd2 : 64 bit clean.
 	* rename MACROs
 	  SWAPL --> SWAP32
 	  SWAPS --> SWAP16

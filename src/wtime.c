@@ -1,9 +1,11 @@
-/* $Id: wtime.c,v 1.3.2.3.2.8 2010/09/17 01:02:04 uehira Exp $ */
+/* $Id: wtime.c,v 1.3.2.3.2.9 2010/09/17 10:22:51 uehira Exp $ */
 
 /*
   program "wtime.c"
   "wchch" shifts time of a win format data file
   2000.7.30   urabe
+  2010.9.17   replace read_data() with read_onesec_win2().
+              64bit clean. (Uehira)
 */
 
 #ifdef HAVE_CONFIG_H
@@ -34,44 +36,23 @@
 /* #define   DEBUG   0 */
 #define   DEBUG1  0
 
-unsigned char *rbuf,*wbuf;
-int32_w *sbuf[WIN_CHMAX];
-int s_add,ms_add;
+static const char  rcsid[] =
+   "$Id: wtime.c,v 1.3.2.3.2.9 2010/09/17 10:22:51 uehira Exp $";
 
+static uint8_w *rbuf=NULL,*wbuf;
+static int32_w *sbuf[WIN_CHMAX];
+static int s_add,ms_add;
+
+static void
 wabort() {exit(0);}
 
-read_data()
-  {
-  static unsigned int size;
-  int re,i;
-  if(fread(&re,1,4,stdin)==0) return 0;
-  i=1;if(*(char *)&i) SWAP32(re);
-  if(rbuf==0)
-    {
-    rbuf=(unsigned char *)malloc(size=re*2);
-    wbuf=(unsigned char *)malloc(size=re*2);
-    }
-  else if(re>size)
-    {
-    rbuf=(unsigned char *)realloc(rbuf,size=re*2);
-    wbuf=(unsigned char *)realloc(wbuf,size=re*2);
-    }
-  rbuf[0]=re>>24;
-  rbuf[1]=re>>16;
-  rbuf[2]=re>>8;
-  rbuf[3]=re;
-  re=fread(rbuf+4,1,re-4,stdin);
-  return re;
-  }
-
-shift_sec(tm_bcd,sec)
-  unsigned char *tm_bcd;
-  int sec;
+static time_t
+shift_sec(uint8_w *tm_bcd, int sec)
   {
   struct tm *nt,mt;
-  unsigned long ltime;
+  time_t ltime;
 
-  memset((char *)&mt,0,sizeof(mt));
+  memset(&mt,0,sizeof(mt));
   if((mt.tm_year=b2d[tm_bcd[0]])<WIN_YEAR) mt.tm_year+=100;
   mt.tm_mon=b2d[tm_bcd[1]]-1;
   mt.tm_mday=b2d[tm_bcd[2]];
@@ -80,29 +61,34 @@ shift_sec(tm_bcd,sec)
   mt.tm_sec=b2d[tm_bcd[5]];
   mt.tm_isdst=0;
   ltime=mktime(&mt);
+  if (ltime == -1) {
+    fprintf(stderr,"mktime error!\n");
+    exit(1);
+  }
   if(sec) ltime+=sec;
-  else return ltime;
-  nt=localtime((time_t *)&ltime);
+  else return (ltime);
+  nt=localtime(&ltime);
   tm_bcd[0]=d2b[nt->tm_year%100];
   tm_bcd[1]=d2b[nt->tm_mon+1];
   tm_bcd[2]=d2b[nt->tm_mday];
   tm_bcd[3]=d2b[nt->tm_hour];
   tm_bcd[4]=d2b[nt->tm_min];
   tm_bcd[5]=d2b[nt->tm_sec];
-  return ltime;
+  return (ltime);
   }
 
-chloop(old_buf,new_buf)
-  unsigned char *old_buf,*new_buf;
+static WIN_bs
+chloop(uint8_w *old_buf, uint8_w *new_buf)
   {
-  static int32_w fixbuf1[4096],fixbuf2[4096],ltime,ltime_ch[WIN_CHMAX];
-  int i,size,new_size,sr_shift;
+  static int32_w fixbuf1[HEADER_5B],fixbuf2[HEADER_5B];
+  static time_t  ltime,ltime_ch[WIN_CHMAX];
+  int i,sr_shift;
+  WIN_bs  new_size;
   WIN_ch  ch;
   WIN_sr  sr;
-  unsigned char *ptr1,*ptr2,*ptr_lim;
+  uint8_w *ptr1,*ptr2,*ptr_lim;
 
-  size=mkuint4(old_buf);
-  ptr_lim=old_buf+size;
+  ptr_lim=old_buf+mkuint4(old_buf);
   ptr1=old_buf+4;
   ptr2=new_buf+4;
   for(i=0;i<6;i++) *ptr2++=(*ptr1++); /* time stamp */
@@ -125,24 +111,24 @@ chloop(old_buf,new_buf)
   new_buf[1]=new_size>>16;
   new_buf[2]=new_size>>8;
   new_buf[3]=new_size;
-  return new_size;
+  return (new_size);
   }
 
+static void
 print_usage()
   {
+
+  WIN_version();
+  fprintf(stderr,"%s\n", rcsid);
   fprintf(stderr," usage of 'wtime' :\n");
   fprintf(stderr,"   'wtime (-h [hrs]) (-s [sec in float]) <[in_file] >[out_file]'\n");
-  exit(0);
   }
 
-main(argc,argv)
-  int argc;
-  char *argv[];
+int
+main(int argc, char *argv[])
   {
   int c,hours,re;
   double fsec;
-/*   extern int optind; */
-/*   extern char *optarg; */
 
   signal(SIGINT,(void *)wabort);
   signal(SIGTERM,(void *)wabort);
@@ -176,7 +162,7 @@ main(argc,argv)
   fprintf(stderr,"s=%d, ms=%d\n",s_add,ms_add);
 #endif
 
-  while((re=read_data())>0)
+  while(read_onesec_win2(stdin,&rbuf,&wbuf)>0)
     {
     /* read one sec */
     re=chloop(rbuf,wbuf);

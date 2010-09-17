@@ -1,4 +1,4 @@
-/* $Id: wchch.c,v 1.5.4.2.2.4 2010/09/17 01:02:04 uehira Exp $ */
+/* $Id: wchch.c,v 1.5.4.2.2.5 2010/09/17 10:20:52 uehira Exp $ */
 
 /*
 program "wchch.c"
@@ -8,7 +8,8 @@ program "wchch.c"
 2000.4.17   wabort
 2003.10.29 exit()->exit(0)
 2005.2.20 added fclose() in read_chfile()
-2009.7.31  64bit clean. High sampling clean(?).
+2009.7.31  64bit clean. High sampling clean(?) (Uehira)
+2010.9.17 replace read_data() with read_onesec_win2() (Uehira)
 */
 
 #ifdef HAVE_CONFIG_H
@@ -25,7 +26,7 @@ program "wchch.c"
 #define   DEBUG1  0
 
 static char rcsid[] =
-  "$Id: wchch.c,v 1.5.4.2.2.4 2010/09/17 01:02:04 uehira Exp $";
+  "$Id: wchch.c,v 1.5.4.2.2.5 2010/09/17 10:20:52 uehira Exp $";
 
 static uint8_w *buf=NULL,*outbuf;
 static WIN_ch ch_table[WIN_CHMAX];
@@ -87,7 +88,7 @@ static void
 get_one_record()
   {
 
-  while(read_data()>0)
+  while(read_onesec_win2(stdin,&buf,&outbuf)>0)
     {
     /* read one sec */
     if(select_ch(ch_table,buf,outbuf)>10)

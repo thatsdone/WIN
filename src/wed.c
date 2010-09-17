@@ -1,4 +1,4 @@
-/* $Id: wed.c,v 1.5.4.3.2.6 2010/09/16 09:52:35 uehira Exp $ */
+/* $Id: wed.c,v 1.5.4.3.2.7 2010/09/17 10:20:52 uehira Exp $ */
 /* program "wed.c"
 	"wed" edits a win format data file by time range and channles
 	6/26/91,7/13/92,3/11/93,4/20/94,8/5/94,12/8/94   urabe
@@ -11,6 +11,7 @@
         2003.10.29 exit()->exit(0)
         2006.9.21 added comment on mklong()
 	2010.9.16 64bit clean (Uehira)
+	2010.9.17 replace read_data() with read_onesec_win2() (Uehira)
 */
 
 #ifdef HAVE_CONFIG_H
@@ -27,7 +28,7 @@
 #define	DEBUG1 0
 
 static const char  rcsid[] =
-  "$Id: wed.c,v 1.5.4.3.2.6 2010/09/16 09:52:35 uehira Exp $";
+  "$Id: wed.c,v 1.5.4.3.2.7 2010/09/17 10:20:52 uehira Exp $";
 
 static uint8_w  *buf=NULL, *outbuf;
 static int  leng, dec_start[6], dec_end[6], dec_now[6], nch;
@@ -37,7 +38,6 @@ static FILE  *f_param;
 /* prototypes */
 static void wabort(void);
 static void get_one_record(void);
-static WIN_bs read_data(void);
 static WIN_bs select_ch(WIN_ch *, int, uint8_w *, uint8_w *);
 int main(int, char *[]);
 
@@ -70,7 +70,7 @@ get_one_record()
 #endif
   /* read first block */
   do {
-    if (read_data() <= 0) {
+    if (read_onesec_win2(stdin, &buf, &outbuf) == 0) {
       exit(1);
     }
     bcd_dec(dec_now, buf + 4);
@@ -94,7 +94,7 @@ get_one_record()
     if (leng >= 0 && time_cmp(dec_now, dec_end, 6) == 0)
       break;
     /* read one sec */
-    if (read_data() <= 0)
+    if (read_onesec_win2(stdin, &buf, &outbuf) == 0)
       break;
     bcd_dec(dec_now, buf + 4);
     if (leng >= 0 && time_cmp(dec_now, dec_end, 6) > 0)
@@ -108,28 +108,6 @@ get_one_record()
 #if DEBUG
   fprintf(stderr, " : done\n");
 #endif
-}
-
-static WIN_bs
-read_data()
-{
-  static size_t  size;
-  WIN_bs  re;
-  uint8_w  tmpa[4];
-
-  if (fread(tmpa, 1, 4, stdin) == 0)
-    return (0);
-  re = mkuint4(tmpa);
-  if (buf == NULL) {
-    buf = (uint8_w *)malloc(size = re * 2);
-    outbuf = (uint8_w *)malloc(size = re * 2);
-  } else if (re > size) {
-    buf = (uint8_w *)realloc(buf, size = re * 2);
-    outbuf = (uint8_w *)realloc(outbuf, size = re * 2);
-  }
-  memcpy(buf, tmpa, 4);
-  re = fread(buf + 4, 1, re - 4, stdin);
-  return (re);
 }
 
 static WIN_bs

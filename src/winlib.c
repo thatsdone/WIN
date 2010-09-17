@@ -1,4 +1,4 @@
-/* $Id: winlib.c,v 1.1.2.4.2.20 2010/09/14 15:00:00 uehira Exp $ */
+/* $Id: winlib.c,v 1.1.2.4.2.21 2010/09/17 10:20:52 uehira Exp $ */
 
 /*-
  * winlib.c  (Uehira Kenji)
@@ -631,6 +631,38 @@ read_onesec_win(FILE *fp, uint8_w **rbuf)
 #endif
 
   return (size);
+}
+
+WIN_bs
+read_onesec_win2(FILE *fp, uint8_w **in_buf, uint8_w **out_buf)
+{
+  static size_t  size;
+  WIN_bs  re, reout;
+  uint8_w  tmpa[4];
+
+  if (fread(tmpa, 1, WIN_BSLEN, fp) != WIN_BSLEN)
+    return (0);
+  re = mkuint4(tmpa);
+  if (*in_buf == NULL) {
+    *in_buf = (uint8_w *)malloc(size = (size_t)(re << 1));
+    *out_buf = (uint8_w *)malloc(size = (size_t)(re << 1));
+  } else if (re > size) {
+    *in_buf = (uint8_w *)realloc(*in_buf, size = (size_t)(re << 1));
+    *out_buf = (uint8_w *)realloc(*out_buf, size = (size_t)(re << 1));
+  }
+  if ((*in_buf == NULL) || (*out_buf == NULL)) {
+    perror("read_onesec_win2()");
+    exit(1);
+  }
+  
+  /* copy data to *in_buf() */
+  (void)memcpy(*in_buf, tmpa, WIN_BSLEN);
+  reout = fread(*in_buf + WIN_BSLEN, 1, re - WIN_BSLEN, fp);
+  
+  if (reout != re - WIN_BSLEN)
+    return (0);
+  else
+    return (re);  /* previous version : return (reout) */
 }
 
 /* init shared memory */

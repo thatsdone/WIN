@@ -1,4 +1,4 @@
-/* $Id: wch.c,v 1.8.4.2.2.4 2010/09/17 01:02:04 uehira Exp $ */
+/* $Id: wch.c,v 1.8.4.2.2.5 2010/09/17 10:20:52 uehira Exp $ */
 /*
 program "wch.c"
 "wch" edits a win format data file by channles
@@ -10,7 +10,8 @@ program "wch.c"
 2002.2.18 delete duplicated data & negate_channel
 2003.10.29 exit()->exit(0)
 2005.2.20 added fclose() in read_chfile()
-2009.7.31  64bit clean.
+2009.7.31  64bit clean. (Uehira)
+2010.9.17 replace read_data() with read_onesec_win2() (Uehira)
 */
 
 #ifdef HAVE_CONFIG_H
@@ -27,7 +28,7 @@ program "wch.c"
 /* #define   DEBUG   0 */
 
 static char rcsid[] =
-  "$Id: wch.c,v 1.8.4.2.2.4 2010/09/17 01:02:04 uehira Exp $";
+  "$Id: wch.c,v 1.8.4.2.2.5 2010/09/17 10:20:52 uehira Exp $";
 
 static uint8_w *buf=NULL,*outbuf;
 static uint8_w ch_table[WIN_CHMAX];
@@ -36,7 +37,6 @@ static int negate_channel;
 /* prototypes */
 static void wabort(void);
 static int read_chfile(char *);
-static WIN_bs read_data(void);
 static WIN_bs select_ch(uint8_w *, uint8_w *, uint8_w *);
 static void get_one_record(void);
 static void usage(void);
@@ -100,43 +100,6 @@ read_chfile(char *chfile)
     }
   }
 
-static WIN_bs
-read_data()
-  {
-  static size_t size;
-  WIN_bs re;
-  int i;
-
-  if(fread(&re,1,WIN_BSLEN,stdin)==0) return (0);
-  i=1;if(*(char *)&i) SWAP32(re);
-  if(buf==NULL)
-    {
-    buf=(uint8_w *)malloc(size=re*2);
-    outbuf=(uint8_w *)malloc(size=re*2);
-    if ((buf == NULL) || (outbuf == NULL))
-      {
-	fprintf(stderr, "Cannot malloc memory\n");
-	exit(1);
-      }
-    }
-  else if(re>size)
-    {
-    buf=(uint8_w *)realloc(buf,size=re*2);
-    outbuf=(uint8_w *)realloc(outbuf,size=re*2);
-    if ((buf == NULL) || (outbuf == NULL))
-      {
-	fprintf(stderr, "Cannot realloc memory\n");
-	exit(1);
-      }
-    }
-  buf[0]=re>>24;
-  buf[1]=re>>16;
-  buf[2]=re>>8;
-  buf[3]=re;
-  re=fread(buf+WIN_BSLEN,1,re-WIN_BSLEN,stdin);
-  return (re);
-  }
-
 static WIN_bs 
 select_ch(uint8_w *table, uint8_w *old_buf, uint8_w *new_buf)
   {
@@ -183,7 +146,7 @@ static void
 get_one_record()
   {
 
-  while(read_data()>0)
+  while(read_onesec_win2(stdin,&buf,&outbuf)>0)
     {
     /* read one sec */
     if(select_ch(ch_table,buf,outbuf)>10)

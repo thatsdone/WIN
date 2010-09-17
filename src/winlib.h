@@ -1,4 +1,4 @@
-/* $Id: winlib.h,v 1.1.2.7.2.32 2010/09/17 01:02:04 uehira Exp $ */
+/* $Id: winlib.h,v 1.1.2.7.2.33 2010/09/17 10:20:52 uehira Exp $ */
 
 #ifndef _WIN_LIB_H_
 #define _WIN_LIB_H_
@@ -295,6 +295,7 @@ uint32_w win2fix(uint8_w *, int32_w *, WIN_ch *, WIN_sr *);
 int strncmp2(char *, char *, int);
 int strcmp2(char *, char *);
 WIN_bs read_onesec_win(FILE *, uint8_w **);
+WIN_bs read_onesec_win2(FILE *, uint8_w **, uint8_w **);
 void Shm_init(struct Shm *, size_t);
 void WIN_version(void);
 uint32_w win_chheader_info(const uint8_w *, WIN_ch *, WIN_sr *, int *);

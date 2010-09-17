@@ -1,4 +1,4 @@
-/* $Id: wtime.c,v 1.3.2.3.2.9 2010/09/17 10:22:51 uehira Exp $ */
+/* $Id: wtime.c,v 1.3.2.3.2.10 2010/09/17 11:47:36 uehira Exp $ */
 
 /*
   program "wtime.c"
@@ -37,11 +37,18 @@
 #define   DEBUG1  0
 
 static const char  rcsid[] =
-   "$Id: wtime.c,v 1.3.2.3.2.9 2010/09/17 10:22:51 uehira Exp $";
+   "$Id: wtime.c,v 1.3.2.3.2.10 2010/09/17 11:47:36 uehira Exp $";
 
 static uint8_w *rbuf=NULL,*wbuf;
 static int32_w *sbuf[WIN_CHMAX];
 static int s_add,ms_add;
+
+/* prototypes */
+static void wabort(void);
+static time_t shift_sec(uint8_w *, int);
+static WIN_bs chloop(uint8_w *, uint8_w *);
+static void print_usage(void);
+int main(int, char *[]);
 
 static void
 wabort() {exit(0);}

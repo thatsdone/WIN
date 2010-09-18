@@ -1,4 +1,4 @@
-/* $Id: send_raw.c,v 1.24.2.4.2.11 2010/09/18 03:32:19 uehira Exp $ */
+/* $Id: send_raw.c,v 1.24.2.4.2.12 2010/09/18 03:37:34 uehira Exp $ */
 /*
     program "send_raw/send_mon.c"   1/24/94 - 1/25/94,5/25/94 urabe
                                     6/15/94 - 6/16/94
@@ -101,7 +101,7 @@
 #define REQ_TIMO  10   /* timeout (sec) for request */
 
 static const char  rcsid[] =
-   "$Id: send_raw.c,v 1.24.2.4.2.11 2010/09/18 03:32:19 uehira Exp $";
+   "$Id: send_raw.c,v 1.24.2.4.2.12 2010/09/18 03:37:34 uehira Exp $";
 
 static int sock,raw,tow,all,n_ch,negate_channel,mtu,nbuf,slptime,
   no_resend;
@@ -274,7 +274,7 @@ recv_pkts(int sock, struct sockaddr_in *to_addr, uint8_w *no,
         for(k=0;k<20;k++) fprintf(stderr,"%02X",sbuf[*bufno][k]);
         fprintf(stderr,"\n");
 #endif
-        snprintf(tbuf,sizeof(tbuf),"resend for %s:%d #%d as #%d, %d B",
+        snprintf(tbuf,sizeof(tbuf),"resend for %s:%d #%d as #%d, %ld B",
           inet_ntoa(from_addr.sin_addr),ntohs(from_addr.sin_port),
           no_f,*no,re);
         write_log(tbuf);

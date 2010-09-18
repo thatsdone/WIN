@@ -1,4 +1,4 @@
-/* $Id: send_raw.c,v 1.24.2.4.2.10 2010/09/17 11:55:53 uehira Exp $ */
+/* $Id: send_raw.c,v 1.24.2.4.2.11 2010/09/18 03:32:19 uehira Exp $ */
 /*
     program "send_raw/send_mon.c"   1/24/94 - 1/25/94,5/25/94 urabe
                                     6/15/94 - 6/16/94
@@ -47,20 +47,32 @@
                2005.2.20 added fclose() in read_chfile()
                2005.9.24 don't resend packet more than once
                2006.9.2 no resend mode (-R)
+               2010.9.18 64bit clean? (Uehira)
 */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
 
-#include <stdio.h>
-#include <signal.h>
-#include <stdlib.h>
-#include <string.h>
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <sys/stat.h>
+#include <sys/socket.h>
+
+#include <netinet/in.h>
+#if HAVE_ARPA_INET_H
+#include <arpa/inet.h>
+#endif
+
+#include <stdio.h>
+#include <signal.h>
+#include <stdlib.h>
+#include <string.h>
+#include <netdb.h>
+#include <unistd.h>
+#include <errno.h>
+#include <syslog.h>
 
 #if TIME_WITH_SYS_TIME
 #include <sys/time.h>
@@ -72,16 +84,6 @@
 #include <time.h>
 #endif  /* !HAVE_SYS_TIME_H */
 #endif  /* !TIME_WITH_SYS_TIME */
-
-#include <sys/socket.h>
-#include <netinet/in.h>
-#if HAVE_ARPA_INET_H
-#include <arpa/inet.h>
-#endif
-#include <netdb.h>
-#include <unistd.h>
-#include <errno.h>
-#include <syslog.h>
 
 #include "daemon_mode.h"
 #include "winlib.h"
@@ -98,41 +100,54 @@
 #define SLPLIMIT  100
 #define REQ_TIMO  10   /* timeout (sec) for request */
 
-/*
-#if defined(SUNOS4)
-#define mktime timelocal
-#endif
-*/
+static const char  rcsid[] =
+   "$Id: send_raw.c,v 1.24.2.4.2.11 2010/09/18 03:32:19 uehira Exp $";
 
-int sock,raw,tow,all,psize[NBUF],n_ch,negate_channel,mtu,nbuf,slptime,
-    n_bytes,n_packets,no_resend;
-unsigned char *sbuf[NBUF],ch_table[WIN_CHMAX],rbuf[RSIZE],ch_req[WIN_CHMAX],
-    ch_req_tmp[WIN_CHMAX],pbuf[RSIZE];
-     /* sbuf[NBUF][mtu-28+8] ; +8 for overrun by "size" and "time" */
-char *progname,*logfile,chfile[1024],file_req[1024];
+static int sock,raw,tow,all,n_ch,negate_channel,mtu,nbuf,slptime,
+  no_resend;
+static ssize_t  psize[NBUF];
+static unsigned long  n_packets, n_bytes;   /* 64bit ok */
+static uint8_w *sbuf[NBUF],ch_table[WIN_CHMAX],rbuf[RSIZE],ch_req[WIN_CHMAX],
+  ch_req_tmp[WIN_CHMAX],pbuf[RSIZE];
+/* sbuf[NBUF][mtu-28+8] ; +8 for overrun by "size" and "time" */
+static char chfile[1024],file_req[1024];
+
+char *progname,*logfile;
 int  daemon_mode, syslog_mode, exit_status;
 
-get_packet(bufno,no)
-  int bufno;  /* present(next) bufno */
-  unsigned char no; /* packet no. to find */
+/* prototypes */
+static int get_packet(int bufno, uint8_w no);
+static void read_chfile(void);
+static void recv_pkts(int, struct sockaddr_in *, uint8_w *,
+		      int *, int, int *, int *, time_t *, int *);
+static void usage(void);
+int main(int, char *[]);
+
+static int
+get_packet(int bufno, uint8_w no)
+/* bufno :  present(next) bufno */
+/* no    :  packet no. to find */
   {
   int i;
+
   if((i=bufno-1)<0) i=nbuf-1;
   while(i!=bufno && psize[i]>0)
     {
-    if(sbuf[i][0]==no) return i;
-    else if(sbuf[i][1]==no) return -2; /* already resent */
+    if(sbuf[i][0]==no) return (i);
+    else if(sbuf[i][1]==no) return (-2); /* already resent */
     if(--i<0) i=nbuf-1;
     }
-  return -1;  /* not found */
+  return (-1);  /* not found */
   }
 
+static void
 read_chfile()
   {
   FILE *fp;
   int i,j,k;
   char tbuf[1024];
   static time_t ltime,ltime_p;
+  time_t  j_timt, k_timt;
 
   if(*chfile)
     {
@@ -144,7 +159,7 @@ read_chfile()
       if(negate_channel) memset(ch_table,1,WIN_CHMAX);
       else memset(ch_table,0,WIN_CHMAX);
       i=j=0;
-      while(fgets(tbuf,1024,fp))
+      while(fgets(tbuf,sizeof(tbuf),fp))
         {
         if(*tbuf=='#' || sscanf(tbuf,"%x",&k)<0) continue;
         k&=0xffff;
@@ -173,8 +188,8 @@ read_chfile()
       fprintf(stderr,"\n");
 #endif
       n_ch=j;
-      if(negate_channel) sprintf(tbuf,"-%d channels",n_ch);
-      else sprintf(tbuf,"%d channels",n_ch);
+      if(negate_channel) snprintf(tbuf,sizeof(tbuf),"-%d channels",n_ch);
+      else snprintf(tbuf,sizeof(tbuf),"%d channels",n_ch);
       write_log(tbuf);
       fclose(fp);
       }
@@ -183,7 +198,7 @@ read_chfile()
 #if DEBUG
       fprintf(stderr,"ch_file '%s' not open\n",chfile);
 #endif
-      sprintf(tbuf,"channel list file '%s' not open",chfile);
+      snprintf(tbuf,sizeof(tbuf),"channel list file '%s' not open",chfile);
       write_log(tbuf);
       write_log("end");
       close(sock);
@@ -193,19 +208,21 @@ read_chfile()
   else
     {
     memset(ch_table,1,WIN_CHMAX);
-    n_ch=i;
+    /* n_ch=i; */  /* What for????? Nonsense??? (Uehira) */
     write_log("all channels");
     }
-  sprintf(tbuf,"slptime=%d (LIMIT=%d)",slptime,SLPLIMIT);
+  snprintf(tbuf,sizeof(tbuf),"slptime=%d (LIMIT=%d)",slptime,SLPLIMIT);
   write_log(tbuf);
 
   time(&ltime);
-  j=ltime-ltime_p;
-  k=j/2;
+  j_timt=ltime-ltime_p;
+  k_timt=j_timt/2;
   if(ltime_p)
     {
-    sprintf(tbuf,"%d pkts %d B in %d s ( %d pkts/s %d B/s ) ",
-      n_packets,n_bytes,j,(n_packets+k)/j,(n_bytes+k)/j);
+    snprintf(tbuf,sizeof(tbuf),
+	     "%lu pkts %lu B in %ld s ( %ld pkts/s %ld B/s ) ",
+	     n_packets,n_bytes,(long)j_timt,
+	     (n_packets+k_timt)/j_timt,(n_bytes+k_timt)/j_timt);
     write_log(tbuf);
     n_packets=n_bytes=0;
     }
@@ -214,17 +231,19 @@ read_chfile()
   signal(SIGHUP,(void *)read_chfile);
   }
 
-recv_pkts(sock,to_addr,no,bufno,standby,seq_exp,n_seq_exp,time_req,req_timo)
-  int sock,*bufno,standby,*seq_exp,*n_seq_exp,*req_timo;
-  struct sockaddr_in *to_addr;
-  unsigned char *no;
-  time_t *time_req;
+static void
+recv_pkts(int sock, struct sockaddr_in *to_addr, uint8_w *no,
+	  int *bufno, int standby, int *seq_exp, int *n_seq_exp,
+	  time_t *time_req, int *req_timo)
   {
   FILE *fp;
-  int i,j,k,fromlen,len,bufno_f,re,seq,n_seq,n_ch_req;
-  struct timeval timeout;
-  struct sockaddr_in from_addr;
-  unsigned char no_f,tbuf[1024];
+  int i,j,k,bufno_f,seq,n_seq,n_ch_req;
+  ssize_t  len, re;
+  socklen_t  fromlen;
+  struct timeval  timeout;
+  struct sockaddr_in  from_addr;
+  uint8_w  no_f;
+  char  tbuf[1024];
 
   while(1)   /* process resend or send request packets */
     {
@@ -255,14 +274,14 @@ recv_pkts(sock,to_addr,no,bufno,standby,seq_exp,n_seq_exp,time_req,req_timo)
         for(k=0;k<20;k++) fprintf(stderr,"%02X",sbuf[*bufno][k]);
         fprintf(stderr,"\n");
 #endif
-        sprintf(tbuf,"resend for %s:%d #%d as #%d, %d B",
+        snprintf(tbuf,sizeof(tbuf),"resend for %s:%d #%d as #%d, %d B",
           inet_ntoa(from_addr.sin_addr),ntohs(from_addr.sin_port),
           no_f,*no,re);
         write_log(tbuf);
         if(++(*bufno)==nbuf) *bufno=0;
         (*no)++;
         }
-      else if(len>=8 && strncmp(rbuf,"REQ",4)==0)
+      else if(len>=8 && strncmp((char *)rbuf,"REQ",4)==0)
         { /* send request packet (channels list) */
         seq=mkuint2(&rbuf[4]);
         n_seq=mkuint2(&rbuf[6]);
@@ -323,7 +342,7 @@ recv_pkts(sock,to_addr,no,bufno,standby,seq_exp,n_seq_exp,time_req,req_timo)
             }
           for(i=0;i<WIN_CHMAX;i++) if(ch_req[i]) fprintf(fp,"%04X\n",i);
           fclose(fp);
-          sprintf(tbuf,"req < %s:%d (%d) > %s",
+          snprintf(tbuf,sizeof(tbuf),"req < %s:%d (%d) > %s",
             inet_ntoa(from_addr.sin_addr),ntohs(from_addr.sin_port),
             n_ch_req,file_req);
           write_log(tbuf);
@@ -334,28 +353,51 @@ recv_pkts(sock,to_addr,no,bufno,standby,seq_exp,n_seq_exp,time_req,req_timo)
     }       /* process resend or send request packets */
   }
 
-main(argc,argv)
-  int argc;
-  char *argv[];
+static void
+usage()
+{
+
+  WIN_version();
+  fprintf(stderr, "%s\n", rcsid);
+  if (daemon_mode)
+    fprintf(stderr,
+	     " usage : '%s (-1amRrt) (-b [mtu]) (-f [req_file]) (-h [h])\\\n\
+   (-i [interface]) (-s [s]) (-p [src_port]) (-w [key]) (-T [ttl])\\\n\
+   [shmkey] [dest] [port] ([chfile]/- ([logfile]))'\n"
+	    ,progname);
+  else
+    fprintf(stderr,
+	     " usage : '%s (-1aDmRrt) (-b [mtu]) (-f [req_file]) (-h [h])\\\n\
+   (-i [interface]) (-s [s]) (-p [src_port]) (-w [key]) (-T [ttl])\\\n\
+   [shmkey] [dest] [port] ([chfile]/- ([logfile]))'\n"
+	    ,progname);
+}
+
+
+int
+main(int argc, char *argv[])
   {
   FILE *fp;
   time_t watch,time_req,ltime;
   key_t shm_key,shw_key;
-  unsigned long uni;
-  int i,j,k,c_save,shp,aa,bb,ii,jj,bufno,hours_shift,sec_shift,c,
-    nw,eobsize,eobsize_count,size2,size,gs,sr,re,shmid,shwid,atm,c_save_w,
+  uint16_w uni;
+  int i,j,k,aa,bb,ii,jj,bufno,hours_shift,sec_shift,c,
+    nw,eobsize,eobsize_count,shmid,shwid,atm,
     standby,ttl,single,seq_exp,n_seq_exp,req_timo;
+  ssize_t  re;  /* 64bit */
+  uint32_w  size ,size2, gs;  /* 64bit */
+  unsigned long  c_save, c_save_w;  /* 64bit */
+  size_t  shp;  /* 64bit */
   struct sockaddr_in to_addr,from_addr;
   struct hostent *h;
-  unsigned short host_port,ch,src_port;
-  unsigned long gh;
-  unsigned char *ptr,*ptr1,*ptr_save,*ptr_lim,*ptw,*ptw_size,
-    no,host_name[256],tbuf[1024];
+  WIN_ch  ch;
+  uint16_t host_port,src_port;  /* 64bit ok */
+  uint8_w *ptr,*ptr1,*ptr_save,*ptr_lim,*ptw,*ptw_size,no;
+  char  host_name[256];
+  char  tbuf[1024];
   struct Shm  *shm,*shw;
-/*   extern int optind; */
-/*   extern char *optarg; */
   char interface[256]; /* multicast interface */
-  unsigned long mif; /* multicast interface address */
+  in_addr_t  mif; /* multicast interface address */
 
   if((progname=strrchr(argv[0],'/')) != NULL) progname++;
   else progname=argv[0];
@@ -375,12 +417,12 @@ main(argc,argv)
   else exit(1);
 
   if (daemon_mode)
-    sprintf(tbuf,
+    snprintf(tbuf,sizeof(tbuf),
 	    " usage : '%s (-1amRrt) (-b [mtu]) (-f [req_file]) (-h [h])\\\n\
    (-i [interface]) (-s [s]) (-p [src_port]) (-w [key]) (-T [ttl])\\\n\
    [shmkey] [dest] [port] ([chfile]/- ([logfile]))'",progname);
   else
-    sprintf(tbuf,
+    snprintf(tbuf,sizeof(tbuf),
 	    " usage : '%s (-1aDmRrt) (-b [mtu]) (-f [req_file]) (-h [h])\\\n\
    (-i [interface]) (-s [s]) (-p [src_port]) (-w [key]) (-T [ttl])\\\n\
    [shmkey] [dest] [port] ([chfile]/- ([logfile]))'",progname);
@@ -410,7 +452,13 @@ main(argc,argv)
 	daemon_mode = 1;  /* daemon mode */
 	break;
       case 'f':   /* requested channels list file */
-        strcpy(file_req,optarg);
+        /* strcpy(file_req,optarg); */
+	if (snprintf(file_req, sizeof(file_req), "%s", optarg)
+	    >= sizeof(file_req))
+	  {
+	    fprintf(stderr, "Buffer overrun.\n");
+	    exit(1);
+	  }
         if((fp=fopen(file_req,"a"))==0)
           {
           fprintf(stderr,"requested channels file '%s' not open.\n",file_req);
@@ -422,13 +470,19 @@ main(argc,argv)
         hours_shift=atoi(optarg);
         break;
       case 'i':   /* interface (ordinary IP address) which sends mcast */
-        strcpy(interface,optarg);
+        /* strcpy(interface,optarg); */
+	if (snprintf(interface, sizeof(interface), "%s", optarg)
+	    >= sizeof(interface))
+	  {
+	    fprintf(stderr, "Buffer overrun.\n");
+	    exit(1);
+	  }
         break;
       case 'm':   /* "mon" mode */
         raw=0;
         break;
       case 'p':   /* source port */
-        src_port=atoi(optarg);
+        src_port=(uint16_t)atoi(optarg);
         break;
       case 'R':   /* no resend mode */
         no_resend=1;
@@ -443,27 +497,33 @@ main(argc,argv)
         tow=1;
         break;
       case 'w':   /* shm key to watch */
-        shw_key=atoi(optarg);
+        shw_key=atol(optarg);
         break;
       case 'T':   /* ttl for MCAST */
         ttl=atoi(optarg);
         break;
       default:
         fprintf(stderr," option -%c unknown\n",c);
-        fprintf(stderr,"%s\n",tbuf);
+	usage();
         exit(1);
       }
     }
   optind--;
   if(argc<4+optind)
     {
-    fprintf(stderr,"%s\n",tbuf);
+    usage();
     exit(1);
     }
 
-  shm_key=atoi(argv[1+optind]);
-  strcpy(host_name,argv[2+optind]);
-  host_port=atoi(argv[3+optind]);
+  shm_key=atol(argv[1+optind]);
+  /* strcpy(host_name,argv[2+optind]); */
+  if (snprintf(host_name, sizeof(host_name), "%s", argv[2+optind])
+      >= sizeof(host_name))
+    {
+      fprintf(stderr, "Buffer overrun.\n");
+      exit(1);
+    }
+  host_port=(uint16_t)atoi(argv[3+optind]);
   *chfile=0;
   if(argc>4+optind)
     {
@@ -472,12 +532,24 @@ main(argc,argv)
       {
       if(argv[4+optind][0]=='-')
         {
-        strcpy(chfile,argv[4+optind]+1);
+        /* strcpy(chfile,argv[4+optind]+1); */
+        if (snprintf(chfile, sizeof(chfile), "%s", argv[4+optind]+1)
+	    >= sizeof(chfile))
+	  {
+	    fprintf(stderr, "Buffer overrun.\n");
+	    exit(1);
+	  }
         negate_channel=1;
         }
       else
         {
-        strcpy(chfile,argv[4+optind]);
+	/* strcpy(chfile,argv[4+optind]); */
+        if (snprintf(chfile, sizeof(chfile), "%s", argv[4+optind])
+	    >= sizeof(chfile))
+	  {
+	    fprintf(stderr, "Buffer overrun.\n");
+	    exit(1);
+	  }
         negate_channel=0;
         }
       }
@@ -499,12 +571,12 @@ main(argc,argv)
   read_chfile();
   if(hours_shift!=0)
     {
-    sprintf(tbuf,"hours shift = %d",hours_shift);
+    snprintf(tbuf,sizeof(tbuf),"hours shift = %d",hours_shift);
     write_log(tbuf);
     }
   if(sec_shift!=0)
     {
-    sprintf(tbuf,"secs shift = %d",sec_shift);
+    snprintf(tbuf,sizeof(tbuf),"secs shift = %d",sec_shift);
     write_log(tbuf);
     }
 
@@ -513,7 +585,7 @@ main(argc,argv)
   if((shm=(struct Shm *)shmat(shmid,(void *)0,0))==(struct Shm *)-1)
     err_sys("shmat");
 
-  sprintf(tbuf,"start shm_key=%d id=%d",shm_key,shmid);
+  snprintf(tbuf,sizeof(tbuf),"start shm_key=%ld id=%d",shm_key,shmid);
   write_log(tbuf);
 
   if(shw_key>0)
@@ -521,15 +593,16 @@ main(argc,argv)
     if((shwid=shmget(shw_key,0,0))<0) err_sys("shmget(watch)");
     if((shw=(struct Shm *)shmat(shwid,(void *)0,0))==(struct Shm *)-1)
       err_sys("shmat(watch)");
-    sprintf(tbuf,"start shm_key=%d id=%d for standby watch",shw_key,shwid);
+    snprintf(tbuf,sizeof(tbuf),
+	     "start shm_key=%ld id=%d for standby watch",shw_key,shwid);
     write_log(tbuf);
     }
 
   /* destination host/port */
   if(!(h=gethostbyname(host_name))) err_sys("can't find host");
-  memset((char *)&to_addr,0,sizeof(to_addr));
+  memset(&to_addr,0,sizeof(to_addr));
   to_addr.sin_family=AF_INET;
-  memcpy((caddr_t)&to_addr.sin_addr,h->h_addr,h->h_length);
+  memcpy((caddr_t)&to_addr.sin_addr,h->h_addr,h->h_length);  /* check? */
   to_addr.sin_port=htons(host_port);
   /* my socket */
   if((sock=socket(AF_INET,SOCK_DGRAM,0))<0) err_sys("socket");
@@ -540,7 +613,7 @@ main(argc,argv)
       break;
     }
   if(j<16) err_sys("SO_SNDBUF setsockopt error\n");
-  sprintf(tbuf,"SNDBUF size=%d",j*1024);
+  snprintf(tbuf,sizeof(tbuf),"SNDBUF size=%d",j*1024);
   write_log(tbuf);
   if(*file_req)
     {
@@ -551,7 +624,7 @@ main(argc,argv)
         break;
       }
     if(j<16) err_sys("SO_RCVBUF setsockopt error\n");
-    sprintf(tbuf,"RCVBUF size=%d",j*1024);
+    snprintf(tbuf,sizeof(tbuf),"RCVBUF size=%d",j*1024);
     write_log(tbuf);
     }
   if(setsockopt(sock,SOL_SOCKET,SO_BROADCAST,(char *)&i,sizeof(i))<0)
@@ -569,13 +642,13 @@ main(argc,argv)
       err_sys("IP_MULTICAST_TTL setsockopt error\n");
     }
   /* bind my socket to a local port */
-  memset((char *)&from_addr,0,sizeof(from_addr));
+  memset(&from_addr,0,sizeof(from_addr));
   from_addr.sin_family=AF_INET;
   from_addr.sin_addr.s_addr=htonl(INADDR_ANY);
   from_addr.sin_port=htons(src_port);
   if(src_port)
     {
-    sprintf(tbuf,"src_port=%d",src_port);
+    snprintf(tbuf,sizeof(tbuf),"src_port=%d",src_port);
     write_log(tbuf);
     }
   if(bind(sock,(struct sockaddr *)&from_addr,sizeof(from_addr))<0)
@@ -587,8 +660,8 @@ main(argc,argv)
   for(i=0;i<NBUF;i++)
     { /* allocate buffers */
     psize[i]=(-1);
-    if((sbuf[i]=(unsigned char *)malloc(mtu-28+8))==NULL){
-      sprintf(tbuf,"malloc failed. nbuf=%d\n",i);
+    if((sbuf[i]=(uint8_w *)malloc(mtu-28+8))==NULL){
+      snprintf(tbuf,sizeof(tbuf),"malloc failed. nbuf=%d\n",i);
       write_log(tbuf);
       break;
       }
@@ -605,7 +678,7 @@ reset:
     c_save_w=shw->c;
     watch=time(NULL);
     standby=1;
-    sprintf(tbuf,"watching shm_key=%d - enter standby",shw_key);
+    snprintf(tbuf,sizeof(tbuf),"watching shm_key=%ld - enter standby",shw_key);
     write_log(tbuf);
     sleep(1);
     }
@@ -616,7 +689,7 @@ reset:
   if(mkuint4(ptr_save+size-4)==size) eobsize=1;
   else eobsize=0;
   eobsize_count=eobsize;
-  sprintf(tbuf,"eobsize=%d",eobsize);
+  snprintf(tbuf,sizeof(tbuf),"eobsize=%d",eobsize);
   write_log(tbuf);
   seq_exp=1;
   n_seq_exp=0;
@@ -657,7 +730,8 @@ reset:
           if(shw->c==c_save_w) /* master is not working */
             {
             standby=0;
-            sprintf(tbuf,"shm_key=%d stopped - begin sending",shw_key);
+            snprintf(tbuf,sizeof(tbuf),
+		    "shm_key=%ld stopped - begin sending",shw_key);
             write_log(tbuf);
             }
           watch=time(NULL);
@@ -669,7 +743,8 @@ reset:
         standby=1;
         c_save_w=shw->c;
         watch=time(NULL);
-        sprintf(tbuf,"shm_key=%d working - enter standby",shw_key);
+        snprintf(tbuf,sizeof(tbuf),
+		 "shm_key=%ld working - enter standby",shw_key);
         write_log(tbuf);
         }
       }
@@ -730,11 +805,7 @@ reset:
     /* obtain gs(group size) and advance ptr by gs */
       if(raw)
         {
-        gh=mkuint4(ptr1=ptr);
-        ch=(gh>>16);
-        sr=gh&0xfff;
-        if((gh>>12)&0xf) gs=((gh>>12)&0xf)*(sr-1)+8;
-        else gs=(sr>>1)+8;
+	gs =get_sysch(ptr1=ptr, &ch);  
         ptr+=gs;
         }
       else /* mon */

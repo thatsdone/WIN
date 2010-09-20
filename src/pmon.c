@@ -1,4 +1,4 @@
-/* $Id: pmon.c,v 1.14.2.5.2.8 2010/09/20 03:33:27 uehira Exp $ */
+/* $Id: pmon.c,v 1.14.2.5.2.9 2010/09/20 09:50:52 uehira Exp $ */
 /************************************************************************
 *************************************************************************
 **  program "pmon.c" for NEWS/SPARC                             *********
@@ -60,6 +60,10 @@
 #include "config.h"
 #endif
 
+#include  <sys/types.h>
+#include  <sys/file.h>
+#include  <sys/ioctl.h>
+
 #include  <stdio.h>
 #include  <stdlib.h>
 #include  <string.h>
@@ -67,8 +71,8 @@
 #include  <signal.h>
 #include  <unistd.h>
 #include  <dirent.h>
-#include  <sys/types.h>
-#include  <sys/file.h>
+#include  <fcntl.h>
+#include  <ctype.h>
 
 #if TIME_WITH_SYS_TIME
 #include <sys/time.h>
@@ -80,10 +84,6 @@
 #include <time.h>
 #endif  /* !HAVE_SYS_TIME_H */
 #endif  /* !TIME_WITH_SYS_TIME */
-
-#include  <fcntl.h>
-#include  <sys/ioctl.h>
-#include  <ctype.h>
 
 #include "winlib.h"
 
@@ -124,6 +124,11 @@
 #define PLOTHEIGHT    (HEIGHT_LBP-Y_BASE-HEIGHT_FONT32)
 
 #define WIN_FILENAME_MAX 1024
+
+#define FILE_R 0
+#define FILE_W 1
+#define DIR_R  2
+#define DIR_W  3
 
 /* (8 x 16) x (128-32) */
 /* start = 32, end = 126, n of codes = 126-32+1 = 95 */
@@ -227,7 +232,7 @@
 0xf0,0x1e,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x40,0x00,0x06,0x10,0xc0,0x00,0x00};
 
 static const char  rcsid[] =
-   "$Id: pmon.c,v 1.14.2.5.2.8 2010/09/20 03:33:27 uehira Exp $";
+   "$Id: pmon.c,v 1.14.2.5.2.9 2010/09/20 09:50:52 uehira Exp $";
 
 char *progname,*logfile;
 int  syslog_mode = 0, exit_status;
@@ -242,10 +247,8 @@ static char file_trig[WIN_FILENAME_MAX],line[LEN],time_text[20],last_line[LEN],
   file_trig_lock[WIN_FILENAME_MAX],*param_file,
   temp_done[WIN_FILENAME_MAX],latest[WIN_FILENAME_MAX],
   ch_file[WIN_FILENAME_MAX],file_zone[WIN_FILENAME_MAX],zone[M_CH][20];
-static unsigned char frame[HEIGHT_LBP][WIDTH_LBP],
-  buf[LENGTH],
-  font24[SIZE_FONT24],font32[SIZE_FONT32],
-  idx2[WIN_CHMAX];
+static uint8_w  frame[HEIGHT_LBP][WIDTH_LBP], buf[LENGTH],
+  font24[SIZE_FONT24],font32[SIZE_FONT32], idx2[WIN_CHMAX];
 static double dt=1.0/(double)SR_MON,time_on,time_off,time_lta,time_lta_off,
   time_sta,a_sta,b_sta,a_lta,b_lta,a_lta_off,b_lta_off;
 
@@ -572,7 +575,9 @@ find_oldest_pmon(char *path, char *oldst, char *latst) /* returns N of files */
 static int
 read_one_sec(int *sec)
   {
-  int i,j,k,lower_min,lower_max,aa,bb,kk,sys,ch,ret,size;
+  int i,j,k,lower_min,lower_max,aa,bb,kk,sys,ch;
+  uint32_w  size;
+  ssize_t  ret;
   uint8_w *ptr,*ptr_lim;
   static uint32_w upper[4][8]={
     {0x00000000,0x00000010,0x00000020,0x00000030,
@@ -890,18 +895,14 @@ owari()
   exit(0);
   }
 
-#define FILE_R 0
-#define FILE_W 1
-#define DIR_R  2
-#define DIR_W  3
 static int
-check_path(char *path, int idx)
+check_path(char *path, int idxc)
   {
   DIR *dir_ptr;
   char tb[1024],tb2[100];
   FILE *fp;
 
-  if(idx==DIR_R || idx==DIR_W)
+  if(idxc==DIR_R || idxc==DIR_W)
     {
     if((dir_ptr=opendir(path))==NULL)
       {
@@ -910,7 +911,7 @@ check_path(char *path, int idx)
       owari();
       }
     else closedir(dir_ptr);
-    if(idx==DIR_W)
+    if(idxc==DIR_W)
       {
       snprintf(tb,sizeof(tb),"%s/%s.test.%d",path,progname,getpid());
       if((fp=fopen(tb,"w+"))==NULL)
@@ -926,7 +927,7 @@ check_path(char *path, int idx)
         }
       }
     }
-  else if(idx==FILE_R)
+  else if(idxc==FILE_R)
     {
     if((fp=fopen(path,"r"))==NULL)
       {
@@ -936,7 +937,7 @@ check_path(char *path, int idx)
       }
     else fclose(fp);
     }
-  else if(idx==FILE_W)
+  else if(idxc==FILE_W)
     {
     if((fp=fopen(path,"r+"))==NULL)
       {
@@ -1097,6 +1098,9 @@ insatsu(uint8_w *tb1, uint8_w *tb2, uint8_w *tb3, char *path_spool,
   req_print=0;
   return;
   }
+#undef RAS_MAGIC
+#undef RT_STANDARD
+#undef RMT_NONE
 
 static int
 read_param(FILE *f_param, char *textbuf)

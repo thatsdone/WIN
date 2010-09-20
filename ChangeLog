@@ -1,4 +1,4 @@
- $Id: ChangeLog,v 1.131.2.25.2.83 2010/09/20 07:54:13 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.84 2010/09/20 08:24:02 uehira Exp $
 
 2010-09-20  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* src/extraw.c : 64 bit clean.
@@ -8,6 +8,9 @@
 	* src/finalb2seis.c : 64bit check.
 	* src/find_picks.c : 64bit check.
 	* while(1) --> for(;;)
+	* adj_sec() moved to 'src/winlib.c'.
+	  src/final2finalb.c, src/pick2finalb.c
+	  win.c : adj_sec() --> adj_sec_win()
 
 2010-09-18  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* src/send_raw.c : 64 bit clean?

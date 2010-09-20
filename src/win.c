@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.46.2.6.2.33 2010/09/20 03:33:28 uehira Exp $
+   $Id: win.c,v 1.46.2.6.2.34 2010/09/20 08:24:02 uehira Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -23,10 +23,10 @@
 #else
 #define NAME_PRG      "win32"
 #endif
-#define WIN_VERSION   "2010.6.23(+Hi-net) 64bit"
+#define WIN_VERSION   "2010.9.20(+Hi-net) 64bit"
 
 static const char rcsid[] =
-  "$Id: win.c,v 1.46.2.6.2.33 2010/09/20 03:33:28 uehira Exp $";
+  "$Id: win.c,v 1.46.2.6.2.34 2010/09/20 08:24:02 uehira Exp $";
 
 #define DEBUG_AP      0   /* for debugging auto-pick */
 /* 5:sr, 4:ch, 3:sec, 2:find_pick, 1:all */
@@ -1118,7 +1118,7 @@ static void put_mark_mon(int, int);  /* check 2010.6.17 */
 static void make_visible(int);  /* check 2010.6.17 */
 static void list_line(void);  /* check 2010.6.17 */
 static void raise_ttysw(int);  /* check 2010.6.17 */
-static void adj_sec(int *, double *, int *, double *);  /* check 2010.6.17 */
+static void adj_sec_win(int *, double *, int *, double *);  /* check 2010.6.17 */
 static void get_calc(void);  /* check 2010.6.17 */
 #if HINET_EXTENTION_3>=2
 static int load_data_prep(int);  /* check 2010.6.18 */
@@ -7132,7 +7132,7 @@ raise_ttysw(int idx)
   }
 
 static void
-adj_sec(int *tm, double *se, int *tmc, double *sec)
+adj_sec_win(int *tm, double *se, int *tmc, double *sec)
   {
   int i;
   double f;
@@ -7177,12 +7177,12 @@ get_calc()
   read_final(ft.finl_file2,&ft.hypoall);
   bcd_dec(tm_base,ft.ptr[0].time);
   lsec_bs=time2lsec(tm_base);
-  adj_sec(ft.hypoall.tm,&ft.hypoall.se,tm_ot,&sec_ot);
+  adj_sec_win(ft.hypoall.tm,&ft.hypoall.se,tm_ot,&sec_ot);
   cancel_picks_calc();
   set_pick(&ft.pick_calc_ot,(int)(time2lsec(tm_ot)-lsec_bs),tm_ot[6],0,0);
   for(i=0;i<ft.hypoall.ndata;i++){ /* station loop */
-    adj_sec(ft.hypoall.tm,&ft.hypoall.fnl[i].pt,tm_p,&sec);
-    adj_sec(ft.hypoall.tm,&ft.hypoall.fnl[i].st,tm_s,&sec);
+    adj_sec_win(ft.hypoall.tm,&ft.hypoall.fnl[i].pt,tm_p,&sec);
+    adj_sec_win(ft.hypoall.tm,&ft.hypoall.fnl[i].st,tm_s,&sec);
     for(j=0;j<ft.n_ch;j++) {
       if(strcmp(ft.hypoall.fnl[i].stn,ft.stn[j].name)) continue;
       /* station name = ft.stn[j].name, idx=j */
@@ -7622,7 +7622,7 @@ get_delta()
   read_final(ft.finl_file2,&ft.hypoall);
   bcd_dec(tm_base,ft.ptr[0].time);
   lsec_bs=time2lsec(tm_base);
-  adj_sec(ft.hypoall.tm,&ft.hypoall.se,tm_ot,&sec_ot);
+  adj_sec_win(ft.hypoall.tm,&ft.hypoall.se,tm_ot,&sec_ot);
   /* sort by delta */
   for(i=0;i<ft.hypoall.ndata;i++){ /* station loop */
     a=ft.hypoall.fnl[i].delta;
@@ -8124,7 +8124,7 @@ phypo(int x, int y, HypoData *h)
     sec=(double)(h->s)+(double)(h->ss)*0.1;
 /*  long2time((struct YMDhms *)tm,&h->t);
     se=(double)(h->s)+(double)(h->ss)*0.1;
-    adj_sec(tm,&se,tmc,&sec);*/
+    adj_sec_win(tm,&se,tmc,&sec);*/
     mag=(double)(h->m)*0.1;
     map_n_find++;
     if(h->lat<0.0) {lat=(-h->lat);ulat='S';}
@@ -10454,7 +10454,7 @@ read_final(char *final_file, struct Hypo *hypo)
   if(fgets(textbuf,LINELEN,fp)==NULL) return (1);
   sscanf(textbuf,"%lf%lf",&hypo->pomc_rms,&hypo->somc_rms);
   fclose(fp);
-  adj_sec(hypo->tm,&hypo->se,hypo->tm_c,&hypo->se_c);
+  adj_sec_win(hypo->tm,&hypo->se,hypo->tm_c,&hypo->se_c);
   if(hypo->alat<0.0) {lat=(-hypo->alat);ulat='S';}
   else {lat=hypo->alat;ulat='N';}
   if(hypo->along<0.0) {lon=(-hypo->along);ulon='W';}

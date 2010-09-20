@@ -1,4 +1,4 @@
-/* $Id: winlib.h,v 1.1.2.7.2.35 2010/09/20 07:01:25 uehira Exp $ */
+/* $Id: winlib.h,v 1.1.2.7.2.36 2010/09/20 08:24:03 uehira Exp $ */
 
 #ifndef _WIN_LIB_H_
 #define _WIN_LIB_H_
@@ -289,6 +289,7 @@ int bcd_dec(int [], uint8_w *);
 int dec_bcd(uint8_w *, int *);
 void adj_time_m(int []);
 void adj_time(int []);
+void adj_sec(int *, double *, int *, double *);
 int time_cmp(int *, int *, int);
 WIN_bs winform(int32_w *, uint8_w *, WIN_sr, WIN_ch);
 uint32_w win2fix(uint8_w *, int32_w *, WIN_ch *, WIN_sr *);

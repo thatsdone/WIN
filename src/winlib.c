@@ -1,4 +1,4 @@
-/* $Id: winlib.c,v 1.1.2.4.2.23 2010/09/20 03:33:29 uehira Exp $ */
+/* $Id: winlib.c,v 1.1.2.4.2.24 2010/09/20 08:24:03 uehira Exp $ */
 
 /*-
  * winlib.c  (Uehira Kenji)
@@ -367,6 +367,29 @@ adj_time(int tm[])
       }
     }
   }
+}
+
+void
+adj_sec(int *tm, double *se, int *tmc, double *sec)
+{
+  int		  i       , j;
+
+  for (i = 0; i < 5; i++)
+    tmc[i] = tm[i];
+  if ((*sec = (*se)) < 0.0) {
+    tmc[5] = 0;
+    i = (int)(-(*sec));
+    if ((double)i == (-(*sec)))
+      i--;
+    i++;
+    for (j = 0; j < i; j++) {
+      tmc[5]--;
+      adj_time(tmc);
+    }
+    *sec += (double)(tmc[5] + i);
+  } else
+    tmc[5] = (int)(*sec);
+  tmc[6] = (int)(*sec * 1000.0) % 1000;
 }
 
 int

@@ -1,4 +1,4 @@
-/* $Id: final2finalb.c,v 1.3.4.2.2.2 2010/09/20 07:01:24 uehira Exp $ */
+/* $Id: final2finalb.c,v 1.3.4.2.2.3 2010/09/20 08:24:02 uehira Exp $ */
 /******************************************************************/
 /*    final2finalb.c              9/21/94 urabe                   */
 /*    97.10.3 FreeBSD  99.4.19 byte-order-free                    */
@@ -15,30 +15,10 @@
 #include "winlib.h"
 
 static const char rcsid[] =
-   "$Id: final2finalb.c,v 1.3.4.2.2.2 2010/09/20 07:01:24 uehira Exp $";
+   "$Id: final2finalb.c,v 1.3.4.2.2.3 2010/09/20 08:24:02 uehira Exp $";
 
 /* prototypes */
-static void adj_sec(int *, double *, int *, double *);
 int main(int, char *[]);
-
-static void
-adj_sec(int *tm, double *se, int *tmc, double *sec)
-  {
-  int i,j;
-
-  for(i=0;i<5;i++) tmc[i]=tm[i];
-  if((*sec=(*se))<0.0)
-    {
-    tmc[5]=0;
-    i=(int)(-(*sec));
-    if((double)i==(-(*sec))) i--;
-    i++;
-    for(j=0;j<i;j++) {tmc[5]--;adj_time(tmc);}
-    *sec+=(double)(tmc[5]+i);
-    }
-  else tmc[5]=(int)(*sec);
-  tmc[6]=(int)(*sec*1000.0)%1000;
-  }
 
 int
 main(int argc, char *argv[])

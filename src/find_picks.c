@@ -1,4 +1,4 @@
-/* $Id: find_picks.c,v 1.4.2.1 2008/05/17 15:32:50 uehira Exp $
+/* $Id: find_picks.c,v 1.4.2.1.2.1 2010/09/20 07:54:13 uehira Exp $ */
 
 /* find_picks */
 /* search for pick files in pick dir */
@@ -9,8 +9,11 @@
 #include "config.h"
 #endif
 
-#include <stdio.h>
 #include <sys/types.h>
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <dirent.h>
 
 #include "winlib.h"
@@ -18,6 +21,13 @@
 #define LINELEN 256
 #define NAMLEN 256
 
+static const char rcsid[] =
+   "$Id: find_picks.c,v 1.4.2.1.2.1 2010/09/20 07:54:13 uehira Exp $";
+
+/* prototypes */
+int main(void);
+
+int
 main()
   {
   FILE *fp;
@@ -28,14 +38,14 @@ main()
 
   fprintf(stdout,"PICKS OK\n");
   fflush(stdout);
-  if(fgets(text_buf,LINELEN,stdin))
+  if(fgets(text_buf,LINELEN,stdin) != NULL)
     {
     sscanf(text_buf,"%s%s%s%s",name1,name2,datafile,pickdir);
 
     if((dir_ptr=opendir(pickdir))==NULL)
       {
       fprintf(stderr,"directory '%s' not open\n",pickdir);
-      return 0;
+      exit(1);
       }
     while((dir_ent=readdir(dir_ptr))!=NULL)
       {
@@ -44,7 +54,7 @@ main()
       if(strncmp2(dir_ent->d_name,name1,13)<0 ||
         strncmp2(dir_ent->d_name,name2,13)>0) continue;
     /* read the first line */
-      sprintf(filename,"%s/%s",pickdir,dir_ent->d_name);
+      snprintf(filename,sizeof(filename),"%s/%s",pickdir,dir_ent->d_name);
       if((fp=fopen(filename,"r"))==NULL) continue;
       *text_buf=0;
       fgets(text_buf,LINELEN,fp);
@@ -53,8 +63,9 @@ main()
       sscanf(text_buf,"%s%s",filename,namebuf);
       if(strcmp(filename,"#p") || strcmp(namebuf,datafile)) continue;
 
-      printf("%s\n",dir_ent->d_name);
+      fprintf(stdout,"%s\n",dir_ent->d_name);
       }
     closedir(dir_ptr);
     }
+  exit(0);
   }

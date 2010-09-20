@@ -1,4 +1,4 @@
-/* $Id: send_raw_old.c,v 1.9.4.3.2.6 2009/12/21 10:00:13 uehira Exp $ */
+/* $Id: send_raw_old.c,v 1.9.4.3.2.7 2010/09/20 02:57:41 uehira Exp $ */
 /*
     program "send_raw_old/send_mon_old.c"   1/24/94 - 1/25/94,5/25/94 urabe
                                     6/15/94 - 6/16/94
@@ -20,13 +20,23 @@
 #include "config.h"
 #endif
 
+#include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
+#include <sys/socket.h>
+
+#include <netinet/in.h>
+#if HAVE_ARPA_INET_H
+#include <arpa/inet.h>
+#endif
+
 #include <stdio.h>
 #include <signal.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/types.h>
-#include <sys/ipc.h>
-#include <sys/shm.h>
+#include <netdb.h>
+#include <unistd.h>
+#include <errno.h>
 
 #if TIME_WITH_SYS_TIME
 #include <sys/time.h>
@@ -39,15 +49,6 @@
 #endif  /* !HAVE_SYS_TIME_H */
 #endif  /* !TIME_WITH_SYS_TIME */
 
-#include <sys/socket.h>
-#include <netinet/in.h>
-#if HAVE_ARPA_INET_H
-#include <arpa/inet.h>
-#endif
-#include <netdb.h>
-#include <unistd.h>
-#include <errno.h>
-
 #include "winlib.h"
 
 /* #define DEBUG     0 */
@@ -55,30 +56,44 @@
 /* #define SR_MON    5 */
 #define BUFNO     128
 
-int sock,raw,mon,tow,psize[BUFNO],n_ch;
-unsigned char sbuf[BUFNO][MAXMESG],ch_table[WIN_CHMAX],rbuf[MAXMESG];
-char *progname,*logfile,chfile[256];
+static const char  rcsid[] =
+   "$Id: send_raw_old.c,v 1.9.4.3.2.7 2010/09/20 02:57:41 uehira Exp $";
+
+static int sock,raw,mon,tow,psize[BUFNO],n_ch;
+static uint8_w sbuf[BUFNO][MAXMESG],ch_table[WIN_CHMAX],rbuf[MAXMESG];
+static char  chfile[256];
+
+char *progname,*logfile;
 int  syslog_mode=0, exit_status;
 
-get_packet(bufno,no)
-  int bufno;  /* present(next) bufno */
-  unsigned char no; /* packet no. to find */
+/* prototypes */
+static int get_packet(int bufno, uint8_w no);
+static void read_chfile(void);
+int main(int, char *[]);
+
+static int
+get_packet(int bufno, uint8_w no)
+/*  bufno : present(next) bufno */
+/*  no    : packet no. to find */
   {
   int i;
+
   if((i=bufno-1)<0) i=BUFNO-1;
   while(i!=bufno && psize[i]>0)
     {
-    if(sbuf[i][0]==no) return i;
+    if(sbuf[i][0]==no) return (i);
     if(--i<0) i=BUFNO-1;
     }
-  return -1;  /* not found */
+  return (-1);  /* not found */
   }
 
+static void
 read_chfile()
   {
   FILE *fp;
   int i,j,k;
   char tbuf[1024];
+
   if(*chfile)
     {
     if((fp=fopen(chfile,"r"))!=NULL)
@@ -88,7 +103,7 @@ read_chfile()
 #endif
       for(i=0;i<WIN_CHMAX;i++) ch_table[i]=0;
       i=j=0;
-      while(fgets(tbuf,1024,fp))
+      while(fgets(tbuf,sizeof(tbuf),fp))
         {
         if(*tbuf=='#' || sscanf(tbuf,"%x",&k)<0) continue;
         k&=0xffff;
@@ -106,7 +121,7 @@ read_chfile()
       fprintf(stderr,"\n");
 #endif
       n_ch=j;
-      sprintf(tbuf,"%d channels",n_ch);
+      snprintf(tbuf,sizeof(tbuf),"%d channels",n_ch);
       write_log(tbuf);
       fclose(fp);
       }
@@ -115,7 +130,7 @@ read_chfile()
 #if DEBUG
       fprintf(stderr,"ch_file '%s' not open\n",chfile);
 #endif
-      sprintf(tbuf,"channel list file '%s' not open",chfile);
+      snprintf(tbuf,sizeof(tbuf),"channel list file '%s' not open",chfile);
       write_log(tbuf);
       write_log("end");
       close(sock);
@@ -131,19 +146,24 @@ read_chfile()
   signal(SIGHUP,(void *)read_chfile);
   }
 
-main(argc,argv)
-  int argc;
-  char *argv[];
+int
+main(int argc, char *argv[])
   {
   key_t shm_key;
   struct timeval timeout;
-  int i,j,k,c_save,shp,aa,bb,ii,bufno,bufno_f,fromlen;
+  int i,j,k,aa,bb,ii,bufno,bufno_f;
+  size_t  shp;  /* 64bit ok */
+  unsigned long  c_save;  /* 64bit */
+  socklen_t  fromlen;
   struct sockaddr_in to_addr,from_addr;
   struct hostent *h;
-  unsigned short host_port,ch;
-  int size,gs,gh,sr,re,shmid;
-  unsigned char *ptr,*ptr1,*ptr_save,*ptr_lim,*ptw,*ptw_save,no,no_f,
-    host_name[100],tbuf[100];
+  uint16_t  host_port;  /* 64bit ok */
+  WIN_ch  ch;
+  int shmid;
+  uint32_w  size, gs;
+  ssize_t  re;  /* 64bit ok */
+  uint8_w *ptr,*ptr1,*ptr_save,*ptr_lim,*ptw,*ptw_save,no,no_f;
+  char  host_name[100],tbuf[100];
   struct Shm  *shm;
 
   if((progname=strrchr(argv[0],'/')) != NULL) progname++;
@@ -160,17 +180,33 @@ main(argc,argv)
 
   if(argc<4)
     {
+    WIN_version();
+    fprintf(stderr, "%s\n", rcsid);
     fprintf(stderr,
       " usage : '%s [shm_key] [dest] [port] ([ch_file]/- ([log file]))'\n",
       progname);
     exit(0);
     }
 
-  shm_key=atoi(argv[1]);
-  strcpy(host_name,argv[2]);
-  host_port=atoi(argv[3]);
+  shm_key=atol(argv[1]);
+  /* strcpy(host_name,argv[2]); */
+  if (snprintf(host_name, sizeof(host_name), "%s", argv[2])
+      >= sizeof(host_name))
+    {
+      fprintf(stderr, "Buffer overrun.\n");
+      exit(1);
+    }
+  host_port=(uint16_t)atoi(argv[3]);
   *chfile=0;
-  if(argc>4) strcpy(chfile,argv[4]);
+  if(argc>4)
+    {
+      /* strcpy(chfile,argv[4]); */
+      if (snprintf(chfile, sizeof(chfile), "%s", argv[4]) >= sizeof(chfile))
+	{
+	  fprintf(stderr, "Buffer overrun.\n");
+	  exit(1);
+	}
+    }
   if(strcmp("-",chfile)==0) *chfile=0;
   if(argc>5) logfile=argv[5];
   else logfile=NULL;
@@ -182,14 +218,14 @@ main(argc,argv)
   if((shm=(struct Shm *)shmat(shmid,(void *)0,0))==(struct Shm *)-1)
     err_sys("shmat");
 
-  sprintf(tbuf,"start shm_key=%d id=%d",shm_key,shmid);
+  snprintf(tbuf,sizeof(tbuf),"start shm_key=%ld id=%d",shm_key,shmid);
   write_log(tbuf);
 
   /* destination host/port */
   if(!(h=gethostbyname(host_name))) err_sys("can't find host");
-  memset((char *)&to_addr,0,sizeof(to_addr));
+  memset(&to_addr,0,sizeof(to_addr));
   to_addr.sin_family=AF_INET;
-  memcpy((caddr_t)&to_addr.sin_addr,h->h_addr,h->h_length);
+  memcpy(&to_addr.sin_addr,h->h_addr,h->h_length);
   to_addr.sin_port=htons(host_port);
 
   /* my socket */
@@ -199,7 +235,7 @@ main(argc,argv)
                 err_sys("SO_SNDBUF setsockopt error\n");
 
   /* bind my socket to a local port */
-  memset((char *)&from_addr,0,sizeof(from_addr));
+  memset(&from_addr,0,sizeof(from_addr));
   from_addr.sin_family=AF_INET;
   from_addr.sin_addr.s_addr=htonl(INADDR_ANY);
   from_addr.sin_port=htons(0);
@@ -210,14 +246,15 @@ main(argc,argv)
   signal(SIGINT,(void *)end_program);
   signal(SIGTERM,(void *)end_program);
   for(i=0;i<BUFNO;i++) psize[i]=(-1);
-  no=bufno=0;
+  no=0;
+  bufno=0;
 
 reset:
   while(shm->r==(-1)) sleep(1);
   c_save=shm->c;
   size=mkuint4(ptr_save=shm->d+(shp=shm->r));
 
-  while(1)
+  for(;;)
     {
     if(shp+size>shm->pl) shp=0; /* advance pointer */
     else shp+=size;
@@ -240,7 +277,7 @@ reset:
     for(i=0;i<6;i++) *ptw++=(*ptr++);
 #if DEBUG
     for(i=0;i<8;i++) fprintf(stderr,"%02X",ptw_save[i]);
-    fprintf(stderr," : %d\n",size);
+    fprintf(stderr," : %u\n",size);
 #endif
     /* send data packets */
     if(raw)
@@ -248,11 +285,7 @@ reset:
       i=j=re=0;
       while(ptr<ptr_lim)
         {
-        gh=mkuint4(ptr);
-        ch=(gh>>16);
-        sr=gh&0xfff;
-        if((gh>>12)&0xf) gs=((gh>>12)&0xf)*(sr-1)+8;
-        else gs=(sr>>1)+8;
+	gs = get_sysch(ptr, &ch); 
         if(ch_table[ch] && gs+6<=MAXMESG)
           {
           if(ptw+gs-ptw_save>MAXMESG)
@@ -363,7 +396,7 @@ reset:
           sbuf[bufno][1]=no_f;  /* old packet no. */
           re=sendto(sock,sbuf[bufno],psize[bufno],0,
 		    (const struct sockaddr *)&to_addr,sizeof(to_addr));
-          sprintf(tbuf,"resend to %s:%d #%d as #%d, %d B",
+          snprintf(tbuf,sizeof(tbuf),"resend to %s:%u #%d as #%d, %zd B",
             inet_ntoa(to_addr.sin_addr),ntohs(to_addr.sin_port),no_f,no,re);
           write_log(tbuf);
           if(++bufno==BUFNO) bufno=0;

@@ -1,4 +1,4 @@
-/* $Id: send_raw.c,v 1.24.2.4.2.12 2010/09/18 03:37:34 uehira Exp $ */
+/* $Id: send_raw.c,v 1.24.2.4.2.13 2010/09/20 02:57:41 uehira Exp $ */
 /*
     program "send_raw/send_mon.c"   1/24/94 - 1/25/94,5/25/94 urabe
                                     6/15/94 - 6/16/94
@@ -101,7 +101,7 @@
 #define REQ_TIMO  10   /* timeout (sec) for request */
 
 static const char  rcsid[] =
-   "$Id: send_raw.c,v 1.24.2.4.2.12 2010/09/18 03:37:34 uehira Exp $";
+   "$Id: send_raw.c,v 1.24.2.4.2.13 2010/09/20 02:57:41 uehira Exp $";
 
 static int sock,raw,tow,all,n_ch,negate_channel,mtu,nbuf,slptime,
   no_resend;
@@ -245,7 +245,7 @@ recv_pkts(int sock, struct sockaddr_in *to_addr, uint8_w *no,
   uint8_w  no_f;
   char  tbuf[1024];
 
-  while(1)   /* process resend or send request packets */
+  for(;;)   /* process resend or send request packets */
     {
     k=1<<sock;
     timeout.tv_sec=timeout.tv_usec=0;
@@ -274,7 +274,7 @@ recv_pkts(int sock, struct sockaddr_in *to_addr, uint8_w *no,
         for(k=0;k<20;k++) fprintf(stderr,"%02X",sbuf[*bufno][k]);
         fprintf(stderr,"\n");
 #endif
-        snprintf(tbuf,sizeof(tbuf),"resend for %s:%d #%d as #%d, %ld B",
+        snprintf(tbuf,sizeof(tbuf),"resend for %s:%d #%d as #%d, %zd B",
           inet_ntoa(from_addr.sin_addr),ntohs(from_addr.sin_port),
           no_f,*no,re);
         write_log(tbuf);
@@ -602,7 +602,7 @@ main(int argc, char *argv[])
   if(!(h=gethostbyname(host_name))) err_sys("can't find host");
   memset(&to_addr,0,sizeof(to_addr));
   to_addr.sin_family=AF_INET;
-  memcpy((caddr_t)&to_addr.sin_addr,h->h_addr,h->h_length);  /* check? */
+  memcpy(&to_addr.sin_addr,h->h_addr,h->h_length);
   to_addr.sin_port=htons(host_port);
   /* my socket */
   if((sock=socket(AF_INET,SOCK_DGRAM,0))<0) err_sys("socket");
@@ -805,7 +805,7 @@ reset:
     /* obtain gs(group size) and advance ptr by gs */
       if(raw)
         {
-	gs =get_sysch(ptr1=ptr, &ch);  
+	gs = get_sysch(ptr1=ptr, &ch);  
         ptr+=gs;
         }
       else /* mon */

@@ -1,4 +1,4 @@
-/* $Id: winlib.h,v 1.1.2.7.2.34 2010/09/17 11:55:53 uehira Exp $ */
+/* $Id: winlib.h,v 1.1.2.7.2.35 2010/09/20 07:01:25 uehira Exp $ */
 
 #ifndef _WIN_LIB_H_
 #define _WIN_LIB_H_
@@ -148,8 +148,8 @@ typedef  int32_w  WIN_sr;   /* 0 < sr < 2^20 */
 #define  SWAP16(a)  a = ((((a) << 8) & 0xff00) | (((a) >> 8) & 0xff))
 #define  MKSWAP16(a)  (uint16_w)((((a) << 8) & 0xff00) | (((a) >> 8) & 0xff))
 #define  SWAPF(a)  *(int32_w *)&(a) =\
-    (((*(int32_w *)&(a)) << 24) | ((*(int32_w *)&(a)) << 8) & 0xff0000 |\
-     ((*(int32_w *)&(a)) >> 8) & 0xff00 | ((*(int32_w *)&(a)) >> 24) & 0xff)
+    (((*(int32_w *)&(a)) << 24) | (((*(int32_w *)&(a)) << 8) & 0xff0000) | \
+     (((*(int32_w *)&(a)) >> 8) & 0xff00) | (((*(int32_w *)&(a)) >> 24) & 0xff))
 
 /* memory malloc utility macro */
 #ifndef MALLOC

@@ -1,8 +1,9 @@
- $Id: ChangeLog,v 1.131.2.25.2.79 2010/09/20 06:33:09 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.80 2010/09/20 07:01:24 uehira Exp $
 
 2010-09-20  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* src/extraw.c : 64 bit clean.
 	* src/send_raw_old.c : 64 bit clean?
+	* src/final2finalb.c : 64bit check.
 	* while(1) --> for(;;)
 
 2010-09-18  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>

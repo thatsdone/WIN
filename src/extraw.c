@@ -1,18 +1,22 @@
-/* $Id: extraw.c,v 1.3.4.3.2.6 2010/09/20 03:33:27 uehira Exp $ */
+/* $Id: extraw.c,v 1.3.4.3.2.7 2010/09/20 06:33:09 uehira Exp $ */
 /* "extraw.c"    2000.3.17 urabe */
 /* 2000.4.24/2001.11.14 strerror() */
+/* 2010.9.10  64bit (Uehira) */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
 
+#include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
+
 #include <stdio.h>
 #include <signal.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/types.h>
-#include <sys/ipc.h>
-#include <sys/shm.h>
+#include <errno.h>
+#include <unistd.h>
 
 #if TIME_WITH_SYS_TIME
 #include <sys/time.h>
@@ -25,37 +29,42 @@
 #endif  /* !HAVE_SYS_TIME_H */
 #endif  /* !TIME_WITH_SYS_TIME */
 
-#include <sys/types.h>
-#include <errno.h>
-
 #include "winlib.h"
 
-#define DEBUG       0
 #define BELL        0
+
+static const char rcsid[] =
+  "$Id: extraw.c,v 1.3.4.3.2.7 2010/09/20 06:33:09 uehira Exp $";
 
 char *progname,*logfile;
 int syslog_mode, exit_status;
 
-main(argc,argv)
-  int argc;
-  char *argv[];
+/* prototype */
+int main(int, char *[]);
+
+int
+main(int argc, char *argv[])
   {
   struct Shm  *shin,*shdat,*shctl;
   key_t inkey,datkey,ctlkey;
   int shmid_in,shmid_dat,shmid_ctl;
-  unsigned long uni;
+  uint32_w  uni;  /* 64bit ok*/
   char tb[100];
-  unsigned char *ptr,*ptw,tm[6],*ptr_lim,*ptr_save;
-  int i,j,k,size,n,size_shdat,size_shctl,tow;
-  unsigned long c_save;
+  uint8_w  *ptr,*ptw,*ptr_lim,*ptr_save;
+  int  i;
+  uint32_w  size;
+  size_t  size_shdat,size_shctl;
+  unsigned long c_save;   /* 64bit ok*/
 
-  if(progname=strrchr(argv[0],'/')) progname++;
+  if((progname=strrchr(argv[0],'/')) != NULL) progname++;
   else progname=argv[0];
   syslog_mode = 0;
   exit_status = EXIT_SUCCESS;
 
   if(argc<6)
     {
+    WIN_version();
+    fprintf(stderr, "%s\n", rcsid);
     fprintf(stderr,
       " usage : '%s [in_key] [dat_key] [shm_size(KB)] [ctl_key] [shm_size(KB)] \\\n",
       progname);
@@ -63,11 +72,11 @@ main(argc,argv)
       "                       ([log file]))'\n");
     exit(1);
     }
-  inkey=atoi(argv[1]);
-  datkey=atoi(argv[2]);
-  size_shdat=atoi(argv[3])*1000;
-  ctlkey=atoi(argv[4]);
-  size_shctl=atoi(argv[5])*1000;
+  inkey=atol(argv[1]);
+  datkey=atol(argv[2]);
+  size_shdat=(size_t)atol(argv[3])*1000;
+  ctlkey=atol(argv[4]);
+  size_shctl=(size_t)atol(argv[5])*1000;
   if(argc>6) logfile=argv[6];
   else   logfile=NULL;
     
@@ -88,8 +97,9 @@ main(argc,argv)
   if((shctl=(struct Shm *)shmat(shmid_ctl,(void *)0,0))==(struct Shm *)-1)
     err_sys("shmat ctl");
 
-  sprintf(tb,"start in_key=%d id=%d dat_key=%d id=%d size=%d ctl_key=%d id=%d size=%d ",
-    inkey,shmid_in,datkey,shmid_dat,size_shdat,ctlkey,shmid_ctl,size_shctl);
+  snprintf(tb,sizeof(tb),
+	  "start in_key=%ld id=%d dat_key=%ld id=%d size=%zu ctl_key=%ld id=%d size=%zu ",
+	  inkey,shmid_in,datkey,shmid_dat,size_shdat,ctlkey,shmid_ctl,size_shctl);
   write_log(tb);
 
   signal(SIGTERM,(void *)end_program);
@@ -109,7 +119,6 @@ reset:
   ptr=shin->d;
   while(shin->r==(-1)) sleep(1);
   ptr=shin->d+shin->r;
-  tow=(-1);
 
   for(;;)
     {
@@ -120,14 +129,14 @@ reset:
 #if DEBUG
     printf("%02X:",ptr[0]);
     for(i=1;i<7;i++) printf("%02X",ptr[i]);
-    printf(" : %d ",size);
+    printf(" : %u ",size);
 #endif
     i=ptr[0];
     if(i==0xA1 || i==0xA2 || i==0xA3 || i==0xA4) /* dat */
       {
       ptw=shdat->d+shdat->p;
       ptw+=4;               /* size (4) */
-      uni=time(NULL);
+      uni=(uint32_w)(time(NULL)-TIME_OFFSET);
       *ptw++=uni>>24;  /* tow (H) */
       *ptw++=uni>>16;
       *ptw++=uni>>8;
@@ -135,13 +144,13 @@ reset:
       ptr++; /* skip label */
       while(ptr<ptr_lim-1) *ptw++=(*ptr++);
 
-      uni=ptw-(shdat->d+shdat->p);
+      uni=(uint32_w)(ptw-(shdat->d+shdat->p));
       shdat->d[shdat->p  ]=uni>>24; /* size (H) */
       shdat->d[shdat->p+1]=uni>>16;
       shdat->d[shdat->p+2]=uni>>8;
       shdat->d[shdat->p+3]=uni;     /* size (L) */
 #if DEBUG
-      printf("dat %d>%d\n",uni,shdat->p);
+      printf("dat %u>%zu\n",uni,shdat->p);
 #endif
 
       shdat->r=shdat->p;
@@ -153,7 +162,7 @@ reset:
       {
       ptw=shctl->d+shctl->p;
       ptw+=4;               /* size (4) */
-      uni=time(NULL);
+      uni=(uint32_w)(time(NULL)-TIME_OFFSET);
       *ptw++=uni>>24;  /* tow (H) */
       *ptw++=uni>>16;
       *ptw++=uni>>8;
@@ -161,13 +170,13 @@ reset:
       for(i=0;i<6;i++) *ptw++=(*ptr++); /* YMDhms (6) */
       while(ptr<ptr_lim) *ptw++=(*ptr++);
 
-      uni=ptw-(shctl->d+shctl->p);
+      uni=(uint32_w)(ptw-(shctl->d+shctl->p));
       shctl->d[shctl->p  ]=uni>>24; /* size (H) */
       shctl->d[shctl->p+1]=uni>>16;
       shctl->d[shctl->p+2]=uni>>8;
       shctl->d[shctl->p+3]=uni;     /* size (L) */
 #if DEBUG
-      printf("ctl %d>%d\n",uni,shctl->p);
+      printf("ctl %u>%zu\n",uni,shctl->p);
 #endif
 
       shctl->r=shctl->p;

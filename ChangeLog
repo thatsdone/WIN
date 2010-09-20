@@ -1,6 +1,7 @@
- $Id: ChangeLog,v 1.131.2.25.2.78 2010/09/20 03:33:08 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.79 2010/09/20 06:33:09 uehira Exp $
 
 2010-09-20  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/extraw.c : 64 bit clean.
 	* src/send_raw_old.c : 64 bit clean?
 	* while(1) --> for(;;)
 

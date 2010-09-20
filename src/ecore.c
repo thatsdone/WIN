@@ -1,4 +1,4 @@
-/* $Id: ecore.c,v 1.4.4.2.2.5 2010/02/23 07:28:45 uehira Exp $ */
+/* $Id: ecore.c,v 1.4.4.2.2.6 2010/09/20 03:33:27 uehira Exp $ */
 
 /* ddr news program "ecore.c"
   "ecore.c" works with "fromtape.c"
@@ -214,7 +214,7 @@ main(argc,argv)
   */
   cnt_min=0;
 
-  while(1)
+  for(;;)
     {
     while((fp=fopen(file_written,"r"))==NULL)
       {

@@ -1,4 +1,4 @@
-/* $Id: winlib.c,v 1.1.2.4.2.22 2010/09/17 11:55:53 uehira Exp $ */
+/* $Id: winlib.c,v 1.1.2.4.2.23 2010/09/20 03:33:29 uehira Exp $ */
 
 /*-
  * winlib.c  (Uehira Kenji)
@@ -681,7 +681,7 @@ Shm_init(struct Shm *sh, size_t size)
   sh->c = 0;
   sh->r = (-1);
 #if DEBUG
-  (void)fprintf(stderr, "size = %ld, sh->pl = %ld(%ld), remain = %ld\n",
+  (void)fprintf(stderr, "size = %zu, sh->pl = %zu(%zu), remain = %zu\n",
 		size, sh->pl, (size - sizeof(*sh)) / 10 * 9, remain);
 #endif
 }
@@ -1447,14 +1447,14 @@ read_exb1(char dev_name[], int fd, uint8_w *dbuf, size_t maxsize)
       if (bcd_dec(dec, dbuf + 4) == 0)
 	continue;
 #if DEBUG
-      printf("(%ld/%u)", re, size);
+      printf("(%zd/%u)", re, size);
 #endif
       ptr = dbuf;
       while (size > re) {
 	re = read(fd, ptr += re, size -= re);
 	blocking++;
 #if DEBUG
-	printf("(%ld/%u)", re, size);
+	printf("(%zd/%u)", re, size);
 #endif
       }
       if (re > 0)
@@ -1467,7 +1467,7 @@ read_exb1(char dev_name[], int fd, uint8_w *dbuf, size_t maxsize)
       mt_pos(-2, 0, fd);	/* overrun ? */
     else if (cnt == TRY_LIMIT)
       return (-1);
-  }   /* while(1) */
+  }   /* for(;;) */
 
   return (blocking);
 }

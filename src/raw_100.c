@@ -1,4 +1,4 @@
-/* $Id: raw_100.c,v 1.5.4.3.2.6 2009/12/21 10:00:13 uehira Exp $ */
+/* $Id: raw_100.c,v 1.5.4.3.2.7 2010/09/20 03:33:27 uehira Exp $ */
 /* "raw_100.c"    97.6.23 - 6.30 urabe */
 /*                  modified from raw_raw.c */
 /*                  97.8.4 bug fixed (output empty block) */
@@ -210,7 +210,7 @@ reset:
   ptr=shr->d+shr->r;
   tow=(-1);
 
-  while(1)
+  for(;;)
     {
     ptr_lim=ptr+(size=mkuint4(ptr_save=ptr));
     c_save=shr->c;

@@ -1,4 +1,4 @@
-/* $Id: recvt_LS7000.c,v 1.1.2.3.2.10 2010/02/02 10:57:22 uehira Exp $ */
+/* $Id: recvt_LS7000.c,v 1.1.2.3.2.11 2010/09/20 03:33:28 uehira Exp $ */
 /* "recvt_LS7000.c"  uehira */
 /*   2007-11-02  imported from recvt.c 1.29.2.1 */
 
@@ -804,7 +804,7 @@ main(argc,argv)
   time(&sec);
   sec_p=sec-1;
 
-  while(1)
+  for(;;)
     {
     k=1<<sock;
     timeout.tv_sec=0;

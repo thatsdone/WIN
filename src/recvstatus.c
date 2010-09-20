@@ -1,4 +1,4 @@
-/* $Id: recvstatus.c,v 1.6.8.3 2009/08/25 04:00:15 uehira Exp $ */
+/* $Id: recvstatus.c,v 1.6.8.4 2010/09/20 03:33:27 uehira Exp $ */
 
 /* "recvstatus.c"      5/24/95    urabe */
 /* 97.7.17 two lines of "if() continue;" in the main loop */
@@ -88,7 +88,7 @@ main(argc,argv)
   signal(SIGPIPE,(void *)end_program);
 
   for(i=0;i<WIN_CHMAX;i++) stt[i]=0xff;
-  while(1)
+  for(;;)
     {
     fromlen=sizeof(from_addr);
     n=recvfrom(sock,rbuf,MAXMESG,0,(struct sockaddr *)&from_addr,&fromlen);

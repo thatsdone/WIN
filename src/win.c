@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.46.2.6.2.32 2010/06/23 09:25:08 uehira Exp $
+   $Id: win.c,v 1.46.2.6.2.33 2010/09/20 03:33:28 uehira Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -26,7 +26,7 @@
 #define WIN_VERSION   "2010.6.23(+Hi-net) 64bit"
 
 static const char rcsid[] =
-  "$Id: win.c,v 1.46.2.6.2.32 2010/06/23 09:25:08 uehira Exp $";
+  "$Id: win.c,v 1.46.2.6.2.33 2010/09/20 03:33:28 uehira Exp $";
 
 #define DEBUG_AP      0   /* for debugging auto-pick */
 /* 5:sr, 4:ch, 3:sec, 2:find_pick, 1:all */
@@ -1647,7 +1647,7 @@ read_one_sec(int32_w ptr, WIN_ch sys_ch, register int32_w *abuf, int spike)
   dp+=6;
 #endif
 #if OLD_FORMAT
-  while(1)
+  for(;;)
     {
     gh=(dp[0]<<24)+(dp[1]<<16)+(dp[2]<<8)+dp[3];
     dp+=4;
@@ -1695,7 +1695,7 @@ read_one_sec(int32_w ptr, WIN_ch sys_ch, register int32_w *abuf, int spike)
       return (0); /* bad header */
     }
 #else  /* from "#if OLD_FORMAT" */
-  while(1)
+  for(;;)
     {
 #if HINET_WIN32
     dp+=2;
@@ -1792,7 +1792,7 @@ read_one_sec_mon(int32_w ptr, WIN_ch sys_ch, register int32_w *abuf, int32_w pps
   if(sys_channel!=sys_ch)
     {
     dp=ft.secbuf+10;
-    while(1)
+    for(;;)
       {
       gh=(dp[0]<<24)+(dp[1]<<16)+(dp[2]<<8)+dp[3];
       dp+=4;
@@ -1936,7 +1936,7 @@ read_one_sec_mon(int32_w ptr, WIN_ch sys_ch, register int32_w *abuf, int32_w pps
 #if HINET_WIN32
     dp+=6;
 #endif
-    while(1) {
+    for(;;) {
 #if HINET_WIN32
       dp+=2;
 #endif
@@ -1955,7 +1955,7 @@ read_one_sec_mon(int32_w ptr, WIN_ch sys_ch, register int32_w *abuf, int32_w pps
 	break;
       } else if ((dp += g_size) >= ddp)
 	return (0);
-    }  /* while(1) */
+    }  /* for(;;) */
   }  /* if(sys_channel!=sys_ch) */
   /* read group */
   sub_rate=s_rate/ppsm;
@@ -2237,7 +2237,7 @@ init_process(int argc, char *argv[], int args)
 
     i=strlen(ft.hypo_dir);
     get_time_win(&tm,0);
-    if(ft.hypo_dir[i-1]=='/') while(1)
+    if(ft.hypo_dir[i-1]=='/') for(;;)
       {
       sprintf(ft.hypo_dir+i,"%02d%02d",tm.ye,tm.mo);
       if((dir_ptr=opendir(ft.hypo_dir)))
@@ -2377,7 +2377,7 @@ init_process(int argc, char *argv[], int args)
 
   bcd_dec(tmd,ft.ptr[0].time);
   i=strlen(ft.hypo_dir);
-  if(ft.hypo_dir[i-1]=='/') while(1)
+  if(ft.hypo_dir[i-1]=='/') for(;;)
     {
     sprintf(ft.hypo_dir+i,"%02d%02d",tmd[0],tmd[1]);
     if((dir_ptr=opendir(ft.hypo_dir)))
@@ -2400,7 +2400,7 @@ init_process(int argc, char *argv[], int args)
     }
   bcd_dec(tmd,ft.ptr[0].time);
   i=strlen(ft.hypo_dir1);
-  if(*ft.hypo_dir1 && ft.hypo_dir1[i-1]=='/') while(1)
+  if(*ft.hypo_dir1 && ft.hypo_dir1[i-1]=='/') for(;;)
     {
     sprintf(ft.hypo_dir1+i,"%02d%02d",tmd[0],tmd[1]);
     if((dir_ptr=opendir(ft.hypo_dir1)))
@@ -2758,7 +2758,7 @@ just_map:
   for(i=0;i<ft.n_ch;i++) ft.stn[i].ch_order=ft.stn[i].order;
 
   k=0;
-  if(!just_hypo) while(1)  /* arrange channls in descending order of 'order' */
+  if(!just_hypo) for(;;)  /* arrange channls in descending order of 'order' */
     {
     j=kk=0;
     for(i=0;i<ft.n_ch;i++)
@@ -3529,7 +3529,7 @@ auto_pick_pick(int sec_now, int hint)
             }
           pt.valid=1;
           k=ft.idx2pos[idx];
-          while(1)
+          for(;;)
             {
             n=getdata(idx,pt,&db,&ip);
             if(ip==0) /* not interpolated */
@@ -7568,7 +7568,7 @@ reorder()
   for(j=0;j<ft.n_ch;j++) {
     ft.idx2pos[j]=-1;
   }
-  while(1){  /* arrange channls in descending order of 'order' */
+  for(;;){  /* arrange channls in descending order of 'order' */
     j=kk=0;
     for(i=0;i<ft.n_ch;i++){
       if(ft.idx2pos[i]>=0) continue;
@@ -7648,7 +7648,7 @@ get_delta()
   /* determined pos of plot_mon*/
   k=0;kk=0;
   for(i=0;i<ft.hypoall.ndata;i++){ /* station loop */
-    while(1){
+    for(;;){
       ll=0;
       for(j=0;j<ft.n_ch;j++) {
         if(ft.idx2pos[j]>=0) continue;
@@ -7823,7 +7823,7 @@ output_pick(FILE *fp)
     if(ft.pick[i][j].valid) ft.pick[i][j].valid=(-ft.pick[i][j].valid);
   init=1;
   lsec_base=0;  /* just for suppress warning */
-  for(j=0;j<4;j++) while(1)
+  for(j=0;j<4;j++) for(;;)
     {
     minu=ft.len*1000;
     pos[P]=pos[S]=pos[X]=pos[MD]=ft.n_ch;
@@ -7935,7 +7935,7 @@ output_pick(FILE *fp)
           ft.stn[ft.ch2idx[sys_ch]].stcs);
       else fprintf(fp,"\n");
       }
-    }  /* while(1) */
+    }  /* for(;;) */
   fprintf(fp,"\n");
   }
 
@@ -8386,7 +8386,7 @@ put_map(int idx)  /* 0:redraw all, 1:plot only hypocenters, */
   y2=height_horiz+i;
   lptn=LPTN_FF;
   i=1;
-  if(mapdata) while(1)  /* if map data exists */
+  if(mapdata) for(;;)  /* if map data exists */
     {
     farout=0;
     for(j=0;j<ft.sr_max;j++)
@@ -8632,7 +8632,7 @@ only:
       yi=MARGIN*2+height_horiz+length_vert/4+HEIGHT_TEXT;
       xi-=WIDTH_TEXT*2;
       mag=0.0;
-      while(1)
+      for(;;)
         {
         if(map_true) radi=(int)(pixels_per_km*MAG2RAD(mag));
         else if((radi=MAG2RAD2(mag))<=0) radi=1;
@@ -8665,7 +8665,7 @@ only:
       xi-=WIDTH_TEXT*2+jj;
     /* ordinary M */
       mag=0.0;
-      while(1)
+      for(;;)
         {
         if(map_true) radi=(int)(pixels_per_km*MAG2RAD(mag));
         else if((radi=MAG2RAD2(mag))<=0) radi=1;
@@ -11040,7 +11040,7 @@ put_psup()
   put_text(&dpy,pu.xx2,pu.yy1-HEIGHT_TEXT/2,"   km  deg",BF_SDO);
 
   /* plot traces */
-  while(1)
+  for(;;)
     {
     k=1;
     for(j=0;j<ft.n_ch;j++)
@@ -11344,7 +11344,7 @@ read_parameter(int n, char *tbuf)
 
   if((fp=open_file(ft.param_file,"parameter"))==NULL) return (0);
   i=0;
-  while(1)
+  for(;;)
     {
     if(fgets(text_buf,LINELEN,fp)==NULL)
       {

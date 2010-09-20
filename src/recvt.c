@@ -1,4 +1,4 @@
-/* $Id: recvt.c,v 1.29.2.3.2.22 2010/09/17 01:02:04 uehira Exp $ */
+/* $Id: recvt.c,v 1.29.2.3.2.23 2010/09/20 03:33:28 uehira Exp $ */
 /*-
  "recvt.c"      4/10/93 - 6/2/93,7/2/93,1/25/94    urabe
                 2/3/93,5/25/94,6/16/94 
@@ -109,7 +109,7 @@
 #define N_PNOS    62    /* length of packet nos. history >=2 */
 
 static char rcsid[] =
-  "$Id: recvt.c,v 1.29.2.3.2.22 2010/09/17 01:02:04 uehira Exp $";
+  "$Id: recvt.c,v 1.29.2.3.2.23 2010/09/20 03:33:28 uehira Exp $";
 
 static uint8_w rbuf[MAXMESG],ch_table[WIN_CHMAX];
 static char chfile[N_CHFILE][256];
@@ -968,7 +968,7 @@ main(int argc, char *argv[])
   time(&sec);
   sec_p=sec-1;
 
-  while(1)
+  for(;;)
     {
     if(*host_name) /* send request */
       {

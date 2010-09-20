@@ -1,4 +1,4 @@
-/* $Id: raw_mon.c,v 1.6.4.4.2.7 2009/12/21 11:00:03 uehira Exp $ */
+/* $Id: raw_mon.c,v 1.6.4.4.2.8 2010/09/20 03:33:27 uehira Exp $ */
 /* "raw_mon.c"      7/2/93,6/17/94,6/28/94    urabe */
 /*                  3/17/95 write_log(), 4/17/95 MAX_SR safety */
 /*                  usleep -> sleep */
@@ -55,7 +55,7 @@
 /* #define SR_MON      5 */
 
 static char rcsid[] =
-  "$Id: raw_mon.c,v 1.6.4.4.2.7 2009/12/21 11:00:03 uehira Exp $";
+  "$Id: raw_mon.c,v 1.6.4.4.2.8 2010/09/20 03:33:27 uehira Exp $";
 
 char *progname,*logfile;
 int  daemon_mode, syslog_mode;
@@ -240,7 +240,7 @@ reset:
   while(shr->r==(-1)) sleep(1);
   ptr=shr->d+shr->r;
 
-  while(1)
+  for(;;)
     {
     ptr_lim=ptr+(size=mkuint4(ptr_save=ptr));
     c_save=shr->c;

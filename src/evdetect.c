@@ -1,4 +1,4 @@
-/* $Id: evdetect.c,v 1.1.2.1 2009/08/25 04:00:15 uehira Exp $ */
+/* $Id: evdetect.c,v 1.1.2.2 2010/09/20 03:33:27 uehira Exp $ */
 
 /*
  * evedetect.c
@@ -119,7 +119,7 @@
 #define WIN_FILENAME_MAX 1024
 
 static const char  rcsid[] =
-   "$Id: evdetect.c,v 1.1.2.1 2009/08/25 04:00:15 uehira Exp $";
+   "$Id: evdetect.c,v 1.1.2.2 2010/09/20 03:33:27 uehira Exp $";
 
 char *progname, *logfile;
 int  syslog_mode = 0, exit_status;
@@ -897,7 +897,7 @@ main(int argc, char *argv[])
   *timebuf1 = 0;
 
   /* Begin main loop */
-  while(1) {
+  for(;;) {
     if (m_count % MIN_PER_LINE == 0) {  /* print info */
       /* (void)snprintf(textbuf, sizeof(textbuf), "%02d/%02d/%02d %02d:%02d", */
 /* 		     tim[0], tim[1], tim[2], tim[3], tim[4]); */
@@ -1093,7 +1093,7 @@ main(int argc, char *argv[])
     sprintf(timebuf2,"%02d%02d%02d%02d.%02d",
         tim[0],tim[1],tim[2],tim[3],tim[4]);
     if (*timebuf1 == 0 || strcmp2(timebuf1, timebuf2) < 0)
-      while(1) {  /* wait LATEST */
+      for(;;) {  /* wait LATEST */
 	if ((fp = fopen(latest, "r")) == NULL)
 	  sleep(15);
 	else {

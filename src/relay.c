@@ -1,4 +1,4 @@
-/* $Id: relay.c,v 1.15.4.3.2.5 2010/04/15 10:53:53 uehira Exp $ */
+/* $Id: relay.c,v 1.15.4.3.2.6 2010/09/20 03:33:28 uehira Exp $ */
 /* "relay.c"      5/23/94-5/25/94,6/15/94-6/16/94,6/23/94,3/16/95 urabe */
 /*                3/26/95 check_packet_no; port# */
 /*                5/24/96 added processing of "host table full" */
@@ -554,7 +554,7 @@ main(argc,argv)
   bufno=0;
   read_chfile();
 
-  while(1)
+  for(;;)
     {
     if(to_port>0)
       {
@@ -595,7 +595,7 @@ main(argc,argv)
     if(++bufno==BUFNO) bufno=0;
     no++;
 
-    while(1)
+    for(;;)
       {
       i=1<<sock_out;
       timeout.tv_sec=timeout.tv_usec=0;

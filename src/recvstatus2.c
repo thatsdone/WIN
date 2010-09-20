@@ -1,4 +1,4 @@
-/* $Id: recvstatus2.c,v 1.6.8.4 2009/08/25 04:00:15 uehira Exp $ */
+/* $Id: recvstatus2.c,v 1.6.8.5 2010/09/20 03:33:27 uehira Exp $ */
 
 /* modified from "recvstatus.c" */
 /* 2002.6.19 recvstatus2 receive A8/A9 packets from Datamark LS-7000XT */
@@ -120,7 +120,7 @@ main(argc,argv)
   signal(SIGPIPE,(void *)end_program);
 
   ns=0;
-  while(1)
+  for(;;)
     {
     fromlen=sizeof(from_addr);
     n=recvfrom(sock,rbuf,MAXMESG,0,(struct sockaddr *)&from_addr,&fromlen);

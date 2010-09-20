@@ -330,7 +330,7 @@ main(argc,argv)
   ptr=ptr_size=sh->d;
   read_chfile();
 
-  while(1)
+  for(;;)
     {
     n=get_packet(fd,rbuf);
 #if DEBUG3

@@ -1,4 +1,4 @@
-/* $Id: shmdump.c,v 1.21.4.6.2.12 2009/12/21 10:00:13 uehira Exp $ */
+/* $Id: shmdump.c,v 1.21.4.6.2.13 2010/09/20 03:33:28 uehira Exp $ */
 
 /*  program "shmdump.c" 6/14/94 urabe */
 /*  revised 5/29/96 */
@@ -72,7 +72,7 @@ struct Filter
 };
 
 static char rcsid[] =
-  "$Id: shmdump.c,v 1.21.4.6.2.12 2009/12/21 10:00:13 uehira Exp $";
+  "$Id: shmdump.c,v 1.21.4.6.2.13 2010/09/20 03:33:28 uehira Exp $";
 
 static char *progname,outfile[256];
 static int win;
@@ -492,7 +492,7 @@ reset:
   eobsize_count=eobsize;
   nch=end=0;
 
-  while(1)
+  for(;;)
     {
     if(shm_key_in)
       {

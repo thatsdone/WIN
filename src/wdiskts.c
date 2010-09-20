@@ -1,4 +1,4 @@
-/* $Id: wdiskts.c,v 1.6.2.5.2.7 2010/09/14 09:11:21 uehira Exp $ */
+/* $Id: wdiskts.c,v 1.6.2.5.2.8 2010/09/20 03:33:28 uehira Exp $ */
 
 /*-
   2005.8.10 urabe bug in strcmp2() fixed : 0-6 > 7-9 
@@ -61,7 +61,7 @@
 /* #define FREE(a)         (void)free((void *)(a)) */
 
 static char rcsid[] =
-  "$Id: wdiskts.c,v 1.6.2.5.2.7 2010/09/14 09:11:21 uehira Exp $";
+  "$Id: wdiskts.c,v 1.6.2.5.2.8 2010/09/20 03:33:28 uehira Exp $";
 
 char *progname,*logfile;
 int  daemon_mode, syslog_mode, exit_status;
@@ -406,7 +406,7 @@ main(int argc, char *argv[])
 #if  DEBUG3
    printf("c_save=%lu\n",c_save);
 #endif
-   while(1){
+   for(;;){
       get_time(tm); /* get system clock */
       if(mode==60) i=time_cmp(tm,tm_save,4);
       else i=time_cmp(tm,tm_save,5);
@@ -465,5 +465,5 @@ main(int argc, char *argv[])
 #ifdef GC_MEMORY_LEAK_TEST
       CHECK_LEAKS();
 #endif
-   }  /* while(1) */
+   }  /* for(;;) */
 }

@@ -1,4 +1,4 @@
-/* $Id: dewin.c,v 1.4.4.3.2.9 2010/06/30 08:00:54 uehira Exp $ */
+/* $Id: dewin.c,v 1.4.4.3.2.10 2010/09/20 03:33:27 uehira Exp $ */
 
 /* program dewin  1994.4.11-4.20  urabe */
 /*                1996.2.23 added -n option */
@@ -36,7 +36,7 @@
 #define MAX_SR      HEADER_5B
 
 static const char  rcsid[] =
-   "$Id: dewin.c,v 1.4.4.3.2.9 2010/06/30 08:00:54 uehira Exp $";
+   "$Id: dewin.c,v 1.4.4.3.2.10 2010/09/20 03:33:27 uehira Exp $";
 
 static int32_w buf[MAX_SR];
 static double dbuf[MAX_SR];
@@ -100,7 +100,7 @@ read_one_sec(uint8_w *ptr, WIN_ch ch, register int32_w *abuf)
 
   dp=ptr+10;
   ddp=ptr+mkuint4(ptr);
-  while(1)
+  for(;;)
     {
     if((g_size=win2fix(dp,abuf,&sys_ch,&s_rate))==0) return (0);
     if(sys_ch==ch) return (s_rate);

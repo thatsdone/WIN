@@ -1,5 +1,5 @@
 /*-
-  $Id: hypomhc.c,v 1.7.2.2.2.4 2010/06/23 08:13:03 uehira Exp $
+  $Id: hypomhc.c,v 1.7.2.2.2.5 2010/09/20 03:33:27 uehira Exp $
    hypomhc.c    : main program for hypocenter location
      original version was made on March 13, 1984 and
      modified by N.H. on Feb. 8, 1985, May 8, 1985.
@@ -1336,7 +1336,7 @@ line200:
 	if (calc[i].se > 0.0)
 	  calc[i].rst -= cot;
       }
-      break;			/* exit while(1) loop */
+      break;			/* exit for(;;) loop */
     }
     /* i.e. ll != lm */
     for (i = 0; i < 3; ++i) {
@@ -1355,7 +1355,7 @@ line200:
     sra = srb;
     acp = bcp;
     ll++;
-  }				/* while(1) */
+  }				/* for(;;) */
 end_NLINV:
   if (judg >= 10)
     goto HYPEND;

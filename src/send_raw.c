@@ -1,4 +1,4 @@
-/* $Id: send_raw.c,v 1.24.2.4.2.13 2010/09/20 02:57:41 uehira Exp $ */
+/* $Id: send_raw.c,v 1.24.2.4.2.14 2010/09/20 03:33:28 uehira Exp $ */
 /*
     program "send_raw/send_mon.c"   1/24/94 - 1/25/94,5/25/94 urabe
                                     6/15/94 - 6/16/94
@@ -101,7 +101,7 @@
 #define REQ_TIMO  10   /* timeout (sec) for request */
 
 static const char  rcsid[] =
-   "$Id: send_raw.c,v 1.24.2.4.2.13 2010/09/20 02:57:41 uehira Exp $";
+   "$Id: send_raw.c,v 1.24.2.4.2.14 2010/09/20 03:33:28 uehira Exp $";
 
 static int sock,raw,tow,all,n_ch,negate_channel,mtu,nbuf,slptime,
   no_resend;
@@ -699,7 +699,7 @@ reset:
   ptw+=2;
   if(!all) *ptw++=0xA0;
 
-  while(1)
+  for(;;)
     {
     if(shp+size>shm->pl) shp=0; /* advance pointer */
     else shp+=size;

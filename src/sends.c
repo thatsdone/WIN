@@ -1,4 +1,4 @@
-/* $Id: sends.c,v 1.6.4.3.2.5 2009/12/21 10:00:13 uehira Exp $ */
+/* $Id: sends.c,v 1.6.4.3.2.6 2010/09/20 03:33:28 uehira Exp $ */
 /*   program "sends"   2000.3.20 urabe                   */
 /*   2000.3.21 */
 /*   2000.4.17 */
@@ -372,7 +372,7 @@ reset:
   c_save=shm->c;
   size=mkuint4(ptr_save=shm->d+(shp=shm->r));
 
-  while(1)
+  for(;;)
     {
     if(shp+size>shm->pl) shp=0; /* advance pointer */
     else shp+=size;
@@ -418,7 +418,7 @@ reset:
       nop=no++;
       }
 /* resend if requested */
-    if(sock>=0) while(1)
+    if(sock>=0) for(;;)
       {
       i=1<<sock;
       timeout.tv_sec=timeout.tv_usec=0;
@@ -447,7 +447,7 @@ reset:
         }
       else break;
       }
-    else while(1)
+    else for(;;)
       {
       i=1<<fd;
       timeout.tv_sec=timeout.tv_usec=0;

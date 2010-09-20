@@ -1,4 +1,4 @@
-/* $Id: recvs.c,v 1.6.2.1.2.7 2009/12/21 10:00:13 uehira Exp $ */
+/* $Id: recvs.c,v 1.6.2.1.2.8 2010/09/20 03:33:27 uehira Exp $ */
 /* "recvs.c"    receive sync frames      2000.3.14       urabe */
 /* 2000.3.21 */
 /* 2000.4.17 */
@@ -431,7 +431,7 @@ main(argc,argv)
   for(i=0;i<6;i++) tm[i]=(-1);
   ptr=ptr_size=sh->d;
 
-  while(1)
+  for(;;)
     {
     n=read(fd,rbuf,MAXMESG);
 #if TEST_RESEND

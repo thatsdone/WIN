@@ -1,4 +1,4 @@
-/* $Id: recvnmx.c,v 1.16.4.4.2.9 2009/12/21 10:00:13 uehira Exp $ */
+/* $Id: recvnmx.c,v 1.16.4.4.2.10 2010/09/20 03:33:27 uehira Exp $ */
 /* "recvnmx.c"    2001.7.18-19 modified from recvt.c and nmx2raw.c  urabe */
 /*                2001.8.18 */
 /*                2001.10.5 workaround for hangup */
@@ -626,7 +626,7 @@ main(argc,argv)
     else closedir(dir_ptr);
     }
 
-  while(1)
+  for(;;)
     {
     fromlen=sizeof(from_addr);
     n=recvfrom(sock,pbuf,MAXMESG,0,(struct sockaddr *)&from_addr,&fromlen);

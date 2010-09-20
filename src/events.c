@@ -1,4 +1,4 @@
-/* $Id: events.c,v 1.8.2.4.2.3 2009/08/25 04:00:15 uehira Exp $ */
+/* $Id: events.c,v 1.8.2.4.2.4 2010/09/20 03:33:27 uehira Exp $ */
 
 /****************************************************************************
 *****************************************************************************
@@ -229,9 +229,9 @@ get_trig(trigfile,init_flag,tbuf,pbuf)
 #if DEBUG
   printf("offset=%d prev=%s",offset,pbuf);
 #endif
-  while(1)
+  for(;;)
     {
-    while(1)
+    for(;;)
       {
       if((fp=fopen(trigfile,"r"))==NULL)
         {
@@ -298,7 +298,7 @@ check_space(path)
 
   /* check disk space */
   sprintf(path1,"%s/.",path);
-  while(1)
+  for(;;)
     {
     /* find oldest file and sum up file sizes */
     if((dir_ptr=opendir(path))==NULL)
@@ -607,7 +607,7 @@ printf("lastline=%s\n",lastline);
   signal(SIGTERM,(void *)owari);
 
   init=1;
-  while(1)
+  for(;;)
     {
     get_trig(trig_file,init,textbuf,lastline);  /* read trigger file */
     if(init) init=0;
@@ -634,7 +634,7 @@ printf("lastline=%s\n",lastline);
     fprintf(fp,"%s\n",file_name);
     fclose(fp);
 
-    while(1)
+    for(;;)
       {
     /* read trigger file */
       get_trig(trig_file,init,textbuf,lastline);
@@ -786,7 +786,7 @@ printf("lastline=%s\n",lastline);
           sprintf(raw_file,"%02d%02d%02d%02d.%02d",
             tm[0],tm[1],tm[2],tm[3],tm[4]);
         /* wait if LATEST is not yet */
-          while(1)
+          for(;;)
             {
             sprintf(textbuf,"%s/LATEST",raw_path);
             if((fp=fopen(textbuf,"r")) != NULL)

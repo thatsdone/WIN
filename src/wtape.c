@@ -1,4 +1,4 @@
-/* $Id: wtape.c,v 1.12.2.4.2.6 2010/02/28 09:09:07 uehira Exp $ */
+/* $Id: wtape.c,v 1.12.2.4.2.7 2010/09/20 03:33:29 uehira Exp $ */
 /*
   program "wtape.c"
   8/23/89 - 8/8/90, 6/27/91, 12/24/91, 2/29/92  urabe
@@ -57,7 +57,7 @@
 #define   WIN_FILENAME_MAX 1024
 
 static char rcsid[] = 
-  "$Id: wtape.c,v 1.12.2.4.2.6 2010/02/28 09:09:07 uehira Exp $";
+  "$Id: wtape.c,v 1.12.2.4.2.7 2010/09/20 03:33:29 uehira Exp $";
 
 static uint8_w buf[SIZE_MAX];
 static int init_flag,wfm,new_tape,switch_req,fd_exb,exb_status[N_EXABYTE],
@@ -557,7 +557,7 @@ main(int argc, char *argv[])
 
 /* read wtape.rsv */
   read_rsv(tm);
-  while(1)
+  for(;;)
     {
     tm[4]++;
     adj_time_wtape(tm);
@@ -638,7 +638,7 @@ main(int argc, char *argv[])
       continue;
       }
 
-    while(1)
+    for(;;)
       {
       cnt=0;
       io_error=0;
@@ -695,7 +695,7 @@ main(int argc, char *argv[])
         continue;
         }
       break;
-      }   /* while(1) */
+      }   /* for(;;) */
 
 /* close disk file */
 #if DEBUGFLAG

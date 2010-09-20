@@ -1,4 +1,4 @@
-/* $Id: fromtape.c,v 1.7.2.3.2.8 2010/02/18 07:05:31 uehira Exp $ */
+/* $Id: fromtape.c,v 1.7.2.3.2.9 2010/09/20 03:33:27 uehira Exp $ */
 /*
   program "fromtape.c"
   12/10/90 - 12/13/90, 9/19/91, 10/30/91, 6/19/92  urabe
@@ -49,7 +49,7 @@
 /* #define   TIME3   "9008031718" */  /* 10 m / fm after this time */
 
 static char rcsid[] =
-  "$Id: fromtape.c,v 1.7.2.3.2.8 2010/02/18 07:05:31 uehira Exp $";
+  "$Id: fromtape.c,v 1.7.2.3.2.9 2010/09/20 03:33:27 uehira Exp $";
 
 static uint8_w wbuf[SIZE_WBUF],buf[MAXSIZE];
 static int fd_exb,dec_start[6],dec_end[6],min_reserve,
@@ -208,7 +208,7 @@ main(int argc, char *argv[])
   get_pos();
   min_reserve=dec_now[4]+1;
   n_file=0;
-  while(1)
+  for(;;)
     {
     if(dec_now[4]!=min_reserve)
       change_file(argc-optbase,max_file,handshake);
@@ -343,7 +343,7 @@ change_file(int argc, int max_file, int handshake)
     if(handshake)
       {
       while((fp=fopen(file_done,"r"))==NULL) sleep(15);
-      while(1)
+      for(;;)
         {
         fscanf(fp,"%02d%02d%02d%02d.%02d",&dec_done[0],&dec_done[1],
           &dec_done[2],&dec_done[3],&dec_done[4]);
@@ -427,7 +427,7 @@ change_file(int argc, int max_file, int handshake)
 /*   uint8_w *ptr; */
 
 /*   cnt=0; */
-/*   while(1) */
+/*   for(;;) */
 /*     { */
 /*     while((re=read(fd_exb,buf,MAXSIZE))==0) */
 /*       { /\* file mark *\/ */

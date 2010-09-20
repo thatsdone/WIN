@@ -1,4 +1,4 @@
-/* $Id: pmon.c,v 1.14.2.5.2.7 2010/09/17 01:02:03 uehira Exp $ */
+/* $Id: pmon.c,v 1.14.2.5.2.8 2010/09/20 03:33:27 uehira Exp $ */
 /************************************************************************
 *************************************************************************
 **  program "pmon.c" for NEWS/SPARC                             *********
@@ -227,7 +227,7 @@
 0xf0,0x1e,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x40,0x00,0x06,0x10,0xc0,0x00,0x00};
 
 static const char  rcsid[] =
-   "$Id: pmon.c,v 1.14.2.5.2.7 2010/09/17 01:02:03 uehira Exp $";
+   "$Id: pmon.c,v 1.14.2.5.2.8 2010/09/20 03:33:27 uehira Exp $";
 
 char *progname,*logfile;
 int  syslog_mode = 0, exit_status;
@@ -1387,7 +1387,7 @@ retry:
   req_print=0;
   *timebuf1=0;
 
-  while(1)
+  for(;;)
     {
     if(m_count%MIN_PER_LINE==0) /* print info */
       {
@@ -1623,7 +1623,7 @@ retry:
   timebuf1 : LATEST
   timebuf2 : tim[] - data time
 */
-    if(*timebuf1==0 || strcmp2(timebuf1,timebuf2)<0) while(1) /* wait LATEST */
+    if(*timebuf1==0 || strcmp2(timebuf1,timebuf2)<0) for(;;) /* wait LATEST */
       {
       if((fp=fopen(latest,"r"))==NULL) sleep(15);
       else

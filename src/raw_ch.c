@@ -1,4 +1,4 @@
-/* $Id: raw_ch.c,v 1.4.4.3.2.5 2009/12/21 10:00:13 uehira Exp $ */
+/* $Id: raw_ch.c,v 1.4.4.3.2.6 2010/09/20 03:33:27 uehira Exp $ */
 /* "raw_ch.c"    99.12.8 urabe */
 /*                  modified from raw_raw.c */
 /*                  byte-order-free */
@@ -181,7 +181,7 @@ reset:
   ptr=shr->d+shr->r;
   tow=(-1);
 
-  while(1)
+  for(;;)
     {
     ptr_lim=ptr+(size=mkuint4(ptr_save=ptr));
     c_save=shr->c;

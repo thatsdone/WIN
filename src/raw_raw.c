@@ -1,4 +1,4 @@
-/* $Id: raw_raw.c,v 1.9.4.3.2.6 2009/12/21 10:00:13 uehira Exp $ */
+/* $Id: raw_raw.c,v 1.9.4.3.2.7 2010/09/20 03:33:27 uehira Exp $ */
 
 /* "raw_raw.c"    97.8.5 urabe */
 /*                  modified from raw_100.c */
@@ -265,7 +265,7 @@ reset:
   sprintf(tb,"eobsize_in=%d, eobsize_out=%d",eobsize_in,eobsize_out);
   write_log(tb);
 
-  while(1)
+  for(;;)
     {
     size=mkuint4(ptr_save=ptr);
     if(size==mkuint4(ptr+size-4)) eobsize_in_count++;

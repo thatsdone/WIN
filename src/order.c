@@ -1,4 +1,4 @@
-/* $Id: order.c,v 1.11.4.5.2.6 2009/12/26 00:56:59 uehira Exp $ */
+/* $Id: order.c,v 1.11.4.5.2.7 2010/09/20 03:33:27 uehira Exp $ */
 /*  program "order.c" 1/26/94 - 2/7/94, 6/14/94 urabe */
 /*                              1/6/95 bug in adj_time(tm[0]--) fixed */
 /*                              3/17/95 write_log() */
@@ -57,7 +57,7 @@
 #define NAMELEN  1025
 
 static char rcsid[] =
-  "$Id: order.c,v 1.11.4.5.2.6 2009/12/26 00:56:59 uehira Exp $";
+  "$Id: order.c,v 1.11.4.5.2.7 2010/09/20 03:33:27 uehira Exp $";
 
 char *progname,*logfile;
 int  daemon_mode, syslog_mode, exit_status;
@@ -276,7 +276,7 @@ reset:
     rt_next=time(NULL)-1;
     ts=t_out;
     if(late) ptw_late=shm_late->d+shm_late->p;
-    while(1)
+    for(;;)
       {
 	tow=(time_t)sec_1;
 #if DEBUG1
@@ -336,7 +336,7 @@ reset:
             t_bcd(t_out,ptw); /* write TS */
             ptw+=6; /* TS */
             i=0;
-            while(1) /* sweep to output data at ts==rt-n_sec */
+            for(;;) /* sweep to output data at ts==rt-n_sec */
               {
               size=mkuint4(ptr);
               tow=mkuint4(ptr+4);
@@ -412,7 +412,7 @@ reset:
       }
     }
   else /* conventional mode */
-    while(1){
+    for(;;){
       no_data=1;
       while(sec_1+n_sec>time(NULL)) sleep(1);
       shp=shp_in;

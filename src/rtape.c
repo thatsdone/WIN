@@ -1,4 +1,4 @@
-/* $Id: rtape.c,v 1.9.2.3.2.7 2010/09/17 04:38:00 uehira Exp $ */
+/* $Id: rtape.c,v 1.9.2.3.2.8 2010/09/20 03:33:28 uehira Exp $ */
 /*
   program "rtape.c"
   9/16/89 - 11/06/90, 6/26/91, 10/30/91, 6/26/92  urabe
@@ -48,7 +48,7 @@
 /* #define   TIME3   "9008031718" */  /* 10 m / fm after this time */
 
 static const char  rcsid[] =
-   "$Id: rtape.c,v 1.9.2.3.2.7 2010/09/17 04:38:00 uehira Exp $";
+   "$Id: rtape.c,v 1.9.2.3.2.8 2010/09/20 03:33:28 uehira Exp $";
 
 static uint8_w buf[MAXSIZE],outbuf[MAXSIZE];
 static int fd_exb,f_get,leng,dec_start[6],dec_end[6],dec_begin[6],
@@ -226,7 +226,7 @@ get_one_record(int blocking)
     fclose(f_param);
     end_process(1);
     }
-  while(1)
+  for(;;)
     {
     select_ch(buf,outbuf,old_format);
   /* write one sec */
@@ -251,7 +251,7 @@ get_one_record(int blocking)
 /*   int cnt,re,size,blocking,dec[6]; */
 /*   char *ptr; */
 /*   cnt=0; */
-/*   while(1) */
+/*   for(;;) */
 /*     { */
 /*     while((re=read(fd_exb,(char *)buf,MAXSIZE))==0) */
 /*       { /\* file mark *\/ */

@@ -1,4 +1,4 @@
-/* $Id: cormeisei.c,v 1.6.4.5.2.5 2009/12/21 10:00:12 uehira Exp $ */
+/* $Id: cormeisei.c,v 1.6.4.5.2.6 2010/09/20 03:33:27 uehira Exp $ */
 /* "cormeisei.c"    June'97 Ide changed from*/
 /* "raw_raw.c"      3/4/96 urabe */
 /*                  revised on 5/20/96 */
@@ -270,7 +270,7 @@ reset:
   fprintf(stderr,"20Hz itd = %d \n",itdl);
 #endif
 
-  while(1) {
+  for(;;) {
     ptr_lim=ptr+(size=mkuint4(ptr_save=ptr));
     c_save=shm->c;
     ptr+=4;

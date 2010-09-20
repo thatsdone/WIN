@@ -1,4 +1,4 @@
-/* $Id: extraw.c,v 1.3.4.3.2.5 2009/12/21 10:00:13 uehira Exp $ */
+/* $Id: extraw.c,v 1.3.4.3.2.6 2010/09/20 03:33:27 uehira Exp $ */
 /* "extraw.c"    2000.3.17 urabe */
 /* 2000.4.24/2001.11.14 strerror() */
 
@@ -111,7 +111,7 @@ reset:
   ptr=shin->d+shin->r;
   tow=(-1);
 
-  while(1)
+  for(;;)
     {
     ptr_lim=ptr+(size=mkuint4(ptr_save=ptr));
     c_save=shin->c;

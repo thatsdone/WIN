@@ -1,4 +1,4 @@
-/* $Id: insert_raw.c,v 1.6.4.2.2.3 2010/02/03 01:39:55 uehira Exp $ */
+/* $Id: insert_raw.c,v 1.6.4.2.2.4 2010/09/20 03:33:27 uehira Exp $ */
 
 /*
  * Insert sorted timeout data to raw data.
@@ -47,7 +47,7 @@
 #define BUF_SIZE 1024
 
 static char rcsid[] =
-  "$Id: insert_raw.c,v 1.6.4.2.2.3 2010/02/03 01:39:55 uehira Exp $";
+  "$Id: insert_raw.c,v 1.6.4.2.2.4 2010/09/20 03:33:27 uehira Exp $";
 
 char *progname;
 
@@ -429,7 +429,7 @@ main(int argc, char *argv[])
   signal(SIGINT,end_prog);
   signal(SIGTERM,end_prog);
 
-  while(1){
+  for(;;){
     tim[4]++;
     adj_time_m(tim);
 #if DEBUG
@@ -472,5 +472,5 @@ main(int argc, char *argv[])
 #ifdef GC_MEMORY_LEAK_TEST
     CHECK_LEAKS();
 #endif
-  }/* while(1) */
+  }/* for(;;) */
 }

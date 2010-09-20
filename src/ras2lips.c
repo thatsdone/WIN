@@ -1,4 +1,4 @@
-/* $Id: ras2lips.c,v 1.3.4.1.2.1 2010/09/17 01:02:04 uehira Exp $ */
+/* $Id: ras2lips.c,v 1.3.4.1.2.2 2010/09/20 03:33:27 uehira Exp $ */
 /********************************************************/
 /*  ras2lips.c   97.10.31-97.11.27             urabe    */
 /*               98.3.4      LITTLE ENDIAN    uehira    */
@@ -66,7 +66,7 @@ compress(buf,size)
   char *ptr,*ptw,*ptr_lim,c;
   ptw=ptr=buf;
   ptr_lim=buf+size;
-  while(1)
+  for(;;)
     {
     *ptw++=c=(*ptr++);
     if(ptr==ptr_lim) return ptw-buf;

@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.38.2.10.2.18 2010/09/06 05:30:59 uehira Exp $
+# $Id: Makefile.am,v 1.38.2.10.2.19 2010/09/20 07:38:37 uehira Exp $
 #
 
 if SUNOS4
@@ -241,6 +241,7 @@ final2finalb_SOURCES = final2finalb.c $(WIN_LIBH)
 final2finalb_LDADD = $(WIN_SYSTEM_LTLIB)
 
 finalb2seis_SOURCES = finalb2seis.c $(WIN_LIBH)
+finalb2seis_LDADD = $(WIN_SYSTEM_LTLIB)
 
 wform_SOURCES = wform.c $(WIN_LIBH)
 wform_LDADD = $(WIN_SYSTEM_LTLIB)

@@ -1,4 +1,4 @@
-/* $Id: send_raw_old.c,v 1.9.4.3.2.7 2010/09/20 02:57:41 uehira Exp $ */
+/* $Id: send_raw_old.c,v 1.9.4.3.2.8 2010/09/20 03:19:36 uehira Exp $ */
 /*
     program "send_raw_old/send_mon_old.c"   1/24/94 - 1/25/94,5/25/94 urabe
                                     6/15/94 - 6/16/94
@@ -57,7 +57,7 @@
 #define BUFNO     128
 
 static const char  rcsid[] =
-   "$Id: send_raw_old.c,v 1.9.4.3.2.7 2010/09/20 02:57:41 uehira Exp $";
+   "$Id: send_raw_old.c,v 1.9.4.3.2.8 2010/09/20 03:19:36 uehira Exp $";
 
 static int sock,raw,mon,tow,psize[BUFNO],n_ch;
 static uint8_w sbuf[BUFNO][MAXMESG],ch_table[WIN_CHMAX],rbuf[MAXMESG];
@@ -293,7 +293,7 @@ reset:
             re=sendto(sock,ptw_save,psize[bufno]=ptw-ptw_save,
               0,(const struct sockaddr *)&to_addr,sizeof(to_addr));
 #if DEBUG
-            fprintf(stderr,"%5d",re);
+            fprintf(stderr,"%5zd",re);
 #endif
             if(re==(-1)) break; /* abort the second */
             else re=0;
@@ -317,7 +317,7 @@ reset:
         re=sendto(sock,ptw_save,psize[bufno]=ptw-ptw_save,
           0,(const struct sockaddr *)&to_addr,sizeof(to_addr));
 #if DEBUG
-        fprintf(stderr,"%5d",re);
+        fprintf(stderr,"%5zd",re);
 #endif
         if(++bufno==BUFNO) bufno=0;
         no++;
@@ -349,7 +349,7 @@ reset:
             re=sendto(sock,ptw_save,psize[bufno]=ptw-ptw_save,
               0,(const struct sockaddr *)&to_addr,sizeof(to_addr));
 #if DEBUG
-            fprintf(stderr,"%5d",re);
+            fprintf(stderr,"%5zd",re);
 #endif
             if(re==(-1)) break; /* abort the second */
             else re=0;
@@ -372,7 +372,7 @@ reset:
         re=sendto(sock,ptw_save,psize[bufno]=ptw-ptw_save,
           0,(const struct sockaddr *)&to_addr,sizeof(to_addr));
 #if DEBUG
-        fprintf(stderr,"%5d",re);
+        fprintf(stderr,"%5zd",re);
 #endif
         if(++bufno==BUFNO) bufno=0;
         no++;

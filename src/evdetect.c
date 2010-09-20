@@ -1,4 +1,4 @@
-/* $Id: evdetect.c,v 1.1.2.2 2010/09/20 03:33:27 uehira Exp $ */
+/* $Id: evdetect.c,v 1.1.2.3 2010/09/20 10:25:44 uehira Exp $ */
 
 /*
  * evedetect.c
@@ -119,7 +119,7 @@
 #define WIN_FILENAME_MAX 1024
 
 static const char  rcsid[] =
-   "$Id: evdetect.c,v 1.1.2.2 2010/09/20 03:33:27 uehira Exp $";
+   "$Id: evdetect.c,v 1.1.2.3 2010/09/20 10:25:44 uehira Exp $";
 
 char *progname, *logfile;
 int  syslog_mode = 0, exit_status;
@@ -178,7 +178,6 @@ static void check_trg(void);
 static void hangup(void);
 static void owari(void);
 static int check_path(char *, int);
-static int read_param(FILE *, char []);
 static void get_lastline(char *, char *);
 static void usage(void);
 int main(int, char *[]);
@@ -624,17 +623,6 @@ check_path(char *path, int idx)
   return (1);
 }
 
-static int
-read_param(FILE *f_param, char textbuf[])
-{
-  
-  do  {
-    if (fgets(textbuf, 200, f_param) == NULL)
-      return (1);
-  } while (textbuf[0] == '#');
-  return (0);
-}
-
 static void
 get_lastline(char *fname, char *lastline)
 {
@@ -724,9 +712,9 @@ main(int argc, char *argv[])
     write_log(tb);
     owari();
   }
-  read_param(f_param, fn1);      /* (1) footnote */  /* skip */
+  read_param_line(f_param, fn1, sizeof(fn1));    /* (1) footnote */  /* skip */
   /* fn1[strlen(fn1) - 1] = 0; */      /* delete CR */
-  read_param(f_param, textbuf1); /* (2) mon data directory */
+  read_param_line(f_param, textbuf1, sizeof(textbuf1)); /* (2) mon data directory */
   (void)sscanf(textbuf1, "%s", textbuf);
   if ((ptr = strchr(textbuf, ':')) == NULL) {
     (void)sscanf(textbuf, "%s", path_mon);
@@ -739,7 +727,7 @@ main(int argc, char *argv[])
     (void)sscanf(ptr + 1, "%s", path_mon1);
     check_path(path_mon1, DIR_R);
   }
-  read_param(f_param, textbuf1); /* (3) temporary work directory : N of files */
+  read_param_line(f_param, textbuf1, sizeof(textbuf1)); /* (3) temporary work directory : N of files */
   (void)sscanf(textbuf1, "%s", textbuf);
   if ((ptr = strchr(textbuf, ':')) == 0) {
     (void)sscanf(textbuf, "%s", path_temp);
@@ -759,14 +747,14 @@ main(int argc, char *argv[])
       (void)sscanf(ptr + 1, "%s", conv); /* path of conversion program */
     }
   }
-  read_param(f_param, textbuf);  /* (4) channel table file */
+  read_param_line(f_param, textbuf, sizeof(textbuf));  /* (4) channel table file */
   (void)sscanf(textbuf, "%s", ch_file);
   check_path(ch_file, FILE_R);
-  read_param(f_param, textbuf);  /* (5) printer name */  /* skip */
+  read_param_line(f_param, textbuf, sizeof(textbuf));  /* (5) printer name */  /* skip */
   /* sscanf(textbuf,"%s",printer); */
-  read_param(f_param,textbuf);  /* (6) rows/sheet */  /* skip */
+  read_param_line(f_param,textbuf, sizeof(textbuf));  /* (6) rows/sheet */  /* skip */
   /* sscanf(textbuf,"%d",&n_rows); */
-  read_param(f_param,textbuf);  /* (7) N of channels */
+  read_param_line(f_param,textbuf, sizeof(textbuf));  /* (7) N of channels */
   (void)sscanf(textbuf,"%d",&max_ch);
 /**********************************************
   n_rows    max_ch(just for suggestion; i.e. pixels_per_trace=20)
@@ -777,14 +765,14 @@ main(int argc, char *argv[])
     9         20
    12         14
  **********************************************/
-  read_param(f_param, textbuf);  /* (8) trigger report file */
+  read_param_line(f_param, textbuf, sizeof(textbuf));  /* (8) trigger report file */
   (void)sscanf(textbuf, "%s", file_trig);
   (void)strcpy(file_trig_lock, file_trig);
   (void)strcat(file_trig_lock, ".lock");
-  read_param(f_param, textbuf);  /* (9) zone table file */
+  read_param_line(f_param, textbuf, sizeof(textbuf));  /* (9) zone table file */
   (void)sscanf(textbuf, "%s", file_zone);
   check_path(file_zone, FILE_R);
-  read_param(f_param, textbuf);  /* (10) min trg list file */
+  read_param_line(f_param, textbuf, sizeof(textbuf));  /* (10) min trg list file */
   (void)sscanf(textbuf, "%s", file_zone_min_trig);
   check_path(file_zone_min_trig, FILE_R);
   (void)fclose(f_param);
@@ -911,20 +899,20 @@ main(int argc, char *argv[])
         sleep(60);
       }
       for(i = 0; i < 10; i++)
-	read_param(f_param, textbuf);
-      /* read_param(f_param, textbuf); */    /* (10) */
+	read_param_line(f_param, textbuf, sizeof(textbuf));
+      /* read_param_line(f_param, textbuf); */    /* (10) */
       /* (void)sscanf(textbuf, "%d", &n_min_trig); */
-      read_param(f_param, textbuf);    /* (11) */
+      read_param_line(f_param, textbuf, sizeof(textbuf));    /* (11) */
       (void)sscanf(textbuf, "%lf", &time_sta);
-      read_param(f_param, textbuf);    /* (12) */
+      read_param_line(f_param, textbuf, sizeof(textbuf));    /* (12) */
       (void)sscanf(textbuf, "%lf", &time_lta);
-      read_param(f_param, textbuf);    /* (13) */
+      read_param_line(f_param, textbuf, sizeof(textbuf));    /* (13) */
       (void)sscanf(textbuf, "%lf", &time_lta_off);
-      read_param(f_param, textbuf);    /* (14) */
+      read_param_line(f_param, textbuf, sizeof(textbuf));    /* (14) */
       (void)sscanf(textbuf, "%lf", &time_on);
-      read_param(f_param, textbuf);    /* (15) */
+      read_param_line(f_param, textbuf, sizeof(textbuf));    /* (15) */
       (void)sscanf(textbuf, "%lf", &time_off);
-      read_param(f_param, textbuf);    /* (16) */
+      read_param_line(f_param, textbuf, sizeof(textbuf));    /* (16) */
       (void)sscanf(textbuf, "%d", &rep_level);
       j = 1;
       for (i = 0; i < max_ch; i++) {
@@ -938,7 +926,7 @@ main(int argc, char *argv[])
 	  idx2[i] = 0;
         maxlen = 0;
         for (i = 0; i < max_ch; i++) {
-          if(read_param(f_param, textbuf))
+          if(read_param_line(f_param, textbuf, sizeof(textbuf)))
 	    break;
           if(!isalnum(*textbuf)) { /* make a blank line */
             tbl[i].use = 0;
@@ -955,7 +943,7 @@ main(int argc, char *argv[])
             write_log(tb);
             sleep(60);
 	  }
-          while((ret = read_param(fp, textbuf1)) == 0) {
+          while((ret = read_param_line(fp, textbuf1, sizeof(textbuf1))) == 0) {
             (void)sscanf(textbuf1, "%x%d%*d%s%s", &j, &k, name, comp);
             /*if(k==0) continue;*/  /* check 'record' flag */
             if(strcmp(tbl[i].name,name))

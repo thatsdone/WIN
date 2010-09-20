@@ -1,4 +1,4 @@
-/* $Id: wtape.c,v 1.12.2.4.2.7 2010/09/20 03:33:29 uehira Exp $ */
+/* $Id: wtape.c,v 1.12.2.4.2.8 2010/09/20 10:25:44 uehira Exp $ */
 /*
   program "wtape.c"
   8/23/89 - 8/8/90, 6/27/91, 12/24/91, 2/29/92  urabe
@@ -57,7 +57,7 @@
 #define   WIN_FILENAME_MAX 1024
 
 static char rcsid[] = 
-  "$Id: wtape.c,v 1.12.2.4.2.7 2010/09/20 03:33:29 uehira Exp $";
+  "$Id: wtape.c,v 1.12.2.4.2.8 2010/09/20 10:25:44 uehira Exp $";
 
 static uint8_w buf[SIZE_MAX];
 static int init_flag,wfm,new_tape,switch_req,fd_exb,exb_status[N_EXABYTE],
@@ -76,7 +76,6 @@ static char *progname;
 static void switch_sig(void);
 static int get_unit(int);
 static int mt_doit(int, int, int);
-static int read_param(FILE *, char []);
 static void init_param(void);
 static void read_rsv(int *);
 static void write_rsv(int *);
@@ -143,16 +142,6 @@ mt_doit(int fd, int ope, int count)
 /*   return re; */
 /*   } */
 
-static int
-read_param(FILE *f_param, char textbuf[])
-  {
-
-  do      {
-    if(fgets(textbuf,WIN_FILENAME_MAX,f_param)==NULL) return (1);
-    } while(textbuf[0]=='#');
-  return (0);
-  }
-
 static void
 init_param()
   {
@@ -168,7 +157,7 @@ init_param()
     usage();
     exit(1);
     }
-  read_param(fp,tb);
+  read_param_line(fp,tb,sizeof(tb));
   if((ptr=strchr(tb,':'))==NULL)
     {
     sscanf(tb,"%s",raw_dir);
@@ -180,11 +169,11 @@ init_param()
     sscanf(tb,"%s",raw_dir);
     sscanf(ptr+1,"%s",raw_dir1);
     }
-  read_param(fp,tb);
+  read_param_line(fp,tb,sizeof(tb));
   sscanf(tb,"%s",log_file);
         for(n_exb=0;n_exb<N_EXABYTE;n_exb++)
     {
-    if(read_param(fp,tb)) break;
+    if(read_param_line(fp,tb,sizeof(tb))) break;
     sscanf(tb,"%s",exb_name[n_exb]);
     }
 
@@ -331,7 +320,7 @@ close_exb(char *tb)
   if(exb_total)
     {
     read_rsv(tm);
-    fprintf(fp,"%02d/%02d/%02d %02d:%02d  %4lu MB  %s\n",
+    fprintf(fp,"%02d/%02d/%02d %02d:%02d  %4zu MB  %s\n",
       tm[0],tm[1],tm[2],tm[3],tm[4],
       (exb_total+512)/1024,tb);
     }
@@ -410,7 +399,7 @@ read_units(char *file)
     perror(tb1);
     for(i=0;i<n_exb;i++) exb_status[i]=1;
     }
-  else while(read_param(fp,tb)==0)
+  else while(read_param_line(fp,tb,sizeof(tb))==0)
     {
     sscanf(tb,"%d",&i);
     if(i<n_exb && i>=0) exb_status[i]=1;
@@ -672,7 +661,7 @@ main(int argc, char *argv[])
         if((re=write(fd_exb,buf,j))<j)
           {
 #if DEBUGFLAG
-          sprintf(tb,"%s: write %u->%ld",progname,j,re);
+          sprintf(tb,"%s: write %u->%zd",progname,j,re);
           perror(tb);
 #endif
           io_error=1;
@@ -712,7 +701,7 @@ main(int argc, char *argv[])
       }
     write_rsv(tm);
 #if DEBUGFLAG
-    printf("%s < %lu   total= %lu KB\n",name_buf,cnt,exb_total);
+    printf("%s < %zu   total= %zu KB\n",name_buf,cnt,exb_total);
 #endif
     if(switch_req)
       {

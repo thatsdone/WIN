@@ -1,4 +1,4 @@
-/* $Id: events.c,v 1.8.2.4.2.4 2010/09/20 03:33:27 uehira Exp $ */
+/* $Id: events.c,v 1.8.2.4.2.5 2010/09/20 10:25:44 uehira Exp $ */
 
 /****************************************************************************
 *****************************************************************************
@@ -405,14 +405,20 @@ read_param(f_param,textbuf)
   FILE *f_param;
   unsigned char *textbuf;
   {
-  do
+
+  if (read_param_line(f_param, textbuf, LEN))
     {
-    if(fgets(textbuf,LEN,f_param)==NULL)
-      {
       printf("%s:error in paramater file\n",progname);
       owari();
-      }
-    } while(*textbuf=='#');
+    }
+  /* do */
+  /*   { */
+  /*   if(fgets(textbuf,LEN,f_param)==NULL) */
+  /*     { */
+  /*     printf("%s:error in paramater file\n",progname); */
+  /*     owari(); */
+  /*     } */
+  /*   } while(*textbuf=='#'); */
   }
 
 print_usage(progname)

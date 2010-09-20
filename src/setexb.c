@@ -1,4 +1,4 @@
-/* $Id: setexb.c,v 1.5.8.2 2010/02/16 10:47:37 uehira Exp $ */
+/* $Id: setexb.c,v 1.5.8.3 2010/09/20 10:25:44 uehira Exp $ */
 /*-
   program "setexb.c"
     2/27/90, 3/8/93,1/17/94,5/27/94  urabe
@@ -23,32 +23,20 @@
 #define         DEFAULT_PARAM_FILE  "wtape.prm"
 #define         WIN_FILENAME_MAX 1024
 
-static char rcsid[] = 
-  "$Id: setexb.c,v 1.5.8.2 2010/02/16 10:47:37 uehira Exp $";
+static const char rcsid[] = 
+  "$Id: setexb.c,v 1.5.8.3 2010/09/20 10:25:44 uehira Exp $";
 
 static int  exb_status[N_EXABYTE], n_exb;
 static char exb_name[N_EXABYTE][20],
   raw_dir[WIN_FILENAME_MAX], raw_dir1[WIN_FILENAME_MAX],
   param_name[WIN_FILENAME_MAX];
 
-static int read_param(FILE *, char []);
+/* prototypes */
 static void read_units(char *);
 static void write_units(char *);
 static void init_param(void);
 static void usage(void);
 int main(int, char *[]);
-
-
-static int
-read_param(FILE *f_param, char textbuf[])
-{
-
-  do {
-    if (fgets(textbuf, WIN_FILENAME_MAX, f_param) == NULL)
-      return (1);
-  } while (*textbuf == '#');
-  return (0);
-}
 
 static void
 read_units(char *file)
@@ -66,7 +54,7 @@ read_units(char *file)
     for (i = 0; i < n_exb; i++)
       exb_status[i] = 1;
   } else
-    while (read_param(fp, tb) == 0) {
+    while (read_param_line(fp, tb, sizeof(tb)) == 0) {
       sscanf(tb, "%d", &i);
       if (i < n_exb && i >= 0)
 	exb_status[i] = 1;
@@ -101,7 +89,7 @@ init_param()
     usage();
     exit(1);
   }
-  read_param(fp, tb);
+  read_param_line(fp, tb, sizeof(tb));
   if ((ptr = strchr(tb, ':')) == 0) {
     sscanf(tb, "%s", raw_dir);
     sscanf(tb, "%s", raw_dir1);
@@ -110,9 +98,9 @@ init_param()
     sscanf(tb, "%s", raw_dir);
     sscanf(ptr + 1, "%s", raw_dir1);
   }
-  read_param(fp, tb);
+  read_param_line(fp, tb, sizeof(tb));
   for (n_exb = 0; n_exb < N_EXABYTE; n_exb++) {
-    if (read_param(fp, tb))
+    if (read_param_line(fp, tb, sizeof(tb)))
       break;
     sscanf(tb, "%s", exb_name[n_exb]);
   }

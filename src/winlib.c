@@ -1,4 +1,4 @@
-/* $Id: winlib.c,v 1.1.2.4.2.24 2010/09/20 08:24:03 uehira Exp $ */
+/* $Id: winlib.c,v 1.1.2.4.2.25 2010/09/20 10:25:44 uehira Exp $ */
 
 /*-
  * winlib.c  (Uehira Kenji)
@@ -1402,6 +1402,18 @@ shift_sec(uint8_w *tm_bcd, int sec)
   tm_bcd[4] = d2b[nt->tm_min];
   tm_bcd[5] = d2b[nt->tm_sec];
   return (ltime);
+}
+
+int
+read_param_line(FILE *f_param, char textbuf[], int bufsize)
+{
+
+  do {
+    if (fgets(textbuf, bufsize, f_param) == NULL)
+      return (1);
+  } while(textbuf[0] == '#');  /* skip comment line */
+
+  return (0);
 }
 
 /* function(s) related with MT device */

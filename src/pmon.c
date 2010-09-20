@@ -1,4 +1,4 @@
-/* $Id: pmon.c,v 1.14.2.5.2.9 2010/09/20 09:50:52 uehira Exp $ */
+/* $Id: pmon.c,v 1.14.2.5.2.10 2010/09/20 10:25:44 uehira Exp $ */
 /************************************************************************
 *************************************************************************
 **  program "pmon.c" for NEWS/SPARC                             *********
@@ -232,7 +232,7 @@
 0xf0,0x1e,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x40,0x00,0x06,0x10,0xc0,0x00,0x00};
 
 static const char  rcsid[] =
-   "$Id: pmon.c,v 1.14.2.5.2.9 2010/09/20 09:50:52 uehira Exp $";
+   "$Id: pmon.c,v 1.14.2.5.2.10 2010/09/20 10:25:44 uehira Exp $";
 
 char *progname,*logfile;
 int  syslog_mode = 0, exit_status;
@@ -299,7 +299,6 @@ static void put_font(uint8_w *, int, int, int, uint8_w *, uint8_w *,
 static void wmemo(char *, char *, char *);
 static void insatsu(uint8_w *, uint8_w *, uint8_w *, char *, char *,
 		    int, int, char *);
-static int read_param(FILE *, char *);
 static void get_lastline(char *, char *);
 static void usage(void);
 int main(int, char *[]);
@@ -1102,16 +1101,6 @@ insatsu(uint8_w *tb1, uint8_w *tb2, uint8_w *tb3, char *path_spool,
 #undef RT_STANDARD
 #undef RMT_NONE
 
-static int
-read_param(FILE *f_param, char *textbuf)
-  {
-
-  do  {
-    if(fgets(textbuf,200,f_param)==NULL) return (1);
-    } while(*textbuf=='#');
-  return (0);
-  }
-
 static void
 get_lastline(char *fname, char *lastline)
   {
@@ -1210,9 +1199,9 @@ main(int argc, char *argv[])
     write_log(tb);
     owari();
     }
-  read_param(f_param,fn1);      /* (1) footnote */
+  read_param_line(f_param,fn1,sizeof(fn1));      /* (1) footnote */
   fn1[strlen(fn1)-1]=0;         /* delete CR */
-  read_param(f_param,textbuf1); /* (2) mon data directory */
+  read_param_line(f_param,textbuf1,sizeof(textbuf1)); /* (2) mon data directory */
   sscanf(textbuf1,"%s",textbuf);
   if((ptr=strchr(textbuf,':'))==NULL)
     {
@@ -1228,7 +1217,7 @@ main(int argc, char *argv[])
     sscanf(ptr+1,"%s",path_mon1);
     check_path(path_mon1,DIR_R);
     }
-  read_param(f_param,textbuf1);  /* (3) temporary work directory : N of files */
+  read_param_line(f_param,textbuf1,sizeof(textbuf1));  /* (3) temporary work directory : N of files */
   sscanf(textbuf1,"%s",textbuf);
   if((ptr=strchr(textbuf,':'))==0)
     {
@@ -1254,14 +1243,14 @@ main(int argc, char *argv[])
       sscanf(ptr+1,"%s",conv); /* path of conversion program */
       }
     }
-  read_param(f_param,textbuf);  /* (4) channel table file */
+  read_param_line(f_param,textbuf,sizeof(textbuf));  /* (4) channel table file */
   sscanf(textbuf,"%s",ch_file);
   check_path(ch_file,FILE_R);
-  read_param(f_param,textbuf);  /* (5) printer name */
+  read_param_line(f_param,textbuf,sizeof(textbuf));  /* (5) printer name */
   sscanf(textbuf,"%s",printer);
-  read_param(f_param,textbuf);  /* (6) rows/sheet */
+  read_param_line(f_param,textbuf,sizeof(textbuf));  /* (6) rows/sheet */
   sscanf(textbuf,"%d",&n_rows);
-  read_param(f_param,textbuf);  /* (7) traces/row */
+  read_param_line(f_param,textbuf,sizeof(textbuf));  /* (7) traces/row */
   sscanf(textbuf,"%d",&max_ch);
 /**********************************************
   n_rows    max_ch(just for suggestion; i.e. pixels_per_trace=20)
@@ -1272,11 +1261,11 @@ main(int argc, char *argv[])
     9         20
    12         14
  **********************************************/
-  read_param(f_param,textbuf);  /* (8) trigger report file */
+  read_param_line(f_param,textbuf,sizeof(textbuf));  /* (8) trigger report file */
   sscanf(textbuf,"%s",file_trig);
   strcpy(file_trig_lock,file_trig);
   strcat(file_trig_lock,".lock");
-  read_param(f_param,textbuf);  /* (9) zone table file */
+  read_param_line(f_param,textbuf,sizeof(textbuf));  /* (9) zone table file */
   sscanf(textbuf,"%s",file_zone);
   check_path(file_zone,FILE_R);
   fclose(f_param);
@@ -1406,20 +1395,20 @@ retry:
         write_log(tb);
         sleep(60);
         }
-      for(i=0;i<9;i++) read_param(f_param,textbuf);
-      read_param(f_param,textbuf);    /* (10) */
+      for(i=0;i<9;i++) read_param_line(f_param,textbuf,sizeof(textbuf));
+      read_param_line(f_param,textbuf,sizeof(textbuf));    /* (10) */
       sscanf(textbuf,"%d",&n_min_trig);
-      read_param(f_param,textbuf);    /* (11) */
+      read_param_line(f_param,textbuf,sizeof(textbuf));    /* (11) */
       sscanf(textbuf,"%lf",&time_sta);
-      read_param(f_param,textbuf);    /* (12) */
+      read_param_line(f_param,textbuf,sizeof(textbuf));    /* (12) */
       sscanf(textbuf,"%lf",&time_lta);
-      read_param(f_param,textbuf);    /* (13) */
+      read_param_line(f_param,textbuf,sizeof(textbuf));    /* (13) */
       sscanf(textbuf,"%lf",&time_lta_off);
-      read_param(f_param,textbuf);    /* (14) */
+      read_param_line(f_param,textbuf,sizeof(textbuf));    /* (14) */
       sscanf(textbuf,"%lf",&time_on);
-      read_param(f_param,textbuf);    /* (15) */
+      read_param_line(f_param,textbuf,sizeof(textbuf));    /* (15) */
       sscanf(textbuf,"%lf",&time_off);
-      read_param(f_param,textbuf);    /* (16) */
+      read_param_line(f_param,textbuf,sizeof(textbuf));    /* (16) */
       sscanf(textbuf,"%d",&rep_level);
       j=1;
       for(i=0;i<max_ch;i++)
@@ -1434,7 +1423,7 @@ retry:
         maxlen=0;
         for(i=0;i<max_ch;i++)
           {
-          if(read_param(f_param,textbuf)) break;
+          if(read_param_line(f_param,textbuf,sizeof(textbuf))) break;
           if(!isalnum(*textbuf)) /* make a blank line */
             {
             tbl[i].use=0;
@@ -1451,7 +1440,7 @@ retry:
             write_log(tb);
             sleep(60);
             }
-          while((ret=read_param(fp,textbuf1))==0)
+          while((ret=read_param_line(fp,textbuf1,sizeof(textbuf)))==0)
             {
             sscanf(textbuf1,"%x%d%*d%s%s",&j,&k,name,comp);
             /*if(k==0) continue;*/  /* check 'record' flag */

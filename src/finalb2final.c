@@ -1,4 +1,4 @@
-/* $Id: finalb2final.c,v 1.3.4.1.2.1 2010/06/18 09:50:11 uehira Exp $ */
+/* $Id: finalb2final.c,v 1.3.4.1.2.2 2010/09/20 07:06:33 uehira Exp $ */
 /******************************************************************/
 /*    finalb2final.c              6/10/94 urabe                   */
 /*    97.10.3 FreeBSD    99.4.19 byte-order-free                  */
@@ -9,16 +9,20 @@
 #endif
 
 #include  <stdio.h>
+#include  <stdlib.h>
 
 #include "winlib.h"
 
-main(argc,argv)
-  int argc;
-  char *argv[];
+static const char rcsid[] =
+   "$Id: finalb2final.c,v 1.3.4.1.2.2 2010/09/20 07:06:33 uehira Exp $";
+
+/* prototypes */
+int main(int, char *[]);
+
+int
+main(int argc, char *argv[])
   {
-  char fname[100];
-  int i,j,no,start,year;
-  unsigned char b[16];
+  int i;
   /* struct { */
   /*   char time[8]; /\* Y,M,D,h,m,s,s10,mag10 *\/ */
   /*   float alat,along,dep; */
@@ -39,4 +43,6 @@ main(argc,argv)
       d.time[5],d.time[6],d.alat,d.along,d.dep,
       ((float)d.time[7])*0.1,d.owner,d.diag);
     }
+
+  exit(0);
   }

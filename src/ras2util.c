@@ -1,10 +1,11 @@
-/* $Id: ras2util.c,v 1.1.2.1 2010/09/21 09:40:50 uehira Exp $ */
+/* $Id: ras2util.c,v 1.1.2.2 2010/09/21 10:53:48 uehira Exp $ */
 /********************************************************/
 /*  ras2util.c   97.10.31-97.11.27             urabe    */
 /*               98.3.4      LITTLE ENDIAN    uehira    */
 /*               99.4.19     byte-order-free            */
 /*               2000.4.17   wabort                     */
 /*          2010.9.21   join ras2lips.c and ras2rpdl.c. */
+/*                      64bit check. (Uehira)           */
 /********************************************************/
 
 #if !defined(LIPS) && !defined(RPDL)
@@ -16,21 +17,30 @@
 #endif
 
 #include <stdio.h>
-#include <sys/file.h>
+#include <stdlib.h>
 #include <signal.h>
-#include <syslog.h>
 
 #include "winlib.h"
 
 #define A4_FRAME_XB     392       /* framebuffer's width (byte) */
 #define A4_FRAME_YP     4516      /* framebuffer's height (pixel) */
 
-read_header(fp,height,width)
-  FILE  *fp;
-  int *height,*width;    /* width in bytes */
+static const char rcsid[] =
+  "$Id: ras2util.c,v 1.1.2.2 2010/09/21 10:53:48 uehira Exp $";
+
+/* prototypes */
+static int read_header(FILE  *, int32_w *, int32_w *);
+static size_t compress(int8_w *, size_t);
+static void one_page(FILE *, int);
+static void wabort(void);
+int main(int, char *[]);
+
+static int
+read_header(FILE  *fp, int32_w *height, int32_w *width)
+/* height, width :  width in bytes */
   {
-  int i,length,type,maplength;
-  static int buf;
+  int32_w  i,length,type,maplength;
+  static int32_w buf;
 
 /* header */
   if(fread(&buf,4,1,fp)<1) return(1);  /* magic */
@@ -63,22 +73,22 @@ read_header(fp,height,width)
   return(0);
   }
 
-compress(buf,size)
-  char *buf;
-  int size;
+static size_t
+compress(int8_w *buf, size_t size)
   {
   int i;
-  char *ptr,*ptw,*ptr_lim,c;
+  int8_w *ptr,*ptw,*ptr_lim,c;
+
   ptw=ptr=buf;
   ptr_lim=buf+size;
   for(;;)
     {
     *ptw++=c=(*ptr++);
-    if(ptr==ptr_lim) return ptw-buf;
+    if(ptr==ptr_lim) return (ptw-buf);
     if(c==(*ptr++))
       {
       *ptw++=c;
-      if(ptr==ptr_lim) return ptw-buf;
+      if(ptr==ptr_lim) return (ptw-buf);
       for(i=0;i<255;i++) if(c!=(*ptr++) || ptr==ptr_lim) break;
       *ptw++=i;
       if(i==255) ptr++;
@@ -89,52 +99,59 @@ compress(buf,size)
 
 #define DPI 410
 #define SCALE 0.98
-one_page(fp,inv)
-  FILE *fp;
-  int inv;
+static void
+one_page(FILE *fp, int inv)
   {
-  int i,j,c1,c2,width,height,size;
-  char *buf;
+  int32_w c1,c2,width,height;
+  size_t  i,j;
+  size_t  size;
+  int8_w *buf;
+
   if(read_header(fp,&height,&width)) fprintf(stderr,"header error.\n");
   else
     {
-    buf=(char *)malloc(height*width);
-    size=fread(buf,1,height*width,fp);
-    if(inv)
+    if ((buf=(int8_w *)malloc(height*width)) == NULL)
+      fprintf(stderr, "Allocate error\n");
+    else
       {
-      for(i=0,j=size-1;i<j;i++,j--)
-        {
-        c1=buf[i];
-        c2=buf[j];
-        buf[j]=(c1<<7)&0x80|(c1<<5)&0x40|(c1<<3)&0x20|(c1<<1)&0x10|
-               (c1>>7)&0x01|(c1>>5)&0x02|(c1>>3)&0x04|(c1>>1)&0x08;
-        buf[i]=(c2<<7)&0x80|(c2<<5)&0x40|(c2<<3)&0x20|(c2<<1)&0x10|
-               (c2>>7)&0x01|(c2>>5)&0x02|(c2>>3)&0x04|(c2>>1)&0x08;
-        }
-      }
-    size=compress(buf,size);
+	size=fread(buf,1,height*width,fp);
+	if(inv)
+	  {
+	    for(i=0,j=size-1;i<j;i++,j--)
+	      {
+		c1=buf[i];
+		c2=buf[j];
+		buf[j]=((c1<<7)&0x80)|((c1<<5)&0x40)|((c1<<3)&0x20)|((c1<<1)&0x10)|
+		  ((c1>>7)&0x01)|((c1>>5)&0x02)|((c1>>3)&0x04)|((c1>>1)&0x08);
+		buf[i]=((c2<<7)&0x80)|((c2<<5)&0x40)|((c2<<3)&0x20)|((c2<<1)&0x10)|
+		  ((c2>>7)&0x01)|((c2>>5)&0x02)|((c2>>3)&0x04)|((c2>>1)&0x08);
+	      }
+	  }
+	size=compress(buf,size);
 #ifdef LIPS
-    printf("\033[%d;%d;%d;9;%d.r",size,width,DPI,height);
+	printf("\033[%zu;%d;%d;9;%d.r",size,width,DPI,height);
 #endif
 #ifdef RPDL
-    printf("\033\022G3,%d,%d,%4.2f,4,,,%d@",width*8,height,SCALE,size);
+	printf("\033\022G3,%d,%d,%4.2f,4,,,%zu@",width*8,height,SCALE,size);
 #endif
-    fwrite(buf,1,size,stdout);
-    free(buf);
+	fwrite(buf,1,size,stdout);
+	free(buf);
+      }
     }
   printf("\014");    /* form-feed */
   }
 #undef DPI
 #undef SCALE
 
+static void
 wabort() {exit(9);}
 
-main(argc, argv)
-  int argc;
-  char *argv[];
+int
+main(int argc, char *argv[])
   {
   FILE *fp;
   int i;
+
   signal(SIGINT,(void *)wabort);
   signal(SIGTERM,(void *)wabort);
   signal(SIGPIPE,(void *)wabort);
@@ -156,7 +173,7 @@ main(argc, argv)
   else printf("\033\022YA06,%d,1 ",1); /* two sides - 1:off/2:on */
 #endif
   if(argc==1) one_page(stdin,0);
-  else for(i=1;i<argc;i++) if(fp=fopen(argv[i],"r")) one_page(fp,(i-1)&1);
+  else for(i=1;i<argc;i++) if((fp=fopen(argv[i],"r"))!=NULL) one_page(fp,(i-1)&1);
 #ifdef LIPS
   printf("\033[0#x"); /* one side */
   printf("\033P0J\033\\");    /* end job */
@@ -165,4 +182,6 @@ main(argc, argv)
   printf("\033\022YA06,%d,1 ",1); /* two sides - 1:off/2:on */
   printf("\033\022!@RPS\033 ");   /* enter RPS */
 #endif
+
+  exit(0);
   }

@@ -1,9 +1,9 @@
- $Id: ChangeLog,v 1.131.2.25.2.91 2010/09/21 09:40:49 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.92 2010/09/21 10:53:48 uehira Exp $
 
 2010-09-21  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* src/pmon.c : 64 bit clean?
 	* src/evdetect.c : 64 bit clean?
-	* src/ras2util.c : join 'ras2lips.c' and 'ras2rpdl.c'.
+	* src/ras2util.c : join 'ras2lips.c' and 'ras2rpdl.c'. 64bit check.
 
 2010-09-20  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* src/extraw.c : 64 bit clean.

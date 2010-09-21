@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.38.2.10.2.19 2010/09/20 07:38:37 uehira Exp $
+# $Id: Makefile.am,v 1.38.2.10.2.20 2010/09/21 09:40:50 uehira Exp $
 #
 
 if SUNOS4
@@ -270,9 +270,11 @@ wdisk_LDADD = $(WIN_LOG_LTLIB) $(WIN_SYSTEM_LTLIB) @LIBSHMGET@
 wdiskts_SOURCES = wdiskts.c $(WIN_LIBH) $(GC_CHECK_INCLUDE)
 wdiskts_LDADD = $(WIN_LOG_LTLIB) $(WIN_SYSTEM_LTLIB) @LIBSHMGET@ $(GC_CHECK_LIB)
 
-ras2rpdl_SOURCES = ras2rpdl.c $(WIN_LIBH)
+ras2rpdl_SOURCES = ras2util.c $(WIN_LIBH)
+ras2rpdl_CFLAGS = -DRPDL
 
-ras2lips_SOURCES = ras2lips.c $(WIN_LIBH)
+ras2lips_SOURCES = ras2util.c $(WIN_LIBH)
+ras2lips_CFLAGS = -DLIPS
 
 file_older_SOURCES = file_older.c $(SUBFUNC_H)
 

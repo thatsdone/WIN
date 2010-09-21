@@ -1,10 +1,15 @@
-/* $Id: ras2rpdl.c,v 1.3.4.1.2.2 2010/09/20 03:33:27 uehira Exp $ */
+/* $Id: ras2util.c,v 1.1.2.1 2010/09/21 09:40:50 uehira Exp $ */
 /********************************************************/
-/*  ras2rpdl.c   97.10.31-97.11.27             urabe    */
+/*  ras2util.c   97.10.31-97.11.27             urabe    */
 /*               98.3.4      LITTLE ENDIAN    uehira    */
 /*               99.4.19     byte-order-free            */
 /*               2000.4.17   wabort                     */
+/*          2010.9.21   join ras2lips.c and ras2rpdl.c. */
 /********************************************************/
+
+#if !defined(LIPS) && !defined(RPDL)
+#error define LIPS or RPDL.
+#endif
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -82,6 +87,7 @@ compress(buf,size)
     }
   }
 
+#define DPI 410
 #define SCALE 0.98
 one_page(fp,inv)
   FILE *fp;
@@ -107,12 +113,19 @@ one_page(fp,inv)
         }
       }
     size=compress(buf,size);
+#ifdef LIPS
+    printf("\033[%d;%d;%d;9;%d.r",size,width,DPI,height);
+#endif
+#ifdef RPDL
     printf("\033\022G3,%d,%d,%4.2f,4,,,%d@",width*8,height,SCALE,size);
+#endif
     fwrite(buf,1,size,stdout);
     free(buf);
     }
   printf("\014");    /* form-feed */
   }
+#undef DPI
+#undef SCALE
 
 wabort() {exit(9);}
 
@@ -125,6 +138,15 @@ main(argc, argv)
   signal(SIGINT,(void *)wabort);
   signal(SIGTERM,(void *)wabort);
   signal(SIGPIPE,(void *)wabort);
+#ifdef LIPS
+  printf("\033%%@");              /* begin text mode */
+  printf("\033P41;600;0J\033\\"); /* start job LIPS4, 600dpi */
+  printf("\033<");                /* soft reset */
+  printf("\033[0p");              /* portrait mode */
+  if(argc>2) printf("\033[2;0#x"); /* two sides */
+  else printf("\033[0#x"); /* one side */
+#endif
+#ifdef RPDL
   printf("\033\022!@R00\033 "); /* enter RPDL */
   printf("\0334");   /* end graphic mode */
   printf("\033\022YA04,%d,1 ",1); /* resolution - 1:400/2:240/3:600 */
@@ -132,8 +154,15 @@ main(argc, argv)
   printf("\033\022Y2,%d,1 ",1); /* direction - 1:portrait/2:landscape */
   if(argc>2) printf("\033\022YA06,%d,1 ",2); /* two sides - 1:off/2:on */
   else printf("\033\022YA06,%d,1 ",1); /* two sides - 1:off/2:on */
+#endif
   if(argc==1) one_page(stdin,0);
   else for(i=1;i<argc;i++) if(fp=fopen(argv[i],"r")) one_page(fp,(i-1)&1);
+#ifdef LIPS
+  printf("\033[0#x"); /* one side */
+  printf("\033P0J\033\\");    /* end job */
+#endif
+#ifdef RPDL
   printf("\033\022YA06,%d,1 ",1); /* two sides - 1:off/2:on */
   printf("\033\022!@RPS\033 ");   /* enter RPS */
+#endif
   }

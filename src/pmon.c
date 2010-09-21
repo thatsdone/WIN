@@ -1,4 +1,4 @@
-/* $Id: pmon.c,v 1.14.2.5.2.10 2010/09/20 10:25:44 uehira Exp $ */
+/* $Id: pmon.c,v 1.14.2.5.2.11 2010/09/21 05:20:38 uehira Exp $ */
 /************************************************************************
 *************************************************************************
 **  program "pmon.c" for NEWS/SPARC                             *********
@@ -47,6 +47,7 @@
 **  2002.9.12 delay time (-d)                                   *********
 **  2005.8.10 bug in strcmp2()/strncmp2() fixed : 0-6 > 7-9     *********
 **  2007.1.15 'ch_file not found' message fixed                 *********
+**  2010.9.21 64bit check (Uehira)                              *********
 **                                                              *********
 **  font files ("font16", "font24" and "font32") are            *********
 **  not necessary                                               *********
@@ -232,7 +233,7 @@
 0xf0,0x1e,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x40,0x00,0x06,0x10,0xc0,0x00,0x00};
 
 static const char  rcsid[] =
-   "$Id: pmon.c,v 1.14.2.5.2.10 2010/09/20 10:25:44 uehira Exp $";
+   "$Id: pmon.c,v 1.14.2.5.2.11 2010/09/21 05:20:38 uehira Exp $";
 
 char *progname,*logfile;
 int  syslog_mode = 0, exit_status;
@@ -242,7 +243,7 @@ static int fd,min_trig[M_CH],tim[6],n_zone,n_trig[M_CH],n_stn[M_CH],
   i_zone[M_CH],n_min_trig,not_yet,m_ch,ppt_half,m_limit,made_lock_file,
   min_per_sheet,pixels_per_trace,n_rows,max_ch,max_ch_flag;
 static int32_w long_max[M_CH][SR_MON],long_min[M_CH][SR_MON];
-static short idx[WIN_CHMAX];
+static int16_w  idx[WIN_CHMAX];
 static char file_trig[WIN_FILENAME_MAX],line[LEN],time_text[20],last_line[LEN],
   file_trig_lock[WIN_FILENAME_MAX],*param_file,
   temp_done[WIN_FILENAME_MAX],latest[WIN_FILENAME_MAX],
@@ -422,8 +423,8 @@ confirm_on(int ch)
     max_trig[z]=(++n_trig[z]);
     if(rep_level>=3)
       {
-      sprintf(line,"  %-4s(%-7.7s) on, %s %5d\n",tbl[ch].name,
-        zone[z],time_text,(int)tbl[ch].lta_save);
+      snprintf(line,sizeof(line),"  %-4s(%-7.7s) on, %s %5d\n",
+	       tbl[ch].name,zone[z],time_text,(int)tbl[ch].lta_save);
       write_file(file_trig,line);
       }
     if(n_trig[z]==min_trig[z])
@@ -432,8 +433,8 @@ confirm_on(int ch)
       i_zone[cnt_zone++]=z;
       if(rep_level>=2)
         {
-        sprintf(line," %s %-7.7s on,  min=%d\n",time_text,
-          zone[z],min_trig[z]);
+        snprintf(line,sizeof(line)," %s %-7.7s on,  min=%d\n",
+		 time_text,zone[z],min_trig[z]);
         write_file(file_trig,line);
         }
       if(n_zone_trig==1 && rep_level>=1)
@@ -446,7 +447,7 @@ confirm_on(int ch)
           sprintm(time_text,tm);
           }
         strncpy(prev_on,time_text,13);
-        sprintf(line,"%13.13s on, at %.7s\n",time_text,zone[z]);
+        snprintf(line,sizeof(line),"%13.13s on, at %.7s\n",time_text,zone[z]);
         if(strncmp2(time_text,last_line,13)>0)
           {
           write_file(file_trig,line);
@@ -455,10 +456,12 @@ confirm_on(int ch)
         /* delayed cont message */
         if(tbl[ch].tm[4]!=tim[4])
           {
-          sprintf(line,"%02d%02d%02d.%02d%02d00 cont, %d+",
+	  snprintf(line,sizeof(line),"%02d%02d%02d.%02d%02d00 cont, %d+",
             tim[0],tim[1],tim[2],tim[3],tim[4],n_zone_trig);
-          if(n_zone_trig>1) sprintf(line+strlen(line)," zones\n");
-          else sprintf(line+strlen(line)," zone\n");
+          if(n_zone_trig>1)
+	    snprintf(line+strlen(line),sizeof(line)-strlen(line)," zones\n");
+          else
+	    snprintf(line+strlen(line),sizeof(line)-strlen(line)," zone\n");
           if(not_yet==0) write_file(file_trig,line);
           }
         }
@@ -495,17 +498,19 @@ confirm_off(int ch, int sec, int i)
     z=tbl[ch].zone[j];
     if(rep_level>=3)
       {
-      sprintf(line,"  %-4s(%-7.7s) off, %5.1f %7d\n",
+      snprintf(line,sizeof(line),"  %-4s(%-7.7s) off, %5.1f %7d\n",
         tbl[ch].name,zone[z],tbl[ch].sec_on,tbl[ch].max);
       write_file(file_trig,line);
       }
     if(--n_trig[z]==min_trig[z]-1)
       {
       sprintm(time_text,tim);
-      sprintf(time_text+strlen(time_text),".%d",i*(10/SR_MON));
+      snprintf(time_text+strlen(time_text),
+	       sizeof(time_text)-strlen(time_text),
+	       ".%d",i*(10/SR_MON));
       if(rep_level>=2)
         {
-        sprintf(line,
+	snprintf(line,sizeof(line),
           " %s %-7.7s off, max=%d\n",time_text,zone[z],max_trig[z]);
         write_file(file_trig,line);
         }
@@ -521,14 +526,15 @@ confirm_off(int ch, int sec, int i)
             sprintm(time_text,tm);
             }
           strncpy(prev_off,time_text,13);
-          sprintf(line,"%13.13s off,",time_text);
+          snprintf(line,sizeof(line),"%13.13s off,",time_text);
           for(ii=1;ii<cnt_zone;ii++)
             {
             for(jj=1;jj<ii;jj++) if(i_zone[ii]==i_zone[jj]) break;
             if(jj<ii) continue; 
-            sprintf(line+strlen(line)," %.7s",zone[i_zone[ii]]);
+            snprintf(line+strlen(line),sizeof(line)-strlen(line),
+		     " %.7s",zone[i_zone[ii]]);
             }
-          sprintf(line+strlen(line),"\n");
+          snprintf(line+strlen(line),sizeof(line)-strlen(line),"\n");
           if(not_yet==0) write_file(file_trig,line);
           }
         cnt_zone=0;
@@ -548,7 +554,7 @@ find_oldest_pmon(char *path, char *oldst, char *latst) /* returns N of files */
   /* find the oldest file */
   if((dir_ptr=opendir(path))==NULL)
     {
-    sprintf(tb,"directory '%s' not open",path);
+    snprintf(tb,sizeof(tb),"directory '%s' not open",path);
     write_log(tb);
     owari();
     }
@@ -574,7 +580,10 @@ find_oldest_pmon(char *path, char *oldst, char *latst) /* returns N of files */
 static int
 read_one_sec(int *sec)
   {
-  int i,j,k,lower_min,lower_max,aa,bb,kk,sys,ch;
+  int i,j,k,kk;
+  int32_w  lower_min,lower_max;
+  uint32_w  aa,bb,sys;
+  WIN_ch  ch;
   uint32_w  size;
   ssize_t  ret;
   uint8_w *ptr,*ptr_lim;
@@ -710,10 +719,12 @@ plot_wave(int xbase, int ybase)
 
   if(n_zone_trig>0 && rep_level>=1)
     {
-    sprintf(line,"%02d%02d%02d.%02d%02d00 cont, %d",
+    snprintf(line,sizeof(line),"%02d%02d%02d.%02d%02d00 cont, %d",
       tim[0],tim[1],tim[2],tim[3],tim[4],n_zone_trig);
-    if(n_zone_trig>1) sprintf(line+strlen(line)," zones\n");
-    else sprintf(line+strlen(line)," zone\n");
+    if(n_zone_trig>1)
+      snprintf(line+strlen(line),sizeof(line)-strlen(line)," zones\n");
+    else
+      snprintf(line+strlen(line),sizeof(line)-strlen(line)," zone\n");
     if(not_yet==0) write_file(file_trig,line);
     }
 
@@ -738,7 +749,7 @@ plot_wave(int xbase, int ybase)
           {
           if(tim[5]==0 && i==0 && m_limit==0 && !tbl[ch].alive)
             {
-            sprintf(tb,"'%s' present (pmon)",tbl[ch].name);
+	    snprintf(tb,sizeof(tb),"'%s' present (pmon)",tbl[ch].name);
             write_log(tb);
             tbl[ch].alive=1;
             }
@@ -759,7 +770,7 @@ plot_wave(int xbase, int ybase)
         else if(tim[5]==0 && i==0 && tbl[ch].name[0]!='*' &&
             m_limit==0 && tbl[ch].alive)
           {
-          sprintf(tb,"'%s' absent (pmon)",tbl[ch].name);
+	  snprintf(tb,sizeof(tb),"'%s' absent (pmon)",tbl[ch].name);
           write_log(tb);
           tbl[ch].alive=0;
           }
@@ -1029,8 +1040,9 @@ insatsu(uint8_w *tb1, uint8_w *tb2, uint8_w *tb3, char *path_spool,
   sscanf((char *)tb2,"%02d/%02d/%02d %02d:%02d",&ye,&mo,&da,&ho1,&mi1);
   sscanf((char *)tb3," - %02d:%02d",&ho2,&mi2);
 /*printf("%02d %02d %02d %02d %02d %02d %02d\n",ye,mo,da,ho1,mi1,ho2,mi2);*/
-  sprintf(timename,"%02d%02d%02d.%02d%02d-%02d%02d",ye,mo,da,ho1,mi1,ho2,mi2);
-  sprintf(filename,"%s/%s.ras",path_spool,timename);
+  snprintf(timename,sizeof(timename),
+	   "%02d%02d%02d.%02d%02d-%02d%02d",ye,mo,da,ho1,mi1,ho2,mi2);
+  snprintf(filename,sizeof(filename),"%s/%s.ras",path_spool,timename);
   lbp=fopen(filename,"w");
   ras.ras_magic=RAS_MAGIC;
   ras.ras_width=WIDTH_LBP*8;
@@ -1058,10 +1070,10 @@ insatsu(uint8_w *tb1, uint8_w *tb2, uint8_w *tb3, char *path_spool,
     {
 #if defined(__SVR4)
     if(m_limit) printf("cat %s|lp -d %s -T raster\n",filename,printer);
-    sprintf(line,"cat %s|lp -d %s -T raster\n",filename,printer);
+    snprintf(line,sizeof(line),"cat %s|lp -d %s -T raster\n",filename,printer);
 #else
     if(m_limit) printf("lpr -P%s -v %s\n",printer,filename);
-    sprintf(line,"lpr -P%s -v %s",printer,filename);
+    snprintf(line,sizeof(line),"lpr -P%s -v %s",printer,filename);
 #endif
     system(line);
     }
@@ -1070,22 +1082,23 @@ insatsu(uint8_w *tb1, uint8_w *tb2, uint8_w *tb3, char *path_spool,
     {
     if(*convert)
       {
-      sprintf(tb,"%s %s %s %s",convert,filename,path_spool,timename);
+      snprintf(tb,sizeof(tb),
+	       "%s %s %s %s",convert,filename,path_spool,timename);
       if(m_limit) printf("%s\n",tb);
       system(tb);
       unlink(filename);
       }
     while((count=find_oldest_pmon(path_spool,oldst,latst))>count_max && count_max)
       {
-      sprintf(tb,"%s/%s",path_spool,oldst);
+      snprintf(tb,sizeof(tb),"%s/%s",path_spool,oldst);
       unlink(tb);
 #if DEBUG1
       printf("%s deleted\n",tb);
 #endif
       }
-    sprintf(tb,"%d",count);
+    snprintf(tb,sizeof(tb),"%d",count);
     wmemo("COUNT",tb,path_spool);
-    sprintf(tb,"%d",count_max);
+    snprintf(tb,sizeof(tb),"%d",count_max);
     wmemo("MAX",tb,path_spool);
     wmemo("OLDEST",oldst,path_spool);
     wmemo("LATEST",latst,path_spool);
@@ -1114,7 +1127,7 @@ get_lastline(char *fname, char *lastline)
     }
   last_dp=(-1);
   dp=0;
-  while(fgets(lastline,200,fp)!=NULL)
+  while(fgets(lastline,LEN,fp)!=NULL)
     {
     if(*lastline!=' ') last_dp=dp;
     dp=ftell(fp);
@@ -1127,7 +1140,7 @@ get_lastline(char *fname, char *lastline)
   else
     {
     fseek(fp,last_dp,0);
-    fgets(lastline,200,fp);
+    fgets(lastline,LEN,fp);
     }
   fclose(fp);
   }
@@ -1138,7 +1151,7 @@ usage()
 
   WIN_version();
   (void)fprintf(stderr, "%s\n", rcsid);
-  fprintf(stderr," usage of '%s' :\n", progname);
+  (void)fprintf(stderr," usage of '%s' :\n", progname);
   (void)fprintf(stderr,
 		"  '%s (-d [dly min]) (-o) (-l [log file]) [param file] ([YYMMDD] [hhmm] [length(min)])'\n",
 		progname);
@@ -1148,8 +1161,9 @@ int
 main(int argc, char *argv[])
   {
   FILE *f_param,*fp;
-  int i,j,k,maxlen,ret,m_count,x_base,y_base,y,ch,tm1[6],minutep,hourp,c,
+  int i,j,k,ret,m_count,x_base,y_base,y,ch,tm1[6],minutep,hourp,c,
     count,count_max,offset,wait_min;
+  size_t  maxlen;
   char *ptr,textbuf[500],textbuf1[500],fn1[200],fn2[100],conv[256],tb[100],
     fn3[100],path_temp[WIN_FILENAME_MAX],
     path_mon[WIN_FILENAME_MAX],area[20],timebuf1[80],timebuf2[80],printer[40],
@@ -1292,7 +1306,7 @@ retry:
       write_log(tb);
       while((fp=fopen(latest,"r"))==NULL)
         {
-        sprintf(tb,"'%s' not found. Waiting ...",latest);
+	snprintf(tb,sizeof(tb),"'%s' not found. Waiting ...",latest);
         write_log(tb);
         sleep(60);
         }
@@ -1335,7 +1349,7 @@ retry:
       fclose(fp);
       if(kill(i,0)==0)
         {
-        sprintf(tb,"Can't run because lock file '%s' is valid for PID#%d.",
+	snprintf(tb,sizeof(tb),"Can't run because lock file '%s' is valid for PID#%d.",
           file_trig_lock,i);
         write_log(tb);
         owari();
@@ -1491,7 +1505,8 @@ retry:
                   }
                 else
                   {
-                  sprintf(tb,"too many zones for station '%s'",tbl[i].name);
+		  snprintf(tb,sizeof(tb),
+			   "too many zones for station '%s'",tbl[i].name);
                   write_log(tb);
                   }
                 }
@@ -1502,7 +1517,8 @@ retry:
             {
             if(tbl[i].n_zone==0)
               {
-              sprintf(tb,"zone for '%s' not found %d",tbl[i].name,i);
+		snprintf(tb,sizeof(tb),
+			 "zone for '%s' not found %d",tbl[i].name,i);
               write_log(tb);
               tbl[i].ratio=0.0;
               }
@@ -1585,17 +1601,18 @@ retry:
           else
             {
             if(strncmp(tbl[i].name,tbl[i-1].name,4)==0) sprintf(textbuf,"    ");
-            else sprintf(textbuf,"%-4s",tbl[i].name);
+            else snprintf(textbuf,sizeof(textbuf),"%-4s",tbl[i].name);
             }
           strcat(textbuf,"-");
-          sprintf(textbuf+strlen(textbuf),"%-2s",tbl[i].comp);
+          snprintf(textbuf+strlen(textbuf),sizeof(textbuf)-strlen(textbuf),
+		  "%-2s",tbl[i].comp);
           if(max_ch_flag)
             put_font((uint8_w *)frame,WIDTH_LBP,WIDTH_FONT16*5,y,
 		     (uint8_w *)textbuf,font16,HEIGHT_FONT16,WIDTH_FONT16,0);
           else
             put_font((uint8_w *)frame,WIDTH_LBP,WIDTH_FONT16*5,y,textbuf,font24,
               HEIGHT_FONT24,WIDTH_FONT24,0);
-          sprintf(textbuf,"%2d",tbl[i].gain);
+          snprintf(textbuf,sizeof(textbuf),"%2d",tbl[i].gain);
           if(max_ch_flag)
             put_font((uint8_w *)frame,WIDTH_LBP,WIDTH_FONT16*4+WIDTH_FONT16*7,y,
               textbuf,font16,HEIGHT_FONT16,WIDTH_FONT16,0);
@@ -1608,9 +1625,9 @@ retry:
         }
       }
     if(m_count%min_per_sheet==0)  /* make fns */
-      sprintf(fn2,"%02d/%02d/%02d %02d:%02d",
+      snprintf(fn2,sizeof(fn2),"%02d/%02d/%02d %02d:%02d",
         tim[0],tim[1],tim[2],tim[3],tim[4]);
-    sprintf(timebuf2,"%02d%02d%02d%02d.%02d",
+    snprintf(timebuf2,sizeof(timebuf2),"%02d%02d%02d%02d.%02d",
         tim[0],tim[1],tim[2],tim[3],tim[4]);
 /*
   timebuf1 : LATEST
@@ -1632,7 +1649,7 @@ retry:
               tm1[5]=(-1);
               adj_time(tm1);
               }
-          sprintf(timebuf1,"%02d%02d%02d%02d.%02d",
+          snprintf(timebuf1,sizeof(timebuf1),"%02d%02d%02d%02d.%02d",
             tm1[0],tm1[1],tm1[2],tm1[3],tm1[4]);
           }
         if(strlen(timebuf1)>=11 && strcmp2(timebuf1,timebuf2)>=0) break;
@@ -1642,7 +1659,7 @@ retry:
 		printer,count,count_max,conv);
       sleep(15);
       }
-    sprintf(textbuf,"%s/%s",path_mon,timebuf2);
+    snprintf(textbuf,sizeof(textbuf),"%s/%s",path_mon,timebuf2);
     if((fd=open(textbuf,O_RDONLY))!=-1)
       {
       if(m_limit)
@@ -1667,7 +1684,7 @@ retry:
       if(++hourp==24) hourp=0;
       minutep=0;
       }
-    sprintf(fn3," - %02d:%02d",hourp,minutep);
+    snprintf(fn3,sizeof(fn3)," - %02d:%02d",hourp,minutep);
     x_base+=SR_MON*60;
     if(++m_count==m_limit)
       {

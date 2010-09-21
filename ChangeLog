@@ -1,4 +1,7 @@
- $Id: ChangeLog,v 1.131.2.25.2.88 2010/09/20 10:25:44 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.89 2010/09/21 05:20:38 uehira Exp $
+
+2010-09-21  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/pmon.c : 64 bit clean?
 
 2010-09-20  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* src/extraw.c : 64 bit clean.

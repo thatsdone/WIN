@@ -1,4 +1,4 @@
-/* $Id: evdetect.c,v 1.1.2.4 2010/09/21 05:40:40 uehira Exp $ */
+/* $Id: evdetect.c,v 1.1.2.5 2010/09/21 14:33:31 uehira Exp $ */
 
 /*
  * evedetect.c
@@ -120,7 +120,7 @@
 #define WIN_FILENAME_MAX 1024
 
 static const char  rcsid[] =
-   "$Id: evdetect.c,v 1.1.2.4 2010/09/21 05:40:40 uehira Exp $";
+   "$Id: evdetect.c,v 1.1.2.5 2010/09/21 14:33:31 uehira Exp $";
 
 char *progname, *logfile;
 int  syslog_mode = 0, exit_status;
@@ -785,7 +785,7 @@ main(int argc, char *argv[])
     owari();
   }
   if (sizeof(latest)
-      <= snprintf(latest, sizeof(latest), "%s/LATEST", path_mon)) {
+      <= snprintf(latest, sizeof(latest), "%s/%s", path_mon, WDISK_LATEST)) {
     (void)snprintf(tb, sizeof(tb), "buffer overflow2");
     write_log(tb);
     owari();

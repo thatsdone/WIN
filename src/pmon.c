@@ -1,4 +1,4 @@
-/* $Id: pmon.c,v 1.14.2.5.2.12 2010/09/21 05:40:40 uehira Exp $ */
+/* $Id: pmon.c,v 1.14.2.5.2.13 2010/09/21 14:33:31 uehira Exp $ */
 /************************************************************************
 *************************************************************************
 **  program "pmon.c" for NEWS/SPARC                             *********
@@ -233,7 +233,7 @@
 0xf0,0x1e,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x40,0x00,0x06,0x10,0xc0,0x00,0x00};
 
 static const char  rcsid[] =
-   "$Id: pmon.c,v 1.14.2.5.2.12 2010/09/21 05:40:40 uehira Exp $";
+   "$Id: pmon.c,v 1.14.2.5.2.13 2010/09/21 14:33:31 uehira Exp $";
 
 char *progname,*logfile;
 int  syslog_mode = 0, exit_status;
@@ -1288,7 +1288,7 @@ main(int argc, char *argv[])
     write_log(tb);
     owari();
   }
-  if (sizeof(latest) <= snprintf(latest,sizeof(latest),"%s/LATEST",path_mon)) {
+  if (sizeof(latest) <= snprintf(latest,sizeof(latest),"%s/%s",path_mon,WDISK_LATEST)) {
     snprintf(tb,sizeof(tb),"buffer overflow2");
     write_log(tb);
     owari();

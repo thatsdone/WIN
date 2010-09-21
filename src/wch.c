@@ -1,4 +1,4 @@
-/* $Id: wch.c,v 1.8.4.2.2.5 2010/09/17 10:20:52 uehira Exp $ */
+/* $Id: wch.c,v 1.8.4.2.2.6 2010/09/21 11:56:59 uehira Exp $ */
 /*
 program "wch.c"
 "wch" edits a win format data file by channles
@@ -27,8 +27,8 @@ program "wch.c"
 
 /* #define   DEBUG   0 */
 
-static char rcsid[] =
-  "$Id: wch.c,v 1.8.4.2.2.5 2010/09/17 10:20:52 uehira Exp $";
+static const char rcsid[] =
+  "$Id: wch.c,v 1.8.4.2.2.6 2010/09/21 11:56:59 uehira Exp $";
 
 static uint8_w *buf=NULL,*outbuf;
 static uint8_w ch_table[WIN_CHMAX];

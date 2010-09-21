@@ -1,4 +1,4 @@
-/* $Id: winrawcli_test.c,v 1.1.4.2.2.1 2009/08/25 04:00:16 uehira Exp $ */
+/* $Id: winrawcli_test.c,v 1.1.4.2.2.2 2010/09/21 11:56:59 uehira Exp $ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -28,8 +28,8 @@
 
 #define MAXMSG       1025
 
-static char rcsid[] =
-  "$Id: winrawcli_test.c,v 1.1.4.2.2.1 2009/08/25 04:00:16 uehira Exp $";
+static const char rcsid[] =
+  "$Id: winrawcli_test.c,v 1.1.4.2.2.2 2010/09/21 11:56:59 uehira Exp $";
 
 char *progname, *logfile;
 int  daemon_mode, syslog_mode;

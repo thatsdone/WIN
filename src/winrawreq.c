@@ -1,4 +1,4 @@
-/* $Id: winrawreq.c,v 1.1.2.4.2.3 2009/12/18 11:33:50 uehira Exp $ */
+/* $Id: winrawreq.c,v 1.1.2.4.2.4 2010/09/21 11:56:59 uehira Exp $ */
 
 /* winrawreq.c -- raw data request client */
 
@@ -47,8 +47,8 @@
         
 #define MAXMSG       1025
 
-static char rcsid[] =
-  "$Id: winrawreq.c,v 1.1.2.4.2.3 2009/12/18 11:33:50 uehira Exp $";
+static const char rcsid[] =
+  "$Id: winrawreq.c,v 1.1.2.4.2.4 2010/09/21 11:56:59 uehira Exp $";
 
 char *progname, *logfile;
 int  daemon_mode, syslog_mode;

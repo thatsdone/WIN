@@ -1,4 +1,4 @@
-/* $Id: rawsrv_info.c,v 1.1.2.2.4.1 2009/08/25 04:00:15 uehira Exp $ */
+/* $Id: rawsrv_info.c,v 1.1.2.2.4.2 2010/09/21 11:56:59 uehira Exp $ */
 
 /* rawsrv_info.c -- print information about raw-data server */
 
@@ -34,8 +34,8 @@
 
 #define MAXMSG       1025
 
-static char rcsid[] =
-  "$Id: rawsrv_info.c,v 1.1.2.2.4.1 2009/08/25 04:00:15 uehira Exp $";
+static const char rcsid[] =
+  "$Id: rawsrv_info.c,v 1.1.2.2.4.2 2010/09/21 11:56:59 uehira Exp $";
 
 char *progname, *logfile;
 int  daemon_mode, syslog_mode;

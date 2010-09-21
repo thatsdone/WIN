@@ -1,4 +1,4 @@
-/* $Id: raw_time.c,v 1.4.4.3.2.7 2010/09/17 11:55:53 uehira Exp $ */
+/* $Id: raw_time.c,v 1.4.4.3.2.8 2010/09/21 11:56:58 uehira Exp $ */
 
 /* raw_time.c -- online version of wtime(1W) */
 
@@ -53,8 +53,8 @@
 #define MAXMESG   2048
 
 
-static char rcsid[] =
-  "$Id: raw_time.c,v 1.4.4.3.2.7 2010/09/17 11:55:53 uehira Exp $";
+static const char rcsid[] =
+  "$Id: raw_time.c,v 1.4.4.3.2.8 2010/09/21 11:56:58 uehira Exp $";
 
 char *progname, *logfile;
 int  daemon_mode, syslog_mode;

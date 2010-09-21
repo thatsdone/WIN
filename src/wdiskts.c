@@ -1,4 +1,4 @@
-/* $Id: wdiskts.c,v 1.6.2.5.2.8 2010/09/20 03:33:28 uehira Exp $ */
+/* $Id: wdiskts.c,v 1.6.2.5.2.9 2010/09/21 11:56:59 uehira Exp $ */
 
 /*-
   2005.8.10 urabe bug in strcmp2() fixed : 0-6 > 7-9 
@@ -60,8 +60,8 @@
 /* (type*)realloc((void *)ptr, (size_t)(sizeof(type)*(n))) */
 /* #define FREE(a)         (void)free((void *)(a)) */
 
-static char rcsid[] =
-  "$Id: wdiskts.c,v 1.6.2.5.2.8 2010/09/20 03:33:28 uehira Exp $";
+static const char rcsid[] =
+  "$Id: wdiskts.c,v 1.6.2.5.2.9 2010/09/21 11:56:59 uehira Exp $";
 
 char *progname,*logfile;
 int  daemon_mode, syslog_mode, exit_status;

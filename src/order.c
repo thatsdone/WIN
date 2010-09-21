@@ -1,4 +1,4 @@
-/* $Id: order.c,v 1.11.4.5.2.7 2010/09/20 03:33:27 uehira Exp $ */
+/* $Id: order.c,v 1.11.4.5.2.8 2010/09/21 11:56:58 uehira Exp $ */
 /*  program "order.c" 1/26/94 - 2/7/94, 6/14/94 urabe */
 /*                              1/6/95 bug in adj_time(tm[0]--) fixed */
 /*                              3/17/95 write_log() */
@@ -56,8 +56,8 @@
 
 #define NAMELEN  1025
 
-static char rcsid[] =
-  "$Id: order.c,v 1.11.4.5.2.7 2010/09/20 03:33:27 uehira Exp $";
+static const char rcsid[] =
+  "$Id: order.c,v 1.11.4.5.2.8 2010/09/21 11:56:58 uehira Exp $";
 
 char *progname,*logfile;
 int  daemon_mode, syslog_mode, exit_status;

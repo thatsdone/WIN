@@ -1,4 +1,4 @@
-/* $Id: wck.c,v 1.5.4.1.2.7 2009/08/28 07:12:16 uehira Exp $ */
+/* $Id: wck.c,v 1.5.4.1.2.8 2010/09/21 11:56:59 uehira Exp $ */
 /*- 
    program "wck.c"
 	"wck" checks a win format data file
@@ -36,8 +36,8 @@
 
 #define DEBUG1  0
 
-static char rcsid[] =
-  "$Id: wck.c,v 1.5.4.1.2.7 2009/08/28 07:12:16 uehira Exp $";
+static const char rcsid[] =
+  "$Id: wck.c,v 1.5.4.1.2.8 2010/09/21 11:56:59 uehira Exp $";
 
 char *progname;
 static unsigned long count[WIN_CHMAX];

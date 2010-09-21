@@ -1,4 +1,4 @@
-/* $Id: fromtape.c,v 1.7.2.3.2.9 2010/09/20 03:33:27 uehira Exp $ */
+/* $Id: fromtape.c,v 1.7.2.3.2.10 2010/09/21 11:56:58 uehira Exp $ */
 /*
   program "fromtape.c"
   12/10/90 - 12/13/90, 9/19/91, 10/30/91, 6/19/92  urabe
@@ -48,8 +48,8 @@
                     /* 60 m / fm after this time */
 /* #define   TIME3   "9008031718" */  /* 10 m / fm after this time */
 
-static char rcsid[] =
-  "$Id: fromtape.c,v 1.7.2.3.2.9 2010/09/20 03:33:27 uehira Exp $";
+static const char rcsid[] =
+  "$Id: fromtape.c,v 1.7.2.3.2.10 2010/09/21 11:56:58 uehira Exp $";
 
 static uint8_w wbuf[SIZE_WBUF],buf[MAXSIZE];
 static int fd_exb,dec_start[6],dec_end[6],min_reserve,

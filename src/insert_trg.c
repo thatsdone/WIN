@@ -1,5 +1,5 @@
 /*
- * $Id: insert_trg.c,v 1.6.4.4.2.4 2010/09/20 03:33:27 uehira Exp $
+ * $Id: insert_trg.c,v 1.6.4.4.2.5 2010/09/21 11:56:58 uehira Exp $
  * Insert sorted timeout data to event data.
  *
  *------------ sample of parameter file ------------
@@ -50,7 +50,8 @@
 #define BUF_SIZE 1024
 
 char *progname;
-static char rcsid[]="$Id: insert_trg.c,v 1.6.4.4.2.4 2010/09/20 03:33:27 uehira Exp $";
+static const char rcsid[]=
+  "$Id: insert_trg.c,v 1.6.4.4.2.5 2010/09/21 11:56:58 uehira Exp $";
 
 struct Cnt_file {
   char  trg_dir[WIN_FILENAME_MAX];    /* trg data directory */

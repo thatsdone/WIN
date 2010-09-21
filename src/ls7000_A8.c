@@ -1,4 +1,4 @@
-/* $Id: ls7000_A8.c,v 1.1.2.1 2009/03/06 13:03:03 uehira Exp $ */
+/* $Id: ls7000_A8.c,v 1.1.2.2 2010/09/21 11:56:58 uehira Exp $ */
 
 /*
  * Copyright (c) 2009 -
@@ -24,8 +24,8 @@
 #include "ls7000.h"
 
 static char  *progname;
-static char  rcsid[] =
-   "$Id: ls7000_A8.c,v 1.1.2.1 2009/03/06 13:03:03 uehira Exp $";
+static const char  rcsid[] =
+   "$Id: ls7000_A8.c,v 1.1.2.2 2010/09/21 11:56:58 uehira Exp $";
 
 static int read_STL(FILE *);
 static int read_CNT(FILE *);

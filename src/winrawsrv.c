@@ -1,4 +1,4 @@
-/* $Id: winrawsrv.c,v 1.1.4.6.2.1 2009/08/25 04:00:16 uehira Exp $ */
+/* $Id: winrawsrv.c,v 1.1.4.6.2.2 2010/09/21 11:56:59 uehira Exp $ */
 
 /* winrawsrv.c -- raw data request server */
 
@@ -50,8 +50,8 @@
 #define MAXMSG       1024
 #define FNAMEMAX     1024
 
-static char rcsid[] =
-  "$Id: winrawsrv.c,v 1.1.4.6.2.1 2009/08/25 04:00:16 uehira Exp $";
+static const char rcsid[] =
+  "$Id: winrawsrv.c,v 1.1.4.6.2.2 2010/09/21 11:56:59 uehira Exp $";
 
 char *progname, *logfile;
 int  daemon_mode, syslog_mode;

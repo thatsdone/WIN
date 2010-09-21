@@ -1,4 +1,4 @@
-/* $Id: wtape.c,v 1.12.2.4.2.8 2010/09/20 10:25:44 uehira Exp $ */
+/* $Id: wtape.c,v 1.12.2.4.2.9 2010/09/21 11:56:59 uehira Exp $ */
 /*
   program "wtape.c"
   8/23/89 - 8/8/90, 6/27/91, 12/24/91, 2/29/92  urabe
@@ -56,8 +56,8 @@
 #define   DEFAULT_PARAM_FILE  "wtape.prm"
 #define   WIN_FILENAME_MAX 1024
 
-static char rcsid[] = 
-  "$Id: wtape.c,v 1.12.2.4.2.8 2010/09/20 10:25:44 uehira Exp $";
+static const char rcsid[] = 
+  "$Id: wtape.c,v 1.12.2.4.2.9 2010/09/21 11:56:59 uehira Exp $";
 
 static uint8_w buf[SIZE_MAX];
 static int init_flag,wfm,new_tape,switch_req,fd_exb,exb_status[N_EXABYTE],

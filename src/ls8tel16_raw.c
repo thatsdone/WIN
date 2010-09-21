@@ -1,4 +1,4 @@
-/* $Id: ls8tel16_raw.c,v 1.3.2.2.2.7 2010/02/02 10:57:22 uehira Exp $ */
+/* $Id: ls8tel16_raw.c,v 1.3.2.2.2.8 2010/09/21 11:56:58 uehira Exp $ */
 
 /*
  * Copyright (c) 2005
@@ -57,8 +57,8 @@
 #define BELL        0
 /*  #define DEBUG       0 */
 
-static char rcsid[] =
-  "$Id: ls8tel16_raw.c,v 1.3.2.2.2.7 2010/02/02 10:57:22 uehira Exp $";
+static const char rcsid[] =
+  "$Id: ls8tel16_raw.c,v 1.3.2.2.2.8 2010/09/21 11:56:58 uehira Exp $";
 
 char *progname, *logfile;
 int  daemon_mode, syslog_mode;

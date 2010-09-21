@@ -1,4 +1,4 @@
-/* $Id: recvstatus3.c,v 1.8.2.1.2.1 2009/08/25 04:00:15 uehira Exp $ */
+/* $Id: recvstatus3.c,v 1.8.2.1.2.2 2010/09/21 11:56:59 uehira Exp $ */
 
 /* 
  * recvstatus3 :
@@ -48,8 +48,8 @@
 #define MAXMSG       1025
 #define PATHMAX      1024
 
-static char rcsid[] =
-  "$Id: recvstatus3.c,v 1.8.2.1.2.1 2009/08/25 04:00:15 uehira Exp $";
+static const char rcsid[] =
+  "$Id: recvstatus3.c,v 1.8.2.1.2.2 2010/09/21 11:56:59 uehira Exp $";
 
 char *progname, *logfile;
 int  daemon_mode, syslog_mode;

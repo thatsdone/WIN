@@ -1,8 +1,8 @@
-/* $Id: evdetect.c,v 1.1.2.3 2010/09/20 10:25:44 uehira Exp $ */
+/* $Id: evdetect.c,v 1.1.2.4 2010/09/21 05:40:40 uehira Exp $ */
 
 /*
  * evedetect.c
- *  Event detect program. Modify pmon.c
+ *  Event detect program. Modified pmon.c
  */
 
 /************************************************************************
@@ -53,6 +53,7 @@
 **  2002.9.12 delay time (-d)                                   *********
 **  2005.8.10 bug in strcmp2()/strncmp2() fixed : 0-6 > 7-9     *********
 **  2007.1.15 'ch_file not found' message fixed                 *********
+**  2010.9.21 64bit check (Uehira)                              *********
 **                                                              *********
 **  font files ("font16", "font24" and "font32") are            *********
 **  not necessary                                               *********
@@ -66,6 +67,10 @@
 #include "config.h"
 #endif
 
+#include  <sys/types.h>
+#include  <sys/file.h>
+#include  <sys/ioctl.h>
+
 #include  <stdio.h>
 #include  <stdlib.h>
 #include  <string.h>
@@ -73,8 +78,8 @@
 #include  <signal.h>
 #include  <unistd.h>
 #include  <dirent.h>
-#include  <sys/types.h>
-#include  <sys/file.h>
+#include  <fcntl.h>
+#include  <ctype.h>
 
 #if TIME_WITH_SYS_TIME
 #include <sys/time.h>
@@ -86,10 +91,6 @@
 #include <time.h>
 #endif  /* !HAVE_SYS_TIME_H */
 #endif  /* !TIME_WITH_SYS_TIME */
-
-#include  <fcntl.h>
-#include  <sys/ioctl.h>
-#include  <ctype.h>
 
 #include "winlib.h"
 
@@ -119,7 +120,7 @@
 #define WIN_FILENAME_MAX 1024
 
 static const char  rcsid[] =
-   "$Id: evdetect.c,v 1.1.2.3 2010/09/20 10:25:44 uehira Exp $";
+   "$Id: evdetect.c,v 1.1.2.4 2010/09/21 05:40:40 uehira Exp $";
 
 char *progname, *logfile;
 int  syslog_mode = 0, exit_status;
@@ -128,7 +129,7 @@ static int fd, min_trig[M_CH], tim[6], n_zone, n_trig[M_CH], n_stn[M_CH],
   max_trig[M_CH], rep_level, n_zone_trig, cnt_zone,
   i_zone[M_CH], not_yet, m_ch, m_limit, made_lock_file, max_ch;
 static int32_w long_max[M_CH][SR_MON], long_min[M_CH][SR_MON];
-static short idx[WIN_CHMAX];
+static int16_w  idx[WIN_CHMAX];
 static char file_trig[WIN_FILENAME_MAX], line[LEN], time_text[20],
   last_line[LEN], file_trig_lock[WIN_FILENAME_MAX], *param_file,
   temp_done[WIN_FILENAME_MAX], latest[WIN_FILENAME_MAX],
@@ -330,11 +331,12 @@ confirm_off(int ch, int sec, int i)
 static int
 read_one_sec(int *sec)
 {
-  int i, j, k, aa, bb, kk;
-  uint32_w size;
+  int i, j, k, kk;
   int32_w  lower_min, lower_max;
-  WIN_ch sys, ch;
-  uint8_w *ptr, *ptr_lim;
+  uint8_w  aa, bb, sys;
+  WIN_ch  ch;
+  uint32_w  size;
+  uint8_w  *ptr, *ptr_lim;
   static uint32_w upper[4][8] = {
     {0x00000000, 0x00000010, 0x00000020, 0x00000030,
      0xffffffc0, 0xffffffd0, 0xffffffe0, 0xfffffff0},
@@ -635,7 +637,7 @@ get_lastline(char *fname, char *lastline)
   }
   last_dp = (-1);
   dp = 0;
-  while (fgets(lastline, 200, fp) != NULL) {
+  while (fgets(lastline, LEN, fp) != NULL) {
     if (*lastline != ' ')
       last_dp = dp;
     dp = ftell(fp);
@@ -646,7 +648,7 @@ get_lastline(char *fname, char *lastline)
     return;
   } else {
     (void)fseek(fp, last_dp, 0);
-    (void)fgets(lastline, 200, fp);
+    (void)fgets(lastline, LEN, fp);
   }
 
   (void)fclose(fp);

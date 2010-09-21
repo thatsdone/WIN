@@ -1,4 +1,4 @@
-/* $Id: pmon.c,v 1.14.2.5.2.11 2010/09/21 05:20:38 uehira Exp $ */
+/* $Id: pmon.c,v 1.14.2.5.2.12 2010/09/21 05:40:40 uehira Exp $ */
 /************************************************************************
 *************************************************************************
 **  program "pmon.c" for NEWS/SPARC                             *********
@@ -233,7 +233,7 @@
 0xf0,0x1e,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x40,0x00,0x06,0x10,0xc0,0x00,0x00};
 
 static const char  rcsid[] =
-   "$Id: pmon.c,v 1.14.2.5.2.11 2010/09/21 05:20:38 uehira Exp $";
+   "$Id: pmon.c,v 1.14.2.5.2.12 2010/09/21 05:40:40 uehira Exp $";
 
 char *progname,*logfile;
 int  syslog_mode = 0, exit_status;
@@ -582,10 +582,9 @@ read_one_sec(int *sec)
   {
   int i,j,k,kk;
   int32_w  lower_min,lower_max;
-  uint32_w  aa,bb,sys;
+  uint8_w  aa,bb,sys;
   WIN_ch  ch;
   uint32_w  size;
-  ssize_t  ret;
   uint8_w *ptr,*ptr_lim;
   static uint32_w upper[4][8]={
     {0x00000000,0x00000010,0x00000020,0x00000030,
@@ -597,10 +596,10 @@ read_one_sec(int *sec)
     {0x00000000,0x01000000,0x02000000,0x03000000,
      0xfc000000,0xfd000000,0xfe000000,0xff000000}};
 
-  if((ret=read(fd,buf,4))<4) return (-1);
+  if(read(fd,buf,4)<4) return (-1);
   size=mkuint4(buf);
   if(size<0 || size>LENGTH) return (-1);
-  if((ret=read(fd,buf+4,size-4))<size-4) return (-1);
+  if(read(fd,buf+4,size-4)<size-4) return (-1);
   ptr=buf+9;
   ptr_lim=buf+size;
   *sec=(((*ptr)>>4)&0x0f)*10+((*ptr)&0x0f);

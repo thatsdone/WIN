@@ -1,4 +1,12 @@
- $Id: ChangeLog,v 1.165 2010/09/06 02:05:01 uehira Exp $
+ $Id: ChangeLog,v 1.166 2010/09/27 03:25:03 uehira Exp $
+
+2010-09-27  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 1.2.0 released.
+	* MF rel_64bit.
+	* configure.in : check struct statfs.f_bavail size.
+	* src/events.c : check struct statfs.f_bavail size.
+	* src/wdisk.c :  check __SVR4 and __NetBSD__.
+	                 check struct statfs.f_bavail size.
 
 2010-09-06  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* Version 1.1.99 released.

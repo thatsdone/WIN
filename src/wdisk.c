@@ -1,4 +1,4 @@
-/* $Id: wdisk.c,v 1.20 2008/04/24 05:14:54 nakagawa Exp $ */
+/* $Id: wdisk.c,v 1.21 2010/09/27 03:25:03 uehira Exp $ */
 /*
   program "wdisk.c"   4/16/93-5/13/93,7/2/93,7/5/94  urabe
                       1/6/95 bug in adj_time fixed (tm[0]--)
@@ -22,6 +22,8 @@
                       2006.12.5 use double in calculating space_raw
                       2007.1.15 i<1000000 -> 5000000,
                                 BUFSZ 500000->1000000, BUFLIM 1000000->5000000
+		      2010.09.27 check struct statfs.f_bavail size. 
+		                 check __SVR4 and __NetBSD__ (uehira)
 */
 
 #ifdef HAVE_CONFIG_H
@@ -65,11 +67,15 @@
 #ifdef HAVE_SYS_MOUNT_H
 #include <sys/mount.h>
 #endif
-#ifdef HAVE_SYS_VFS_H
+
+#if !defined(BSD4_4) && defined(HAVE_SYS_VFS_H)
 #include <sys/vfs.h>
 #endif
+
+#if defined(__SVR4) || defined(__NetBSD__)
 #ifdef HAVE_SYS_STATVFS_H
 #include <sys/statvfs.h>
+#endif
 #define statfs statvfs
 #define f_bsize f_frsize
 #endif
@@ -196,10 +202,18 @@ get_time(rt)
    rt[5]=nt->tm_sec;
 }
 
+#if defined(STRUCT_STATFS_F_BAVAIL_LONG)
 long
+#elif defined(STRUCT_STATFS_F_BAVAIL_INT64)
+int64_t
+#endif
 check_space(path,fsbsize)
      char *path;
+#if defined(STRUCT_STATFS_F_BAVAIL_LONG)
      long *fsbsize;
+#elif defined(STRUCT_STATFS_F_BAVAIL_INT64)
+     int64_t *fsbsize;
+#endif
 {
 #if USE_LARGE_FS
   struct statfs64 fsbuf;
@@ -229,7 +243,11 @@ switch_file(tm)
 {
    FILE *fp;
    char oldst[NAMELEN];
+#if defined(STRUCT_STATFS_F_BAVAIL_LONG)
    long freeb, fsbsize, space_raw;
+#elif defined(STRUCT_STATFS_F_BAVAIL_INT64)
+   int64_t freeb, fsbsize, space_raw;
+#endif
 
    if(fd!=NULL){  /* if file is open, close last file */
       fclose(fd);
@@ -257,11 +275,20 @@ switch_file(tm)
 
      for (;;) {
        freeb = check_space(outdir, &fsbsize);
+#if defined(STRUCT_STATFS_F_BAVAIL_LONG)
        space_raw =(long)((1048576.0*(double)count_max) / (double)fsbsize);
+#elif defined(STRUCT_STATFS_F_BAVAIL_INT64)
+       space_raw =(int64_t)((1048576.0*(double)count_max) / (double)fsbsize);
+#endif
        count = find_oldest(outdir,oldst);
 #if DEBUG
-       printf("freeb, space_raw: %d %d (%d)\n",
+#if defined(STRUCT_STATFS_F_BAVAIL_LONG)
+       printf("freeb, space_raw: %ld %ld (%ld)\n",
 	      freeb, space_raw, fsbsize);
+#elif defined(STRUCT_STATFS_F_BAVAIL_INT64)
+       printf("freeb, space_raw: %lld %lld (%lld)\n",
+	      freeb, space_raw, fsbsize);
+#endif
 #endif
        if (space_raw < freeb || count == 0)
 	 break;

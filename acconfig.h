@@ -27,3 +27,7 @@
 
 /* d_namlen exists as a member of struct DIR or not */
 #undef HAVE_STRUCT_D_NAMELEN
+
+/* struct statfs.f_bavail .. long or int64_t */
+#undef STRUCT_STATFS_F_BAVAIL_LONG
+#undef STRUCT_STATFS_F_BAVAIL_INT64

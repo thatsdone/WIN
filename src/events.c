@@ -1,4 +1,4 @@
-/* $Id: events.c,v 1.8.2.4.2.6 2010/09/27 02:33:40 uehira Exp $ */
+/* $Id: events.c,v 1.8.2.4.2.7 2010/09/27 07:53:55 uehira Exp $ */
 
 /****************************************************************************
 *****************************************************************************
@@ -33,6 +33,7 @@
 **     2001.1.22      used_raw & check_path                         *********
 **     2002.9.5       -u [dir] for USED_EVENTS file                 *********
 **     2005.8.10      bug in strcmp2()/strncmp2() fixed : 0-6 > 7-9 *********
+**     2010.9.27      64bit clean? (Uehira)                         *********
 **                                                                  *********
 **   Example of parameter file (events.prm)                         *********
 =============================================================================
@@ -84,8 +85,24 @@ sso     /dat/etc/sso.station    cut-jc3
 #include  <math.h>
 #include  <ctype.h>
 #include  <unistd.h>
-#include  <dirent.h>
 #include  <fcntl.h>
+
+#if HAVE_DIRENT_H
+# include <dirent.h>
+# define DIRNAMLEN(dirent) strlen((dirent)->d_name)
+#else
+# define dirent direct
+# define DIRNAMLEN(dirent) (dirent)->d_namlen
+# if HAVE_SYS_NDIR_H
+#  include <sys/ndir.h>
+# endif
+# if HAVE_SYS_DIR_H
+#  include <sys/dir.h>
+# endif
+# if HAVE_NDIR_H
+#  include <ndir.h>
+# endif
+#endif
 
 #if TIME_WITH_SYS_TIME
 #include <sys/time.h>
@@ -124,7 +141,7 @@ sso     /dat/etc/sso.station    cut-jc3
 #define DIR_W  3
 
 static const char rcsid[] =
-  "$Id: events.c,v 1.8.2.4.2.6 2010/09/27 02:33:40 uehira Exp $";
+  "$Id: events.c,v 1.8.2.4.2.7 2010/09/27 07:53:55 uehira Exp $";
 
 #if defined(STRUCT_STATFS_F_BAVAIL_LONG)
 static long space_raw,used_raw;

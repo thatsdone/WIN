@@ -1,4 +1,4 @@
-/* $Id: ecore2.c,v 1.4.4.3.2.5 2009/12/21 10:00:13 uehira Exp $ */
+/* $Id: ecore2.c,v 1.4.4.3.2.6 2010/09/27 07:53:55 uehira Exp $ */
 
 /*
   program "ecore2.c"   4/16/93-5/13/93,7/2/93,7/5/94  urabe
@@ -23,14 +23,17 @@
 #include "config.h"
 #endif
 
+#include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
+#include <sys/file.h>
+
 #include <stdio.h>
 #include <signal.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <sys/types.h>
-#include <sys/ipc.h>
-#include <sys/shm.h>
+#include <errno.h>
 
 #if TIME_WITH_SYS_TIME
 #include <sys/time.h>
@@ -43,17 +46,29 @@
 #endif  /* !HAVE_SYS_TIME_H */
 #endif  /* !TIME_WITH_SYS_TIME */
 
-#include <sys/types.h>
-#include <errno.h>
-
-#include "winlib.h"
-
 /*--------------------------------------------*/
 
-#include <sys/file.h>
 #include <memory.h>
-#include <dirent.h>
 #include <ctype.h>
+
+#if HAVE_DIRENT_H
+# include <dirent.h>
+# define DIRNAMLEN(dirent) strlen((dirent)->d_name)
+#else
+# define dirent direct
+# define DIRNAMLEN(dirent) (dirent)->d_namlen
+# if HAVE_SYS_NDIR_H
+#  include <sys/ndir.h>
+# endif
+# if HAVE_SYS_DIR_H
+#  include <sys/dir.h>
+# endif
+# if HAVE_NDIR_H
+#  include <ndir.h>
+# endif
+#endif
+
+#include "winlib.h"
 
 /* following parameters give M=3 (6-th order) */
 #define	FP			6.0

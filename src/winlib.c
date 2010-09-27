@@ -1,4 +1,4 @@
-/* $Id: winlib.c,v 1.1.2.4.2.25 2010/09/20 10:25:44 uehira Exp $ */
+/* $Id: winlib.c,v 1.1.2.4.2.26 2010/09/27 07:53:56 uehira Exp $ */
 
 /*-
  * winlib.c  (Uehira Kenji)
@@ -80,7 +80,7 @@ mktime2(struct tm *mt) /* high-speed version of mktime() */
 #if defined(__SVR4)
   return (j * 86400 + mt->tm_hour * 3600 + mt->tm_min * 60 + mt->tm_sec + timezone);
 #endif
-#if defined(HAVE_STRUCT_TM_GMTOFF)
+#if defined(HAVE_STRUCT_TM_TM_GMTOFF)
   return (j * 86400 + mt->tm_hour * 3600 + mt->tm_min * 60 + mt->tm_sec - m->tm_gmtoff);
 #endif
 #if defined(__CYGWIN__)
@@ -986,7 +986,7 @@ bcd_t(uint8_w *ptr)
   mt.tm_min = tm[4];
   mt.tm_sec = tm[5];
   mt.tm_isdst = 0;
-#if defined(__SVR4) || defined(HAVE_STRUCT_TM_GMTOFF) || defined(__CYGWIN__)
+#if defined(__SVR4) || defined(HAVE_STRUCT_TM_TM_GMTOFF) || defined(__CYGWIN__)
   ts = mktime2(&mt);
 #else
   if ((ts = mktime(&mt)) == (time_t)-1) {

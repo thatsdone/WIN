@@ -1,4 +1,4 @@
-/* $Id: elist.c,v 1.9.4.2.2.4 2010/06/24 02:54:13 uehira Exp $ */
+/* $Id: elist.c,v 1.9.4.2.2.5 2010/09/27 07:53:55 uehira Exp $ */
 
 /* program elist.c    2/5/91 - 2/25/91 ,  4/16/92, 4/22/92  urabe */
 /*                      6/10/92, 8/18/92, 10/25/92, 6/8/93, 1/5/94  */
@@ -20,7 +20,24 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <dirent.h>   /* opendir(), readdir() */
+
+#if HAVE_DIRENT_H  /* opendir(), readdir() */
+# include <dirent.h>
+# define DIRNAMLEN(dirent) strlen((dirent)->d_name)
+#else
+# define dirent direct
+# define DIRNAMLEN(dirent) (dirent)->d_namlen
+# if HAVE_SYS_NDIR_H
+#  include <sys/ndir.h>
+# endif
+# if HAVE_SYS_DIR_H
+#  include <sys/dir.h>
+# endif
+# if HAVE_NDIR_H
+#  include <ndir.h>
+# endif
+#endif
+
 #include <math.h>
 #include <ctype.h>
 #include <pwd.h>
@@ -38,7 +55,7 @@
 #endif
 
 static const char rcsid[] =
-  "$Id: elist.c,v 1.9.4.2.2.4 2010/06/24 02:54:13 uehira Exp $";
+  "$Id: elist.c,v 1.9.4.2.2.5 2010/09/27 07:53:55 uehira Exp $";
 
 /* prototypes */
 static char *getname(char *, int);

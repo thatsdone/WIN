@@ -1,4 +1,4 @@
-/* $Id: evdetect.c,v 1.1.2.5 2010/09/21 14:33:31 uehira Exp $ */
+/* $Id: evdetect.c,v 1.1.2.6 2010/09/27 07:53:55 uehira Exp $ */
 
 /*
  * evedetect.c
@@ -77,9 +77,25 @@
 #include  <math.h>
 #include  <signal.h>
 #include  <unistd.h>
-#include  <dirent.h>
 #include  <fcntl.h>
 #include  <ctype.h>
+
+#if HAVE_DIRENT_H
+# include <dirent.h>
+# define NAMLEN(dirent) strlen((dirent)->d_name)
+#else
+# define dirent direct
+# define NAMLEN(dirent) (dirent)->d_namlen
+# if HAVE_SYS_NDIR_H
+#  include <sys/ndir.h>
+# endif
+# if HAVE_SYS_DIR_H
+#  include <sys/dir.h>
+# endif
+# if HAVE_NDIR_H
+#  include <ndir.h>
+# endif
+#endif
 
 #if TIME_WITH_SYS_TIME
 #include <sys/time.h>
@@ -120,7 +136,7 @@
 #define WIN_FILENAME_MAX 1024
 
 static const char  rcsid[] =
-   "$Id: evdetect.c,v 1.1.2.5 2010/09/21 14:33:31 uehira Exp $";
+   "$Id: evdetect.c,v 1.1.2.6 2010/09/27 07:53:55 uehira Exp $";
 
 char *progname, *logfile;
 int  syslog_mode = 0, exit_status;

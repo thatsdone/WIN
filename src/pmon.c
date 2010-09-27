@@ -1,4 +1,4 @@
-/* $Id: pmon.c,v 1.14.2.5.2.13 2010/09/21 14:33:31 uehira Exp $ */
+/* $Id: pmon.c,v 1.14.2.5.2.14 2010/09/27 07:53:55 uehira Exp $ */
 /************************************************************************
 *************************************************************************
 **  program "pmon.c" for NEWS/SPARC                             *********
@@ -71,9 +71,25 @@
 #include  <math.h>
 #include  <signal.h>
 #include  <unistd.h>
-#include  <dirent.h>
 #include  <fcntl.h>
 #include  <ctype.h>
+
+#if HAVE_DIRENT_H
+# include <dirent.h>
+# define DIRNAMLEN(dirent) strlen((dirent)->d_name)
+#else
+# define dirent direct
+# define DIRNAMLEN(dirent) (dirent)->d_namlen
+# if HAVE_SYS_NDIR_H
+#  include <sys/ndir.h>
+# endif
+# if HAVE_SYS_DIR_H
+#  include <sys/dir.h>
+# endif
+# if HAVE_NDIR_H
+#  include <ndir.h>
+# endif
+#endif
 
 #if TIME_WITH_SYS_TIME
 #include <sys/time.h>
@@ -233,7 +249,7 @@
 0xf0,0x1e,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x40,0x00,0x06,0x10,0xc0,0x00,0x00};
 
 static const char  rcsid[] =
-   "$Id: pmon.c,v 1.14.2.5.2.13 2010/09/21 14:33:31 uehira Exp $";
+   "$Id: pmon.c,v 1.14.2.5.2.14 2010/09/27 07:53:55 uehira Exp $";
 
 char *progname,*logfile;
 int  syslog_mode = 0, exit_status;

@@ -1,5 +1,5 @@
 /*
- * $Id: insert_trg.c,v 1.6.4.4.2.5 2010/09/21 11:56:58 uehira Exp $
+ * $Id: insert_trg.c,v 1.6.4.4.2.6 2010/09/27 07:53:55 uehira Exp $
  * Insert sorted timeout data to event data.
  *
  *------------ sample of parameter file ------------
@@ -23,12 +23,29 @@
 #endif
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <signal.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include <dirent.h>
 #include <ctype.h>
+
+#if HAVE_DIRENT_H
+# include <dirent.h>
+# define DIRNAMLEN(dirent) strlen((dirent)->d_name)
+#else
+# define dirent direct
+# define DIRNAMLEN(dirent) (dirent)->d_namlen
+# if HAVE_SYS_NDIR_H
+#  include <sys/ndir.h>
+# endif
+# if HAVE_SYS_DIR_H
+#  include <sys/dir.h>
+# endif
+# if HAVE_NDIR_H
+#  include <ndir.h>
+# endif
+#endif
 
 #ifdef GC_MEMORY_LEAK_TEST
 #include "gc_leak_detector.h"
@@ -51,7 +68,7 @@
 
 char *progname;
 static const char rcsid[]=
-  "$Id: insert_trg.c,v 1.6.4.4.2.5 2010/09/21 11:56:58 uehira Exp $";
+  "$Id: insert_trg.c,v 1.6.4.4.2.6 2010/09/27 07:53:55 uehira Exp $";
 
 struct Cnt_file {
   char  trg_dir[WIN_FILENAME_MAX];    /* trg data directory */
@@ -263,9 +280,7 @@ do_insert(int tim[], struct Cnt_file *cnt)
       end_prog(-1);
     }
     while((dir_ent=readdir(dir_ptr))!=NULL){
-#ifdef HAVE_STRUCT_D_NAMELEN
-      if(dir_ent->d_namlen!=13) continue;
-#endif
+      if(DIRNAMLEN(dir_ent)!=13) continue;
       if(dir_ent->d_name[0]=='.') continue;
       if(!isdigit(dir_ent->d_name[0])) continue;
       /* skip *.ch file */

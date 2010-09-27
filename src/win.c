@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.46.2.6.2.34 2010/09/20 08:24:02 uehira Exp $
+   $Id: win.c,v 1.46.2.6.2.35 2010/09/27 07:53:55 uehira Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -23,10 +23,10 @@
 #else
 #define NAME_PRG      "win32"
 #endif
-#define WIN_VERSION   "2010.9.20(+Hi-net) 64bit"
+#define WIN_VERSION   "2010.9.27(+Hi-net) 64bit"
 
 static const char rcsid[] =
-  "$Id: win.c,v 1.46.2.6.2.34 2010/09/20 08:24:02 uehira Exp $";
+  "$Id: win.c,v 1.46.2.6.2.35 2010/09/27 07:53:55 uehira Exp $";
 
 #define DEBUG_AP      0   /* for debugging auto-pick */
 /* 5:sr, 4:ch, 3:sec, 2:find_pick, 1:all */
@@ -146,7 +146,24 @@ LOCAL
 #include <sys/types.h>
 #include <sys/uio.h>
 #include <sys/stat.h>
-#include <dirent.h>   /* opendir(), readdir() */
+
+#if HAVE_DIRENT_H  /* opendir(), readdir() */
+# include <dirent.h>
+# define DIRNAMLEN(dirent) strlen((dirent)->d_name)
+#else
+# define dirent direct
+# define DIRNAMLEN(dirent) (dirent)->d_namlen
+# if HAVE_SYS_NDIR_H
+#  include <sys/ndir.h>
+# endif
+# if HAVE_SYS_DIR_H
+#  include <sys/dir.h>
+# endif
+# if HAVE_NDIR_H
+#  include <ndir.h>
+# endif
+#endif
+
 #include <sys/file.h>
 #include <sys/ioctl.h>
 #include <fcntl.h>
@@ -2909,7 +2926,7 @@ alloc_mem(size_t size, char *mes)   /* 64bit OK */
 
   if((almem=(void *)malloc(size))==NULL)
     {
-    snprintf(tb,sizeof(tb),"%s(%ld)",mes,size);
+    snprintf(tb,sizeof(tb),"%s(%zu)",mes,size);
     emalloc(tb);
     }
   return (almem);

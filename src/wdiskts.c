@@ -1,4 +1,4 @@
-/* $Id: wdiskts.c,v 1.6.2.5.2.9 2010/09/21 11:56:59 uehira Exp $ */
+/* $Id: wdiskts.c,v 1.6.2.5.2.10 2010/09/27 07:53:55 uehira Exp $ */
 
 /*-
   2005.8.10 urabe bug in strcmp2() fixed : 0-6 > 7-9 
@@ -33,7 +33,23 @@
 #endif  /* !HAVE_SYS_TIME_H */
 #endif  /* !TIME_WITH_SYS_TIME */
 
-#include <dirent.h>
+#if HAVE_DIRENT_H
+# include <dirent.h>
+# define DIRNAMLEN(dirent) strlen((dirent)->d_name)
+#else
+# define dirent direct
+# define DIRNAMLEN(dirent) (dirent)->d_namlen
+# if HAVE_SYS_NDIR_H
+#  include <sys/ndir.h>
+# endif
+# if HAVE_SYS_DIR_H
+#  include <sys/dir.h>
+# endif
+# if HAVE_NDIR_H
+#  include <ndir.h>
+# endif
+#endif
+
 #include <signal.h>
 #include <ctype.h>
 #include <errno.h>
@@ -61,7 +77,7 @@
 /* #define FREE(a)         (void)free((void *)(a)) */
 
 static const char rcsid[] =
-  "$Id: wdiskts.c,v 1.6.2.5.2.9 2010/09/21 11:56:59 uehira Exp $";
+  "$Id: wdiskts.c,v 1.6.2.5.2.10 2010/09/27 07:53:55 uehira Exp $";
 
 char *progname,*logfile;
 int  daemon_mode, syslog_mode, exit_status;

@@ -1,4 +1,4 @@
-/* $Id: find_picks.c,v 1.4.2.1.2.1 2010/09/20 07:54:13 uehira Exp $ */
+/* $Id: find_picks.c,v 1.4.2.1.2.2 2010/09/27 07:53:55 uehira Exp $ */
 
 /* find_picks */
 /* search for pick files in pick dir */
@@ -14,7 +14,23 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <dirent.h>
+
+#if HAVE_DIRENT_H
+# include <dirent.h>
+# define DIRNAMLEN(dirent) strlen((dirent)->d_name)
+#else
+# define dirent direct
+# define DIRNAMLEN(dirent) (dirent)->d_namlen
+# if HAVE_SYS_NDIR_H
+#  include <sys/ndir.h>
+# endif
+# if HAVE_SYS_DIR_H
+#  include <sys/dir.h>
+# endif
+# if HAVE_NDIR_H
+#  include <ndir.h>
+# endif
+#endif
 
 #include "winlib.h"
 
@@ -22,7 +38,7 @@
 #define NAMLEN 256
 
 static const char rcsid[] =
-   "$Id: find_picks.c,v 1.4.2.1.2.1 2010/09/20 07:54:13 uehira Exp $";
+   "$Id: find_picks.c,v 1.4.2.1.2.2 2010/09/27 07:53:55 uehira Exp $";
 
 /* prototypes */
 int main(void);

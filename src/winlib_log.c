@@ -1,4 +1,4 @@
-/* $Id: winlib_log.c,v 1.1.2.1 2009/12/26 00:56:59 uehira Exp $ */
+/* $Id: winlib_log.c,v 1.1.2.2 2010/09/27 07:53:56 uehira Exp $ */
 
 /*-
  * winlib.c  (Uehira Kenji)
@@ -10,7 +10,23 @@
 #endif
 
 #include <sys/types.h>
-#include <dirent.h>
+
+#if HAVE_DIRENT_H
+# include <dirent.h>
+# define DIRNAMLEN(dirent) strlen((dirent)->d_name)
+#else
+# define dirent direct
+# define DIRNAMLEN(dirent) (dirent)->d_namlen
+# if HAVE_SYS_NDIR_H
+#  include <sys/ndir.h>
+# endif
+# if HAVE_SYS_DIR_H
+#  include <sys/dir.h>
+# endif
+# if HAVE_NDIR_H
+#  include <ndir.h>
+# endif
+#endif
 
 #include <ctype.h>
 #include <stdio.h>

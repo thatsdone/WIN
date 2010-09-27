@@ -1,4 +1,4 @@
-/* $Id: wdisk.c,v 1.17.2.8.2.7 2010/09/27 02:33:41 uehira Exp $ */
+/* $Id: wdisk.c,v 1.17.2.8.2.8 2010/09/27 07:53:55 uehira Exp $ */
 /*
   program "wdisk.c"   4/16/93-5/13/93,7/2/93,7/5/94  urabe
                       1/6/95 bug in adj_time fixed (tm[0]--)
@@ -63,7 +63,23 @@
 #endif  /* !HAVE_SYS_TIME_H */
 #endif  /* !TIME_WITH_SYS_TIME */
 
-#include <dirent.h>
+#if HAVE_DIRENT_H
+# include <dirent.h>
+# define DIRNAMLEN(dirent) strlen((dirent)->d_name)
+#else
+# define dirent direct
+# define DIRNAMLEN(dirent) (dirent)->d_namlen
+# if HAVE_SYS_NDIR_H
+#  include <sys/ndir.h>
+# endif
+# if HAVE_SYS_DIR_H
+#  include <sys/dir.h>
+# endif
+# if HAVE_NDIR_H
+#  include <ndir.h>
+# endif
+#endif
+
 #include <signal.h>
 #include <ctype.h>
 #include <errno.h>
@@ -91,7 +107,7 @@
 #define   NAMELEN  1025
 
 static const char rcsid[] =
-  "$Id: wdisk.c,v 1.17.2.8.2.7 2010/09/27 02:33:41 uehira Exp $";
+  "$Id: wdisk.c,v 1.17.2.8.2.8 2010/09/27 07:53:55 uehira Exp $";
 
 char *progname,*logfile;
 int  daemon_mode, syslog_mode, exit_status;

@@ -1,9 +1,13 @@
- $Id: ChangeLog,v 1.131.2.25.2.93 2010/09/27 02:33:40 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.94 2010/09/27 07:53:54 uehira Exp $
 
 2010-09-06  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* configure.in : check struct statfs.f_bavail size.
+	    dirent.h : check include file, and defined DIRNAMLEN macro.
+	    update checking methods : socklen_t, struct tm.tm_gmtoff
 	* src/events.c : 64 bit clean?
 	* src/wdisk.c : check __SVR4 and __NetBSD__.
+	* update libtool (ver.2.2.10)
+	* Version 2.1.8 released.
 
 2010-09-21  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* src/pmon.c : 64 bit clean?

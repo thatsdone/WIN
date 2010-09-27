@@ -1,9 +1,9 @@
 dnl ------------------------------------------------------------------------- 
-dnl $Id: configure.in,v 1.98.2.17.2.29 2010/09/27 02:33:40 uehira Exp $
+dnl $Id: configure.in,v 1.98.2.17.2.30 2010/09/27 07:53:54 uehira Exp $
 dnl -------------------------------------------------------------------------
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT(src/win.c)
-AM_INIT_AUTOMAKE(WIN_pkg, 2.1.7)
+AM_INIT_AUTOMAKE(WIN_pkg, 2.1.8)
 AM_CONFIG_HEADER(config.h)
 AC_ARG_PROGRAM
 AC_CANONICAL_TARGET
@@ -76,7 +76,10 @@ AC_PATH_X
 AC_PATH_XTRA
 AC_HEADER_DIRENT
 AC_HEADER_STDC
-AC_CHECK_HEADERS(fcntl.h sys/file.h sys/ioctl.h sys/time.h syslog.h unistd.h stdarg.h varargs.h sys/param.h sys/mount.h sys/vfs.h sys/statvfs.h sys/statvfs.h stropts.h sys/ser_sync.h  arpa/inet.h sys/mtio.h limits.h netdb.h netinet/in.h stddef.h sys/socket.h)
+AC_HEADER_TIME
+AC_HEADER_STAT
+AC_CHECK_HEADERS(fcntl.h sys/file.h sys/ioctl.h sys/time.h syslog.h unistd.h stdarg.h varargs.h sys/param.h sys/mount.h sys/vfs.h sys/statvfs.h stropts.h sys/ser_sync.h arpa/inet.h sys/mtio.h limits.h netdb.h netinet/in.h stddef.h sys/socket.h)
+
 
 dnl Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
@@ -89,9 +92,14 @@ AC_TYPE_UID_T
 AC_TYPE_UINT16_T
 AC_TYPE_INT64_T
 AC_TYPE_UINT64_T
+AC_CHECK_TYPE(socklen_t,,
+	[AC_DEFINE_UNQUOTED(socklen_t,int,
+		[Define to 'int' if <sys/socket.h> does not define.])],
+	[#include <sys/socket.h>])
+
 AC_STRUCT_ST_BLOCKS
-AC_HEADER_TIME
 AC_STRUCT_TM
+AC_CHECK_MEMBERS(struct tm.tm_gmtoff,,,[#include <time.h> #include <sys/time.h>])
 dnl AC_STRUCT_TIMEZONE
 AC_C_BIGENDIAN
 AC_C_CHAR_UNSIGNED
@@ -102,34 +110,6 @@ AC_CHECK_SIZEOF(char)
 AC_CHECK_SIZEOF(float)
 AC_CHECK_SIZEOF(double)
 AC_CHECK_SIZEOF(int64_t)
-
-AC_MSG_CHECKING(for tm.tm_gmtoff)
-AC_EGREP_CPP(tm_gmtoff, [#include <time.h>],
-			[
-			AC_MSG_RESULT(yes)
-			AC_DEFINE(HAVE_STRUCT_TM_GMTOFF)
-			],
-			[
-			AC_EGREP_CPP(tm_gmtoff, [#include <sys/time.h>],
-						[
-						AC_MSG_RESULT(yes)
-						AC_DEFINE(HAVE_STRUCT_TM_GMTOFF)
-						],
-						AC_MSG_RESULT(no)
-					)
-			]
-		)
-
-AC_MSG_CHECKING(for dir.d_namlen)
-AC_EGREP_CPP(d_namlen, [#include <dirent.h>],
-			[
-			AC_MSG_RESULT(yes)
-			AC_DEFINE(HAVE_STRUCT_D_NAMELEN)
-			],
-			[
-			AC_MSG_RESULT(no)
-			]
-		)
 
 dnl Checks for library functions.
 AC_PROG_GCC_TRADITIONAL
@@ -201,7 +181,6 @@ AC_RUN_IFELSE([
 	  AC_MSG_ERROR(unkouwn type)
 	  )
 ])
-
 
 dnl -------------------------------------------------------------------------
 dnl check for ipv6 option (from http://www.itojun.org)

@@ -1,4 +1,4 @@
-/* $Id: winlib.h,v 1.1.2.7.2.37 2010/09/20 10:25:44 uehira Exp $ */
+/* $Id: winlib.h,v 1.1.2.7.2.38 2010/09/27 02:33:41 uehira Exp $ */
 
 #ifndef _WIN_LIB_H_
 #define _WIN_LIB_H_
@@ -116,6 +116,7 @@ typedef  int32_w  WIN_sr;   /* 0 < sr < 2^20 */
 #define EVENTS_BUSY    "BUSY"
 #define EVENTS_COUNT   "COUNT"
 #define EVENTS_FREESPACE "FREESPACE"
+#define EVENTS_USED    "USED_EVENTS"
 
 #define TRG_CHFILE_SUFIX ".ch"
 
@@ -142,6 +143,9 @@ typedef  int32_w  WIN_sr;   /* 0 < sr < 2^20 */
 
 /* 'insert_trg' process makes the following file */
 #define INSERT_TRG_USED  "USED_TRG"
+
+#define WED       "wed"
+#define RTAPE     "rtape"
 
 #define  SWAP32(a)  a = ((((a) << 24)) | (((a) << 8) & 0xff0000) |	\
 			(((a) >> 8) & 0xff00) | (((a) >> 24) & 0xff))

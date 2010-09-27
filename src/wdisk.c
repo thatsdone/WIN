@@ -1,4 +1,4 @@
-/* $Id: wdisk.c,v 1.17.2.8.2.6 2010/09/21 11:56:59 uehira Exp $ */
+/* $Id: wdisk.c,v 1.17.2.8.2.7 2010/09/27 02:33:41 uehira Exp $ */
 /*
   program "wdisk.c"   4/16/93-5/13/93,7/2/93,7/5/94  urabe
                       1/6/95 bug in adj_time fixed (tm[0]--)
@@ -23,6 +23,8 @@
                       2007.1.15 i<1000000 -> 5000000,
                                 BUFSZ 500000->1000000, BUFLIM 1000000->5000000
 		      2009.12.21 64bit clean? (uehira)
+		      2010.09.27 check struct statfs.f_bavail size. 
+		                 check __SVR4 and __NetBSD__ (uehira)
 */
 
 #ifdef HAVE_CONFIG_H
@@ -39,6 +41,13 @@
 #include <sys/shm.h>
 #include <sys/file.h>
 #include <sys/stat.h>
+#ifdef HAVE_SYS_PARAM_H
+#include <sys/param.h>
+#endif
+#ifdef HAVE_SYS_MOUNT_H
+#include <sys/mount.h>
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -61,17 +70,14 @@
 #include <unistd.h>
 #include <syslog.h>
 
-#ifdef HAVE_SYS_PARAM_H
-#include <sys/param.h>
-#endif
-#ifdef HAVE_SYS_MOUNT_H
-#include <sys/mount.h>
-#endif
-#ifdef HAVE_SYS_VFS_H
+#if !defined(BSD4_4) && defined(HAVE_SYS_VFS_H)
 #include <sys/vfs.h>
 #endif
+
+#if defined(__SVR4) || defined(__NetBSD__)
 #ifdef HAVE_SYS_STATVFS_H
 #include <sys/statvfs.h>
+#endif
 #define statfs statvfs
 #define f_bsize f_frsize
 #endif
@@ -85,7 +91,7 @@
 #define   NAMELEN  1025
 
 static const char rcsid[] =
-  "$Id: wdisk.c,v 1.17.2.8.2.6 2010/09/21 11:56:59 uehira Exp $";
+  "$Id: wdisk.c,v 1.17.2.8.2.7 2010/09/27 02:33:41 uehira Exp $";
 
 char *progname,*logfile;
 int  daemon_mode, syslog_mode, exit_status;
@@ -98,14 +104,23 @@ static FILE *fd;
 static int  nflag, smode;
 
 /* prototypes */
+#if defined(STRUCT_STATFS_F_BAVAIL_LONG)
 static long check_space(char *, long *);
+#elif defined(STRUCT_STATFS_F_BAVAIL_INT64)
+static int64_t check_space(char *, int64_t *);
+#endif
 static int switch_file(int *);
 static void wmemo(char *, char *);
 static void usage(void);
 int main(int , char *[]);
 
+#if defined(STRUCT_STATFS_F_BAVAIL_LONG)
 static long
-check_space(char *path, long *fsbsize)  /* 64bit ok? */
+check_space(char *path, long *fsbsize)
+#elif defined(STRUCT_STATFS_F_BAVAIL_INT64)
+static int64_t
+check_space(char *path, int64_t *fsbsize)  /* 64bit ok */
+#endif
 {
 #if USE_LARGE_FS
   struct statfs64 fsbuf;
@@ -135,7 +150,11 @@ switch_file(int *tm)
 {
    FILE *fp;
    char oldst[NAMELEN];
+#if defined(STRUCT_STATFS_F_BAVAIL_LONG)
    long freeb, fsbsize, space_raw;  /* 64bit ok */
+#elif defined(STRUCT_STATFS_F_BAVAIL_INT64)
+   int64_t freeb, fsbsize, space_raw;  /* 64bit ok */
+#endif
 
    if(fd!=NULL){  /* if file is open, close last file */
       fclose(fd);
@@ -163,11 +182,20 @@ switch_file(int *tm)
 
      for (;;) {
        freeb = check_space(outdir, &fsbsize);
+#if defined(STRUCT_STATFS_F_BAVAIL_LONG)
        space_raw =(long)((1048576.0*(double)count_max) / (double)fsbsize);
+#elif defined(STRUCT_STATFS_F_BAVAIL_INT64)
+       space_raw =(int64_t)((1048576.0*(double)count_max) / (double)fsbsize);
+#endif
        count = find_oldest(outdir,oldst);
 #if DEBUG
+#if defined(STRUCT_STATFS_F_BAVAIL_LONG)
        printf("freeb, space_raw: %ld %ld (%ld)\n",
 	      freeb, space_raw, fsbsize);
+#elif defined(STRUCT_STATFS_F_BAVAIL_INT64)
+       printf("freeb, space_raw: %lld %lld (%lld)\n",
+	      freeb, space_raw, fsbsize);
+#endif
 #endif
        if (space_raw < freeb || count == 0)
 	 break;
@@ -439,7 +467,7 @@ main(int argc, char *argv[])
 
 #if DEBUG
       for(i=0;i<6;i++) printf("%02d",tm[i]);
-      printf(" : %d r=%ld\n",size,shp);
+      printf(" : %d r=%zu\n",size,shp);
 #endif
 #if BELL
       printf("\007");fflush(stdout);
@@ -453,7 +481,7 @@ main(int argc, char *argv[])
       if(mode==60) fflush(fd);
 	   
 #if DEBUG
-      printf("%d>(fd=%p) r=%ld\n",size2,fd,shp);
+      printf("%d>(fd=%p) r=%zu\n",size2,fd,shp);
 #endif
       if(shmkey)
         {

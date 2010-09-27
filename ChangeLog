@@ -1,4 +1,9 @@
- $Id: ChangeLog,v 1.131.2.25.2.92 2010/09/21 10:53:48 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.93 2010/09/27 02:33:40 uehira Exp $
+
+2010-09-06  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* configure.in : check struct statfs.f_bavail size.
+	* src/events.c : 64 bit clean?
+	* src/wdisk.c : check __SVR4 and __NetBSD__.
 
 2010-09-21  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* src/pmon.c : 64 bit clean?

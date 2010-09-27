@@ -1,4 +1,4 @@
-/* $Id: events.c,v 1.7.2.2 2009/01/05 14:55:54 uehira Exp $ */
+/* $Id: events.c,v 1.7.2.3 2010/09/27 04:24:03 uehira Exp $ */
 /****************************************************************************
 *****************************************************************************
 **     program "events.c" for NEWS                                  *********
@@ -32,6 +32,7 @@
 **     2001.1.22      used_raw & check_path                         *********
 **     2002.9.5       -u [dir] for USED_EVENTS file                 *********
 **     2005.8.10      bug in strcmp2()/strncmp2() fixed : 0-6 > 7-9 *********
+**     2010.9.27     check struct statfs.f_bavail size. (Uehira)    *********
 **                                                                  *********
 **   Example of parameter file (events.prm)                         *********
 =============================================================================
@@ -118,7 +119,12 @@ sso     /dat/etc/sso.station    cut-jc3
 #define LEN       1024
 #define NSYS      20   /* n of remote system to request data */
 
-int space_raw,used_raw,time_flag;
+#if defined(STRUCT_STATFS_F_BAVAIL_LONG)
+long space_raw,used_raw;
+#elif defined(STRUCT_STATFS_F_BAVAIL_INT64)
+int64_t space_raw,used_raw;  /* FreeBSD > 4 (include i386) */
+#endif
+int time_flag;
 char *progname,temp_path[LEN];
 
 owari()
@@ -419,7 +425,12 @@ check_space(path)
 #else
   struct statfs fsbuf;
 #endif
-  int i,dirblocks;
+  int i;
+#if defined(STRUCT_STATFS_F_BAVAIL_LONG)
+  long  dirblocks;   /* 64bit ok */
+#elif defined(STRUCT_STATFS_F_BAVAIL_INT64)
+  int64_t  dirblocks;   /* FreeBSD > 4 (include i386) */
+#endif
   struct dirent *dir_ent;
   DIR *dir_ptr;
   char name_buf[256],oldest[256],oldest2[256],newest[256],path1[256];
@@ -491,13 +502,24 @@ check_space(path)
       printf("%s:statfs : %s (%d)",progname,path1,getpid());
       owari();
       }
-    printf("%dMB free(min.%dMB), %d MB used(max.%dMB)\n",
+#if defined(STRUCT_STATFS_F_BAVAIL_LONG)
+    printf("%ldMB free(min.%ldMB), %ld MB used(max.%ldMB)\n",
       fsbuf.f_bavail/((1024*1024)/fsbuf.f_bsize),space_raw,
       (dirblocks+1)/(2*1024),used_raw);
+#elif defined(STRUCT_STATFS_F_BAVAIL_INT64)
+    printf("%lldMB free(min.%lldMB), %lld MB used(max.%lldMB)\n",
+      fsbuf.f_bavail/((1024*1024)/fsbuf.f_bsize),space_raw,
+      (dirblocks+1)/(2*1024),used_raw);
+#endif
     sprintf(name_buf,"%s/%s",path,"FREESPACE");
     fp=fopen(name_buf,"w+");
-    fprintf(fp,"%d %d %d %d\n",fsbuf.f_bavail/((1024*1024)/fsbuf.f_bsize),
+#if defined(STRUCT_STATFS_F_BAVAIL_LONG)
+    fprintf(fp,"%ld %ld %ld %ld\n",fsbuf.f_bavail/((1024*1024)/fsbuf.f_bsize),
       space_raw,(dirblocks+1)/(2*1024),used_raw);
+#elif defined(STRUCT_STATFS_F_BAVAIL_INT64)
+    fprintf(fp,"%lld %lld %lld %lld\n",fsbuf.f_bavail/((1024*1024)/fsbuf.f_bsize),
+      space_raw,(dirblocks+1)/(2*1024),used_raw);
+#endif
     fclose(fp);
     /* check free/used spaces */
     if(fsbuf.f_bavail/((1024*1024)/fsbuf.f_bsize)<space_raw ||
@@ -668,14 +690,23 @@ main(argc,argv)
   sscanf(textbuf1,"%s",textbuf);
   if((ptr=strchr(textbuf,':'))==0)
     {
-    sscanf(textbuf,"%d",&space_raw);
+#if defined(STRUCT_STATFS_F_BAVAIL_LONG)
+    sscanf(textbuf,"%ld",&space_raw);
+#elif defined(STRUCT_STATFS_F_BAVAIL_INT64) /* int64_t */
+    sscanf(textbuf,"%lld",&space_raw);
+#endif
     used_raw=0;
     }
   else
     {
     *ptr=0;
-    sscanf(textbuf,"%d",&space_raw);
-    sscanf(ptr+1,"%d",&used_raw);
+#if defined(STRUCT_STATFS_F_BAVAIL_LONG)
+    sscanf(textbuf,"%ld",&space_raw);
+    sscanf(ptr+1,"%ld",&used_raw);
+#elif defined(STRUCT_STATFS_F_BAVAIL_INT64)
+    sscanf(textbuf,"%lld",&space_raw);
+    sscanf(ptr+1,"%lld",&used_raw);
+#endif
     }
   read_param(f_param,textbuf);
   sscanf(textbuf,"%s",temp_path);

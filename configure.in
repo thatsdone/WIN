@@ -1,10 +1,11 @@
 dnl ------------------------------------------------------------------------- 
-dnl $Id: configure.in,v 1.98.2.17.2.31 2010/09/28 00:58:23 uehira Exp $
+dnl $Id: configure.in,v 1.98.2.17.2.32 2010/09/28 02:32:03 uehira Exp $
 dnl -------------------------------------------------------------------------
 dnl Process this file with autoconf to produce a configure script.
-AC_INIT(src/win.c)
+AC_INIT
+AC_CONFIG_SRCDIR([src/win.c])
 AM_INIT_AUTOMAKE(WIN_pkg, 2.1.8)
-AM_CONFIG_HEADER(config.h)
+AC_CONFIG_HEADERS([config.h])
 AC_ARG_PROGRAM
 AC_CANONICAL_TARGET
 
@@ -28,8 +29,8 @@ AC_PROG_F77
 AC_PROG_AWK
 AC_PROG_INSTALL
 #AC_PROG_RANLIB
-#LT_INIT
-AC_PROG_LIBTOOL
+LT_INIT
+#AC_PROG_LIBTOOL
 #AC_CONFIG_MACRO_DIR([m4])
 
 dnl Checks for libraries.
@@ -78,8 +79,11 @@ AC_HEADER_DIRENT
 AC_HEADER_STDC
 AC_HEADER_TIME
 AC_HEADER_STAT
-AC_CHECK_HEADERS(fcntl.h sys/file.h sys/ioctl.h sys/time.h syslog.h unistd.h stdarg.h varargs.h sys/param.h sys/mount.h sys/vfs.h sys/statvfs.h stropts.h sys/ser_sync.h arpa/inet.h sys/mtio.h limits.h netdb.h netinet/in.h stddef.h sys/socket.h)
 
+dnl by autoscan
+AC_CHECK_HEADERS([inttypes.h limits.h memory.h stdlib.h string.h])
+
+AC_CHECK_HEADERS([fcntl.h sys/file.h sys/ioctl.h sys/time.h syslog.h unistd.h stdarg.h varargs.h sys/param.h sys/mount.h sys/vfs.h sys/statvfs.h stropts.h sys/ser_sync.h arpa/inet.h sys/mtio.h limits.h netdb.h netinet/in.h stddef.h sys/socket.h])
 
 dnl Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
@@ -89,8 +93,11 @@ AC_TYPE_PID_T
 AC_TYPE_SIZE_T
 AC_TYPE_SSIZE_T
 AC_TYPE_UID_T
-AC_TYPE_UINT16_T
+AC_TYPE_INT8_T
 AC_TYPE_INT64_T
+AC_TYPE_UINT8_T
+AC_TYPE_UINT16_T
+AC_TYPE_UINT32_T
 AC_TYPE_UINT64_T
 AC_CHECK_TYPE(socklen_t,,
 	[AC_DEFINE_UNQUOTED(socklen_t,int,
@@ -114,8 +121,18 @@ AC_CHECK_SIZEOF(int64_t)
 dnl Checks for library functions.
 AC_PROG_GCC_TRADITIONAL
 AC_FUNC_MEMCMP
+AC_FUNC_FORK
+AC_FUNC_MALLOC
+AC_FUNC_MKTIME
+AC_FUNC_REALLOC
+AC_FUNC_STRTOD
 AC_TYPE_SIGNAL
-AC_CHECK_FUNCS(mktime timelocal select socket strerror strtol snprintf statfs statfs64 statvfs mkdtemp)
+
+dnl by autoscan
+AC_CHECK_FUNCS([alarm bzero floor gethostbyname gettimeofday inet_ntoa memset mkdir pow rint rmdir select socket sqrt strchr strerror strrchr strtol tzset])
+
+AC_CHECK_FUNCS([mktime timelocal select socket strerror strtol snprintf statfs statfs64 statvfs mkdtemp])
+
 
 dnl check struct statfs.f_bavail size.
 AC_MSG_CHECKING(size of struct statfs.f_bavail)
@@ -353,7 +370,7 @@ fi
 dnl -------------------------------------------------------------------------
 dnl output Makefile
 dnl -------------------------------------------------------------------------
-AC_OUTPUT([Makefile src/Makefile man/Makefile etc/Makefile pick/Makefile
+AC_CONFIG_FILES([Makefile src/Makefile man/Makefile etc/Makefile pick/Makefile
 	tools/Makefile tools/TKY2JGD/Makefile man.en/Makefile
 	prog/Makefile
 	prog/w2m
@@ -369,3 +386,4 @@ AC_OUTPUT([Makefile src/Makefile man/Makefile etc/Makefile pick/Makefile
 	prog/wincd
 	prog/pick2pick
 	])
+AC_OUTPUT

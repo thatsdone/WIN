@@ -1,6 +1,6 @@
- $Id: ChangeLog,v 1.131.2.25.2.95 2010/09/28 02:32:03 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.96 2010/09/28 03:48:02 uehira Exp $
 
-2010-09-06  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+2010-09-27  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* configure.in : check struct statfs.f_bavail size.
 	    dirent.h : check include file, and defined DIRNAMLEN macro.
 	    update checking methods : socklen_t, struct tm.tm_gmtoff

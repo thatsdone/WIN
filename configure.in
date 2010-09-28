@@ -1,5 +1,5 @@
 dnl ------------------------------------------------------------------------- 
-dnl $Id: configure.in,v 1.82.2.35 2010/09/27 04:24:03 uehira Exp $
+dnl $Id: configure.in,v 1.82.2.36 2010/09/28 05:04:25 uehira Exp $
 dnl -------------------------------------------------------------------------
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT(src/win.c)
@@ -132,7 +132,7 @@ AC_CHECK_FUNCS(mktime timelocal select socket strerror strtol snprintf statfs st
 
 dnl check struct statfs.f_bavail size.
 AC_MSG_CHECKING(size of struct statfs.f_bavail)
-AC_RUN_IFELSE([
+AC_RUN_IFELSE([AC_LANG_SOURCE([[
 #include <sys/types.h>
 #ifdef HAVE_SYS_PARAM_H
 #include <sys/param.h>
@@ -156,13 +156,13 @@ int main()
   if (sizeof(sbuf->f_bavail) == sizeof(long))
      exit(0);
   exit(1);
-}],
+}]])],
 [
 AC_MSG_RESULT(long) 
 AC_DEFINE(STRUCT_STATFS_F_BAVAIL_LONG)
 ],
 [
-AC_RUN_IFELSE([
+AC_RUN_IFELSE([AC_LANG_SOURCE([[
 	#include <sys/types.h>
 	#ifdef HAVE_SYS_PARAM_H
 	#include <sys/param.h>
@@ -186,7 +186,7 @@ AC_RUN_IFELSE([
 	    if (sizeof(sbuf->f_bavail) == sizeof(int64_t))
 	         exit(0);
           exit(1);
-	  }],
+	  }]])],
 	  [
 	  AC_MSG_RESULT(int64_t (long long))
 	  AC_DEFINE(STRUCT_STATFS_F_BAVAIL_INT64)

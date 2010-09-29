@@ -1,4 +1,4 @@
-/* $Id: recvs.c,v 1.6.2.1.2.9 2010/09/29 06:23:48 uehira Exp $ */
+/* $Id: recvs.c,v 1.6.2.1.2.10 2010/09/29 16:06:34 uehira Exp $ */
 /* "recvs.c"    receive sync frames      2000.3.14       urabe */
 /* 2000.3.21 */
 /* 2000.4.17 */
@@ -394,17 +394,18 @@ main(argc,argv)
   if(host_port)
     {
     /* destination host/port */
-    if(!(h=gethostbyname(host_name))) err_sys("can't find host");
-    memset((char *)&to_addr,0,sizeof(to_addr));
-    to_addr.sin_family=AF_INET;
-    memcpy((caddr_t)&to_addr.sin_addr,h->h_addr,h->h_length);
-/*  to_addr.sin_addr.s_addr=mkuint4(h->h_addr);*/
-    to_addr.sin_port=htons(host_port);
+    sock = udp_dest4(host_name, host_port, &to_addr, 32, 0);
+    /* if(!(h=gethostbyname(host_name))) err_sys("can't find host"); */
+/*     memset((char *)&to_addr,0,sizeof(to_addr)); */
+/*     to_addr.sin_family=AF_INET; */
+/*     memcpy((caddr_t)&to_addr.sin_addr,h->h_addr,h->h_length); */
+/* /\*  to_addr.sin_addr.s_addr=mkuint4(h->h_addr);*\/ */
+/*     to_addr.sin_port=htons(host_port); */
 
-    /* my socket */
-    if((sock=socket(AF_INET,SOCK_DGRAM,0))<0) err_sys("socket");
-    if(setsockopt(sock,SOL_SOCKET,SO_BROADCAST,(char *)&i,sizeof(i))<0)
-      err_sys("SO_BROADCAST setsockopt error\n");
+/*     /\* my socket *\/ */
+/*     if((sock=socket(AF_INET,SOCK_DGRAM,0))<0) err_sys("socket"); */
+/*     if(setsockopt(sock,SOL_SOCKET,SO_BROADCAST,(char *)&i,sizeof(i))<0) */
+/*       err_sys("SO_BROADCAST setsockopt error\n"); */
     }
 
   if((fd=open(device,O_RDWR))<0) err_sys("open HDLC device");

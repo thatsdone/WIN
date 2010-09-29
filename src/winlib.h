@@ -1,4 +1,4 @@
-/* $Id: winlib.h,v 1.1.2.7.2.39 2010/09/29 06:23:49 uehira Exp $ */
+/* $Id: winlib.h,v 1.1.2.7.2.40 2010/09/29 16:06:35 uehira Exp $ */
 
 #ifndef _WIN_LIB_H_
 #define _WIN_LIB_H_
@@ -94,6 +94,12 @@ typedef  int32_w  WIN_sr;   /* 0 < sr < 2^20 */
 
 /* Max. remain size of shared memory */
 #define  MAX_REMAIN_SHM  ((size_t)10000000)   /* 10 MB */
+
+/* default receipt buffer size of socket (in KB) */
+#define  DEFAULT_RCVBUF  256
+
+/* default transmit buffer size of socket (in KB) */
+#define  DEFAULT_SNDBUF  256
 
 /*** process control file ***/
 #define N_LATEST     "LATEST"

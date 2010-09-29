@@ -1,4 +1,4 @@
-/* $Id: recvt_LS7000.c,v 1.1.2.3.2.12 2010/09/29 06:23:49 uehira Exp $ */
+/* $Id: recvt_LS7000.c,v 1.1.2.3.2.13 2010/09/29 16:06:35 uehira Exp $ */
 /* "recvt_LS7000.c"  uehira */
 /*   2007-11-02  imported from recvt.c 1.29.2.1 */
 
@@ -548,9 +548,9 @@ main(argc,argv)
   /* int shmid; */
   unsigned long uni;
   unsigned char *ptr,tm[6],*ptr_size,*ptr_size2;
-  int i,j,k,size,n,norg,sock,nn,pre,post,c,mon,pl,eobsize,
+  int i,k,size,n,norg,sock,nn,pre,post,c,mon,pl,eobsize,
     sbuf,noreq,no_ts,no_pno,req_delay;
-  struct sockaddr_in to_addr,from_addr;
+  struct sockaddr_in from_addr;
   socklen_t fromlen;
   unsigned short to_port;
   extern int optind;
@@ -602,7 +602,7 @@ main(argc,argv)
   no_pinfo=mon=eobsize=noreq=no_ts=no_pno=0;
   pre=post=0;
   *interface=(*mcastgroup)=0;
-  sbuf=256;
+  sbuf=DEFAULT_RCVBUF;
   chhist.n=N_HIST;
   n_chfile=1;
   req_delay=0;
@@ -770,22 +770,23 @@ main(argc,argv)
   sprintf(tb,"TS window %ds - +%ds",pre,post);
   write_log(tb);
 
-  if((sock=socket(AF_INET,SOCK_DGRAM,0))<0) err_sys("socket");
-  for(j=sbuf;j>=16;j-=4)
-    {
-    i=j*1024;
-    if(setsockopt(sock,SOL_SOCKET,SO_RCVBUF,(char *)&i,sizeof(i))>=0)
-      break;
-    }
-  if(j<16) err_sys("SO_RCVBUF setsockopt error\n");
-  sprintf(tb,"RCVBUF size=%d",j*1024);
-  write_log(tb);
+  sock = udp_accept4(to_port, sbuf);
+  /* if((sock=socket(AF_INET,SOCK_DGRAM,0))<0) err_sys("socket"); */
+  /* for(j=sbuf;j>=16;j-=4) */
+  /*   { */
+  /*   i=j*1024; */
+  /*   if(setsockopt(sock,SOL_SOCKET,SO_RCVBUF,(char *)&i,sizeof(i))>=0) */
+  /*     break; */
+  /*   } */
+  /* if(j<16) err_sys("SO_RCVBUF setsockopt error\n"); */
+  /* sprintf(tb,"RCVBUF size=%d",j*1024); */
+  /* write_log(tb); */
 
-  memset((char *)&to_addr,0,sizeof(to_addr));
-  to_addr.sin_family=AF_INET;
-  to_addr.sin_addr.s_addr=htonl(INADDR_ANY);
-  to_addr.sin_port=htons(to_port);
-  if(bind(sock,(struct sockaddr *)&to_addr,sizeof(to_addr))<0) err_sys("bind");
+  /* memset((char *)&to_addr,0,sizeof(to_addr)); */
+  /* to_addr.sin_family=AF_INET; */
+  /* to_addr.sin_addr.s_addr=htonl(INADDR_ANY); */
+  /* to_addr.sin_port=htons(to_port); */
+  /* if(bind(sock,(struct sockaddr *)&to_addr,sizeof(to_addr))<0) err_sys("bind"); */
 
   if(*mcastgroup){
     stMreq.imr_multiaddr.s_addr=inet_addr(mcastgroup);

@@ -1,4 +1,4 @@
-/* $Id: recvstatus.c,v 1.6.8.4 2010/09/20 03:33:27 uehira Exp $ */
+/* $Id: recvstatus.c,v 1.6.8.5 2010/09/29 16:06:34 uehira Exp $ */
 
 /* "recvstatus.c"      5/24/95    urabe */
 /* 97.7.17 two lines of "if() continue;" in the main loop */
@@ -37,6 +37,7 @@
 #include <errno.h>
 
 #include "winlib.h"
+#include "udpu.h"
 
 #define MAXMESG   2048
 
@@ -52,7 +53,7 @@ main(argc,argv)
   char *argv[];
   {
   int i,fromlen,n;
-  struct sockaddr_in to_addr,from_addr;
+  struct sockaddr_in from_addr;
   unsigned short to_port;
 
   if((progname=strrchr(argv[0],'/')) != NULL) progname++;
@@ -67,21 +68,22 @@ main(argc,argv)
   if(argc>2) logfile=argv[2];
   else logfile=NULL;
 
-  sprintf(tb,"%s started. port=%d file=%s",progname,to_port,logfile);
+  sprintf(tb,"started. port=%d file=%s",to_port,logfile);
   write_log(tb);
 
-  if((sock=socket(AF_INET,SOCK_DGRAM,0))<0) err_sys("socket");
-  i=32768;
-  if(setsockopt(sock,SOL_SOCKET,SO_RCVBUF,(char *)&i,sizeof(i))<0)
-    err_sys("SO_RCVBUF setsockopt error\n");
+  sock = udp_accept4(to_port, 32);
+  /* if((sock=socket(AF_INET,SOCK_DGRAM,0))<0) err_sys("socket"); */
+  /* i=32768; */
+  /* if(setsockopt(sock,SOL_SOCKET,SO_RCVBUF,(char *)&i,sizeof(i))<0) */
+  /*   err_sys("SO_RCVBUF setsockopt error\n"); */
 
-  memset((char *)&to_addr,0,sizeof(to_addr));
-  to_addr.sin_family=AF_INET;
-  to_addr.sin_addr.s_addr=htonl(INADDR_ANY);
-  to_addr.sin_port=htons(to_port);
+  /* memset((char *)&to_addr,0,sizeof(to_addr)); */
+  /* to_addr.sin_family=AF_INET; */
+  /* to_addr.sin_addr.s_addr=htonl(INADDR_ANY); */
+  /* to_addr.sin_port=htons(to_port); */
 
-  if(bind(sock,(struct sockaddr *)&to_addr,sizeof(to_addr))<0)
-    err_sys("bind");
+  /* if(bind(sock,(struct sockaddr *)&to_addr,sizeof(to_addr))<0) */
+  /*   err_sys("bind"); */
 
   signal(SIGTERM,(void *)end_program);
   signal(SIGINT,(void *)end_program);

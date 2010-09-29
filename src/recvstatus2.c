@@ -1,4 +1,4 @@
-/* $Id: recvstatus2.c,v 1.6.8.6 2010/09/27 07:53:55 uehira Exp $ */
+/* $Id: recvstatus2.c,v 1.6.8.7 2010/09/29 16:06:34 uehira Exp $ */
 
 /* modified from "recvstatus.c" */
 /* 2002.6.19 recvstatus2 receive A8/A9 packets from Datamark LS-7000XT */
@@ -55,6 +55,7 @@
 #include <errno.h>
 
 #include "winlib.h"
+#include "udpu.h"
 
 #define NSMAX 100
 #define MAXMESG   2048
@@ -74,7 +75,7 @@ main(argc,argv)
   int i,fromlen,n,ns,c,rcs;
 /*   extern int optind; */
 /*   extern char *optarg; */
-  struct sockaddr_in to_addr,from_addr;
+  struct sockaddr_in  from_addr;
   unsigned short to_port;
   struct infoarray {
     int adrs;
@@ -122,14 +123,18 @@ main(argc,argv)
     }
   else *logdir=0;
 
-  if((sock=socket(AF_INET,SOCK_DGRAM,0))<0) err_sys("socket");
+  snprintf(tb,sizeof(tb),"started. port=%d logdir=%s",to_port,logfile);
+  write_log(tb);
 
-  memset((char *)&to_addr,0,sizeof(to_addr));
-  to_addr.sin_family=AF_INET;
-  to_addr.sin_addr.s_addr=htonl(INADDR_ANY);
-  to_addr.sin_port=htons(to_port);
+  sock = udp_accept4(to_port, 32);
+  /* if((sock=socket(AF_INET,SOCK_DGRAM,0))<0) err_sys("socket"); */
 
-  if(bind(sock,(struct sockaddr *)&to_addr,sizeof(to_addr))<0) err_sys("bind");
+  /* memset((char *)&to_addr,0,sizeof(to_addr)); */
+  /* to_addr.sin_family=AF_INET; */
+  /* to_addr.sin_addr.s_addr=htonl(INADDR_ANY); */
+  /* to_addr.sin_port=htons(to_port); */
+
+  /* if(bind(sock,(struct sockaddr *)&to_addr,sizeof(to_addr))<0) err_sys("bind"); */
 
   signal(SIGTERM,(void *)end_program);
   signal(SIGINT,(void *)end_program);

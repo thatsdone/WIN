@@ -1,4 +1,4 @@
-/* $Id: relay.c,v 1.15.4.3.2.6 2010/09/20 03:33:28 uehira Exp $ */
+/* $Id: relay.c,v 1.15.4.3.2.7 2010/09/29 16:06:35 uehira Exp $ */
 /* "relay.c"      5/23/94-5/25/94,6/15/94-6/16/94,6/23/94,3/16/95 urabe */
 /*                3/26/95 check_packet_no; port# */
 /*                5/24/96 added processing of "host table full" */
@@ -63,6 +63,7 @@
 
 #include "daemon_mode.h"
 #include "winlib.h"
+#include "udpu.h"
 
 /* #define DEBUG     0 */
 #define DEBUG1    0
@@ -352,10 +353,10 @@ main(argc,argv)
   {
   struct timeval timeout,tv1,tv2;
   double idletime;
-  int c,i,j,re,fromlen,bufno,bufno_f,ttl,delay,noreq,sockbuf,nopno;
+  int c,i,re,fromlen,bufno,bufno_f,ttl,delay,noreq,sockbuf,nopno;
   struct sockaddr_in to_addr,from_addr;
   unsigned short to_port;
-  struct hostent *h;
+  /* struct hostent *h; */
   unsigned short host_port,src_port;
   unsigned char no,no_f;
   char tb[256];
@@ -387,7 +388,7 @@ main(argc,argv)
   *chfile=(*interface)=(*mcastgroup)=(*sinterface)=0;
   ttl=1;
   no_pinfo=src_port=delay=noreq=negate_channel=nopno=0;
-  sockbuf=256;
+  sockbuf=DEFAULT_RCVBUF;
 
   while((c=getopt(argc,argv,"b:Dd:f:g:i:Nnp:rs:t:T:"))!=-1)
     {
@@ -473,23 +474,25 @@ main(argc,argv)
   if(to_port>0)
     {
     /* 'in' port */
-    if((sock_in=socket(AF_INET,SOCK_DGRAM,0))<0) err_sys("sock_in");
-    for(j=sockbuf;j>=16;j-=4)
-      {
-      i=j*1024;
-      if(setsockopt(sock_in,SOL_SOCKET,SO_RCVBUF,(char *)&i,sizeof(i))>=0)
-        break;
-      }
-    if(j<16) err_sys("SO_RCVBUF setsockopt error\n");
-    sprintf(tb,"RCVBUF size=%d",j*1024);
-    write_log(tb);
+    sock_in = udp_accept4(to_port, sockbuf);
 
-    memset((char *)&to_addr,0,sizeof(to_addr));
-    to_addr.sin_family=AF_INET;
-    to_addr.sin_addr.s_addr=htonl(INADDR_ANY);
-    to_addr.sin_port=htons(to_port);
-    if(bind(sock_in,(struct sockaddr *)&to_addr,sizeof(to_addr))<0)
-    err_sys("bind_in");
+    /* if((sock_in=socket(AF_INET,SOCK_DGRAM,0))<0) err_sys("sock_in"); */
+    /* for(j=sockbuf;j>=16;j-=4) */
+    /*   { */
+    /*   i=j*1024; */
+    /*   if(setsockopt(sock_in,SOL_SOCKET,SO_RCVBUF,(char *)&i,sizeof(i))>=0) */
+    /*     break; */
+    /*   } */
+    /* if(j<16) err_sys("SO_RCVBUF setsockopt error\n"); */
+    /* sprintf(tb,"RCVBUF size=%d",j*1024); */
+    /* write_log(tb); */
+
+    /* memset((char *)&to_addr,0,sizeof(to_addr)); */
+    /* to_addr.sin_family=AF_INET; */
+    /* to_addr.sin_addr.s_addr=htonl(INADDR_ANY); */
+    /* to_addr.sin_port=htons(to_port); */
+    /* if(bind(sock_in,(struct sockaddr *)&to_addr,sizeof(to_addr))<0) */
+    /* err_sys("bind_in"); */
 
     if(*mcastgroup)
       {
@@ -502,23 +505,38 @@ main(argc,argv)
     }
 
   /* destination host/port */
-  if(!(h=gethostbyname(host_name))) err_sys("can't find host");
-  memset((char *)&to_addr,0,sizeof(to_addr));
-  to_addr.sin_family=AF_INET;
-  memcpy((caddr_t)&to_addr.sin_addr,h->h_addr,h->h_length);
-/*  to_addr.sin_addr.s_addr=inet_addr(inet_ntoa(h->h_addr));*/
-  to_addr.sin_port=htons(host_port);
-  if((sock_out=socket(AF_INET,SOCK_DGRAM,0))<0) err_sys("sock_out");
-  i=1;
-  if(setsockopt(sock_out,SOL_SOCKET,SO_BROADCAST,(char *)&i,sizeof(i))<0)
-    err_sys("SO_BROADCAST setsockopt error\n");
-  i=65535;
-  if(setsockopt(sock_out,SOL_SOCKET,SO_SNDBUF,(char *)&i,sizeof(i))<0)
-    {
-    i=50000;
-    if(setsockopt(sock_out,SOL_SOCKET,SO_SNDBUF,(char *)&i,sizeof(i))<0)
-      err_sys("SO_SNDBUF setsockopt error\n");
-    }
+  sock_out = udp_dest4(host_name, host_port, &to_addr, 64, src_port);
+  /* if(!(h=gethostbyname(host_name))) err_sys("can't find host"); */
+  /* memset((char *)&to_addr,0,sizeof(to_addr)); */
+  /* to_addr.sin_family=AF_INET; */
+  /* memcpy((caddr_t)&to_addr.sin_addr,h->h_addr,h->h_length); */
+  /* /\*  to_addr.sin_addr.s_addr=inet_addr(inet_ntoa(h->h_addr));*\/ */
+  /* to_addr.sin_port=htons(host_port); */
+  /* if((sock_out=socket(AF_INET,SOCK_DGRAM,0))<0) err_sys("sock_out"); */
+  /* i=1; */
+  /* if(setsockopt(sock_out,SOL_SOCKET,SO_BROADCAST,(char *)&i,sizeof(i))<0) */
+  /*   err_sys("SO_BROADCAST setsockopt error\n"); */
+  /* i=65535; */
+  /* if(setsockopt(sock_out,SOL_SOCKET,SO_SNDBUF,(char *)&i,sizeof(i))<0) */
+  /*   { */
+  /*   i=50000; */
+  /*   if(setsockopt(sock_out,SOL_SOCKET,SO_SNDBUF,(char *)&i,sizeof(i))<0) */
+  /*     err_sys("SO_SNDBUF setsockopt error\n"); */
+  /*   } */
+
+  /* /\* bind my socket to a local port *\/ */
+  /* memset((char *)&from_addr,0,sizeof(from_addr)); */
+  /* from_addr.sin_family=AF_INET; */
+  /* from_addr.sin_addr.s_addr=htonl(INADDR_ANY); */
+  /* from_addr.sin_port=htons(src_port); */
+  /* if(src_port) */
+  /*   { */
+  /*   sprintf(tb,"src_port=%d",src_port); */
+  /*   write_log(tb); */
+  /*   } */
+  /* if(bind(sock_out,(struct sockaddr *)&from_addr,sizeof(from_addr))<0) */
+  /*   err_sys("bind_out"); */
+
   if(*sinterface)
     {
     mif=inet_addr(sinterface);
@@ -531,18 +549,6 @@ main(argc,argv)
     if(setsockopt(sock_out,IPPROTO_IP,IP_MULTICAST_TTL,&no,sizeof(no))<0)
       err_sys("IP_MULTICAST_TTL setsockopt error\n");
     }
-  /* bind my socket to a local port */
-  memset((char *)&from_addr,0,sizeof(from_addr));
-  from_addr.sin_family=AF_INET;
-  from_addr.sin_addr.s_addr=htonl(INADDR_ANY);
-  from_addr.sin_port=htons(src_port);
-  if(src_port)
-    {
-    sprintf(tb,"src_port=%d",src_port);
-    write_log(tb);
-    }
-  if(bind(sock_out,(struct sockaddr *)&from_addr,sizeof(from_addr))<0)
-    err_sys("bind_out");
 
   if(nopno) write_log("packet numbers pass through");
   if(noreq) write_log("resend request disabled");

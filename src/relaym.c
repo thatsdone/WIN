@@ -1,4 +1,4 @@
-/* $Id: relaym.c,v 1.8.2.1.2.3 2010/06/13 04:14:33 uehira Exp $ */
+/* $Id: relaym.c,v 1.8.2.1.2.4 2010/09/29 16:06:35 uehira Exp $ */
 
 /*
  * 2005-06-22 MF relay.c:
@@ -57,7 +57,7 @@
 #define MAXMSG       1025
 
 static const char rcsid[] =
-  "$Id: relaym.c,v 1.8.2.1.2.3 2010/06/13 04:14:33 uehira Exp $";
+  "$Id: relaym.c,v 1.8.2.1.2.4 2010/09/29 16:06:35 uehira Exp $";
 
 /* destination host info. */
 struct hostinfo {
@@ -144,7 +144,7 @@ main(int argc, char *argv[])
 
   chfile[0] = '\0';
   delay = noreq = no_pinfo = negate_channel = nopno = 0;
-  sockbuf = 256;  /* default socket buffer size in KB */
+  sockbuf = DEFAULT_SNDBUF;  /* default socket buffer size in KB */
 
   while ((c = getopt(argc, argv, "b:Dd:f:Nnr")) != -1)
     switch (c) {

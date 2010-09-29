@@ -1,4 +1,4 @@
-/* $Id: recvstatus4.c,v 1.1.2.4 2010/09/21 11:56:59 uehira Exp $ */
+/* $Id: recvstatus4.c,v 1.1.2.5 2010/09/29 16:06:34 uehira Exp $ */
 
 /* 
  * recvstatus4 :
@@ -48,7 +48,7 @@
 #define PATHMAX      1024
 
 static const char rcsid[] =
-  "$Id: recvstatus4.c,v 1.1.2.4 2010/09/21 11:56:59 uehira Exp $";
+  "$Id: recvstatus4.c,v 1.1.2.5 2010/09/29 16:06:34 uehira Exp $";
 
 char *progname, *logfile;
 int  daemon_mode, syslog_mode;
@@ -94,7 +94,7 @@ main(int argc, char *argv[])
   if (strcmp(progname, "recvstatus4d") == 0)
     daemon_mode = 1;
   
-  sockbuf = 256;  /* default socket buffer size in KB */
+  sockbuf = DEFAULT_SNDBUF;  /* default socket buffer size in KB */
 
   while ((c = getopt(argc, argv, "D")) != -1)
     switch (c) {

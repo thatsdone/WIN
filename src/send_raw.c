@@ -1,4 +1,4 @@
-/* $Id: send_raw.c,v 1.24.2.4.2.15 2010/09/29 06:23:49 uehira Exp $ */
+/* $Id: send_raw.c,v 1.24.2.4.2.16 2010/09/29 16:06:35 uehira Exp $ */
 /*
     program "send_raw/send_mon.c"   1/24/94 - 1/25/94,5/25/94 urabe
                                     6/15/94 - 6/16/94
@@ -87,6 +87,7 @@
 
 #include "daemon_mode.h"
 #include "winlib.h"
+#include "udpu.h"
 
 /* #define DEBUG       0 */
 #define DEBUG0      0
@@ -101,7 +102,7 @@
 #define REQ_TIMO  10   /* timeout (sec) for request */
 
 static const char  rcsid[] =
-   "$Id: send_raw.c,v 1.24.2.4.2.15 2010/09/29 06:23:49 uehira Exp $";
+   "$Id: send_raw.c,v 1.24.2.4.2.16 2010/09/29 16:06:35 uehira Exp $";
 
 static int sock,raw,tow,all,n_ch,negate_channel,mtu,nbuf,slptime,
   no_resend;
@@ -388,8 +389,8 @@ main(int argc, char *argv[])
   uint32_w  size ,size2, gs;  /* 64bit */
   unsigned long  c_save, c_save_w;  /* 64bit */
   size_t  shp;  /* 64bit */
-  struct sockaddr_in to_addr,from_addr;
-  struct hostent *h;
+  struct sockaddr_in to_addr;
+  /* struct hostent *h; */
   WIN_ch  ch;
   uint16_t host_port,src_port;  /* 64bit ok */
   uint8_w *ptr,*ptr1,*ptr_save,*ptr_lim,*ptw,*ptw_size,no;
@@ -459,7 +460,7 @@ main(int argc, char *argv[])
 	    fprintf(stderr, "Buffer overrun.\n");
 	    exit(1);
 	  }
-        if((fp=fopen(file_req,"a"))==0)
+        if((fp=fopen(file_req,"a"))==NULL)
           {
           fprintf(stderr,"requested channels file '%s' not open.\n",file_req);
           exit(1);
@@ -601,60 +602,65 @@ main(int argc, char *argv[])
     }
 
   /* destination host/port */
-  if(!(h=gethostbyname(host_name))) err_sys("can't find host");
-  memset(&to_addr,0,sizeof(to_addr));
-  to_addr.sin_family=AF_INET;
-  memcpy(&to_addr.sin_addr,h->h_addr,h->h_length);
-  to_addr.sin_port=htons(host_port);
-  /* my socket */
-  if((sock=socket(AF_INET,SOCK_DGRAM,0))<0) err_sys("socket");
-  for(j=256;j>=16;j-=4)
-    {
-    i=j*1024;
-    if(setsockopt(sock,SOL_SOCKET,SO_SNDBUF,(char *)&i,sizeof(i))>=0)
-      break;
-    }
-  if(j<16) err_sys("SO_SNDBUF setsockopt error\n");
-  snprintf(tbuf,sizeof(tbuf),"SNDBUF size=%d",j*1024);
-  write_log(tbuf);
+  sock = udp_dest4(host_name, host_port, &to_addr, DEFAULT_SNDBUF, src_port);
+  /* if(!(h=gethostbyname(host_name))) err_sys("can't find host"); */
+  /* memset(&to_addr,0,sizeof(to_addr)); */
+  /* to_addr.sin_family=AF_INET; */
+  /* memcpy(&to_addr.sin_addr,h->h_addr,h->h_length); */
+  /* to_addr.sin_port=htons(host_port); */
+  /* /\* my socket *\/ */
+  /* if((sock=socket(AF_INET,SOCK_DGRAM,0))<0) err_sys("socket"); */
+  /* for(j=DEFAULT_SNDBUF;j>=16;j-=4) */
+  /*   { */
+  /*   i=j*1024; */
+  /*   if(setsockopt(sock,SOL_SOCKET,SO_SNDBUF,(char *)&i,sizeof(i))>=0) */
+  /*     break; */
+  /*   } */
+  /* if(j<16) err_sys("SO_SNDBUF setsockopt error\n"); */
+  /* snprintf(tbuf,sizeof(tbuf),"SNDBUF size=%d",j*1024); */
+  /* write_log(tbuf); */
+
+  /* if(setsockopt(sock,SOL_SOCKET,SO_BROADCAST,(char *)&i,sizeof(i))<0) */
+  /*   err_sys("SO_BROADCAST setsockopt error\n"); */
+
+  /* /\* bind my socket to a local port *\/ */
+  /* memset(&from_addr,0,sizeof(from_addr)); */
+  /* from_addr.sin_family=AF_INET; */
+  /* from_addr.sin_addr.s_addr=htonl(INADDR_ANY); */
+  /* from_addr.sin_port=htons(src_port); */
+  /* if(src_port) */
+  /*   { */
+  /*   snprintf(tbuf,sizeof(tbuf),"src_port=%d",src_port); */
+  /*   write_log(tbuf); */
+  /*   } */
+  /* if(bind(sock,(struct sockaddr *)&from_addr,sizeof(from_addr))<0) */
+  /*   err_sys("bind"); */
+
   if(*file_req)
     {
-    for(j=256;j>=16;j-=4)
+    for(j=DEFAULT_RCVBUF;j>=16;j-=4)
       {
       i=j*1024;
       if(setsockopt(sock,SOL_SOCKET,SO_RCVBUF,(char *)&i,sizeof(i))>=0)
         break;
       }
-    if(j<16) err_sys("SO_RCVBUF setsockopt error\n");
+    if(j<16) err_sys("SO_RCVBUF setsockopt error");
     snprintf(tbuf,sizeof(tbuf),"RCVBUF size=%d",j*1024);
     write_log(tbuf);
     }
-  if(setsockopt(sock,SOL_SOCKET,SO_BROADCAST,(char *)&i,sizeof(i))<0)
-    err_sys("SO_BROADCAST setsockopt error\n");
+
   if(*interface)
     {
     mif=inet_addr(interface);
     if(setsockopt(sock,IPPROTO_IP,IP_MULTICAST_IF,(char *)&mif,sizeof(mif))<0)
-      err_sys("IP_MULTICAST_IF setsockopt error\n");
+      err_sys("IP_MULTICAST_IF setsockopt error");
     }
   if(ttl>1)
     {
     no=ttl;
     if(setsockopt(sock,IPPROTO_IP,IP_MULTICAST_TTL,&no,sizeof(no))<0)
-      err_sys("IP_MULTICAST_TTL setsockopt error\n");
+      err_sys("IP_MULTICAST_TTL setsockopt error");
     }
-  /* bind my socket to a local port */
-  memset(&from_addr,0,sizeof(from_addr));
-  from_addr.sin_family=AF_INET;
-  from_addr.sin_addr.s_addr=htonl(INADDR_ANY);
-  from_addr.sin_port=htons(src_port);
-  if(src_port)
-    {
-    snprintf(tbuf,sizeof(tbuf),"src_port=%d",src_port);
-    write_log(tbuf);
-    }
-  if(bind(sock,(struct sockaddr *)&from_addr,sizeof(from_addr))<0)
-    err_sys("bind");
 
   signal(SIGPIPE,(void *)end_program);
   signal(SIGINT,(void *)end_program);

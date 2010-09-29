@@ -1,4 +1,4 @@
-/* $Id: recvnmx.c,v 1.16.4.4.2.12 2010/09/29 06:23:48 uehira Exp $ */
+/* $Id: recvnmx.c,v 1.16.4.4.2.13 2010/09/29 16:06:34 uehira Exp $ */
 /* "recvnmx.c"    2001.7.18-19 modified from recvt.c and nmx2raw.c  urabe */
 /*                2001.8.18 */
 /*                2001.10.5 workaround for hangup */
@@ -15,13 +15,23 @@
 #include "config.h"
 #endif
 
+#include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
+#include <sys/socket.h>
+
+#include <netinet/in.h>
+#if HAVE_ARPA_INET_H
+#include <arpa/inet.h>
+#endif
+
 #include <stdio.h>
 #include <signal.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/types.h>
-#include <sys/ipc.h>
-#include <sys/shm.h>
+#include <unistd.h>
+#include <netdb.h>
+#include <errno.h>
 
 #if HAVE_DIRENT_H
 # include <dirent.h>
@@ -51,15 +61,8 @@
 #endif  /* !HAVE_SYS_TIME_H */
 #endif  /* !TIME_WITH_SYS_TIME */
 
-#include <sys/socket.h>
-#include <netinet/in.h>
-#if HAVE_ARPA_INET_H
-#include <arpa/inet.h>
-#endif
-#include <netdb.h>
-#include <errno.h>
-
 #include "winlib.h"
+#include "udpu.h"
 
 /* #define DEBUG     0 */
 #define DEBUG1    0
@@ -536,7 +539,7 @@ main(argc,argv)
   char interface[256];  /* multicast interface */
 #define MCASTGROUP  "224.0.1.1"
 #define TO_PORT   32000
-  struct sockaddr_in to_addr,from_addr;
+  struct sockaddr_in from_addr;
   unsigned short to_port;
   extern int optind;
   extern char *optarg;
@@ -593,19 +596,20 @@ main(argc,argv)
   if(argc>4+optind) logfile=argv[4+optind];
   else logfile=NULL;
 
-  if((sock=socket(AF_INET,SOCK_DGRAM,0))<0) err_sys("socket");
-  i=65535;
-  if(setsockopt(sock,SOL_SOCKET,SO_RCVBUF,(char *)&i,sizeof(i))<0)
-    {
-    i=50000;
-    if(setsockopt(sock,SOL_SOCKET,SO_RCVBUF,(char *)&i,sizeof(i))<0)
-      err_sys("SO_RCVBUF setsockopt error\n");
-    }
-  memset((char *)&to_addr,0,sizeof(to_addr));
-  to_addr.sin_family=AF_INET;
-  to_addr.sin_addr.s_addr=htonl(INADDR_ANY);
-  to_addr.sin_port=htons(to_port);
-  if(bind(sock,(struct sockaddr *)&to_addr,sizeof(to_addr))<0) err_sys("bind");
+  sock = udp_accept4(to_port, 64);
+  /* if((sock=socket(AF_INET,SOCK_DGRAM,0))<0) err_sys("socket"); */
+  /* i=65535; */
+  /* if(setsockopt(sock,SOL_SOCKET,SO_RCVBUF,(char *)&i,sizeof(i))<0) */
+  /*   { */
+  /*   i=50000; */
+  /*   if(setsockopt(sock,SOL_SOCKET,SO_RCVBUF,(char *)&i,sizeof(i))<0) */
+  /*     err_sys("SO_RCVBUF setsockopt error\n"); */
+  /*   } */
+  /* memset((char *)&to_addr,0,sizeof(to_addr)); */
+  /* to_addr.sin_family=AF_INET; */
+  /* to_addr.sin_addr.s_addr=htonl(INADDR_ANY); */
+  /* to_addr.sin_port=htons(to_port); */
+  /* if(bind(sock,(struct sockaddr *)&to_addr,sizeof(to_addr))<0) err_sys("bind"); */
 
   if(*mcastgroup)
     {

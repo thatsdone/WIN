@@ -1,4 +1,4 @@
-/* $Id: winlib_log.c,v 1.1.2.3 2010/09/29 06:23:49 uehira Exp $ */
+/* $Id: winlib_log.c,v 1.1.2.4 2010/09/29 16:06:35 uehira Exp $ */
 
 /*-
  * winlib.c  (Uehira Kenji)
@@ -106,8 +106,8 @@ Shm_create(key_t shmkey, size_t shmsize, char *msg)
   oflag |= SHM_R |  SHM_W;  /* user permission */
   oflag |= (SHM_R>>3);      /* group permission */
   oflag |= (SHM_R>>6);      /* other permission */
-  /*  oflag |= (SHM_R>>3) | (SHM_W>>3);  /* group permission */
-  /* oflag |= (SHM_R>>6) | (SHM_W>>6);  /* other permission */
+  /* oflag |= (SHM_R>>3) | (SHM_W>>3);  group permission */
+  /* oflag |= (SHM_R>>6) | (SHM_W>>6);  other permission */
 
   if ((shmid = shmget(shmkey, shmsize, oflag)) == -1) {
     (void)snprintf(tbuf, sizeof(tbuf), "shmget %s", msg);

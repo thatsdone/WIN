@@ -1,4 +1,4 @@
-/* $Id: recvt.c,v 1.29.2.3.2.25 2010/09/29 06:23:48 uehira Exp $ */
+/* $Id: recvt.c,v 1.29.2.3.2.26 2010/09/29 16:06:35 uehira Exp $ */
 /*-
  "recvt.c"      4/10/93 - 6/2/93,7/2/93,1/25/94    urabe
                 2/3/93,5/25/94,6/16/94 
@@ -93,6 +93,7 @@
 #endif  /* !TIME_WITH_SYS_TIME */
 
 #include "daemon_mode.h"
+#include "udpu.h"
 #include "winlib.h"
 
 #define DEBUG0    0
@@ -109,7 +110,7 @@
 #define N_PNOS    62    /* length of packet nos. history >=2 */
 
 static const char rcsid[] =
-  "$Id: recvt.c,v 1.29.2.3.2.25 2010/09/29 06:23:48 uehira Exp $";
+  "$Id: recvt.c,v 1.29.2.3.2.26 2010/09/29 16:06:35 uehira Exp $";
 
 static uint8_w rbuf[MAXMESG],ch_table[WIN_CHMAX];
 static char chfile[N_CHFILE][256];
@@ -705,7 +706,7 @@ int
 main(int argc, char *argv[])
   {
   key_t shm_key;  /*- 64bit ok -*/
-  int shmid;      /*- 64bit ok -*/
+  /* int shmid; */      /*- 64bit ok -*/
   uint32_w uni;  /*- 64bit ok -*/
   WIN_bs  uni2;  /*- 64bit ok -*/
   uint8_w *ptr,tm[6],*ptr_size,*ptr_size2;  /*- 64bit ok -*/
@@ -716,7 +717,7 @@ main(int argc, char *argv[])
   size_t size,pl;     /*- 64bit ok -*/
   ssize_t n,nn,nlen;  /*- 64bit ok -*/
   time_t pre,post;    /*- 64bit ok -*/
-  struct sockaddr_in to_addr,from_addr,host_addr;  /*- 64bit ok -*/
+  struct sockaddr_in from_addr,host_addr;  /*- 64bit ok -*/
   uint16_t  to_port,host_port;  /*- 64bit ok -*/
   struct Shm  *sh;
   char tb[256],tb2[256];
@@ -739,7 +740,7 @@ main(int argc, char *argv[])
   all=no_pinfo=mon=eobsize=noreq=no_ts=no_pno=0;
   pre=post=0;
   *interface=(*mcastgroup)=(*host_name)=0;
-  sbuf=256;
+  sbuf=DEFAULT_RCVBUF;
   chhist.n=N_HIST;
   n_chfile=1;
   req_delay=0;
@@ -886,7 +887,8 @@ main(int argc, char *argv[])
   write_log(tb);
 
   /* shared memory */
-  sh = Shm_create(shm_key, size, "start");
+  write_log("start");
+  sh = Shm_create(shm_key, size, "in");
   /* if((shmid=shmget(shm_key,size,IPC_CREAT|0666))<0) err_sys("shmget"); */
   /* if((sh=(struct Shm *)shmat(shmid,(void *)0,0))==(struct Shm *)-1) */
   /*   err_sys("shmat"); */
@@ -906,22 +908,23 @@ main(int argc, char *argv[])
   snprintf(tb,sizeof(tb),"TS window %lds - +%lds",pre,post);
   write_log(tb);
 
-  if((sock=socket(AF_INET,SOCK_DGRAM,0))<0) err_sys("socket");
-  for(j=sbuf;j>=16;j-=4)
-    {
-    i=j*1024;
-    if(setsockopt(sock,SOL_SOCKET,SO_RCVBUF,(char *)&i,sizeof(i))>=0)
-      break;
-    }
-  if(j<16) err_sys("SO_RCVBUF setsockopt error\n");
-  snprintf(tb,sizeof(tb),"RCVBUF size=%d",j*1024);
-  write_log(tb);
+  sock = udp_accept4(to_port, sbuf);
+  /* if((sock=socket(AF_INET,SOCK_DGRAM,0))<0) err_sys("socket"); */
+  /* for(j=sbuf;j>=16;j-=4) */
+  /*   { */
+  /*   i=j*1024; */
+  /*   if(setsockopt(sock,SOL_SOCKET,SO_RCVBUF,(char *)&i,sizeof(i))>=0) */
+  /*     break; */
+  /*   } */
+  /* if(j<16) err_sys("SO_RCVBUF setsockopt error\n"); */
+  /* snprintf(tb,sizeof(tb),"RCVBUF size=%d",j*1024); */
+  /* write_log(tb); */
 
-  memset((char *)&to_addr,0,sizeof(to_addr));
-  to_addr.sin_family=AF_INET;
-  to_addr.sin_addr.s_addr=htonl(INADDR_ANY);
-  to_addr.sin_port=htons(to_port);
-  if(bind(sock,(struct sockaddr *)&to_addr,sizeof(to_addr))<0) err_sys("bind");
+  /* memset((char *)&to_addr,0,sizeof(to_addr)); */
+  /* to_addr.sin_family=AF_INET; */
+  /* to_addr.sin_addr.s_addr=htonl(INADDR_ANY); */
+  /* to_addr.sin_port=htons(to_port); */
+  /* if(bind(sock,(struct sockaddr *)&to_addr,sizeof(to_addr))<0) err_sys("bind"); */
 
   if(*mcastgroup){
     stMreq.imr_multiaddr.s_addr=inet_addr(mcastgroup);

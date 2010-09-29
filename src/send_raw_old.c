@@ -1,4 +1,4 @@
-/* $Id: send_raw_old.c,v 1.9.4.3.2.9 2010/09/29 06:23:49 uehira Exp $ */
+/* $Id: send_raw_old.c,v 1.9.4.3.2.10 2010/09/29 16:06:35 uehira Exp $ */
 /*
     program "send_raw_old/send_mon_old.c"   1/24/94 - 1/25/94,5/25/94 urabe
                                     6/15/94 - 6/16/94
@@ -50,6 +50,7 @@
 #endif  /* !TIME_WITH_SYS_TIME */
 
 #include "winlib.h"
+#include "udpu.h"
 
 /* #define DEBUG     0 */
 #define MAXMESG   1024
@@ -57,7 +58,7 @@
 #define BUFNO     128
 
 static const char  rcsid[] =
-   "$Id: send_raw_old.c,v 1.9.4.3.2.9 2010/09/29 06:23:49 uehira Exp $";
+   "$Id: send_raw_old.c,v 1.9.4.3.2.10 2010/09/29 16:06:35 uehira Exp $";
 
 static int sock,raw,mon,tow,psize[BUFNO],n_ch;
 static uint8_w sbuf[BUFNO][MAXMESG],ch_table[WIN_CHMAX],rbuf[MAXMESG];
@@ -156,7 +157,7 @@ main(int argc, char *argv[])
   unsigned long  c_save;  /* 64bit */
   socklen_t  fromlen;
   struct sockaddr_in to_addr,from_addr;
-  struct hostent *h;
+  /* struct hostent *h; */
   uint16_t  host_port;  /* 64bit ok */
   WIN_ch  ch;
   /* int shmid; */
@@ -223,25 +224,26 @@ main(int argc, char *argv[])
   /* write_log(tbuf); */
 
   /* destination host/port */
-  if(!(h=gethostbyname(host_name))) err_sys("can't find host");
-  memset(&to_addr,0,sizeof(to_addr));
-  to_addr.sin_family=AF_INET;
-  memcpy(&to_addr.sin_addr,h->h_addr,h->h_length);
-  to_addr.sin_port=htons(host_port);
+  sock = udp_dest4(host_name, host_port, &to_addr, 32, 0);
+  /* if(!(h=gethostbyname(host_name))) err_sys("can't find host"); */
+  /* memset(&to_addr,0,sizeof(to_addr)); */
+  /* to_addr.sin_family=AF_INET; */
+  /* memcpy(&to_addr.sin_addr,h->h_addr,h->h_length); */
+  /* to_addr.sin_port=htons(host_port); */
 
-  /* my socket */
-  if((sock=socket(AF_INET,SOCK_DGRAM,0))<0) err_sys("socket");
-  i=32768;
-  if(setsockopt(sock,SOL_SOCKET,SO_SNDBUF,(char *)&i,sizeof(i))<0)
-                err_sys("SO_SNDBUF setsockopt error\n");
+  /* /\* my socket *\/ */
+  /* if((sock=socket(AF_INET,SOCK_DGRAM,0))<0) err_sys("socket"); */
+  /* i=32768; */
+  /* if(setsockopt(sock,SOL_SOCKET,SO_SNDBUF,(char *)&i,sizeof(i))<0) */
+  /*               err_sys("SO_SNDBUF setsockopt error\n"); */
 
-  /* bind my socket to a local port */
-  memset(&from_addr,0,sizeof(from_addr));
-  from_addr.sin_family=AF_INET;
-  from_addr.sin_addr.s_addr=htonl(INADDR_ANY);
-  from_addr.sin_port=htons(0);
-  if(bind(sock,(struct sockaddr *)&from_addr,sizeof(from_addr))<0)
-    err_sys("bind");
+  /* /\* bind my socket to a local port *\/ */
+  /* memset(&from_addr,0,sizeof(from_addr)); */
+  /* from_addr.sin_family=AF_INET; */
+  /* from_addr.sin_addr.s_addr=htonl(INADDR_ANY); */
+  /* from_addr.sin_port=htons(0); */
+  /* if(bind(sock,(struct sockaddr *)&from_addr,sizeof(from_addr))<0) */
+  /*   err_sys("bind"); */
 
   signal(SIGPIPE,(void *)end_program);
   signal(SIGINT,(void *)end_program);

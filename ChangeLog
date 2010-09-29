@@ -1,6 +1,6 @@
- $Id: ChangeLog,v 1.131.2.25.2.98 2010/09/29 16:06:34 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.99 2010/09/29 16:07:45 uehira Exp $
 
-2010-09-29  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+2010-09-30  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* src/udp_accept.c : udp_accept4()
 	* src/udp_dest.c : udp_dest4()
 	* Version 2.1.9 released.

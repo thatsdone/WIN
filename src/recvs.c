@@ -1,4 +1,4 @@
-/* $Id: recvs.c,v 1.6.2.1.2.8 2010/09/20 03:33:27 uehira Exp $ */
+/* $Id: recvs.c,v 1.6.2.1.2.9 2010/09/29 06:23:48 uehira Exp $ */
 /* "recvs.c"    receive sync frames      2000.3.14       urabe */
 /* 2000.3.21 */
 /* 2000.4.17 */
@@ -377,9 +377,10 @@ main(argc,argv)
   if(argc>4+optind) logfile=argv[4+optind];
 
   /* shared memory */
-  if((shmid=shmget(shm_key,size,IPC_CREAT|0666))<0) err_sys("shmget");
-  if((sh=(struct Shm *)shmat(shmid,(void *)0,0))==(struct Shm *)-1)
-    err_sys("shmat");
+  sh = Shm_create(shm_key, size, "start");
+  /* if((shmid=shmget(shm_key,size,IPC_CREAT|0666))<0) err_sys("shmget"); */
+  /* if((sh=(struct Shm *)shmat(shmid,(void *)0,0))==(struct Shm *)-1) */
+  /*   err_sys("shmat"); */
 
   /* initialize buffer */
   Shm_init(sh, size);    /* previous code had bug?? sh->p=0 ??? */
@@ -387,8 +388,8 @@ main(argc,argv)
   /*   sh->pl=(size-sizeof(*sh))/10*9; */
   /*   sh->p=sh->r=(-1); */
 
-  sprintf(tb,"start shm_key=%d id=%d size=%d",shm_key,shmid,size);
-  write_log(tb);
+  /* sprintf(tb,"start shm_key=%d id=%d size=%d",shm_key,shmid,size); */
+  /* write_log(tb); */
 
   if(host_port)
     {

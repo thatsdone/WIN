@@ -1,4 +1,4 @@
-/* $Id: wdisk.c,v 1.17.2.8.2.8 2010/09/27 07:53:55 uehira Exp $ */
+/* $Id: wdisk.c,v 1.17.2.8.2.9 2010/09/29 06:23:49 uehira Exp $ */
 /*
   program "wdisk.c"   4/16/93-5/13/93,7/2/93,7/5/94  urabe
                       1/6/95 bug in adj_time fixed (tm[0]--)
@@ -107,7 +107,7 @@
 #define   NAMELEN  1025
 
 static const char rcsid[] =
-  "$Id: wdisk.c,v 1.17.2.8.2.8 2010/09/27 07:53:55 uehira Exp $";
+  "$Id: wdisk.c,v 1.17.2.8.2.9 2010/09/29 06:23:49 uehira Exp $";
 
 char *progname,*logfile;
 int  daemon_mode, syslog_mode, exit_status;
@@ -309,7 +309,7 @@ main(int argc, char *argv[])
 #define BUFSZ 1000000
 #define BUFLIM 5000000
    FILE *fp;
-   int shmid,tm[6],tm_last[6],eobsize,eobsize_count=0;
+   int tm[6],tm_last[6],eobsize,eobsize_count=0;
    long  i;    /* 64bit ok */
    unsigned long c_save=0;  /* 64bit ok */
    WIN_bs  size, size2, bufsiz;
@@ -394,12 +394,13 @@ main(int argc, char *argv[])
    *latest=(*oldest)=(*busy)=0;
    if(shmkey)
      {
-     if((shmid=shmget(shmkey,0,0))<0) err_sys("shmget");
-     if((shm=(struct Shm *)shmat(shmid,(void *)0,0))==(struct Shm *)-1)
-       err_sys("shmat");
-   
-     sprintf(tbuf,"start, shm_key=%ld sh=%p",shmkey,shm);
-     write_log(tbuf);
+     shm = Shm_read(shmkey, "start");
+     /* if((shmid=shmget(shmkey,0,0))<0) err_sys("shmget"); */
+     /* if((shm=(struct Shm *)shmat(shmid,(void *)0,0))==(struct Shm *)-1) */
+     /*   err_sys("shmat"); */
+     
+     /* sprintf(tbuf,"start, shm_key=%ld sh=%p",shmkey,shm); */
+     /* write_log(tbuf); */
      }
    
    signal(SIGPIPE,(void *)end_program);

@@ -1,4 +1,4 @@
-/* $Id: send_raw.c,v 1.24.2.4.2.14 2010/09/20 03:33:28 uehira Exp $ */
+/* $Id: send_raw.c,v 1.24.2.4.2.15 2010/09/29 06:23:49 uehira Exp $ */
 /*
     program "send_raw/send_mon.c"   1/24/94 - 1/25/94,5/25/94 urabe
                                     6/15/94 - 6/16/94
@@ -101,7 +101,7 @@
 #define REQ_TIMO  10   /* timeout (sec) for request */
 
 static const char  rcsid[] =
-   "$Id: send_raw.c,v 1.24.2.4.2.14 2010/09/20 03:33:28 uehira Exp $";
+   "$Id: send_raw.c,v 1.24.2.4.2.15 2010/09/29 06:23:49 uehira Exp $";
 
 static int sock,raw,tow,all,n_ch,negate_channel,mtu,nbuf,slptime,
   no_resend;
@@ -382,7 +382,7 @@ main(int argc, char *argv[])
   key_t shm_key,shw_key;
   uint16_w uni;
   int i,j,k,aa,bb,ii,jj,bufno,hours_shift,sec_shift,c,
-    nw,eobsize,eobsize_count,shmid,shwid,atm,
+    nw,eobsize,eobsize_count,atm,
     standby,ttl,single,seq_exp,n_seq_exp,req_timo;
   ssize_t  re;  /* 64bit */
   uint32_w  size ,size2, gs;  /* 64bit */
@@ -581,21 +581,23 @@ main(int argc, char *argv[])
     }
 
   /* shared memory */
-  if((shmid=shmget(shm_key,0,0))<0) err_sys("shmget");
-  if((shm=(struct Shm *)shmat(shmid,(void *)0,0))==(struct Shm *)-1)
-    err_sys("shmat");
+  shm = Shm_read(shm_key, "start");
+  /* if((shmid=shmget(shm_key,0,0))<0) err_sys("shmget"); */
+  /* if((shm=(struct Shm *)shmat(shmid,(void *)0,0))==(struct Shm *)-1) */
+  /*   err_sys("shmat"); */
 
-  snprintf(tbuf,sizeof(tbuf),"start shm_key=%ld id=%d",shm_key,shmid);
-  write_log(tbuf);
+  /* snprintf(tbuf,sizeof(tbuf),"start shm_key=%ld id=%d",shm_key,shmid); */
+  /* write_log(tbuf); */
 
   if(shw_key>0)
     {
-    if((shwid=shmget(shw_key,0,0))<0) err_sys("shmget(watch)");
-    if((shw=(struct Shm *)shmat(shwid,(void *)0,0))==(struct Shm *)-1)
-      err_sys("shmat(watch)");
-    snprintf(tbuf,sizeof(tbuf),
-	     "start shm_key=%ld id=%d for standby watch",shw_key,shwid);
-    write_log(tbuf);
+    shw = Shm_read(shw_key, "watch");
+    /* if((shwid=shmget(shw_key,0,0))<0) err_sys("shmget(watch)"); */
+    /* if((shw=(struct Shm *)shmat(shwid,(void *)0,0))==(struct Shm *)-1) */
+    /*   err_sys("shmat(watch)"); */
+    /* snprintf(tbuf,sizeof(tbuf), */
+    /* 	     "start shm_key=%ld id=%d for standby watch",shw_key,shwid); */
+    /* write_log(tbuf); */
     }
 
   /* destination host/port */

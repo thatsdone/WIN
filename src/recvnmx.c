@@ -1,4 +1,4 @@
-/* $Id: recvnmx.c,v 1.16.4.4.2.11 2010/09/27 07:53:55 uehira Exp $ */
+/* $Id: recvnmx.c,v 1.16.4.4.2.12 2010/09/29 06:23:48 uehira Exp $ */
 /* "recvnmx.c"    2001.7.18-19 modified from recvt.c and nmx2raw.c  urabe */
 /*                2001.8.18 */
 /*                2001.10.5 workaround for hangup */
@@ -386,7 +386,7 @@ proc_soh(struct Nmx_Packet *pk)
 {
   struct tm *t;
   time_t tim;
-  unsigned char tb[256],*ptr;
+  unsigned char tb[256];
   union {unsigned char c[4];float f;} u;
   int i,j;
   sprintf(tb,"%02X %02d/%02d/%02d %02d:%02d:%02d %s#%d p#%d",
@@ -438,7 +438,8 @@ ch2idx(int *rbuf[],struct Nmx_Packet *pk,int winch)
 {
   char tb[256];
   static int m[MAXCH],s[MAXCH],c[MAXCH],n_idx;
-  int i,bufsize;
+  int i;
+
   for(i=0;i<n_idx;i++){
     if(pk->model==m[i] && pk->serno==s[i] && pk->ch==c[i]) break;
   }
@@ -472,7 +473,7 @@ read_ch_map()
 {
   char tb[256],mdl[256];
   FILE *fp;
-  int i,j,k,serno,ch;
+  int i,k,serno,ch;
   /* read channel map file */
   if(*chmapfile){
     if((fp=fopen(chmapfile,"r"))!=NULL) {
@@ -520,14 +521,14 @@ main(argc,argv)
   DIR *dir_ptr;
   FILE *fp;
   unsigned char pbuf[MAXMESG];
-  int *rbuf[MAXCH],*ptr,idx,seq_rbuf[MAXCH],fsize_rbuf[MAXCH];
+  int *rbuf[MAXCH],idx,seq_rbuf[MAXCH],fsize_rbuf[MAXCH];
   time_t tim_rbuf[MAXCH];
-  unsigned long uni;
+  /* unsigned long uni; */
   struct Nmx_Packet pk;
-  int i,j,k,size_shm,n,fd,baud,c,oldest,nn,verbose,rbuf_ptr,sock,fromlen,winch,
+  int i,j,k,size_shm,n,c,nn,verbose,rbuf_ptr,sock,fromlen,winch,
     eobsize,pl,nr;
   key_t shm_key;
-  int shmid;
+  /* int shmid; */
   struct Shm *shm;
   char name[100];
   char fragdir[1024]; /* directory for fragment data */
@@ -535,7 +536,6 @@ main(argc,argv)
   char interface[256];  /* multicast interface */
 #define MCASTGROUP  "224.0.1.1"
 #define TO_PORT   32000
-  unsigned char *p;
   struct sockaddr_in to_addr,from_addr;
   unsigned short to_port;
   extern int optind;
@@ -588,8 +588,8 @@ main(argc,argv)
     exit(1);
     }
   to_port=atoi(argv[1+optind]);
-  shm_key=atoi(argv[2+optind]);
-  size_shm=atoi(argv[3+optind])*1000;
+  shm_key=atol(argv[2+optind]);
+  size_shm=atol(argv[3+optind])*1000;
   if(argc>4+optind) logfile=argv[4+optind];
   else logfile=NULL;
 
@@ -620,12 +620,14 @@ main(argc,argv)
   signal(SIGPIPE,(void *)end_program);
 
   /* out shared memory */
-  if((shmid=shmget(shm_key,size_shm,IPC_CREAT|0666))<0) err_sys("shmget");
-  if((shm=(struct Shm *)shmat(shmid,(void *)0,0))==(struct Shm *)-1)
-    err_sys("shmat");
+  write_log("start");
+  shm = Shm_create(shm_key, size_shm, "out");
+  /* if((shmid=shmget(shm_key,size_shm,IPC_CREAT|0666))<0) err_sys("shmget"); */
+  /* if((shm=(struct Shm *)shmat(shmid,(void *)0,0))==(struct Shm *)-1) */
+  /*   err_sys("shmat"); */
 
-  sprintf(tb,"start out_key=%d id=%d size=%d",shm_key,shmid,size_shm);
-  write_log(tb);
+  /* sprintf(tb,"start out_key=%d id=%d size=%d",shm_key,shmid,size_shm); */
+  /* write_log(tb); */
 
   /* initialize buffer */
   Shm_init(shm, size_shm);

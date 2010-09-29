@@ -1,4 +1,4 @@
-/* $Id: shmdump.c,v 1.21.4.6.2.14 2010/09/21 11:56:59 uehira Exp $ */
+/* $Id: shmdump.c,v 1.21.4.6.2.15 2010/09/29 06:23:49 uehira Exp $ */
 
 /*  program "shmdump.c" 6/14/94 urabe */
 /*  revised 5/29/96 */
@@ -72,7 +72,7 @@ struct Filter
 };
 
 static const char rcsid[] =
-  "$Id: shmdump.c,v 1.21.4.6.2.14 2010/09/21 11:56:59 uehira Exp $";
+  "$Id: shmdump.c,v 1.21.4.6.2.15 2010/09/29 06:23:49 uehira Exp $";
 
 static char *progname,outfile[256];
 static int win;
@@ -230,12 +230,12 @@ main(int argc, char *argv[])
   {
   /* #define SR_MON 5 */
   key_t shm_key_in;  /* 64 bit ok */
-  int i,j,k,shmid_in,wtow,c,out,all,mon,
+  int i,j,k,wtow,c,out,all,mon,
     size,chsel,nch=0,search,seconds,tbufp=0,zero,nsec,aa,bb,end,
     eobsize,eobsize_count,tout,rawdump,quiet,
     hexdump;
   /*- 64bit ok
-    shmid_in
+    int shmid_in
     -*/
   uint32_w  size_in;  /* 64 bit ok */
   size_t  shp_in;  /* 64 bit ok */
@@ -411,10 +411,11 @@ main(int argc, char *argv[])
 
   if(strcmp(argv[1+optind],"-"))
     {
-    shm_key_in=atoi(argv[1+optind]); /* shared memory */
-    if((shmid_in=shmget(shm_key_in,0,0))<0) err_sys_local("shmget");
-    if((shm_in=(struct Shm *)shmat(shmid_in,(void *)0,0))==(struct Shm *)-1)
-      err_sys_local("shmat");
+    shm_key_in=atol(argv[1+optind]); /* shared memory */
+    shm_in = Shm_read_offline(shm_key_in);
+    /* if((shmid_in=shmget(shm_key_in,0,0))<0) err_sys_local("shmget"); */
+    /* if((shm_in=(struct Shm *)shmat(shmid_in,(void *)0,0))==(struct Shm *)-1) */
+    /*   err_sys_local("shmat"); */
     /*fprintf(stderr,"in : shm_key_in=%d id=%d\n",shm_key_in,shmid_in);*/
     }
   else /* read data from stdin instead of Shm */

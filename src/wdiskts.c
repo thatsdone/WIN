@@ -1,4 +1,4 @@
-/* $Id: wdiskts.c,v 1.6.2.5.2.10 2010/09/27 07:53:55 uehira Exp $ */
+/* $Id: wdiskts.c,v 1.6.2.5.2.11 2010/09/29 06:23:49 uehira Exp $ */
 
 /*-
   2005.8.10 urabe bug in strcmp2() fixed : 0-6 > 7-9 
@@ -77,7 +77,7 @@
 /* #define FREE(a)         (void)free((void *)(a)) */
 
 static const char rcsid[] =
-  "$Id: wdiskts.c,v 1.6.2.5.2.10 2010/09/27 07:53:55 uehira Exp $";
+  "$Id: wdiskts.c,v 1.6.2.5.2.11 2010/09/29 06:23:49 uehira Exp $";
 
 char *progname,*logfile;
 int  daemon_mode, syslog_mode, exit_status;
@@ -349,7 +349,7 @@ int
 main(int argc, char *argv[])
 {
    FILE *fp;
-   int i,j,shmid,tm[6],tm_save[6];
+   int i,j,tm[6],tm_save[6];
    unsigned long c_save;   /* 64bit ok */
    size_t  shp;
    WIN_bs  size, size_save;
@@ -400,12 +400,14 @@ main(int argc, char *argv[])
    }
 
    *latest=(*oldest)=(*busy)=0;
-   if((shmid=shmget(shmkey,0,0))<0) err_sys("shmget");
-   if((shm=(struct Shm *)shmat(shmid,(void *)0,0))==(struct Shm *)-1)
-     err_sys("shmat");
+
+   shm = Shm_read(shmkey, "start");
+   /* if((shmid=shmget(shmkey,0,0))<0) err_sys("shmget"); */
+   /* if((shm=(struct Shm *)shmat(shmid,(void *)0,0))==(struct Shm *)-1) */
+   /*   err_sys("shmat"); */
    
-   sprintf(tbuf,"start, shm_key=%ld sh=%p",shmkey,shm);
-   write_log(tbuf);
+   /* sprintf(tbuf,"start, shm_key=%ld sh=%p",shmkey,shm); */
+   /* write_log(tbuf); */
    
    signal(SIGTERM,(void *)end_program);
    signal(SIGINT,(void *)end_program);
@@ -470,7 +472,7 @@ main(int argc, char *argv[])
 	size-=4;
 	ptr=shm->d+shp+8;
 #if DEBUG
-	printf("size=%5d\t dat_num=%lu\t array_num_datbuf=%lu\n",
+	printf("size=%5d\t dat_num=%zu\t array_num_datbuf=%zu\n",
 	       size,dat_num,array_num_datbuf);
 #endif
 	while((size--)>0) *ptw++=(*ptr++);

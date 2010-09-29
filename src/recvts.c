@@ -14,13 +14,17 @@
 #include "config.h"
 #endif
 
+#include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
+#include <sys/uio.h>
+
 #include <stdio.h>
 #include <signal.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/types.h>
-#include <sys/ipc.h>
-#include <sys/shm.h>
+#include <fcntl.h>
+#include <unistd.h>
 
 #if TIME_WITH_SYS_TIME
 #include <sys/time.h>
@@ -35,7 +39,7 @@
 
 #include "winlib.h"
 
-#define DEBUG     0
+/* #define DEBUG     0 */
 #define DEBUG1    0
 #define DEBUG2    1
 #define DEBUG3    0
@@ -172,7 +176,7 @@ get_packet(fd,pbuf)
   unsigned char *pbuf;
   {
   static int p,len;
-  int i,psize,plim;
+  int psize,plim;
   static unsigned char buf[4000];
   if(!(p>0 && len>0 && p<len))
     {
@@ -241,10 +245,10 @@ main(argc,argv)
   char *argv[];
   {
   key_t shm_key;
-  int shmid;
+  /* int shmid; */
   unsigned long uni;
   unsigned char *ptr,tm[6],*ptr_size;
-  int i,j,k,c,size,n,re,fd,nn,pre,post;
+  int i,c,size,n,fd,nn,pre,post;
   extern int optind;
   extern char *optarg;
   struct Shm  *sh;
@@ -284,8 +288,8 @@ main(argc,argv)
   pre=(-pre*60);
   post*=60;
 
-  shm_key=atoi(argv[1+optind]);
-  size=atoi(argv[2+optind])*1000;
+  shm_key=atol(argv[1+optind]);
+  size=atol(argv[2+optind])*1000;
   *chfile=0;
   logfile=NULL;
   if(argc>3+optind)
@@ -308,9 +312,10 @@ main(argc,argv)
   if(argc>4+optind) logfile=argv[4+optind];
 
   /* shared memory */
-  if((shmid=shmget(shm_key,size,IPC_CREAT|0666))<0) err_sys("shmget");
-  if((sh=(struct Shm *)shmat(shmid,(void *)0,0))==(struct Shm *)-1)
-    err_sys("shmat");
+  sh = Shm_create(shm_key, size, "start");
+  /* if((shmid=shmget(shm_key,size,IPC_CREAT|0666))<0) err_sys("shmget"); */
+  /* if((sh=(struct Shm *)shmat(shmid,(void *)0,0))==(struct Shm *)-1) */
+  /*   err_sys("shmat"); */
 
   /* initialize buffer */
   Shm_init(sh, size);   /* previous code had bug????? sh->p=0 ???? */
@@ -318,8 +323,8 @@ main(argc,argv)
   /*   sh->pl=(size-sizeof(*sh))/10*9; */
   /*   sh->p=sh->r=(-1); */
 
-  sprintf(tb,"start shm_key=%d id=%d size=%d",shm_key,shmid,size);
-  write_log(tb);
+  /* sprintf(tb,"start shm_key=%d id=%d size=%d",shm_key,shmid,size); */
+  /* write_log(tb); */
 
   if((fd=open("/dev/brhdlc0",0))<0) err_sys("open /dev/brhdlc0");
 

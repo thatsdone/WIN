@@ -1,4 +1,4 @@
-/* $Id: raw_shift.c,v 1.2.4.3.2.7 2010/09/20 03:33:27 uehira Exp $ */
+/* $Id: raw_shift.c,v 1.2.4.3.2.8 2010/09/29 06:23:48 uehira Exp $ */
 
 /* "raw_shift.c"    2002.4.1 - 4.1 urabe */
 /*                  modified from raw_100.c */
@@ -117,7 +117,7 @@ main(argc,argv)
   {
   struct Shm  *shr,*shm;
   key_t rawkey,monkey;
-  int shmid_raw,shmid_mon;
+  /* int shmid_raw,shmid_mon; */
   unsigned long uni;
   char tb[100];
   unsigned char *ptr,*ptw,*ptr_lim,*ptr_save;
@@ -141,9 +141,9 @@ main(argc,argv)
       "                       (-/[ch_file]/-[ch_file]/+[ch_file] ([log file]))'\n");
     exit(1);
     }
-  rawkey=atoi(argv[1]);
-  monkey=atoi(argv[2]);
-  size_shm=atoi(argv[3])*1000;
+  rawkey=atol(argv[1]);
+  monkey=atol(argv[2]);
+  size_shm=atol(argv[3])*1000;
   bits_shift=atoi(argv[4]);
   *chfile=0;
   rest=1;
@@ -175,18 +175,20 @@ main(argc,argv)
   read_chfile();
 
   /* in shared memory */
-  if((shmid_raw=shmget(rawkey,0,0))<0) err_sys("shmget in");
-  if((shr=(struct Shm *)shmat(shmid_raw,(void *)0,0))==
-      (struct Shm *)-1) err_sys("shmat in");
+  shr = Shm_read(rawkey, "in");
+  /* if((shmid_raw=shmget(rawkey,0,0))<0) err_sys("shmget in"); */
+  /* if((shr=(struct Shm *)shmat(shmid_raw,(void *)0,0))== */
+  /*     (struct Shm *)-1) err_sys("shmat in"); */
 
   /* out shared memory */
-  if((shmid_mon=shmget(monkey,size_shm,IPC_CREAT|0666))<0) err_sys("shmget out");
-  if((shm=(struct Shm *)shmat(shmid_mon,(void *)0,0))==(struct Shm *)-1)
-    err_sys("shmat out");
+  shm = Shm_create(monkey, size_shm, "out");
+  /* if((shmid_mon=shmget(monkey,size_shm,IPC_CREAT|0666))<0) err_sys("shmget out"); */
+  /* if((shm=(struct Shm *)shmat(shmid_mon,(void *)0,0))==(struct Shm *)-1) */
+  /*   err_sys("shmat out"); */
 
-  sprintf(tb,"start in_key=%d id=%d out_key=%d id=%d size=%d",
-    rawkey,shmid_raw,monkey,shmid_mon,size_shm);
-  write_log(tb);
+  /* sprintf(tb,"start in_key=%d id=%d out_key=%d id=%d size=%d", */
+  /*   rawkey,shmid_raw,monkey,shmid_mon,size_shm); */
+  /* write_log(tb); */
 
   signal(SIGTERM,(void *)end_program);
   signal(SIGINT,(void *)end_program);

@@ -67,7 +67,7 @@ char *argv[];
 
     key_t shmkey_out;
     struct Shm  *shm_out;
-    int shmid_out, shm_size = 0;
+    int shm_size = 0;
     unsigned char *ptw;
     unsigned long ltime;
     int tmst = 0;
@@ -115,10 +115,12 @@ char *argv[];
     }
 
     if (shm_size > 0) {
-	if ((shmid_out = shmget(shmkey_out, shm_size, IPC_CREAT | 0666)) < 0)
-	    fprintf(stderr, "error shmget_out\n");
-	if ((shm_out = (struct Shm *) shmat(shmid_out, (void *) 0, 0)) == (struct Shm *) -1)
-	    fprintf(stderr, "error shmget_out\n");
+      shm_out = Shm_create_offline(shmkey_out, shm_size);
+      /* if ((shmid_out = shmget(shmkey_out, shm_size, IPC_CREAT | 0666)) < 0) */
+      /* 	fprintf(stderr, "error shmget_out\n"); */
+      /* if ((shm_out = (struct Shm *) shmat(shmid_out, (void *) 0, 0)) == (struct Shm *) -1) */
+      /* 	fprintf(stderr, "error shmget_out\n"); */
+
 	/* initialize output buffer */
 	Shm_init(shm_out, shm_size);
 	/* 	shm_out->p = shm_out->c = 0; */

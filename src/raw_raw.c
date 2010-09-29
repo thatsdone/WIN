@@ -1,4 +1,4 @@
-/* $Id: raw_raw.c,v 1.9.4.3.2.7 2010/09/20 03:33:27 uehira Exp $ */
+/* $Id: raw_raw.c,v 1.9.4.3.2.8 2010/09/29 06:23:48 uehira Exp $ */
 
 /* "raw_raw.c"    97.8.5 urabe */
 /*                  modified from raw_100.c */
@@ -130,7 +130,7 @@ main(argc,argv)
   {
   struct Shm  *shr,*shm;
   key_t rawkey,monkey;
-  int shmid_raw,shmid_mon;
+  /* int shmid_raw,shmid_mon; */
   unsigned long uni;
   char tb[256];
   unsigned char *ptr,*ptw,*ptr_lim,*ptr_save;
@@ -184,9 +184,9 @@ main(argc,argv)
     exit(1);
     }
 
-  rawkey=atoi(argv[1+optind]);
-  monkey=atoi(argv[2+optind]);
-  size_shm=atoi(argv[3+optind])*1000;
+  rawkey=atol(argv[1+optind]);
+  monkey=atol(argv[2+optind]);
+  size_shm=atol(argv[3+optind])*1000;
   logfile=NULL;
   *chfile=0;
   if(argc>4+optind)
@@ -223,15 +223,17 @@ main(argc,argv)
   read_chfile();
 
   /* in shared memory */
-  if((shmid_raw=shmget(rawkey,0,0))<0) err_sys("shmget in");
-  if((shr=(struct Shm *)shmat(shmid_raw,(void *)0,0))==
-      (struct Shm *)-1) err_sys("shmat in");
+  shr = Shm_read(rawkey, "in");
+  /* if((shmid_raw=shmget(rawkey,0,0))<0) err_sys("shmget in"); */
+  /* if((shr=(struct Shm *)shmat(shmid_raw,(void *)0,0))== */
+  /*     (struct Shm *)-1) err_sys("shmat in"); */
 
   /* out shared memory */
-  if((shmid_mon=shmget(monkey,size_shm,IPC_CREAT|0666))<0)
-    err_sys("shmget out");
-  if((shm=(struct Shm *)shmat(shmid_mon,(void *)0,0))==(struct Shm *)-1)
-    err_sys("shmat out");
+  shm = Shm_create(monkey, size_shm, "out");
+  /* if((shmid_mon=shmget(monkey,size_shm,IPC_CREAT|0666))<0) */
+  /*   err_sys("shmget out"); */
+  /* if((shm=(struct Shm *)shmat(shmid_mon,(void *)0,0))==(struct Shm *)-1) */
+  /*   err_sys("shmat out"); */
 
   /* initialize buffer */
   Shm_init(shm, size_shm);
@@ -240,9 +242,9 @@ main(argc,argv)
   /*   shm->pl=pl_out=(size_shm-sizeof(*shm))/10*9; */
   /*   shm->r=(-1); */
 
-  sprintf(tb,"start in_key=%d id=%d out_key=%d id=%d size=%d",
-    rawkey,shmid_raw,monkey,shmid_mon,size_shm);
-  write_log(tb);
+  /* sprintf(tb,"start in_key=%d id=%d out_key=%d id=%d size=%d", */
+  /*   rawkey,shmid_raw,monkey,shmid_mon,size_shm); */
+  /* write_log(tb); */
 
   if(shift45)
     {

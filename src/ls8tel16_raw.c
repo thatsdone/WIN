@@ -1,4 +1,4 @@
-/* $Id: ls8tel16_raw.c,v 1.3.2.2.2.8 2010/09/21 11:56:58 uehira Exp $ */
+/* $Id: ls8tel16_raw.c,v 1.3.2.2.2.9 2010/09/29 06:23:48 uehira Exp $ */
 
 /*
  * Copyright (c) 2005
@@ -22,6 +22,7 @@
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
+#include <sys/stat.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -58,7 +59,7 @@
 /*  #define DEBUG       0 */
 
 static const char rcsid[] =
-  "$Id: ls8tel16_raw.c,v 1.3.2.2.2.8 2010/09/21 11:56:58 uehira Exp $";
+  "$Id: ls8tel16_raw.c,v 1.3.2.2.2.9 2010/09/29 06:23:48 uehira Exp $";
 
 char *progname, *logfile;
 int  daemon_mode, syslog_mode;
@@ -79,7 +80,7 @@ main(int argc, char *argv[])
   FILE            *fp_log;
   struct Shm      *shr, *shm;
   key_t		  inkey, outkey;
-  int		  shmid_in, shmid_out;
+  /* int		  shmid_in, shmid_out; */
   int             size_shm;
   unsigned long	  uni;
   unsigned char   *ptr, *ptw, *ptr_lim, *ptr_save;
@@ -92,7 +93,7 @@ main(int argc, char *argv[])
   int             tow, size;
   int             c, rest, i;
 
-  if (progname = strrchr(argv[0], '/'))
+  if ((progname = strrchr(argv[0], '/')) != NULL)
     progname++;
   else
     progname = argv[0];
@@ -117,9 +118,9 @@ main(int argc, char *argv[])
   if (argc < 3)
     usage();
 
-  inkey = (key_t)atoi(argv[0]);
-  outkey = (key_t)atoi(argv[1]);
-  size_shm = atoi(argv[2]) * 1000;
+  inkey = (key_t)atol(argv[0]);
+  outkey = (key_t)atol(argv[1]);
+  size_shm = atol(argv[2]) * 1000;
 
   /* channel file */
   rest = 1;
@@ -164,21 +165,23 @@ main(int argc, char *argv[])
 
   /***** shared memory *****/
   /* in shared memory */
-  if ((shmid_in = shmget(inkey, 0, 0)) == -1)
-    err_sys("shmget in");
-  if ((shr = (struct Shm *)shmat(shmid_in, (void *)0, 0)) == (struct Shm *)-1)
-    err_sys("shmat in");
+  shr = Shm_read(inkey, "in");
+  /* if ((shmid_in = shmget(inkey, 0, 0)) == -1) */
+  /*   err_sys("shmget in"); */
+  /* if ((shr = (struct Shm *)shmat(shmid_in, (void *)0, 0)) == (struct Shm *)-1) */
+  /*   err_sys("shmat in"); */
 
   /* out shared memory */
-  if ((shmid_out = shmget(outkey, size_shm, IPC_CREAT | 0644)) == -1)
-    err_sys("shmget out");
-  if ((shm = (struct Shm *)shmat(shmid_out, (void *)0, 0)) == (struct Shm *)-1)
-    err_sys("shmat out");
+  shm = Shm_create(outkey, size_shm, "out");
+  /* if ((shmid_out = shmget(outkey, size_shm, IPC_CREAT | 0644)) == -1) */
+  /*   err_sys("shmget out"); */
+  /* if ((shm = (struct Shm *)shmat(shmid_out, (void *)0, 0)) == (struct Shm *)-1) */
+  /*   err_sys("shmat out"); */
 
-  (void)snprintf(tb, sizeof(tb),
-		 "start in_key=%d id=%d out_key=%d id=%d size=%d",
-		 inkey, shmid_in, outkey, shmid_out, size_shm);
-  write_log(tb);
+  /* (void)snprintf(tb, sizeof(tb), */
+  /* 		 "start in_key=%d id=%d out_key=%d id=%d size=%d", */
+  /* 		 inkey, shmid_in, outkey, shmid_out, size_shm); */
+  /* write_log(tb); */
 
   /* set signal handler */
   signal(SIGTERM, (void *)end_program);
@@ -285,7 +288,7 @@ reset:
       else
 	for (i = 0; i < 6; i++)
 	  printf("%02X", shm->d[shm->p + 4 + i]);
-      printf(" : %d M\n", uni);
+      printf(" : %lu M\n", uni);
 #endif
 
       shm->r = shm->p;
@@ -353,7 +356,7 @@ read_chfile(void)
 	i++;
       }
 #if DEBUG
-      fprintf(stderr, "\n", k);
+      fprintf(stderr, "\n");
 #endif
       n_ch = j;
       if (negate_channel)
@@ -393,15 +396,13 @@ usage(void)
 		  "   %s [in_key] [out_key] [shm_size(KB)]\\\n",
 		  progname);
     (void)fprintf(stderr,
-		  "                       (-/[ch_file]/-[ch_file]/+[ch_file] ([log file]))\n",
-		  progname);
+		  "                       (-/[ch_file]/-[ch_file]/+[ch_file] ([log file]))\n");
   } else {
     (void)fprintf(stderr,
 		  "   %s (-D) [in_key] [out_key] [shm_size(KB)]\\\n",
 		  progname);
     (void)fprintf(stderr,
-		  "                       (-/[ch_file]/-[ch_file]/+[ch_file] ([log file]))\n",
-		  progname);
+		  "                       (-/[ch_file]/-[ch_file]/+[ch_file] ([log file]))\n");
   }
   exit(1);
 }

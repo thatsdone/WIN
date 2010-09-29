@@ -1,4 +1,4 @@
-/* $Id: winlib.h,v 1.1.2.7.2.38 2010/09/27 02:33:41 uehira Exp $ */
+/* $Id: winlib.h,v 1.1.2.7.2.39 2010/09/29 06:23:49 uehira Exp $ */
 
 #ifndef _WIN_LIB_H_
 #define _WIN_LIB_H_
@@ -6,6 +6,8 @@
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
+
+#include <sys/types.h>
 
 #include <stdio.h>
 
@@ -302,6 +304,8 @@ int strcmp2(char *, char *);
 WIN_bs read_onesec_win(FILE *, uint8_w **);
 WIN_bs read_onesec_win2(FILE *, uint8_w **, uint8_w **);
 void Shm_init(struct Shm *, size_t);
+struct Shm * Shm_read_offline(key_t);
+struct Shm * Shm_create_offline(key_t, size_t);
 void WIN_version(void);
 uint32_w win_chheader_info(const uint8_w *, WIN_ch *, WIN_sr *, int *);
 uint32_w win_get_chhdr(const uint8_w *, WIN_ch *, WIN_sr *);
@@ -337,5 +341,7 @@ int read_exb1(char [], int, uint8_w *, size_t);
 
 /* winlib_log.c */
 int find_oldest(char *, char *);
+struct Shm * Shm_read(key_t, char *);
+struct Shm * Shm_create(key_t, size_t, char *);
 
 #endif  /* !_WIN_LIB_H_*/

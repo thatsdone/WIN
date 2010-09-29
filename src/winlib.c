@@ -1,4 +1,4 @@
-/* $Id: winlib.c,v 1.1.2.4.2.26 2010/09/27 07:53:56 uehira Exp $ */
+/* $Id: winlib.c,v 1.1.2.4.2.27 2010/09/29 06:23:49 uehira Exp $ */
 
 /*-
  * winlib.c  (Uehira Kenji)
@@ -8,6 +8,10 @@
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
+
+#include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
 
 #if HAVE_SYS_MTIO_H
 #include <sys/ioctl.h>
@@ -707,6 +711,66 @@ Shm_init(struct Shm *sh, size_t size)
   (void)fprintf(stderr, "size = %zu, sh->pl = %zu(%zu), remain = %zu\n",
 		size, sh->pl, (size - sizeof(*sh)) / 10 * 9, remain);
 #endif
+}
+
+/* attach shared memory for read (Read-only) */
+struct Shm *
+Shm_read_offline(key_t shmkey)
+{
+  struct Shm  *shm;
+  int  shmid, aflag;
+
+  if ((shmid = shmget(shmkey, 0, 0)) == -1) {
+    (void)fprintf(stderr, "shmget : %s\n", strerror(errno));
+    exit(1);
+  }
+
+  aflag = SHM_RDONLY;
+  /* aflag = 0;  original */
+  if ((shm = (struct Shm *)shmat(shmid, NULL, aflag)) == (struct Shm *)-1) {
+    (void)fprintf(stderr, "shmat : %s\n", strerror(errno));
+    exit(1);
+  }
+
+#if DEBUG
+  (void)fprintf(stderr,
+ 		"Shm_read_offline : key=%ld id=%d (%p)\n",
+		shmkey, shmid, shm);
+#endif
+
+  return (shm);
+}
+
+struct Shm *
+Shm_create_offline(key_t shmkey, size_t shmsize)
+{
+  struct Shm  *shm;
+  int  shmid, oflag;
+
+  oflag = IPC_CREAT;
+  oflag |= SHM_R |  SHM_W;  /* user permission */
+  oflag |= (SHM_R>>3);      /* group permission */
+  oflag |= (SHM_R>>6);      /* other permission */
+  /* oflag |= (SHM_R>>3) | (SHM_W>>3);   group permission */
+  /* oflag |= (SHM_R>>6) | (SHM_W>>6);   other permission */
+
+  if ((shmid = shmget(shmkey, shmsize, oflag)) == -1) {
+    (void)fprintf(stderr, "shmget : %s\n", strerror(errno));
+    exit(1);
+  }
+
+  if ((shm = (struct Shm *)shmat(shmid, NULL, 0)) == (struct Shm *)-1) {
+    (void)fprintf(stderr, "shmat : %s\n", strerror(errno));
+    exit(1);
+  }
+
+#if DEBUG
+  (void)fprintf(stderr,
+		"Shm_create_offline : key=%ld id=%d size=%zu (%p)",
+		shmkey, shmid, shmsize, shm);
+#endif
+
+  return (shm);
 }
 
 /* print version */

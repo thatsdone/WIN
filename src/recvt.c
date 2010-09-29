@@ -1,4 +1,4 @@
-/* $Id: recvt.c,v 1.29.2.3.2.24 2010/09/21 11:56:59 uehira Exp $ */
+/* $Id: recvt.c,v 1.29.2.3.2.25 2010/09/29 06:23:48 uehira Exp $ */
 /*-
  "recvt.c"      4/10/93 - 6/2/93,7/2/93,1/25/94    urabe
                 2/3/93,5/25/94,6/16/94 
@@ -109,7 +109,7 @@
 #define N_PNOS    62    /* length of packet nos. history >=2 */
 
 static const char rcsid[] =
-  "$Id: recvt.c,v 1.29.2.3.2.24 2010/09/21 11:56:59 uehira Exp $";
+  "$Id: recvt.c,v 1.29.2.3.2.25 2010/09/29 06:23:48 uehira Exp $";
 
 static uint8_w rbuf[MAXMESG],ch_table[WIN_CHMAX];
 static char chfile[N_CHFILE][256];
@@ -886,9 +886,10 @@ main(int argc, char *argv[])
   write_log(tb);
 
   /* shared memory */
-  if((shmid=shmget(shm_key,size,IPC_CREAT|0666))<0) err_sys("shmget");
-  if((sh=(struct Shm *)shmat(shmid,(void *)0,0))==(struct Shm *)-1)
-    err_sys("shmat");
+  sh = Shm_create(shm_key, size, "start");
+  /* if((shmid=shmget(shm_key,size,IPC_CREAT|0666))<0) err_sys("shmget"); */
+  /* if((sh=(struct Shm *)shmat(shmid,(void *)0,0))==(struct Shm *)-1) */
+  /*   err_sys("shmat"); */
 
   /* initialize buffer */
   Shm_init(sh, size);
@@ -898,8 +899,9 @@ main(int argc, char *argv[])
   /*   sh->p=0; */
   /*   sh->r=(-1); */
 
-  snprintf(tb,sizeof(tb),"start shm_key=%ld id=%d size=%ld",shm_key,shmid,size);
-  write_log(tb);
+  /* snprintf(tb,sizeof(tb),"start shm_key=%ld id=%d size=%ld",shm_key,shmid,size); */
+  /* write_log(tb); */
+
   if(all) write_log("accept >=A1 packets");
   snprintf(tb,sizeof(tb),"TS window %lds - +%lds",pre,post);
   write_log(tb);

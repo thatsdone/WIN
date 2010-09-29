@@ -1,4 +1,4 @@
-/* $Id: recvt_LS7000.c,v 1.1.2.3.2.11 2010/09/20 03:33:28 uehira Exp $ */
+/* $Id: recvt_LS7000.c,v 1.1.2.3.2.12 2010/09/29 06:23:49 uehira Exp $ */
 /* "recvt_LS7000.c"  uehira */
 /*   2007-11-02  imported from recvt.c 1.29.2.1 */
 
@@ -6,13 +6,25 @@
 #include "config.h"
 #endif
 
+#include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
+#include <sys/stat.h>
+#include <sys/socket.h>
+
+#include <netinet/in.h>
+#if HAVE_ARPA_INET_H
+#include <arpa/inet.h>
+#endif
+
 #include <stdio.h>
 #include <signal.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/types.h>
-#include <sys/ipc.h>
-#include <sys/shm.h>
+#include <unistd.h>
+#include <netdb.h>
+#include <errno.h>
+#include <syslog.h>
 
 #if TIME_WITH_SYS_TIME
 #include <sys/time.h>
@@ -24,15 +36,6 @@
 #include <time.h>
 #endif  /* !HAVE_SYS_TIME_H */
 #endif  /* !TIME_WITH_SYS_TIME */
-
-#include <sys/socket.h>
-#include <netinet/in.h>
-#if HAVE_ARPA_INET_H
-#include <arpa/inet.h>
-#endif
-#include <netdb.h>
-#include <errno.h>
-#include <syslog.h>
 
 #include "daemon_mode.h"
 #include "winlib.h"
@@ -454,7 +457,7 @@ wincpy2(ptw,ts,ptr,size,mon,chhist,from_addr)
   int sr,n,ss;
   unsigned char *ptr_lim,*ptr1;
   unsigned short ch;
-  int gs,i,j,aa,bb,k;
+  int gs,i,aa,bb,k;
   unsigned long gh;
   char tb[256];
 
@@ -542,24 +545,24 @@ main(argc,argv)
   char *argv[];
   {
   key_t shm_key;
-  int shmid;
+  /* int shmid; */
   unsigned long uni;
   unsigned char *ptr,tm[6],*ptr_size,*ptr_size2;
-  int i,j,k,size,n,norg,re,nlen,sock,nn,all,pre,post,c,mon,pl,eobsize,
+  int i,j,k,size,n,norg,sock,nn,pre,post,c,mon,pl,eobsize,
     sbuf,noreq,no_ts,no_pno,req_delay;
-  struct sockaddr_in to_addr,from_addr,host_addr;
+  struct sockaddr_in to_addr,from_addr;
   socklen_t fromlen;
   unsigned short to_port;
   extern int optind;
   extern char *optarg;
   struct Shm  *sh;
-  char tb[256],tb2[256];
+  char tb[256];
   struct ip_mreq stMreq;
   char mcastgroup[256]; /* multicast address */
   char interface[256]; /* multicast interface */
   time_t ts,sec,sec_p;
   struct channel_hist  chhist;
-  struct hostent *h;
+  /* struct hostent *h; */
   struct timeval timeout;
   /* status */
   char  *ptmp;
@@ -682,8 +685,8 @@ main(argc,argv)
   pre=(-pre*60);
   post*=60;
   to_port=atoi(argv[1+optind]);
-  shm_key=atoi(argv[2+optind]);
-  size=atoi(argv[3+optind])*1000;
+  shm_key=atol(argv[2+optind]);
+  size=atol(argv[3+optind])*1000;
   *chfile[0]=0;
   if(argc>4+optind)
     {
@@ -748,9 +751,10 @@ main(argc,argv)
   write_log(tb);
 
   /* shared memory */
-  if((shmid=shmget(shm_key,size,IPC_CREAT|0666))<0) err_sys("shmget");
-  if((sh=(struct Shm *)shmat(shmid,(void *)0,0))==(struct Shm *)-1)
-    err_sys("shmat");
+  sh = Shm_create(shm_key, size, "start");
+  /* if((shmid=shmget(shm_key,size,IPC_CREAT|0666))<0) err_sys("shmget"); */
+  /* if((sh=(struct Shm *)shmat(shmid,(void *)0,0))==(struct Shm *)-1) */
+  /*   err_sys("shmat"); */
 
   /* initialize buffer */
   Shm_init(sh, size);
@@ -760,8 +764,9 @@ main(argc,argv)
   /*   sh->p=0; */
   /*   sh->r=(-1); */
 
-  sprintf(tb,"start shm_key=%d id=%d size=%d",shm_key,shmid,size);
-  write_log(tb);
+  /* sprintf(tb,"start shm_key=%d id=%d size=%d",shm_key,shmid,size); */
+  /* write_log(tb); */
+
   sprintf(tb,"TS window %ds - +%ds",pre,post);
   write_log(tb);
 

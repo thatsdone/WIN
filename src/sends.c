@@ -1,4 +1,4 @@
-/* $Id: sends.c,v 1.6.4.3.2.6 2010/09/20 03:33:28 uehira Exp $ */
+/* $Id: sends.c,v 1.6.4.3.2.7 2010/09/29 06:23:49 uehira Exp $ */
 /*   program "sends"   2000.3.20 urabe                   */
 /*   2000.3.21 */
 /*   2000.4.17 */
@@ -276,7 +276,7 @@ main(argc,argv)
   struct sockaddr_in to_addr,from_addr;
   struct hostent *h;
   unsigned short to_port;
-  int size,re,shmid;
+  int size,re;
   unsigned char *ptr,*ptr_save,*ptr_lim,*ptw,*ptw_save,device[80],
     no,no_f,host_name[100],tbuf[100],nop;
   struct Shm  *shm;
@@ -329,12 +329,13 @@ main(argc,argv)
   if(argc>3+optind) logfile=argv[3+optind];
     
   /* shared memory */
-  if((shmid=shmget(shm_key,0,0))<0) err_sys("shmget");
-  if((shm=(struct Shm *)shmat(shmid,(void *)0,0))==(struct Shm *)-1)
-    err_sys("shmat");
+  shm = Shm_read(shm_key, "start");
+  /* if((shmid=shmget(shm_key,0,0))<0) err_sys("shmget"); */
+  /* if((shm=(struct Shm *)shmat(shmid,(void *)0,0))==(struct Shm *)-1) */
+  /*   err_sys("shmat"); */
 
-  sprintf(tbuf,"start shm_key=%d id=%d",shm_key,shmid);
-  write_log(tbuf);
+  /* sprintf(tbuf,"start shm_key=%d id=%d",shm_key,shmid); */
+  /* write_log(tbuf); */
 
   if(to_port)
     {

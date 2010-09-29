@@ -1,4 +1,4 @@
-/* $Id: cormeisei.c,v 1.6.4.5.2.6 2010/09/20 03:33:27 uehira Exp $ */
+/* $Id: cormeisei.c,v 1.6.4.5.2.7 2010/09/29 06:23:48 uehira Exp $ */
 /* "cormeisei.c"    June'97 Ide changed from*/
 /* "raw_raw.c"      3/4/96 urabe */
 /*                  revised on 5/20/96 */
@@ -24,13 +24,14 @@
 #include "config.h"
 #endif
 
+#include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
+
 #include <stdio.h>
 #include <signal.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/types.h>
-#include <sys/ipc.h>
-#include <sys/shm.h>
 
 #if TIME_WITH_SYS_TIME
 #include <sys/time.h>
@@ -43,13 +44,12 @@
 #endif  /* !HAVE_SYS_TIME_H */
 #endif  /* !TIME_WITH_SYS_TIME */
 
-#include <sys/types.h>
 #include <unistd.h>
 #include <errno.h>
 
 #include "winlib.h"
 
-#define DEBUG     0
+/* #define DEBUG     0 */
 #define DEBUG1    0
 #ifndef CH_TOTAL
 #define CH_TOTAL  200  /* max N of meisei chs */
@@ -133,9 +133,9 @@ char *argv[];
 {
   struct Shm  *shr,*shm;
   key_t rawkey,monkey;
-  int shmid_raw,shmid_mon;
+  /* int shmid_raw,shmid_mon; */
   unsigned long uni;
-  char tb[100];
+  /* char tb[100]; */
   unsigned char *ptr,*ptw,*ptr_lim,*ptr_save;
   static unsigned char dbuf[12][MAX_SEC_SIZE],ch_flagh[12][CH_TOTAL],
     ch_flagl[12][CH_TOTAL];
@@ -200,28 +200,31 @@ char *argv[];
       progname);
     exit(1);
     }
-  rawkey=atoi(argv[1]);
-  monkey=atoi(argv[2]);
-  size_shm=atoi(argv[3])*1000;
+  rawkey=atol(argv[1]);
+  monkey=atol(argv[2]);
+  size_shm=atol(argv[3])*1000;
   strcpy(chfile,argv[4]);
   if(argc>5) logfile=argv[5];
   else logfile=NULL;
     
   read_chfile();
 
+  write_log("start");
   /* in shared memory */
-  if((shmid_raw=shmget(rawkey,0,0))<0) err_sys("shmget in");
-  if((shr=(struct Shm *)shmat(shmid_raw,(void *)0,0))==
-      (struct Shm *)-1) err_sys("shmat in");
+  shr = Shm_read(rawkey, "in");
+  /* if((shmid_raw=shmget(rawkey,0,0))<0) err_sys("shmget in"); */
+  /* if((shr=(struct Shm *)shmat(shmid_raw,(void *)0,0))== */
+  /*     (struct Shm *)-1) err_sys("shmat in"); */
 
   /* out shared memory */
-  if((shmid_mon=shmget(monkey,size_shm,IPC_CREAT|0666))<0) err_sys("shmget out");
-  if((shm=(struct Shm *)shmat(shmid_mon,(void *)0,0))==(struct Shm *)-1)
-    err_sys("shmat out");
+  shm = Shm_create(monkey, size_shm, "out");
+  /* if((shmid_mon=shmget(monkey,size_shm,IPC_CREAT|0666))<0) err_sys("shmget out"); */
+  /* if((shm=(struct Shm *)shmat(shmid_mon,(void *)0,0))==(struct Shm *)-1) */
+  /*   err_sys("shmat out"); */
 
-  sprintf(tb,"start in_key=%d id=%d out_key=%d id=%d size=%d",
-    rawkey,shmid_raw,monkey,shmid_mon,size_shm);
-  write_log(tb);
+  /* sprintf(tb,"start in_key=%d id=%d out_key=%d id=%d size=%d", */
+  /*   rawkey,shmid_raw,monkey,shmid_mon,size_shm); */
+  /* write_log(tb); */
 
   signal(SIGTERM,(void *)end_program);
   signal(SIGINT,(void *)end_program);

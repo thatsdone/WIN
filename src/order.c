@@ -1,4 +1,4 @@
-/* $Id: order.c,v 1.11.4.5.2.8 2010/09/21 11:56:58 uehira Exp $ */
+/* $Id: order.c,v 1.11.4.5.2.9 2010/09/29 06:23:48 uehira Exp $ */
 /*  program "order.c" 1/26/94 - 2/7/94, 6/14/94 urabe */
 /*                              1/6/95 bug in adj_time(tm[0]--) fixed */
 /*                              3/17/95 write_log() */
@@ -57,7 +57,7 @@
 #define NAMELEN  1025
 
 static const char rcsid[] =
-  "$Id: order.c,v 1.11.4.5.2.8 2010/09/21 11:56:58 uehira Exp $";
+  "$Id: order.c,v 1.11.4.5.2.9 2010/09/29 06:23:48 uehira Exp $";
 
 char *progname,*logfile;
 int  daemon_mode, syslog_mode, exit_status;
@@ -133,8 +133,7 @@ main(int argc, char *argv[])
   unsigned long  c_save, c_save_in;
   uint32_w  size, size_in, size2;
   int32_w  sec_1;
-  int sec,shmid_in,late,c,pl_out,
-    shmid_out,shmid_late,n_sec,no_data,sysclk,sysclk_org,
+  int sec,late,c,pl_out,n_sec,no_data,sysclk,sysclk_org,
     timeout_flag=0,size_next,eobsize_in,eobsize_out,i,eobsize_in_count;
   uint8_w *ptr,*ptr_save,*ptw,*ptw_save,*ptw_late=NULL,*ptr_prev,tm_out[6];
   char tbuf[NAMELEN], *ptrc;
@@ -203,26 +202,28 @@ main(int argc, char *argv[])
       if (daemon_mode)
 	syslog_mode = 1;
     }
-
-   /* daemon mode */
-   if (daemon_mode) {
-     daemon_init(progname, LOG_USER, syslog_mode);
-     umask(022);
-   }
+  
+  /* daemon mode */
+  if (daemon_mode) {
+    daemon_init(progname, LOG_USER, syslog_mode);
+    umask(022);
+  }
    
   /* shared memory */
-  if((shmid_in=shmget(shm_key_in,0,0))<0) err_sys("shmget");
-  if((shm_in=(struct Shm *)shmat(shmid_in,(void *)0,0))==(struct Shm *)-1)
-    err_sys("shmat");
-  sprintf(tbuf,"in : shm_key_in=%ld id=%d",shm_key_in,shmid_in);
-  write_log(tbuf);
+  shm_in = Shm_read(shm_key_in, "in");
+  /* if((shmid_in=shmget(shm_key_in,0,0))<0) err_sys("shmget"); */
+  /* if((shm_in=(struct Shm *)shmat(shmid_in,(void *)0,0))==(struct Shm *)-1) */
+  /*   err_sys("shmat"); */
+  /* sprintf(tbuf,"in : shm_key_in=%ld id=%d",shm_key_in,shmid_in); */
+  /* write_log(tbuf); */
    
-  if((shmid_out=shmget(shm_key_out,sizei,IPC_CREAT|0666))<0) err_sys("shmget");
-  if((shm_out=(struct Shm *)shmat(shmid_out,(void *)0,0))==(struct Shm *)-1)
-    err_sys("shmat");
-  sprintf(tbuf,"out: shm_key_out=%ld id=%d size=%ld",
-	  shm_key_out,shmid_out,sizei);
-  write_log(tbuf);
+  shm_out = Shm_create(shm_key_out, sizei, "out");
+  /* if((shmid_out=shmget(shm_key_out,sizei,IPC_CREAT|0666))<0) err_sys("shmget"); */
+  /* if((shm_out=(struct Shm *)shmat(shmid_out,(void *)0,0))==(struct Shm *)-1) */
+  /*   err_sys("shmat"); */
+  /* sprintf(tbuf,"out: shm_key_out=%ld id=%d size=%ld", */
+  /* 	  shm_key_out,shmid_out,sizei); */
+  /* write_log(tbuf); */
 
   /* initialize buffer */
   Shm_init(shm_out, sizei);
@@ -232,13 +233,14 @@ main(int argc, char *argv[])
   /*   shm_out->r=(-1); */
 
   if(late) {
-    if((shmid_late=shmget(shm_key_late,sizej,IPC_CREAT|0666))<0)
-      err_sys("shmget");
-    if((shm_late=(struct Shm *)shmat(shmid_late,(void *)0,0))==(struct Shm *)-1)
-      err_sys("shmat");
-    sprintf(tbuf,"late: shm_key_late=%ld id=%d size=%ld",
-          shm_key_late,shmid_late,sizej);
-    write_log(tbuf);
+    shm_late = Shm_create(shm_key_late, sizej, "late");
+    /* if((shmid_late=shmget(shm_key_late,sizej,IPC_CREAT|0666))<0) */
+    /*   err_sys("shmget"); */
+    /* if((shm_late=(struct Shm *)shmat(shmid_late,(void *)0,0))==(struct Shm *)-1) */
+    /*   err_sys("shmat"); */
+    /* sprintf(tbuf,"late: shm_key_late=%ld id=%d size=%ld", */
+    /*       shm_key_late,shmid_late,sizej); */
+    /* write_log(tbuf); */
     Shm_init(shm_late, sizej);
     /*     shm_late->p=shm_late->c=0; */
     /*     shm_late->pl=(sizej-sizeof(*shm_late))/10*9; */
@@ -401,7 +403,7 @@ reset:
              shm_out->p=ptw-shm_out->d;
              shm_out->c++;
 #if DEBUG
-             printf("eob %d B > %ld next=%ld\n",uni2,shm_out->r,shm_out->p);
+             printf("eob %d B > %zu next=%zu\n",uni2,shm_out->r,shm_out->p);
 #endif
              }
             }

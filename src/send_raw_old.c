@@ -1,4 +1,4 @@
-/* $Id: send_raw_old.c,v 1.9.4.3.2.8 2010/09/20 03:19:36 uehira Exp $ */
+/* $Id: send_raw_old.c,v 1.9.4.3.2.9 2010/09/29 06:23:49 uehira Exp $ */
 /*
     program "send_raw_old/send_mon_old.c"   1/24/94 - 1/25/94,5/25/94 urabe
                                     6/15/94 - 6/16/94
@@ -57,7 +57,7 @@
 #define BUFNO     128
 
 static const char  rcsid[] =
-   "$Id: send_raw_old.c,v 1.9.4.3.2.8 2010/09/20 03:19:36 uehira Exp $";
+   "$Id: send_raw_old.c,v 1.9.4.3.2.9 2010/09/29 06:23:49 uehira Exp $";
 
 static int sock,raw,mon,tow,psize[BUFNO],n_ch;
 static uint8_w sbuf[BUFNO][MAXMESG],ch_table[WIN_CHMAX],rbuf[MAXMESG];
@@ -159,7 +159,7 @@ main(int argc, char *argv[])
   struct hostent *h;
   uint16_t  host_port;  /* 64bit ok */
   WIN_ch  ch;
-  int shmid;
+  /* int shmid; */
   uint32_w  size, gs;
   ssize_t  re;  /* 64bit ok */
   uint8_w *ptr,*ptr1,*ptr_save,*ptr_lim,*ptw,*ptw_save,no,no_f;
@@ -214,12 +214,13 @@ main(int argc, char *argv[])
   read_chfile();
 
   /* shared memory */
-  if((shmid=shmget(shm_key,0,0))<0) err_sys("shmget");
-  if((shm=(struct Shm *)shmat(shmid,(void *)0,0))==(struct Shm *)-1)
-    err_sys("shmat");
+  shm = Shm_read(shm_key, "start");
+  /* if((shmid=shmget(shm_key,0,0))<0) err_sys("shmget"); */
+  /* if((shm=(struct Shm *)shmat(shmid,(void *)0,0))==(struct Shm *)-1) */
+  /*   err_sys("shmat"); */
 
-  snprintf(tbuf,sizeof(tbuf),"start shm_key=%ld id=%d",shm_key,shmid);
-  write_log(tbuf);
+  /* snprintf(tbuf,sizeof(tbuf),"start shm_key=%ld id=%d",shm_key,shmid); */
+  /* write_log(tbuf); */
 
   /* destination host/port */
   if(!(h=gethostbyname(host_name))) err_sys("can't find host");

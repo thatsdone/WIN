@@ -1,4 +1,4 @@
-/* $Id: ecore2.c,v 1.4.4.3.2.6 2010/09/27 07:53:55 uehira Exp $ */
+/* $Id: ecore2.c,v 1.4.4.3.2.7 2010/09/29 06:23:48 uehira Exp $ */
 
 /*
   program "ecore2.c"   4/16/93-5/13/93,7/2/93,7/5/94  urabe
@@ -141,7 +141,7 @@ main(argc, argv)
 	char	**argv;
 {
 	double	dbuf[512], dt;
-	int	j, sr, pos, shmid_in, shmid_out;
+	int	j, sr, pos;
 	long	dl;
 	int32_w lbuf[512], work[512];
 	unsigned long	shp_in, shp_in_save, ch_size, size_in,
@@ -174,33 +174,35 @@ main(argc, argv)
 	else
 		logfile = NULL;
 
-	shmkey_in = atoi(argv[1]);
-	shmkey_out = atoi(argv[2]);
-	shm_size = atoi(argv[3]) * 1000;
+	shmkey_in = atol(argv[1]);
+	shmkey_out = atol(argv[2]);
+	shm_size = atol(argv[3]) * 1000;
 
 	/* read channel list */
 	sscanf(argv[4], "%s", file_list);
 	read_chtbl();
 
 	/* shered memory */
-	if ((shmid_in = shmget(shmkey_in, 0, 0)) < 0)
-		err_sys("shmget_in");
-	if ((shm_in = (struct Shm *)shmat(shmid_in, (void *)0, SHM_RDONLY)) ==
-		(struct Shm *)-1)
-		err_sys("shmat_in");
+	shm_in = Shm_read(shmkey_in, "in");
+	/* if ((shmid_in = shmget(shmkey_in, 0, 0)) < 0) */
+	/* 	err_sys("shmget_in"); */
+	/* if ((shm_in = (struct Shm *)shmat(shmid_in, (void *)0, SHM_RDONLY)) == */
+	/* 	(struct Shm *)-1) */
+	/* 	err_sys("shmat_in"); */
 
-	sprintf(Tbuf, "in : shmkey_in=%d shmid_in=%d", shmkey_in, shmid_in);
-	write_log(Tbuf);
+	/* sprintf(Tbuf, "in : shmkey_in=%d shmid_in=%d", shmkey_in, shmid_in); */
+	/* write_log(Tbuf); */
 
-	if ((shmid_out = shmget(shmkey_out, shm_size, IPC_CREAT|0666)) < 0)
-		err_sys("shmget_out");
-	if ((shm_out = (struct Shm *)shmat(shmid_out, (void *)0, 0)) ==
-		(struct Shm *)-1)
-		err_sys("shmat_out");
+	shm_out = Shm_create(shmkey_out, shm_size, "out");
+	/* if ((shmid_out = shmget(shmkey_out, shm_size, IPC_CREAT|0666)) < 0) */
+	/* 	err_sys("shmget_out"); */
+	/* if ((shm_out = (struct Shm *)shmat(shmid_out, (void *)0, 0)) == */
+	/* 	(struct Shm *)-1) */
+	/* 	err_sys("shmat_out"); */
 
-	sprintf(Tbuf, "out : shmkey_out=%d shmid_out=%d shm_size=%d",
-		shmkey_out, shmid_out, shm_size);
-	write_log(Tbuf);
+	/* sprintf(Tbuf, "out : shmkey_out=%d shmid_out=%d shm_size=%d", */
+	/* 	shmkey_out, shmid_out, shm_size); */
+	/* write_log(Tbuf); */
 
 	/* initialize output buffer */
 	Shm_init(shm_out, shm_size);

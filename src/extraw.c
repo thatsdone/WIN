@@ -1,4 +1,4 @@
-/* $Id: extraw.c,v 1.3.4.3.2.7 2010/09/20 06:33:09 uehira Exp $ */
+/* $Id: extraw.c,v 1.3.4.3.2.8 2010/09/29 06:23:48 uehira Exp $ */
 /* "extraw.c"    2000.3.17 urabe */
 /* 2000.4.24/2001.11.14 strerror() */
 /* 2010.9.10  64bit (Uehira) */
@@ -34,7 +34,7 @@
 #define BELL        0
 
 static const char rcsid[] =
-  "$Id: extraw.c,v 1.3.4.3.2.7 2010/09/20 06:33:09 uehira Exp $";
+  "$Id: extraw.c,v 1.3.4.3.2.8 2010/09/29 06:23:48 uehira Exp $";
 
 char *progname,*logfile;
 int syslog_mode, exit_status;
@@ -47,9 +47,9 @@ main(int argc, char *argv[])
   {
   struct Shm  *shin,*shdat,*shctl;
   key_t inkey,datkey,ctlkey;
-  int shmid_in,shmid_dat,shmid_ctl;
+  /* int shmid_in,shmid_dat,shmid_ctl; */
   uint32_w  uni;  /* 64bit ok*/
-  char tb[100];
+  /* char tb[100]; */
   uint8_w  *ptr,*ptw,*ptr_lim,*ptr_save;
   int  i;
   uint32_w  size;
@@ -81,26 +81,29 @@ main(int argc, char *argv[])
   else   logfile=NULL;
     
   /* in shared memory */
-  if((shmid_in=shmget(inkey,0,0))<0) err_sys("shmget in");
-  if((shin=(struct Shm *)shmat(shmid_in,(void *)0,0))==
-      (struct Shm *)-1) err_sys("shmat in");
+  shin = Shm_read(inkey, "in");
+  /* if((shmid_in=shmget(inkey,0,0))<0) err_sys("shmget in"); */
+  /* if((shin=(struct Shm *)shmat(shmid_in,(void *)0,0))== */
+  /*     (struct Shm *)-1) err_sys("shmat in"); */
 
   /* dat(out) shared memory */
-  if((shmid_dat=shmget(datkey,size_shdat,IPC_CREAT|0666))<0)
-    err_sys("shmget dat");
-  if((shdat=(struct Shm *)shmat(shmid_dat,(void *)0,0))==(struct Shm *)-1)
-    err_sys("shmat dat");
+  shdat = Shm_create(datkey, size_shdat, "dat");
+  /* if((shmid_dat=shmget(datkey,size_shdat,IPC_CREAT|0666))<0) */
+  /*   err_sys("shmget dat"); */
+  /* if((shdat=(struct Shm *)shmat(shmid_dat,(void *)0,0))==(struct Shm *)-1) */
+  /*   err_sys("shmat dat"); */
 
   /* ctl(out) shared memory */
-  if((shmid_ctl=shmget(ctlkey,size_shctl,IPC_CREAT|0666))<0)
-    err_sys("shmget ctl");
-  if((shctl=(struct Shm *)shmat(shmid_ctl,(void *)0,0))==(struct Shm *)-1)
-    err_sys("shmat ctl");
+  shctl = Shm_create(ctlkey, size_shctl, "ctl");
+  /* if((shmid_ctl=shmget(ctlkey,size_shctl,IPC_CREAT|0666))<0) */
+  /*   err_sys("shmget ctl"); */
+  /* if((shctl=(struct Shm *)shmat(shmid_ctl,(void *)0,0))==(struct Shm *)-1) */
+  /*   err_sys("shmat ctl"); */
 
-  snprintf(tb,sizeof(tb),
-	  "start in_key=%ld id=%d dat_key=%ld id=%d size=%zu ctl_key=%ld id=%d size=%zu ",
-	  inkey,shmid_in,datkey,shmid_dat,size_shdat,ctlkey,shmid_ctl,size_shctl);
-  write_log(tb);
+  /* snprintf(tb,sizeof(tb), */
+  /* 	  "start in_key=%ld id=%d dat_key=%ld id=%d size=%zu ctl_key=%ld id=%d size=%zu ", */
+  /* 	  inkey,shmid_in,datkey,shmid_dat,size_shdat,ctlkey,shmid_ctl,size_shctl); */
+  /* write_log(tb); */
 
   signal(SIGTERM,(void *)end_program);
   signal(SIGINT,(void *)end_program);

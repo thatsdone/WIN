@@ -1,4 +1,4 @@
-/* $Id: raw_time.c,v 1.4.4.3.2.8 2010/09/21 11:56:58 uehira Exp $ */
+/* $Id: raw_time.c,v 1.4.4.3.2.9 2010/09/29 06:23:48 uehira Exp $ */
 
 /* raw_time.c -- online version of wtime(1W) */
 
@@ -54,7 +54,7 @@
 
 
 static const char rcsid[] =
-  "$Id: raw_time.c,v 1.4.4.3.2.8 2010/09/21 11:56:58 uehira Exp $";
+  "$Id: raw_time.c,v 1.4.4.3.2.9 2010/09/29 06:23:48 uehira Exp $";
 
 char *progname, *logfile;
 int  daemon_mode, syslog_mode;
@@ -75,7 +75,7 @@ main(int argc, char *argv[])
 {
   FILE        *fp_log;
   key_t       shm_key_in, shm_key_out;
-  int         shmid_in, shmid_out, size;
+  int         size;
   int         eobsize_in, eobsize_out, eobsize_in_count;
   unsigned long  pl_out, uni;
   struct Shm  *shm_in, *shm_out;
@@ -129,9 +129,9 @@ main(int argc, char *argv[])
   if (argc < 4)
     usage();
 
-  shm_key_in = (key_t)atoi(argv[0]);
-  shm_key_out = (key_t)atoi(argv[1]);
-  size = atoi(argv[2]) * 1000;
+  shm_key_in = (key_t)atol(argv[0]);
+  shm_key_out = (key_t)atol(argv[1]);
+  size = atol(argv[2]) * 1000;
   chfile = argv[3];
 
 #if DEBUG
@@ -162,27 +162,31 @@ main(int argc, char *argv[])
 
   /***** shared memory *****/
   /* input */
-  if ((shmid_in = shmget(shm_key_in, 0, 0)) == -1)
-    err_sys("shmget");
-  if ((shm_in = (struct Shm *)shmat(shmid_in, (void *)0, 0)) == (struct Shm *)-1)
-    err_sys("shmat");
-  (void)snprintf(msg, sizeof(msg), "in : shm_key_in=%d id=%d",
-		 shm_key_in, shmid_in);
-  write_log(msg);
+  shm_in = Shm_read(shm_key_in, "in");
+  /* if ((shmid_in = shmget(shm_key_in, 0, 0)) == -1) */
+  /*   err_sys("shmget"); */
+  /* if ((shm_in = (struct Shm *)shmat(shmid_in, (void *)0, 0)) == (struct Shm *)-1) */
+  /*   err_sys("shmat"); */
+  /* (void)snprintf(msg, sizeof(msg), "in : shm_key_in=%d id=%d", */
+  /* 		 shm_key_in, shmid_in); */
+  /* write_log(msg); */
 
   /* output */
-  if ((shmid_out = shmget(shm_key_out, size, IPC_CREAT | 0644)) == -1)
-    err_sys("shmget");
-  if ((shm_out = (struct Shm *)shmat(shmid_out, (void *)0, 0)) == (struct Shm *)-1)
-    err_sys("shmat");
-  (void)snprintf(msg, sizeof(msg), "shm_key_out=%d id=%d size=%d",
-		 shm_key_out, shmid_out, size);
-  write_log(msg);
+  shm_out = Shm_create(shm_key_out, size, "out");
+  /* if ((shmid_out = shmget(shm_key_out, size, IPC_CREAT | 0644)) == -1) */
+  /*   err_sys("shmget"); */
+  /* if ((shm_out = (struct Shm *)shmat(shmid_out, (void *)0, 0)) == (struct Shm *)-1) */
+  /*   err_sys("shmat"); */
+  /* (void)snprintf(msg, sizeof(msg), "shm_key_out=%d id=%d size=%d", */
+  /* 		 shm_key_out, shmid_out, size); */
+  /* write_log(msg); */
 
   /* initialize output buffer */
-  shm_out->p = shm_out->c = 0;
-  shm_out->pl = pl_out = (size - sizeof(*shm_out)) / 10 * 9;
-  shm_out->r = (-1);
+  Shm_init(shm_out, size);
+  pl_out = shm_out->pl;
+  /* shm_out->p = shm_out->c = 0; */
+  /* shm_out->pl = pl_out = (size - sizeof(*shm_out)) / 10 * 9; */
+  /* shm_out->r = (-1); */
 
   /* set signal handler */
   signal(SIGTERM, (void *)end_program);

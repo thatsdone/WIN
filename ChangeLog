@@ -1,4 +1,8 @@
- $Id: ChangeLog,v 1.166 2010/09/27 03:25:03 uehira Exp $
+ $Id: ChangeLog,v 1.167 2010/09/30 14:59:27 uehira Exp $
+
+2010-09-30  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 1.2.1 released.
+	* src/recvstatus2.c : fixed a bug.
 
 2010-09-27  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* Version 1.2.0 released.

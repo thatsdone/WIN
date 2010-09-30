@@ -1,6 +1,7 @@
- $Id: ChangeLog,v 1.131.2.25.2.101 2010/09/30 13:24:59 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.102 2010/09/30 14:48:47 uehira Exp $
 
 2010-09-30  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/recvstatus.c : 64bit check.
 	* src/recvstatus2.c : added daemon mode. 64bit check.
 	* src/relay.c : 64 bit clean?
 	* src/udp_accept.c : udp_accept4()

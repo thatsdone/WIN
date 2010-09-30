@@ -1,21 +1,31 @@
-/* $Id: recvstatus.c,v 1.6.8.5 2010/09/29 16:06:34 uehira Exp $ */
+/* $Id: recvstatus.c,v 1.6.8.6 2010/09/30 14:48:47 uehira Exp $ */
 
 /* "recvstatus.c"      5/24/95    urabe */
 /* 97.7.17 two lines of "if() continue;" in the main loop */
 /* 2000.4.24/2001.11.14 strerror() */
 /* 2001.11.14 ntohs() */
+/* 2010.9.30 64bit check */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
+#endif
+
+#include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
+
+#include <sys/socket.h>
+#include <netinet/in.h>
+#if HAVE_ARPA_INET_H
+#include <arpa/inet.h>
 #endif
 
 #include <stdio.h>
 #include <signal.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/types.h>
-#include <sys/ipc.h>
-#include <sys/shm.h>
+#include <netdb.h>
+#include <errno.h>
 
 #if TIME_WITH_SYS_TIME
 #include <sys/time.h>
@@ -28,47 +38,56 @@
 #endif  /* !HAVE_SYS_TIME_H */
 #endif  /* !TIME_WITH_SYS_TIME */
 
-#include <sys/socket.h>
-#include <netinet/in.h>
-#if HAVE_ARPA_INET_H
-#include <arpa/inet.h>
-#endif
-#include <netdb.h>
-#include <errno.h>
-
 #include "winlib.h"
 #include "udpu.h"
 
 #define MAXMESG   2048
 
+static const char rcsid[] =
+  "$Id: recvstatus.c,v 1.6.8.6 2010/09/30 14:48:47 uehira Exp $";
+
 static int sock;     /* socket */
-static unsigned char rbuf[MAXMESG],stt[WIN_CHMAX];
+static uint8_w rbuf[MAXMESG],stt[WIN_CHMAX];
 static char tb[100];
 
 char *progname,*logfile;
 int  syslog_mode = 0, exit_status = EXIT_SUCCESS;
 
-main(argc,argv)
-  int argc;
-  char *argv[];
+/* prototypes */
+static void usage(void);
+int main(int, char *[]);
+
+static void
+usage()
+{
+  
+  WIN_version();
+  (void)fprintf(stderr, "%s\n", rcsid);
+  (void)fprintf(stderr, " usage : '%s [port] ([log file])'\n", progname);
+}
+
+
+int
+main(int argc, char *argv[])
   {
-  int i,fromlen,n;
+  int i;
+  ssize_t n;
+  socklen_t  fromlen;
   struct sockaddr_in from_addr;
-  unsigned short to_port;
+  uint16_t to_port;
 
   if((progname=strrchr(argv[0],'/')) != NULL) progname++;
   else progname=argv[0];
   if(argc<2)
     {
-    fprintf(stderr,
-      " usage : '%s [port] ([log file])'\n",progname);
+    usage();
     exit(1);
     }
   to_port=atoi(argv[1]);
   if(argc>2) logfile=argv[2];
   else logfile=NULL;
 
-  sprintf(tb,"started. port=%d file=%s",to_port,logfile);
+  snprintf(tb,sizeof(tb),"started. port=%d file=%s",to_port,logfile);
   write_log(tb);
 
   sock = udp_accept4(to_port, 32);
@@ -96,10 +115,11 @@ main(argc,argv)
     n=recvfrom(sock,rbuf,MAXMESG,0,(struct sockaddr *)&from_addr,&fromlen);
     if(rbuf[0]!=rbuf[8]) continue;
     if(rbuf[9]==stt[(rbuf[7]<<8)+rbuf[8]]) continue;
-    sprintf(tb,"%s:%d %02X %02X%02X%02X %02X%02X%02X %02X%02X ... %02X",
-      inet_ntoa(from_addr.sin_addr),ntohs(from_addr.sin_port),
-      rbuf[0],rbuf[1],rbuf[2],rbuf[3],rbuf[4],rbuf[5],rbuf[6],
-      rbuf[7],rbuf[8],rbuf[9]);
+    snprintf(tb,sizeof(tb),
+	     "%s:%d %02X %02X%02X%02X %02X%02X%02X %02X%02X ... %02X",
+	     inet_ntoa(from_addr.sin_addr),ntohs(from_addr.sin_port),
+	     rbuf[0],rbuf[1],rbuf[2],rbuf[3],rbuf[4],rbuf[5],rbuf[6],
+	     rbuf[7],rbuf[8],rbuf[9]);
     write_log(tb);
     stt[(rbuf[7]<<8)+rbuf[8]]=rbuf[9];
     }

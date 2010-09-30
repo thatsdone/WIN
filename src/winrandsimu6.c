@@ -1,4 +1,4 @@
-/* $Id: winrandsimu6.c,v 1.1.4.3 2010/09/20 03:33:29 uehira Exp $ */
+/* $Id: winrandsimu6.c,v 1.1.4.4 2010/09/30 03:01:12 uehira Exp $ */
 
 /*  WIN random simulater, real-time version
      write 100Hz 3000ch data to stdout as WIN-text or shared memory
@@ -260,7 +260,7 @@ int out_data(time_t tnow,int del,int sch,int sta,int nch,int samp,int *ev,int *d
         06.30  bug fix & add fflush
    2004.10.10  writing to share memory option
  */
-/* $Id: winrandsimu6.c,v 1.1.4.3 2010/09/20 03:33:29 uehira Exp $ */
+/* $Id: winrandsimu6.c,v 1.1.4.4 2010/09/30 03:01:12 uehira Exp $ */
 /* winform.c  4/30/91,99.4.19   urabe */
 /* winform converts fixed-sample-size-data into win's format */
 /* winform returns the length in bytes of output data */
@@ -350,5 +350,5 @@ unsigned short sys_ch;          /* 16 bit long channel ID number */
         }
         break;
     }
-    return (int) (buf - outbuf);
+    return ((int) (buf - outbuf));
 }

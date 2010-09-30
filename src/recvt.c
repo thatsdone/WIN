@@ -1,4 +1,4 @@
-/* $Id: recvt.c,v 1.29.2.3.2.26 2010/09/29 16:06:35 uehira Exp $ */
+/* $Id: recvt.c,v 1.29.2.3.2.27 2010/09/30 03:01:12 uehira Exp $ */
 /*-
  "recvt.c"      4/10/93 - 6/2/93,7/2/93,1/25/94    urabe
                 2/3/93,5/25/94,6/16/94 
@@ -110,7 +110,7 @@
 #define N_PNOS    62    /* length of packet nos. history >=2 */
 
 static const char rcsid[] =
-  "$Id: recvt.c,v 1.29.2.3.2.26 2010/09/29 16:06:35 uehira Exp $";
+  "$Id: recvt.c,v 1.29.2.3.2.27 2010/09/30 03:01:12 uehira Exp $";
 
 static uint8_w rbuf[MAXMESG],ch_table[WIN_CHMAX];
 static char chfile[N_CHFILE][256];
@@ -156,7 +156,7 @@ check_ts(uint8_w *ptr, time_t pre, time_t post)   /* 64bit ok */
   time_t ts,rt,diff;
   struct tm mt;
 
-  if(!bcd_dec(tm,ptr)) return 0; /* out of range */
+  if(!bcd_dec(tm,ptr)) return (0); /* out of range */
   /* memset((char *)&mt,0,sizeof(mt)); */
   memset(&mt,0,sizeof(mt));
   if((mt.tm_year=tm[0])<WIN_YEAR) mt.tm_year+=100;
@@ -170,11 +170,11 @@ check_ts(uint8_w *ptr, time_t pre, time_t post)   /* 64bit ok */
   /* compare time with real time */
   time(&rt);
   diff=ts-rt;
-  if((pre==0 || pre<diff) && (post==0 || diff<post)) return ts;
+  if((pre==0 || pre<diff) && (post==0 || diff<post)) return (ts);
 #if DEBUG1
   printf("diff %ld s out of range (%ds - %ds)\n",diff,pre,post);
 #endif
-  return 0;
+  return (0);
   }
 
 static void
@@ -388,7 +388,7 @@ check_pno(struct sockaddr_in *from_addr, unsigned int pn, unsigned int pn_f,
           ((uint8_w *)&host_)[2],((uint8_w *)&host_)[3],ntohs(port_));
         write_log(tb);
         }
-      return -1;
+      return (-1);
       }
     }
   for(i=0;i<N_HOST;i++)
@@ -505,7 +505,7 @@ check_pno(struct sockaddr_in *from_addr, unsigned int pn, unsigned int pn_f,
         sprintf(tb,"discard duplicated resent packet #%d for #%d",pn,pn_f);
         write_log(tb);
         }
-      return -1;
+      return (-1);
       }
 #if DEBUG4
     else if(!no_pinfo)
@@ -515,7 +515,7 @@ check_pno(struct sockaddr_in *from_addr, unsigned int pn, unsigned int pn_f,
       }
 #endif
     }
-  return 0;
+  return (0);
   }
 
 static int
@@ -559,7 +559,7 @@ wincpy2(uint8_w *ptw, time_t ts, uint8_w *ptr, ssize_t size, int mon,
             inet_ntoa(from_addr->sin_addr),ntohs(from_addr->sin_port));
 	  write_log(tb);
           }
-        return n;
+        return (n);
         }
       }
     else /* mon format */
@@ -585,7 +585,7 @@ wincpy2(uint8_w *ptw, time_t ts, uint8_w *ptr, ssize_t size, int mon,
             inet_ntoa(from_addr->sin_addr),ntohs(from_addr->sin_port));
           write_log(tb);
           }
-        return n;
+        return (n);
         }
       }
     if(ch_table[ch] && ptr+gs<=ptr_lim)
@@ -612,7 +612,7 @@ wincpy2(uint8_w *ptw, time_t ts, uint8_w *ptr, ssize_t size, int mon,
       }
     ptr+=gs;
     } while(ptr<ptr_lim);
-  return n;
+  return (n);
   }
 
 static void

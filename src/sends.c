@@ -1,4 +1,4 @@
-/* $Id: sends.c,v 1.6.4.3.2.7 2010/09/29 06:23:49 uehira Exp $ */
+/* $Id: sends.c,v 1.6.4.3.2.8 2010/09/30 03:01:12 uehira Exp $ */
 /*   program "sends"   2000.3.20 urabe                   */
 /*   2000.3.21 */
 /*   2000.4.17 */
@@ -73,10 +73,10 @@ get_packet(bufno,no)
   if((i=bufno-1)<0) i=BUFNO-1;
   while(i!=bufno && psize[i]>0)
     {
-    if(sbuf[i][2]==no) return i;
+    if(sbuf[i][2]==no) return (i);
     if(--i<0) i=BUFNO-1;
     }
-  return -1;  /* not found */
+  return (-1);  /* not found */
   }
 
 #if AURORA
@@ -129,7 +129,7 @@ read_aurora(fd)
        }
     }
   }
-  return rdataptr.len;
+  return (rdataptr.len);
 }
 
 config_aurora(fd,baud)

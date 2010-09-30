@@ -155,7 +155,7 @@ wincpy(ptw,ptr,size)
         size,sr,ss,gs,ptr_lim-ptr);
       write_log(tb);
 #endif
-      return n;
+      return (n);
       }
     if(ch_table[ch] && ptr+gs<=ptr_lim)
       {
@@ -168,7 +168,7 @@ wincpy(ptw,ptr,size)
       }
     ptr+=gs;
     } while(ptr<ptr_lim);
-  return n;
+  return (n);
   }
 
 get_packet(fd,pbuf)
@@ -204,12 +204,12 @@ get_packet(fd,pbuf)
     {
     memcpy(pbuf,buf+p,psize-5);
     p=plim;
-    return psize-5;
+    return (psize-5);
     }
   else
     {
     p=plim;
-    return 0;
+    return (0);
     }
   }
 
@@ -220,7 +220,7 @@ time_t check_ts(ptr,pre,post)
   int diff,tm[6];
   time_t ts,rt;
   struct tm mt;
-  if(!bcd_dec(tm,ptr)) return 0; /* out of range */
+  if(!bcd_dec(tm,ptr)) return (0); /* out of range */
   memset((char *)&mt,0,sizeof(mt));
   if((mt.tm_year=tm[0])<WIN_YEAR) mt.tm_year+=100;   
   mt.tm_mon=tm[1]-1;
@@ -233,11 +233,11 @@ time_t check_ts(ptr,pre,post)
   /* compare time with real time */
   time(&rt);
   diff=ts-rt;
-  if((pre==0 || pre<diff) && (post==0 || diff<post)) return ts;
+  if((pre==0 || pre<diff) && (post==0 || diff<post)) return (ts);
 #if DEBUG1
   printf("diff %d s out of range (%ds - %ds)\n",diff,pre,post);
 #endif
-  return 0;
+  return (0);
   }
 
 main(argc,argv)

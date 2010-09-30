@@ -1,4 +1,4 @@
-/* $Id: recvnmx.c,v 1.16.4.4.2.13 2010/09/29 16:06:34 uehira Exp $ */
+/* $Id: recvnmx.c,v 1.16.4.4.2.14 2010/09/30 03:01:12 uehira Exp $ */
 /* "recvnmx.c"    2001.7.18-19 modified from recvt.c and nmx2raw.c  urabe */
 /*                2001.8.18 */
 /*                2001.10.5 workaround for hangup */
@@ -125,7 +125,7 @@ write_shm(int ch,int sr,time_t tim,int *buf,struct Shm *shm,int eobsize,int pl)
   unsigned long uni;
   int i;
 
-  if(ch<0) return 0;
+  if(ch<0) return (0);
   ptw=ptw_save=shm->d+shm->p;
   ptw+=4;          /* size (4) */
   uni=time(NULL);
@@ -164,7 +164,7 @@ write_shm(int ch,int sr,time_t tim,int *buf,struct Shm *shm,int eobsize,int pl)
   if(!eobsize && ptw>shm->d+shm->pl) ptw=shm->d;
   shm->p=ptw-shm->d;
   shm->c++;
-  return uni;
+  return (uni);
 }
 
 parse_one_packet_np(unsigned char *inbuf,int len,struct Nmx_Packet *pk)
@@ -178,10 +178,10 @@ parse_one_packet_np(unsigned char *inbuf,int len,struct Nmx_Packet *pk)
   int x1,x2,x3,x5,ch,i,j;
   ptr=inbuf;
   signature=mkuint2(ptr);
-  if(signature!=SIGNATURE_NP) return -1;
+  if(signature!=SIGNATURE_NP) return (-1);
   ptr+=2;
   size=mkuint2(ptr);
-  if(size!=len) return -1;
+  if(size!=len) return (-1);
   ptr+=2;
   pk->seq=mkuint4(ptr);
   ptr+=8;
@@ -200,7 +200,7 @@ parse_one_packet_np(unsigned char *inbuf,int len,struct Nmx_Packet *pk)
   pk->alt=(short)mkuint2(ptr);
   ptr+=2;
   mdl=(short)mkuint2(ptr);
-  if(mdl!=TAURUS) return -1;
+  if(mdl!=TAURUS) return (-1);
   pk->model=11;
   ptr+=2;
   pk->serno=mkuint2(ptr);
@@ -209,7 +209,7 @@ parse_one_packet_np(unsigned char *inbuf,int len,struct Nmx_Packet *pk)
   if(ch==151) pk->ch=0;
   else if(ch==153) pk->ch=1;
   else if(ch==155) pk->ch=2;
-  else return -1;
+  else return (-1);
   ptr+=1;
   ptr+=2;
   size=mkuint2(ptr); /* payload size */
@@ -244,7 +244,7 @@ printf("model=%d serno=%d ch=%d size=%d ns=%d sr=%d bpp=%d first=%d last=%d\n",
 model,pk->serno,pk->ch,size,pk->ns,pk->sr,pk->bpp,pk->first,pk->last);
 */
   pk->ptype=1; /* assumed */
-  return pk->bpp;
+  return (pk->bpp);
 }
 
 parse_one_packet(unsigned char *inbuf,int len,struct Nmx_Packet *pk)
@@ -259,7 +259,7 @@ parse_one_packet(unsigned char *inbuf,int len,struct Nmx_Packet *pk)
   signature=inbuf[i+3]+(inbuf[i+2]<<8)+(inbuf[i+1]<<16)+(inbuf[i]<<24); 
   i=4;
   mestype=inbuf[i+3]+(inbuf[i+2]<<8)+(inbuf[i+1]<<16)+(inbuf[i]<<24); 
-  if(signature!=SIGNATURE || mestype!=MES_DATA) return -1;
+  if(signature!=SIGNATURE || mestype!=MES_DATA) return (-1);
   i=8;
   length=inbuf[i+3]+(inbuf[i+2]<<8)+(inbuf[i+1]<<16)+(inbuf[i]<<24); 
   i=12;
@@ -306,7 +306,7 @@ parse_one_packet(unsigned char *inbuf,int len,struct Nmx_Packet *pk)
   printf("(%d %d %02X)",nb,cnt,b);
 #endif
   }
-  return pk->bpp=nb-1;
+  return (pk->bpp=nb-1);
 }
 
 int bundle2fix_np(struct Nmx_Packet *pk,int *dbuf)
@@ -350,7 +350,7 @@ int bundle2fix_np(struct Nmx_Packet *pk,int *dbuf)
       }
     }
 /*printf("n=%d first=%d last=%d\n",n,dbuf[0],dbuf[n-1]);*/
-  return n;
+  return (n);
   }
 
 int bundle2fix(struct Nmx_Packet *pk,int *dbuf)
@@ -382,7 +382,7 @@ int bundle2fix(struct Nmx_Packet *pk,int *dbuf)
       }
     }
   }
-  return n;
+  return (n);
 }
 
 proc_soh(struct Nmx_Packet *pk)
@@ -434,7 +434,7 @@ proc_soh(struct Nmx_Packet *pk)
     write_log(tb);
 #endif
   }
-  return 0;
+  return (0);
 }
 
 ch2idx(int *rbuf[],struct Nmx_Packet *pk,int winch)
@@ -449,11 +449,11 @@ ch2idx(int *rbuf[],struct Nmx_Packet *pk,int winch)
   if(i==n_idx){
     if(n_idx==MAXCH){
       fprintf(stderr,"n_idx=%d at limit.\n",n_idx);
-      return -1;
+      return (-1);
       }
     if((rbuf[i]=(int *)malloc(BUFSIZE))==NULL){
       fprintf(stderr,"malloc failed. n_idx=%d\n",n_idx);
-      return -1;
+      return (-1);
       }
     m[i]=pk->model;
     s[i]=pk->serno;
@@ -469,7 +469,7 @@ ch2idx(int *rbuf[],struct Nmx_Packet *pk,int winch)
       write_log(tb);
       }
   }
-  return i;
+  return (i);
 }
 
 read_ch_map()  

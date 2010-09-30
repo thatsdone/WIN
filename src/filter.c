@@ -1,4 +1,4 @@
-/* $Id: filter.c,v 1.1.2.2 2008/05/18 07:38:45 uehira Exp $ */
+/* $Id: filter.c,v 1.1.2.2.2.1 2010/09/30 03:01:12 uehira Exp $ */
 
 #include <stdio.h>
 #include <math.h>
@@ -34,7 +34,7 @@ butlop(double *h, int *m, double *gn, int *n, double fp, double fs,
    if(wp==0.0 || wp==ws || ws>=HP){
       fprintf(stderr,"? (butlop) invalid input : fp=%14.6e fs=%14.6e ?\n",
 	      fp,fs);
-      return 1;
+      return (1);
    }
    /****  DETERMINE N & C */
    tp=tan(wp);
@@ -68,7 +68,7 @@ butlop(double *h, int *m, double *gn, int *n, double fp, double fs,
    }
    /****  EXIT */
    *gn=g;
-   if(*n%2==0) return 0;
+   if(*n%2==0) return (0);
    /****  FOR ODD N */
    *m=(*m)+1;
    *gn=g/(1.0+c);
@@ -76,7 +76,7 @@ butlop(double *h, int *m, double *gn, int *n, double fp, double fs,
    h[k+1]=0.0;
    h[k+2]=(1.0-c)/(1.0+c);
    h[k+3]=0.0;
-   return 0;
+   return (0);
 }
 
 /*
@@ -107,7 +107,7 @@ buthip(double *h, int *m, double *gn, int *n, double fp, double fs,
    if(wp==0.0 || wp==ws || wp>=HP){
       fprintf(stderr,"? (buthip) invalid input : fp=%14.6e fs=%14.6e ?\n",
 	      fp,fs);
-      return 1;
+      return (1);
    }
    /****  DETERMINE N & C */
    tp=tan(wp);
@@ -141,7 +141,7 @@ buthip(double *h, int *m, double *gn, int *n, double fp, double fs,
    }
    /****  EXIT */
    *gn=g;
-   if(*n%2==0) return 0;
+   if(*n%2==0) return (0);
    /****  FOR ODD N */
    *m=(*m)+1;
    *gn=g/(c+1.0);
@@ -149,7 +149,7 @@ buthip(double *h, int *m, double *gn, int *n, double fp, double fs,
    h[k+1]=0.0;
    h[k+2]=(c-1.0)/(c+1.0);
    h[k+3]=0.0;
-   return 0;
+   return (0);
 }
 
 /*
@@ -190,7 +190,7 @@ butpas(double *h, int *m, double *gn, int *n, double fl, double fh, double fs,
 	      fl,fh,fs);
       *m=0;
       *gn=1.0;
-      return 1;
+      return (1);
    }
    /****  DETERMINE N & C */
    clh=1.0/(cos(wl)*cos(wh));
@@ -245,7 +245,7 @@ butpas(double *h, int *m, double *gn, int *n, double fl, double fh, double fs,
    }
    /****  EXIT */
    *gn=g;
-   if(*n==(*m)) return 0;
+   if(*n==(*m)) return (0);
    /****  FOR ODD N */
    *m=(*m)+1;
    wpc=  cc *cos(wh-wl)*clh;
@@ -256,7 +256,7 @@ butpas(double *h, int *m, double *gn, int *n, double fl, double fh, double fs,
    h[l+1]=(-1.0);
    h[l+2]=2.0*wmc*a;
    h[l+3]=(wpc-c)*a;
-   return 0;
+   return (0);
 }
 
 /*
@@ -280,7 +280,7 @@ recfil(double *x, double *y, int n, double *h, int nml, double *uv)
    double a,aa,b,bb,u1,u2,u3,v1,v2,v3;
    if(n<=0){
       fprintf(stderr,"? (recfil) invalid input : n=%d ?\n",n);
-      return 1;
+      return (1);
    }
    if(nml>=0){
       j=0;
@@ -313,7 +313,7 @@ recfil(double *x, double *y, int n, double *h, int nml, double *uv)
    uv[1]=u2;
    uv[2]=v1;
    uv[3]=v2;
-   return 0;
+   return (0);
 }
 
 /*
@@ -339,12 +339,12 @@ tandem(double *x, double *y, int n, double *h, int m, int nml, double *uv)
    int i;
    if(n<=0 || m<=0){
       fprintf(stderr,"? (tandem) invalid input : n=%d m=%d ?\n",n,m);
-      return 1;
+      return (1);
    }
    /****  1-ST CALL */
    recfil(x,y,n,h,nml,uv);
    /****  2-ND AND AFTER */
    if(m>1) for(i=1;i<m;i++) recfil(y,y,n,&h[i*4],nml,&uv[i*4]);
-   return 0;
+   return (0);
 }
 

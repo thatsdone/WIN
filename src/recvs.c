@@ -1,4 +1,4 @@
-/* $Id: recvs.c,v 1.6.2.1.2.10 2010/09/29 16:06:34 uehira Exp $ */
+/* $Id: recvs.c,v 1.6.2.1.2.11 2010/09/30 03:01:12 uehira Exp $ */
 /* "recvs.c"    receive sync frames      2000.3.14       urabe */
 /* 2000.3.21 */
 /* 2000.4.17 */
@@ -205,7 +205,7 @@ read_aurora(fd)
        }
     }
   }
-  return rdataptr.len;
+  return (rdataptr.len);
 }
 #endif
 
@@ -301,9 +301,9 @@ check_pno_s(to_addr,pn,pn_f,sock,fd_req) /* returns -1 if duplicated */
     nos[pn_1]=0;  /* reset bit for the packet no */
     } while((pn_1=(++pn_1&0xff))!=pn);
   init=1;
-  if(pn!=pn_f && nos[pn_f]) return -1;
+  if(pn!=pn_f && nos[pn_f]) return (-1);
      /* if the resent packet is duplicated, return with -1 */
-  return 0;
+  return (0);
   }
 
 main(argc,argv)

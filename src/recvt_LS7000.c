@@ -1,4 +1,4 @@
-/* $Id: recvt_LS7000.c,v 1.1.2.3.2.13 2010/09/29 16:06:35 uehira Exp $ */
+/* $Id: recvt_LS7000.c,v 1.1.2.3.2.14 2010/09/30 03:01:12 uehira Exp $ */
 /* "recvt_LS7000.c"  uehira */
 /*   2007-11-02  imported from recvt.c 1.29.2.1 */
 
@@ -84,7 +84,7 @@ time_t check_ts(ptr,pre,post)
   int diff,tm[6];
   time_t ts,rt;
   struct tm mt;
-  if(!bcd_dec(tm,(unsigned char *)ptr)) return 0; /* out of range */
+  if(!bcd_dec(tm,(unsigned char *)ptr)) return (0); /* out of range */
   memset((char *)&mt,0,sizeof(mt));
   if((mt.tm_year=tm[0])<WIN_YEAR) mt.tm_year+=100;
   mt.tm_mon=tm[1]-1;
@@ -97,11 +97,11 @@ time_t check_ts(ptr,pre,post)
   /* compare time with real time */
   time(&rt);
   diff=ts-rt;
-  if((pre==0 || pre<diff) && (post==0 || diff<post)) return ts;
+  if((pre==0 || pre<diff) && (post==0 || diff<post)) return (ts);
 #if DEBUG1
   printf("diff %d s out of range (%ds - %ds)\n",diff,pre,post);
 #endif
-  return 0;
+  return (0);
   }
 
 read_chfile()
@@ -310,7 +310,7 @@ check_pno(from_addr,pn,pn_f,sock,fromlen,n,nr,req_delay) /* returns -1 if dup */
           ((unsigned char *)&host_)[2],((unsigned char *)&host_)[3],ntohs(port_));
         write_log(tb);
         }
-      return -1;
+      return (-1);
       }
     }
   for(i=0;i<N_HOST;i++)
@@ -431,7 +431,7 @@ check_pno(from_addr,pn,pn_f,sock,fromlen,n,nr,req_delay) /* returns -1 if dup */
         sprintf(tb,"discard duplicated resent packet #%d for #%d",pn,pn_f);
         write_log(tb);
         }
-      return -1;
+      return (-1);
       }
 #if DEBUG4
     else if(!no_pinfo)
@@ -441,7 +441,7 @@ check_pno(from_addr,pn,pn_f,sock,fromlen,n,nr,req_delay) /* returns -1 if dup */
       }
 #endif
     }
-  return 0;
+  return (0);
   }
 
 wincpy2(ptw,ts,ptr,size,mon,chhist,from_addr)
@@ -484,7 +484,7 @@ wincpy2(ptw,ts,ptr,size,mon,chhist,from_addr)
             inet_ntoa(from_addr->sin_addr),ntohs(from_addr->sin_port));
           write_log(tb);
           }
-        return n;
+        return (n);
         }
       }
     else /* mon format */
@@ -510,7 +510,7 @@ wincpy2(ptw,ts,ptr,size,mon,chhist,from_addr)
             inet_ntoa(from_addr->sin_addr),ntohs(from_addr->sin_port));
           write_log(tb);
           }
-        return n;
+        return (n);
         }
       }
     if(ch_table[ch] && ptr+gs<=ptr_lim)
@@ -537,7 +537,7 @@ wincpy2(ptw,ts,ptr,size,mon,chhist,from_addr)
       }
     ptr+=gs;
     } while(ptr<ptr_lim);
-  return n;
+  return (n);
   }
 
 main(argc,argv)

@@ -1,4 +1,4 @@
-/* $Id: winlib.c,v 1.1.2.4.2.27 2010/09/29 06:23:49 uehira Exp $ */
+/* $Id: winlib.c,v 1.1.2.4.2.28 2010/09/30 14:51:03 uehira Exp $ */
 
 /*-
  * winlib.c  (Uehira Kenji)
@@ -12,6 +12,7 @@
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
+#include <sys/stat.h>
 
 #if HAVE_SYS_MTIO_H
 #include <sys/ioctl.h>
@@ -1476,6 +1477,30 @@ read_param_line(FILE *f_param, char textbuf[], int bufsize)
     if (fgets(textbuf, bufsize, f_param) == NULL)
       return (1);
   } while(textbuf[0] == '#');  /* skip comment line */
+
+  return (0);
+}
+
+
+/* check dir exists or not. If doesn't, make it.
+ * return : 1: make dir, 0: dir already exists, -1: error */
+int
+dir_check(char *path)
+
+{
+  struct stat sb;
+
+  if (stat(path, &sb) < 0) {
+    if (errno == ENOENT) {  /* if no such dir, make dir */
+      if (mkdir(path, S_IRWXU | S_IRWXG | S_IRWXO) < 0)
+	return (-1);
+      else
+	return (1);
+    } else
+      return (-1);
+  }
+  else if (!S_ISDIR(sb.st_mode))
+    return (-1);  /* path exists, but not directory */  
 
   return (0);
 }

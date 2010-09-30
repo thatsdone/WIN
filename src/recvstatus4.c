@@ -1,4 +1,4 @@
-/* $Id: recvstatus4.c,v 1.1.2.5 2010/09/29 16:06:34 uehira Exp $ */
+/* $Id: recvstatus4.c,v 1.1.2.6 2010/09/30 14:51:03 uehira Exp $ */
 
 /* 
  * recvstatus4 :
@@ -7,6 +7,7 @@
 
 /*
  * 2009-03-06  Import from recvstatus3.c
+ * 2010-09-30  64bit check.
  */
 
 #ifdef HAVE_CONFIG_H
@@ -14,7 +15,6 @@
 #endif
 
 #include <sys/types.h>
-#include <sys/stat.h>
 #include <sys/socket.h>
 #include <netdb.h>
 #include <netinet/in.h>
@@ -25,6 +25,7 @@
 #include <signal.h>
 #include <unistd.h>
 #include <errno.h>
+#include <syslog.h>
 
 #if TIME_WITH_SYS_TIME
 #include <sys/time.h>
@@ -37,8 +38,6 @@
 #endif  /* !HAVE_SYS_TIME_H */
 #endif  /* !TIME_WITH_SYS_TIME */
 
-#include <syslog.h>
-
 #include "daemon_mode.h"
 #include "udpu.h"
 #include "winlib.h"
@@ -48,16 +47,14 @@
 #define PATHMAX      1024
 
 static const char rcsid[] =
-  "$Id: recvstatus4.c,v 1.1.2.5 2010/09/29 16:06:34 uehira Exp $";
+  "$Id: recvstatus4.c,v 1.1.2.6 2010/09/30 14:51:03 uehira Exp $";
 
 char *progname, *logfile;
-int  daemon_mode, syslog_mode;
-int  exit_status;
+int  exit_status, syslog_mode;
 
+static int  daemon_mode;
 
 static void usage(void);
-static int dir_check(char *);
-
 int main(int, char *[]);
 
 int
@@ -76,7 +73,7 @@ main(int argc, char *argv[])
   char  *dirtop, dirname[PATHMAX], filename[PATHMAX], *ptname;
   size_t  dsize;
   char  msg[MAXMSG];
-  unsigned char  rbuf[MAXMSG], *ptr;
+  uint8_w  rbuf[MAXMSG], *ptr;
   int  c, chnum;
 #if DEBUG
   int  i = 0;
@@ -94,7 +91,7 @@ main(int argc, char *argv[])
   if (strcmp(progname, "recvstatus4d") == 0)
     daemon_mode = 1;
   
-  sockbuf = DEFAULT_SNDBUF;  /* default socket buffer size in KB */
+  sockbuf = DEFAULT_RCVBUF;  /* default socket buffer size in KB */
 
   while ((c = getopt(argc, argv, "D")) != -1)
     switch (c) {
@@ -191,7 +188,7 @@ main(int argc, char *argv[])
       (void)getnameinfo(sa, fromlen,
 			host_, sizeof(host_), port_, sizeof(port_),
 			NI_DGRAM | NI_NUMERICHOST | NI_NUMERICSERV);
-      (void)printf("%s : %s : %ld byte(s)\n", host_, port_, psize);
+      (void)printf("%s : %s : %zd byte(s)\n", host_, port_, psize);
 #endif
 
 #if DEBUG
@@ -248,14 +245,14 @@ main(int argc, char *argv[])
 	dsize = fwrite(ptr, 1, psize - LS7_PHDER_LEN, fp);
 	if (dsize != psize - LS7_PHDER_LEN) {
 	  (void)snprintf(msg, sizeof(msg),
-			 "strange A8 packet: %ld bytes\n", dsize);
+			 "strange A8 packet: %zu bytes\n", dsize);
 	  write_log(msg);
 	}
       } else if (rbuf[LS7_PID] == 0xA9) {
 	dsize = fwrite(ptr, 1, psize - LS7_PHDER_LEN, fp);
 	if (dsize != psize - LS7_PHDER_LEN) {
 	  (void)snprintf(msg, sizeof(msg),
-			 "strange A9 packet: %ld bytes\n", dsize);
+			 "strange A9 packet: %zu bytes\n", dsize);
 	  write_log(msg);
 	}
       }
@@ -264,33 +261,11 @@ main(int argc, char *argv[])
   }  /* for (;;) (main loop) */
 }
 
-/* check dir exists or not. If doesn't, make it.
- * return : 1: make dir, 0: dir already exists, -1: error */
-static int
-dir_check(char *path)
-
-{
-  struct stat sb;
-
-  if (stat(path, &sb) < 0) {
-    if (errno == ENOENT) {  /* if no such dir, make dir */
-      if (mkdir(path, S_IRWXU | S_IRWXG | S_IRWXO) < 0)
-	return (-1);
-      else
-	return (1);
-    } else
-      return (-1);
-  }
-  else if (!S_ISDIR(sb.st_mode))
-    return (-1);  /* path exists, but not directory */  
-
-  return (0);
-}
-
 static void
 usage(void)
 {
 
+  WIN_version();
   (void)fprintf(stderr, "%s\n", rcsid);
   (void)fprintf(stderr, "Usage of %s :\n", progname);
   if (daemon_mode)

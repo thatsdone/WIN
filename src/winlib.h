@@ -1,4 +1,4 @@
-/* $Id: winlib.h,v 1.1.2.7.2.40 2010/09/29 16:06:35 uehira Exp $ */
+/* $Id: winlib.h,v 1.1.2.7.2.41 2010/09/30 14:51:03 uehira Exp $ */
 
 #ifndef _WIN_LIB_H_
 #define _WIN_LIB_H_
@@ -8,6 +8,20 @@
 #endif
 
 #include <sys/types.h>
+
+#ifdef HAVE_SYS_STAT_H
+#include <sys/stat.h>
+#endif
+
+#ifdef STAT_MACROS_BROKEN
+#undef S_ISDIR
+#endif
+#ifndef S_IFMT
+#define S_IFMT   0170000
+#endif
+#if !defined(S_ISDIR) && defined(S_IFDIR)
+#define S_ISDIR(m)      (((m) & S_IFMT) == S_IFDIR)
+#endif
 
 #include <stdio.h>
 
@@ -338,6 +352,7 @@ int read_channel_file(FILE *, struct channel_tbl [], int);
 void str2double(char *, int, int, double *);
 time_t shift_sec(uint8_w *, int);
 int read_param_line(FILE *, char [], int);
+int dir_check(char *);
 
 /* MT device */
 #if HAVE_SYS_MTIO_H

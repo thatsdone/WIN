@@ -1,9 +1,12 @@
- $Id: ChangeLog,v 1.131.2.25.2.102 2010/09/30 14:48:47 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.103 2010/09/30 14:51:03 uehira Exp $
 
 2010-09-30  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* src/recvstatus.c : 64bit check.
 	* src/recvstatus2.c : added daemon mode. 64bit check.
+	* src/recvstatus3.c : 64bit check.
+	* src/recvstatus4.c : 64bit check.
 	* src/relay.c : 64 bit clean?
+	* src/winlib.c : dir_check()
 	* src/udp_accept.c : udp_accept4()
 	* src/udp_dest.c : udp_dest4()
 	* Version 2.1.9 released.

@@ -1,6 +1,7 @@
- $Id: ChangeLog,v 1.131.2.25.2.99 2010/09/29 16:07:45 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.100 2010/09/30 10:12:13 uehira Exp $
 
 2010-09-30  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/relay.c : 64 bit clean?
 	* src/udp_accept.c : udp_accept4()
 	* src/udp_dest.c : udp_dest4()
 	* Version 2.1.9 released.

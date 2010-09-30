@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.38.2.10.2.20 2010/09/21 09:40:50 uehira Exp $
+# $Id: Makefile.am,v 1.38.2.10.2.21 2010/09/30 13:24:59 uehira Exp $
 #
 
 if SUNOS4
@@ -133,6 +133,7 @@ install-exec-hook:
 	(rm -f @bindir@/raw_timed; cd @bindir@ && @LN_S@ raw_time raw_timed)
 	(rm -f @bindir@/raw_rawd; cd @bindir@ && @LN_S@ raw_raw raw_rawd)
 	(rm -f @bindir@/wdisktsd; cd @bindir@ && @LN_S@ wdiskts wdisktsd)
+	(rm -f @bindir@/recvstatus2d; cd @bindir@ && @LN_S@ recvstatus2 recvstatus2d)
 	(rm -f @bindir@/recvstatus3d; cd @bindir@ && @LN_S@ recvstatus3 recvstatus3d)
 	(rm -f @bindir@/recvstatus4d; cd @bindir@ && @LN_S@ recvstatus4 recvstatus4d)
 	(rm -f @bindir@/ls8tel16_rawd; cd @bindir@ && @LN_S@ ls8tel16_raw ls8tel16_rawd)
@@ -160,6 +161,7 @@ uninstall-local:
 	rm -f @bindir@/raw_timed
 	rm -f @bindir@/raw_rawd
 	rm -f @bindir@/wdisktsd
+	rm -f @bindir@/recvstatus2d
 	rm -f @bindir@/recvstatus3d
 	rm -f @bindir@/recvstatus4d
 	rm -f @bindir@/ls8tel16_rawd

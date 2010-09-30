@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.27.2.2.4.4 2010/09/06 05:30:59 uehira Exp $
+# $Id: Makefile.am,v 1.27.2.2.4.5 2010/09/30 13:24:59 uehira Exp $
 #
 #  Makefile.am in man subdirectory.
 #
@@ -53,6 +53,7 @@ install-data-hook:
 	(rm -f $(man1dir)/raw_rawd.1; cd $(man1dir) && @LN_S@ raw_raw.1 raw_rawd.1)
 	(rm -f $(man1dir)/wdisktsd.1; cd $(man1dir) && @LN_S@ wdiskts.1 wdisktsd.1)
 	(rm -f $(man1dir)/raw_timed.1; cd $(man1dir) && @LN_S@ raw_time.1 raw_timed.1)
+	(rm -f $(man1dir)/recvstatus2d.1; cd $(man1dir) && @LN_S@ recvstatus2.1 recvstatus2d.1)
 	(rm -f $(man1dir)/recvstatus3d.1; cd $(man1dir) && @LN_S@ recvstatus3.1 recvstatus3d.1)
 	(rm -f $(man1dir)/recvstatus4d.1; cd $(man1dir) && @LN_S@ recvstatus4.1 recvstatus4d.1)
 	(rm -f $(man1dir)/ls8tel16_rawd.1; cd $(man1dir) && @LN_S@ ls8tel16_raw.1 ls8tel16_rawd.1)
@@ -79,6 +80,7 @@ uninstall-local:
 	rm -f $(man1dir)/raw_rawd.1
 	rm -f $(man1dir)/wdisktsd.1
 	rm -f $(man1dir)/raw_timed.1
+	rm -f $(man1dir)/recvstatus2d.1
 	rm -f $(man1dir)/recvstatus3d.1
 	rm -f $(man1dir)/recvstatus4d.1
 	rm -f $(man1dir)/ls8tel16_rawd.1

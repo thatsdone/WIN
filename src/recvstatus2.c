@@ -1,4 +1,4 @@
-/* $Id: recvstatus2.c,v 1.6.2.1 2009/01/05 14:55:55 uehira Exp $ */
+/* $Id: recvstatus2.c,v 1.6.2.2 2010/09/30 14:59:55 uehira Exp $ */
 /* modified from "recvstatus.c" */
 /* 2002.6.19 recvstatus2 receive A8/A9 packets from Datamark LS-7000XT */
 /* 2002.7.3 fixed a bug - 'ok' deleted */
@@ -191,7 +191,7 @@ printf("%s",s[i]->c);
           else sprintf(logfile,"%s/M%04X.xml",logdir,s[i]->ch);
           if((fp=fopen(logfile,"w+"))==NULL)
             {
-            fprintf(stderr,"file '%s' not open !\n",tb);
+            fprintf(stderr,"file '%s' not open !\n",logfile);
             ctrlc();
             }
           fwrite(s[i]->c,1,s[i]->len+1,fp);

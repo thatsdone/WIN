@@ -1,4 +1,4 @@
-/* $Id: recvt.c,v 1.31 2008/12/31 08:03:56 uehira Exp $ */
+/* $Id: recvt.c,v 1.32 2010/10/01 01:00:42 uehira Exp $ */
 /* "recvt.c"      4/10/93 - 6/2/93,7/2/93,1/25/94    urabe */
 /*                2/3/93,5/25/94,6/16/94 */
 /*                1/6/95 bug in adj_time fixed (tm[0]--) */
@@ -51,6 +51,8 @@
 /*                2005.6.24 don't change optarg's content (-o) */
 /*                2005.9.25 allow disorder of arriving packets */
 /*                2005.9.25 host(:port) in control file */
+/*                2010.10.1 fixed bug in check_pno(). */
+/*                          ht[].pnos[] : unsigned int --> int */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -110,7 +112,7 @@ struct {
     int host;
     int port;
     int ppnos;	/* pointer for pnos */
-    unsigned int pnos[N_PNOS];
+    int pnos[N_PNOS];
     int nosf[4]; /* 4 segments x 64 */
     unsigned char nos[256/8];
     unsigned int n_bytes;
@@ -501,7 +503,7 @@ check_pno(from_addr,pn,pn_f,sock,fromlen,n,nr,req_delay) /* returns -1 if dup */
     ht[i].host=host_;
     ht[i].port=port_;
     ht[i].pnos[(ht[i].ppnos=0)]=pn;
-    for(k=1;k<N_PNOS;k++) ht[i].pnos[0]=(-1);
+    for(k=1;k<N_PNOS;k++) ht[i].pnos[k]=(-1);
     ht[i].ppnos++;
     for(k=0;k<32;k++) ht[i].nos[k]=0; /* clear all bits for pnos */
     ht[i].nos[pn>>3]|=mask[pn&0x07]; /* set bit for the packet no */

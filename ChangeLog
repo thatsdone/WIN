@@ -1,7 +1,11 @@
- $Id: ChangeLog,v 1.113.2.47 2010/09/30 14:59:55 uehira Exp $
+ $Id: ChangeLog,v 1.113.2.48 2010/10/01 01:06:32 uehira Exp $
+
+2010-10-01  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 1.2.1 released.
+	* src/recvt.c : fixed bugs in check_pno().
+	                ht[].pnos[] : unsigned int --> int
 
 2010-09-30  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
-	* Version 1.2.1 released.
 	* src/recvstatus2.c : fixed a bug.
 
 2010-09-27  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>

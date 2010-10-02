@@ -1,5 +1,5 @@
 dnl ------------------------------------------------------------------------- 
-dnl $Id: configure.in,v 1.82.2.37 2010/09/30 14:59:55 uehira Exp $
+dnl $Id: configure.in,v 1.82.2.38 2010/10/02 01:58:08 uehira Exp $
 dnl -------------------------------------------------------------------------
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT(src/win.c)
@@ -70,7 +70,12 @@ AC_PATH_X
 AC_PATH_XTRA
 AC_HEADER_DIRENT
 AC_HEADER_STDC
-AC_CHECK_HEADERS(fcntl.h sys/file.h sys/ioctl.h sys/time.h syslog.h unistd.h stdarg.h varargs.h sys/param.h sys/mount.h sys/vfs.h sys/statvfs.h stropts.h sys/ser_sync.h arpa/inet.h sys/mtio.h limits.h netdb.h netinet/in.h stddef.h sys/socket.h)
+AC_CHECK_HEADERS(fcntl.h sys/file.h sys/ioctl.h sys/time.h syslog.h unistd.h stdarg.h varargs.h sys/param.h sys/vfs.h sys/statvfs.h stropts.h sys/ser_sync.h arpa/inet.h sys/mtio.h limits.h netdb.h netinet/in.h stddef.h sys/socket.h)
+AC_CHECK_HEADERS(sys/mount.h,,,
+[[#if HAVE_SYS_PARAM_H
+# include <sys/param.h>
+#endif
+]])
 
 dnl Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST

@@ -1,7 +1,11 @@
- $Id: ChangeLog,v 1.113.2.48 2010/10/01 01:06:32 uehira Exp $
+ $Id: ChangeLog,v 1.113.2.49 2010/10/02 01:58:08 uehira Exp $
+
+2010-10-02  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 1.2.1 released.
+	* configure.in : force #include <sys/param.h> at the time of
+  	                 <sys/mount.h> existance check.
 
 2010-10-01  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
-	* Version 1.2.1 released.
 	* src/recvt.c : fixed bugs in check_pno().
 	                ht[].pnos[] : unsigned int --> int
 

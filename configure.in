@@ -1,10 +1,10 @@
 dnl ------------------------------------------------------------------------- 
-dnl $Id: configure.in,v 1.98.2.17.2.34 2010/09/29 16:06:34 uehira Exp $
+dnl $Id: configure.in,v 1.98.2.17.2.35 2010/10/02 02:30:48 uehira Exp $
 dnl -------------------------------------------------------------------------
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT
 AC_CONFIG_SRCDIR([src/win.c])
-AM_INIT_AUTOMAKE(WIN_pkg, 2.1.9)
+AM_INIT_AUTOMAKE(WIN_pkg, 2.1.10)
 AC_CONFIG_HEADERS([config.h])
 AC_ARG_PROGRAM
 AC_CANONICAL_TARGET
@@ -83,7 +83,12 @@ AC_HEADER_STAT
 dnl by autoscan
 AC_CHECK_HEADERS([inttypes.h limits.h memory.h stdlib.h string.h])
 
-AC_CHECK_HEADERS([fcntl.h sys/file.h sys/ioctl.h sys/time.h syslog.h unistd.h stdarg.h varargs.h sys/param.h sys/mount.h sys/vfs.h sys/statvfs.h stropts.h sys/ser_sync.h arpa/inet.h sys/mtio.h limits.h netdb.h netinet/in.h stddef.h sys/socket.h])
+AC_CHECK_HEADERS([fcntl.h sys/file.h sys/ioctl.h sys/time.h syslog.h unistd.h stdarg.h varargs.h sys/param.h sys/vfs.h sys/statvfs.h stropts.h sys/ser_sync.h arpa/inet.h sys/mtio.h limits.h netdb.h netinet/in.h stddef.h sys/socket.h])
+AC_CHECK_HEADERS(sys/mount.h,,,
+[[#if HAVE_SYS_PARAM_H
+# include <sys/param.h>
+#endif
+]])
 
 dnl Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST

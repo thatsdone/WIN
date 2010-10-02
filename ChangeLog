@@ -1,11 +1,15 @@
- $Id: ChangeLog,v 1.131.2.25.2.103 2010/09/30 14:51:03 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.104 2010/10/02 02:30:48 uehira Exp $
+
+2010-10-02  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* configure.in : force #include <sys/param.h> at the time of
+  	                 <sys/mount.h> existance check.
 
 2010-09-30  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* src/recvstatus.c : 64bit check.
 	* src/recvstatus2.c : added daemon mode. 64bit check.
 	* src/recvstatus3.c : 64bit check.
 	* src/recvstatus4.c : 64bit check.
-	* src/relay.c : 64 bit clean?
+	* src/relay.c : 64bit clean?
 	* src/winlib.c : dir_check()
 	* src/udp_accept.c : udp_accept4()
 	* src/udp_dest.c : udp_dest4()

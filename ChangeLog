@@ -1,7 +1,10 @@
- $Id: ChangeLog,v 1.170 2010/10/02 01:54:19 uehira Exp $
+ $Id: ChangeLog,v 1.171 2010/10/04 13:04:53 uehira Exp $
+
+2010-10-04  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 1.2.1 released.
+	* configure.in : use statvfs() in case of __SVR4 (SunOS)
 
 2010-10-02  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
-	* Version 1.2.1 released.
 	* configure.in : force #include <sys/param.h> at the time of
   	                 <sys/mount.h> existance check.
 

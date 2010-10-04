@@ -1,4 +1,4 @@
-/* $Id: winlib.c,v 1.1.2.4.2.28 2010/09/30 14:51:03 uehira Exp $ */
+/* $Id: winlib.c,v 1.1.2.4.2.29 2010/10/04 08:23:07 uehira Exp $ */
 
 /*-
  * winlib.c  (Uehira Kenji)
@@ -44,6 +44,8 @@
 #include "winlib.h"
 
 #define BUF_SIZE 1024
+
+#define DEBUG1 0
 
 /**********************************************************
  * Local function
@@ -94,6 +96,101 @@ mktime2(struct tm *mt) /* high-speed version of mktime() */
 #endif
 }
 /******- End of Local function -******/
+
+/**********************************************************
+ * Global functions
+ ********************************************************** */
+/* function(s) related with MT device */
+#if HAVE_SYS_MTIO_H
+int
+mt_pos(int fmc, int blc, int fd)
+{
+  struct mtop exb_param;
+  int re;
+
+  re = 0;
+  if (fmc) {
+    if (fmc > 0) {
+      exb_param.mt_op = MTFSF;
+      exb_param.mt_count = fmc;
+    } else {
+      exb_param.mt_op = MTBSF;
+      exb_param.mt_count = (-fmc);
+    }
+    if ((re = ioctl(fd, MTIOCTOP, (char *)&exb_param)) == -1) {
+      perror("error in space fms");
+      printf("processing continues ... ");
+      fflush(stdout);
+      return (re);
+    }
+  }
+  if (blc) {
+    if (blc > 0) {
+      exb_param.mt_op = MTFSR;
+      exb_param.mt_count = blc;
+    } else {
+      exb_param.mt_op = MTBSR;
+      exb_param.mt_count = (-blc);
+    }
+    if ((re = ioctl(fd, MTIOCTOP, (char *)&exb_param)) == -1) {
+      perror("error in space records");
+      printf("processing continues ... ");
+      fflush(stdout);
+      return (re);
+    }
+  }
+  return (re);
+}
+
+int
+read_exb1(char dev_name[], int fd, uint8_w *dbuf, size_t maxsize)
+{
+  int       cnt, blocking, dec[6];
+  ssize_t   re;
+  uint32_w  size;
+  uint8_w   *ptr;
+
+  blocking = cnt = 0;
+  while (1) {
+    while ((re = read(fd, dbuf, maxsize)) == 0) {	/* file mark */
+      close(fd);
+      if ((fd = open(dev_name, O_RDONLY)) == -1) {
+	perror("exabyte unit cannot open : ");
+	exit(1);
+      }
+    }
+    if (re > 0) {
+      blocking = 1;
+      size = mkuint4(dbuf);
+      /* if(size<0) continue; */   /* nonsense! */
+      if (bcd_dec(dec, dbuf + 4) == 0)
+	continue;
+#if DEBUG
+      printf("(%zd/%u)", re, size);
+#endif
+      ptr = dbuf;
+      while (size > re) {
+	re = read(fd, ptr += re, size -= re);
+	blocking++;
+#if DEBUG
+	printf("(%zd/%u)", re, size);
+#endif
+      }
+      if (re > 0)
+	break;
+    }
+    /* error */
+    perror("exabyte");
+    cnt++;
+    if (cnt == TRY_LIMIT / 2)
+      mt_pos(-2, 0, fd);	/* overrun ? */
+    else if (cnt == TRY_LIMIT)
+      return (-1);
+  }   /* for(;;) */
+
+  return (blocking);
+}
+#endif  /* #if HAVE_SYS_MTIO_H */
 
 void
 get_time(int rt[])
@@ -1505,94 +1602,34 @@ dir_check(char *path)
   return (0);
 }
 
-/* function(s) related with MT device */
-#if HAVE_SYS_MTIO_H
-int
-mt_pos(int fmc, int blc, int fd)
+time_t
+check_ts(uint8_w *ptr, time_t pre, time_t post)
 {
-  struct mtop exb_param;
-  int re;
+  int  tm[6];
+  time_t  ts, rt, diff;
+  struct tm  mt;
 
-  re = 0;
-  if (fmc) {
-    if (fmc > 0) {
-      exb_param.mt_op = MTFSF;
-      exb_param.mt_count = fmc;
-    } else {
-      exb_param.mt_op = MTBSF;
-      exb_param.mt_count = (-fmc);
-    }
-    if ((re = ioctl(fd, MTIOCTOP, (char *)&exb_param)) == -1) {
-      perror("error in space fms");
-      printf("processing continues ... ");
-      fflush(stdout);
-      return (re);
-    }
-  }
-  if (blc) {
-    if (blc > 0) {
-      exb_param.mt_op = MTFSR;
-      exb_param.mt_count = blc;
-    } else {
-      exb_param.mt_op = MTBSR;
-      exb_param.mt_count = (-blc);
-    }
-    if ((re = ioctl(fd, MTIOCTOP, (char *)&exb_param)) == -1) {
-      perror("error in space records");
-      printf("processing continues ... ");
-      fflush(stdout);
-      return (re);
-    }
-  }
-  return (re);
+  if (!bcd_dec(tm, ptr))
+    return (0);			/* out of range */
+  /* memset((char *)&mt,0,sizeof(mt)); */
+  memset(&mt, 0, sizeof(mt));
+  if ((mt.tm_year = tm[0]) < WIN_YEAR)
+    mt.tm_year += 100;
+  mt.tm_mon = tm[1] - 1;
+  mt.tm_mday = tm[2];
+  mt.tm_hour = tm[3];
+  mt.tm_min = tm[4];
+  mt.tm_sec = tm[5];
+  mt.tm_isdst = 0;
+  ts = mktime(&mt);
+  /* compare time with real time */
+  time(&rt);
+  diff = ts - rt;
+  if ((pre == 0 || pre < diff) && (post == 0 || diff < post))
+    return (ts);
+#if DEBUG1
+  printf("diff %ld s out of range (%lds - %lds)\n", diff, pre, post);
+#endif
+  return (0);
 }
 
-int
-read_exb1(char dev_name[], int fd, uint8_w *dbuf, size_t maxsize)
-{
-  int       cnt, blocking, dec[6];
-  ssize_t   re;
-  uint32_w  size;
-  uint8_w   *ptr;
-
-  blocking = cnt = 0;
-  while (1) {
-    while ((re = read(fd, dbuf, maxsize)) == 0) {	/* file mark */
-      close(fd);
-      if ((fd = open(dev_name, O_RDONLY)) == -1) {
-	perror("exabyte unit cannot open : ");
-	exit(1);
-      }
-    }
-    if (re > 0) {
-      blocking = 1;
-      size = mkuint4(dbuf);
-      /* if(size<0) continue; */   /* nonsense! */
-      if (bcd_dec(dec, dbuf + 4) == 0)
-	continue;
-#if DEBUG
-      printf("(%zd/%u)", re, size);
-#endif
-      ptr = dbuf;
-      while (size > re) {
-	re = read(fd, ptr += re, size -= re);
-	blocking++;
-#if DEBUG
-	printf("(%zd/%u)", re, size);
-#endif
-      }
-      if (re > 0)
-	break;
-    }
-    /* error */
-    perror("exabyte");
-    cnt++;
-    if (cnt == TRY_LIMIT / 2)
-      mt_pos(-2, 0, fd);	/* overrun ? */
-    else if (cnt == TRY_LIMIT)
-      return (-1);
-  }   /* for(;;) */
-
-  return (blocking);
-}
-#endif  /* #if HAVE_SYS_MTIO_H */

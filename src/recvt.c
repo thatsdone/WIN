@@ -1,4 +1,4 @@
-/* $Id: recvt.c,v 1.29.2.3.2.30 2010/10/04 06:55:02 uehira Exp $ */
+/* $Id: recvt.c,v 1.29.2.3.2.31 2010/10/04 08:23:06 uehira Exp $ */
 /*-
  "recvt.c"      4/10/93 - 6/2/93,7/2/93,1/25/94    urabe
                 2/3/93,5/25/94,6/16/94 
@@ -112,7 +112,7 @@
 #define N_PNOS    62    /* length of packet nos. history >=2 */
 
 static const char rcsid[] =
-  "$Id: recvt.c,v 1.29.2.3.2.30 2010/10/04 06:55:02 uehira Exp $";
+  "$Id: recvt.c,v 1.29.2.3.2.31 2010/10/04 08:23:06 uehira Exp $";
 
 static uint8_w rbuf[MAXMESG],ch_table[WIN_CHMAX];
 static char chfile[N_CHFILE][256];
@@ -141,7 +141,7 @@ struct ch_hist {
   int p[WIN_CHMAX];
 };
 
-static time_t check_ts(uint8_w *, time_t, time_t);
+/* prototyes */
 static void read_chfile(void);
 static int check_pno(struct sockaddr_in *, unsigned int, unsigned int,
 		     int, socklen_t, ssize_t, int, int);
@@ -151,33 +151,6 @@ static void send_req(int, struct sockaddr_in *);
 static void usage(void);
 int main(int, char *[]);
 
-static time_t
-check_ts(uint8_w *ptr, time_t pre, time_t post)   /* 64bit ok */
-  {
-  int tm[6];
-  time_t ts,rt,diff;
-  struct tm mt;
-
-  if(!bcd_dec(tm,ptr)) return (0); /* out of range */
-  /* memset((char *)&mt,0,sizeof(mt)); */
-  memset(&mt,0,sizeof(mt));
-  if((mt.tm_year=tm[0])<WIN_YEAR) mt.tm_year+=100;
-  mt.tm_mon=tm[1]-1;
-  mt.tm_mday=tm[2];
-  mt.tm_hour=tm[3];
-  mt.tm_min=tm[4];
-  mt.tm_sec=tm[5];
-  mt.tm_isdst=0;
-  ts=mktime(&mt);
-  /* compare time with real time */
-  time(&rt);
-  diff=ts-rt;
-  if((pre==0 || pre<diff) && (post==0 || diff<post)) return (ts);
-#if DEBUG1
-  printf("diff %ld s out of range (%ds - %ds)\n",diff,pre,post);
-#endif
-  return (0);
-  }
 
 static void
 read_chfile()

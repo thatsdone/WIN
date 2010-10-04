@@ -1,4 +1,4 @@
-/* $Id: winlib.h,v 1.1.2.7.2.41 2010/09/30 14:51:03 uehira Exp $ */
+/* $Id: winlib.h,v 1.1.2.7.2.42 2010/10/04 08:23:07 uehira Exp $ */
 
 #ifndef _WIN_LIB_H_
 #define _WIN_LIB_H_
@@ -353,6 +353,7 @@ void str2double(char *, int, int, double *);
 time_t shift_sec(uint8_w *, int);
 int read_param_line(FILE *, char [], int);
 int dir_check(char *);
+time_t check_ts(uint8_w *, time_t, time_t);
 
 /* MT device */
 #if HAVE_SYS_MTIO_H

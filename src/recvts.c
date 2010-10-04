@@ -213,33 +213,6 @@ get_packet(fd,pbuf)
     }
   }
 
-time_t check_ts(ptr,pre,post)
-  char *ptr;
-  int pre,post;
-  {
-  int diff,tm[6];
-  time_t ts,rt;
-  struct tm mt;
-  if(!bcd_dec(tm,ptr)) return (0); /* out of range */
-  memset((char *)&mt,0,sizeof(mt));
-  if((mt.tm_year=tm[0])<WIN_YEAR) mt.tm_year+=100;   
-  mt.tm_mon=tm[1]-1;
-  mt.tm_mday=tm[2];
-  mt.tm_hour=tm[3];
-  mt.tm_min=tm[4];
-  mt.tm_sec=tm[5];
-  mt.tm_isdst=0;
-  ts=mktime(&mt);
-  /* compare time with real time */
-  time(&rt);
-  diff=ts-rt;
-  if((pre==0 || pre<diff) && (post==0 || diff<post)) return (ts);
-#if DEBUG1
-  printf("diff %d s out of range (%ds - %ds)\n",diff,pre,post);
-#endif
-  return (0);
-  }
-
 main(argc,argv)
   int argc;
   char *argv[];

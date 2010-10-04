@@ -1,4 +1,4 @@
-/* $Id: recvt.c,v 1.29.2.3.2.28 2010/10/04 02:09:03 uehira Exp $ */
+/* $Id: recvt.c,v 1.29.2.3.2.29 2010/10/04 06:04:05 uehira Exp $ */
 /*-
  "recvt.c"      4/10/93 - 6/2/93,7/2/93,1/25/94    urabe
                 2/3/93,5/25/94,6/16/94 
@@ -110,7 +110,7 @@
 #define N_PNOS    62    /* length of packet nos. history >=2 */
 
 static const char rcsid[] =
-  "$Id: recvt.c,v 1.29.2.3.2.28 2010/10/04 02:09:03 uehira Exp $";
+  "$Id: recvt.c,v 1.29.2.3.2.29 2010/10/04 06:04:05 uehira Exp $";
 
 static uint8_w rbuf[MAXMESG],ch_table[WIN_CHMAX];
 static char chfile[N_CHFILE][256];
@@ -121,11 +121,11 @@ char *progname, *logfile;
 int  syslog_mode, exit_status;
 
 static struct {
-    int host;
-    int port;
-    int ppnos;	/* pointer for pnos */
-    int pnos[N_PNOS];
-    int nosf[4]; /* 4 segments x 64 */
+    in_addr_t host;  /* unsigned int32_t */
+    in_port_t port;  /* unsigned int16_t */
+    int ppnos;	/* pointer for pnos */  /* 0 <--> N_PNOS */
+    int32_w pnos[N_PNOS];
+    int nosf[4]; /* 4 segments x 64 */  /* 64bit ok */
     uint8_w  nos[256/8];     /*- 64bit ok?? -*/
     unsigned long n_bytes;       /*- 64bit ok -*/
     unsigned long n_packets;     /*- 64bit ok -*/
@@ -142,7 +142,7 @@ struct ch_hist {
 static time_t check_ts(uint8_w *, time_t, time_t);
 static void read_chfile(void);
 static int check_pno(struct sockaddr_in *, unsigned int, unsigned int,
-		     int, socklen_t, int, int, int);
+		     int, socklen_t, ssize_t, int, int);
 static int wincpy2(uint8_w *, time_t, uint8_w *, ssize_t, int,
 		   struct ch_hist *, struct sockaddr_in *);
 static void send_req(int, struct sockaddr_in *);
@@ -233,16 +233,19 @@ read_chfile()
                 }
               if(!(h=gethostbyname(host_name)))
                 {
-                sprintf(tb,"host '%s' not resolved",host_name);
+		snprintf(tb,sizeof(tb),"host '%s' not resolved",host_name);
                 write_log(tb);
                 continue;
                 }
               memcpy((char *)&hostlist[ii][1],h->h_addr,4);
-              if(*tbuf=='+') sprintf(tb,"allow");
-              else sprintf(tb,"deny");
-              sprintf(tb+strlen(tb)," from host %d.%d.%d.%d:%d",
- ((uint8_w *)&hostlist[ii][1])[0],((uint8_w *)&hostlist[ii][1])[1],
- ((uint8_w *)&hostlist[ii][1])[2],((uint8_w *)&hostlist[ii][1])[3],
+              if(*tbuf=='+') snprintf(tb,sizeof(tb),"allow");
+              else snprintf(tb,sizeof(tb),"deny");
+              snprintf(tb+strlen(tb),sizeof(tb)-strlen(tb),
+		       " from host %d.%d.%d.%d:%d",
+		      ((uint8_w *)&hostlist[ii][1])[0],
+		      ((uint8_w *)&hostlist[ii][1])[1],
+		      ((uint8_w *)&hostlist[ii][1])[2],
+		      ((uint8_w *)&hostlist[ii][1])[3],
                 hostlist[ii][2]);
               write_log(tb);
               }
@@ -268,7 +271,7 @@ read_chfile()
       fprintf(stderr,"\n");
 #endif
       if(ii>0 && n_host==0) n_host=ii;
-      sprintf(tb,"%d host rules",n_host);
+      snprintf(tb,sizeof(tb),"%d host rules",n_host);
       write_log(tb);
       fclose(fp);
       }
@@ -277,7 +280,7 @@ read_chfile()
 #if DEBUG
       fprintf(stderr,"ch_file '%s' not open\n",chfile[0]);
 #endif
-      sprintf(tb,"channel list file '%s' not open",chfile[0]);
+      snprintf(tb,sizeof(tb),"channel list file '%s' not open",chfile[0]);
       write_log(tb);
       write_log("end");
       exit(1);
@@ -313,15 +316,15 @@ read_chfile()
 #if DEBUG
       fprintf(stderr,"ch_file '%s' not open\n",chfile[i_chfile]);
 #endif
-      sprintf(tb,"channel list file '%s' not open",chfile[i_chfile]);
+      snprintf(tb,sizeof(tb),"channel list file '%s' not open",chfile[i_chfile]);
       write_log(tb);
       }
     }
 
   n_ch=0;
   for(i=0;i<WIN_CHMAX;i++) if(ch_table[i]==1) n_ch++;
-  if(n_ch==WIN_CHMAX) sprintf(tb,"all channels");
-  else sprintf(tb,"%d (-%d) channels",n_ch,WIN_CHMAX-n_ch);
+  if(n_ch==WIN_CHMAX) snprintf(tb,sizeof(tb),"all channels");
+  else snprintf(tb,sizeof(tb),"%d (-%d) channels",n_ch,WIN_CHMAX-n_ch);
   write_log(tb);
 
   time(&ltime);
@@ -329,17 +332,17 @@ read_chfile()
   tdif2=tdif/2;
   if(ht[0].host)
     {
-    sprintf(tb,"statistics in %ld s (pkts, B, pkts/s, B/s)",tdif);
+    snprintf(tb,sizeof(tb),"statistics in %ld s (pkts, B, pkts/s, B/s)",tdif);
     write_log(tb);
     }
   for(i=0;i<N_HOST;i++) /* print statistics for hosts */
     {
     if(ht[i].host==0) break;
-    sprintf(tb,"  src %d.%d.%d.%d:%d   %lu %lu %lu %lu",
-      ((uint8_w *)&ht[i].host)[0],((uint8_w *)&ht[i].host)[1],
-      ((uint8_w *)&ht[i].host)[2],((uint8_w *)&ht[i].host)[3],
-      ntohs(ht[i].port),ht[i].n_packets,ht[i].n_bytes,
-     (ht[i].n_packets+tdif2)/tdif,(ht[i].n_bytes+tdif2)/tdif);
+    snprintf(tb,sizeof(tb),"  src %d.%d.%d.%d:%d   %lu %lu %lu %lu",
+	    ((uint8_w *)&ht[i].host)[0],((uint8_w *)&ht[i].host)[1],
+	    ((uint8_w *)&ht[i].host)[2],((uint8_w *)&ht[i].host)[3],
+	    ntohs(ht[i].port),ht[i].n_packets,ht[i].n_bytes,
+	    (ht[i].n_packets+tdif2)/tdif,(ht[i].n_bytes+tdif2)/tdif);
     write_log(tb);
     ht[i].n_packets=ht[i].n_bytes=0;
     }
@@ -350,25 +353,29 @@ read_chfile()
 /* returns -1 if dup */
 static int
 check_pno(struct sockaddr_in *from_addr, unsigned int pn, unsigned int pn_f,
-	  int sock, socklen_t fromlen, int n, int nr, int req_delay)
+	  int sock, socklen_t fromlen, ssize_t n, int nr, int req_delay)
 /* struct sockaddr_in *from_addr;   sender address */
 /*  unsigned int pn,pn_f;           present and former packet Nos. */
 /*  int sock;                       socket */
 /*  socklen_t fromlen;              length of from_addr */
-/*  int n;                          size of packet */
+/*  ssize_t n;                          size of packet */
 /*  int nr;                         no resend request if 1 */
 /*  int req_delay;                  packet count for delayed resend-request */
+
+/*  global : hostlist, n_host, no_pinfo  */
+/*  uinsiged int OK  */
   {
-  int i,j,k,seg,ppnos_prev,ppnos_now,pn_prev,pn_now,dup;
-  int host_;  /* 32-bit-long host address in network byte-order */
-  int port_;  /* port No. in network byte-order */
-  unsigned int pn_1;
+  int i,j,k,seg,dup;
+  int32_w  ppnos_prev,ppnos_now,pn_prev,pn_now;
+  in_addr_t host_;  /* 32-bit-long host address in network byte-order */
+  in_port_t port_;  /* 16-bit-long port No. in network byte-order */
+  unsigned int pn_1;  /* 64bit ok */
   static unsigned int mask[8]={0x80,0x40,0x20,0x10,0x08,0x04,0x02,0x01};
   uint8_w pnc;   /* 64bit ok */
   char tb[256];
 
 #if DEBUG4
-  printf("%d(%d)",pn,pn_f);
+  printf("%u(%u)",pn,pn_f);
 #endif
   j=(-1);
   dup=0;
@@ -383,7 +390,7 @@ check_pno(struct sockaddr_in *from_addr, unsigned int pn, unsigned int pn_f,
       {
       if(!no_pinfo)
         {
-        sprintf(tb,"deny packet from host %d.%d.%d.%d:%d",
+	snprintf(tb,sizeof(tb),"deny packet from host %d.%d.%d.%d:%d",
           ((uint8_w *)&host_)[0],((uint8_w *)&host_)[1],
           ((uint8_w *)&host_)[2],((uint8_w *)&host_)[3],ntohs(port_));
         write_log(tb);
@@ -432,9 +439,9 @@ check_pno(struct sockaddr_in *from_addr, unsigned int pn, unsigned int pn_f,
     for(k=0;k<32;k++) ht[i].nos[k]=0; /* clear all bits for pnos */
     ht[i].nos[pn>>3]|=mask[pn&0x07]; /* set bit for the packet no */
     ht[i].nosf[pn>>6]=1;
-    sprintf(tb,"registered host %d.%d.%d.%d:%d (%d)",
-      ((uint8_w *)&host_)[0],((uint8_w *)&host_)[1],
-      ((uint8_w *)&host_)[2],((uint8_w *)&host_)[3],ntohs(port_),i);
+    snprintf(tb,sizeof(tb),"registered host %d.%d.%d.%d:%d (%d)",
+	    ((uint8_w *)&host_)[0],((uint8_w *)&host_)[1],
+	    ((uint8_w *)&host_)[2],((uint8_w *)&host_)[3],ntohs(port_),i);
     write_log(tb);
     ht[i].n_bytes=n;
     ht[i].n_packets=1;
@@ -457,9 +464,9 @@ check_pno(struct sockaddr_in *from_addr, unsigned int pn, unsigned int pn_f,
           { /* send request-resend packet(s) */
           if(!(ht[i].nos[pn_1>>3]&mask[pn_1&0x07]))
             {
-            pnc=pn_1;
+	    pnc=(uint8_w)pn_1;
             sendto(sock,&pnc,1,0,(struct sockaddr *)from_addr,fromlen);
-            sprintf(tb,"request resend %s:%d #%d",
+            snprintf(tb,sizeof(tb),"request resend %s:%d #%d",
               inet_ntoa(from_addr->sin_addr),ntohs(from_addr->sin_port),pn_1);
             write_log(tb);
 #if DEBUG1
@@ -469,7 +476,7 @@ check_pno(struct sockaddr_in *from_addr, unsigned int pn, unsigned int pn_f,
 #if DEBUG4
           else
             {
-            sprintf(tb,"dropped but already received %s:%d #%d",
+	    snprintf(tb,sizeof(tb),"dropped but already received %s:%d #%d",
               inet_ntoa(from_addr->sin_addr),ntohs(from_addr->sin_port),pn_1);
             write_log(tb);
             }
@@ -480,14 +487,14 @@ check_pno(struct sockaddr_in *from_addr, unsigned int pn, unsigned int pn_f,
           if(((pn_now-pn_1)&0xff)>192 && !dup)
             {
 #if DEBUG4
-            sprintf(tb,"inverted order but OK %s:%d #%d",
+	    snprintf(tb,sizeof(tb),"inverted order but OK %s:%d #%d",
               inet_ntoa(from_addr->sin_addr),ntohs(from_addr->sin_port),pn_now);
             write_log(tb);
 #endif
             }
           else
             {
-            sprintf(tb,"no request resend %s:%d #%d-#%d",
+	    snprintf(tb,sizeof(tb),"no request resend %s:%d #%d-#%d",
               inet_ntoa(from_addr->sin_addr),ntohs(from_addr->sin_port),pn_1,
               (pn_now-1)&0xff);
             write_log(tb);
@@ -502,7 +509,7 @@ check_pno(struct sockaddr_in *from_addr, unsigned int pn, unsigned int pn_f,
       {   /* if the resent packet is duplicated, return with -1 */
       if(!no_pinfo)
         {
-        sprintf(tb,"discard duplicated resent packet #%d for #%d",pn,pn_f);
+	snprintf(tb,sizeof(tb),"discard duplicated resent packet #%d for #%d",pn,pn_f);
         write_log(tb);
         }
       return (-1);
@@ -510,7 +517,7 @@ check_pno(struct sockaddr_in *from_addr, unsigned int pn, unsigned int pn_f,
 #if DEBUG4
     else if(!no_pinfo)
       {
-      sprintf(tb,"received resent packet #%d for #%d",pn,pn_f);
+      snprintf(tb,sizeof(tb),"received resent packet #%d for #%d",pn,pn_f);
       write_log(tb);
       }
 #endif
@@ -552,11 +559,11 @@ wincpy2(uint8_w *ptw, time_t ts, uint8_w *ptr, ssize_t size, int mon,
         {
         if(!no_pinfo)
           {
-          sprintf(tb,
-"ill ch hdr %02X%02X%02X%02X %02X%02X%02X%02X psiz=%ld sr=%d ss=%d gs=%d rest=%lu from %s:%hu",
-            ptr[0],ptr[1],ptr[2],ptr[3],ptr[4],ptr[5],ptr[6],ptr[7],
-            size,sr,ss,gs,ptr_lim-ptr,
-            inet_ntoa(from_addr->sin_addr),ntohs(from_addr->sin_port));
+	  snprintf(tb,sizeof(tb),
+		   "ill ch hdr %02X%02X%02X%02X %02X%02X%02X%02X psiz=%zd sr=%d ss=%d gs=%u rest=%ld from %s:%hu",
+		   ptr[0],ptr[1],ptr[2],ptr[3],ptr[4],ptr[5],ptr[6],ptr[7],
+		   size,sr,ss,gs,ptr_lim-ptr,
+		   inet_ntoa(from_addr->sin_addr),ntohs(from_addr->sin_port));
 	  write_log(tb);
           }
         return (n);
@@ -578,11 +585,11 @@ wincpy2(uint8_w *ptw, time_t ts, uint8_w *ptr, ssize_t size, int mon,
         {
         if(!no_pinfo)
           {
-          sprintf(tb,
-"ill ch blk %02X%02X%02X%02X %02X%02X%02X%02X psiz=%ld sr=%d gs=%d rest=%lu from %s:%d",
-            ptr[0],ptr[1],ptr[2],ptr[3],ptr[4],ptr[5],ptr[6],ptr[7],
-            size,sr,gs,ptr_lim-ptr,
-            inet_ntoa(from_addr->sin_addr),ntohs(from_addr->sin_port));
+	  snprintf(tb,sizeof(tb),
+		   "ill ch blk %02X%02X%02X%02X %02X%02X%02X%02X psiz=%zd sr=%d gs=%u rest=%ld from %s:%d",
+		   ptr[0],ptr[1],ptr[2],ptr[3],ptr[4],ptr[5],ptr[6],ptr[7],
+		   size,sr,gs,ptr_lim-ptr,
+		   inet_ntoa(from_addr->sin_addr),ntohs(from_addr->sin_port));
           write_log(tb);
           }
         return (n);
@@ -1138,7 +1145,7 @@ main(int argc, char *argv[])
           if(!no_pinfo)
             {
 	      snprintf(tb,sizeof(tb),
-		       "ill blk n=%ld(%02X%02X) %02X%02X%02X.%02X%02X%02X:%02X%02X%02X%02X%02X%02X%02X%02X from %s:%d #%d(#%d) at %d",
+		       "ill blk n=%zd(%02X%02X) %02X%02X%02X.%02X%02X%02X:%02X%02X%02X%02X%02X%02X%02X%02X from %s:%d #%d(#%d) at %d",
               n,rbuf[j],rbuf[j+1],rbuf[j+2],rbuf[j+3],rbuf[j+4],rbuf[j+5],
               rbuf[j+6],rbuf[j+7],rbuf[j+8],rbuf[j+9],rbuf[j+10],rbuf[j+11],
               rbuf[j+12],rbuf[j+13],rbuf[j+14],rbuf[j+15],

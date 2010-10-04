@@ -1,4 +1,4 @@
-/* $Id: recvt.c,v 1.29.2.3.2.29 2010/10/04 06:04:05 uehira Exp $ */
+/* $Id: recvt.c,v 1.29.2.3.2.30 2010/10/04 06:55:02 uehira Exp $ */
 /*-
  "recvt.c"      4/10/93 - 6/2/93,7/2/93,1/25/94    urabe
                 2/3/93,5/25/94,6/16/94 
@@ -53,6 +53,8 @@
                 2005.9.25 allow disorder of arriving packets 
                 2005.9.25 host(:port) in control file
 		2009.1.8  64bit?
+                2010.10.4 fixed bug in check_pno().
+                          ht[].pnos[] : unsigned int --> int
 -*/
 
 #ifdef HAVE_CONFIG_H
@@ -110,7 +112,7 @@
 #define N_PNOS    62    /* length of packet nos. history >=2 */
 
 static const char rcsid[] =
-  "$Id: recvt.c,v 1.29.2.3.2.29 2010/10/04 06:04:05 uehira Exp $";
+  "$Id: recvt.c,v 1.29.2.3.2.30 2010/10/04 06:55:02 uehira Exp $";
 
 static uint8_w rbuf[MAXMESG],ch_table[WIN_CHMAX];
 static char chfile[N_CHFILE][256];
@@ -470,7 +472,7 @@ check_pno(struct sockaddr_in *from_addr, unsigned int pn, unsigned int pn_f,
               inet_ntoa(from_addr->sin_addr),ntohs(from_addr->sin_port),pn_1);
             write_log(tb);
 #if DEBUG1
-            printf("<%d ",pn_1);
+            printf("<%u ",pn_1);
 #endif
             }
 #if DEBUG4

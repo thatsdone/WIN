@@ -1,4 +1,4 @@
-/* $Id: relay.c,v 1.15.4.3.2.8 2010/09/30 10:12:13 uehira Exp $ */
+/* $Id: relay.c,v 1.15.4.3.2.9 2010/10/04 06:55:03 uehira Exp $ */
 /* "relay.c"      5/23/94-5/25/94,6/15/94-6/16/94,6/23/94,3/16/95 urabe */
 /*                3/26/95 check_packet_no; port# */
 /*                5/24/96 added processing of "host table full" */
@@ -77,7 +77,7 @@
 #define N_HOST    100   /* max N of hosts */  
 
 static const char rcsid[] =
-  "$Id: relay.c,v 1.15.4.3.2.8 2010/09/30 10:12:13 uehira Exp $";
+  "$Id: relay.c,v 1.15.4.3.2.9 2010/10/04 06:55:03 uehira Exp $";
 
 static int sock_in,sock_out;   /* socket */
 static uint8_w sbuf[BUFNO][MAXMESG],ch_table[WIN_CHMAX];
@@ -93,7 +93,7 @@ int  syslog_mode, exit_status;
 struct {
     in_addr_t host;  /* ok */
     in_port_t port;  /* ok */
-    uint8_w no;
+    int32_w no;
     uint8_w nos[256/8];
     unsigned long n_bytes;       /*- 64bit ok -*/
     unsigned long n_packets;       /*- 64bit ok -*/
@@ -103,7 +103,7 @@ struct {
 
 /* prototypes */
 static void read_chfile(void);
-static int check_pno(struct sockaddr_in *, uint8_w, uint8_w,
+static int check_pno(struct sockaddr_in *, unsigned int, unsigned int,
 		     int, socklen_t, ssize_t, int, int);
 static int get_packet(int, uint8_w);
 static void usage(void);
@@ -255,20 +255,22 @@ read_chfile()
 
 /* returns -1 if duplicated */
 static int
-check_pno(struct sockaddr_in *from_addr, uint8_w pn, uint8_w pn_f,
+check_pno(struct sockaddr_in *from_addr, unsigned int pn, unsigned int pn_f,
 	  int sock, socklen_t fromlen, ssize_t n, int nr, int nopno)
 /* struct sockaddr_in *from_addr;   sender address */
-/* uint8_w (old unsigned int) pn,pn_f;     present and former packet Nos. */
+/* unsigned int  pn,pn_f;           present and former packet Nos. */
 /* int sock;                        socket */
 /* socklen_t fromlen;               length of from_addr */
 /* ssize_t n;                       size of packet */
 /* int nr;                          no resend request if 1 */
 /* int nopno;                       don't check pno */
+
+/* global : hostlist, n_host, no_pinfo ?*/
   {
   int i,j;
   in_addr_t  host_;  /* 32-bit-long host address in network byte-order */
   in_port_t  port_;  /* port No. in network byte-order */
-  uint8_w pn_1;
+  unsigned int  pn_1;
   static uint8_w mask[8]={0x80,0x40,0x20,0x10,0x08,0x04,0x02,0x01};
   uint8_w pnc;
   char tb[256];
@@ -331,7 +333,7 @@ check_pno(struct sockaddr_in *from_addr, uint8_w pn, uint8_w pn_f,
       {
       if(((pn-pn_1)&0xff)<N_PACKET) do
         { /* send request-resend packet(s) */
-        pnc=pn_1;
+	  pnc=(uint8_w)pn_1;
         sendto(sock,&pnc,1,0,(struct sockaddr *)from_addr,fromlen);
         snprintf(tb,sizeof(tb),"request resend %s:%d #%u",
           inet_ntoa(from_addr->sin_addr),ntohs(from_addr->sin_port),pn_1);

@@ -1,8 +1,10 @@
- $Id: ChangeLog,v 1.131.2.25.2.105 2010/10/04 02:09:02 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.106 2010/10/04 06:55:02 uehira Exp $
 
 2010-10-04  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* src/recvt.c : fixed bugs in check_pno().
 	                ht[].pnos[] : unsigned int --> int
+	* src/relay.c : partial backout check_pno().
+	* src/relaym.c : 64bit clean.
 
 2010-10-02  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* configure.in : force #include <sys/param.h> at the time of

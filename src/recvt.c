@@ -1,4 +1,4 @@
-/* $Id: recvt.c,v 1.29.2.3.2.27 2010/09/30 03:01:12 uehira Exp $ */
+/* $Id: recvt.c,v 1.29.2.3.2.28 2010/10/04 02:09:03 uehira Exp $ */
 /*-
  "recvt.c"      4/10/93 - 6/2/93,7/2/93,1/25/94    urabe
                 2/3/93,5/25/94,6/16/94 
@@ -110,7 +110,7 @@
 #define N_PNOS    62    /* length of packet nos. history >=2 */
 
 static const char rcsid[] =
-  "$Id: recvt.c,v 1.29.2.3.2.27 2010/09/30 03:01:12 uehira Exp $";
+  "$Id: recvt.c,v 1.29.2.3.2.28 2010/10/04 02:09:03 uehira Exp $";
 
 static uint8_w rbuf[MAXMESG],ch_table[WIN_CHMAX];
 static char chfile[N_CHFILE][256];
@@ -124,7 +124,7 @@ static struct {
     int host;
     int port;
     int ppnos;	/* pointer for pnos */
-    unsigned int pnos[N_PNOS];
+    int pnos[N_PNOS];
     int nosf[4]; /* 4 segments x 64 */
     uint8_w  nos[256/8];     /*- 64bit ok?? -*/
     unsigned long n_bytes;       /*- 64bit ok -*/
@@ -427,7 +427,7 @@ check_pno(struct sockaddr_in *from_addr, unsigned int pn, unsigned int pn_f,
     ht[i].host=host_;
     ht[i].port=port_;
     ht[i].pnos[(ht[i].ppnos=0)]=pn;
-    for(k=1;k<N_PNOS;k++) ht[i].pnos[0]=(-1);
+    for(k=1;k<N_PNOS;k++) ht[i].pnos[k]=(-1);
     ht[i].ppnos++;
     for(k=0;k<32;k++) ht[i].nos[k]=0; /* clear all bits for pnos */
     ht[i].nos[pn>>3]|=mask[pn&0x07]; /* set bit for the packet no */

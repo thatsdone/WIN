@@ -1,4 +1,4 @@
-/* $Id: recvt.c,v 1.29.2.3.2.31 2010/10/04 08:23:06 uehira Exp $ */
+/* $Id: recvt.c,v 1.29.2.3.2.32 2010/10/04 14:04:11 uehira Exp $ */
 /*-
  "recvt.c"      4/10/93 - 6/2/93,7/2/93,1/25/94    urabe
                 2/3/93,5/25/94,6/16/94 
@@ -112,7 +112,7 @@
 #define N_PNOS    62    /* length of packet nos. history >=2 */
 
 static const char rcsid[] =
-  "$Id: recvt.c,v 1.29.2.3.2.31 2010/10/04 08:23:06 uehira Exp $";
+  "$Id: recvt.c,v 1.29.2.3.2.32 2010/10/04 14:04:11 uehira Exp $";
 
 static uint8_w rbuf[MAXMESG],ch_table[WIN_CHMAX];
 static char chfile[N_CHFILE][256];
@@ -145,7 +145,7 @@ struct ch_hist {
 static void read_chfile(void);
 static int check_pno(struct sockaddr_in *, unsigned int, unsigned int,
 		     int, socklen_t, ssize_t, int, int);
-static int wincpy2(uint8_w *, time_t, uint8_w *, ssize_t, int,
+static size_t wincpy2(uint8_w *, time_t, uint8_w *, ssize_t, int,
 		   struct ch_hist *, struct sockaddr_in *);
 static void send_req(int, struct sockaddr_in *);
 static void usage(void);
@@ -173,7 +173,7 @@ read_chfile()
       if(negate_channel) for(i=0;i<WIN_CHMAX;i++) ch_table[i]=1;
       else for(i=0;i<WIN_CHMAX;i++) ch_table[i]=0;
       ii=0;
-      while(fgets(tbuf,1024,fp))
+      while(fgets(tbuf,sizeof(tbuf),fp))
         {
         *host_name=0;
         if(sscanf(tbuf,"%s",host_name)==0) continue;
@@ -274,7 +274,7 @@ read_chfile()
 #if DEBUG
       fprintf(stderr,"ch_file=%s\n",chfile[i_chfile]);
 #endif
-      while(fgets(tbuf,1024,fp))
+      while(fgets(tbuf,sizeof(tbuf),fp))
         {
         if(*tbuf==0 || *tbuf=='#') continue;
         sscanf(tbuf,"%x",&k);
@@ -500,14 +500,15 @@ check_pno(struct sockaddr_in *from_addr, unsigned int pn, unsigned int pn_f,
   return (0);
   }
 
-static int
+static size_t
 wincpy2(uint8_w *ptw, time_t ts, uint8_w *ptr, ssize_t size, int mon,
 	struct ch_hist *chhist, struct sockaddr_in *from_addr)   /* 64bit ok */
   {
 #define MAX_SR 500
 #define MAX_SS 4
 /* #define SR_MON 5 */
-  int n,ss;
+  int ss;
+  size_t n;
   WIN_sr sr;
   uint8_w *ptr_lim,*ptr1;
   WIN_ch ch;
@@ -696,8 +697,8 @@ main(int argc, char *argv[])
   int i,j,k,sock,all,c,mon,eobsize,      /*- 64bit ok -*/
     sbuf,noreq,no_ts,no_pno,req_delay;   /*- 64bit ok -*/
   socklen_t fromlen;  /*- 64bit ok -*/
-  size_t size,pl;     /*- 64bit ok -*/
-  ssize_t n,nn,nlen;  /*- 64bit ok -*/
+  size_t size,pl,nn;     /*- 64bit ok -*/
+  ssize_t n,nlen;  /*- 64bit ok -*/
   time_t pre,post;    /*- 64bit ok -*/
   struct sockaddr_in from_addr,host_addr;  /*- 64bit ok -*/
   uint16_t  to_port,host_port;  /*- 64bit ok -*/
@@ -864,7 +865,7 @@ main(int argc, char *argv[])
      umask(022);
    }
 
-  snprintf(tb,sizeof(tb),"n_hist=%d size=%ld req_delay=%d",chhist.n,
+  snprintf(tb,sizeof(tb),"n_hist=%d size=%zd req_delay=%d",chhist.n,
     WIN_CHMAX*chhist.n*sizeof(time_t),req_delay);
   write_log(tb);
 

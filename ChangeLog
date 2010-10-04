@@ -1,4 +1,4 @@
- $Id: ChangeLog,v 1.131.2.25.2.108 2010/10/04 13:25:39 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.109 2010/10/04 14:04:11 uehira Exp $
 
 2010-10-04  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* src/recvt.c : fixed bugs in check_pno().
@@ -7,6 +7,7 @@
 	* src/relaym.c : 64bit clean.
 	* src/winlib.c : check_ts()
 	* configure.in : use statvfs() in case of __SVR4 (SunOS)
+	* src/recvt_LS7000.c : 64bit clean?
 
 2010-10-02  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* configure.in : force #include <sys/param.h> at the time of

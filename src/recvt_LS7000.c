@@ -1,6 +1,11 @@
-/* $Id: recvt_LS7000.c,v 1.1.2.3.2.14 2010/09/30 03:01:12 uehira Exp $ */
-/* "recvt_LS7000.c"  uehira */
-/*   2007-11-02  imported from recvt.c 1.29.2.1 */
+/* $Id: recvt_LS7000.c,v 1.1.2.3.2.15 2010/10/04 14:04:11 uehira Exp $ */
+
+/*- 
+ * "recvt_LS7000.c"  uehira
+ *   2007-11-02  imported from recvt.c 1.29.2.1
+ *   2010-10-04  fixed bug in check_pno(). ht[].pnos[] : unsigned int --> int
+ *               64bit clean?
+-*/
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -54,21 +59,27 @@
 #define N_CHFILE  30    /* N of channel files */
 #define N_PNOS    62    /* length of packet nos. history >=2 */
 
-unsigned char rbuff[MAXMESG],rbuf[MAXMESG],ch_table[WIN_CHMAX];
-char *progname,*logfile,chfile[N_CHFILE][256];
-int n_ch,negate_channel,hostlist[N_HOST][3],n_host,no_pinfo,n_chfile;
-int  daemon_mode, syslog_mode, exit_status;
-unsigned char  logger_address[2];
+static const char rcsid[] =
+  "$Id: recvt_LS7000.c,v 1.1.2.3.2.15 2010/10/04 14:04:11 uehira Exp $";
+
+static uint8_w rbuff[MAXMESG],rbuf[MAXMESG],ch_table[WIN_CHMAX];
+static char chfile[N_CHFILE][256];
+static int n_ch,negate_channel,hostlist[N_HOST][3],n_host,no_pinfo,n_chfile;
+static int  daemon_mode;
+static uint8_w  logger_address[2];
+
+char *progname,*logfile;
+int  syslog_mode, exit_status;
 
 struct {
-    int host;
-    int port;
+    in_addr_t host;  /* unsigned int32_t */
+    in_port_t port;  /* unsigned int16_t */
     int ppnos;	/* pointer for pnos */
-    unsigned int pnos[N_PNOS];
+    int32_w pnos[N_PNOS];
     int nosf[4]; /* 4 segments x 64 */
-    unsigned char nos[256/8];
-    unsigned int n_bytes;
-    unsigned int n_packets;
+    uint8_w nos[256/8];
+    unsigned long n_bytes;
+    unsigned long n_packets;
     } ht[N_HOST];
 
 struct channel_hist {
@@ -77,37 +88,22 @@ struct channel_hist {
   int p[WIN_CHMAX];
 };
 
-time_t check_ts(ptr,pre,post)
-  char *ptr;
-  int pre,post;
-  {
-  int diff,tm[6];
-  time_t ts,rt;
-  struct tm mt;
-  if(!bcd_dec(tm,(unsigned char *)ptr)) return (0); /* out of range */
-  memset((char *)&mt,0,sizeof(mt));
-  if((mt.tm_year=tm[0])<WIN_YEAR) mt.tm_year+=100;
-  mt.tm_mon=tm[1]-1;
-  mt.tm_mday=tm[2];
-  mt.tm_hour=tm[3];
-  mt.tm_min=tm[4];
-  mt.tm_sec=tm[5];
-  mt.tm_isdst=0;
-  ts=mktime(&mt);
-  /* compare time with real time */
-  time(&rt);
-  diff=ts-rt;
-  if((pre==0 || pre<diff) && (post==0 || diff<post)) return (ts);
-#if DEBUG1
-  printf("diff %d s out of range (%ds - %ds)\n",diff,pre,post);
-#endif
-  return (0);
-  }
+/* prototypes */
+static void read_chfile(void);
+static int check_pno(struct sockaddr_in *, unsigned int, unsigned int,
+		     int, socklen_t, ssize_t, int, int);
+static size_t wincpy2(uint8_w *, time_t, uint8_w *, ssize_t, int,
+		   struct channel_hist *, struct sockaddr_in *);
+static void usage(void);
+int main(int, char *[]);
 
+
+static void
 read_chfile()
   {
   FILE *fp;
-  int i,j,k,ii,i_chfile;
+  int i,k,ii,i_chfile;
+  time_t tdif, tdif2;
   char tbuf[1024],host_name[80],tb[256],*ptr;
   struct hostent *h;
   static time_t ltime,ltime_p;
@@ -123,7 +119,7 @@ read_chfile()
       if(negate_channel) for(i=0;i<WIN_CHMAX;i++) ch_table[i]=1;
       else for(i=0;i<WIN_CHMAX;i++) ch_table[i]=0;
       ii=0;
-      while(fgets(tbuf,1024,fp))
+      while(fgets(tbuf,sizeof(tbuf),fp))
         {
         *host_name=0;
         if(sscanf(tbuf,"%s",host_name)==0) continue;
@@ -158,16 +154,19 @@ read_chfile()
                 }
               if(!(h=gethostbyname(host_name)))
                 {
-                sprintf(tb,"host '%s' not resolved",host_name);
+		snprintf(tb,sizeof(tb),"host '%s' not resolved",host_name);
                 write_log(tb);
                 continue;
                 }
               memcpy((char *)&hostlist[ii][1],h->h_addr,4);
-              if(*tbuf=='+') sprintf(tb,"allow");
-              else sprintf(tb,"deny");
-              sprintf(tb+strlen(tb)," from host %d.%d.%d.%d:%d",
- ((unsigned char *)&hostlist[ii][1])[0],((unsigned char *)&hostlist[ii][1])[1],
- ((unsigned char *)&hostlist[ii][1])[2],((unsigned char *)&hostlist[ii][1])[3],
+              if(*tbuf=='+') snprintf(tb,sizeof(tb),"allow");
+              else snprintf(tb,sizeof(tb),"deny");
+              snprintf(tb+strlen(tb),sizeof(tb)-strlen(tb),
+		       " from host %d.%d.%d.%d:%d",
+		      ((uint8_w *)&hostlist[ii][1])[0],
+		      ((uint8_w *)&hostlist[ii][1])[1],
+		      ((uint8_w *)&hostlist[ii][1])[2],
+		      ((uint8_w *)&hostlist[ii][1])[3],
                 hostlist[ii][2]);
               write_log(tb);
               }
@@ -175,7 +174,7 @@ read_chfile()
           if(++ii==N_HOST)
             {
             n_host=ii;
-            write_log("host control table full"); 
+	    write_log("host control table full"); 
             }
           }
         else
@@ -193,7 +192,7 @@ read_chfile()
       fprintf(stderr,"\n");
 #endif
       if(ii>0 && n_host==0) n_host=ii;
-      sprintf(tb,"%d host rules",n_host);
+      snprintf(tb,sizeof(tb),"%d host rules",n_host);
       write_log(tb);
       fclose(fp);
       }
@@ -202,7 +201,7 @@ read_chfile()
 #if DEBUG
       fprintf(stderr,"ch_file '%s' not open\n",chfile[0]);
 #endif
-      sprintf(tb,"channel list file '%s' not open",chfile[0]);
+      snprintf(tb,sizeof(tb),"channel list file '%s' not open",chfile[0]);
       write_log(tb);
       write_log("end");
       exit(1);
@@ -221,7 +220,7 @@ read_chfile()
 #if DEBUG
       fprintf(stderr,"ch_file=%s\n",chfile[i_chfile]);
 #endif
-      while(fgets(tbuf,1024,fp))
+      while(fgets(tbuf,sizeof(tbuf),fp))
         {
         if(*tbuf==0 || *tbuf=='#') continue;
         sscanf(tbuf,"%x",&k);
@@ -238,33 +237,33 @@ read_chfile()
 #if DEBUG
       fprintf(stderr,"ch_file '%s' not open\n",chfile[i_chfile]);
 #endif
-      sprintf(tb,"channel list file '%s' not open",chfile[i_chfile]);
+      snprintf(tb,sizeof(tb),"channel list file '%s' not open",chfile[i_chfile]);
       write_log(tb);
       }
     }
 
   n_ch=0;
   for(i=0;i<WIN_CHMAX;i++) if(ch_table[i]==1) n_ch++;
-  if(n_ch==WIN_CHMAX) sprintf(tb,"all channels");
-  else sprintf(tb,"%d (-%d) channels",n_ch,WIN_CHMAX-n_ch);
+  if(n_ch==WIN_CHMAX) snprintf(tb,sizeof(tb),"all channels");
+  else snprintf(tb,sizeof(tb),"%d (-%d) channels",n_ch,WIN_CHMAX-n_ch);
   write_log(tb);
 
   time(&ltime);
-  j=ltime-ltime_p;
-  k=j/2;
+  tdif=ltime-ltime_p;
+  tdif2=tdif/2;
   if(ht[0].host)
     {
-    sprintf(tb,"statistics in %d s (pkts, B, pkts/s, B/s)",j);
+    snprintf(tb,sizeof(tb),"statistics in %ld s (pkts, B, pkts/s, B/s)",tdif);
     write_log(tb);
     }
   for(i=0;i<N_HOST;i++) /* print statistics for hosts */
     {
     if(ht[i].host==0) break;
-    sprintf(tb,"  src %d.%d.%d.%d:%d   %d %d %d %d",
-      ((unsigned char *)&ht[i].host)[0],((unsigned char *)&ht[i].host)[1],
-      ((unsigned char *)&ht[i].host)[2],((unsigned char *)&ht[i].host)[3],
-      ntohs(ht[i].port),ht[i].n_packets,ht[i].n_bytes,(ht[i].n_packets+k)/j,
-      (ht[i].n_bytes+k)/j);
+    snprintf(tb,sizeof(tb),"  src %d.%d.%d.%d:%d   %lu %lu %lu %lu",
+	    ((uint8_w *)&ht[i].host)[0],((uint8_w *)&ht[i].host)[1],
+	    ((uint8_w *)&ht[i].host)[2],((uint8_w *)&ht[i].host)[3],
+	    ntohs(ht[i].port),ht[i].n_packets,ht[i].n_bytes,
+	    (ht[i].n_packets+tdif2)/tdif,(ht[i].n_bytes+tdif2)/tdif);
     write_log(tb);
     ht[i].n_packets=ht[i].n_bytes=0;
     }
@@ -272,25 +271,32 @@ read_chfile()
   signal(SIGHUP,(void *)read_chfile);
   }
 
-check_pno(from_addr,pn,pn_f,sock,fromlen,n,nr,req_delay) /* returns -1 if dup */
-  struct sockaddr_in *from_addr;  /* sender address */
-  unsigned int pn,pn_f;           /* present and former packet Nos. */
-  int sock;                       /* socket */
-  socklen_t fromlen;              /* length of from_addr */
-  int n;                          /* size of packet */
-  int nr;                         /* no resend request if 1 */
-  int req_delay;                  /* packet count for delayed resend-request */
+/* returns -1 if dup */
+static int
+check_pno(struct sockaddr_in *from_addr, unsigned int pn, unsigned int pn_f,
+	  int sock, socklen_t fromlen, ssize_t n, int nr, int req_delay)
+/* struct sockaddr_in *from_addr;   sender address */
+/*  unsigned int pn,pn_f;           present and former packet Nos. */
+/*  int sock;                       socket */
+/*  socklen_t fromlen;              length of from_addr */
+/*  ssize_t n;                          size of packet */
+/*  int nr;                         no resend request if 1 */
+/*  int req_delay;                  packet count for delayed resend-request */
+
+/*  global : hostlist, n_host, no_pinfo, logger_address[]  */
+/*  uinsiged int OK  */
   {
-  int i,j,k,seg,ppnos_prev,ppnos_now,pn_prev,pn_now,dup;
-  int host_;  /* 32-bit-long host address in network byte-order */
-  int port_;  /* port No. in network byte-order */
-  unsigned int pn_1;
+  int i,j,k,seg,dup;
+  int32_w  ppnos_prev,ppnos_now,pn_prev,pn_now;
+  in_addr_t host_;  /* 32-bit-long host address in network byte-order */
+  in_port_t port_;  /* 16-bit-long port No. in network byte-order */
+  unsigned int pn_1;  /* 64bit ok */
   static unsigned int mask[8]={0x80,0x40,0x20,0x10,0x08,0x04,0x02,0x01};
-  unsigned char pnc[8];  /* request resend packet */
+  uint8_w pnc[8];  /* request resend packet */
   char tb[256];
 
 #if DEBUG4
-  printf("%d(%d)",pn,pn_f);
+  printf("%u(%u)",pn,pn_f);
 #endif
   j=(-1);
   dup=0;
@@ -305,9 +311,9 @@ check_pno(from_addr,pn,pn_f,sock,fromlen,n,nr,req_delay) /* returns -1 if dup */
       {
       if(!no_pinfo)
         {
-        sprintf(tb,"deny packet from host %d.%d.%d.%d:%d",
-          ((unsigned char *)&host_)[0],((unsigned char *)&host_)[1],
-          ((unsigned char *)&host_)[2],((unsigned char *)&host_)[3],ntohs(port_));
+	snprintf(tb,sizeof(tb),"deny packet from host %d.%d.%d.%d:%d",
+          ((uint8_w *)&host_)[0],((uint8_w *)&host_)[1],
+          ((uint8_w *)&host_)[2],((uint8_w *)&host_)[3],ntohs(port_));
         write_log(tb);
         }
       return (-1);
@@ -349,14 +355,14 @@ check_pno(from_addr,pn,pn_f,sock,fromlen,n,nr,req_delay) /* returns -1 if dup */
     ht[i].host=host_;
     ht[i].port=port_;
     ht[i].pnos[(ht[i].ppnos=0)]=pn;
-    for(k=1;k<N_PNOS;k++) ht[i].pnos[0]=(-1);
+    for(k=1;k<N_PNOS;k++) ht[i].pnos[k]=(-1);
     ht[i].ppnos++;
     for(k=0;k<32;k++) ht[i].nos[k]=0; /* clear all bits for pnos */
     ht[i].nos[pn>>3]|=mask[pn&0x07]; /* set bit for the packet no */
     ht[i].nosf[pn>>6]=1;
-    sprintf(tb,"registered host %d.%d.%d.%d:%d (%d)",
-      ((unsigned char *)&host_)[0],((unsigned char *)&host_)[1],
-      ((unsigned char *)&host_)[2],((unsigned char *)&host_)[3],ntohs(port_),i);
+    snprintf(tb,sizeof(tb),"registered host %d.%d.%d.%d:%d (%d)",
+	    ((uint8_w *)&host_)[0],((uint8_w *)&host_)[1],
+	    ((uint8_w *)&host_)[2],((uint8_w *)&host_)[3],ntohs(port_),i);
     write_log(tb);
     ht[i].n_bytes=n;
     ht[i].n_packets=1;
@@ -382,20 +388,20 @@ check_pno(from_addr,pn,pn_f,sock,fromlen,n,nr,req_delay) /* returns -1 if dup */
             pnc[4]=0xDE;
 	    pnc[5]=logger_address[0];
 	    pnc[6]=logger_address[1];
-            pnc[7]=pn_1;
+            pnc[7]=(uint8_w)pn_1;
             sendto(sock,&pnc,sizeof(pnc),0,
 		   (struct sockaddr *)from_addr,fromlen);
-            sprintf(tb,"request resend %s:%d #%d",
+            snprintf(tb,sizeof(tb),"request resend %s:%d #%d",
               inet_ntoa(from_addr->sin_addr),ntohs(from_addr->sin_port),pn_1);
             write_log(tb);
 #if DEBUG1
-            printf("<%d ",pn_1);
+            printf("<%u ",pn_1);
 #endif
             }
 #if DEBUG4
           else
             {
-            sprintf(tb,"dropped but already received %s:%d #%d",
+	    snprintf(tb,sizeof(tb),"dropped but already received %s:%d #%d",
               inet_ntoa(from_addr->sin_addr),ntohs(from_addr->sin_port),pn_1);
             write_log(tb);
             }
@@ -406,14 +412,14 @@ check_pno(from_addr,pn,pn_f,sock,fromlen,n,nr,req_delay) /* returns -1 if dup */
           if(((pn_now-pn_1)&0xff)>192 && !dup)
             {
 #if DEBUG4
-            sprintf(tb,"inverted order but OK %s:%d #%d",
+	    snprintf(tb,sizeof(tb),"inverted order but OK %s:%d #%d",
               inet_ntoa(from_addr->sin_addr),ntohs(from_addr->sin_port),pn_now);
             write_log(tb);
 #endif
             }
           else
             {
-            sprintf(tb,"no request resend %s:%d #%d-#%d",
+	    snprintf(tb,sizeof(tb),"no request resend %s:%d #%d-#%d",
               inet_ntoa(from_addr->sin_addr),ntohs(from_addr->sin_port),pn_1,
               (pn_now-1)&0xff);
             write_log(tb);
@@ -428,7 +434,7 @@ check_pno(from_addr,pn,pn_f,sock,fromlen,n,nr,req_delay) /* returns -1 if dup */
       {   /* if the resent packet is duplicated, return with -1 */
       if(!no_pinfo)
         {
-        sprintf(tb,"discard duplicated resent packet #%d for #%d",pn,pn_f);
+	snprintf(tb,sizeof(tb),"discard duplicated resent packet #%d for #%d",pn,pn_f);
         write_log(tb);
         }
       return (-1);
@@ -436,7 +442,7 @@ check_pno(from_addr,pn,pn_f,sock,fromlen,n,nr,req_delay) /* returns -1 if dup */
 #if DEBUG4
     else if(!no_pinfo)
       {
-      sprintf(tb,"received resent packet #%d for #%d",pn,pn_f);
+      snprintf(tb,sizeof(tb),"received resent packet #%d for #%d",pn,pn_f);
       write_log(tb);
       }
 #endif
@@ -444,21 +450,22 @@ check_pno(from_addr,pn,pn_f,sock,fromlen,n,nr,req_delay) /* returns -1 if dup */
   return (0);
   }
 
-wincpy2(ptw,ts,ptr,size,mon,chhist,from_addr)
-  unsigned char *ptw,*ptr;
-  time_t ts;
-  int size,mon;
-  struct channel_hist  *chhist;
-  struct sockaddr_in *from_addr;
+static size_t
+wincpy2(uint8_w *ptw, time_t ts, uint8_w *ptr, ssize_t size, int mon,
+	struct channel_hist *chhist, struct sockaddr_in *from_addr)
   {
 #define MAX_SR 500
 #define MAX_SS 4
 /* #define SR_MON 5 */
-  int sr,n,ss;
-  unsigned char *ptr_lim,*ptr1;
-  unsigned short ch;
-  int gs,i,aa,bb,k;
-  unsigned long gh;
+  int ss;
+  size_t n;
+  WIN_sr sr;
+  uint8_w *ptr_lim,*ptr1;
+  WIN_ch ch;
+  int i,k;
+  int32_w aa,bb;  /* must be check later!! */
+  /* uint32_w gh,gs; */
+  uint32_w gs;
   char tb[256];
 
   ptr_lim=ptr+size;
@@ -467,22 +474,23 @@ wincpy2(ptw,ts,ptr,size,mon,chhist,from_addr)
     {
     if(!mon)
       {
-      gh=mkuint4(ptr);
-      ch=(gh>>16)&0xffff;
-      sr=gh&0xfff;
-      ss=(gh>>12)&0xf;
-      if(ss) gs=ss*(sr-1)+8;
-      else gs=(sr>>1)+8;
+      gs=win_chheader_info(ptr,&ch,&sr,&ss);
+      /*       gh=mkuint4(ptr); */
+      /*       ch=(gh>>16)&0xffff; */
+      /*       sr=gh&0xfff; */
+      /*       ss=(gh>>12)&0xf; */
+      /*       if(ss) gs=ss*(sr-1)+8; */
+      /*       else gs=(sr>>1)+8; */
       if(sr>MAX_SR || ss>MAX_SS || ptr+gs>ptr_lim)
         {
         if(!no_pinfo)
           {
-          sprintf(tb,
-"ill ch hdr %02X%02X%02X%02X %02X%02X%02X%02X psiz=%d sr=%d ss=%d gs=%d rest=%d from %s:%d",
-            ptr[0],ptr[1],ptr[2],ptr[3],ptr[4],ptr[5],ptr[6],ptr[7],
-            size,sr,ss,gs,ptr_lim-ptr,
-            inet_ntoa(from_addr->sin_addr),ntohs(from_addr->sin_port));
-          write_log(tb);
+	  snprintf(tb,sizeof(tb),
+		   "ill ch hdr %02X%02X%02X%02X %02X%02X%02X%02X psiz=%zd sr=%d ss=%d gs=%u rest=%ld from %s:%hu",
+		   ptr[0],ptr[1],ptr[2],ptr[3],ptr[4],ptr[5],ptr[6],ptr[7],
+		   size,sr,ss,gs,ptr_lim-ptr,
+		   inet_ntoa(from_addr->sin_addr),ntohs(from_addr->sin_port));
+	  write_log(tb);
           }
         return (n);
         }
@@ -503,11 +511,11 @@ wincpy2(ptw,ts,ptr,size,mon,chhist,from_addr)
         {
         if(!no_pinfo)
           {
-          sprintf(tb,
-"ill ch blk %02X%02X%02X%02X %02X%02X%02X%02X psiz=%d sr=%d gs=%d rest=%d from %s:%d",
-            ptr[0],ptr[1],ptr[2],ptr[3],ptr[4],ptr[5],ptr[6],ptr[7],
-            size,sr,gs,ptr_lim-ptr,
-            inet_ntoa(from_addr->sin_addr),ntohs(from_addr->sin_port));
+	  snprintf(tb,sizeof(tb),
+		   "ill ch blk %02X%02X%02X%02X %02X%02X%02X%02X psiz=%zd sr=%d gs=%u rest=%ld from %s:%d",
+		   ptr[0],ptr[1],ptr[2],ptr[3],ptr[4],ptr[5],ptr[6],ptr[7],
+		   size,sr,gs,ptr_lim-ptr,
+		   inet_ntoa(from_addr->sin_addr),ntohs(from_addr->sin_port));
           write_log(tb);
           }
         return (n);
@@ -540,21 +548,44 @@ wincpy2(ptw,ts,ptr,size,mon,chhist,from_addr)
   return (n);
   }
 
-main(argc,argv)
-  int argc;
-  char *argv[];
+static void
+usage()
+{
+
+  WIN_version();
+  fprintf(stderr, "%s\n", rcsid);
+  if(strcmp(progname,"recvt_LS7000d")==0)
+    fprintf(stderr,
+	    " usage : '%s (-ABnNr) (-d [len(s)]) (-m [pre(m)]) (-p [post(m)]) \\\n\
+              (-i [interface]) (-g [mcast_group]) (-s sbuf(KB)) \\\n	\
+              (-S [dir]/[host]:[port]) (-f [ch file]) (-y [req_delay])\\\n \
+              [port] [shm_key] [shm_size(KB)] ([ctl file]/- ([log file]))'",
+	    progname);
+  else
+    fprintf(stderr,
+	    " usage : '%s (-ABDnNr) (-d [len(s)]) (-m [pre(m)]) (-p [post(m)]) \\\n\
+              (-i [interface]) (-g [mcast_group]) (-s sbuf(KB)) \\\n	\
+              (-S [dir]/[host]:[port]) (-f [ch file]) (-y [req_delay])\\\n \
+              [port] [shm_key] [shm_size(KB)] ([ctl file]/- ([log file]))'",
+	    progname);
+}
+
+int
+main(int argc, char *argv[])
   {
   key_t shm_key;
   /* int shmid; */
-  unsigned long uni;
-  unsigned char *ptr,tm[6],*ptr_size,*ptr_size2;
-  int i,k,size,n,norg,sock,nn,pre,post,c,mon,pl,eobsize,
+  uint32_w  uni;  /*- 64bit ok -*/
+  WIN_bs  uni2;  /*- 64bit ok -*/
+  uint8_w *ptr,tm[6],*ptr_size,*ptr_size2;
+  int i,k,sock,c,mon,eobsize,
     sbuf,noreq,no_ts,no_pno,req_delay;
   struct sockaddr_in from_addr;
-  socklen_t fromlen;
-  unsigned short to_port;
-  extern int optind;
-  extern char *optarg;
+  size_t size,pl,nn;     /*- 64bit ok -*/
+  ssize_t norg,n;  /*- 64bit ok -*/
+  time_t  pre, post;  /*- 64bit ok -*/
+  socklen_t fromlen;  /*- 64bit ok -*/
+  uint16_t  to_port;  /*- 64bit ok -*/
   struct Shm  *sh;
   char tb[256];
   struct ip_mreq stMreq;
@@ -576,28 +607,13 @@ main(argc,argv)
   socklen_t   salen;
   ssize_t  sendnum;
 
-  if(progname=strrchr(argv[0],'/')) progname++;
+  if((progname=strrchr(argv[0],'/')) != NULL) progname++;
   else progname=argv[0];
 
   daemon_mode = syslog_mode = 0;
   exit_status = EXIT_SUCCESS;
 
   if(strcmp(progname,"recvt_LS7000d")==0) daemon_mode=1;
-
-  if(strcmp(progname,"recvt_LS7000d")==0)
-    sprintf(tb,
-	    " usage : '%s (-ABnNr) (-d [len(s)]) (-m [pre(m)]) (-p [post(m)]) \\\n\
-              (-i [interface]) (-g [mcast_group]) (-s sbuf(KB)) \\\n\
-              (-S [dir]/[host]:[port]) (-f [ch file]) (-y [req_delay])\\\n\
-              [port] [shm_key] [shm_size(KB)] ([ctl file]/- ([log file]))'",
-	    progname);
-  else
-    sprintf(tb,
-	    " usage : '%s (-ABDnNr) (-d [len(s)]) (-m [pre(m)]) (-p [post(m)]) \\\n\
-              (-i [interface]) (-g [mcast_group]) (-s sbuf(KB)) \\\n\
-              (-S [dir]/[host]:[port]) (-f [ch file]) (-y [req_delay])\\\n\
-              [port] [shm_key] [shm_size(KB)] ([ctl file]/- ([log file]))'",
-	    progname);
 
   no_pinfo=mon=eobsize=noreq=no_ts=no_pno=0;
   pre=post=0;
@@ -633,7 +649,7 @@ main(argc,argv)
         strcpy(mcastgroup,optarg);
         break;
       case 'm':   /* time limit before RT in minutes */
-        pre=atoi(optarg);
+        pre=atol(optarg);
         if(pre<0) pre=(-pre);
         break;
       case 'N':   /* no packet nos */
@@ -643,7 +659,7 @@ main(argc,argv)
         no_pinfo=1;
         break;
       case 'p':   /* time limit after RT in minutes */
-        post=atoi(optarg);
+        post=atol(optarg);
         break;
       case 'r':   /* disable resend request */
         noreq=1;
@@ -666,27 +682,27 @@ main(argc,argv)
         if(req_delay>N_PNOS-2 || req_delay<0)
           {
           fprintf(stderr," resend-request delay < %d !\n",N_PNOS-1);
-          fprintf(stderr,"%s\n",tb);
+	  usage();
           exit(1);
           }
         break;
       default:
         fprintf(stderr," option -%c unknown\n",c);
-        fprintf(stderr,"%s\n",tb);
+	usage();
         exit(1);
       }
     }
   optind--;
   if(argc<4+optind)
     {
-    fprintf(stderr,"%s\n",tb);
+    usage();
     exit(1);
     }
   pre=(-pre*60);
   post*=60;
-  to_port=atoi(argv[1+optind]);
+  to_port=(uint16_t)atoi(argv[1+optind]);
   shm_key=atol(argv[2+optind]);
-  size=atol(argv[3+optind])*1000;
+  size=(size_t)atol(argv[3+optind])*1000;
   *chfile[0]=0;
   if(argc>4+optind)
     {
@@ -733,7 +749,7 @@ main(argc,argv)
      umask(022);
    }
 
-  sprintf(tb,"n_hist=%d size=%d req_delay=%d",chhist.n,
+  snprintf(tb,sizeof(tb),"n_hist=%d size=%zd req_delay=%d",chhist.n,
     WIN_CHMAX*chhist.n*sizeof(time_t),req_delay);
   write_log(tb);
   
@@ -751,7 +767,8 @@ main(argc,argv)
   write_log(tb);
 
   /* shared memory */
-  sh = Shm_create(shm_key, size, "start");
+  write_log("start");
+  sh = Shm_create(shm_key, size, "in");
   /* if((shmid=shmget(shm_key,size,IPC_CREAT|0666))<0) err_sys("shmget"); */
   /* if((sh=(struct Shm *)shmat(shmid,(void *)0,0))==(struct Shm *)-1) */
   /*   err_sys("shmat"); */
@@ -767,7 +784,7 @@ main(argc,argv)
   /* sprintf(tb,"start shm_key=%d id=%d size=%d",shm_key,shmid,size); */
   /* write_log(tb); */
 
-  sprintf(tb,"TS window %ds - +%ds",pre,post);
+  snprintf(tb,sizeof(tb),"TS window %lds - +%lds",pre,post);
   write_log(tb);
 
   sock = udp_accept4(to_port, sbuf);
@@ -854,18 +871,18 @@ main(argc,argv)
         memcpy(ptr,rbuf+2,nn=n-2);
         }
       ptr+=nn;
-      uni=time(NULL);
+      uni=(uint32_w)(time(NULL)-TIME_OFFSET);
       ptr_size[4]=uni>>24;  /* tow (H) */
       ptr_size[5]=uni>>16;
       ptr_size[6]=uni>>8;
       ptr_size[7]=uni;      /* tow (L) */
       ptr_size2=ptr;
       if(eobsize) ptr+=4; /* size(2) */
-      uni=ptr-ptr_size;
-      ptr_size[0]=uni>>24;  /* size (H) */
-      ptr_size[1]=uni>>16;
-      ptr_size[2]=uni>>8;
-      ptr_size[3]=uni;      /* size (L) */
+      uni2=(WIN_bs)(ptr-ptr_size);
+      ptr_size[0]=uni2>>24;  /* size (H) */
+      ptr_size[1]=uni2>>16;
+      ptr_size[2]=uni2>>8;
+      ptr_size[3]=uni2;      /* size (L) */
       if(eobsize)
         {
         ptr_size2[0]=ptr_size[0];  /* size (H) */
@@ -898,7 +915,7 @@ main(argc,argv)
         {
         nn=wincpy2(ptr,ts,rbuf+8,n-8,mon,&chhist,&from_addr);
         ptr+=nn;
-        uni=time(NULL);
+        uni=(uint32_w)(time(NULL)-TIME_OFFSET);
         ptr_size[4]=uni>>24;  /* tow (H) */
         ptr_size[5]=uni>>16;
         ptr_size[6]=uni>>8;
@@ -910,11 +927,11 @@ main(argc,argv)
           {
           ptr_size2=ptr;
           if(eobsize) ptr+=4; /* size(2) */
-          uni=ptr-ptr_size;
-          ptr_size[0]=uni>>24;  /* size (H) */
-          ptr_size[1]=uni>>16;
-          ptr_size[2]=uni>>8;
-          ptr_size[3]=uni;      /* size (L) */
+          uni2=(WIN_bs)(ptr-ptr_size);
+          ptr_size[0]=uni2>>24;  /* size (H) */
+          ptr_size[1]=uni2>>16;
+          ptr_size[2]=uni2>>8;
+          ptr_size[3]=uni2;      /* size (L) */
           if(eobsize)
             {
             ptr_size2[0]=ptr_size[0];  /* size (H) */
@@ -923,13 +940,13 @@ main(argc,argv)
             ptr_size2[3]=ptr_size[3];  /* size (L) */
             }
 #if DEBUG2
-          printf("%d - %d (%d) %d / %d\n",ptr_size-sh->d,uni,ptr_size2-sh->d,
+          printf("%d - %d (%d) %d / %d\n",ptr_size-sh->d,uni2,ptr_size2-sh->d,
             sh->pl,pl);
 #endif
 #if DEBUG1
           printf("(%d)",time(NULL));
           for(i=8;i<14;i++) printf("%02X",ptr_size[i]);
-          printf(" : %d > %d\n",uni,ptr_size-sh->d);
+          printf(" : %d > %d\n",uni2,ptr_size-sh->d);
 #endif
           }
         else ptr=ptr_size;
@@ -937,7 +954,7 @@ main(argc,argv)
           {
           if(!no_pinfo)
             {
-            sprintf(tb,"ill time %02X:%02X %02X%02X%02X.%02X%02X%02X:%02X%02X%02X%02X%02X%02X%02X%02X from %s:%d",
+	    snprintf(tb,sizeof(tb),"ill time %02X:%02X %02X%02X%02X.%02X%02X%02X:%02X%02X%02X%02X%02X%02X%02X%02X from %s:%d",
               rbuf[0],rbuf[1],rbuf[2],rbuf[3],rbuf[4],rbuf[5],rbuf[6],rbuf[7],
               rbuf[8],rbuf[9],rbuf[10],rbuf[11],rbuf[12],rbuf[13],rbuf[14],
               rbuf[15],inet_ntoa(from_addr.sin_addr),ntohs(from_addr.sin_port));
@@ -961,7 +978,7 @@ main(argc,argv)
           nn=wincpy2(ptr,ts,rbuf+8,n-8,mon,&chhist,&from_addr);
           ptr+=nn;
           memcpy(tm,rbuf+2,6);
-          uni=time(NULL);
+          uni=(uint32_w)(time(NULL)-TIME_OFFSET);
           ptr_size[4]=uni>>24;  /* tow (H) */
           ptr_size[5]=uni>>16;
           ptr_size[6]=uni>>8;
@@ -985,13 +1002,13 @@ main(argc,argv)
 	  if ((sendnum = sendto(sock_status, rbuff, norg, 0, sa, salen))
 	      != norg) {
 	    snprintf(tb, sizeof(tb),
-		     "A8 status packet %d bytes but send %d : %s",
-		     norg, (int)sendnum, strerror(errno));
+		     "A8 status packet %d bytes but send %zd : %s",
+		     norg, sendnum, strerror(errno));
 	    write_log(tb);
 	  }
 #if DEBUG
-	  snprintf(tb, sizeof(tb), "A8 send status packet : %d bytes",
-		   (int)sendnum);
+	  snprintf(tb, sizeof(tb), "A8 send status packet : %zd bytes",
+		   sendnum);
 	  write_log(tb);
 #endif
 	}
@@ -1012,13 +1029,13 @@ main(argc,argv)
 	  if ((sendnum = sendto(sock_status, rbuff, norg, 0, sa, salen))
 	      != norg) {
 	    snprintf(tb, sizeof(tb),
-		     "A9 status packet %d bytes but send %d : %s",
-		     norg, (int)sendnum, strerror(errno));
+		     "A9 status packet %d bytes but send %zd : %s",
+		     norg, sendnum, strerror(errno));
 	    write_log(tb);
 	  }
 #if DEBUG
-	  snprintf(tb, sizeof(tb), "A9 send status packet %d bytes",
-		   (int)sendnum);
+	  snprintf(tb, sizeof(tb), "A9 send status packet %zd bytes",
+		   sendnum);
 	  write_log(tb);
 #endif
 	}

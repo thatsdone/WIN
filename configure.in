@@ -1,5 +1,5 @@
 dnl ------------------------------------------------------------------------- 
-dnl $Id: configure.in,v 1.82.2.38 2010/10/02 01:58:08 uehira Exp $
+dnl $Id: configure.in,v 1.82.2.39 2010/10/04 13:22:15 uehira Exp $
 dnl -------------------------------------------------------------------------
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT(src/win.c)
@@ -149,7 +149,7 @@ AC_RUN_IFELSE([AC_LANG_SOURCE([[
 #include <sys/vfs.h>
 #endif
 #include <stdlib.h>
-#if !defined(HAVE_STATFS) && defined(HAVE_SYS_STATVFS_H)
+#if (!defined(HAVE_STATFS) || defined(__SVR4)) && defined(HAVE_SYS_STATVFS_H)
 #include <sys/statvfs.h> 
 #define statfs statvfs
 #define f_bsize f_frsize
@@ -179,7 +179,7 @@ AC_RUN_IFELSE([AC_LANG_SOURCE([[
 	#include <sys/vfs.h>
 	#endif
 	#include <stdlib.h>
-	#if !defined(HAVE_STATFS) && defined(HAVE_SYS_STATVFS_H)
+	#if (!defined(HAVE_STATFS) || defined(__SVR4)) && defined(HAVE_SYS_STATVFS_H)
 	#include <sys/statvfs.h> 
 	#define statfs statvfs
 	#define f_bsize f_frsize

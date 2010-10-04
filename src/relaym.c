@@ -1,4 +1,4 @@
-/* $Id: relaym.c,v 1.8.2.1.2.5 2010/10/04 06:55:03 uehira Exp $ */
+/* $Id: relaym.c,v 1.8.2.1.2.6 2010/10/04 06:56:53 uehira Exp $ */
 
 /*
  * 2004-11-26 MF relay.c:
@@ -63,7 +63,7 @@
 #define MAXMSG       1025
 
 static const char rcsid[] =
-  "$Id: relaym.c,v 1.8.2.1.2.5 2010/10/04 06:55:03 uehira Exp $";
+  "$Id: relaym.c,v 1.8.2.1.2.6 2010/10/04 06:56:53 uehira Exp $";
 
 /* destination host info. */
 struct hostinfo {
@@ -357,7 +357,7 @@ main(int argc, char *argv[])
 	    re = sendto(hinf->sock, sbuf[bufno],
 			psize[bufno], 0, hinf->sa, hinf->salen);
 	    (void)snprintf(msg, sizeof(msg), 
-			   "request from %s:%s and resend to %s:%s #%d(#%d) as #%d, %d B",
+			   "request from %s:%s and resend to %s:%s #%d(#%d) as #%d, %zd B",
 			   host_, port_,
 			   hinf->host_, hinf->port_,
 			   no_f, bufno_f, sq[hinf->ID], re);

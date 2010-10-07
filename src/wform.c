@@ -1,4 +1,4 @@
-/* $Id: wform.c,v 1.4.4.2.2.2 2008/11/13 09:36:07 uehira Exp $ */
+/* $Id: wform.c,v 1.4.4.2.2.3 2010/10/07 16:05:17 uehira Exp $ */
 /* wform.c - a program to make a win format file */
 /* wform [ch] [sr] */
 
@@ -11,12 +11,16 @@
 
 #include "winlib.h"
 
-#define SR 4096
+/* #define SR 4096 */
+#define SR (HEADER_5B)
+
+static const char  rcsid[] =
+   "$Id: wform.c,v 1.4.4.2.2.3 2010/10/07 16:05:17 uehira Exp $";
+
+int main(int, char *[]);
 
 int
-main(argc,argv)
-  int argc;
-  char *argv[];
+main(int argc, char *argv[])
   {
   static uint8_w  outbuf[4+4*SR],tt[6],cbuf;
   static int32_w  inbuf[SR];
@@ -28,7 +32,10 @@ main(argc,argv)
 
   if(argc<4)
     {
-    fprintf(stderr,"usage: wform [YYMMDDhhmmss] [CH(in hex)] [SR(<4096)]\n");
+    WIN_version();
+    fprintf(stderr, "%s\n", rcsid);
+    fprintf(stderr,"usage: wform [YYMMDDhhmmss] [CH(in hex)] [SR(<%d)]\n",
+	    SR);
     exit(1);
     }
   sscanf(argv[1],"%2x%2x%2x%2x%2x%2x",&t[0],&t[1],&t[2],&t[3],&t[4],&t[5]);

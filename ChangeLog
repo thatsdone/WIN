@@ -1,6 +1,7 @@
- $Id: ChangeLog,v 1.131.2.25.2.114 2010/10/07 15:45:58 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.115 2010/10/07 16:05:17 uehira Exp $
 
 2010-10-07  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/wform.c : 64bit clean.
 	* src/winrandsimu6.c : 64bit clean?
 	* src/wintowin.c : 64bit clean?
 	* src/wintosac.c : ANSI C

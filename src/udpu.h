@@ -1,4 +1,4 @@
-/* $Id: udpu.h,v 1.2.8.1 2010/09/29 16:06:35 uehira Exp $ */
+/* $Id: udpu.h,v 1.2.8.2 2010/10/07 14:20:46 uehira Exp $ */
 
 /*
  * Copyright (c) 2001-2004
@@ -16,6 +16,7 @@
 
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <netinet/in.h>
 
 #define MIN_RECV_BUFSIZ  16   /* min. bufsize for recipt in KB */
 #define MIN_SEND_BUFSIZ  16   /* min. bufsize for transmit in KB */

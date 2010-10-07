@@ -1,4 +1,4 @@
-/* $Id: winrawcli_test.c,v 1.1.4.2.2.2 2010/09/21 11:56:59 uehira Exp $ */
+/* $Id: winrawcli_test.c,v 1.1.4.2.2.3 2010/10/07 14:20:47 uehira Exp $ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -29,12 +29,12 @@
 #define MAXMSG       1025
 
 static const char rcsid[] =
-  "$Id: winrawcli_test.c,v 1.1.4.2.2.2 2010/09/21 11:56:59 uehira Exp $";
+  "$Id: winrawcli_test.c,v 1.1.4.2.2.3 2010/10/07 14:20:47 uehira Exp $";
 
 char *progname, *logfile;
-int  daemon_mode, syslog_mode;
-int  exit_status;
+int  syslog_mode, exit_status;
 
+static int  daemon_mode;
 
 /* prototypes */
 static void usage(void);
@@ -104,7 +104,7 @@ main(int argc, char *argv[])
   readnum = fread(wrbp_buf, 1, WRBP_CLEN, fpsockr);
   /*  readnum = recv(socknum, wrbp_buf, sizeof(wrbp_buf), MSG_WAITALL); */
   write_log(wrbp_buf);
-  (void)snprintf(msg, sizeof(msg), "num = %ld %s",
+  (void)snprintf(msg, sizeof(msg), "num = %zd %s",
 		 readnum, (char *)strerror(errno));
   write_log(msg);
 
@@ -116,7 +116,7 @@ main(int argc, char *argv[])
   readnum = fread(wrbp_buf, 1, WRBP_CLEN, fpsockr);
   /*  readnum = recv(socknum, wrbp_buf, WRBP_CLEN, MSG_WAITALL); */
   write_log(wrbp_buf);
-  (void)snprintf(msg, sizeof(msg), "num2 = %ld %s",
+  (void)snprintf(msg, sizeof(msg), "num2 = %zd %s",
 		 readnum, (char *)strerror(errno));
   write_log(msg);
 
@@ -155,7 +155,7 @@ main(int argc, char *argv[])
       readnum = fread(rawbuf, 1, rsize, fpsockr);
       /*  readnum = recv(socknum, rawbuf, rsize, MSG_WAITALL); */
       /*  readnum = recv(socknum, rawbuf, rsize, 0); */
-      (void)snprintf(msg, sizeof(msg), "Get data size: %ld", readnum);
+      (void)snprintf(msg, sizeof(msg), "Get data size: %zd", readnum);
       write_log(msg);
       if (readnum != rsize)
 	err_sys("read raw data");

@@ -1,4 +1,4 @@
-/* $Id: winrawreq.c,v 1.1.2.4.2.4 2010/09/21 11:56:59 uehira Exp $ */
+/* $Id: winrawreq.c,v 1.1.2.4.2.5 2010/10/07 14:20:47 uehira Exp $ */
 
 /* winrawreq.c -- raw data request client */
 
@@ -48,12 +48,13 @@
 #define MAXMSG       1025
 
 static const char rcsid[] =
-  "$Id: winrawreq.c,v 1.1.2.4.2.4 2010/09/21 11:56:59 uehira Exp $";
+  "$Id: winrawreq.c,v 1.1.2.4.2.5 2010/10/07 14:20:47 uehira Exp $";
+
 
 char *progname, *logfile;
-int  daemon_mode, syslog_mode;
-int  exit_status;
+int  syslog_mode, exit_status;
 
+static int  daemon_mode;
 static char *srvlist_file;    /* server list file name */
 static char msg[MAXMSG];      /* log message */
 static int  srvnum;           /* number of server */
@@ -119,7 +120,7 @@ main(int argc, char *argv[])
     switch (c) {
     case 'b':
       /* maximum size of IP packet in bytes (or MTU) for network output */
-      mtu = (size_t)atoi(optarg);
+      mtu = (size_t)atol(optarg);
       break;
     case 'n':  /* nofile output mode */
       nflag = 1;
@@ -177,7 +178,7 @@ main(int argc, char *argv[])
   if (!nflag)
     write_log("Data output to file(s)");
   if (oflag) {
-    (void)snprintf(msg, sizeof(msg), "Data output to %s:%s (MTU=%ld)",
+    (void)snprintf(msg, sizeof(msg), "Data output to %s:%s (MTU=%zu)",
 		   ohost, oport, mtu);
     write_log(msg);
   }
@@ -410,7 +411,7 @@ do_get_data(const char *host, const char *port, const char *fname,
   (void)snprintf(msg, sizeof(msg), "%d %s", id, wrbp_buf);
   write_log(msg);
 #if DEBUG
-  (void)snprintf(msg, sizeof(msg), "%d num = %ld %s",
+  (void)snprintf(msg, sizeof(msg), "%d num = %zd %s",
 		 id, readnum, (char *)strerror(errno));
   write_log(msg);
 #endif
@@ -424,7 +425,7 @@ do_get_data(const char *host, const char *port, const char *fname,
     (void)snprintf(msg, sizeof(msg), "%d %s", id, wrbp_buf);
     write_log(msg);
 #if DEBUG
-    (void)snprintf(msg, sizeof(msg), "%d num2 = %ld %s",
+    (void)snprintf(msg, sizeof(msg), "%d num2 = %zd %s",
 		   id, readnum, (char *)strerror(errno));
     write_log(msg);
 #endif
@@ -436,13 +437,13 @@ do_get_data(const char *host, const char *port, const char *fname,
   sendnum = fwrite(wrbp_buf, 1, WRBP_CLEN, fpsockw);
   readnum = fread(wrbp_buf, 1, WRBP_CLEN, fpsockr);
 #if DEBUG
-  (void)snprintf(msg, sizeof(msg), "%d num3 = %ld %s",
+  (void)snprintf(msg, sizeof(msg), "%d num3 = %zd %s",
 		 id, readnum, (char *)strerror(errno));
   write_log(msg);
 #endif
   if (readnum != WRBP_CLEN) {
     (void)snprintf(msg, sizeof(msg),
-		   "%d SIZE packet len. invalid: %ld %s",
+		   "%d SIZE packet len. invalid: %zd %s",
 		   id, readnum, (char *)strerror(errno));
     write_log(msg);
     (void)fclose(fpsockw);
@@ -467,7 +468,7 @@ do_get_data(const char *host, const char *port, const char *fname,
       status = 1;
     } else {  /* malloc ok */
       readnum = fread(rawbuf, 1, rsize, fpsockr);
-      (void)snprintf(msg, sizeof(msg), "%d Get data size: %ld", id, readnum);
+      (void)snprintf(msg, sizeof(msg), "%d Get data size: %zd", id, readnum);
       write_log(msg);
       if (readnum != rsize) {
 	write_log("read raw data");

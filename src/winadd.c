@@ -1,4 +1,4 @@
-/* $Id: winadd.c,v 1.4.4.3.2.9 2010/09/16 09:09:11 uehira Exp $ */
+/* $Id: winadd.c,v 1.4.4.3.2.10 2010/10/07 14:20:47 uehira Exp $ */
 
 /*
  * winadd.c  (Uehira Kenji)
@@ -66,7 +66,7 @@ typedef struct data_index  INDX;
 
 /* global variables */
 static const char rcsid[] =
-   "$Id: winadd.c,v 1.4.4.3.2.9 2010/09/16 09:09:11 uehira Exp $";
+   "$Id: winadd.c,v 1.4.4.3.2.10 2010/10/07 14:20:47 uehira Exp $";
 static int  dummy_flag, verbose_flag, chsort_flag;
 
 /* prototypes */
@@ -772,7 +772,7 @@ memory_mode_run(int argcc, char *argvv[])
     }
     raw_size[i] = sb.st_size;
     if (verbose_flag)
-      (void)fprintf(stderr, "%s: %ld bytes\n", argvv[i], raw_size[i]);
+      (void)fprintf(stderr, "%s: %lld bytes\n", argvv[i], raw_size[i]);
 
     /* malloc memory. unless get memory, memory mode tunes off */
     rawbuf[i] = MALLOC(uint8_w, raw_size[i]);
@@ -797,7 +797,7 @@ memory_mode_run(int argcc, char *argvv[])
     re_debug = fread(rawbuf[i], 1, (size_t)raw_size[i], fp_in);
     if (re_debug != raw_size[i]) {
       (void)fprintf(stderr, "Input file is strange! : %s\n", argvv[i]);
-      (void)fprintf(stderr, "  Require=%lu [byte], but %lu [byte]\n",
+      (void)fprintf(stderr, "  Require=%lld [byte], but %zu [byte]\n",
 		    raw_size[i], re_debug);
       exit(1);
     }

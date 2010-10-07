@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.38.2.10.2.21 2010/09/30 13:24:59 uehira Exp $
+# $Id: Makefile.am,v 1.38.2.10.2.22 2010/10/07 15:45:58 uehira Exp $
 #
 
 if SUNOS4
@@ -430,8 +430,8 @@ ls7000_A9_LDADD = $(WIN_SYSTEM_LTLIB)
 evdetect_SOURCES = evdetect.c $(WIN_LIBH)
 evdetect_LDADD = $(WIN_LOG_LTLIB) $(WIN_SYSTEM_LTLIB) -lm
 
-winrandsimu6_SOURCES = winrandsimu6.c $(SUBFUNC_H)
-winrandsimu6_LDADD = @LIBSHMGET@ -lm
+winrandsimu6_SOURCES = winrandsimu6.c $(WIN_LIBH)
+winrandsimu6_LDADD = @LIBSHMGET@ $(WIN_SYSTEM_LTLIB)  -lm
 
 select_bylatlon_SOURCES = select_bylatlon.c pltxy.h $(SUBFUNC_H)
 select_bylatlon_LDADD = $(WIN_SYSTEM_LTLIB) -lm

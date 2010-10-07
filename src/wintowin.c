@@ -3,6 +3,7 @@
    2003.06.22- (C) Hiroshi TSURUOKA / All Rights Reserved.   
         06.30  bug fix & add fflush
    2004.10.10  writing to share memory option
+   2010.10.07  64bit clean? (Uehira)
  */
 
 #ifdef HAVE_CONFIG_H
@@ -35,31 +36,39 @@
 /* #define SR 4096 */
 #define SR 250
 
-int tokenize(char *command_string, char *tokenlist[], size_t maxtoken)
+static const char rcsid[] =
+  "$Id: wintowin.c,v 1.5.2.5.2.8 2010/10/07 15:06:50 uehira Exp $";
+
+/* prototypes */
+static int tokenize(char *, char *[], size_t);
+int main(int, char *[]);
+
+static int
+tokenize(char *command_string, char *tokenlist[], size_t maxtoken)
 {
     static char tokensep[] = " \t";
     int tokencount;
     char *thistoken;
+
     if (command_string == NULL || !maxtoken)
-	return 0;
+      return (0);
     thistoken = strtok(command_string, tokensep);
     for (tokencount = 0; tokencount < maxtoken && thistoken != NULL;) {
 	tokenlist[tokencount++] = thistoken;
 	thistoken = strtok(NULL, tokensep);
     }
     tokenlist[tokencount] = NULL;
-    return tokencount;
+    return (tokencount);
 }
 
 #define MAXTOKEN SR
 char *tokens[MAXTOKEN];
 
-main(argc, argv)
-int argc;
-char *argv[];
+int
+main(int argc, char *argv[])
 {
 #define MAXCH 1000
-    static unsigned char **outbuf, tt[6], cbuf;
+    static uint8_w **outbuf, tt[6], cbuf;
     static int32_w inbuf[SR];
     char buf[8192];
     int sr, ch, size, *chsize, t[6], i, j, k, ntoken, nch;
@@ -67,18 +76,18 @@ char *argv[];
 
     key_t shmkey_out;
     struct Shm  *shm_out;
-    int shm_size = 0;
-    unsigned char *ptw;
-    unsigned long ltime;
+    size_t shm_size = 0;
+    uint8_w *ptw;
+    uint32_w ltime;
+    uint8_w  wtimbuf[4];
     int tmst = 0;
     int mdim = MAXCH;
-
-/*     extern int optind; */
-/*     extern char *optarg; */
 
     while ((c = getopt(argc, argv, "hk:s:tm:")) != -1) {
 	switch (c) {
 	case 'h':
+	    WIN_version();
+	    fprintf(stderr, "%s\n", rcsid);
 	    fprintf(stderr, "usage: wintowin <[in_file] >[out_file]\n");
 	    fprintf(stderr, "          or\n");
 	    fprintf(stderr, "       wintowin [shm_key] [shm_size] \n");
@@ -110,7 +119,7 @@ char *argv[];
     optind--;
     if ( argc > 1 ) {
       shmkey_out = atoi(argv[1+optind]);
-      shm_size = atoi(argv[2+optind]);
+      shm_size = atol(argv[2+optind]);
       shm_size = shm_size * 1000;
     }
 
@@ -135,9 +144,9 @@ char *argv[];
         outbuf[k] = (char *)malloc(sizeof(char) * (4+4*SR));
     }
  */
-    outbuf= malloc(sizeof(char *) * (mdim));
+    outbuf= (uint8_w **)malloc(sizeof(uint8_w *) * (mdim));
     for (k = 0; k < mdim; k++) {
-        outbuf[k] = malloc(sizeof(char) * (4+4*SR));
+      outbuf[k] = (uint8_w *)malloc(sizeof(uint8_w) * (4+4*SR));
     }
     chsize=(int *)malloc(sizeof(int) * mdim);
 
@@ -180,8 +189,12 @@ char *argv[];
 	    cbuf = size >> 8; memcpy(ptw, &cbuf, 1); ptw++;
 	    cbuf = size; memcpy(ptw, &cbuf, 1); ptw++;
             if ( tmst ) {
-            time((time_t *)&ltime);
-            memcpy(ptw,&ltime, 4); ptw +=4;
+	      ltime = (uint32_w)(time(NULL) - TIME_OFFSET);
+	      wtimbuf[3] = ltime >> 24;
+	      wtimbuf[2] = ltime >> 16;
+	      wtimbuf[1] = ltime >> 8;
+	      wtimbuf[0] = ltime;
+	      memcpy(ptw,wtimbuf,4); ptw +=4;
             }
 	    memcpy(ptw, tt, 6); ptw += 6;
 	    for (j = 0; j < nch; j++) {
@@ -195,4 +208,5 @@ char *argv[];
 	    shm_out->c++;
 	}
     }				/* read data loop end */
+    exit(0);
 }

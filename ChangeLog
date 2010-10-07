@@ -1,6 +1,7 @@
- $Id: ChangeLog,v 1.131.2.25.2.112 2010/10/07 14:33:36 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.113 2010/10/07 15:06:49 uehira Exp $
 
 2010-10-07  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/wintowin.c : 64bit clean?
 	* src/wintosac.c : ANSI C
 	* src/timeout.c : ANSI C
 	* src/select_bylatlon.c : ANSI C

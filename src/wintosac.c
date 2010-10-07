@@ -10,8 +10,13 @@
               by NAKAGAWA Shigeki
  
  */
-#define VERSION "1.0.1"
+/* #define VERSION "1.0.1" */
 #define YMD "2005.01.17"
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <stdlib.h>
 #include <string.h>
 #include <stddef.h>
@@ -19,13 +24,16 @@
 #include <math.h>
 #include <unistd.h>
 
-#define SWAPL(a) a=(((a)<<24)|((a)<<8)&0xff0000|((a)>>8)&0xff00|((a)>>24)&0xff)
-#define SWAPF(a) *(long *)&(a)=(((*(long *)&(a))<<24)|\
-  ((*(long *)&(a))<<8)&0xff0000|((*(long *)&(a))>>8)&0xff00|\
-  ((*(long *)&(a))>>24)&0xff)
+#include "winlib.h"
+
+/* prototypes */
+static long julday(int, int, int);
+static int tokenize(char *, char *[], size_t);
+int main(int, char *[]);
 
 #define IGREG (15+31L*(10+12L*1582))
-long julday(int mm, int id, int iyyy)
+static long
+julday(int mm, int id, int iyyy)
 {
     long jul;
     int ja, jy = iyyy, jm;
@@ -45,25 +53,26 @@ long julday(int mm, int id, int iyyy)
 	ja = (int) (0.01 * jy);
 	jul += 2 - ja + (int) (0.25 * ja);
     }
-    return jul;
+    return (jul);
 }
-
 #undef IGREG
 
-int tokenize(char *command_string, char *tokenlist[], size_t maxtoken)
+static int
+tokenize(char *command_string, char *tokenlist[], size_t maxtoken)
 {
     static char tokensep[] = " \t";
     int tokencount;
     char *thistoken;
+
     if (command_string == NULL || !maxtoken)
-	return 0;
+      return (0);
     thistoken = strtok(command_string, tokensep);
     for (tokencount = 0; tokencount < maxtoken && thistoken != NULL;) {
 	tokenlist[tokencount++] = thistoken;
 	thistoken = strtok(NULL, tokensep);
     }
     tokenlist[tokencount] = NULL;
-    return tokencount;
+    return (tokencount);
 }
 
 #define MAXTOKEN 4096
@@ -77,18 +86,17 @@ typedef struct {
     double mul;
 } c_info;
 
-main(argc, argv)
-int argc;
-char *argv[];
+int
+main(int argc, char *argv[])
 {
 /*     extern int optind; */
 /*     extern char *optarg; */
     FILE *fp;
     int ntoken;
-    int chindex[65536], id[65536];
+    int chindex[WIN_CHMAX], id[WIN_CHMAX];
     int c, chsel, check, swap, i, j, n, yr, mo, dy, hr, mi, sc, nch;
     int jul, jul0, idt, nsec, nsec0, ndata, nfreq;
-    unsigned char chlist[65536 / 8];
+    unsigned char chlist[WIN_CHMAX / 8];
     static unsigned int mask[8] = { 0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01 };
 #define setch(a) (chlist[a>>3]|=mask[a&0x07])
     int table = 0;
@@ -142,9 +150,9 @@ char *argv[];
     optind--;
     if (argc > 1 + optind) {
 	nch = 0;
-	for (i = 0; i < 65536 / 8; i++)
+	for (i = 0; i < WIN_CHMAX / 8; i++)
 	    chlist[i] = 0;
-	for (i = 0; i < 65536; i++)
+	for (i = 0; i < WIN_CHMAX; i++)
 	    chindex[i] = -1;
 	for (i = 1 + optind; i < argc; i++) {
 	    chsel = strtol(argv[i], 0, 16);
@@ -318,7 +326,7 @@ char *argv[];
     for (i = 0; i < 40; i++) {
 	itmp = idum[i];
 	if (swap)
-	    SWAPL(itmp);
+	    SWAP32(itmp);
 	fwrite(&itmp, sizeof(float), 1, fp);
     }
     fwrite(kstnm, 1, 8, fp);
@@ -333,6 +341,6 @@ char *argv[];
 	fwrite(&ftmp, sizeof(float), 1, fp);
     }
     fclose(fp);
-    return (0);
 
+    exit(0);
 }

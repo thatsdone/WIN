@@ -1,4 +1,4 @@
-/* $Id: select_bylatlon.c,v 1.1.4.3 2010/04/03 02:11:21 uehira Exp $ */
+/* $Id: select_bylatlon.c,v 1.1.4.4 2010/10/07 13:21:22 uehira Exp $ */
 
 /* Imported from $WIN: select_stations.c,v 1.3 2004/01/29 01:58:16 urabe Exp $ */
 /* select_stations  1999.11.9  urabe */
@@ -16,10 +16,22 @@
 #include "subst_func.h"
 
 #define NAME_PRG "select_bylatlon"
-#define DEBUG 0
+/* #define DEBUG 0 */
 
-print_usage() 
+static const char rcsid[] =
+  "$Id: select_bylatlon.c,v 1.1.4.4 2010/10/07 13:21:22 uehira Exp $";
+
+/* prototypes */
+static void print_usage(void);
+static void get_dist_and_azim(double, double, double, double, 
+			      double *, double *);
+int main(int, char *[]);
+
+static void
+print_usage()
   {
+
+  fprintf(stderr,"%s\n", rcsid);
   fprintf(stderr,"usage of '%s' :\n",NAME_PRG);
   fprintf(stderr,"   %s [stations_file] [polygon_file]\n",NAME_PRG);
   fprintf(stderr,"       stationss_file : file lines with Lat/Long\n");
@@ -41,14 +53,17 @@ print_usage()
 39 136
 */
 
-get_dist_and_azim(x0,y0,x1,y1,d,a)
-  double x0,y0; /* start point */
-  double x1,y1; /* end point */
-  double *d,*a; /* distance and azimuth */
+static void
+get_dist_and_azim(double x0, double y0, double x1, double y1,
+		  double *d, double *a)
+/*  double x0,y0;    start point */
+/*  double x1,y1;    end point */
+/*  double *d,*a;    distance and azimuth */
   {
 #define PI          3.141592654
   int i,i0,i1;
   double x00,y00,x11,y11,x2,y2,d0,d1,d2;
+
   x00=x0;
   y00=y0;
   x11=x1;
@@ -102,24 +117,22 @@ printf(" (%8.3f,%8.3f) (%8.3f,%8.3f) ",x0,y0,x1,y1);
 #if DEBUG
 printf("(%8.3f,%8.3f) d=%8.3f,a=%8.3f\n",x2,y2,*d,*a);
 #endif
+#undef PI
   }
 
-main(argc,argv)
-  int argc;
-  char *argv[];
+int
+main(int argc, char *argv[])
   {
   FILE *f1,*f2;
-  int init,init2,i;
+  int init,init2;
   char ta[256],tb[256];
-  double alat0,along0,alat,along,x00,y00,d,a,dmin,amin;
-  double alat1,along1,x,y,x0,y0,x1,y1,xa,ya,xb,yb;
-  extern int optind;
-  extern char *optarg;
+  double alat0,along0,x00,y00,d,a,dmin,amin;
+  double alat1,along1,x0,y0,x1,y1,xa,ya,xb,yb;
 
   if(argc<3)
     {
     print_usage();
-    exit(0);
+    exit(1);
     }
   f1=fopen(argv[1],"r"); /* list of points */
   f2=fopen(argv[2],"r"); /* list of a polygon */
@@ -128,7 +141,7 @@ main(argc,argv)
     {
     if(*tb=='#') continue;
     alat0=along0=0.0;
-    sscanf(tb,"%lf%lf%",&alat0,&along0);
+    sscanf(tb,"%lf%lf",&alat0,&along0);
     if(alat0==0.0 || along0==0.0) continue;
 #if DEBUG
     printf("%s",tb);
@@ -185,4 +198,6 @@ printf("d=%8.3f,a=%8.3f ,dmin=%8.3f,amin=%8.3f",d,a,dmin,amin);
       printf("x %s",tb);
 #endif
     }
+
+  exit(0);
   }

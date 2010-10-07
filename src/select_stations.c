@@ -1,4 +1,4 @@
-/* $Id: select_stations.c,v 1.3.8.3 2010/04/03 02:11:21 uehira Exp $ */
+/* $Id: select_stations.c,v 1.3.8.4 2010/10/07 13:21:22 uehira Exp $ */
 
 /* select_stations  1999.11.9  urabe */
 /* debugged 2004.1.28  urabe */
@@ -8,6 +8,7 @@
 #endif
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <math.h>
 
 #include "pltxy.h"
@@ -16,8 +17,20 @@
 #define NAME_PRG "select_stations"
 /* #define DEBUG 0 */
 
-print_usage() 
+static const char rcsid[] =
+  "$Id: select_stations.c,v 1.3.8.4 2010/10/07 13:21:22 uehira Exp $";
+
+/* prototypes */
+static void print_usage(void);
+static void get_dist_and_azim(double, double, double, double, 
+			      double *, double *);
+int main(int, char *[]);
+
+static void
+print_usage()
   {
+
+  fprintf(stderr,"%s\n", rcsid);
   fprintf(stderr,"usage of '%s' :\n",NAME_PRG);
   fprintf(stderr,"   %s [stations_file] [polygon_file]\n",NAME_PRG);
   fprintf(stderr,"       stationss_file : WIN's ch file lines with Lat/Long\n");
@@ -39,10 +52,12 @@ print_usage()
 39 136
 */
 
-get_dist_and_azim(x0,y0,x1,y1,d,a)
-  double x0,y0; /* start point */
-  double x1,y1; /* end point */
-  double *d,*a; /* distance and azimuth */
+static void
+get_dist_and_azim(double x0, double y0, double x1, double y1,
+		  double *d, double *a)
+/*  double x0,y0;    start point */
+/*  double x1,y1;    end point */
+/*  double *d,*a;    distance and azimuth */
   {
 #define PI          3.141592654
   int i,i0,i1;
@@ -100,11 +115,11 @@ printf(" (%8.3f,%8.3f) (%8.3f,%8.3f) ",x0,y0,x1,y1);
 #if DEBUG
 printf("(%8.3f,%8.3f) d=%8.3f,a=%8.3f\n",x2,y2,*d,*a);
 #endif
+#undef PI
   }
 
-main(argc,argv)
-  int argc;
-  char *argv[];
+int
+main(int argc, char *argv[])
   {
   FILE *f1,*f2;
   int init,init2;
@@ -115,7 +130,7 @@ main(argc,argv)
   if(argc<3)
     {
     print_usage();
-    exit(0);
+    exit(1);
     }
   f1=fopen(argv[1],"r"); /* list of points */
   f2=fopen(argv[2],"r"); /* list of a polygon */
@@ -124,7 +139,7 @@ main(argc,argv)
     {
     if(*tb=='#') continue;
     alat0=along0=0.0;
-    sscanf(tb,"%*s%*s%*s%s%*s%*s%*s%*s%*s%*s%*s%*s%*s%lf%lf%",name,&alat0,&along0);
+    sscanf(tb,"%*s%*s%*s%s%*s%*s%*s%*s%*s%*s%*s%*s%*s%lf%lf",name,&alat0,&along0);
     if(alat0==0.0 || along0==0.0) continue;
 #if DEBUG
     printf("%s",tb);
@@ -181,4 +196,6 @@ printf("d=%8.3f,a=%8.3f ,dmin=%8.3f,amin=%8.3f",d,a,dmin,amin);
       printf("x %s",tb);
 #endif
     }
+
+  exit(0);
   }

@@ -1,4 +1,11 @@
- $Id: ChangeLog,v 1.113.2.50 2010/10/04 13:22:15 uehira Exp $
+ $Id: ChangeLog,v 1.113.2.51 2010/10/08 16:18:03 uehira Exp $
+
+2010-10-09  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 1.2.2 released.
+	* src/ecore.c : fixed bugs.
+	* update autotools
+	  autoconf-2.67
+	  automake-1.11
 
 2010-10-04  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* Version 1.2.1 released.

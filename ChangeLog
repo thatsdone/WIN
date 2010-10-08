@@ -1,4 +1,7 @@
- $Id: ChangeLog,v 1.131.2.25.2.115 2010/10/07 16:05:17 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.116 2010/10/08 03:03:45 uehira Exp $
+
+2010-10-08  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/insert_trg.c : 64bit check.
 
 2010-10-07  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* src/wform.c : 64bit clean.

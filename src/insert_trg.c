@@ -1,5 +1,5 @@
 /*
- * $Id: insert_trg.c,v 1.6.4.4.2.6 2010/09/27 07:53:55 uehira Exp $
+ * $Id: insert_trg.c,v 1.6.4.4.2.7 2010/10/08 03:03:46 uehira Exp $
  * Insert sorted timeout data to event data.
  *
  *------------ sample of parameter file ------------
@@ -16,17 +16,19 @@
 /*-
  * 2005/3/12   memory leak bug fixed.
  * 2007/9/12   bug fixed.
+ * 2010/10/8   64bit check.
  */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
 
+#include <sys/types.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <signal.h>
-#include <sys/types.h>
 #include <unistd.h>
 #include <ctype.h>
 
@@ -68,7 +70,7 @@
 
 char *progname;
 static const char rcsid[]=
-  "$Id: insert_trg.c,v 1.6.4.4.2.6 2010/09/27 07:53:55 uehira Exp $";
+  "$Id: insert_trg.c,v 1.6.4.4.2.7 2010/10/08 03:03:46 uehira Exp $";
 
 struct Cnt_file {
   char  trg_dir[WIN_FILENAME_MAX];    /* trg data directory */
@@ -82,17 +84,37 @@ struct Cnt_file {
   int   wait_min;       /* wait time[min.](>=POST_MIN) from timeout LATEST */
 };
 
+/* prototypes */
+static void end_prog(int);
+static void bfov_error(void);
+static void memory_error(void);
+static void print_usage(void);
+static int read_param(char [], struct Cnt_file *);
+static void do_insert(int [], struct Cnt_file *);
+int main(int, char *[]);
+
+
 /* exit program with status */
 static void
 end_prog(int status)
 {
+
   printf("*****  %s end  *****\n",progname);
   exit(status);
 }
 
 static void
+bfov_error()
+{
+
+  fprintf(stderr,"'%s': Buffer overrun!\n",progname);
+  end_prog(1);
+}
+
+static void
 memory_error()
 {
+
   fprintf(stderr,"'%s': cannot allocate memory.\n",progname);
   end_prog(-3);
 }
@@ -101,6 +123,8 @@ memory_error()
 static void
 print_usage()
 {
+
+  WIN_version();
   fprintf(stderr,"%s\n",rcsid);
   fprintf(stderr,"Usage of %s :\n",progname);
   fprintf(stderr,"\t%s [param file] ([YYMMDDhh.mm(1)] [YYMMDDhh.mm(2)])\n",
@@ -171,10 +195,10 @@ do_insert(int tim[], struct Cnt_file *cnt)
   WIN_bs  sizes;
   WIN_bs  data_num,data_num_save;
   WIN_bs  array_size_of_data;
-  unsigned char  *data,*datam,*datat,*tmpbuf;
-  unsigned char  *datas;
-  unsigned char  size_arr[WIN_BLOCKSIZE_LEN];
-  unsigned char  *ptrd,*ptw,*ptrs;
+  uint8_w  *data,*datam,*datat,*tmpbuf;
+  uint8_w  *datas;
+  uint8_w  size_arr[WIN_BLOCKSIZE_LEN];
+  uint8_w  *ptrd,*ptw,*ptrs;
   int  dtime[WIN_TIME_LEN],dtime_start[WIN_TIME_LEN],dtime_end[WIN_TIME_LEN];
   int  dttime[WIN_TIME_LEN],dstime[WIN_TIME_LEN];
   int  dtime_tmp[WIN_TIME_LEN];
@@ -187,50 +211,57 @@ do_insert(int tim[], struct Cnt_file *cnt)
   char  cmdbuf[WIN_FILENAME_MAX];
   int  j;
 
-  sprintf(data_name,"%s/%02d%02d%02d%02d.%02d",
-	  cnt->junk_dir,tim[0],tim[1],tim[2],tim[3],tim[4]);
+  if (snprintf(data_name,sizeof(data_name),
+	       "%s/%02d%02d%02d%02d.%02d", cnt->junk_dir,tim[0],
+	       tim[1],tim[2],tim[3],tim[4]) >= sizeof(data_name))
+    bfov_error();
   if((fp=fopen(data_name,"r"))==NULL) return;
 
   while(fread(&a,1,WIN_BLOCKSIZE_LEN,fp)==WIN_BLOCKSIZE_LEN){  /*(1)*/
     /*** copy same minute data to data[] ***/
-    data_num_save=data_num=size=(WIN_bs)mkuint4((unsigned char *)&a);
+    data_num_save=data_num=size=(WIN_bs)mkuint4((uint8_w *)&a);
     array_size_of_data = data_num << 2;
-    if((data=MALLOC(unsigned char,array_size_of_data))==NULL) memory_error();
+    if((data=MALLOC(uint8_w,array_size_of_data))==NULL) memory_error();
     memcpy(data,&a,WIN_BLOCKSIZE_LEN);
     size-=WIN_BLOCKSIZE_LEN;
     if(fread(data+WIN_BLOCKSIZE_LEN,1,size,fp)!=size){
       FREE(data);
+      data = NULL;
       break; /* exit do_insert() in case of timeout file broken */
     }
     if(!bcd_dec(dtime,data+WIN_BLOCKSIZE_LEN)){
       FREE(data);
+      data = NULL;
       continue; /* skip in case of strange time stamp */
     }
     for(j=0;j<WIN_TIME_LEN;++j) dtime_start[j]=dtime_end[j]=dtime[j];
     fpt=ftell(fp);
     while(fread(&a,1,WIN_BLOCKSIZE_LEN,fp)==WIN_BLOCKSIZE_LEN){  /*(2)*/
-      size_save=size=(WIN_bs)mkuint4((unsigned char *)&a);
-      if((tmpbuf=MALLOC(unsigned char,size))==NULL) memory_error();
+      size_save=size=(WIN_bs)mkuint4((uint8_w *)&a);
+      if((tmpbuf=MALLOC(uint8_w,size))==NULL) memory_error();
       memcpy(tmpbuf,&a,WIN_BLOCKSIZE_LEN);
       size-=WIN_BLOCKSIZE_LEN;
       if(fread(tmpbuf+WIN_BLOCKSIZE_LEN,1,size,fp)!=size){
 	FREE(tmpbuf); FREE(data);
+	tmpbuf = data = NULL;
 	goto insert_end; /* exit do_insert() in case of timeout file broken */
       }
       if(!bcd_dec(dtime_tmp,tmpbuf+WIN_BLOCKSIZE_LEN)){
 	FREE(tmpbuf);
+	tmpbuf = NULL;
 	continue; /* skip in case of strange time stamp */
       }
       /* if next minutes, exit this loop */
       if(time_cmp(dtime,dtime_tmp,5)){
 	FREE(tmpbuf);
+	tmpbuf = NULL;
 	fseek(fp,fpt,0);
 	break;
       }
       data_num+=size_save;
       if (array_size_of_data < data_num) {
 	array_size_of_data = data_num << 1;
-	if((data=REALLOC(unsigned char,data,array_size_of_data))==NULL)
+	if((data=REALLOC(uint8_w,data,array_size_of_data))==NULL)
 	  memory_error();
       }
       memcpy(data+data_num_save,tmpbuf,size_save);
@@ -239,6 +270,7 @@ do_insert(int tim[], struct Cnt_file *cnt)
       if(time_cmp(dtime_tmp,dtime_end,WIN_TIME_LEN)>0)
 	for(j=0;j<WIN_TIME_LEN;++j) dtime_end[j]=dtime_tmp[j];
       FREE(tmpbuf);
+      tmpbuf = NULL;
     } /* while(fread(&a,1,WIN_BLOCKSIZE_LEN,fp)==WIN_BLOCKSIZE_LEN) (2) */
 
     for(j=0;j<5;++j) scan_tim_old[j]=scan_tim_yng[j]=dtime[j];
@@ -296,7 +328,9 @@ do_insert(int tim[], struct Cnt_file *cnt)
 #endif
 
       /* get start_time and end_time of 1 trg file. */
-      sprintf(outname,"%s/%s",cnt->trg_dir,dir_ent->d_name);
+      if (snprintf(outname, sizeof(outname), "%s/%s",
+		   cnt->trg_dir,dir_ent->d_name) >= sizeof(outname))
+	bfov_error();
       if(WIN_time_hani(outname,tim_trg_start,tim_trg_end)) continue;
       if(time_cmp(dtime_end,tim_trg_start,WIN_TIME_LEN)<0) continue;
       if(time_cmp(dtime_start,tim_trg_end,WIN_TIME_LEN)>0) continue;
@@ -311,17 +345,20 @@ do_insert(int tim[], struct Cnt_file *cnt)
 #endif
 
       /** read .ch file or trg file(first sec.) to get channel list **/
-      sprintf(chname,"%s/%s%s",cnt->trg_dir,dir_ent->d_name,TRG_CHFILE_SUFIX);
+      if (snprintf(chname,sizeof(chname),"%s/%s%s",cnt->trg_dir,
+		   dir_ent->d_name,TRG_CHFILE_SUFIX) >= sizeof(chname))
+	bfov_error();
       trg_chnum=0;
       if((fpch=fopen(chname,"r"))==NULL){
 	if((fptrg=fopen(outname,"r"))!=NULL){
 	  if(fread(&a,1,WIN_BLOCKSIZE_LEN,fptrg)==WIN_BLOCKSIZE_LEN){
-	    sizet=(WIN_bs)mkuint4((unsigned char *)&a)-WIN_BLOCKSIZE_LEN;
-	    if((tmpbuf=MALLOC(unsigned char,sizet))==NULL) memory_error();
+	    sizet=(WIN_bs)mkuint4((uint8_w *)&a)-WIN_BLOCKSIZE_LEN;
+	    if((tmpbuf=MALLOC(uint8_w,sizet))==NULL) memory_error();
 	    if(fread(tmpbuf,1,sizet,fptrg)==sizet){
 	      trg_chnum=get_sysch_list(tmpbuf,sizet,trg_ch);
 	    }
 	    FREE(tmpbuf);
+	    tmpbuf = NULL;
 	  }
 	  fclose(fptrg);
 	}
@@ -341,16 +378,16 @@ do_insert(int tim[], struct Cnt_file *cnt)
       ptrd=data;
       for(j=0;j<WIN_TIME_LEN;++j) dtime[j]=dtime_start[j];
       while(time_cmp(dtime,tim_trg_start,WIN_TIME_LEN)<0){  /* skip */
-	size=(WIN_bs)mkuint4((unsigned char *)ptrd);
+	size=(WIN_bs)mkuint4((uint8_w *)ptrd);
 	ptrd+=size;
 	bcd_dec(dtime,ptrd+WIN_BLOCKSIZE_LEN);
       }
       if(time_cmp(dtime,tim_trg_end,WIN_TIME_LEN)>0) continue;
-      if((datas=MALLOC(unsigned char,data_num))==NULL) memory_error();
+      if((datas=MALLOC(uint8_w,data_num))==NULL) memory_error();
       ptw=datas;
       datas_num=0;
       while(time_cmp(dtime,tim_trg_end,WIN_TIME_LEN)<=0 && ptrd<data+data_num){
-	size=(WIN_bs)mkuint4((unsigned char *)ptrd)-WIN_BLOCKSIZE_LEN;
+	size=(WIN_bs)mkuint4((uint8_w *)ptrd)-WIN_BLOCKSIZE_LEN;
 	ptrd+=WIN_BLOCKSIZE_LEN;
 #if DEBUG1>5
 	fprintf(stderr,"size=%ld dtime=%02d%02d%02d.%02d%02d%02d\n",
@@ -376,6 +413,7 @@ do_insert(int tim[], struct Cnt_file *cnt)
       } /* while(time_cmp(dtime,tim_trg_end,WIN_TIME_LEN)<=0 && ptrd<data+data_num) */
       if(datas_num==0){
 	FREE(datas);
+	datas = NULL;
 	continue;  /* There is no selected data, go to next trg file */
       }
 #if DEBUG1
@@ -384,7 +422,9 @@ do_insert(int tim[], struct Cnt_file *cnt)
 #endif
 
       if((fptrg=fopen(outname,"r"))==NULL) continue;
-      sprintf(addname,"%s/%s.%d",cnt->tmp_dir,TMP_ADD_NAME,getpid());
+      if (snprintf(addname, sizeof(addname),"%s/%s.%d",cnt->tmp_dir,
+		   TMP_ADD_NAME,getpid()) >= sizeof(addname))
+	bfov_error();
       if((fpadd=fopen(addname,"w"))==NULL){
 	fprintf(stderr,"Cannot create file: '%s'\n",addname);
 	end_prog(-4);
@@ -399,15 +439,17 @@ dttime[0],dttime[1],dttime[2],dttime[3],dttime[4],dttime[5]);
 #endif
       /* merge data */
       while(fread(&a,1,WIN_BLOCKSIZE_LEN,fptrg)==WIN_BLOCKSIZE_LEN){
-	sizet=(WIN_bs)mkuint4((unsigned char *)&a)-WIN_BLOCKSIZE_LEN;
-	if((datat=MALLOC(unsigned char,sizet))==NULL) memory_error();
+	sizet=(WIN_bs)mkuint4((uint8_w *)&a)-WIN_BLOCKSIZE_LEN;
+	if((datat=MALLOC(uint8_w,sizet))==NULL) memory_error();
 	if(fread(datat,1,sizet,fptrg)!=sizet){
 	  FREE(datat);
+	  datat = NULL;
 	  fwrite(ptrs,1,datas_num-(WIN_bs)(ptrs-datas),fpadd);
 	  break;
 	}
 	if(!bcd_dec(dttime,datat)){
 	  FREE(datat);
+	  datat = NULL;
 	  continue; /* skip in case of strange time stamp in trg file */
 	}
 	/* output only trg data, if time stamp differ */
@@ -424,7 +466,7 @@ dttime[0],dttime[1],dttime[2],dttime[3],dttime[4],dttime[5]);
 	else{
 	  size=(WIN_bs)mkuint4(ptrs)-WIN_BLOCKSIZE_LEN;
 	  ptrs+=WIN_BLOCKSIZE_LEN;
-	  if((datam=MALLOC(unsigned char,size))==NULL) memory_error();
+	  if((datam=MALLOC(uint8_w,size))==NULL) memory_error();
 	  sizem=get_merge_data(datam,datat,&sizet,ptrs,&size);
 #if DEBUG1>5
 	  fprintf(stderr,"sizem=%ld  ",sizem);
@@ -441,6 +483,7 @@ dttime[0],dttime[1],dttime[2],dttime[3],dttime[4],dttime[5]);
 	  fwrite(datat,1,sizet,fpadd); /* write trg data part */
 	  fwrite(datam,1,sizem,fpadd); /* write add data part */
 	  FREE(datam);
+	  datam = NULL;	  
 	  ptrs+=size;
 	  if(ptrs<datas+datas_num)
 	    bcd_dec(dstime,ptrs+WIN_BLOCKSIZE_LEN);
@@ -448,16 +491,21 @@ dttime[0],dttime[1],dttime[2],dttime[3],dttime[4],dttime[5]);
 	    dstime[0]=-1;
 	} /* if(time_cmp(dstime,dttime,WIN_TIME_LEN)) */
 	FREE(datat);
+	datat = NULL;
       } /* while(fread(&a,1,WIN_BLOCKSIZE_LEN,fptrg)==WIN_BLOCKSIZE_LEN) */
       fclose(fpadd);
-      sprintf(cmdbuf,"cp %s %s",addname,outname);
+      if (snprintf(cmdbuf, sizeof(cmdbuf),
+		   "cp %s %s", addname, outname) >= sizeof(cmdbuf))
+	bfov_error();
       system(cmdbuf);
       unlink(addname);
       fclose(fptrg);
       FREE(datas);
+      datas = NULL;
     } /* while((dir_ent=readdir(dir_ptr))!=NULL) */
     closedir(dir_ptr);
     FREE(data);
+    data = NULL;
   } /* while(fread(&a,1,WIN_BLOCKSIZE_LEN,fp)==WIN_BLOCKSIZE_LEN) (1) */
 
 insert_end:
@@ -496,11 +544,21 @@ main(int argc, char *argv[])
 #endif
 
   /** set names of control files **/
-  sprintf(cnt.junk_used,"%s/%s",cnt.junk_dir,INSERT_TRG_USED);
-  sprintf(cnt.junk_latst,"%s/%s",cnt.junk_dir,WDISKT_LATEST);
-  sprintf(cnt.junk_oldst,"%s/%s",cnt.junk_dir,WDISKT_OLDEST);
-  sprintf(cnt.trg_latst,"%s/%s",cnt.trg_dir,EVENTS_LATEST);
-  sprintf(cnt.trg_oldst,"%s/%s",cnt.trg_dir,EVENTS_OLDEST);
+  if (snprintf(cnt.junk_used, sizeof(cnt.junk_used), "%s/%s",
+	       cnt.junk_dir, INSERT_TRG_USED) >= sizeof(cnt.junk_used))
+    bfov_error();
+  if (snprintf(cnt.junk_latst, sizeof(cnt.junk_latst), "%s/%s",
+	       cnt.junk_dir, WDISKT_LATEST) >= sizeof(cnt.junk_latst))
+    bfov_error();
+  if (snprintf(cnt.junk_oldst, sizeof(cnt.junk_oldst), "%s/%s",
+	       cnt.junk_dir, WDISKT_OLDEST) >= sizeof(cnt.junk_oldst))
+    bfov_error();
+  if (snprintf(cnt.trg_latst, sizeof(cnt.trg_latst), "%s/%s",
+	       cnt.trg_dir, EVENTS_LATEST) >= sizeof(cnt.junk_oldst))
+    bfov_error();
+  if (snprintf(cnt.trg_oldst, sizeof(cnt.trg_oldst), "%s/%s",
+	       cnt.trg_dir, EVENTS_OLDEST) >= sizeof(cnt.junk_oldst))
+    bfov_error();
 #if DEBUG
   fprintf(stderr,"used: %s\nlatst: %s\n",cnt.junk_used,cnt.junk_latst);
   fprintf(stderr,"oldest: %s\n",cnt.junk_oldst);

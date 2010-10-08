@@ -1,4 +1,4 @@
-/* $Id: ecore.c,v 1.4 2003/05/11 15:28:03 urabe Exp $ */
+/* $Id: ecore.c,v 1.5 2010/10/08 16:36:17 uehira Exp $ */
 /* ddr news program "ecore.c"
   "ecore.c" works with "fromtape.c"
   "ecore.c" makes continuously filtered and decimated data
@@ -18,10 +18,13 @@
 #include "config.h"
 #endif
 
-#include  <stdio.h>
-#include  <sys/file.h>
 #include  <sys/types.h>
+#include  <sys/file.h>
 #include  <sys/stat.h>
+
+#include  <stdio.h>
+#include  <stdlib.h>
+#include  <string.h>
 #include  <fcntl.h>
 
 #include "subst_func.h"
@@ -498,9 +501,9 @@ main(argc,argv)
 		//fflush(stdout);
                 }
 	      /* data => channel block by win format 03/03/07 */
-		wptr=wptr+idx;
 		//idx = winform((long *)fildata,wptr,SR,(short)sys_ch); int=>long 03/04/23 
 		idx = winform(fildata,wptr,SR,(short)sys_ch);
+		wptr=wptr+idx;
 		//printf("winform:idx=%d,sys_ch=%x\n",idx,sys_ch);  /* 03/04/23 */
 		//fflush(stdout);
               }
@@ -588,8 +591,8 @@ get_data(dp,buf,idx)
   *dp+=4+g_size;
   sys_ch=gh>>16;
   if(idx==0) return(s_rate);
-
-  //printf("ecore(get_data):idx=%d,b_size=%x, gh=%x, g_size=%x, sys_ch=%x\n",idx,b_size,gh,g_size,sys_ch); /* 03/04/25 */
+  
+  /* printf("ecore(get_data):idx=%d,b_size=%x, gh=%x, g_size=%x, sys_ch=%x\n",idx,b_size,gh,g_size,sys_ch); */ /* 03/04/25 */
   fflush(stdout);
   /* read group */
   buf[0]=mklong(ddp);
@@ -600,7 +603,9 @@ get_data(dp,buf,idx)
       for(i=1;i<s_rate;i+=2)
         {
         buf[i]=buf[i-1]+((*(char *)ddp)>>4);
-        buf[i+1]=buf[i]+(((char)(*(ddp++)<<4))>>4);
+        if (i == s_rate - 1)
+	  break;
+	buf[i+1]=buf[i]+(((char)(*(ddp++)<<4))>>4);
         }
       break;
     case 1:

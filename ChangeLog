@@ -1,7 +1,9 @@
- $Id: ChangeLog,v 1.131.2.25.2.116 2010/10/08 03:03:45 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.117 2010/10/08 03:24:35 uehira Exp $
 
 2010-10-08  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* src/insert_trg.c : 64bit check.
+	* src/insert_raw.c : fixed buffer overrun bugs.
+	                     safe for danging pointer.
 
 2010-10-07  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* src/wform.c : 64bit clean.

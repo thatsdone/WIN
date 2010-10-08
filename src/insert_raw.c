@@ -1,4 +1,4 @@
-/* $Id: insert_raw.c,v 1.6.4.2.2.5 2010/09/21 11:56:58 uehira Exp $ */
+/* $Id: insert_raw.c,v 1.6.4.2.2.6 2010/10/08 03:24:35 uehira Exp $ */
 
 /*
  * Insert sorted timeout data to raw data.
@@ -17,17 +17,19 @@
 /*-
  * 2005/3/12   memory leak bug fixed.
  * 2010/2/2    64bit check
+ * 2010/10/8   fixed buffer overrun bugs. safe for danging pointer.
  */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
 
+#include <sys/types.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <signal.h>
-#include <sys/types.h>
 #include <unistd.h>
 
 #ifdef GC_MEMORY_LEAK_TEST
@@ -35,7 +37,7 @@
 #endif
 
 #include "winlib.h"
-#include "subst_func.h"
+/* #include "subst_func.h" */
 /* #include "win_system.h" */
 
 /* #define DEBUG  0 */
@@ -47,9 +49,9 @@
 #define BUF_SIZE 1024
 
 static const char rcsid[] =
-  "$Id: insert_raw.c,v 1.6.4.2.2.5 2010/09/21 11:56:58 uehira Exp $";
+  "$Id: insert_raw.c,v 1.6.4.2.2.6 2010/10/08 03:24:35 uehira Exp $";
 
-char *progname;
+static char *progname;
 
 struct Cnt_file {
   char  raw_dir[WIN_FILENAME_MAX];    /* raw data directory */
@@ -65,6 +67,7 @@ struct Cnt_file {
 
 /* prototypes */
 static void end_prog(int);
+static void bfov_error(void);
 static void memory_error(void);
 static void print_usage(void);
 static int read_param(char [], struct Cnt_file *);
@@ -78,6 +81,14 @@ end_prog(int status)
 
   printf("*****  %s end  *****\n",progname);
   exit(status);
+}
+
+static void
+bfov_error()
+{
+
+  fprintf(stderr,"'%s': Buffer overrun!\n",progname);
+  end_prog(1);
 }
 
 static void
@@ -168,12 +179,11 @@ do_insert(int tim[], struct Cnt_file *cnt)
   int  wait_flag;
   int  i=0,j;
 
-  if (snprintf(data_name,sizeof(data_name)-1,"%s/%02d%02d%02d%02d.%02d",
-	       cnt->junk_dir,tim[0],tim[1],tim[2],tim[3],tim[4])
-      > sizeof(data_name)-1) {
-    fprintf(stderr, "Error : data is too large!¥ü\n");
-    exit(1);
-  }
+  if (snprintf(data_name, sizeof(data_name),
+	       "%s/%02d%02d%02d%02d.%02d", cnt->junk_dir,
+	       tim[0], tim[1], tim[2], tim[3], tim[4]) >= sizeof(data_name)) 
+    bfov_error();
+
   if((fp=fopen(data_name,"r"))==NULL) return;
 
   while(fread(&a,1,WIN_BLOCKSIZE_LEN,fp)==WIN_BLOCKSIZE_LEN){  /*(1)*/
@@ -185,10 +195,12 @@ do_insert(int tim[], struct Cnt_file *cnt)
     size-=WIN_BLOCKSIZE_LEN;
     if(fread(data+WIN_BLOCKSIZE_LEN,1,size,fp)!=size){
       FREE(data);
+      data = NULL;
       break; /* exit do_insert() in case of timeout file broken */
     }
     if(!bcd_dec(dtime,data+WIN_BLOCKSIZE_LEN)){
       FREE(data);
+      data = NULL;
       continue; /* skip in case of strange time stamp */
     }
     fpt=ftell(fp);
@@ -199,15 +211,18 @@ do_insert(int tim[], struct Cnt_file *cnt)
       size-=WIN_BLOCKSIZE_LEN;
       if(fread(tmpbuf+WIN_BLOCKSIZE_LEN,1,size,fp)!=size){
 	FREE(tmpbuf); FREE(data);
+	tmpbuf = data = NULL;
 	goto insert_end; /* exit do_insert() in case of timeout file broken */
       }
       if(!bcd_dec(dtime_tmp,tmpbuf+WIN_BLOCKSIZE_LEN)){
 	FREE(tmpbuf);
+	tmpbuf = NULL;
 	continue; /* skip in case of strange time stamp */
       }
       /* if next minutes, exit this loop */
       if(time_cmp(dtime,dtime_tmp,5)){
 	FREE(tmpbuf);
+	tmpbuf = NULL;
 	fseek(fp,fpt,0);
 	break;
       }
@@ -221,12 +236,14 @@ do_insert(int tim[], struct Cnt_file *cnt)
       data_num_save=data_num;
       fpt=ftell(fp);
       FREE(tmpbuf);
+      tmpbuf = NULL;
     } /* while(fread(&a,1,WIN_BLOCKSIZE_LEN,fp)==WIN_BLOCKSIZE_LEN) (2) */
 
     /* compare with oldest raw data */
     rmemo5(cnt->raw_oldst,tim_raw_oldest);
     if(time_cmp(dtime,tim_raw_oldest,5)<0){
       FREE(data);
+      data = NULL;
       continue;  /* skip data which is older than OLDEST */
     }
     /* compare with latest raw data */
@@ -259,9 +276,13 @@ do_insert(int tim[], struct Cnt_file *cnt)
       }
     } while(wait_flag);
 
-    sprintf(outname,"%s/%02d%02d%02d%02d.%02d",cnt->raw_dir,
-	    dtime[0],dtime[1],dtime[2],dtime[3],dtime[4]);
-    sprintf(addname,"%s/%s.%d.%d",cnt->tmp_dir,TMP_ADD_NAME,i,getpid());
+    if (snprintf(outname, sizeof(outname), "%s/%02d%02d%02d%02d.%02d",
+		 cnt->raw_dir, dtime[0],
+		 dtime[1], dtime[2], dtime[3], dtime[4]) >= sizeof(outname))
+      bfov_error();
+    if (snprintf(addname, sizeof(addname), "%s/%s.%d.%d",
+		 cnt->tmp_dir, TMP_ADD_NAME,i,getpid()) >= sizeof(addname))
+      bfov_error();
 #if DEBUG
     fprintf(stderr,"outname:%s  addname:%s\n",outname,addname);
     fflush(stderr);
@@ -284,11 +305,13 @@ do_insert(int tim[], struct Cnt_file *cnt)
 	}
 	if(fread(datar,1,sizer,fpraw)!=sizer){
 	  FREE(datar);
+	  datar = NULL;
 	  fwrite(ptrd,1,data_num-(WIN_bs)(ptrd-data),fpadd);
 	  break; /* exit loop in case of raw file broken */
 	}
 	if(!bcd_dec(drtime,datar)){
 	  FREE(datar);
+	  datar = NULL;
 	  continue; /* skip in case of strange time stamp in raw file */
 	}
 	/* output only raw data, if time stamp differ */
@@ -311,6 +334,7 @@ do_insert(int tim[], struct Cnt_file *cnt)
 	  fwrite(datar,1,sizer,fpadd); /* write raw data part */
 	  fwrite(datam,1,sizem,fpadd); /* write add data part */
 	  FREE(datam);
+	  datam = NULL;
 	  ptrd+=size;
 	  if(ptrd<data+data_num)
 	    bcd_dec(dtime,ptrd+WIN_BLOCKSIZE_LEN);
@@ -323,15 +347,19 @@ do_insert(int tim[], struct Cnt_file *cnt)
 #endif
 	} /* if(time_cmp(dtime,drtime,6)) */
 	FREE(datar);
+	datar = NULL;
       } /* while(fread(&a,1,WIN_BLOCKSIZE_LEN,fpraw)==WIN_BLOCKSIZE_LEN) */
       fclose(fpraw);
     } /* if((fpraw=fopen(outname,"r"))==NULL) */
 
     fclose(fpadd);
-    sprintf(cmdbuf,"cp %s %s",addname,outname);
+    if (snprintf(cmdbuf, sizeof(cmdbuf),
+		 "cp %s %s", addname, outname) >= sizeof(cmdbuf))
+      bfov_error();
     system(cmdbuf);
     unlink(addname);
     FREE(data);
+    data = NULL;
     i++;
   } /* while(fread(&a,1,WIN_BLOCKSIZE_LEN,fp)==WIN_BLOCKSIZE_LEN) (1) */
 
@@ -371,11 +399,21 @@ main(int argc, char *argv[])
 #endif
 
   /** set names of control files **/
-  sprintf(cnt.junk_used,"%s/%s",cnt.junk_dir,INSERT_RAW_USED);
-  sprintf(cnt.junk_latst,"%s/%s",cnt.junk_dir,WDISKT_LATEST);
-  sprintf(cnt.junk_oldst,"%s/%s",cnt.junk_dir,WDISKT_OLDEST);
-  sprintf(cnt.raw_latst,"%s/%s",cnt.raw_dir,WDISK_LATEST);
-  sprintf(cnt.raw_oldst,"%s/%s",cnt.raw_dir,WDISK_OLDEST);
+  if (snprintf(cnt.junk_used, sizeof(cnt.junk_used), "%s/%s",
+	       cnt.junk_dir, INSERT_RAW_USED) >= sizeof(cnt.junk_used))
+    bfov_error();
+  if (snprintf(cnt.junk_latst, sizeof(cnt.junk_latst), "%s/%s",
+	       cnt.junk_dir, WDISKT_LATEST) >= sizeof(cnt.junk_latst))
+    bfov_error();
+  if (snprintf(cnt.junk_oldst, sizeof(cnt.junk_oldst), "%s/%s",
+	       cnt.junk_dir,WDISKT_OLDEST) >= sizeof(cnt.junk_oldst))
+    bfov_error();
+  if (snprintf(cnt.raw_latst, sizeof(cnt.raw_latst), "%s/%s",
+	       cnt.raw_dir, WDISK_LATEST) >= sizeof(cnt.raw_latst))
+    bfov_error();
+  if (snprintf(cnt.raw_oldst, sizeof(cnt.raw_oldst), "%s/%s",
+	       cnt.raw_dir, WDISK_OLDEST) >= sizeof(cnt.raw_oldst))
+    bfov_error();
 #if DEBUG
   fprintf(stderr,"used: %s\nlatst: %s\n",cnt.junk_used,cnt.junk_latst);
   fprintf(stderr,"oldest: %s\n",cnt.junk_oldst);

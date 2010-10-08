@@ -1,4 +1,7 @@
- $Id: ChangeLog,v 1.131.2.25.2.118 2010/10/08 06:53:29 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.119 2010/10/08 16:42:10 uehira Exp $
+
+2010-10-09  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/ecore.c : 64bit clean? & fixed bugs.
 
 2010-10-08  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* src/cormeisei.c : 64bit check? & fixed bugs.

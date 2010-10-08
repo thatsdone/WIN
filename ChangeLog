@@ -1,6 +1,7 @@
- $Id: ChangeLog,v 1.131.2.25.2.117 2010/10/08 03:24:35 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.118 2010/10/08 06:53:29 uehira Exp $
 
 2010-10-08  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/cormeisei.c : 64bit check? & fixed bugs.
 	* src/insert_trg.c : 64bit check.
 	* src/insert_raw.c : fixed buffer overrun bugs.
 	                     safe for danging pointer.

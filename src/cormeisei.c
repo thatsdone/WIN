@@ -1,4 +1,4 @@
-/* $Id: cormeisei.c,v 1.6.4.5.2.7 2010/09/29 06:23:48 uehira Exp $ */
+/* $Id: cormeisei.c,v 1.6.4.5.2.8 2010/10/08 06:53:30 uehira Exp $ */
 /* "cormeisei.c"    June'97 Ide changed from*/
 /* "raw_raw.c"      3/4/96 urabe */
 /*                  revised on 5/20/96 */
@@ -19,6 +19,7 @@
 /*                  2002.5.31 MAX_SEC_SIZE 500000 -> 1000000 */
 /*                  2005.2.20 added fclose() in read_chfile() */
 /*                  2007.1.15 MAX_SEC_SIZE 1000000 -> 5000000 */
+/*                  2010.10.8 64bit check? & fixed bugs. (Uehira) */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -32,6 +33,8 @@
 #include <signal.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
+#include <errno.h>
 
 #if TIME_WITH_SYS_TIME
 #include <sys/time.h>
@@ -44,9 +47,6 @@
 #endif  /* !HAVE_SYS_TIME_H */
 #endif  /* !TIME_WITH_SYS_TIME */
 
-#include <unistd.h>
-#include <errno.h>
-
 #include "winlib.h"
 
 /* #define DEBUG     0 */
@@ -58,6 +58,10 @@
 #define MAX_SEC_SIZE  5000000  /* max size of one sec data in bytes */
 #endif
 
+#if CH_TOTAL > 32767
+#error CH_TOTAL must be less than 32768
+#endif
+
 #define XPM       30
 #define YPM       30
 #define IAH       26
@@ -67,16 +71,27 @@
 #define IBL       27
 #define TDLYL     1.35
 
-short ch_tableh[WIN_CHMAX], ch_tablel[WIN_CHMAX];
-char *progname,*logfile,chfile[256];
-int n_chh, ch_orderh[CH_TOTAL], n_chl, ch_orderl[CH_TOTAL];
+static const char rcsid[] =
+  "$Id: cormeisei.c,v 1.6.4.5.2.8 2010/10/08 06:53:30 uehira Exp $";
+
+static short ch_tableh[WIN_CHMAX], ch_tablel[WIN_CHMAX];
+static char *chfile;
+static int n_chh, ch_orderh[CH_TOTAL], n_chl, ch_orderl[CH_TOTAL];
+
+char *progname,*logfile;
 int syslog_mode=0, exit_status=0;
 
+/* prototypes */
+static void read_chfile(void);
+int main(int, char *[]);
+
+static void
 read_chfile()
 {
 FILE *fp;
 int i,jh,jl,k,sp;
 char tbuf[256];
+
   if((fp=fopen(chfile,"r"))!=NULL) {
 #if DEBUG
     fprintf(stderr,"ch_file=%s\n",chfile);
@@ -86,11 +101,11 @@ char tbuf[256];
     for(i=0;i<WIN_CHMAX;i++) ch_tableh[i]=(-1);
     for(i=0;i<WIN_CHMAX;i++) ch_tablel[i]=(-1);
     i=jh=jl=0;
-    while(fgets(tbuf,256,fp)) {
+    while(fgets(tbuf,sizeof(tbuf),fp)) {
       if(*tbuf=='#') continue;
       sscanf(tbuf,"%x %d",&k,&sp);
       k&=0xffff;
-      if(ch_tableh[k]<0 && sp == 100){
+      if((ch_tableh[k] < 0) && (sp == 100) && (jh < CH_TOTAL)){
 #if DEBUG
       fprintf(stderr,"100Hz %04X",k);
 #endif
@@ -98,7 +113,7 @@ char tbuf[256];
         ch_orderh[jh]=k;
         jh++;
       }
-      if(ch_tablel[k]<0 && sp == 20){
+      if((ch_tablel[k] < 0) && (sp == 20) && (jl < CH_TOTAL)){
 #if DEBUG
       fprintf(stderr,"20Hz %04X",k);
 #endif
@@ -108,7 +123,7 @@ char tbuf[256];
       }
     }
 #if DEBUG
-    fprintf(stderr,"\n",k);
+    fprintf(stderr,"\n");
 #endif
     n_chh=jh;
     n_chl=jl;
@@ -127,23 +142,25 @@ char tbuf[256];
   signal(SIGHUP,(void *)read_chfile);
 }
 
-main(argc,argv)
-int argc;
-char *argv[];
+int
+main(int argc, char *argv[])
 {
   struct Shm  *shr,*shm;
   key_t rawkey,monkey;
   /* int shmid_raw,shmid_mon; */
-  unsigned long uni;
+  uint32_w uni;  /* 64bit ok */
   /* char tb[100]; */
-  unsigned char *ptr,*ptw,*ptr_lim,*ptr_save;
-  static unsigned char dbuf[12][MAX_SEC_SIZE],ch_flagh[12][CH_TOTAL],
+  uint8_w *ptr,*ptw,*ptr_lim,*ptr_save;
+  static uint8_w dbuf[12][MAX_SEC_SIZE],ch_flagh[12][CH_TOTAL],
     ch_flagl[12][CH_TOTAL];
-  int i,k,size,size_shm,itdl,itdh,ich;
-  uint32_w sr;
+  int i,k,itdl,itdh,ich;
+  uint32_w  size;
+  size_t  size_shm;
+  WIN_sr  sr;
   uint16_w ch;
-  unsigned long c_save;
-  int gs,gh,wf;
+  unsigned long c_save;  /* 64bit ok */
+  int wf;
+  uint32_w  gs;
   int iah=IAH,ibh=IBH;
   int ial=IAL,ibl=IBL;
   int idb01=0,idb02=0,idb03=0,idb04=0,idb05=0,idb06=0;
@@ -191,10 +208,12 @@ char *argv[];
      -1.7613769e-001, 2.9050579e-001, -3.6852992e-001, 3.5318485e-001,
      -1.7382806e-001, -2.4879237e-001, 1.0000000e+000};
 
-  if(progname=strrchr(argv[0],'/')) progname++;
+  if((progname=strrchr(argv[0],'/')) != NULL) progname++;
   else progname=argv[0];
   if(argc<5)
     {
+    WIN_version();
+    fprintf(stderr, "%s\n", rcsid);
     fprintf(stderr,
       " usage : '%s [in_key] [out_key] [shm_size(KB)] [ch_file] ([log file])'\n",
       progname);
@@ -203,7 +222,7 @@ char *argv[];
   rawkey=atol(argv[1]);
   monkey=atol(argv[2]);
   size_shm=atol(argv[3])*1000;
-  strcpy(chfile,argv[4]);
+  chfile=argv[4];
   if(argc>5) logfile=argv[5];
   else logfile=NULL;
     
@@ -279,7 +298,7 @@ reset:
     ptr+=4;
 #if DEBUG1
     for(i=0;i<6;i++) fprintf(stderr,"%02X",ptr[i]);
-    fprintf(stderr," : %d R wf=%d um=%d\n",size,wf,idb01);
+    fprintf(stderr," : %u R wf=%d um=%d\n",size,wf,idb01);
 #endif
   /* make output data */
     ptw=shm->d+shm->p;
@@ -401,15 +420,15 @@ reset:
     idx10=idx11;
     idx11=idx12;
     idx12=i;
-    if((uni=ptw-(shm->d+shm->p))>10) {
-      uni=ptw-(shm->d+shm->p);
+    if((uni=(uint32_w)(ptw-(shm->d+shm->p)))>10) {
+      /* uni=(uint32_w)(ptw-(shm->d+shm->p)); */
       shm->d[shm->p  ]=uni>>24; /* size (H) */
       shm->d[shm->p+1]=uni>>16;
       shm->d[shm->p+2]=uni>>8;
       shm->d[shm->p+3]=uni;     /* size (L) */
 #if DEBUG1
       for(i=0;i<6;i++)fprintf(stderr,"%02X",shm->d[shm->p+4+i]);
-      fprintf(stderr," : %d M um=%d\n",uni,idb01);
+      fprintf(stderr," : %u M um=%d\n",uni,idb01);
 #endif
       shm->r=shm->p;
       if(ptw>shm->d+shm->pl) ptw=shm->d;
@@ -449,29 +468,30 @@ reset:
     j=0;
 #endif
     do {   /* loop for ch's */
-      gh=mkuint4(ptr);
-      ch=(gh>>16)&0xffff;
-      sr=gh&0xfff;
+      /* gh=mkuint4(ptr); */
+      /* ch=(gh>>16)&0xffff; */
+      /* sr=gh&0xfff; */
+      gs = win_get_chhdr(ptr, &ch, &sr);
       if((ich=ch_tableh[ch])>=0 && sr==100){
-        gs=win2fix(ptr,dath[idx12][ich],&ch,&sr);
+        (void)win2fix(ptr,dath[idx12][ich],&ch,&sr);
         ch_flagh[iddx12][ich]=1;
 #if DEBUG
         fprintf(stderr,"+");
 #endif
       } else if((ich=ch_tablel[ch])>=0 && sr==20){
-        gs=win2fix(ptr,datl[idx12][ich],&ch,&sr);
+        (void)win2fix(ptr,datl[idx12][ich],&ch,&sr);
         ch_flagl[iddx12][ich]=1;
 #if DEBUG
         fprintf(stderr,"+");
 #endif
       } else {
-        if((gh>>12)&0xf) gs=((gh>>12)&0xf)*(sr-1)+8;
-        else gs=(sr>>1)+8;
+        /* if((gh>>12)&0xf) gs=((gh>>12)&0xf)*(sr-1)+8; */
+        /* else gs=(sr>>1)+8; */
         for(i=0;i<gs;i++) dbuf[iddx12][idb12+i]=ptr[i];
         idb12+=gs;
       }
 #if DEBUG
-      fprintf(stderr,"%d ",gs);
+      fprintf(stderr,"%u ",gs);
 #endif
       ptr+=gs;
 #if DEBUG1

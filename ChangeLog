@@ -1,4 +1,8 @@
- $Id: ChangeLog,v 1.113.2.51 2010/10/08 16:18:03 uehira Exp $
+ $Id: ChangeLog,v 1.113.2.52 2010/10/11 09:15:09 uehira Exp $
+
+2010-10-11  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 1.2.3 released.
+	* src/elist.c : fixed bugs.
 
 2010-10-09  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* Version 1.2.2 released.

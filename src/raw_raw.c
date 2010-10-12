@@ -1,4 +1,4 @@
-/* $Id: raw_raw.c,v 1.9.4.3.2.9 2010/10/12 13:59:05 uehira Exp $ */
+/* $Id: raw_raw.c,v 1.9.4.3.2.10 2010/10/12 15:32:07 uehira Exp $ */
 
 /* "raw_raw.c"    97.8.5 urabe */
 /*                  modified from raw_100.c */
@@ -13,19 +13,24 @@
 /* 2002.5.2 i<1000 -> 1000000 */
 /* 2005.2.20 added fclose() in read_chfile() */
 /* 2005.3.7  daemon mode (Uehira) */
+/* 2010.10.12 64bit (Uehira) */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
 
-#include <stdio.h>
-#include <signal.h>
-#include <stdlib.h>
-#include <string.h>
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <sys/stat.h>
+
+#include <stdio.h>
+#include <signal.h>
+#include <stdlib.h>
+#include <string.h>
+#include <errno.h>
+#include <syslog.h>
+#include <unistd.h>
 
 #if TIME_WITH_SYS_TIME
 #include <sys/time.h>
@@ -38,29 +43,36 @@
 #endif  /* !HAVE_SYS_TIME_H */
 #endif  /* !TIME_WITH_SYS_TIME */
 
-#include <sys/types.h>
-#include <errno.h>
-#include <syslog.h>
-#include <unistd.h>
-
 #include "daemon_mode.h"
 #include "winlib.h"
 
 /* #define DEBUG       0 */
 #define BELL        0
 
-unsigned char ch_table[WIN_CHMAX];
-char *progname,*logfile,chfile[254];
-int n_ch,negate_channel;
-int  daemon_mode, syslog_mode;
-int  exit_status;
+static const char rcsid[] =
+  "$Id: raw_raw.c,v 1.9.4.3.2.10 2010/10/12 15:32:07 uehira Exp $";
 
+static uint8_w ch_table[WIN_CHMAX];
+static char *chfile;
+static int n_ch,negate_channel;
+static int daemon_mode;
+
+char *progname,*logfile;
+int  syslog_mode, exit_status;
+
+/* prototypes */
+static void read_chfile(void);
+static void usage(void);
+int main(int, char *[]);
+
+static void
 read_chfile()
   {
   FILE *fp;
   int i,j,k;
   char tbuf[1024];
-  if(*chfile)
+
+  if(chfile!=NULL)
     {
     if((fp=fopen(chfile,"r"))!=NULL)
       {
@@ -70,7 +82,7 @@ read_chfile()
       if(negate_channel) for(i=0;i<WIN_CHMAX;i++) ch_table[i]=1;
       else for(i=0;i<WIN_CHMAX;i++) ch_table[i]=0;
       i=j=0;
-      while(fgets(tbuf,1024,fp))
+      while(fgets(tbuf,sizeof(tbuf),fp))
         {
         if(*tbuf=='#' || sscanf(tbuf,"%x",&k)<0) continue;
         k&=0xffff;
@@ -99,8 +111,8 @@ read_chfile()
       fprintf(stderr,"\n");
 #endif
       n_ch=j;
-      if(negate_channel) sprintf(tbuf,"-%d channels",n_ch);
-      else sprintf(tbuf,"%d channels",n_ch);
+      if(negate_channel) snprintf(tbuf,sizeof(tbuf),"-%d channels",n_ch);
+      else snprintf(tbuf,sizeof(tbuf),"%d channels",n_ch);
       write_log(tbuf);
       fclose(fp);
       }
@@ -109,7 +121,7 @@ read_chfile()
 #if DEBUG
       fprintf(stderr,"ch_file '%s' not open\n",chfile);
 #endif
-      sprintf(tbuf,"channel list file '%s' not open",chfile);
+      snprintf(tbuf,sizeof(tbuf),"channel list file '%s' not open",chfile);
       write_log(tbuf);
       write_log("end");
       exit(1);
@@ -124,23 +136,41 @@ read_chfile()
   signal(SIGHUP,(void *)read_chfile);
   }
 
-main(argc,argv)
-  int argc;
-  char *argv[];
+static void
+usage()
+{
+
+  WIN_version();
+  fprintf(stderr, "%s\n", rcsid);
+  if(daemon_mode)
+    fprintf(stderr,
+	    " usage : '%s (-gB) [in_key] [out_key] [shm_size(KB)] \\\n\
+                  (-/[ch_file]/-[ch_file] ([log file]))'\n",progname);
+  else
+    fprintf(stderr," usage : '%s (-gBD) [in_key] [out_key] [shm_size(KB)] \\\n\
+                  (-/[ch_file]/-[ch_file] ([log file]))'\n",progname);
+}
+
+int
+main(int argc, char *argv[])
   {
   struct Shm  *shr,*shm;
   key_t rawkey,monkey;
   /* int shmid_raw,shmid_mon; */
-  unsigned long uni;
+  uint32_w uni;
   char tb[256];
-  unsigned char *ptr,*ptw,*ptr_lim,*ptr_save;
-  int sr,i,size,size_shm,tow,c,shift45,eobsize_in,eobsize_out,pl_out,
+  uint8_w *ptr,*ptw,*ptr_lim,*ptr_save;
+  int i,tow,c,shift45,eobsize_in,eobsize_out,
     eobsize_in_count,size2;
-  unsigned long c_save;
-  unsigned short ch;
-  int gs,gh;
-  extern int optind;
-  extern char *optarg;
+  WIN_sr  sr;
+  size_t  size_shm, pl_out;
+  uint32_w  size;
+  unsigned long c_save;  /* 64bit ok */
+  WIN_ch ch;
+  uint32_w gs;
+  int ss;
+  /* extern int optind; */
+  /* extern char *optarg; */
 
   shift45=0;
   if((progname=strrchr(argv[0],'/')) != NULL) progname++;
@@ -149,13 +179,6 @@ main(argc,argv)
   daemon_mode = syslog_mode = 0;
   exit_status = EXIT_SUCCESS;
   if(strcmp(progname,"raw_rawd")==0) daemon_mode=1;
-
-  if(strcmp(progname,"raw_rawd")==0)
-    sprintf(tb," usage : '%s (-gB) [in_key] [out_key] [shm_size(KB)] \\\n\
-                  (-/[ch_file]/-[ch_file] ([log file]))'",progname);
-  else
-    sprintf(tb," usage : '%s (-gBD) [in_key] [out_key] [shm_size(KB)] \\\n\
-                  (-/[ch_file]/-[ch_file] ([log file]))'",progname);
 
   eobsize_out=eobsize_in=0;
   while((c=getopt(argc,argv,"gBD"))!=-1)
@@ -173,35 +196,35 @@ main(argc,argv)
         break;
       default:
         fprintf(stderr," option -%c unknown\n",c);
-        fprintf(stderr,"%s\n",tb);
+	usage();
         exit(1);
       }
     }
   optind--;
   if(argc<4+optind)
     {
-    fprintf(stderr,"%s\n",tb);
+    usage();
     exit(1);
     }
 
   rawkey=atol(argv[1+optind]);
   monkey=atol(argv[2+optind]);
-  size_shm=atol(argv[3+optind])*1000;
+  size_shm=(size_t)atol(argv[3+optind])*1000;
   logfile=NULL;
-  *chfile=0;
+  chfile=NULL;
   if(argc>4+optind)
     {
-    if(strcmp("-",argv[4+optind])==0) *chfile=0;
+    if(strcmp("-",argv[4+optind])==0) chfile=NULL;
     else
       {
       if(argv[4+optind][0]=='-')
         {
-        strcpy(chfile,argv[4+optind]+1);
+        chfile=argv[4+optind]+1;
         negate_channel=1;
         }
       else
         {
-        strcpy(chfile,argv[4+optind]);
+	chfile=argv[4+optind];
         negate_channel=0;
         }
       }
@@ -248,7 +271,7 @@ main(argc,argv)
 
   if(shift45)
     {
-    sprintf(tb,"shift 1Hz data by 4 bits right for GTA-45");
+    snprintf(tb,sizeof(tb),"shift 1Hz data by 4 bits right for GTA-45");
     write_log(tb);
     }
 
@@ -264,7 +287,8 @@ reset:
   if(mkuint4(ptr+size-4)==size) eobsize_in=1;
   else eobsize_in=0;
   eobsize_in_count=eobsize_in;
-  sprintf(tb,"eobsize_in=%d, eobsize_out=%d",eobsize_in,eobsize_out);
+  snprintf(tb,sizeof(tb),
+	   "eobsize_in=%d, eobsize_out=%d",eobsize_in,eobsize_out);
   write_log(tb);
 
   for(;;)
@@ -289,13 +313,13 @@ reset:
   /* make output data */
     ptw=shm->d+shm->p;
     ptw+=4;               /* size (4) */
-    uni=time(NULL);
+    uni=(uint32_w)(time(NULL)-TIME_OFFSET);
     i=uni-mkuint4(ptr);
     if(i>=0 && i<1440)   /* with tow */
       {
       if(tow!=1)
         {
-        sprintf(tb,"with TOW (diff=%ds)",i);
+	snprintf(tb,sizeof(tb),"with TOW (diff=%ds)",i);
         write_log(tb);
         if(tow==0)
           {
@@ -324,17 +348,19 @@ reset:
 
     do    /* loop for ch's */
       {
-      gh=mkuint4(ptr);
-      ch=(gh>>16)&0xffff;
-      sr=gh&0xfff;
-      if((gh>>12)&0xf) gs=((gh>>12)&0xf)*(sr-1)+8;
-      else gs=(sr>>1)+8;
+      /* gh=mkuint4(ptr); */
+      /* ch=(gh>>16)&0xffff; */
+      /* sr=gh&0xfff; */
+      /* if((gh>>12)&0xf) gs=((gh>>12)&0xf)*(sr-1)+8; */
+      /* else gs=(sr>>1)+8; */
+      gs = win_chheader_info(ptr, &ch, &sr, &ss);
       if(ch_table[ch])
         {
 #if DEBUG
         fprintf(stderr,"%5d",gs);
 #endif
-        if(shift45 && (gh&0xffff)==0x2001)
+        /* if(shift45 && (gh&0xffff)==0x2001) */
+        if(shift45 && sr==1 && ss==2)
           {
           i=mkuint4(ptr+4)>>4;
           ptr[4]=i>>24;
@@ -351,7 +377,7 @@ reset:
     else i=10;
     if((ptw-(shm->d+shm->p))>i)
       {
-      uni=ptw-(shm->d+shm->p);
+      uni=(uint32_w)(ptw-(shm->d+shm->p));
       if(eobsize_out) uni+=4;
       shm->d[shm->p  ]=uni>>24; /* size (H) */
       shm->d[shm->p+1]=uni>>16;
@@ -367,7 +393,7 @@ reset:
         }
 #if DEBUG
       for(i=0;i<6;i++) printf("%02X",shm->d[shm->p+4+i]);
-      printf(" : %d M\n",uni);
+      printf(" : %u M\n",uni);
 #endif
 
       shm->r=shm->p;

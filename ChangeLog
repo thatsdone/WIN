@@ -1,6 +1,8 @@
- $Id: ChangeLog,v 1.131.2.25.2.127 2010/10/12 13:59:04 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.128 2010/10/12 15:32:07 uehira Exp $
 
 2010-10-12  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/raw_shift.c : 64bit check. eobsize_in(auto).
+	* src/raw_raw.c : 64bit check.
 	* src/order.c, src/raw_raw.c, src/raw_time.c, src/send_raw.c,
 	  src/shmdump.c, src/wdisk.c : fixed eobsize_in counter bug.
 	* src/raw_ch.c : 64bit check. eobsize_in(auto). fixed a bug.

@@ -1,4 +1,4 @@
-/* $Id: elist.c,v 1.9.4.2.2.6 2010/10/12 00:51:12 uehira Exp $ */
+/* $Id: elist.c,v 1.9.4.2.2.7 2010/10/12 00:54:09 uehira Exp $ */
 
 /* program elist.c    2/5/91 - 2/25/91 ,  4/16/92, 4/22/92  urabe */
 /*                      6/10/92, 8/18/92, 10/25/92, 6/8/93, 1/5/94  */
@@ -56,7 +56,7 @@
 #endif
 
 static const char rcsid[] =
-  "$Id: elist.c,v 1.9.4.2.2.6 2010/10/12 00:51:12 uehira Exp $";
+  "$Id: elist.c,v 1.9.4.2.2.7 2010/10/12 00:54:09 uehira Exp $";
 
 /* prototypes */
 static char *getname(char *, int);
@@ -291,7 +291,7 @@ main(int argc,char *argv[])
       {
       if((pk=(struct Pk *)realloc((char *)pk,sizeof(*pk)*(npick_lim+NPICK)))==NULL)
         {
-        fprintf(stderr,"realloc failed !  Npicks=%d (size=%d)\n",
+        fprintf(stderr,"realloc failed !  Npicks=%d (size=%zu)\n",
           npick_lim,sizeof(*pk)*npick_lim);
         break;
         }

@@ -1,6 +1,7 @@
- $Id: ChangeLog,v 1.131.2.25.2.124 2010/10/12 02:40:16 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.125 2010/10/12 06:54:35 uehira Exp $
 
 2010-10-12  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/raw_100.c : 64bit check. eobsize_in(auto).
 	* src/ls8tel_STS.c : 64bit check.
 	* src/ls8tel_STM.c : 64bit check.
 	* src/ls8tel16_win.c : 64bit check.

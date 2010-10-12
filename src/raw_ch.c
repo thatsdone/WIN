@@ -1,10 +1,11 @@
-/* $Id: raw_ch.c,v 1.4 2005/02/20 13:56:17 urabe Exp $ */
+/* $Id: raw_ch.c,v 1.5 2010/10/12 10:23:28 uehira Exp $ */
 /* "raw_ch.c"    99.12.8 urabe */
 /*                  modified from raw_raw.c */
 /*                  byte-order-free */
 /*                  2000.3.21 c_save=shr->c; bug fixed */
 /*                  2000.4.24/2001.11.14 strerror() */
 /*                  2005.2.20 added fclose() in read_chfile() */
+/*                  2010.10.12  fixed bug : input data had been overwritten. */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -34,7 +35,7 @@
 
 #include "subst_func.h"
 
-#define DEBUG       0
+/* #define DEBUG       0 */
 #define BELL        0
 
 int ch_table[65536];
@@ -293,12 +294,12 @@ reset:
 #if DEBUG
         fprintf(stderr,"%04X->%04X(%5d)",ch,ch_table[ch],gs);
 #endif
+        memcpy(ptw,ptr,gs);
         if(ch_table[ch]!=ch)
           {
-          ptr[0]=(ch_table[ch]>>8);        
-          ptr[1]=(ch_table[ch]);        
+          ptw[0]=(ch_table[ch]>>8);        
+          ptw[1]=(ch_table[ch]);        
           }
-        memcpy(ptw,ptr,gs);
         ptw+=gs;
         }
       ptr+=gs;

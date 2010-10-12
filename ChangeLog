@@ -1,4 +1,7 @@
- $Id: ChangeLog,v 1.131.2.25.2.120 2010/10/11 07:48:59 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.121 2010/10/12 00:51:12 uehira Exp $
+
+2010-10-12  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/elist.c : Fixed bug. 64bit check.
 
 2010-10-11  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* src/ecore2.c : 64bit clean?
@@ -10,7 +13,7 @@
 	* src/cormeisei.c : 64bit check? & fixed bugs.
 	* src/insert_trg.c : 64bit check.
 	* src/insert_raw.c : fixed buffer overrun bugs.
-	                     safe for danging pointer.
+	                     safe for dangling pointer.
 
 2010-10-07  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* src/wform.c : 64bit clean.

@@ -1,4 +1,4 @@
-/* $Id: elist.c,v 1.9.4.2.2.5 2010/09/27 07:53:55 uehira Exp $ */
+/* $Id: elist.c,v 1.9.4.2.2.6 2010/10/12 00:51:12 uehira Exp $ */
 
 /* program elist.c    2/5/91 - 2/25/91 ,  4/16/92, 4/22/92  urabe */
 /*                      6/10/92, 8/18/92, 10/25/92, 6/8/93, 1/5/94  */
@@ -9,17 +9,22 @@
 /*      2001.2.9 use "tac", instead of "tail -r", for Linux */
 /*      2001.2.20 increase size of line-buffer to avoid overflow */
 /*      2001.8.22 use pickers name read from #p line if exists */
+/*      2010.10.12 fixed buf. 64bit check. */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
 
+#include <sys/types.h>
+#include <sys/stat.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <sys/types.h>
-#include <sys/stat.h>
+#include <math.h>
+#include <ctype.h>
+#include <pwd.h>
 
 #if HAVE_DIRENT_H  /* opendir(), readdir() */
 # include <dirent.h>
@@ -38,10 +43,6 @@
 # endif
 #endif
 
-#include <math.h>
-#include <ctype.h>
-#include <pwd.h>
-
 #include "winlib.h"
 
 #define   NAMLEN    128
@@ -55,16 +56,25 @@
 #endif
 
 static const char rcsid[] =
-  "$Id: elist.c,v 1.9.4.2.2.5 2010/09/27 07:53:55 uehira Exp $";
+  "$Id: elist.c,v 1.9.4.2.2.6 2010/10/12 00:51:12 uehira Exp $";
 
 /* prototypes */
 static char *getname(char *, int);
+static void bfov_err(void);
 static void print_usage(void);
 int main(int, char *[]);
 /* end of prototypes */
 
-static char 
-*getname(char *name, int id)
+static void
+bfov_err()
+{
+
+  fprintf(stderr, "Buffer overrun!\n");
+  exit(1);
+}
+
+static char *
+getname(char *name, int id)
   {
   static char t[10];
   struct passwd *pwd;
@@ -84,6 +94,7 @@ print_usage()
   {
 
   WIN_version();
+  fprintf(stderr, "%s\n", rcsid);
   fprintf(stderr,"Usage :  elist (-hupon) [pick dir] [pmon.out file] ([data dir] ([request dir] ..))\n");
   fprintf(stderr,"    If 'data dir' is specified, 'NOISE' files will be deleted.\n");
   fprintf(stderr,"    -h  hide 'NOISE only' events\n");
@@ -211,7 +222,9 @@ main(int argc,char *argv[])
     {
     if(*dir_ent->d_name=='.') continue;
     strcpy(pk[i].fname,dir_ent->d_name);
-    sprintf(filename,"%s/%s",pick_dir,dir_ent->d_name);
+    if (snprintf(filename,sizeof(filename),"%s/%s",
+		 pick_dir,dir_ent->d_name) >= sizeof(filename))
+      bfov_err();
 
     if((fp=fopen(filename,"r"))==NULL)
       {
@@ -251,7 +264,7 @@ main(int argc,char *argv[])
         if(fn==5) sscanf(textbuf,"%*s%d",&nstn);
         if(fn>5 && fn<=5+nstn)
           {
-          sscanf(textbuf,"%*s%s",&pk[i].near);
+	  sscanf(textbuf,"%*s%s",pk[i].near);
           str2double(textbuf,39+3,7,&pt);
           str2double(textbuf,46+3,6,&pe);
           str2double(textbuf,52+3,7,&pomc);
@@ -300,7 +313,8 @@ fprintf(fpp,"pickfile          trgfile       picker P   S   M Lat.  Lon.   Dep. 
 fprintf(fpp,"-----------------------------------------------------------------------------\n");
       fclose(fpp);
       }
-    sprintf(tbuf,"sort >> %s",ppfile);
+    if (snprintf(tbuf,sizeof(tbuf),"sort >> %s",ppfile) >= sizeof(tbuf))
+      bfov_err();
     if((fpp=popen(tbuf,"w"))==NULL)
       fprintf(stderr,"pipe '%s' not open.\n",tbuf);    
     else
@@ -323,7 +337,9 @@ fprintf(fpp,"-------------------------------------------------------------------
     exit(1);
     }
 
-  sprintf(tmpfile,"/tmp/elist.%d",getpid());
+  if (snprintf(tmpfile,sizeof(tmpfile),
+	       "/tmp/elist.%d",getpid()) >= sizeof(tmpfile))
+    bfov_err();
   if((fee=fopen(tmpfile,"w"))==NULL)
     {
     fprintf(stderr,"tempfile '%s' not open.\n",tmpfile);
@@ -368,24 +384,44 @@ fprintf(fpp,"-------------------------------------------------------------------
       m=(int)(-2.36+2.85*log10((double)i+3.0*sqrt((double)i))+0.5);
           /* After Tsumura */
 /*printf("i=%d, M=%d\n",i,m);*/
-      sprintf(outbuf,"%02d%02d%02d.%02d%02d%02d",
-        ton[0],ton[1],ton[2],ton[3],ton[4],ton[5]);
-      sprintf(textbuf,"%02d%02d%02d.%02d%02d%02d",
-        ton[0],ton[1],ton[2],ton[3],ton[4],ton[5]);
+      if (snprintf(outbuf,sizeof(outbuf),"%02d%02d%02d.%02d%02d%02d",
+		   ton[0],ton[1],ton[2],
+		   ton[3],ton[4],ton[5]) >= sizeof(outbuf))
+	bfov_err();
+      if (snprintf(textbuf,sizeof(textbuf),"%02d%02d%02d.%02d%02d%02d",
+		   ton[0],ton[1],ton[2],
+		   ton[3],ton[4],ton[5]) >= sizeof(textbuf))
+	bfov_err();
       no_file=0;
       if(*dat_dir)
         {
-        sprintf(name_dat,"%s/%s",dat_dir,textbuf);
-        sprintf(name_ch,"%s.ch",name_dat);
-        sprintf(name_sv,"%s.sv",name_dat);
+	if (snprintf(name_dat,sizeof(name_dat),"%s/%s",
+		     dat_dir,textbuf) >= sizeof(name_dat))
+	  bfov_err();
+        if (snprintf(name_ch,sizeof(name_ch),
+		     "%s.ch",name_dat) >= sizeof(name_ch))
+	  bfov_err();
+        if (snprintf(name_sv,sizeof(name_sv),
+		     "%s.sv",name_dat) >= sizeof(name_sv))
+	  bfov_err();
         if((fa=fopen(name_dat,"r"))==NULL) no_file=1;
         else fclose(fa);
         }
       if(*req_dir[0])
         {
-        sprintf(tbuf,"test \"`ls %s/%s ",req_dir[0],textbuf);
-        if(*req_dir[1]) sprintf(tbuf+strlen(tbuf),"%s/%s ",req_dir[1],textbuf);
-        if(*req_dir[2]) sprintf(tbuf+strlen(tbuf),"%s/%s ",req_dir[2],textbuf);
+	if (snprintf(tbuf,sizeof(tbuf),
+		     "test \"`ls %s/%s ",req_dir[0],textbuf) >= sizeof(tbuf))
+	  bfov_err();
+        if(*req_dir[1])
+	  if (snprintf(tbuf+strlen(tbuf),sizeof(tbuf)-strlen(tbuf),
+		       "%s/%s ",req_dir[1],textbuf)
+	      >= sizeof(tbuf)-strlen(tbuf))
+	    bfov_err();
+        if(*req_dir[2])
+	  if (snprintf(tbuf+strlen(tbuf),sizeof(tbuf)-strlen(tbuf),
+		       "%s/%s ",req_dir[2],textbuf)
+	      >= sizeof(tbuf)-strlen(tbuf))
+	    bfov_err();
         strcat(tbuf,"2>/dev/null`\"");
         re=system(tbuf); /* re==0 if flag file exists */
         }
@@ -412,7 +448,11 @@ fprintf(fpp,"-------------------------------------------------------------------
               }
             outbuf[kkk+kk]=0;
             }
-          else sprintf(outbuf+strlen(outbuf)," %-.5s",ptr);
+          else {
+	    if (snprintf(outbuf+strlen(outbuf),sizeof(outbuf)-strlen(outbuf),
+			 " %-.5s",ptr) >= sizeof(outbuf)-strlen(outbuf))
+	      bfov_err();
+	  }
           if(strlen(ptr)<5)
             {
             for(kk=0;kk<5-strlen(ptr);kk++) strcat(outbuf," ");
@@ -424,7 +464,9 @@ fprintf(fpp,"-------------------------------------------------------------------
             if(strcmp(pk[i].diagnos,"NOISE")==0 || 
               strcmp(pk[i].diagnos,"noise")==0) noise=1;
             else not_noise=1;
-            sprintf(outbuf+strlen(outbuf),"%s",pk[i].diagnos);
+            if (snprintf(outbuf+strlen(outbuf),sizeof(outbuf)-strlen(outbuf),
+			 "%s",pk[i].diagnos) >= sizeof(outbuf)-strlen(outbuf))
+	      bfov_err();
             for(k=0;k<5-strlen(pk[i].diagnos);k++) strcat(outbuf," ");
             }
           else
@@ -455,7 +497,9 @@ fprintf(fpp,"-------------------------------------------------------------------
         }
       for(i=0;i<m;i++) strcat(outbuf,"*");
       for(i=m;i<7;i++) strcat(outbuf," ");
-      sprintf(outbuf+strlen(outbuf),"  %s %s",group,gbuf);
+      if (snprintf(outbuf+strlen(outbuf),sizeof(outbuf)-strlen(outbuf),
+		   "  %s %s",group,gbuf) >= sizeof(outbuf)-strlen(outbuf))
+	bfov_err();
 /*    if(*dat_dir && no_file==1 && noise==1 && not_noise==0)*/
       if(noise==1 && not_noise==0)
         {
@@ -481,8 +525,15 @@ fprintf(fpp,"-------------------------------------------------------------------
     fprintf(fee," date   time                       M      triggered\n");
     fprintf(fee,"---------------------------------------------------\n");
     fclose(fee);
-    if(reverse) sprintf(tbuf,"%s %s >> %s",TAIL,tmpfile,eefile);
-    else sprintf(tbuf,"cat %s >> %s",tmpfile,eefile);
+    if(reverse) {
+      if (snprintf(tbuf,sizeof(tbuf),
+		   "%s %s >> %s",TAIL,tmpfile,eefile) >= sizeof(tbuf))
+	bfov_err();
+    } else {
+      if (snprintf(tbuf,sizeof(tbuf),
+		   "cat %s >> %s",tmpfile,eefile) >= sizeof(tbuf))
+	bfov_err();
+    }
     system(tbuf);
     }
   else
@@ -492,8 +543,13 @@ fprintf(fpp,"-------------------------------------------------------------------
     printf(" date   time                       M      triggered\n");
     printf("---------------------------------------------------\n");
     fflush(stdout);
-    if(reverse) sprintf(tbuf,"%s %s",TAIL,tmpfile);
-    else sprintf(tbuf,"cat %s",tmpfile);
+    if(reverse) {
+      if (snprintf(tbuf,sizeof(tbuf),"%s %s",TAIL,tmpfile) >= sizeof(tbuf))
+	bfov_err();
+    } else {
+      if (snprintf(tbuf,sizeof(tbuf),"cat %s",tmpfile) >= sizeof(tbuf))
+	bfov_err();
+    }
     system(tbuf);
     }
   unlink(tmpfile);

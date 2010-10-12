@@ -1,4 +1,4 @@
-/* $Id: file_older.c,v 1.3.8.1 2010/10/12 01:16:07 uehira Exp $ */
+/* $Id: file_older.c,v 1.3.8.2 2010/10/12 01:17:33 uehira Exp $ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -14,7 +14,7 @@
 #include "subst_func.h"
 
 static const char rcsid[] =
-  "$Id: file_older.c,v 1.3.8.1 2010/10/12 01:16:07 uehira Exp $";
+  "$Id: file_older.c,v 1.3.8.2 2010/10/12 01:17:33 uehira Exp $";
 
 /*
 	echo [file2] | file_older [file1]
@@ -23,6 +23,10 @@ static const char rcsid[] =
 		if file2 is older than file1, returns 0, otherwise 1.
 		file_older prints name of older file
 */
+
+/* prototype */
+int main(int, char *[]);
+
 int
 main(int argc, char *argv[])
 	{

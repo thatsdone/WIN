@@ -1,4 +1,4 @@
-/* $Id: raw_100.c,v 1.5.4.3.2.9 2010/10/12 06:54:35 uehira Exp $ */
+/* $Id: raw_100.c,v 1.5.4.3.2.10 2010/10/12 13:38:30 uehira Exp $ */
 /* "raw_100.c"    97.6.23 - 6.30 urabe */
 /*                  modified from raw_raw.c */
 /*                  97.8.4 bug fixed (output empty block) */
@@ -45,7 +45,7 @@
 #define SR        100
 
 static const char rcsid[] =
-  "$Id: raw_100.c,v 1.5.4.3.2.9 2010/10/12 06:54:35 uehira Exp $";
+  "$Id: raw_100.c,v 1.5.4.3.2.10 2010/10/12 13:38:30 uehira Exp $";
 
 static uint8_w ch_table[WIN_CHMAX];
 static char chfile[256];
@@ -241,19 +241,12 @@ reset:
     {
     size=mkuint4(ptr_save=ptr);
     if (mkuint4(ptr+size-4) == size) {
-      eobsize_in_count++;
-      if (eobsize_in_count == 0)
+      if (++eobsize_in_count == 0)
 	eobsize_in_count = 1;
     } else
       eobsize_in_count=0;
-    if(eobsize_in && eobsize_in_count==0) {
-      write_log("reset1");
-      goto reset;
-    }
-    if(!eobsize_in && eobsize_in_count>3) {
-      write_log("reset2");
-      goto reset;
-    }
+    if(eobsize_in && eobsize_in_count==0) goto reset;
+    if(!eobsize_in && eobsize_in_count>3) goto reset;
     ptr_lim=ptr+size;
     if(eobsize_in)
       ptr_lim -= 4;

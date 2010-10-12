@@ -1,14 +1,20 @@
-/* $Id: file_older.c,v 1.3 2002/01/13 06:57:50 uehira Exp $ */
+/* $Id: file_older.c,v 1.3.8.1 2010/10/12 01:16:07 uehira Exp $ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
 
-#include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 #include "subst_func.h"
+
+static const char rcsid[] =
+  "$Id: file_older.c,v 1.3.8.1 2010/10/12 01:16:07 uehira Exp $";
 
 /*
 	echo [file2] | file_older [file1]
@@ -17,13 +23,13 @@
 		if file2 is older than file1, returns 0, otherwise 1.
 		file_older prints name of older file
 */
-main(argc,argv)
-	int argc;
-	char *argv[];
+int
+main(int argc, char *argv[])
 	{
 	time_t time1,time2;
 	char path1[100],path2[100];
 	struct stat buf;
+
 	if(argc<2)
 		{
 		scanf("%s%s",path2,path1);

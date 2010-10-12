@@ -1,4 +1,4 @@
-/* $Id: raw_raw.c,v 1.9.4.3.2.8 2010/09/29 06:23:48 uehira Exp $ */
+/* $Id: raw_raw.c,v 1.9.4.3.2.9 2010/10/12 13:59:05 uehira Exp $ */
 
 /* "raw_raw.c"    97.8.5 urabe */
 /*                  modified from raw_100.c */
@@ -270,7 +270,9 @@ reset:
   for(;;)
     {
     size=mkuint4(ptr_save=ptr);
-    if(size==mkuint4(ptr+size-4)) eobsize_in_count++;
+    if(size==mkuint4(ptr+size-4)) {
+      if (++eobsize_in_count == 0) eobsize_in_count = 1;
+    }
     else eobsize_in_count=0;
     if(eobsize_in && eobsize_in_count==0) goto reset;
     if(!eobsize_in && eobsize_in_count>3) goto reset;

@@ -1,4 +1,4 @@
-/* $Id: send_raw.c,v 1.24.2.4.2.16 2010/09/29 16:06:35 uehira Exp $ */
+/* $Id: send_raw.c,v 1.24.2.4.2.17 2010/10/12 13:59:05 uehira Exp $ */
 /*
     program "send_raw/send_mon.c"   1/24/94 - 1/25/94,5/25/94 urabe
                                     6/15/94 - 6/16/94
@@ -102,7 +102,7 @@
 #define REQ_TIMO  10   /* timeout (sec) for request */
 
 static const char  rcsid[] =
-   "$Id: send_raw.c,v 1.24.2.4.2.16 2010/09/29 16:06:35 uehira Exp $";
+   "$Id: send_raw.c,v 1.24.2.4.2.17 2010/10/12 13:59:05 uehira Exp $";
 
 static int sock,raw,tow,all,n_ch,negate_channel,mtu,nbuf,slptime,
   no_resend;
@@ -759,7 +759,9 @@ reset:
 
     size=mkuint4(ptr_save=ptr=shm->d+shp);
 
-    if(size==mkuint4(shm->d+shp+size-4)) eobsize_count++;
+    if(size==mkuint4(shm->d+shp+size-4)) {
+      if (++eobsize_count == 0) eobsize_count = 1;
+    }
     else eobsize_count=0;
     if(eobsize && eobsize_count==0) goto reset;
     if(!eobsize && eobsize_count>3) goto reset;

@@ -1,4 +1,4 @@
-/* $Id: wdisk.c,v 1.17.2.8.2.9 2010/09/29 06:23:49 uehira Exp $ */
+/* $Id: wdisk.c,v 1.17.2.8.2.10 2010/10/12 13:59:05 uehira Exp $ */
 /*
   program "wdisk.c"   4/16/93-5/13/93,7/2/93,7/5/94  urabe
                       1/6/95 bug in adj_time fixed (tm[0]--)
@@ -107,7 +107,7 @@
 #define   NAMELEN  1025
 
 static const char rcsid[] =
-  "$Id: wdisk.c,v 1.17.2.8.2.9 2010/09/29 06:23:49 uehira Exp $";
+  "$Id: wdisk.c,v 1.17.2.8.2.10 2010/10/12 13:59:05 uehira Exp $";
 
 char *progname,*logfile;
 int  daemon_mode, syslog_mode, exit_status;
@@ -511,7 +511,9 @@ main(int argc, char *argv[])
         }
 
         size=mkuint4(ptr_save=shm->d+shp);
-        if(size==mkuint4(ptr_save+size-4)) eobsize_count++;
+        if(size==mkuint4(ptr_save+size-4)) {
+	  if (++eobsize_count == 0) eobsize_count = 1;
+	}
         else eobsize_count=0;
         if(eobsize && eobsize_count==0) goto reset;
         if(!eobsize && eobsize_count>3) goto reset;

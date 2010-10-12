@@ -1,4 +1,4 @@
-/* $Id: shmdump.c,v 1.21.4.6.2.15 2010/09/29 06:23:49 uehira Exp $ */
+/* $Id: shmdump.c,v 1.21.4.6.2.16 2010/10/12 13:59:05 uehira Exp $ */
 
 /*  program "shmdump.c" 6/14/94 urabe */
 /*  revised 5/29/96 */
@@ -72,7 +72,7 @@ struct Filter
 };
 
 static const char rcsid[] =
-  "$Id: shmdump.c,v 1.21.4.6.2.15 2010/09/29 06:23:49 uehira Exp $";
+  "$Id: shmdump.c,v 1.21.4.6.2.16 2010/10/12 13:59:05 uehira Exp $";
 
 static char *progname,outfile[256];
 static int win;
@@ -505,7 +505,9 @@ reset:
         }
       else if(i<0) goto reset;
 
-      if(size_in==mkuint4(shm_in->d+shp_in+size_in-4)) eobsize_count++;
+      if(size_in==mkuint4(shm_in->d+shp_in+size_in-4)) {
+	if (++eobsize_count == 0) eobsize_count = 1;
+      }
       else eobsize_count=0;
       if(eobsize && eobsize_count==0) goto reset;
       if(!eobsize && eobsize_count>3) goto reset;

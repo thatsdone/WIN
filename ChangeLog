@@ -1,6 +1,8 @@
- $Id: ChangeLog,v 1.131.2.25.2.126 2010/10/12 13:38:30 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.127 2010/10/12 13:59:04 uehira Exp $
 
 2010-10-12  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/order.c, src/raw_raw.c, src/raw_time.c, src/send_raw.c,
+	  src/shmdump.c, src/wdisk.c : fixed eobsize_in counter bug.
 	* src/raw_ch.c : 64bit check. eobsize_in(auto). fixed a bug.
 	* src/raw_100.c : 64bit check. eobsize_in(auto).
 	* src/ls8tel_STS.c : 64bit check.
@@ -9,6 +11,7 @@
 	* src/ls8tel16_raw.c : 64bit check.
 	* src/elist.c : Fixed bug. 64bit check.
 	* src/file_older.c : ANSI C
+	* Version 2.1.10 released.
 
 2010-10-11  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* src/ecore2.c : 64bit clean?

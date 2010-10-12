@@ -1,4 +1,4 @@
-/* $Id: ls8tel_STM.c,v 1.3.2.1.2.2 2010/09/21 11:56:58 uehira Exp $ */
+/* $Id: ls8tel_STM.c,v 1.3.2.1.2.3 2010/10/12 02:40:16 uehira Exp $ */
 
 /*
  * Copyright (c) 2002 -
@@ -24,7 +24,7 @@
 
 static char  *progname;
 static const char  rcsid[] =
-   "$Id: ls8tel_STM.c,v 1.3.2.1.2.2 2010/09/21 11:56:58 uehira Exp $";
+   "$Id: ls8tel_STM.c,v 1.3.2.1.2.3 2010/10/12 02:40:16 uehira Exp $";
 
 int main(int, char *[]);
 
@@ -91,4 +91,6 @@ main(int argc, char *argv[])
     else
       (void)printf("\n");
   }
+
+  exit(0);
 }

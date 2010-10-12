@@ -1,4 +1,4 @@
-/* $Id: ls8tel16_raw.c,v 1.3.2.2.2.10 2010/10/12 01:40:29 uehira Exp $ */
+/* $Id: ls8tel16_raw.c,v 1.3.2.2.2.11 2010/10/12 02:40:16 uehira Exp $ */
 
 /*
  * Copyright (c) 2005
@@ -13,6 +13,7 @@
  *  Don't input normal winformat data.
  *
  *  2005-06-10  Initial version.
+ *  2010-10-12  64bit clean.
  */
 
 #ifdef HAVE_CONFIG_H
@@ -59,7 +60,7 @@
 /*  #define DEBUG       0 */
 
 static const char rcsid[] =
-  "$Id: ls8tel16_raw.c,v 1.3.2.2.2.10 2010/10/12 01:40:29 uehira Exp $";
+  "$Id: ls8tel16_raw.c,v 1.3.2.2.2.11 2010/10/12 02:40:16 uehira Exp $";
 
 char *progname, *logfile;
 int  syslog_mode, exit_status;

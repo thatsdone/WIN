@@ -1,4 +1,4 @@
-/* $Id: ls8tel16_win.c,v 1.2.4.2.2.2 2010/02/02 10:57:22 uehira Exp $ */
+/* $Id: ls8tel16_win.c,v 1.2.4.2.2.3 2010/10/12 02:40:16 uehira Exp $ */
 
 /*
  * Copyright (c) 2005
@@ -11,6 +11,8 @@
  * Datamark LS-8000SH of LS8TEL16 utility
  *  Convert LS8TEL16 winformat to normal winformat.
  *  Don't input normal winformat data.
+ *
+ *  2010-10-12  64bit clean.
  */
 
 #ifdef HAVE_CONFIG_H
@@ -32,7 +34,7 @@
 /* #include "win_system.h" */
 
 static const char  rcsid[] =
-   "$Id: ls8tel16_win.c,v 1.2.4.2.2.2 2010/02/02 10:57:22 uehira Exp $";
+   "$Id: ls8tel16_win.c,v 1.2.4.2.2.3 2010/10/12 02:40:16 uehira Exp $";
 
 static char  *progname;
 
@@ -45,8 +47,8 @@ main(int argc, char *argv[])
 {
   WIN_bs         wsize;
   uint32_w       dsize, gsize;
-  unsigned char  *dbuf = NULL, *ptr, *ptr_limit;
-  unsigned char  *obuf = NULL, *ptw, *ptw_limit;
+  uint8_w  *dbuf = NULL, *ptr, *ptr_limit;
+  uint8_w  *obuf = NULL, *ptw, *ptw_limit;
   size_t         obuf_size = 0;
   int            dtime[WIN_TIME_LEN];
   WIN_ch         ch;
@@ -80,7 +82,7 @@ main(int argc, char *argv[])
     /* malloc obuf */
     if (obuf_size < (dsize << 3)) {
       obuf_size = (dsize << 3);
-      obuf = (unsigned char *)realloc(obuf, obuf_size);
+      obuf = (uint8_w *)realloc(obuf, obuf_size);
       if (obuf == NULL) {
 	(void)fprintf(stderr, "%s\n", strerror(errno));
 	exit(1);
@@ -131,6 +133,7 @@ static void
 usage(void)
 {
 
+  WIN_version();
   (void)fprintf(stderr, "%s\n", rcsid);
   (void)fprintf(stderr, "Usage : %s < [LS8TEL16 file] > [out_file]\n",
 		progname);

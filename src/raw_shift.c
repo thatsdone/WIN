@@ -1,4 +1,4 @@
-/* $Id: raw_shift.c,v 1.2 2005/02/20 13:56:17 urabe Exp $ */
+/* $Id: raw_shift.c,v 1.3 2010/10/12 15:39:15 uehira Exp $ */
 /* "raw_shift.c"    2002.4.1 - 4.1 urabe */
 /*                  modified from raw_100.c */
 /*                  2005.2.20 added fclose() in read_chfile() */
@@ -347,7 +347,7 @@ main(argc,argv)
 
   if(progname=strrchr(argv[0],'/')) progname++;
   else progname=argv[0];
-  if(argc<4)
+  if(argc<5)
     {
     fprintf(stderr,
       " usage : '%s [in_key] [out_key] [shm_size(KB)] [bits]\\\n",

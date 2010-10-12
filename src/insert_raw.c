@@ -1,4 +1,4 @@
-/* $Id: insert_raw.c,v 1.6.4.2.2.6 2010/10/08 03:24:35 uehira Exp $ */
+/* $Id: insert_raw.c,v 1.6.4.2.2.7 2010/10/12 01:40:28 uehira Exp $ */
 
 /*
  * Insert sorted timeout data to raw data.
@@ -17,7 +17,7 @@
 /*-
  * 2005/3/12   memory leak bug fixed.
  * 2010/2/2    64bit check
- * 2010/10/8   fixed buffer overrun bugs. safe for danging pointer.
+ * 2010/10/8   fixed buffer overrun bugs. safe for dangling pointer.
  */
 
 #ifdef HAVE_CONFIG_H
@@ -49,7 +49,7 @@
 #define BUF_SIZE 1024
 
 static const char rcsid[] =
-  "$Id: insert_raw.c,v 1.6.4.2.2.6 2010/10/08 03:24:35 uehira Exp $";
+  "$Id: insert_raw.c,v 1.6.4.2.2.7 2010/10/12 01:40:28 uehira Exp $";
 
 static char *progname;
 

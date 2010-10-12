@@ -1,4 +1,4 @@
-/* $Id: ls8tel16_raw.c,v 1.3.2.2.2.9 2010/09/29 06:23:48 uehira Exp $ */
+/* $Id: ls8tel16_raw.c,v 1.3.2.2.2.10 2010/10/12 01:40:29 uehira Exp $ */
 
 /*
  * Copyright (c) 2005
@@ -59,14 +59,14 @@
 /*  #define DEBUG       0 */
 
 static const char rcsid[] =
-  "$Id: ls8tel16_raw.c,v 1.3.2.2.2.9 2010/09/29 06:23:48 uehira Exp $";
+  "$Id: ls8tel16_raw.c,v 1.3.2.2.2.10 2010/10/12 01:40:29 uehira Exp $";
 
 char *progname, *logfile;
-int  daemon_mode, syslog_mode;
-int  exit_status;
+int  syslog_mode, exit_status;
 
+static int              daemon_mode;
 static char             *chfile;
-static unsigned char	ch_table[WIN_CH_MAX_NUM];
+static uint8_w	        ch_table[WIN_CH_MAX_NUM];
 static int		n_ch, negate_channel;
 
 /* prototypes */
@@ -81,9 +81,9 @@ main(int argc, char *argv[])
   struct Shm      *shr, *shm;
   key_t		  inkey, outkey;
   /* int		  shmid_in, shmid_out; */
-  int             size_shm;
-  unsigned long	  uni;
-  unsigned char   *ptr, *ptw, *ptr_lim, *ptr_save;
+  size_t          size_shm;
+  uint32_w	  uni;
+  uint8_w   *ptr, *ptw, *ptr_lim, *ptr_save;
   unsigned long	  c_save;
   WIN_ch          ch, ch1;
   WIN_sr          sr, sr1;
@@ -120,7 +120,7 @@ main(int argc, char *argv[])
 
   inkey = (key_t)atol(argv[0]);
   outkey = (key_t)atol(argv[1]);
-  size_shm = atol(argv[2]) * 1000;
+  size_shm = (size_t)atol(argv[2]) * 1000;
 
   /* channel file */
   rest = 1;
@@ -214,7 +214,7 @@ reset:
     /* make output data */
     ptw = shm->d + shm->p;
     ptw += 4;			/* size (4) */
-    uni = time(NULL);
+    uni=(uint32_w)(time(NULL) - TIME_OFFSET);
     i = uni - mkuint4(ptr);
     if (i >= 0 && i < 1440) {	/* with tow */
       if (tow != 1) {
@@ -274,8 +274,7 @@ reset:
       i = 14;
     else
       i = 10;
-    if ((uni = ptw - (shm->d + shm->p)) > i) {
-      uni = ptw - (shm->d + shm->p);
+    if ((uni = (uint32_w)(ptw - (shm->d + shm->p))) > i) {
       shm->d[shm->p] = uni >> 24;	/* size (H) */
       shm->d[shm->p + 1] = uni >> 16;
       shm->d[shm->p + 2] = uni >> 8;
@@ -288,7 +287,7 @@ reset:
       else
 	for (i = 0; i < 6; i++)
 	  printf("%02X", shm->d[shm->p + 4 + i]);
-      printf(" : %lu M\n", uni);
+      printf(" : %u M\n", uni);
 #endif
 
       shm->r = shm->p;
@@ -389,6 +388,7 @@ static void
 usage(void)
 {
 
+  WIN_version();
   (void)fprintf(stderr, "%s\n", rcsid);
   (void)fprintf(stderr, "Usage of %s :\n", progname);
   if (daemon_mode) {

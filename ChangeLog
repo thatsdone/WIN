@@ -1,6 +1,7 @@
- $Id: ChangeLog,v 1.131.2.25.2.122 2010/10/12 01:16:07 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.123 2010/10/12 01:40:28 uehira Exp $
 
 2010-10-12  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/ls8tel16_raw.c : 64bit check.
 	* src/elist.c : Fixed bug. 64bit check.
 	* src/file_older.c : ANSI C
 

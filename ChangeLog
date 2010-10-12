@@ -1,4 +1,10 @@
- $Id: ChangeLog,v 1.113.2.52 2010/10/11 09:15:09 uehira Exp $
+ $Id: ChangeLog,v 1.113.2.53 2010/10/12 13:08:55 uehira Exp $
+
+2010-10-12  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 1.2.4 released.
+	* src/raw_ch.c : fixed a bug.
+	* src/order.c, src/raw_raw.c, src/raw_time.c, src/send_raw.c,
+	  src/shmdump.c, src/wdisk.c : fixed eobsize_in counter bug.
 
 2010-10-11  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* Version 1.2.3 released.

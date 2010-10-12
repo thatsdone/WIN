@@ -1,4 +1,4 @@
-/* $Id: raw_raw.c,v 1.10 2008/12/31 08:03:56 uehira Exp $ */
+/* $Id: raw_raw.c,v 1.11 2010/10/12 10:03:14 uehira Exp $ */
 /* "raw_raw.c"    97.8.5 urabe */
 /*                  modified from raw_100.c */
 /*                  98.4.17 FreeBSD */
@@ -331,7 +331,9 @@ reset:
   while(1)
     {
     size=mklong(ptr_save=ptr);
-    if(size==mklong(ptr+size-4)) eobsize_in_count++;
+    if(size==mklong(ptr+size-4)) {
+      if (++eobsize_in_count == 0) eobsize_in_count = 1;
+    }
     else eobsize_in_count=0;
     if(eobsize_in && eobsize_in_count==0) goto reset;
     if(!eobsize_in && eobsize_in_count>3) goto reset;

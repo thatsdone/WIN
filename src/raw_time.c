@@ -1,4 +1,4 @@
-/* $Id: raw_time.c,v 1.4 2005/03/18 14:34:42 uehira Exp $ */
+/* $Id: raw_time.c,v 1.5 2010/10/12 10:03:14 uehira Exp $ */
 
 /* raw_time.c -- online version of wtime(1W) */
 
@@ -53,7 +53,7 @@
 
 
 static char rcsid[] =
-  "$Id: raw_time.c,v 1.4 2005/03/18 14:34:42 uehira Exp $";
+  "$Id: raw_time.c,v 1.5 2010/10/12 10:03:14 uehira Exp $";
 
 char *progname, *logfile;
 int  daemon_mode, syslog_mode;
@@ -212,9 +212,10 @@ main(int argc, char *argv[])
   /***** main loop *****/
   for (;;) {
     sizein = mklong(ptr_save = ptr);
-    if (sizein == mklong(ptr + sizein - WIN_BLOCKSIZE_LEN))
-      eobsize_in_count++;
-    else
+    if (sizein == mklong(ptr + sizein - WIN_BLOCKSIZE_LEN)) {
+      if (++eobsize_in_count == 0)
+	eobsize_in_count = 1;
+    } else
       eobsize_in_count = 0;
 
     if (eobsize_in && eobsize_in_count == 0)

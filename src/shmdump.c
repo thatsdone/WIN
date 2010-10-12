@@ -950,7 +950,9 @@ reset:
         }
       else if(i<0) goto reset;
 
-      if(size_in==mklong(shm_in->d+shp_in+size_in-4)) eobsize_count++;
+      if(size_in==mklong(shm_in->d+shp_in+size_in-4)) {
+	if (++eobsize_count == 0) eobsize_count = 1;
+      }
       else eobsize_count=0;
       if(eobsize && eobsize_count==0) goto reset;
       if(!eobsize && eobsize_count>3) goto reset;

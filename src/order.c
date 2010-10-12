@@ -1,4 +1,4 @@
-/* $Id: order.c,v 1.13 2009/12/18 11:40:04 uehira Exp $ */
+/* $Id: order.c,v 1.14 2010/10/12 10:03:14 uehira Exp $ */
 /*  program "order.c" 1/26/94 - 2/7/94, 6/14/94 urabe */
 /*                              1/6/95 bug in adj_time(tm[0]--) fixed */
 /*                              3/17/95 write_log() */
@@ -48,7 +48,7 @@
 #include "subst_func.h"
 
 #define SWAPL(a) a=(((a)<<24)|((a)<<8)&0xff0000|((a)>>8)&0xff00|((a)>>24)&0xff)
-#define DEBUG     0
+/* #define DEBUG     0 */
 #define DEBUG1    0
 
 #define NAMELEN  1025
@@ -587,7 +587,9 @@ reset:
     t=t_bottom;
 
     do{
-      if(size==mklong(shm_in->d+shp+size-4)) eobsize_in_count++;
+      if(size==mklong(shm_in->d+shp+size-4)) {
+	if (++eobsize_in_count == 0) eobsize_in_count = 1;
+      }
       else eobsize_in_count=0;
       if(eobsize_in && eobsize_in_count==0) goto reset;
       if(!eobsize_in && eobsize_in_count>3) goto reset;

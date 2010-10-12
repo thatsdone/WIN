@@ -1,4 +1,4 @@
-/* $Id: send_raw.c,v 1.26 2008/12/31 08:03:56 uehira Exp $ */
+/* $Id: send_raw.c,v 1.27 2010/10/12 10:03:14 uehira Exp $ */
 /*
     program "send_raw/send_mon.c"   1/24/94 - 1/25/94,5/25/94 urabe
                                     6/15/94 - 6/16/94
@@ -86,7 +86,7 @@
 #include "subst_func.h"
 
 #define DEBUG0      0
-#define DEBUG       0
+/* #define DEBUG       0 */
 #define DEBUG1      0
 #define DEBUG2      0  /* -f */
 #define TEST_RESEND 0
@@ -810,7 +810,9 @@ reset:
 
     size=mklong(ptr_save=ptr=shm->d+shp);
 
-    if(size==mklong(shm->d+shp+size-4)) eobsize_count++;
+    if(size==mklong(shm->d+shp+size-4)) {
+      if (++eobsize_count == 0) eobsize_count = 1;
+    }
     else eobsize_count=0;
     if(eobsize && eobsize_count==0) goto reset;
     if(!eobsize && eobsize_count>3) goto reset;

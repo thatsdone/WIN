@@ -9,6 +9,7 @@
 /*                2002.8.4 fixed bug in advancing SHM pointers */
 /*                2003.4.4 avoid overwrite ch_table[] by memcpy(rbuf) */
 /*                2005.2.20 added fclose() in read_chfile() */
+/*                2010.10.13 64bit check? */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -25,6 +26,7 @@
 #include <string.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <errno.h>
 
 #if TIME_WITH_SYS_TIME
 #include <sys/time.h>
@@ -46,21 +48,35 @@
 #define BELL      0
 #define MAXMESG   2048
 
-extern const int sys_nerr;
-extern const char *const sys_errlist[];
-extern int errno;
+static const char rcsid[] =
+  "$Id: recvts.c,v 1.11.4.4.2.11 2010/10/13 12:18:18 uehira Exp $";
 
-unsigned char rbuf[MAXMESG],ch_table[WIN_CHMAX];
-char tb[256],*progname,*logfile,chfile[256];
-int n_ch,negate_channel;
+/* extern const int sys_nerr; */
+/* extern const char *const sys_errlist[]; */
+/* extern int errno; */
+
+static uint8_w rbuf[MAXMESG],ch_table[WIN_CHMAX];
+static char tb[256], *chfile;
+static int n_ch,negate_channel;
+
+char *progname,*logfile;
 int syslog_mode = 0, exit_status;
 
+/* prototypes */
+static void read_chfile(void);
+static WIN_bs wincpy(uint8_w *, uint8_w *, int32_w);
+static int32_w get_packet(int, uint8_w *);
+static void usage(void);
+int main(int, char *[]);
+
+static void
 read_chfile()
   {
   FILE *fp;
   int i,j,k;
   char tbuf[1024];
-  if(*chfile)
+
+  if(chfile != NULL)
     {
     if((fp=fopen(chfile,"r"))!=NULL)
       {
@@ -70,7 +86,7 @@ read_chfile()
       if(negate_channel) for(i=0;i<WIN_CHMAX;i++) ch_table[i]=1;
       else for(i=0;i<WIN_CHMAX;i++) ch_table[i]=0;
       i=j=0;
-      while(fgets(tbuf,1024,fp))
+      while(fgets(tbuf,sizeof(tbuf),fp))
         {
         if(*tbuf=='#') continue;
         sscanf(tbuf,"%x",&k);
@@ -97,7 +113,7 @@ read_chfile()
         i++;
         }
 #if DEBUG
-      fprintf(stderr,"\n",k);
+      fprintf(stderr,"\n");
 #endif
       n_ch=j;
       if(negate_channel) sprintf(tbuf,"-%d channels",n_ch);
@@ -125,27 +141,30 @@ read_chfile()
   signal(SIGHUP,(void *)read_chfile);
   }
 
-wincpy(ptw,ptr,size)
-  unsigned char *ptw,*ptr;
-  int size;
+static WIN_bs
+wincpy(uint8_w *ptw, uint8_w *ptr, int32_w size)
   {
 #define MAX_SR 500
 #define MAX_SS 4
-  int sr,n,ss;
-  unsigned char *ptr_lim;
-  unsigned short ch;
-  int gs;
-  unsigned long gh;
+  int ss;
+  WIN_bs  n;
+  WIN_sr  sr;
+  uint8_w *ptr_lim;
+  WIN_ch ch;
+  uint32_w gs;
+  /* unsigned long gh; */
+
   ptr_lim=ptr+size;
   n=0;
   do    /* loop for ch's */
     {
-    gh=mkuint4(ptr);
-    ch=(gh>>16)&0xffff;
-    sr=gh&0xfff;
-    ss=(gh>>12)&0xf;
-    if(ss) gs=ss*(sr-1)+8;
-    else gs=(sr>>1)+8;
+    /* gh=mkuint4(ptr); */
+    /* ch=(gh>>16)&0xffff; */
+    /* sr=gh&0xfff; */
+    /* ss=(gh>>12)&0xf; */
+    /* if(ss) gs=ss*(sr-1)+8; */
+    /* else gs=(sr>>1)+8; */
+    gs = win_chheader_info(ptr, &ch, &sr, &ss);
     if(sr>MAX_SR || ss>MAX_SS || ptr+gs>ptr_lim)
       {
 #if DEBUG2
@@ -169,15 +188,17 @@ wincpy(ptw,ptr,size)
     ptr+=gs;
     } while(ptr<ptr_lim);
   return (n);
+#undef MAX_SR
+#undef MAX_SS
   }
 
-get_packet(fd,pbuf)
-  int fd;
-  unsigned char *pbuf;
+static int32_w
+get_packet(int fd, uint8_w *pbuf)
   {
   static int p,len;
-  int psize,plim;
-  static unsigned char buf[4000];
+  int32_w psize,plim;
+  static uint8_w buf[4000];
+
   if(!(p>0 && len>0 && p<len))
     {
     len=read(fd,buf,4000);
@@ -186,7 +207,7 @@ get_packet(fd,pbuf)
 #endif
     p=18;
     }
-  psize=(buf[p]<<8)+buf[p+1];
+  psize=(buf[p]<<8)+buf[p+1];  /* 2-byte length */
   p+=2;
 #if DEBUG3
   printf("  %3d ",psize);
@@ -213,27 +234,36 @@ get_packet(fd,pbuf)
     }
   }
 
-main(argc,argv)
-  int argc;
-  char *argv[];
+static void
+usage()
+{
+
+  WIN_version();
+  fprintf(stderr, "%s\n", rcsid);
+  fprintf(stderr,
+	  " usage : '%s (-m [pre(m)]) (-p [post(m)]) [shm_key] [shm_size(KB)] ([ch file]/- ([log file]))'\n",
+      progname);
+}
+
+int
+main(int argc, char *argv[])
   {
   key_t shm_key;
   /* int shmid; */
-  unsigned long uni;
-  unsigned char *ptr,tm[6],*ptr_size;
-  int i,c,size,n,fd,nn,pre,post;
-  extern int optind;
-  extern char *optarg;
+  uint32_w uni;
+  uint8_w *ptr,tm[6],*ptr_size;
+  int i,c,n,fd,pre,post;
+  WIN_bs nn;
+  size_t  size;
+  /* extern int optind; */
+  /* extern char *optarg; */
   struct Shm  *sh;
   time_t ts;
 
-  if(progname=strrchr(argv[0],'/')) progname++;
+  if((progname=strrchr(argv[0],'/')) != NULL) progname++;
   else progname=argv[0];
   exit_status = EXIT_SUCCESS;
 
-  sprintf(tb,
-" usage : '%s (-m [pre(m)]) (-p [post(m)]) [shm_key] [shm_size(KB)] ([ch file]/- ([log file]))'\n",
-      progname);
   pre=post=0;
   while((c=getopt(argc,argv,"m:p:"))!=-1)
     {
@@ -248,41 +278,43 @@ main(argc,argv)
         break;
       default:
         fprintf(stderr," option -%c unknown\n",c);
-        fprintf(stderr,"%s\n",tb);
+        usage();
         exit(1);
       }
     }
   optind--;
   if(argc<3+optind)
     {
-    fprintf(stderr,"%s\n",tb);
+    usage();
     exit(1);
     }
   pre=(-pre*60);
   post*=60;
 
   shm_key=atol(argv[1+optind]);
-  size=atol(argv[2+optind])*1000;
-  *chfile=0;
+  size=(size_t)atol(argv[2+optind])*1000;
+  chfile=NULL;
   logfile=NULL;
   if(argc>3+optind)
     {
-    if(strcmp("-",argv[3+optind])==0) *chfile=0;
+    if(strcmp("-",argv[3+optind])==0) chfile=NULL;
     else
       {
       if(argv[3+optind][0]=='-')
         {
-        strcpy(chfile,argv[3+optind]+1);
+	chfile=argv[3+optind]+1;
         negate_channel=1;
         }
       else
         {
-        strcpy(chfile,argv[3+optind]);
+        chfile=argv[3+optind];
         negate_channel=0;
         }
       }
     }
   if(argc>4+optind) logfile=argv[4+optind];
+
+  if((fd=open("/dev/brhdlc0",0))<0) err_sys("open /dev/brhdlc0");
 
   /* shared memory */
   sh = Shm_create(shm_key, size, "start");
@@ -298,8 +330,6 @@ main(argc,argv)
 
   /* sprintf(tb,"start shm_key=%d id=%d size=%d",shm_key,shmid,size); */
   /* write_log(tb); */
-
-  if((fd=open("/dev/brhdlc0",0))<0) err_sys("open /dev/brhdlc0");
 
   signal(SIGTERM,(void *)end_program);
   signal(SIGINT,(void *)end_program);
@@ -325,18 +355,18 @@ main(argc,argv)
         {
         if((nn=wincpy(ptr,rbuf+7,n-7))>0) sh->c++;
         ptr+=nn;
-        uni=time(NULL);
+        uni=(uint32_w)(time(NULL)-TIME_OFFSET);
         ptr_size[4]=uni>>24;  /* tow (H) */
         ptr_size[5]=uni>>16;
         ptr_size[6]=uni>>8;
         ptr_size[7]=uni;      /* tow (L) */
 #if DEBUG
-        if(nn>0) printf("same:nn=%d ptr=%d sh->p=%d\n",nn,ptr,sh->p);
+        if(nn>0) printf("same:nn=%d ptr=%p sh->p=%d\n",nn,ptr,sh->p);
 #endif
         }
       else /* new time -> close the previous sec block */
         {
-        if((uni=ptr-ptr_size)>14) /* data exist in the previous sec block */
+	  if((uni=(uint32_w)(ptr-ptr_size))>14) /* data exist in the previous sec block */
           {
           ptr_size[0]=uni>>24;  /* size (H) */
           ptr_size[1]=uni>>16;
@@ -376,13 +406,13 @@ main(argc,argv)
           if((nn=wincpy(ptr,rbuf+7,n-7))>0) sh->c++;
           ptr+=nn;
           memcpy(tm,rbuf+1,6);
-          uni=time(NULL);
+          uni=(uint32_w)(time(NULL)-TIME_OFFSET);
           ptr_size[4]=uni>>24;  /* tow (H) */
           ptr_size[5]=uni>>16;
           ptr_size[6]=uni>>8;
           ptr_size[7]=uni;      /* tow (L) */
 #if DEBUG
-          if(nn>0) printf("new:nn=%d ptr=%d sh->p=%d\n",nn,ptr,sh->p);
+          if(nn>0) printf("new:nn=%d ptr=%p sh->p=%d\n",nn,ptr,sh->p);
 #endif
           }
         }

@@ -1,4 +1,4 @@
-/* $Id: winrawreq.c,v 1.1.2.4.2.5 2010/10/07 14:20:47 uehira Exp $ */
+/* $Id: winrawreq.c,v 1.1.2.4.2.6 2010/10/13 12:18:18 uehira Exp $ */
 
 /* winrawreq.c -- raw data request client */
 
@@ -48,7 +48,7 @@
 #define MAXMSG       1025
 
 static const char rcsid[] =
-  "$Id: winrawreq.c,v 1.1.2.4.2.5 2010/10/07 14:20:47 uehira Exp $";
+  "$Id: winrawreq.c,v 1.1.2.4.2.6 2010/10/13 12:18:18 uehira Exp $";
 
 
 char *progname, *logfile;
@@ -814,6 +814,7 @@ static void
 usage(void)
 {
 
+  WIN_version();
   (void)fprintf(stderr, "%s\n", rcsid);
   (void)fprintf(stderr,
 		"Usage : %s [-nrstu] [-o host:port [-b MTU]] srvlist request [logfile]\n",

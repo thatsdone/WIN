@@ -1,4 +1,4 @@
-/* $Id: recvt.c,v 1.29.2.3.2.32 2010/10/04 14:04:11 uehira Exp $ */
+/* $Id: recvt.c,v 1.29.2.3.2.33 2010/10/13 12:18:18 uehira Exp $ */
 /*-
  "recvt.c"      4/10/93 - 6/2/93,7/2/93,1/25/94    urabe
                 2/3/93,5/25/94,6/16/94 
@@ -112,10 +112,10 @@
 #define N_PNOS    62    /* length of packet nos. history >=2 */
 
 static const char rcsid[] =
-  "$Id: recvt.c,v 1.29.2.3.2.32 2010/10/04 14:04:11 uehira Exp $";
+  "$Id: recvt.c,v 1.29.2.3.2.33 2010/10/13 12:18:18 uehira Exp $";
 
 static uint8_w rbuf[MAXMESG],ch_table[WIN_CHMAX];
-static char chfile[N_CHFILE][256];
+static char *chfile[N_CHFILE];
 static int n_ch,negate_channel,hostlist[N_HOST][3],n_host,no_pinfo,n_chfile;
 static int daemon_mode;
 
@@ -163,7 +163,7 @@ read_chfile()
   static time_t ltime,ltime_p;
 
   n_host=0;
-  if(*chfile[0])
+  if(chfile[0] != NULL)
     {
     if((fp=fopen(chfile[0],"r"))!=NULL)
       {
@@ -750,7 +750,11 @@ main(int argc, char *argv[])
         strcpy(interface,optarg);
         break;
       case 'f':   /* channel list file */
-        strcpy(chfile[n_chfile++],optarg);
+	if (n_chfile < N_CHFILE)
+	  chfile[n_chfile++]=optarg;
+	else
+	  fprintf(stderr,
+		  "Num exceeded. Ignore channel list file: %s\n", optarg);
         break;
       case 'g':   /* multicast group (multicast IP address) */
         strcpy(mcastgroup,optarg);
@@ -818,25 +822,25 @@ main(int argc, char *argv[])
   to_port=(uint16_t)atoi(argv[1+optind]);
   shm_key=atol(argv[2+optind]);
   size=(size_t)atol(argv[3+optind])*1000;
-  *chfile[0]=0;
+  chfile[0]=NULL;
   if(argc>4+optind)
     {
-    if(strcmp("-",argv[4+optind])==0) *chfile[0]=0;
+    if(strcmp("-",argv[4+optind])==0) chfile[0]=NULL;
     else
       {
       if(argv[4+optind][0]=='-')
         {
-        strcpy(chfile[0],argv[4+optind]+1);
+        chfile[0]=argv[4+optind]+1;
         negate_channel=1;
         }
       else
         {
-        strcpy(chfile[0],argv[4+optind]);
+        chfile[0]=argv[4+optind];
         negate_channel=0;
         }
       }
     }
-  if(n_chfile==1 && (*chfile[0])==0) n_chfile=0;
+  if(n_chfile==1 && (chfile[0])==NULL) n_chfile=0;
 
   if(argc>5+optind) logfile=argv[5+optind];
   else

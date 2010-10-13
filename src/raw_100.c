@@ -1,4 +1,4 @@
-/* $Id: raw_100.c,v 1.5.4.3.2.10 2010/10/12 13:38:30 uehira Exp $ */
+/* $Id: raw_100.c,v 1.5.4.3.2.11 2010/10/13 12:18:17 uehira Exp $ */
 /* "raw_100.c"    97.6.23 - 6.30 urabe */
 /*                  modified from raw_raw.c */
 /*                  97.8.4 bug fixed (output empty block) */
@@ -45,10 +45,10 @@
 #define SR        100
 
 static const char rcsid[] =
-  "$Id: raw_100.c,v 1.5.4.3.2.10 2010/10/12 13:38:30 uehira Exp $";
+  "$Id: raw_100.c,v 1.5.4.3.2.11 2010/10/13 12:18:17 uehira Exp $";
 
 static uint8_w ch_table[WIN_CHMAX];
-static char chfile[256];
+static char *chfile;
 static int n_ch,negate_channel;
 
 char *progname,*logfile;
@@ -65,7 +65,7 @@ read_chfile()
   int i,j,k;
   char tbuf[1024];
 
-  if(*chfile)
+  if(chfile != NULL)
     {
     if((fp=fopen(chfile,"r"))!=NULL)
       {
@@ -167,29 +167,29 @@ main(int argc, char *argv[])
   rawkey=atol(argv[1]);
   monkey=atol(argv[2]);
   size_shm=(size_t)atol(argv[3])*1000;
-  *chfile=0;
+  chfile=NULL;
   logfile=NULL;
   rest=1;
   eobsize_in = 0;
   exit_status = EXIT_SUCCESS;
   if(argc>4)
     {
-    if(strcmp("-",argv[4])==0) *chfile=0;
+    if(strcmp("-",argv[4])==0) chfile=NULL;
     else
       {
       if(argv[4][0]=='-')
         {
-        strcpy(chfile,argv[4]+1);
+        chfile=argv[4]+1;
         negate_channel=1;
         }
       else if(argv[4][0]=='+')
         {
-        strcpy(chfile,argv[4]+1);
+        chfile=argv[4]+1;
         negate_channel=0;
         }
       else
         {
-        strcpy(chfile,argv[4]);
+        chfile=argv[4];
         rest=negate_channel=0;
         }
       }

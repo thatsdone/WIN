@@ -1,4 +1,4 @@
-/* $Id: recvnmx.c,v 1.16.4.4.2.14 2010/09/30 03:01:12 uehira Exp $ */
+/* $Id: recvnmx.c,v 1.16.4.4.2.15 2010/10/13 12:18:18 uehira Exp $ */
 /* "recvnmx.c"    2001.7.18-19 modified from recvt.c and nmx2raw.c  urabe */
 /*                2001.8.18 */
 /*                2001.10.5 workaround for hangup */
@@ -10,6 +10,7 @@
 /*                2002.7.5  Trident */
 /*                2002.8.9  process re-tx packets properly */
 /*                2005.4.14 NP format */
+/*                2010.10.13 64bit check? */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -78,15 +79,22 @@
 #define BUFSIZE   ((16*NB+MAXSR+1)*4)
 #define MAXCH     1024
 
-char *progname,*logfile,chmapfile[1024];
+static const char rcsid[] =
+  "$Id: recvnmx.c,v 1.16.4.4.2.15 2010/10/13 12:18:18 uehira Exp $";
+
+char *progname,*logfile;
 int  syslog_mode = 0, exit_status;
-struct ip_mreq stMreq;
-unsigned short station,chmap[WIN_CHMAX];
-int use_chmap;
-char *model[32]={"HRD","ORION","RM3","RM4","LYNX","CYGNUS","EUROPA","CARINA",
-    "TimeServer","TRIDENT","JANUS","TAURUS",
-    "012","013","014","015","016","017","018","019",
-    "020","021","022","023","024","025","026","027","028","029","030","031"};
+
+static char chmapfile[1024];
+static struct ip_mreq stMreq;
+static uint16_w station,chmap[WIN_CHMAX];
+static int use_chmap;
+static char *model[32]=
+  {"HRD","ORION","RM3","RM4","LYNX","CYGNUS","EUROPA","CARINA",
+   "TimeServer","TRIDENT","JANUS","TAURUS",
+   "012","013","014","015","016","017","018","019",
+   "020","021","022","023","024","025","026","027","028","029","030","031"};
+
 struct Nmx_Packet {
   int npformat;
   int ptype;
@@ -106,29 +114,43 @@ struct Nmx_Packet {
   int last;
   struct {
     int bundle_type;
-    union {char c[16];char cc[4][4];unsigned char uc[4][4];} u;
+    union {int8_w c[16];int8_w cc[4][4];uint8_w uc[4][4];} u;
   } b[NB];
   struct {
     unsigned int bundle_type;
-    union {char c[60];char cc[15][4];unsigned char uc[15][4];} u;
+    union {int8_w c[60];int8_w cc[15][4];uint8_w uc[15][4];} u;
   } b2[NB];
   int crc_calculated;
   int crc_given;
   int bpp;
 };
 
-int
-write_shm(int ch,int sr,time_t tim,int *buf,struct Shm *shm,int eobsize,int pl)
+/* prototypes */
+static WIN_bs write_shm(int, int, time_t, int32_w *, struct Shm *,
+			int, size_t);
+static int parse_one_packet_np(uint8_w *, ssize_t, struct Nmx_Packet *);
+static int parse_one_packet(uint8_w *, ssize_t, struct Nmx_Packet *);
+static int bundle2fix_np(struct Nmx_Packet *, int32_w *);
+static int bundle2fix(struct Nmx_Packet *, int32_w *);
+static int proc_soh(struct Nmx_Packet *);
+static int ch2idx(int32_w *[], struct Nmx_Packet *, int);
+static void read_ch_map(void);
+static void usage(void);
+int main(int, char *[]);
+
+static WIN_bs
+write_shm(int ch, int sr, time_t tim, int32_w *buf, struct Shm *shm,
+	  int eobsize, size_t pl)
 {
   struct tm *t;
-  unsigned char *ptw,*ptw_save,*ptw_save2;
-  unsigned long uni;
+  uint8_w *ptw,*ptw_save,*ptw_save2;
+  uint32_w uni;
   int i;
 
   if(ch<0) return (0);
   ptw=ptw_save=shm->d+shm->p;
   ptw+=4;          /* size (4) */
-  uni=time(NULL);
+  uni=(uint32_w)(time(NULL)-TIME_OFFSET);
   *ptw++=uni>>24;  /* tow (H) */
   *ptw++=uni>>16;
   *ptw++=uni>>8;
@@ -140,7 +162,7 @@ write_shm(int ch,int sr,time_t tim,int *buf,struct Shm *shm,int eobsize,int pl)
   *ptw++=d2b[t->tm_hour];
   *ptw++=d2b[t->tm_min];
   *ptw++=d2b[t->tm_sec];
-  ptw+=winform((int32_w *)buf,ptw,sr,ch);
+  ptw+=winform(buf,ptw,(WIN_sr)sr,(WIN_ch)ch);
   ptw_save2=ptw;
   if(eobsize) ptw+=4;
   uni=ptw-ptw_save;
@@ -167,15 +189,17 @@ write_shm(int ch,int sr,time_t tim,int *buf,struct Shm *shm,int eobsize,int pl)
   return (uni);
 }
 
-parse_one_packet_np(unsigned char *inbuf,int len,struct Nmx_Packet *pk)
+static int
+parse_one_packet_np(uint8_w *inbuf, ssize_t len, struct Nmx_Packet *pk)
 {
 #define SIGNATURE_NP 0x4E50
 #define TAURUS 0xE80B
-  unsigned short signature,size;
-  unsigned short mdl;
-  unsigned char *ptr;
+  uint16_w signature,size;
+  uint16_w mdl;
+  uint8_w *ptr;
   unsigned long long t,thigh,tlow;
   int x1,x2,x3,x5,ch,i,j;
+
   ptr=inbuf;
   signature=mkuint2(ptr);
   if(signature!=SIGNATURE_NP) return (-1);
@@ -247,13 +271,15 @@ model,pk->serno,pk->ch,size,pk->ns,pk->sr,pk->bpp,pk->first,pk->last);
   return (pk->bpp);
 }
 
-parse_one_packet(unsigned char *inbuf,int len,struct Nmx_Packet *pk)
+static int
+parse_one_packet(uint8_w *inbuf, ssize_t len, struct Nmx_Packet *pk)
 {
 #define SIGNATURE 0x7ABCDE0F
 #define MES_DATA 1
   int srtab[32]={0,1,2,5,10,20,40,50,80,100,125,200,250,500,1000,25,120};
-  unsigned char *ptr,b,*ptr_lim;
+  uint8_w *ptr,b,*ptr_lim;
   int nb,cnt,sr,i,oldest,signature,mestype,length;
+
   nb=cnt=0;
   i=0;
   signature=inbuf[i+3]+(inbuf[i+2]<<8)+(inbuf[i+1]<<16)+(inbuf[i]<<24); 
@@ -309,12 +335,15 @@ parse_one_packet(unsigned char *inbuf,int len,struct Nmx_Packet *pk)
   return (pk->bpp=nb-1);
 }
 
-int bundle2fix_np(struct Nmx_Packet *pk,int *dbuf)
+static int
+bundle2fix_np(struct Nmx_Packet *pk, int32_w *dbuf)
   {
 #define GPB 15 /* groups/bundle */
-  int n,i,j,k,difsize[GPB],data,flag,diff0;
-  long diff4;
-  short diff2;
+  int n,i,j,k,difsize[GPB],flag;
+  int32_w  data, diff0; 
+  int32_w diff4;
+  int16_w diff2;
+
   n=flag=0;
 /* don't use the first difference (why?) -> diff0 */
   dbuf[n++]=data=pk->first;
@@ -353,11 +382,14 @@ int bundle2fix_np(struct Nmx_Packet *pk,int *dbuf)
   return (n);
   }
 
-int bundle2fix(struct Nmx_Packet *pk,int *dbuf)
+static int
+bundle2fix(struct Nmx_Packet *pk, int32_w *dbuf)
 {
-  int n,i,j,k,difsize[4],data;
-  long diff4;
-  short diff2;
+  int n,i,j,k,difsize[4];
+  int32_w data;
+  int32_w diff4;
+  int16_w diff2;
+
   n=0;
   dbuf[n++]=data=pk->first;
   for(k=0;k<pk->bpp;k++){
@@ -385,13 +417,15 @@ int bundle2fix(struct Nmx_Packet *pk,int *dbuf)
   return (n);
 }
 
+static int
 proc_soh(struct Nmx_Packet *pk)
 {
   struct tm *t;
   time_t tim;
-  unsigned char tb[256];
-  union {unsigned char c[4];float f;} u;
+  char tb[256];
+  union {uint8_w c[4];float f;} u;
   int i,j;
+
   sprintf(tb,"%02X %02d/%02d/%02d %02d:%02d:%02d %s#%d p#%d",
     pk->ptype,pk->t->tm_year%100,pk->t->tm_mon+1,pk->t->tm_mday,pk->t->tm_hour,
     pk->t->tm_min,pk->t->tm_sec,model[pk->model],pk->serno,pk->seq);
@@ -423,12 +457,12 @@ proc_soh(struct Nmx_Packet *pk)
       case 39:
       case 7:
         for(j=4;j<16;j+=2)
-          sprintf(tb+strlen(tb),"%02X%02X ",(unsigned char)pk->b[i].u.c[j],
-            (unsigned char)pk->b[i].u.c[j+1]);
+          sprintf(tb+strlen(tb),"%02X%02X ",(uint8_w)pk->b[i].u.c[j],
+            (uint8_w)pk->b[i].u.c[j+1]);
         break;
       default:
         for(j=4;j<16;j++)
-          sprintf(tb+strlen(tb),"%02X",(unsigned char)pk->b[i].u.c[j]);
+          sprintf(tb+strlen(tb),"%02X",(uint8_w)pk->b[i].u.c[j]);
     }
 #if SOH
     write_log(tb);
@@ -437,7 +471,8 @@ proc_soh(struct Nmx_Packet *pk)
   return (0);
 }
 
-ch2idx(int *rbuf[],struct Nmx_Packet *pk,int winch)
+static int
+ch2idx(int32_w *rbuf[], struct Nmx_Packet *pk, int winch)
 {
   char tb[256];
   static int m[MAXCH],s[MAXCH],c[MAXCH],n_idx;
@@ -451,7 +486,7 @@ ch2idx(int *rbuf[],struct Nmx_Packet *pk,int winch)
       fprintf(stderr,"n_idx=%d at limit.\n",n_idx);
       return (-1);
       }
-    if((rbuf[i]=(int *)malloc(BUFSIZE))==NULL){
+    if((rbuf[i]=(int32_w *)malloc(BUFSIZE))==NULL){
       fprintf(stderr,"malloc failed. n_idx=%d\n",n_idx);
       return (-1);
       }
@@ -472,11 +507,13 @@ ch2idx(int *rbuf[],struct Nmx_Packet *pk,int winch)
   return (i);
 }
 
+static void
 read_ch_map()  
 {
   char tb[256],mdl[256];
   FILE *fp;
   int i,k,serno,ch;
+
   /* read channel map file */
   if(*chmapfile){
     if((fp=fopen(chmapfile,"r"))!=NULL) {
@@ -516,20 +553,34 @@ read_ch_map()
   signal(SIGHUP,(void *)read_ch_map);
 }
 
-main(argc,argv)
-  int argc;
-  char *argv[];
+static void
+usage()
+{
+
+  WIN_version();
+  (void)fprintf(stderr, "%s\n", rcsid);
+  fprintf(stderr,
+	  " usage : '%s (-c [ch_map]) (-i [interface]) (-m [mcast_group]) (-vBn) \\\n\
+         (-d [fragdir]) [port] [shm_key] [shm_size(KB)] ([log file])'\n",progname);
+}
+
+int
+main(int argc, char *argv[])
   {
   char tb[256];
   DIR *dir_ptr;
   FILE *fp;
-  unsigned char pbuf[MAXMESG];
-  int *rbuf[MAXCH],idx,seq_rbuf[MAXCH],fsize_rbuf[MAXCH];
+  uint8_w pbuf[MAXMESG];
+  int idx,seq_rbuf[MAXCH],fsize_rbuf[MAXCH];
+  int32_w *rbuf[MAXCH];
   time_t tim_rbuf[MAXCH];
   /* unsigned long uni; */
   struct Nmx_Packet pk;
-  int i,j,k,size_shm,n,c,nn,verbose,rbuf_ptr,sock,fromlen,winch,
-    eobsize,pl,nr;
+  int i,j,k,c,verbose,rbuf_ptr,sock,winch,eobsize,nr;
+  socklen_t  fromlen;
+  WIN_bs nn;
+  size_t  size_shm, pl;
+  ssize_t  n;
   key_t shm_key;
   /* int shmid; */
   struct Shm *shm;
@@ -540,16 +591,13 @@ main(argc,argv)
 #define MCASTGROUP  "224.0.1.1"
 #define TO_PORT   32000
   struct sockaddr_in from_addr;
-  unsigned short to_port;
-  extern int optind;
-  extern char *optarg;
+  uint16_t to_port;
+  /* extern int optind; */
+  /* extern char *optarg; */
 
-  if(progname=strrchr(argv[0],'/')) progname++;
+  if((progname=strrchr(argv[0],'/')) != NULL) progname++;
   else progname=argv[0];
   exit_status = EXIT_SUCCESS;
-  sprintf(tb,
-    " usage : '%s (-c [ch_map]) (-i [interface]) (-m [mcast_group]) (-vBn) \\\n\
-         (-d [fragdir]) [port] [shm_key] [shm_size(KB)] ([log file])'",progname);
 
   station=verbose=use_chmap=eobsize=pk.npformat=0;
   *interface=(*mcastgroup)=(*chmapfile)=(*fragdir)=0;
@@ -580,14 +628,14 @@ main(argc,argv)
         break;
       default:
         fprintf(stderr," option -%c unknown\n",c);
-        fprintf(stderr,"%s\n",tb);
+        usage();
         exit(1);
       }
     }
   optind--;
   if(argc<4+optind)
     {
-    fprintf(stderr,"%s\n",tb);
+    usage();
     exit(1);
     }
   to_port=atoi(argv[1+optind]);

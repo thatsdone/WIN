@@ -1,4 +1,4 @@
-/* $Id: send_raw.c,v 1.24.2.4.2.17 2010/10/12 13:59:05 uehira Exp $ */
+/* $Id: send_raw.c,v 1.24.2.4.2.18 2010/10/13 12:18:18 uehira Exp $ */
 /*
     program "send_raw/send_mon.c"   1/24/94 - 1/25/94,5/25/94 urabe
                                     6/15/94 - 6/16/94
@@ -102,7 +102,7 @@
 #define REQ_TIMO  10   /* timeout (sec) for request */
 
 static const char  rcsid[] =
-   "$Id: send_raw.c,v 1.24.2.4.2.17 2010/10/12 13:59:05 uehira Exp $";
+   "$Id: send_raw.c,v 1.24.2.4.2.18 2010/10/13 12:18:18 uehira Exp $";
 
 static int sock,raw,tow,all,n_ch,negate_channel,mtu,nbuf,slptime,
   no_resend;
@@ -111,7 +111,7 @@ static unsigned long  n_packets, n_bytes;   /* 64bit ok */
 static uint8_w *sbuf[NBUF],ch_table[WIN_CHMAX],rbuf[RSIZE],ch_req[WIN_CHMAX],
   ch_req_tmp[WIN_CHMAX],pbuf[RSIZE];
 /* sbuf[NBUF][mtu-28+8] ; +8 for overrun by "size" and "time" */
-static char chfile[1024],file_req[1024];
+static char *chfile,file_req[1024];
 
 char *progname,*logfile;
 int  daemon_mode, syslog_mode, exit_status;
@@ -150,7 +150,7 @@ read_chfile()
   static time_t ltime,ltime_p;
   time_t  j_timt, k_timt;
 
-  if(*chfile)
+  if(chfile != NULL)
     {
     if((fp=fopen(chfile,"r"))!=NULL)
       {
@@ -525,32 +525,20 @@ main(int argc, char *argv[])
       exit(1);
     }
   host_port=(uint16_t)atoi(argv[3+optind]);
-  *chfile=0;
+  chfile=NULL;
   if(argc>4+optind)
     {
-    if(strcmp("-",argv[4+optind])==0) *chfile=0;
+    if(strcmp("-",argv[4+optind])==0) chfile=NULL;
     else
       {
       if(argv[4+optind][0]=='-')
         {
-        /* strcpy(chfile,argv[4+optind]+1); */
-        if (snprintf(chfile, sizeof(chfile), "%s", argv[4+optind]+1)
-	    >= sizeof(chfile))
-	  {
-	    fprintf(stderr, "Buffer overrun.\n");
-	    exit(1);
-	  }
+        chfile=argv[4+optind]+1;
         negate_channel=1;
         }
       else
         {
-	/* strcpy(chfile,argv[4+optind]); */
-        if (snprintf(chfile, sizeof(chfile), "%s", argv[4+optind])
-	    >= sizeof(chfile))
-	  {
-	    fprintf(stderr, "Buffer overrun.\n");
-	    exit(1);
-	  }
+	chfile=argv[4+optind];
         negate_channel=0;
         }
       }

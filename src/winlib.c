@@ -1,4 +1,4 @@
-/* $Id: winlib.c,v 1.1.2.4.2.29 2010/10/04 08:23:07 uehira Exp $ */
+/* $Id: winlib.c,v 1.1.2.4.2.30 2010/10/13 12:18:18 uehira Exp $ */
 
 /*-
  * winlib.c  (Uehira Kenji)
@@ -877,9 +877,9 @@ WIN_version(void)
 {
 
 #if defined __LP64__
-  (void)printf("%s package Version %s [64-bit]\n", PACKAGE, VERSION);
+  (void)fprintf(stderr, "%s package Version %s [64-bit]\n", PACKAGE, VERSION);
 #else
-  (void)printf("%s package Version %s [32-bit]\n", PACKAGE, VERSION);
+  (void)fprintf(stderr, "%s package Version %s [32-bit]\n", PACKAGE, VERSION);
 #endif
 }
 

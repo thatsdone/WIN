@@ -1,4 +1,4 @@
-/* $Id: order.c,v 1.11.4.5.2.10 2010/10/12 13:59:04 uehira Exp $ */
+/* $Id: order.c,v 1.11.4.5.2.11 2010/10/13 12:18:17 uehira Exp $ */
 /*  program "order.c" 1/26/94 - 2/7/94, 6/14/94 urabe */
 /*                              1/6/95 bug in adj_time(tm[0]--) fixed */
 /*                              3/17/95 write_log() */
@@ -57,7 +57,7 @@
 #define NAMELEN  1025
 
 static const char rcsid[] =
-  "$Id: order.c,v 1.11.4.5.2.10 2010/10/12 13:59:04 uehira Exp $";
+  "$Id: order.c,v 1.11.4.5.2.11 2010/10/13 12:18:17 uehira Exp $";
 
 char *progname,*logfile;
 int  daemon_mode, syslog_mode, exit_status;
@@ -346,7 +346,7 @@ reset:
               if(tow<rt-n_sec-1) /* quit loop - TOW too old */
                 {
 #if DEBUG
-                printf("\nend>ptr=%ld size=%d tow=%ld ts=%ld rt=%ld\n",
+                printf("\nend>ptr=%zd size=%u tow=%ld ts=%ld rt=%ld\n",
 		       ptr-shm_in->d,size,tow,ts,rt);
 #endif
                 break;
@@ -354,7 +354,7 @@ reset:
               if(ts==rt-n_sec)
                 {
 #if DEBUG
-                printf("out %ld(%d)>%ld ",
+                printf("out %zd(%u)>%zd ",
 		       ptr-shm_in->d,size-(4+4+6+4),ptw-shm_out->d);
 #endif
                 memcpy(ptw,ptr+(4+4+6),size-(4+4+6+4));

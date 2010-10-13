@@ -1,4 +1,4 @@
-/* $Id: winrawsrv.c,v 1.1.4.6.2.3 2010/10/07 14:20:47 uehira Exp $ */
+/* $Id: winrawsrv.c,v 1.1.4.6.2.4 2010/10/13 12:18:18 uehira Exp $ */
 
 /* winrawsrv.c -- raw data request server */
 
@@ -51,7 +51,7 @@
 #define FNAMEMAX     1024
 
 static const char rcsid[] =
-  "$Id: winrawsrv.c,v 1.1.4.6.2.3 2010/10/07 14:20:47 uehira Exp $";
+  "$Id: winrawsrv.c,v 1.1.4.6.2.4 2010/10/13 12:18:18 uehira Exp $";
 
 char *progname, *logfile;
 int  syslog_mode, exit_status;
@@ -268,6 +268,7 @@ static void
 usage(void)
 {
 
+  WIN_version();
   (void)fprintf(stderr, "%s\n", rcsid);
   (void)fprintf(stderr, "Usage : %s rawdir\n", progname);
   exit(1);

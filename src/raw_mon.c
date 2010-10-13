@@ -1,4 +1,4 @@
-/* $Id: raw_mon.c,v 1.6.4.4.2.10 2010/09/29 06:23:48 uehira Exp $ */
+/* $Id: raw_mon.c,v 1.6.4.4.2.11 2010/10/13 12:18:18 uehira Exp $ */
 /* "raw_mon.c"      7/2/93,6/17/94,6/28/94    urabe */
 /*                  3/17/95 write_log(), 4/17/95 MAX_SR safety */
 /*                  usleep -> sleep */
@@ -55,7 +55,7 @@
 /* #define SR_MON      5 */
 
 static const char rcsid[] =
-  "$Id: raw_mon.c,v 1.6.4.4.2.10 2010/09/29 06:23:48 uehira Exp $";
+  "$Id: raw_mon.c,v 1.6.4.4.2.11 2010/10/13 12:18:18 uehira Exp $";
 
 char *progname,*logfile;
 int  daemon_mode, syslog_mode;
@@ -63,7 +63,7 @@ int  exit_status;
 
 static int32_w buf_raw[MAX_SR],buf_mon[SR_MON][2];
 static uint8_w  ch_table[WIN_CHMAX];
-static char chfile[256];
+static char *chfile;
 static int n_ch,negate_channel;
 
 /* prototypes */
@@ -77,7 +77,7 @@ read_chfile()
   int i,j,k;
   char tbuf[1024];
 
-  if(*chfile)
+  if(chfile!=NULL)
     {
     if((fp=fopen(chfile,"r"))!=NULL)
       {
@@ -178,20 +178,20 @@ main(int argc, char *argv[])
   rawkey=atol(argv[1]);
   monkey=atol(argv[2]);
   size_shm=atol(argv[3])*1000;
-  *chfile=0;
+  chfile=NULL;
   if(argc>4)
     {
-    if(strcmp("-",argv[4])==0) *chfile=0;
+    if(strcmp("-",argv[4])==0) chfile=NULL;
     else
       {
       if(argv[4][0]=='-')
         {
-        strcpy(chfile,argv[4]+1);
+        chfile=argv[4]+1;
         negate_channel=1;
         }
       else
         {
-        strcpy(chfile,argv[4]);
+        chfile=argv[4];
         negate_channel=0;
         }
       }

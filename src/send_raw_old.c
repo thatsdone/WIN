@@ -1,4 +1,4 @@
-/* $Id: send_raw_old.c,v 1.9.4.3.2.10 2010/09/29 16:06:35 uehira Exp $ */
+/* $Id: send_raw_old.c,v 1.9.4.3.2.11 2010/10/13 12:18:18 uehira Exp $ */
 /*
     program "send_raw_old/send_mon_old.c"   1/24/94 - 1/25/94,5/25/94 urabe
                                     6/15/94 - 6/16/94
@@ -58,11 +58,11 @@
 #define BUFNO     128
 
 static const char  rcsid[] =
-   "$Id: send_raw_old.c,v 1.9.4.3.2.10 2010/09/29 16:06:35 uehira Exp $";
+   "$Id: send_raw_old.c,v 1.9.4.3.2.11 2010/10/13 12:18:18 uehira Exp $";
 
 static int sock,raw,mon,tow,psize[BUFNO],n_ch;
 static uint8_w sbuf[BUFNO][MAXMESG],ch_table[WIN_CHMAX],rbuf[MAXMESG];
-static char  chfile[256];
+static char  *chfile;
 
 char *progname,*logfile;
 int  syslog_mode=0, exit_status;
@@ -95,7 +95,7 @@ read_chfile()
   int i,j,k;
   char tbuf[1024];
 
-  if(*chfile)
+  if(chfile != NULL)
     {
     if((fp=fopen(chfile,"r"))!=NULL)
       {
@@ -198,17 +198,9 @@ main(int argc, char *argv[])
       exit(1);
     }
   host_port=(uint16_t)atoi(argv[3]);
-  *chfile=0;
-  if(argc>4)
-    {
-      /* strcpy(chfile,argv[4]); */
-      if (snprintf(chfile, sizeof(chfile), "%s", argv[4]) >= sizeof(chfile))
-	{
-	  fprintf(stderr, "Buffer overrun.\n");
-	  exit(1);
-	}
-    }
-  if(strcmp("-",chfile)==0) *chfile=0;
+  chfile=NULL;
+  if(argc>4)  chfile=argv[4];
+  if(strcmp("-",chfile)==0) chfile=NULL;
   if(argc>5) logfile=argv[5];
   else logfile=NULL;
     

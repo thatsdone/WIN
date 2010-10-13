@@ -1,4 +1,4 @@
-/* $Id: relay.c,v 1.15.4.3.2.9 2010/10/04 06:55:03 uehira Exp $ */
+/* $Id: relay.c,v 1.15.4.3.2.10 2010/10/13 12:18:18 uehira Exp $ */
 /* "relay.c"      5/23/94-5/25/94,6/15/94-6/16/94,6/23/94,3/16/95 urabe */
 /*                3/26/95 check_packet_no; port# */
 /*                5/24/96 added processing of "host table full" */
@@ -77,7 +77,7 @@
 #define N_HOST    100   /* max N of hosts */  
 
 static const char rcsid[] =
-  "$Id: relay.c,v 1.15.4.3.2.9 2010/10/04 06:55:03 uehira Exp $";
+  "$Id: relay.c,v 1.15.4.3.2.10 2010/10/13 12:18:18 uehira Exp $";
 
 static int sock_in,sock_out;   /* socket */
 static uint8_w sbuf[BUFNO][MAXMESG],ch_table[WIN_CHMAX];
@@ -85,7 +85,7 @@ static int negate_channel,hostlist[N_HOST][2],n_host,no_pinfo,
     n_ch;
 static ssize_t  psize[BUFNO];
 static int  daemon_mode;
-static char host_name[100],chfile[256];
+static char host_name[100],*chfile;
 
 char *progname, *logfile;
 int  syslog_mode, exit_status;
@@ -120,7 +120,7 @@ read_chfile()
   time_t  tdif, tdif2;
 
   n_host=0;
-  if(*chfile)
+  if(chfile != NULL)
     {
     if((fp=fopen(chfile,"r"))!=NULL)
       {
@@ -422,7 +422,8 @@ main(int argc, char *argv[])
   exit_status = EXIT_SUCCESS;
   if(strcmp(progname,"relayd")==0) daemon_mode=1;
 
-  *chfile=(*interface)=(*mcastgroup)=(*sinterface)=0;
+  (*interface)=(*mcastgroup)=(*sinterface)=0;
+  chfile = NULL;
   ttl=1;
   no_pinfo=src_port=delay=noreq=negate_channel=nopno=0;
   sockbuf=DEFAULT_RCVBUF;
@@ -441,7 +442,7 @@ main(int argc, char *argv[])
         delay=atoi(optarg);
         break;
       case 'f':   /* host control file */
-        strcpy(chfile,optarg);
+        chfile=optarg;
         break;
       case 'g':   /* multicast group for input (multicast IP address) */
         strcpy(mcastgroup,optarg);

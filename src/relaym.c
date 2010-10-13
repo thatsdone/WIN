@@ -1,4 +1,4 @@
-/* $Id: relaym.c,v 1.8.2.1.2.6 2010/10/04 06:56:53 uehira Exp $ */
+/* $Id: relaym.c,v 1.8.2.1.2.7 2010/10/13 12:18:18 uehira Exp $ */
 
 /*
  * 2004-11-26 MF relay.c:
@@ -63,7 +63,7 @@
 #define MAXMSG       1025
 
 static const char rcsid[] =
-  "$Id: relaym.c,v 1.8.2.1.2.6 2010/10/04 06:56:53 uehira Exp $";
+  "$Id: relaym.c,v 1.8.2.1.2.7 2010/10/13 12:18:18 uehira Exp $";
 
 /* destination host info. */
 struct hostinfo {
@@ -87,7 +87,7 @@ static ssize_t        psize[BUFNO];
 static uint8_w        sbuf[BUFNO][MAXMESG];
 static uint8_w        sq[N_DHOST];
 static int            sqindx[N_DHOST][MAXSQ];
-static char           chfile[MAXNAMELEN];
+static char           *chfile;
 static int            no_pinfo, n_host, negate_channel;
 static uint8_w        ch_table[WIN_CHMAX];
 
@@ -148,7 +148,7 @@ main(int argc, char *argv[])
   if (strcmp(progname, "relaymd") == 0)
     daemon_mode = 1;
 
-  chfile[0] = '\0';
+  chfile = NULL;
   delay = noreq = no_pinfo = negate_channel = nopno = 0;
   sockbuf = DEFAULT_RCVBUF;  /* default socket buffer size in KB */
 
@@ -164,7 +164,7 @@ main(int argc, char *argv[])
       delay = atoi(optarg);
       break;
     case 'f':           /* host control file */
-      strcpy(chfile, optarg);
+      chfile=optarg;
       break;
     case 'N':           /* no pno */
       nopno = no_pinfo = noreq = 1;
@@ -579,7 +579,7 @@ read_chfile(void)
   time_t  tdif, tdif2;
 
   n_host = 0;
-  if (chfile[0] != '\0') {
+  if (chfile != NULL) {
     if ((fp = fopen(chfile, "r")) == NULL) {
       (void)snprintf(tb, sizeof(tb),
 		     "channel list file '%s' not open", chfile);
@@ -699,13 +699,13 @@ read_chfile(void)
 	(void)snprintf(tb, sizeof(tb), "%d channels", j);
     }
     write_log(tb);
-  } else {   /* if (chfile[0] != '\0') */
+  } else {   /* if (chfile != NULL) */
     for(i = 0; i < WIN_CHMAX; i++)
       /* If there is no chfile, get all channel */
       ch_table[i] = 1;
     n_host = 0;
     write_log("all channels");
-  }   /* if (chfile[0] != '\0') */
+  }   /* if (chfile != NULL) */
 
   time(&ltime);
   tdif = ltime - ltime_p;

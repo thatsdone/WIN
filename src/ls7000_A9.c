@@ -1,4 +1,4 @@
-/* $Id: ls7000_A9.c,v 1.1.2.3 2010/09/21 11:56:58 uehira Exp $ */
+/* $Id: ls7000_A9.c,v 1.1.2.4 2010/10/13 12:18:17 uehira Exp $ */
 
 /*
  * Copyright (c) 2009 -
@@ -25,7 +25,7 @@
 
 static char  *progname;
 static const char  rcsid[] =
-   "$Id: ls7000_A9.c,v 1.1.2.3 2010/09/21 11:56:58 uehira Exp $";
+   "$Id: ls7000_A9.c,v 1.1.2.4 2010/10/13 12:18:17 uehira Exp $";
 
 static int read_STL(FILE *);
 static int read_CNT(FILE *);
@@ -107,8 +107,6 @@ static int
 read_STL(FILE *fp)
 {
   uint8_w  buf[128];
-  uint8_w  *ptr;
-  int    i, gain, bit;
 
   fread(buf, 1, 1, fp);
   if (buf[0] != LS7_A9_STL_SIZ)
@@ -127,7 +125,7 @@ read_CNT(FILE *fp)
 {
   uint8_w  buf[128];
   uint8_w  *ptr;
-  int16_w  err, speed;
+  int16_w  err;
   int  i, sum;
   
   fread(buf, 1, 1, fp);

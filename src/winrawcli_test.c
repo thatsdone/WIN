@@ -1,4 +1,4 @@
-/* $Id: winrawcli_test.c,v 1.1.4.2.2.3 2010/10/07 14:20:47 uehira Exp $ */
+/* $Id: winrawcli_test.c,v 1.1.4.2.2.4 2010/10/13 12:18:18 uehira Exp $ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -29,7 +29,7 @@
 #define MAXMSG       1025
 
 static const char rcsid[] =
-  "$Id: winrawcli_test.c,v 1.1.4.2.2.3 2010/10/07 14:20:47 uehira Exp $";
+  "$Id: winrawcli_test.c,v 1.1.4.2.2.4 2010/10/13 12:18:18 uehira Exp $";
 
 char *progname, *logfile;
 int  syslog_mode, exit_status;
@@ -184,6 +184,7 @@ static void
 usage(void)
 {
 
+  WIN_version();
   (void)fprintf(stderr, "%s\n", rcsid);
   (void)fprintf(stderr, "Usage : %s hostname port\n", progname);
   exit(1);

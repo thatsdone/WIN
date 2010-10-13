@@ -1,4 +1,4 @@
-/* $Id: raw_time.c,v 1.4.4.3.2.10 2010/10/12 13:59:05 uehira Exp $ */
+/* $Id: raw_time.c,v 1.4.4.3.2.11 2010/10/13 01:22:05 uehira Exp $ */
 
 /* raw_time.c -- online version of wtime(1W) */
 
@@ -9,6 +9,7 @@
  *    Institute of Seismology and Volcanology, Kyushu University.
  *
  *   2005-03-17  Initial version.  imported from wtime.c raw_raw.c ... etc.
+ *   2010-10-13  64bit clean.
  */
 
 #ifdef HAVE_CONFIG_H
@@ -26,6 +27,8 @@
 #include <unistd.h>
 #include <signal.h>
 #include <errno.h>
+#include <syslog.h>
+#include <math.h>
 
 #if TIME_WITH_SYS_TIME
 #include <sys/time.h>
@@ -37,9 +40,6 @@
 #include <time.h>
 #endif  /* !HAVE_SYS_TIME_H */
 #endif  /* !TIME_WITH_SYS_TIME */
-
-#include <syslog.h>
-#include <math.h>
 
 #ifdef GC_MEMORY_LEAK_TEST
 #include "gc_leak_detector.h"
@@ -54,12 +54,12 @@
 
 
 static const char rcsid[] =
-  "$Id: raw_time.c,v 1.4.4.3.2.10 2010/10/12 13:59:05 uehira Exp $";
+  "$Id: raw_time.c,v 1.4.4.3.2.11 2010/10/13 01:22:05 uehira Exp $";
 
 char *progname, *logfile;
-int  daemon_mode, syslog_mode;
-int  exit_status;
+int  syslog_mode, exit_status;
 
+static int     daemon_mode;
 static char    *chfile;
 static int     ms_add[WIN_CH_MAX_NUM], s_add[WIN_CH_MAX_NUM];
 static int     ch_mask[WIN_CH_MAX_NUM];
@@ -75,14 +75,15 @@ main(int argc, char *argv[])
 {
   FILE        *fp_log;
   key_t       shm_key_in, shm_key_out;
-  int         size;
+  size_t      size;
   int         eobsize_in, eobsize_out, eobsize_in_count;
-  unsigned long  pl_out, uni;
+  uint32_w  uni;
+  size_t  pl_out;
   struct Shm  *shm_in, *shm_out;
-  unsigned char  *ptr, *ptr_save, *ptw;
-  unsigned char  *ptr1, *ptr1_lim, *ptr2;
+  uint8_w  *ptr, *ptr_save, *ptw;
+  uint8_w  *ptr1, *ptr1_lim, *ptr2;
   WIN_bs  sizein, sizein2;
-  unsigned long  c_save;
+  unsigned long  c_save;  /* 64bit ok */
   int32_w  *fixbuf1 = NULL, *fixbuf2 = NULL;
   WIN_sr fixbuf_num;
   time_t      ltime[WIN_CH_MAX_NUM], ltime_prev[WIN_CH_MAX_NUM];
@@ -91,8 +92,8 @@ main(int argc, char *argv[])
   WIN_sr         sr, sr_check[WIN_CH_MAX_NUM];
   WIN_bs         gsize, new_size;
   static int32_w   *sbuf[WIN_CH_MAX_NUM];
-  uint16_w  chdum;
-  uint32_w  srdum;
+  WIN_ch  chdum;
+  WIN_sr  srdum;
   int   c, sr_shift;
   int   i;
 
@@ -131,11 +132,11 @@ main(int argc, char *argv[])
 
   shm_key_in = (key_t)atol(argv[0]);
   shm_key_out = (key_t)atol(argv[1]);
-  size = atol(argv[2]) * 1000;
+  size = (size_t)atol(argv[2]) * 1000;
   chfile = argv[3];
 
 #if DEBUG
-  printf("in=%d out=%d size=%d chfile=%s\n",
+  printf("in=%ld out=%ld size=%zu chfile=%s\n",
 	 shm_key_in, shm_key_out, size, chfile);
 #endif
 
@@ -218,7 +219,8 @@ main(int argc, char *argv[])
   for (;;) {
     sizein = mkuint4(ptr_save = ptr);
     if (sizein == mkuint4(ptr + sizein - WIN_BLOCKSIZE_LEN)) {
-      if (++eobsize_in_count == 0) eobsize_in_count = 1;
+      if (++eobsize_in_count == 0)
+	eobsize_in_count = 1;
     } else
       eobsize_in_count = 0;
 
@@ -276,7 +278,7 @@ main(int argc, char *argv[])
 	/* set wrtite point */
 	ptw = shm_out->d + shm_out->p;
 	ptw += WIN_BLOCKSIZE_LEN;  /* size */
-	uni = (unsigned long)time(NULL);  /* writing time */
+	uni=(uint32_w)(time(NULL)-TIME_OFFSET);  /* writing time */
 	ptw[0] = uni >> 24;
 	ptw[1] = uni >> 16;
 	ptw[2] = uni >> 8;
@@ -415,6 +417,7 @@ static void
 usage(void)
 {
 
+  WIN_version();
   (void)fprintf(stderr, "%s\n", rcsid);
   (void)fprintf(stderr, "Usage of %s :\n", progname);
   if (daemon_mode)

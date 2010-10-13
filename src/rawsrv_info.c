@@ -1,4 +1,4 @@
-/* $Id: rawsrv_info.c,v 1.1.2.2.4.2 2010/09/21 11:56:59 uehira Exp $ */
+/* $Id: rawsrv_info.c,v 1.1.2.2.4.3 2010/10/13 01:22:05 uehira Exp $ */
 
 /* rawsrv_info.c -- print information about raw-data server */
 
@@ -8,6 +8,7 @@
  *    uehira@sevo.kyushu-u.ac.jp
  *    Institute of Seismology and Volcanology, Kyushu University.
  *
+ *  2010-10-13  64bit check.
  */
 
 
@@ -35,12 +36,12 @@
 #define MAXMSG       1025
 
 static const char rcsid[] =
-  "$Id: rawsrv_info.c,v 1.1.2.2.4.2 2010/09/21 11:56:59 uehira Exp $";
+  "$Id: rawsrv_info.c,v 1.1.2.2.4.3 2010/10/13 01:22:05 uehira Exp $";
 
 char *progname, *logfile;
-int  daemon_mode, syslog_mode;
-int  exit_status;
+int  syslog_mode, exit_status;
 
+static int daemon_mode;
 static char *srvlist_file;    /* server list file name */
 static int  srvnum;           /* number of server */
 struct {
@@ -150,7 +151,7 @@ get_info(const char *host, const char *port)
 #if DEBUG
   (void)snprintf(msg, sizeof(msg), "%s", wrbp_buf);
   write_log(msg);
-  (void)snprintf(msg, sizeof(msg), "num = %ld %s",
+  (void)snprintf(msg, sizeof(msg), "num = %zd %s",
 		 readnum, (char *)strerror(errno));
   write_log(msg);
 #endif
@@ -162,7 +163,7 @@ get_info(const char *host, const char *port)
   readnum = fread(wrbp_buf, 1, WRBP_CLEN, fpsockr);
   if (readnum != WRBP_CLEN) {
     (void)snprintf(msg, sizeof(msg),
-		   "SIZE packet len. invalid: %ld %s",
+		   "SIZE packet len. invalid: %zd %s",
 		   readnum, (char *)strerror(errno));
     write_log(msg);
     (void)fclose(fpsockw);
@@ -174,7 +175,7 @@ get_info(const char *host, const char *port)
 #if DEBUG
   (void)snprintf(msg, sizeof(msg), "%s", wrbp_buf);
   write_log(msg);
-  (void)snprintf(msg, sizeof(msg), "num2 = %ld %s",
+  (void)snprintf(msg, sizeof(msg), "num2 = %zd %s",
 		 readnum, (char *)strerror(errno));
   write_log(msg);
 #endif
@@ -240,6 +241,7 @@ static void
 usage(void)
 {
 
+  WIN_version();
   (void)fprintf(stderr, "%s\n", rcsid);
   (void)fprintf(stderr,
 		"Usage : %s srvlist\n",

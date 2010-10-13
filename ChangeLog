@@ -1,4 +1,8 @@
- $Id: ChangeLog,v 1.131.2.25.2.128 2010/10/12 15:32:07 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.129 2010/10/13 01:22:05 uehira Exp $
+
+2010-10-13  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/rawsrv_info.c : 64bit check.
+	* src/raw_time.c : 64bit check.
 
 2010-10-12  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* src/raw_shift.c : 64bit check. eobsize_in(auto).

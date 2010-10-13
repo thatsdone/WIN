@@ -1,8 +1,9 @@
- $Id: ChangeLog,v 1.131.2.25.2.130 2010/10/13 12:18:17 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.131 2010/10/13 12:26:02 uehira Exp $
 
 2010-10-13  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* Version 2.1.11 released.
-	* src/win2fix.c, src/winform.c : removed. (already moved to winlib.c)
+	* src/win2fix.c, src/winform.c, src/adj_time_m.c :
+	            removed. (already moved to winlib.c)
 	* src/recvnmx.c : 64bit check?
 	* src/recvts.c : 64bit check?
 	* src/rawsrv_info.c : 64bit check.

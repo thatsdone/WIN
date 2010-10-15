@@ -1,4 +1,4 @@
-/* $Id: pmon.c,v 1.14.2.5.2.14 2010/09/27 07:53:55 uehira Exp $ */
+/* $Id: pmon.c,v 1.14.2.5.2.15 2010/10/15 15:12:26 uehira Exp $ */
 /************************************************************************
 *************************************************************************
 **  program "pmon.c" for NEWS/SPARC                             *********
@@ -249,7 +249,7 @@
 0xf0,0x1e,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x40,0x00,0x06,0x10,0xc0,0x00,0x00};
 
 static const char  rcsid[] =
-   "$Id: pmon.c,v 1.14.2.5.2.14 2010/09/27 07:53:55 uehira Exp $";
+   "$Id: pmon.c,v 1.14.2.5.2.15 2010/10/15 15:12:26 uehira Exp $";
 
 char *progname,*logfile;
 int  syslog_mode = 0, exit_status;
@@ -298,6 +298,7 @@ struct
 
 
 /* prototypes */
+static void bfov_err(void);
 static void mkfont(int , int, uint8_w *, int, int, int, uint16_w *, int);
 static void make_fonts(uint8_w *, uint8_w *, uint8_w *);
 static void write_file(char *, char *);
@@ -319,6 +320,14 @@ static void insatsu(uint8_w *, uint8_w *, uint8_w *, char *, char *,
 static void get_lastline(char *, char *);
 static void usage(void);
 int main(int, char *[]);
+
+static void
+bfov_err()
+{
+
+  write_log("Buffer overflow");
+  owari();
+}
 
 static void
 mkfont(int y, int ii, uint8_w *buf_font, int width, int jj, int k,
@@ -1038,7 +1047,7 @@ insatsu(uint8_w *tb1, uint8_w *tb2, uint8_w *tb3, char *path_spool,
 #define RMT_NONE  0   /* ras_maplength is expected to be 0 */
   FILE *lbp;
   int i,j,ye,mo,da,ho1,ho2,mi1,mi2;
-  char filename[WIN_FILENAME_MAX],tb[100],timename[100],oldst[100],latst[100];
+  char filename[WIN_FILENAME_MAX],tb[1024],timename[100],oldst[100],latst[100];
 
   if(!isalpha(*printer) && count_max<0) return;
 
@@ -1055,9 +1064,12 @@ insatsu(uint8_w *tb1, uint8_w *tb2, uint8_w *tb3, char *path_spool,
   sscanf((char *)tb2,"%02d/%02d/%02d %02d:%02d",&ye,&mo,&da,&ho1,&mi1);
   sscanf((char *)tb3," - %02d:%02d",&ho2,&mi2);
 /*printf("%02d %02d %02d %02d %02d %02d %02d\n",ye,mo,da,ho1,mi1,ho2,mi2);*/
-  snprintf(timename,sizeof(timename),
-	   "%02d%02d%02d.%02d%02d-%02d%02d",ye,mo,da,ho1,mi1,ho2,mi2);
-  snprintf(filename,sizeof(filename),"%s/%s.ras",path_spool,timename);
+  if (snprintf(timename, sizeof(timename), "%02d%02d%02d.%02d%02d-%02d%02d",
+	       ye,mo,da,ho1,mi1,ho2,mi2) >= sizeof(timename))
+    bfov_err();
+  if (snprintf(filename,sizeof(filename),"%s/%s.ras",
+	       path_spool,timename) >= sizeof(filename))
+    bfov_err();
   lbp=fopen(filename,"w");
   ras.ras_magic=RAS_MAGIC;
   ras.ras_width=WIDTH_LBP*8;
@@ -1085,10 +1097,14 @@ insatsu(uint8_w *tb1, uint8_w *tb2, uint8_w *tb3, char *path_spool,
     {
 #if defined(__SVR4)
     if(m_limit) printf("cat %s|lp -d %s -T raster\n",filename,printer);
-    snprintf(line,sizeof(line),"cat %s|lp -d %s -T raster\n",filename,printer);
+    if (snprintf(line,sizeof(line),"cat %s|lp -d %s -T raster\n",
+		 filename,printer) >= sizeof(line))
+      bfov_err();
 #else
     if(m_limit) printf("lpr -P%s -v %s\n",printer,filename);
-    snprintf(line,sizeof(line),"lpr -P%s -v %s",printer,filename);
+    if (snprintf(line,sizeof(line),"lpr -P%s -v %s",
+		 printer,filename) >= sizeof(line))
+      bfov_err();
 #endif
     system(line);
     }
@@ -1097,23 +1113,27 @@ insatsu(uint8_w *tb1, uint8_w *tb2, uint8_w *tb3, char *path_spool,
     {
     if(*convert)
       {
-      snprintf(tb,sizeof(tb),
-	       "%s %s %s %s",convert,filename,path_spool,timename);
+      if (snprintf(tb,sizeof(tb),"%s %s %s %s",
+		   convert,filename,path_spool,timename) >= sizeof(tb))
+	bfov_err();
       if(m_limit) printf("%s\n",tb);
       system(tb);
       unlink(filename);
       }
     while((count=find_oldest_pmon(path_spool,oldst,latst))>count_max && count_max)
       {
-      snprintf(tb,sizeof(tb),"%s/%s",path_spool,oldst);
+      if (snprintf(tb,sizeof(tb),"%s/%s",path_spool,oldst) >= sizeof(tb))
+	bfov_err();
       unlink(tb);
 #if DEBUG1
       printf("%s deleted\n",tb);
 #endif
       }
-    snprintf(tb,sizeof(tb),"%d",count);
+    if (snprintf(tb,sizeof(tb),"%d",count) >= sizeof(tb))
+      bfov_err();
     wmemo("COUNT",tb,path_spool);
-    snprintf(tb,sizeof(tb),"%d",count_max);
+    if (snprintf(tb,sizeof(tb),"%d",count_max) >= sizeof(tb))
+      bfov_err();
     wmemo("MAX",tb,path_spool);
     wmemo("OLDEST",oldst,path_spool);
     wmemo("LATEST",latst,path_spool);
@@ -1300,13 +1320,11 @@ main(int argc, char *argv[])
   fclose(f_param);
   if (sizeof(temp_done) <= snprintf(temp_done,sizeof(temp_done),
 				    "%s/%s",path_mon1,PMON_USED)) {
-    snprintf(tb,sizeof(tb),"buffer overflow1");
-    write_log(tb);
+    write_log("buffer overflow1");
     owari();
   }
   if (sizeof(latest) <= snprintf(latest,sizeof(latest),"%s/%s",path_mon,WDISK_LATEST)) {
-    snprintf(tb,sizeof(tb),"buffer overflow2");
-    write_log(tb);
+    write_log("buffer overflow2");
     owari();
   }
   min_per_sheet=MIN_PER_LINE*n_rows;    /* min/sheet */

@@ -1,4 +1,7 @@
- $Id: ChangeLog,v 1.131.2.25.2.131 2010/10/13 12:26:02 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.132 2010/10/15 15:12:26 uehira Exp $
+
+2010-10-16  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/pmon.c : buffer overflow check (partially).
 
 2010-10-13  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* Version 2.1.11 released.

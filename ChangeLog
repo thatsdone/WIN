@@ -1,4 +1,8 @@
- $Id: ChangeLog,v 1.176 2010/10/12 15:39:14 uehira Exp $
+ $Id: ChangeLog,v 1.177 2010/10/15 16:23:09 uehira Exp $
+
+2010-10-16  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 1.2.5 released.
+	* src/pmon.c : increased buffer to avoid buffer overflow.
 
 2010-10-12  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* Version 1.2.4 released.

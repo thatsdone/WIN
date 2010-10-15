@@ -1,4 +1,4 @@
-/* $Id: pmon.c,v 1.16 2008/12/31 08:03:56 uehira Exp $ */
+/* $Id: pmon.c,v 1.17 2010/10/15 16:23:09 uehira Exp $ */
 /************************************************************************
 *************************************************************************
 **  program "pmon.c" for NEWS/SPARC                             *********
@@ -1121,7 +1121,7 @@ insatsu(tb1,tb2,tb3,path_spool,printer,count,count_max,convert)
 #define RMT_NONE  0   /* ras_maplength is expected to be 0 */
   FILE *lbp;
   int i,j,ye,mo,da,ho1,ho2,mi1,mi2;
-  char filename[WIN_FILENAME_MAX],tb[100],timename[100],oldst[100],latst[100];
+  char filename[WIN_FILENAME_MAX],tb[1024],timename[100],oldst[100],latst[100];
 
   if(!isalpha(*printer) && count_max<0) return;
 

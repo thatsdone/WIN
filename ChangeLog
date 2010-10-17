@@ -1,4 +1,8 @@
- $Id: ChangeLog,v 1.131.2.25.2.132 2010/10/15 15:12:26 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.133 2010/10/17 01:43:45 uehira Exp $
+
+2010-10-17  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* configure.in : added AM_PROG_CC_C_O
+	* compile : again added.
 
 2010-10-16  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* src/pmon.c : buffer overflow check (partially).

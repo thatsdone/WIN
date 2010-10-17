@@ -1,4 +1,9 @@
- $Id: ChangeLog,v 1.113.2.55 2010/10/15 16:25:24 uehira Exp $
+ $Id: ChangeLog,v 1.113.2.56 2010/10/17 02:01:43 uehira Exp $
+
+2010-10-17  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 1.2.6 released.
+	* configure.in : added AM_PROG_CC_C_O
+	* compile : again added.
 
 2010-10-16  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* Version 1.2.5 released.

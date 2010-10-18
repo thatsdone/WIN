@@ -1,5 +1,5 @@
 dnl check socklen_t
-AC_DEFUN(AC_TYPE_SOCKLEN_T,
+AC_DEFUN([AC_TYPE_SOCKLEN_T],
 [AC_CACHE_CHECK([for socklen_t], ac_cv_type_socklen_t,
 [
   AC_TRY_COMPILE(

@@ -1,12 +1,12 @@
 dnl ------------------------------------------------------------------------- 
-dnl $Id: configure.in,v 1.82.2.44 2010/10/17 02:01:43 uehira Exp $
+dnl $Id: configure.in,v 1.82.2.45 2010/10/18 12:37:05 uehira Exp $
 dnl -------------------------------------------------------------------------
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT(src/win.c)
+AC_CANONICAL_TARGET
 AM_INIT_AUTOMAKE(WIN_pkg, 1.2.6-SEVO)
 AM_CONFIG_HEADER(config.h)
 AC_ARG_PROGRAM
-AC_CANONICAL_TARGET
 
 dnl automake cygnus mode
 dnl AM_MAINTAINER_MODE

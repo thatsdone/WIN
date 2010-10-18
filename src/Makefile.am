@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.38.2.10.2.22 2010/10/07 15:45:58 uehira Exp $
+# $Id: Makefile.am,v 1.38.2.10.2.23 2010/10/18 14:33:51 uehira Exp $
 #
 
 if SUNOS4
@@ -72,6 +72,7 @@ TAPE_USER=$(RTAPE) $(FROMTAPE) wdisk wdiskts ras2rpdl ras2lips file_older raw2mo
           $(TAPE_USER_MATH)
 ONLINE=order raw_mon $(WTAPE) setexb timeout raw_raw raw_100 cormeisei shmdump \
        raw_ch extraw insert_raw insert_trg find_picks raw_shift ls8tel16_raw\
+	shmcounter\
        $(ONLINE_SO) $(ONLINE_MATH) $(ONL_FREEBSD)
 
 ONL_OPT_=robot
@@ -324,6 +325,9 @@ cormeisei_LDADD = $(WIN_LOG_LTLIB) $(WIN_SYSTEM_LTLIB) @LIBSHMGET@
 
 shmdump_SOURCES = shmdump.c $(WIN_LIBH)
 shmdump_LDADD = $(WIN_SYSTEM_LTLIB) @LIBSHMGET@ -lm
+
+shmcounter_SOURCES = shmcounter.c $(WIN_LIBH)
+shmcounter_LDADD = $(WIN_SYSTEM_LTLIB) @LIBSHMGET@
 
 raw_ch_SOURCES = raw_ch.c $(WIN_LIBH)
 raw_ch_LDADD = $(WIN_LOG_LTLIB) $(WIN_SYSTEM_LTLIB) @LIBSHMGET@

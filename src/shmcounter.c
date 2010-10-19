@@ -1,4 +1,4 @@
-/* $Id: shmcounter.c,v 1.1.2.3 2010/10/19 04:03:29 uehira Exp $ */
+/* $Id: shmcounter.c,v 1.1.2.4 2010/10/19 04:30:04 uehira Exp $ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -15,10 +15,21 @@
 #include <unistd.h>
 #include <errno.h>
 
+#if TIME_WITH_SYS_TIME
+#include <sys/time.h>
+#include <time.h>
+#else  /* !TIME_WITH_SYS_TIME */
+#if HAVE_SYS_TIME_H
+#include <sys/time.h>
+#else  /* !HAVE_SYS_TIME_H */
+#include <time.h>
+#endif  /* !HAVE_SYS_TIME_H */
+#endif  /* !TIME_WITH_SYS_TIME */
+
 #include "winlib.h"
 
 static const char rcsid[] =
-  "$Id: shmcounter.c,v 1.1.2.3 2010/10/19 04:03:29 uehira Exp $";
+  "$Id: shmcounter.c,v 1.1.2.4 2010/10/19 04:30:04 uehira Exp $";
 
 static char *progname;
 
@@ -34,6 +45,7 @@ main(int argc, char *argv[])
   unsigned long  c_save;
   int  c_save_flag;
   size_t  pl_save;
+  time_t  now;
   int  c;
 
   if ((progname = strrchr(argv[0], '/')) != NULL)
@@ -74,7 +86,9 @@ main(int argc, char *argv[])
     printf("\r%-20zu%-20zu%-20zu%-20lu",
 	   shm_in->pl, shm_in->p, shm_in->r, shm_in->c);
     if (pl_save != shm_in->pl) {
-      printf("\npl diff! : %zu --> %zu\n", pl_save, shm_in->pl);
+      now = time(NULL);
+      printf("\npl diff! : %zu --> %zu : %s",
+	     pl_save, shm_in->pl, ctime(&now));
       pl_save = shm_in->pl;
     }
     (void)fflush(stdout);

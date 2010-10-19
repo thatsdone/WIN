@@ -1,4 +1,4 @@
-/* $Id: shmcounter.c,v 1.1.2.2 2010/10/19 01:17:35 uehira Exp $ */
+/* $Id: shmcounter.c,v 1.1.2.3 2010/10/19 04:03:29 uehira Exp $ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -18,7 +18,7 @@
 #include "winlib.h"
 
 static const char rcsid[] =
-  "$Id: shmcounter.c,v 1.1.2.2 2010/10/19 01:17:35 uehira Exp $";
+  "$Id: shmcounter.c,v 1.1.2.3 2010/10/19 04:03:29 uehira Exp $";
 
 static char *progname;
 
@@ -33,6 +33,7 @@ main(int argc, char *argv[])
   struct Shm  *shm_in;
   unsigned long  c_save;
   int  c_save_flag;
+  size_t  pl_save;
   int  c;
 
   if ((progname = strrchr(argv[0], '/')) != NULL)
@@ -57,6 +58,7 @@ main(int argc, char *argv[])
   }
   
   c_save_flag = 0;
+  pl_save = 0;
 
   shm_key_in = (key_t)atol(argv[0]);
   shm_in = Shm_read_offline(shm_key_in);
@@ -64,12 +66,17 @@ main(int argc, char *argv[])
   printf("pl                  p                   r                   c\n");
   for (;;) {
     if (c_save_flag && c_save == shm_in->c) {
-      usleep(2);
+      usleep(1);
       continue;
     }
-    /* printf("\r"); */
+    if (pl_save == 0)
+      pl_save = shm_in->pl;
     printf("\r%-20zu%-20zu%-20zu%-20lu",
 	   shm_in->pl, shm_in->p, shm_in->r, shm_in->c);
+    if (pl_save != shm_in->pl) {
+      printf("\npl diff! : %zu --> %zu\n", pl_save, shm_in->pl);
+      pl_save = shm_in->pl;
+    }
     (void)fflush(stdout);
     c_save = shm_in->c;
     if (c_save_flag == 0)

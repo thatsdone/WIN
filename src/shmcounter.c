@@ -1,4 +1,4 @@
-/* $Id: shmcounter.c,v 1.1.2.4 2010/10/19 04:30:04 uehira Exp $ */
+/* $Id: shmcounter.c,v 1.1.2.5 2010/10/19 09:27:34 uehira Exp $ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -29,7 +29,7 @@
 #include "winlib.h"
 
 static const char rcsid[] =
-  "$Id: shmcounter.c,v 1.1.2.4 2010/10/19 04:30:04 uehira Exp $";
+  "$Id: shmcounter.c,v 1.1.2.5 2010/10/19 09:27:34 uehira Exp $";
 
 static char *progname;
 
@@ -43,9 +43,10 @@ main(int argc, char *argv[])
   key_t shm_key_in;
   struct Shm  *shm_in;
   unsigned long  c_save;
-  int  c_save_flag;
-  size_t  pl_save;
+  size_t  pl_save, p_save;
+  int  c_save_flag, p_save_flag;
   time_t  now;
+  int  a_opt, p_opt;
   int  c;
 
   if ((progname = strrchr(argv[0], '/')) != NULL)
@@ -53,8 +54,16 @@ main(int argc, char *argv[])
   else
     progname = argv[0];
 
-  while ((c = getopt(argc, argv, "h")) != -1) {
+  a_opt = p_opt = 0;
+
+  while ((c = getopt(argc, argv, "ahp")) != -1) {
     switch (c) {
+    case 'a':
+      a_opt = 1;  /* one around */
+      break;
+    case 'p':
+      p_opt = 1;  /* print if pl change */
+      break;
     case 'h':
     default:
       usage();
@@ -69,32 +78,49 @@ main(int argc, char *argv[])
     exit(1);
   }
   
-  c_save_flag = 0;
+  p_save_flag = c_save_flag = 0;
   pl_save = 0;
 
   shm_key_in = (key_t)atol(argv[0]);
   shm_in = Shm_read_offline(shm_key_in);
   
   printf("pl                  p                   r                   c\n");
+
+  /* begin loop */
   for (;;) {
     if (c_save_flag && c_save == shm_in->c) {
-      usleep(1);
+      usleep(2);
       continue;
     }
     if (pl_save == 0)
       pl_save = shm_in->pl;
+
+    /* output informations */
     printf("\r%-20zu%-20zu%-20zu%-20lu",
 	   shm_in->pl, shm_in->p, shm_in->r, shm_in->c);
-    if (pl_save != shm_in->pl) {
+    /* if pl change */
+    if (p_opt && pl_save != shm_in->pl) {
       now = time(NULL);
       printf("\npl diff! : %zu --> %zu : %s",
 	     pl_save, shm_in->pl, ctime(&now));
       pl_save = shm_in->pl;
     }
+    /* one around */
+    if (a_opt && p_save_flag && p_save > shm_in->p) {
+      now = time(NULL);
+      printf("\none around : %s", ctime(&now));
+    }
     (void)fflush(stdout);
+
+    /* save c */
     c_save = shm_in->c;
     if (c_save_flag == 0)
       c_save_flag = 1;
+    
+    /* save p */
+    p_save = shm_in->p;
+    if (p_save_flag == 0)
+      p_save_flag = 1;
   }  /* for (;;) */
 }
 
@@ -104,5 +130,7 @@ usage()
   
   WIN_version();
   fprintf(stderr, "%s\n", rcsid);
-  fprintf(stderr, "usage : %s shm_key\n", progname);
+  fprintf(stderr, "usage : %s [-ap] shm_key\n", progname);
+  fprintf(stderr, "     options : -a : print time if one around.\n");
+  fprintf(stderr, "             : -p : print time if 'pl' changed.\n");
 }

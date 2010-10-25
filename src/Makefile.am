@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.38.2.10.2.23 2010/10/18 14:33:51 uehira Exp $
+# $Id: Makefile.am,v 1.38.2.10.2.24 2010/10/25 10:31:51 uehira Exp $
 #
 
 if SUNOS4
@@ -185,7 +185,7 @@ libwinsystem_la_LIBADD = -lm
 
 libwinlog_la_SOURCES =  $(WIN_LOG) $(DAEMON_MODE) $(UDP_UTILITY) $(TCP_UTILITY)
 libwinlog_la_LDFLAGS = -version-info 0:0:0
-libwinlog_la_LIBADD =
+libwinlog_la_LIBADD = @LIBNSL@ @LIBSOCKET@
 
 #####----- Sources -----
 win_SOURCES = win.c $(WIN_LIBH)
@@ -384,10 +384,10 @@ hypomhc_LDADD = $(WIN_SYSTEM_LTLIB) -lm
 #hypomhc_CFLAGS = $(AM_CFLAGS)
 
 sends_SOURCES = sends.c $(WIN_LIBH)
-sends_LDADD = $(WIN_SYSTEM_LTLIB) @LIBNSL@ @LIBSOCKET@
+sends_LDADD = $(WIN_SYSTEM_LTLIB) $(WIN_LOG_LTLIB) @LIBNSL@ @LIBSOCKET@
 
 recvs_SOURCES = recvs.c $(WIN_LIBH)
-recvs_LDADD = $(WIN_SYSTEM_LTLIB) @LIBNSL@ @LIBSOCKET@
+recvs_LDADD = $(WIN_SYSTEM_LTLIB) $(WIN_LOG_LTLIB) @LIBNSL@ @LIBSOCKET@
 
 raw_time_SOURCES = raw_time.c $(WIN_LIBH) $(GC_CHECK_INCLUDE)
 raw_time_LDADD = $(WIN_LOG_LTLIB) $(WIN_SYSTEM_LTLIB) -lm @LIBSHMGET@ $(GC_CHECK_LIB)

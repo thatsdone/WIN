@@ -1,4 +1,4 @@
-/* $Id: events.c,v 1.8.2.4.2.7 2010/09/27 07:53:55 uehira Exp $ */
+/* $Id: events.c,v 1.8.2.4.2.8 2010/10/25 10:31:51 uehira Exp $ */
 
 /****************************************************************************
 *****************************************************************************
@@ -66,7 +66,7 @@ sso     /dat/etc/sso.station    cut-jc3
 #include "config.h"
 #endif
 
-#define USE_LARGE_FS 0
+/* #define USE_LARGE_FS 0 */
 #ifdef USE_LARGE_FS
 #define _LARGEFILE64_SOURCE
 #endif
@@ -141,7 +141,7 @@ sso     /dat/etc/sso.station    cut-jc3
 #define DIR_W  3
 
 static const char rcsid[] =
-  "$Id: events.c,v 1.8.2.4.2.7 2010/09/27 07:53:55 uehira Exp $";
+  "$Id: events.c,v 1.8.2.4.2.8 2010/10/25 10:31:51 uehira Exp $";
 
 #if defined(STRUCT_STATFS_F_BAVAIL_LONG)
 static long space_raw,used_raw;

@@ -1,4 +1,4 @@
-/* $Id: wdisk.c,v 1.17.2.8.2.10 2010/10/12 13:59:05 uehira Exp $ */
+/* $Id: wdisk.c,v 1.17.2.8.2.11 2010/10/25 10:31:52 uehira Exp $ */
 /*
   program "wdisk.c"   4/16/93-5/13/93,7/2/93,7/5/94  urabe
                       1/6/95 bug in adj_time fixed (tm[0]--)
@@ -31,7 +31,7 @@
 #include "config.h"
 #endif
 
-#define USE_LARGE_FS 0
+/* #define USE_LARGE_FS 0 */
 #ifdef USE_LARGE_FS
 #define _LARGEFILE64_SOURCE
 #endif
@@ -107,7 +107,7 @@
 #define   NAMELEN  1025
 
 static const char rcsid[] =
-  "$Id: wdisk.c,v 1.17.2.8.2.10 2010/10/12 13:59:05 uehira Exp $";
+  "$Id: wdisk.c,v 1.17.2.8.2.11 2010/10/25 10:31:52 uehira Exp $";
 
 char *progname,*logfile;
 int  daemon_mode, syslog_mode, exit_status;

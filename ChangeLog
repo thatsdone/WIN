@@ -1,4 +1,10 @@
- $Id: ChangeLog,v 1.131.2.25.2.134 2010/10/18 14:33:50 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.135 2010/10/25 10:31:51 uehira Exp $
+
+2010-10-25  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 2.1.12 released.
+	* configure.in : libwinlog.la : link '-lnsl' and '-lsocket'. (SunOS)
+	   : added '--enable-statfs64' option.
+	   : FFLAGS : added "-fno-automatic -finit-local-zero" if they work.
 
 2010-10-16  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* src/shmcounter.c : added.

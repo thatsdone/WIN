@@ -1,5 +1,5 @@
 dnl ------------------------------------------------------------------------- 
-dnl $Id: configure.in,v 1.98.2.17.2.40 2010/10/25 10:31:51 uehira Exp $
+dnl $Id: configure.in,v 1.98.2.17.2.41 2010/10/26 00:38:08 uehira Exp $
 dnl -------------------------------------------------------------------------
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT
@@ -40,7 +40,8 @@ AC_LANG_PUSH(Fortran 77)
 my_save_fflags="$FFLAGS"
 FFLAGS="-fno-automatic -finit-local-zero"
 AC_MSG_CHECKING([whether F77 supports -fno-automatic -finit-local-zero])
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([])],
+# AC_COMPILE_IFELSE() did not work on SunOS 5.10 with Sun Fortran
+AC_LINK_IFELSE([AC_LANG_PROGRAM([])],
 	[AC_MSG_RESULT([yes])]
 	[AM_ADD_FFLAGS="-fno-automatic -finit-local-zero"],
 	[AC_MSG_RESULT([no])]

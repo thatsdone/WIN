@@ -1,4 +1,4 @@
-/* $Id: winrawcli_test.c,v 1.1.4.2.2.4 2010/10/13 12:18:18 uehira Exp $ */
+/* $Id: winrawcli_test.c,v 1.1.4.2.2.5 2010/11/01 13:16:02 uehira Exp $ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -29,7 +29,7 @@
 #define MAXMSG       1025
 
 static const char rcsid[] =
-  "$Id: winrawcli_test.c,v 1.1.4.2.2.4 2010/10/13 12:18:18 uehira Exp $";
+  "$Id: winrawcli_test.c,v 1.1.4.2.2.5 2010/11/01 13:16:02 uehira Exp $";
 
 char *progname, *logfile;
 int  syslog_mode, exit_status;
@@ -46,8 +46,6 @@ main(int argc, char *argv[])
   struct sockaddr_storage  ss;
   struct sockaddr *sa = (struct sockaddr *)&ss;
   socklen_t   salen;
-  char  host_[NI_MAXHOST];  /* host address */
-  char  port_[NI_MAXSERV];  /* port No. */
   char  msg[MAXMSG], buf[MAXMSG];
   char  wrbp_buf[WRBP_CLEN];
   int   socknum;
@@ -58,7 +56,10 @@ main(int argc, char *argv[])
   uint8_t   rsize_r[4], *rawbuf;
   int     num;
   FILE    *fpsockr, *fpsockw;
- 
+#if DEBUG
+  char  host_[NI_MAXHOST];  /* host address */
+  char  port_[NI_MAXSERV];  /* port No. */
+#endif
 
   if ((progname = strrchr(argv[0], '/')) != NULL)
     progname++;

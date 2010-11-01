@@ -1,4 +1,4 @@
-/* $Id: recvnmx.c,v 1.16.4.4.2.15 2010/10/13 12:18:18 uehira Exp $ */
+/* $Id: recvnmx.c,v 1.16.4.4.2.16 2010/11/01 13:16:02 uehira Exp $ */
 /* "recvnmx.c"    2001.7.18-19 modified from recvt.c and nmx2raw.c  urabe */
 /*                2001.8.18 */
 /*                2001.10.5 workaround for hangup */
@@ -80,7 +80,7 @@
 #define MAXCH     1024
 
 static const char rcsid[] =
-  "$Id: recvnmx.c,v 1.16.4.4.2.15 2010/10/13 12:18:18 uehira Exp $";
+  "$Id: recvnmx.c,v 1.16.4.4.2.16 2010/11/01 13:16:02 uehira Exp $";
 
 char *progname,*logfile;
 int  syslog_mode = 0, exit_status;
@@ -145,7 +145,9 @@ write_shm(int ch, int sr, time_t tim, int32_w *buf, struct Shm *shm,
   struct tm *t;
   uint8_w *ptw,*ptw_save,*ptw_save2;
   uint32_w uni;
+#if DEBUG
   int i;
+#endif
 
   if(ch<0) return (0);
   ptw=ptw_save=shm->d+shm->p;

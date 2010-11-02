@@ -1,4 +1,4 @@
-/* $Id: order.c,v 1.11.4.5.2.11 2010/10/13 12:18:17 uehira Exp $ */
+/* $Id: order.c,v 1.11.4.5.2.12 2010/11/02 09:09:52 uehira Exp $ */
 /*  program "order.c" 1/26/94 - 2/7/94, 6/14/94 urabe */
 /*                              1/6/95 bug in adj_time(tm[0]--) fixed */
 /*                              3/17/95 write_log() */
@@ -57,14 +57,14 @@
 #define NAMELEN  1025
 
 static const char rcsid[] =
-  "$Id: order.c,v 1.11.4.5.2.11 2010/10/13 12:18:17 uehira Exp $";
+  "$Id: order.c,v 1.11.4.5.2.12 2010/11/02 09:09:52 uehira Exp $";
 
 char *progname,*logfile;
 int  daemon_mode, syslog_mode, exit_status;
 
 /* prototypes */
 static int check_time(uint8_w *);
-static int32_w advance(struct Shm *, size_t *, unsigned long *, uint32_w *,
+static time_t advance(struct Shm *, size_t *, unsigned long *, uint32_w *,
 		       time_t *, size_t *);
 int main(int argc, char *argv[]);
 
@@ -79,10 +79,13 @@ check_time(uint8_w *ptr)  /* 64bit ok*/
   return (0);
   }
 
-/*** potential bug is in this function ***/
-static int32_w
+/*** potential bug is in this function --> ok? ***/
+static time_t
 advance(struct Shm *shm, size_t *shp, unsigned long *c_save,
 	uint32_w *size, time_t *t, size_t *shp_busy_save)
+/*  input ONLY:  shm */
+/*  input & output:  shp, c_save */
+/*  output ONLY: size, t, shp_busy_save */
 {
   long i;
   size_t  shpp;
@@ -98,9 +101,10 @@ advance(struct Shm *shm, size_t *shp, unsigned long *c_save,
   *c_save=shm->c;
   *size=mkuint4(shm->d+(*shp=shpp)); /* size of next block */
   if(!(*t=bcd_t(shm->d+shpp+8))) return (-1);
-
-  /* potential bug */
-  return ((int32_w)mkuint4(shm->d+shpp+4)); /* return value = TOW */
+  
+  /* return value = TOW */
+  /* potential bug --> ok? */
+  return ((time_t)((int32_w)mkuint4(shm->d+shpp+4)+TIME_OFFSET));
 }
 
 
@@ -132,7 +136,8 @@ main(int argc, char *argv[])
   size_t  sizei, sizej=0, shp_in, shp;
   unsigned long  c_save, c_save_in;
   uint32_w  size, size_in, size2;
-  int32_w  sec_1;
+  /* int32_w  sec_1; */
+  time_t  sec_1;
   int sec,late,c,pl_out,n_sec,no_data,sysclk,sysclk_org,
     timeout_flag=0,size_next,eobsize_in,eobsize_out,i,eobsize_in_count;
   uint8_w *ptr,*ptr_save,*ptw,*ptw_save,*ptw_late=NULL,*ptr_prev,tm_out[6];
@@ -259,7 +264,7 @@ reset:
      sleep(1);
      goto reset;
   }
-  sec_1=(int32_w)mkuint4(ptr_save+4); /* TOW */ /* potential bug */
+  sec_1=(int32_w)mkuint4(ptr_save+4)+TIME_OFFSET; /* TOW */ /* potential bug --> ok? */
   t_out=t_bottom=bcd_t(ptr_save+8); /* TS */
   if(late) {
     shp_busy_save=(-1);
@@ -269,8 +274,9 @@ reset:
   if(mkuint4(ptr_save+size_in-4)==size_in) eobsize_in=1;
   else eobsize_in=sysclk=0;
   eobsize_in_count=eobsize_in;
-  sprintf(tbuf,"eobsize_in=%d, eobsize_out=%d, sysclk=%d sysclk_org=%d",
-    eobsize_in,eobsize_out,sysclk,sysclk_org);
+  snprintf(tbuf,sizeof(tbuf),
+	   "eobsize_in=%d, eobsize_out=%d, sysclk=%d sysclk_org=%d",
+	   eobsize_in,eobsize_out,sysclk,sysclk_org);
   write_log(tbuf);
 
   if(sysclk) /* system clock mode */
@@ -278,11 +284,13 @@ reset:
     rt_next=time(NULL)-1;
     ts=t_out;
     if(late) ptw_late=shm_late->d+shm_late->p;
+
+    /* begin main loop */
     for(;;)
       {
-	tow=(time_t)sec_1;
+	tow=sec_1;
 #if DEBUG1
-      printf("tow=%d ts=%ld shp=%ld\n",sec_1,ts,shp_in);
+      printf("tow=%ld ts=%ld shp=%ld\n",sec_1,ts,shp_in);
 #endif
       /* new TS */
       if(tow>ts+n_sec) /* output as a late packet */
@@ -315,13 +323,13 @@ reset:
       while((sec_1=advance(shm_in,&shp_in,&c_save_in,&size_in,&ts,&shp_busy_save))<=0)
         {
 #if DEBUG1
-        printf("sec_1=%d\n",sec_1);
+        printf("sec_1=%ld\n",sec_1);
 #endif
         if(sec_1==(-2)) /* shm corrupted */
           {
           ptr=shm_in->d+shp+8;
-          sprintf(tbuf,"reset %02X%02X%02X.%02X%02X%02X:%02X%02X",
-            ptr[0],ptr[1],ptr[2],ptr[3],ptr[4],ptr[5],ptr[6],ptr[7]);
+          snprintf(tbuf,sizeof(tbuf),"reset %02X%02X%02X.%02X%02X%02X:%02X%02X",
+		   ptr[0],ptr[1],ptr[2],ptr[3],ptr[4],ptr[5],ptr[6],ptr[7]);
           write_log(tbuf);
           sleep(1);
           goto reset;
@@ -341,7 +349,7 @@ reset:
             for(;;) /* sweep to output data at ts==rt-n_sec */
               {
               size=mkuint4(ptr);
-              tow=mkuint4(ptr+4);
+              tow=(int32_w)mkuint4(ptr+4)+TIME_OFFSET;
               ts=bcd_t(ptr+8);
               if(tow<rt-n_sec-1) /* quit loop - TOW too old */
                 {
@@ -379,7 +387,7 @@ reset:
                 else goto reset;
                 }
               i++;
-              }
+              }  /* for(;;) */
 
 	    if((uni2=(WIN_bs)(ptw-ptw_save))>10)
              {
@@ -406,12 +414,12 @@ reset:
              printf("eob %d B > %zu next=%zu\n",uni2,shm_out->r,shm_out->p);
 #endif
              }
-            }
-          rt_next=t_out+n_sec;
+            }  /* for(t_out=rt_next-n_sec;t_out<=rt-n_sec;t_out++) */
+          rt_next=t_out+n_sec;   /* rt_next=rt+1 */
           }
         else if(sec_1==(-1)) usleep(100000);
-        }
-      }
+        }  /* while((sec_1=advance())<=0) */
+      }  /* for(;;) */
     }
   else /* conventional mode */
     for(;;){
@@ -475,8 +483,9 @@ reset:
 	while((sec=advance(shm_in,&shp,&c_save,&size,&t,&shp_busy_save))==(-1));
 	if(sec==(-2)){
 	  ptr=shm_in->d+shp+8;
-	  sprintf(tbuf,"reset %02X%02X%02X.%02X%02X%02X:%02X%02X",
-		  ptr[0],ptr[1],ptr[2],ptr[3],ptr[4],ptr[5],ptr[6],ptr[7]);
+	  snprintf(tbuf,sizeof(tbuf),
+		   "reset %02X%02X%02X.%02X%02X%02X:%02X%02X",
+		   ptr[0],ptr[1],ptr[2],ptr[3],ptr[4],ptr[5],ptr[6],ptr[7]);
 	  write_log(tbuf);
 	  goto reset;
 	}
@@ -512,10 +521,10 @@ reset:
 	if(t_bottom>t_out){
 	  ptr=shm_in->d+shp_in+8;
 	  t_bcd(t_out,tm_out);
-	  sprintf(tbuf,
-		  "passing %02X%02X%02X.%02X%02X%02X:%02X%02X(out=%02X%02X%02X.%02X%02X%02X)",
-		  ptr[0],ptr[1],ptr[2],ptr[3],ptr[4],ptr[5],ptr[6],ptr[7],
-		  tm_out[0],tm_out[1],tm_out[2],tm_out[3],tm_out[4],tm_out[5]);
+	  snprintf(tbuf,sizeof(tbuf),
+		   "passing %02X%02X%02X.%02X%02X%02X:%02X%02X(out=%02X%02X%02X.%02X%02X%02X)",
+		   ptr[0],ptr[1],ptr[2],ptr[3],ptr[4],ptr[5],ptr[6],ptr[7],
+		   tm_out[0],tm_out[1],tm_out[2],tm_out[3],tm_out[4],tm_out[5]);
 	  write_log(tbuf);
 	}
 	while((sec_1=advance(shm_in,&shp_in,&c_save_in,&size_in,&t_bottom,NULL))<=0){
@@ -527,8 +536,9 @@ reset:
 	  }
 	  else if(sec_1==(-2)){
 	    ptr=shm_in->d+shp_in+8;
-	    sprintf(tbuf,"reset %02X%02X%02X.%02X%02X%02X:%02X%02X",
-		    ptr[0],ptr[1],ptr[2],ptr[3],ptr[4],ptr[5],ptr[6],ptr[7]);
+	    snprintf(tbuf,sizeof(tbuf),
+		     "reset %02X%02X%02X.%02X%02X%02X:%02X%02X",
+		     ptr[0],ptr[1],ptr[2],ptr[3],ptr[4],ptr[5],ptr[6],ptr[7]);
 	    write_log(tbuf);
 	    goto reset;
 	  }

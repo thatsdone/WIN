@@ -1,4 +1,4 @@
-/* $Id: order.c,v 1.11.4.5.2.12 2010/11/02 09:09:52 uehira Exp $ */
+/* $Id: order.c,v 1.11.4.5.2.13 2010/11/02 09:30:53 uehira Exp $ */
 /*  program "order.c" 1/26/94 - 2/7/94, 6/14/94 urabe */
 /*                              1/6/95 bug in adj_time(tm[0]--) fixed */
 /*                              3/17/95 write_log() */
@@ -57,7 +57,7 @@
 #define NAMELEN  1025
 
 static const char rcsid[] =
-  "$Id: order.c,v 1.11.4.5.2.12 2010/11/02 09:09:52 uehira Exp $";
+  "$Id: order.c,v 1.11.4.5.2.13 2010/11/02 09:30:53 uehira Exp $";
 
 char *progname,*logfile;
 int  daemon_mode, syslog_mode, exit_status;
@@ -328,7 +328,8 @@ reset:
         if(sec_1==(-2)) /* shm corrupted */
           {
           ptr=shm_in->d+shp+8;
-          snprintf(tbuf,sizeof(tbuf),"reset %02X%02X%02X.%02X%02X%02X:%02X%02X",
+          snprintf(tbuf,sizeof(tbuf),
+		   "reset %02X%02X%02X.%02X%02X%02X:%02X%02X",
 		   ptr[0],ptr[1],ptr[2],ptr[3],ptr[4],ptr[5],ptr[6],ptr[7]);
           write_log(tbuf);
           sleep(1);
@@ -346,6 +347,14 @@ reset:
             t_bcd(t_out,ptw); /* write TS */
             ptw+=6; /* TS */
             i=0;
+
+	    if (t_out != rt-n_sec) {
+	      snprintf(tbuf,sizeof(tbuf),
+		       "t_out=%ld  rt - n_sec = %ld",
+		       t_out, rt - n_sec);
+	      write_log(tbuf);
+	    }
+
             for(;;) /* sweep to output data at ts==rt-n_sec */
               {
               size=mkuint4(ptr);

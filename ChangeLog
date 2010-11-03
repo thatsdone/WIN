@@ -1,4 +1,8 @@
- $Id: ChangeLog,v 1.113.2.56 2010/10/17 02:01:43 uehira Exp $
+ $Id: ChangeLog,v 1.113.2.57 2010/11/03 13:57:53 uehira Exp $
+
+2010-11-03  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 1.2.7 released.
+	* src/order.c : system clock mode (-a) : fixed a bug.
 
 2010-10-17  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* Version 1.2.6 released.

@@ -1,4 +1,4 @@
-/* $Id: order.c,v 1.11.4.5.2.13 2010/11/02 09:30:53 uehira Exp $ */
+/* $Id: order.c,v 1.11.4.5.2.14 2010/11/03 13:07:06 uehira Exp $ */
 /*  program "order.c" 1/26/94 - 2/7/94, 6/14/94 urabe */
 /*                              1/6/95 bug in adj_time(tm[0]--) fixed */
 /*                              3/17/95 write_log() */
@@ -18,6 +18,7 @@
 /*                              2002.5.11 timezone for SVR4 */
 /*                              2004.10.21 daemon mode (uehira) */
 /*                              2009.12.18 64bit? (uehira) */
+/*                              2010.11.3 system clock mode (-a) : fixed a bug (uehira) */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -53,11 +54,12 @@
 
 /* #define DEBUG     0 */
 #define DEBUG1    0
+#define DEBUG2    1
 
 #define NAMELEN  1025
 
 static const char rcsid[] =
-  "$Id: order.c,v 1.11.4.5.2.13 2010/11/02 09:30:53 uehira Exp $";
+  "$Id: order.c,v 1.11.4.5.2.14 2010/11/03 13:07:06 uehira Exp $";
 
 char *progname,*logfile;
 int  daemon_mode, syslog_mode, exit_status;
@@ -347,14 +349,14 @@ reset:
             t_bcd(t_out,ptw); /* write TS */
             ptw+=6; /* TS */
             i=0;
-
+#if DEBUG2
 	    if (t_out != rt-n_sec) {
 	      snprintf(tbuf,sizeof(tbuf),
 		       "t_out=%ld  rt - n_sec = %ld",
 		       t_out, rt - n_sec);
 	      write_log(tbuf);
 	    }
-
+#endif
             for(;;) /* sweep to output data at ts==rt-n_sec */
               {
               size=mkuint4(ptr);
@@ -368,7 +370,7 @@ reset:
 #endif
                 break;
                 }
-              if(ts==rt-n_sec)
+              if(ts==t_out)
                 {
 #if DEBUG
                 printf("out %zd(%u)>%zd ",

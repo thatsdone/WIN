@@ -1,4 +1,4 @@
-/* $Id: winlib.h,v 1.1.2.7.2.43 2010/11/08 02:11:37 uehira Exp $ */
+/* $Id: winlib.h,v 1.1.2.7.2.44 2010/11/08 02:29:12 uehira Exp $ */
 
 #ifndef _WIN_LIB_H_
 #define _WIN_LIB_H_
@@ -26,6 +26,12 @@
 /* check SHM_R & SHM_W */
 #include <sys/ipc.h>
 #include <sys/shm.h>
+#ifndef IPC_R
+#define IPC_R           000400  /* read permission */
+#endif
+#ifndef IPC_W
+#define IPC_W           000200  /* write/alter permission */
+#endif
 #ifndef SHM_R
 #define SHM_R       (IPC_R)
 #endif

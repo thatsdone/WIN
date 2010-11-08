@@ -1,4 +1,8 @@
- $Id: ChangeLog,v 1.131.2.25.2.136 2010/11/03 13:07:05 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.137 2010/11/08 03:16:09 uehira Exp $
+
+2010-11-08  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 2.1.14 released.
+	* src/winlib.h : check SHM_R & SHM_W macros. (for Cygwin etc.)
 
 2010-11-03  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* Version 2.1.13 released.

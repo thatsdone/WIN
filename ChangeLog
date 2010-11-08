@@ -1,4 +1,8 @@
- $Id: ChangeLog,v 1.179 2010/11/03 13:55:11 uehira Exp $
+ $Id: ChangeLog,v 1.180 2010/11/08 15:08:31 uehira Exp $
+
+2010-11-09  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 1.2.8 released.
+	* configure.in : run only with ILP32 mode.
 
 2010-11-03  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* Version 1.2.7 released.

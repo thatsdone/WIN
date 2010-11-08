@@ -1,10 +1,10 @@
 dnl ------------------------------------------------------------------------- 
-dnl $Id: configure.in,v 1.134 2010/11/03 13:55:11 uehira Exp $
+dnl $Id: configure.in,v 1.135 2010/11/08 15:08:31 uehira Exp $
 dnl -------------------------------------------------------------------------
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT(src/win.c)
 AC_CANONICAL_TARGET
-AM_INIT_AUTOMAKE(WIN_pkg, 1.2.7)
+AM_INIT_AUTOMAKE(WIN_pkg, 1.2.8)
 AM_CONFIG_HEADER(config.h)
 AC_ARG_PROGRAM
 
@@ -101,6 +101,22 @@ AC_CHECK_SIZEOF(char)
 AC_CHECK_SIZEOF(float)
 AC_CHECK_SIZEOF(double)
 AC_CHECK_SIZEOF(int64_t)
+
+AC_MSG_CHECKING([ILP32 model])
+AC_PREPROC_IFELSE([AC_LANG_PROGRAM([[
+#if SIZEOF_INT == 4
+#else
+#error int is not 4 byte lengths.
+#endif
+#if SIZEOF_LONG == 4
+#else
+#error long is not 4 byte lengths.
+#endif
+]])],
+[AC_MSG_RESULT([yes])],
+[AC_MSG_FAILURE([Please compile with 32bit mode.])]
+)
+
 
 AC_MSG_CHECKING(for tm.tm_gmtoff)
 AC_EGREP_CPP(tm_gmtoff, [#include <time.h>],

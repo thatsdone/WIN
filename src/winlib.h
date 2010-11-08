@@ -1,4 +1,4 @@
-/* $Id: winlib.h,v 1.1.2.7.2.42 2010/10/04 08:23:07 uehira Exp $ */
+/* $Id: winlib.h,v 1.1.2.7.2.43 2010/11/08 02:11:37 uehira Exp $ */
 
 #ifndef _WIN_LIB_H_
 #define _WIN_LIB_H_
@@ -9,10 +9,10 @@
 
 #include <sys/types.h>
 
+/* check stat macros */
 #ifdef HAVE_SYS_STAT_H
 #include <sys/stat.h>
 #endif
-
 #ifdef STAT_MACROS_BROKEN
 #undef S_ISDIR
 #endif
@@ -21,6 +21,16 @@
 #endif
 #if !defined(S_ISDIR) && defined(S_IFDIR)
 #define S_ISDIR(m)      (((m) & S_IFMT) == S_IFDIR)
+#endif
+
+/* check SHM_R & SHM_W */
+#include <sys/ipc.h>
+#include <sys/shm.h>
+#ifndef SHM_R
+#define SHM_R       (IPC_R)
+#endif
+#ifndef SHM_W
+#define SHM_W       (IPC_W)
 #endif
 
 #include <stdio.h>

@@ -1,4 +1,4 @@
-/* $Id: raw_shift.c,v 1.2.4.3.2.9 2010/10/12 15:32:07 uehira Exp $ */
+/* $Id: raw_shift.c,v 1.2.4.3.2.10 2010/11/09 08:31:42 uehira Exp $ */
 
 /* "raw_shift.c"    2002.4.1 - 4.1 urabe */
 /*                  modified from raw_100.c */
@@ -38,11 +38,11 @@
 #define MAX_SR   4095
 
 static const char rcsid[] =
-  "$Id: raw_shift.c,v 1.2.4.3.2.9 2010/10/12 15:32:07 uehira Exp $";
+  "$Id: raw_shift.c,v 1.2.4.3.2.10 2010/11/09 08:31:42 uehira Exp $";
 
 static uint8_w ch_table[WIN_CHMAX];
-char *chfile;
-int n_ch,negate_channel;
+static char *chfile;
+static int n_ch,negate_channel;
 
 int syslog_mode = 0, exit_status;
 char *progname,*logfile;

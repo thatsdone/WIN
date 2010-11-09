@@ -1,5 +1,5 @@
 /*-
-  $Id: hypomhc.c,v 1.7.2.2.2.5 2010/09/20 03:33:27 uehira Exp $
+  $Id: hypomhc.c,v 1.7.2.2.2.6 2010/11/09 08:31:04 uehira Exp $
    hypomhc.c    : main program for hypocenter location
      original version was made on March 13, 1984 and
      modified by N.H. on Feb. 8, 1985, May 8, 1985.
@@ -1078,7 +1078,7 @@ line150:
     if (NULL == (bng1 = (double *)malloc(sizeof(double) * (strc1.n1 + 1))))
       memory_error();
   }
-  while (1) {
+  for (;;) {
     jj = 0;
 line200:
     where(&strc, xm1[2], &ln);

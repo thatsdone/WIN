@@ -1,5 +1,5 @@
 /*-
-  $Id: hypomhc.c,v 1.7.2.2.2.5.2.1 2010/11/09 08:02:28 uehira Exp $
+  $Id: hypomhc2.c,v 1.1.6.1 2010/11/09 08:02:28 uehira Exp $
    hypomhc.c    : main program for hypocenter location
      original version was made on March 13, 1984 and
      modified by N.H. on Feb. 8, 1985, May 8, 1985.
@@ -82,43 +82,43 @@ struct struct_data {
 typedef struct struct_data STRUCT;
 
 struct station_data {
-  char		  sa1     [11];	/* STATION ABBREVIATION   (WITHIN 10
-				 * CHARACTERS) */
-  char		  pola1   [2];	/* POLARITY OF THE FIRST MOTION                 */
-  double	  pt1;		/* P-PHASE ARRIVAL TIME             (IN SECOND) */
-  double	  st1;		/* S-PHASE ARRIVAL TIME             (IN SECOND) */
-  double	  pe1;		/* STANDARD ERROR IN P-ARRIVAL DATA (IN SECOND) */
-  double	  se1;		/* STANDARD ERROR IN S-ARRIVAL DATA (IN SECOND) */
-  double	  fmp;		/* F-P TIME DATA (IN SECOND, 0.0 FOR NO USE)    */
-  double	  amp;		/* MAXIMUM AMPLITUDE DATA (IN m/s, 0.0 FOR NO
-				 * USE) */
-  double	  alat;		/* Latitude of Station */
-  double	  alng;		/* Longitude of Station */
-  double	  ahgt;		/* Height of station (in KM) */
-  double	  stcp;		/* Station correction of P-wave (in SEC) */
-  double	  stcs;		/* Station correction of S-wave (in SEC) */
-  double	  xst   , yst;
-  int		  flag;		/* structure flag 1=special */
+  char		  sa1[11];  /* STATION ABBREVIATION  (WITHIN 10* CHARACTERS) */
+  char		  pola1[2]; /* POLARITY OF THE FIRST MOTION                 */
+  double	  pt1;      /* P-PHASE ARRIVAL TIME             (IN SECOND) */
+  double	  st1;	    /* S-PHASE ARRIVAL TIME             (IN SECOND) */
+  double	  pe1;	    /* STANDARD ERROR IN P-ARRIVAL DATA (IN SECOND) */
+  double	  se1;	    /* STANDARD ERROR IN S-ARRIVAL DATA (IN SECOND) */
+  double	  fmp;	    /* F-P TIME DATA (IN SECOND, 0.0 FOR NO USE)    */
+  double	  amp;
+                          /* MAXIMUM AMPLITUDE DATA (IN m/s, 0.0 FOR NO USE) */
+  double	  alat;	    /* Latitude of Station */
+  double	  alng;	    /* Longitude of Station */
+  double	  ahgt;	    /* Height of station (in KM) */
+  double	  stcp;	    /* Station correction of P-wave (in SEC) */
+  double	  stcs;	    /* Station correction of S-wave (in SEC) */
+  double	  xst, yst;
+  int		  flag;	    /* structure flag 1=special */
 };
 typedef struct station_data STATION;
 
 struct station_for_calc_data {
   int		  org_num;
-  char		  sa      [11];
-  double	  sc     [3];
-  double	  pt    , st;
-  double	  pe    , se;
-  double	  apt   , ast;
-  double	  vpt   , vst;
+  char		  sa[11];
+  double	  sc[3];
+  double	  pt, st;
+  double	  pe, se;
+  double	  apt, ast;
+  double	  vpt, vst;
   double	  vps;
   double         *fp, *fs;
-  double	  tpt   , tag, tbg;
-  double	  a      [3];
-  double	  rpt   , rst;
+  double	  tpt, tag, tbg;       /* P wave */
+  double	  tpts, tags, tbgs;    /* S wave */
+  double	  a[3], as[3];
+  double	  rpt, rst;
   double	  tw;
-  double	  cp     [3], cs[3];
-  double	  dl    , az, ta, tb, bmag;
-  char		  pola    [2];
+  double	  cp[3], cs[3];
+  double	  dl, az, ta, tb, bmag;
+  char		  pola[2];
   int		  flag;		/* structure flag */
 };
 typedef struct station_for_calc_data FOR_CALC;
@@ -378,12 +378,12 @@ static void
 travel(double rr, double ya, double yb, int *np, double *ang, double *trv,
        double *bng, STRUCT *strc)
 {
-  double	  y1, y2;
+  double	  y1    , y2;
   double         *xc, *tac;
-  int		  l1, l2;
-  int		  i, j, k;
-  double	  t1, t2, x1, x2, ta1, ta2, xr, ta0, t0, x0, a0, dt0, dta, tag;
-  double	  dtc, sang;
+  int		  l1      , l2;
+  int		  i       , j, k;
+  double	  t1    , t2, x1, x2, ta1, ta2, xr, ta0, t0, x0, a0, dt0, dta, tag;
+  double	  dtc   , sang;
 
   ta0 = 0.0;  /* supress warnning */
   /* First, malloc */
@@ -471,7 +471,6 @@ line55:
 static void
 usage()
 {
-
   fputs("Usage : hypomhc <STATION, STRUCTURE> <ARRIVAL TIME DATA> <FINAL RESULTS> <REPORT> (<INITIAL GUESS>)\n", stderr);
 }
 
@@ -507,7 +506,9 @@ main(int argc, char *argv[])
   int		  nn;
   double         *th, eot, ex1[3];
   static STRUCT	  strc, strc1;
+  static STRUCT	  strcs;
   double	  zmin  , zmax;
+  double	  zmins  , zmaxs;
   double	  zmin1 , zmax1;
   char		  vst     [4], svst[4];
   int		  na      , npd, nsd, nd;
@@ -518,10 +519,12 @@ main(int argc, char *argv[])
   double	  xm0    [3], ex0[3];
   int		  ll      , lm, jm, judg;
   double	  ccp   , al2, alp, vxm[3], xm1[3], as;
-  int		  jj      , ln, ln1, np, np1;
+  int		  jj      , ln, ln1, np, nps, np1;
   double         *ang, *trv, *bng;
+  double         *angs, *trvs, *bngs;
   double         *ang1 = NULL, *trv1 = NULL, *bng1 = NULL; /* supress warning */
-  double	  sn    , cn, vre, srb, src, wpt, wst, bcp;
+  double	  sn, cn, vre, srb, src, wpt, wst, bcp;
+  double          sns, cns, vres;
   double	  xw     [3], rmx, rvx[3], aa, sra;	/* sra=0.0 need? */
   double	  zm1   , zm2, xmc[3] /* shokika? */ , acp /* shokika? */ ;
   double	  dp     [3][3], ds[3][3], bb[3][3], h[3][3], cc[3][3], dtb;
@@ -543,7 +546,7 @@ main(int argc, char *argv[])
   int		  cflag = 0, sflag = 0, smode = 0;
   char		  sstrname[1024], schname[1024];
   FILE           *fp_sstr = NULL, *fp_sch;
-  int		  sstanum = 0;
+  int		  sstanum;
   char          **ssta = NULL;
 
 #if (defined(__FreeBSD__) && (__FreeBSD__ < 4))
@@ -680,17 +683,27 @@ main(int argc, char *argv[])
   fgets(txtbuf, LINELEN, fp_11);
   sscanf(txtbuf, "%d%3s%lf%lf", &nn, vst, &va, &vb);
   vst[3] = '\0';
-  strc.n1 = nn + 1;
+  strc.n1 = strcs.n1 = nn + 1;
 
+  if (NULL == (th = (double *)malloc(sizeof(double) * (strc.n1))))
+    memory_error();
+  /* P wave velocity structure */
   if (NULL == (strc.vr = (double *)malloc(sizeof(double) * (strc.n1 + 1))))
     memory_error();
   if (NULL == (strc.y = (double *)malloc(sizeof(double) * (strc.n1 + 1))))
     memory_error();
-  if (NULL == (th = (double *)malloc(sizeof(double) * (strc.n1))))
-    memory_error();
   if (NULL == (strc.vlg = (double *)malloc(sizeof(double) * (strc.n1))))
     memory_error();
   if (NULL == (strc.v = (double *)malloc(sizeof(double) * (strc.n1))))
+    memory_error();
+  /* S wave velocity structure */
+  if (NULL == (strcs.vr = (double *)malloc(sizeof(double) * (strcs.n1 + 1))))
+    memory_error();
+  if (NULL == (strcs.y = (double *)malloc(sizeof(double) * (strcs.n1 + 1))))
+    memory_error();
+  if (NULL == (strcs.vlg = (double *)malloc(sizeof(double) * (strcs.n1))))
+    memory_error();
+  if (NULL == (strcs.v = (double *)malloc(sizeof(double) * (strcs.n1))))
     memory_error();
   /*-  This part is Original
      if(vb <= va)
@@ -699,35 +712,60 @@ main(int argc, char *argv[])
        vlct = (vb-va)/log(vb/va);
   */
   vlct = 0.0;
-  for (i = 0; i <= strc.n1; ++i)/* nn+2 */
+  for (i = 0; i <= strc.n1; ++i)   /* nn + 2 */
     fscanf(fp_11, "%lf", strc.vr + i);	/* P-wave velocity of each layer */
-  for (i = 0; i < strc.n1; ++i)	/* nn+1 */
-    fscanf(fp_11, "%lf", th + i);	/* Thickness of each layer */
-  fgets(txtbuf, LINELEN, fp_11);/* only for skip */
+  for (i = 0; i < strc.n1; ++i)	   /* nn + 1 */
+    fscanf(fp_11, "%lf", th + i);  /* Thickness of each layer */
+  fgets(txtbuf, LINELEN, fp_11);   /* only for skip */
   fgets(txtbuf, LINELEN, fp_11);
   sscanf(txtbuf, "%lf%lf%lf%lf", &eot, ex1 + 1, ex1, ex1 + 2);
 #if DEBUG
   printf("eot=%lf ex1[0]=%lf ex1[1]=%lf ex1[2]=%lf\n",
 	 eot, ex1[0], ex1[1], ex1[2]);
 #endif
-
-  for (i = 0; i < strc.n1; ++i)
+  /* set S-wave velocity */
+  for (i = 0; i <= strcs.n1; ++i) { /* nn + 2 */
+    /* S-wave velocity of each layer */
+    if (fscanf(fp_11, "%lf", strcs.vr + i) != 1)
+      break;
+  }
+  if (i < strcs.n1 + 1)  /* If not enough S data, Vs=Vp/sqrt(3) */
+    for (j = 0; j <= strcs.n1; ++j)
+      strcs.vr[j] = strc.vr[j] / VPVS;
+  
+  for (i = 0; i < strc.n1; ++i) {
     strc.vlg[i] = (strc.vr[i + 1] - strc.vr[i]) / th[i];
-  strc.y[0] = 0.0;
-  for (i = 0; i < strc.n1; ++i)
+    strcs.vlg[i] = (strcs.vr[i + 1] - strcs.vr[i]) / th[i];
+  }
+  strc.y[0] = strcs.y[0] = 0.0;
+  for (i = 0; i < strc.n1; ++i) {
     strc.y[i + 1] = strc.y[i] + th[i];
+    strcs.y[i + 1] = strcs.y[i] + th[i];
+  }
   strc.v[0] = strc.vr[0] / strc.vlg[0];
-  for (i = 1; i < strc.n1; ++i)
+  strcs.v[0] = strcs.vr[0] / strcs.vlg[0];
+  for (i = 1; i < strc.n1; ++i) {
     strc.v[i] =
-      (strc.vlg[i - 1] * strc.v[i - 1] + (strc.vlg[i - 1] - strc.vlg[i]) * strc.y[i])
-      / strc.vlg[i];
+      (strc.vlg[i - 1] * strc.v[i - 1] + (strc.vlg[i - 1] - strc.vlg[i]) * strc.y[i]) / strc.vlg[i];
+    strcs.v[i] =
+      (strcs.vlg[i - 1] * strcs.v[i - 1] + (strcs.vlg[i - 1] - strcs.vlg[i]) * strcs.y[i]) / strcs.vlg[i];
+  }
+
   zmin = -strc.vr[0] / strc.vlg[0] + 1.0e-1;
   zmax = strc.y[strc.n1] - 1.0e-1;
+  zmins = -strcs.vr[0] / strcs.vlg[0] + 1.0e-1;
+  zmaxs = strcs.y[strcs.n1] - 1.0e-1;
 #if DEBUGS
-  printf("%lf %lf\n", zmin, zmax);
+  fprintf(fp_21, "%lf %lf : %lf %lf\n", zmin, zmax, zmins, zmaxs);
 #endif
-  /* output report */
-  fprintf(fp_21, " ***** VELOCITY STRUCTURE (%s) *****\n", vst);
+  zmin = zmin < zmins ? zmins : zmin;
+  zmax = zmax > zmaxs ? zmaxs : zmax;
+#if DEBUGS
+  fprintf(fp_21, "%lf %lf : %lf %lf\n", zmin, zmax, zmins, zmaxs);
+#endif
+
+  /* output report (P wave) */
+  fprintf(fp_21, " ***** P WAVE VELOCITY STRUCTURE (%s) *****\n", vst);
   fprintf(fp_21, "         I    Y(I)      VR(I)     ALPHA(I)    VLG(I)\n");
   for (i = 0; i < strc.n1; ++i) {
     fprintf(fp_21, "     %5d%10.4lf%10.4lf\n", i, strc.y[i], strc.vr[i]);
@@ -736,6 +774,16 @@ main(int argc, char *argv[])
   }
   fprintf(fp_21, "     %5d%10.4lf%10.4lf\n",
 	  strc.n1, strc.y[strc.n1], strc.vr[strc.n1]);
+  /* output report (S wave) */
+  fprintf(fp_21, " ***** S WAVE VELOCITY STRUCTURE (%s) *****\n", vst);
+  fprintf(fp_21, "         I    Y(I)      VR(I)     ALPHA(I)    VLG(I)\n");
+  for (i = 0; i < strcs.n1; ++i) {
+    fprintf(fp_21, "     %5d%10.4lf%10.4lf\n", i, strcs.y[i], strcs.vr[i]);
+    fprintf(fp_21, "                              %12.3lE%12.3lE\n",
+	    strcs.v[i], strcs.vlg[i]);
+  }
+  fprintf(fp_21, "     %5d%10.4lf%10.4lf\n",
+	  strcs.n1, strcs.y[strcs.n1], strcs.vr[strcs.n1]);
   free(th);
 
   /****** Read Special Struct data *****/
@@ -1057,6 +1105,7 @@ line150:
     for (j = 0; j < nd; ++j) {
       calc[i].fp[j] = -calc[i].vps / as;
       calc[i].fs[j] = calc[i].fp[j] / alp;
+      /*  calc[i].fs[j] = calc[i].fp[j]; */
       if (i == j) {
 	calc[i].fp[j] += 1.0;
 	calc[i].fs[j] += 1.0;
@@ -1064,13 +1113,24 @@ line150:
       calc[i].fp[j] *= calc[j].vpt;
       calc[i].fs[j] *= calc[j].vst;
     }
+
+  /* P wave */
   if (NULL == (ang = (double *)malloc(sizeof(double) * (strc.n1 + 1))))
     memory_error();
   if (NULL == (trv = (double *)malloc(sizeof(double) * (strc.n1 + 1))))
     memory_error();
   if (NULL == (bng = (double *)malloc(sizeof(double) * (strc.n1 + 1))))
     memory_error();
+  /* S wave */
+  if (NULL == (angs = (double *)malloc(sizeof(double) * (strcs.n1 + 1))))
+    memory_error();
+  if (NULL == (trvs = (double *)malloc(sizeof(double) * (strcs.n1 + 1))))
+    memory_error();
+  if (NULL == (bngs = (double *)malloc(sizeof(double) * (strcs.n1 + 1))))
+    memory_error();
+  /* special structure */
   if (smode) {
+    /* P wave */
     if (NULL == (ang1 = (double *)malloc(sizeof(double) * (strc1.n1 + 1))))
       memory_error();
     if (NULL == (trv1 = (double *)malloc(sizeof(double) * (strc1.n1 + 1))))
@@ -1078,6 +1138,8 @@ line150:
     if (NULL == (bng1 = (double *)malloc(sizeof(double) * (strc1.n1 + 1))))
       memory_error();
   }
+
+  /***** Begin iteration *****/
   for (;;) {
     jj = 0;
 line200:
@@ -1087,6 +1149,7 @@ line200:
 #if DEBUGS > 0
     fprintf(fp_21, "depth=%lf where=%d where1=%d\n", xm1[2], ln, ln1);
 #endif
+
     for (i = 0; i < nd; ++i) {
       xx = xm1[0] - calc[i].sc[0];
       yy = xm1[1] - calc[i].sc[1];
@@ -1102,6 +1165,8 @@ line200:
       /*
        * printf("rr=%lf  xm1[2]=%lf  sc=%lf\n", rr,xm1[2],calc[i].sc[2]);
        */
+
+      /* calculate travel time */
       if (smode && calc[i].flag) {	/* special station */
 	travel(rr, xm1[2], calc[i].sc[2], &np1, ang1, trv1, bng1, &strc1);
 	if (np1 == 0) {
@@ -1112,26 +1177,33 @@ line200:
 	}
       } else {
 	travel(rr, xm1[2], calc[i].sc[2], &np, ang, trv, bng, &strc);
-	if (np == 0) {
+	travel(rr, xm1[2], calc[i].sc[2], &nps, angs, trvs, bngs, &strcs);
+	if ((np == 0) || (nps == 0)) {
 	  fprintf(fp_21,
 		  " *** RAY PATH TO %d-STATION IS NOT FOUND ***\n", i);
 	  judg = 10;
 	  goto end_NLINV;
 	}
       }
-#if DEBUGS
+#if DEBUGS > 1
+/*  #if DEBUGS == 0 */
       if (smode && calc[i].flag) {
 	printf("np1=%d\n", np1);
 	for (j = 0; j < np1; ++j)
 	  printf("%d ang1=%lf trv1=%lf bng1=%lf\n",
 		 j, ang1[j], trv1[j], bng1[j]);
       } else {
-	printf("np=%d\n", np);
+	fprintf(fp_21, "np =%d ", np);
 	for (j = 0; j < np; ++j)
-	  printf("%d ang=%lf trv=%lf bng=%lf\n", j, ang[j], trv[j], bng[j]);
+	  fprintf(fp_21, "P: %d ang=%lf trv=%lf bng=%lf\n",
+		  j, ang[j], trv[j], bng[j]);
+	fprintf(fp_21, "nps=%d ", nps);
+	for (j = 0; j < nps; ++j)
+	  fprintf(fp_21, "S: %d ang=%lf trv=%lf bng=%lf\n",
+		  j, angs[j], trvs[j], bngs[j]);
       }
 #endif
-      calc[i].tpt = 1.0e5;
+      calc[i].tpt = calc[i].tpts = 1.0e5;
 
       if (smode && calc[i].flag) {
 	for (j = 0; j < np1; ++j) {
@@ -1144,6 +1216,7 @@ line200:
 	  }
 	}
       } else {
+	/* P wave */
 	for (j = 0; j < np; ++j) {
 	  if (trv[j] > calc[i].tpt)
 	    continue;
@@ -1153,29 +1226,51 @@ line200:
 	    calc[i].tbg = bng[j];
 	  }
 	}
+	/* S wave */
+	for (j = 0; j < nps; ++j) {
+	  if (trvs[j] > calc[i].tpts)
+	    continue;
+	  else {
+	    calc[i].tpts = trvs[j];
+	    calc[i].tags = angs[j];
+	    calc[i].tbgs = bngs[j];
+	  }
+	}
       }
 
       sn = sin(calc[i].tag);
       cn = cos(calc[i].tag);
+      sns = sin(calc[i].tags);
+      cns = cos(calc[i].tags);
       if (smode && calc[i].flag)
 	vre = strc1.vlg[ln1] * (xm1[2] + strc1.v[ln1]);
-      else
-	vre = strc.vlg[ln] * (xm1[2] + strc.v[ln]);
+      else {
+	vre = strc.vlg[ln] * (xm1[2] + strc.v[ln]);     /* P wave */
+	vres = strcs.vlg[ln] * (xm1[2] + strcs.v[ln]);  /* S wave */
+      }
       /*
        * printf("tpt=%.11lf  tag=%.11lf  tbg=%.11lf  vre=%.13lf\n",
        * calc[i].tpt,calc[i].tag,calc[i].tbg,vre);
        */
+
+      /* P wave */
       calc[i].a[0] = sn * xx / rr / vre;
       calc[i].a[1] = sn * yy / rr / vre;
       calc[i].a[2] = -cn / vre;
-    }
+      /* S wave */
+      calc[i].as[0] = sns * xx / rr / vres;
+      calc[i].as[1] = sns * yy / rr / vres;
+      calc[i].as[2] = -cns / vres;
+    }  /** for (i = 0; i < nd; ++i) **/
+
     if (iyear >= 0) {
       for (i = 0; i < nd; ++i) {
 	/* PT(I) and ST(I) contains STCP(I) and STCS(I), respectively. */
 	calc[i].pe = calc[i].pt;
 	calc[i].se = calc[i].st;
 	calc[i].pt = secc + calc[i].tpt - calc[i].pt;
-	calc[i].st = secc + alp * calc[i].tpt - calc[i].st;
+	/*  calc[i].st = secc + alp * calc[i].tpt - calc[i].st; */
+	calc[i].st = secc + calc[i].tpts - calc[i].st;
 	calc[i].rpt = 0.0;
 	calc[i].rst = 0.0;
       }
@@ -1197,7 +1292,8 @@ line200:
       if (calc[i].se <= 0.0)
 	calc[i].rst = 0.0;
       else
-	calc[i].rst = calc[i].st - alp * calc[i].tpt;
+	calc[i].rst = calc[i].st - calc[i].tpts;
+        /*  calc[i].rst = calc[i].st - alp * calc[i].tpt; */
       wpt = calc[i].vpt * calc[i].rpt;
       wst = calc[i].vst * calc[i].rst;
       srb += wpt * calc[i].rpt + wst * calc[i].rst;
@@ -1275,6 +1371,7 @@ line200:
 	for (l = 0; l < nd; ++l) {
 	  calc[i].cp[j] += calc[i].fp[l] * calc[l].a[j];
 	  calc[i].cs[j] += calc[i].fs[l] * calc[l].a[j];
+	  /*  calc[i].cs[j] += calc[i].fs[l] * calc[l].as[j]; */
 	}
       }
     }
@@ -1284,8 +1381,10 @@ line200:
 	for (l = 0; l < nd; ++l) {
 	  dp[i][j] += calc[l].a[i] * calc[l].cp[j];
 	  ds[i][j] += calc[l].a[i] * calc[l].cs[j];
+	  /*  ds[i][j] += calc[l].as[i] * calc[l].cs[j]; */
 	}
 	bb[i][j] = dp[i][j] + al2 * ds[i][j];
+	/*  bb[i][j] = dp[i][j] + ds[i][j]; */
 	if (i == j)
 	  bb[i][j] += vxm[i];
       }

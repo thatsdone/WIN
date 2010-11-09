@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.38.2.10.2.24 2010/10/25 10:31:51 uehira Exp $
+# $Id: Makefile.am,v 1.38.2.10.2.24.2.1 2010/11/09 08:02:28 uehira Exp $
 #
 
 if SUNOS4
@@ -62,10 +62,11 @@ TAPE_USER_MATH=pmon elist events evdetect
 ONLINE_MATH=ecore ecore2 raw_time winrandsimu6
 OFFLINE_USER_MATH=wtime
 #OFFLINE_MATH=dewin select_stations
-OFFLINE_MATH=dewin select_stations hypomhc wintosac select_bylatlon
+OFFLINE_MATH=dewin select_stations hypomhc hypomhc2 wintosac select_bylatlon
 
 OFFLINE_USER=$(OFFLINE_X) $(OFFLINE_F77) wed wck wadd $(OFFLINE_MATH) wchch pick2tseis \
              wch pick2finalb pick2final finalb2final final2finalb finalb2seis \
+             pick2finalb_SEVO \
              wform wintowin $(OFFLINE_USER_MATH) winadd wck_wdisk wadd2 \
              win2raw wchasn ls8tel16_win ls8tel_STM ls8tel_STS ls7000_A8 ls7000_A9 split_win
 TAPE_USER=$(RTAPE) $(FROMTAPE) wdisk wdiskts ras2rpdl ras2lips file_older raw2mon \
@@ -73,6 +74,7 @@ TAPE_USER=$(RTAPE) $(FROMTAPE) wdisk wdiskts ras2rpdl ras2lips file_older raw2mo
 ONLINE=order raw_mon $(WTAPE) setexb timeout raw_raw raw_100 cormeisei shmdump \
        raw_ch extraw insert_raw insert_trg find_picks raw_shift ls8tel16_raw\
 	shmcounter\
+       raw_clip \
        $(ONLINE_SO) $(ONLINE_MATH) $(ONL_FREEBSD)
 
 ONL_OPT_=robot
@@ -137,6 +139,7 @@ install-exec-hook:
 	(rm -f @bindir@/recvstatus2d; cd @bindir@ && @LN_S@ recvstatus2 recvstatus2d)
 	(rm -f @bindir@/recvstatus3d; cd @bindir@ && @LN_S@ recvstatus3 recvstatus3d)
 	(rm -f @bindir@/recvstatus4d; cd @bindir@ && @LN_S@ recvstatus4 recvstatus4d)
+	(rm -f @bindir@/raw_clipd; cd @bindir@ && @LN_S@ raw_clip raw_clipd)
 	(rm -f @bindir@/ls8tel16_rawd; cd @bindir@ && @LN_S@ ls8tel16_raw ls8tel16_rawd)
 	(rm -f @bindir@/recvt_LS7000d; cd @bindir@ && @LN_S@ recvt_LS7000 recvt_LS7000d)
 
@@ -165,6 +168,7 @@ uninstall-local:
 	rm -f @bindir@/recvstatus2d
 	rm -f @bindir@/recvstatus3d
 	rm -f @bindir@/recvstatus4d
+	rm -f @bindir@/raw_clipd
 	rm -f @bindir@/ls8tel16_rawd
 	rm -f @bindir@/recvt_LS7000d
 
@@ -235,6 +239,9 @@ wch_LDADD = $(WIN_SYSTEM_LTLIB)
 
 pick2finalb_SOURCES = pick2finalb.c $(WIN_LIBH)
 pick2finalb_LDADD = $(WIN_SYSTEM_LTLIB)
+
+pick2finalb_SEVO_SOURCES = pick2finalb_SEVO.c $(WIN_LIBH)
+pick2finalb_SEVO_LDADD = $(WIN_SYSTEM_LTLIB)
 
 pick2final_SOURCES = pick2final.c $(SUBFUNC_H)
 
@@ -383,6 +390,10 @@ hypomhc_SOURCES = hypomhc.c pltxy.h $(SUBFUNC_H)
 hypomhc_LDADD = $(WIN_SYSTEM_LTLIB) -lm
 #hypomhc_CFLAGS = $(AM_CFLAGS)
 
+hypomhc2_SOURCES = hypomhc2.c pltxy.h $(SUBFUNC_H)
+hypomhc2_LDADD = $(WIN_SYSTEM_LTLIB) -lm
+#hypomhc2_CFLAGS = $(AM_CFLAGS)
+
 sends_SOURCES = sends.c $(WIN_LIBH)
 sends_LDADD = $(WIN_SYSTEM_LTLIB) $(WIN_LOG_LTLIB) @LIBNSL@ @LIBSOCKET@
 
@@ -397,6 +408,9 @@ recvstatus3_LDADD = $(WIN_LOG_LTLIB) $(WIN_SYSTEM_LTLIB) @LIBNSL@ @LIBSOCKET@
 
 recvstatus4_SOURCES = recvstatus4.c $(WIN_LIBH) ls7000.h
 recvstatus4_LDADD = $(WIN_LOG_LTLIB) $(WIN_SYSTEM_LTLIB) @LIBNSL@ @LIBSOCKET@
+
+raw_clip_SOURCES = raw_clip.c $(WIN_LIBH) $(GC_CHECK_INCLUDE)
+raw_clip_LDADD = $(WIN_LOG_LTLIB) $(WIN_SYSTEM_LTLIB) @LIBSHMGET@ $(GC_CHECK_LIB)
 
 ls8tel16_win_SOURCES = ls8tel16_win.c $(WIN_LIBH) $(GC_CHECK_INCLUDE) ls8tel.h ls8tel.c
 ls8tel16_win_LDADD = $(WIN_SYSTEM_LTLIB) $(GC_CHECK_LIB)

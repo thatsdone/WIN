@@ -1,4 +1,8 @@
- $Id: ChangeLog,v 1.131.2.25.2.137.2.1 2010/11/09 08:02:27 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.137.2.2 2010/11/16 10:55:08 uehira Exp $
+
+2010-11-16  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 2.1.15 released.
+	* prog/windiffq : added.
 
 2010-11-09  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* make new branch 'rel-64bit_SEVO'

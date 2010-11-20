@@ -1,6 +1,6 @@
 #! /bin/sh
 #
-# $Id: windiffq,v 1.1.4.1 2010/11/16 10:55:08 uehira Exp $
+# $Id: windiffq,v 1.1.4.2 2010/11/20 12:45:15 uehira Exp $
 #
 # Output only whether win files differ.
 #
@@ -15,6 +15,15 @@ if [ -z "TMPDIR" ]; then
     TMPDIR=/tmp
 fi
 
+# First, check file size.
+size1=`wc -c $1 | awk '{print $1}'`
+size2=`wc -c $2 | awk '{print $1}'`
+
+if [ $size1 -ne $size2 ]; then
+    echo "Files $1 and $2 differ"
+    exit 1
+fi
+
 tempfoo=`basename $0`
 TMPFILE1=`mktemp -t ${tempfoo}` || exit 1
 TMPFILE2=`mktemp -t ${tempfoo}` || exit 1
@@ -22,9 +31,8 @@ TMPFILE2=`mktemp -t ${tempfoo}` || exit 1
 winadd -ns $1 > $TMPFILE1
 winadd -ns $2 > $TMPFILE2
 
-diff -rq $TMPFILE1 $TMPFILE2 > /dev/null 2>&1
-
 # md5 $TMPFILE1 $TMPFILE2
+diff -rq $TMPFILE1 $TMPFILE2 > /dev/null 2>&1
 
 RET=$?
 #echo $RET

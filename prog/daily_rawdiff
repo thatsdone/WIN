@@ -1,0 +1,31 @@
+#! /bin/sh
+#
+# $Id: daily_rawdiff,v 1.1.2.1 2010/11/20 12:28:07 uehira Exp $
+#
+# Output only whether win files differ.
+#
+
+if [ -z "$1" -o ! -d "$2" -o ! -d "$3" ]; then
+    echo "daily_rawdiff date rawdir1 rawdir2"
+    echo "   date: YYMMDD"
+    exit 1
+fi
+
+if [ "$2" = "$3" ]; then
+   echo "raw dir names are same"
+   exit 0
+fi
+
+tempfoo=`basename $0`
+TMPFILE=`mktemp -t ${tempfoo}` || exit 1
+
+(cd $2 && ls "$1"*) | while read file
+do
+	echo "windiffq $2/$file $3/$file" >> $TMPFILE
+done
+
+/bin/sh $TMPFILE
+
+rm -f $TMPFILE
+
+exit 0

@@ -1,9 +1,11 @@
 #! /bin/sh
 #
-# $Id: daily_rawdiff,v 1.1.2.1 2010/11/20 12:28:07 uehira Exp $
+# $Id: daily_rawdiff,v 1.1.2.2 2010/11/22 01:30:49 uehira Exp $
 #
 # Output only whether win files differ.
 #
+
+. win.conf
 
 if [ -z "$1" -o ! -d "$2" -o ! -d "$3" ]; then
     echo "daily_rawdiff date rawdir1 rawdir2"

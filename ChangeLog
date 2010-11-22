@@ -1,7 +1,11 @@
- $Id: ChangeLog,v 1.131.2.25.2.138 2010/11/16 10:48:08 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.139 2010/11/22 14:50:27 uehira Exp $
+
+2010-11-20  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 2.1.15 released.
+	* prog/daily_rawdiff : added.
+	* prog/windiffq : check file size.
 
 2010-11-16  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
-	* Version 2.1.15 released.
 	* prog/windiffq : added.
 
 2010-11-08  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>

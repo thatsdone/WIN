@@ -1,7 +1,10 @@
- $Id: ChangeLog,v 1.131.2.25.2.137.2.4 2010/11/20 12:45:15 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.137.2.5 2010/11/23 05:25:17 uehira Exp $
+
+2010-11-23  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 2.1.15 released.
+	* create header files which can include from other sources.
 
 2010-11-20  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
-	* Version 2.1.15 released.
 	* prog/daily_rawdiff : added.
 	* prog/windiffq : check file size.
 

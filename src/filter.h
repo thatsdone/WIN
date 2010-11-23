@@ -1,11 +1,7 @@
-/* $Id: filter.h,v 1.1.2.1 2007/06/19 11:19:40 uehira Exp $ */
+/* $Id: filter.h,v 1.1.2.1.6.1 2010/11/23 05:25:17 uehira Exp $ */
 
 #ifndef _FILTER_H_
 #define _FILTER_H_
-
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
 
 /* filter.c */
 int butlop(double *, int *, double *, int *, double, double, double, double);

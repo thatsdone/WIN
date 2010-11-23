@@ -1,11 +1,7 @@
-/* $Id: win_log.h,v 1.2 2004/11/30 14:16:30 uehira Exp $ */
+/* $Id: win_log.h,v 1.2.10.1 2010/11/23 05:25:18 uehira Exp $ */
 
 #ifndef _WIN_LOG_H_
 #define _WIN_LOG_H_
-
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
 
 void write_log(char *);
 void err_sys(char *);

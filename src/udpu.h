@@ -1,4 +1,4 @@
-/* $Id: udpu.h,v 1.2.8.2 2010/10/07 14:20:46 uehira Exp $ */
+/* $Id: udpu.h,v 1.2.8.2.2.1 2010/11/23 05:25:18 uehira Exp $ */
 
 /*
  * Copyright (c) 2001-2004
@@ -9,10 +9,6 @@
 
 #ifndef _UDPU_H_
 #define _UDPU_H_
-
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
 
 #include <sys/types.h>
 #include <sys/socket.h>

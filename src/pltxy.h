@@ -1,11 +1,7 @@
-/* $Id: pltxy.h,v 1.1.2.1 2010/02/28 09:09:06 uehira Exp $ */
+/* $Id: pltxy.h,v 1.1.2.2 2010/11/23 03:50:20 uehira Exp $ */
 
 #ifndef _PLTXY_H_
 #define _PLTXY_H_
-
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
 
 /* pltxy.c */
 void

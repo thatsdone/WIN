@@ -1,4 +1,4 @@
-/* $Id: ls7000.h,v 1.1.2.1 2009/03/06 13:03:03 uehira Exp $ */
+/* $Id: ls7000.h,v 1.1.2.2 2010/11/23 03:50:20 uehira Exp $ */
 
 /*
  * Copyright (c) 2009
@@ -13,12 +13,6 @@
 
 #ifndef _LS7000_H_
 #define _LS7000_H_
-
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
-#include "winlib.h"
 
 #define LS7_PHDER_LEN  5     /* LS7000 packet header length */
 #define LS7_PID        4     /* position of packet ID (A1, A8 or A9) */

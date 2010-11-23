@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.38.2.10.2.24 2010/10/25 10:31:51 uehira Exp $
+# $Id: Makefile.am,v 1.38.2.10.2.25 2010/11/23 03:50:20 uehira Exp $
 #
 
 if SUNOS4
@@ -82,13 +82,15 @@ SUB=winform win2fix
 
 #WIN_UTIL = win_system.h win_system.c
 WIN_UTIL =
+WINSYSTEM_H = winsystem.h
 SUBFUNC_H = subst_func.h
 DAEMON_MODE = daemon_mode.h daemon_mode.c
 WIN_LOG = win_log.h win_log.c win_externs.h winlib_log.c
 UDP_UTILITY = udpu.h udp_accept.c udp_dest.c
 TCP_UTILITY = tcpu.h tcp_connect.c
 
-WIN_LIBH=winlib.h win_log.h filter.h pltxy.h ulaw.h daemon_mode.h udpu.h tcpu.h $(SUBFUNC_H)
+WIN_INCLUDABLE=wconst.h wmacros.h wproto.h wstruct.h  win_log.h filter.h pltxy.h ulaw.h daemon_mode.h udpu.h tcpu.h ls7000.h ls8tel.h 
+WIN_LIBH=winlib.h $(WIN_INCLUDABLE) $(SUBFUNC_H)
 WIN_LIBC=winlib.c filter.c pltxy.c ulaw.c
 
 #WIN_SYSTEM_LIB = libwinsystem.a
@@ -107,7 +109,9 @@ noinst_PROGRAMS = winrawcli_test
 endif
 #lib_LIBRARIES = $(WIN_SYSTEM_LIB) $(WIN_LOG_LIB)
 lib_LTLIBRARIES = $(WIN_LOG_LTLIB) $(WIN_SYSTEM_LTLIB)
-include_HEADERS = $(WIN_LIBH)
+include_HEADERS = $(WINSYSTEM_H) $(WIN_INCLUDABLE) winraw_bp.h
+
+DISTCLEANFILES = $(WINSYSTEM_H)
 
 install-exec-hook:
 	(rm -f @bindir@/send_mon; cd @bindir@ && @LN_S@ send_raw send_mon)

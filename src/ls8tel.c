@@ -1,4 +1,4 @@
-/* $Id: ls8tel.c,v 1.2.8.3 2010/02/02 10:57:22 uehira Exp $ */
+/* $Id: ls8tel.c,v 1.2.8.4 2010/11/23 03:50:20 uehira Exp $ */
 
 /*
  * Copyright (c) 2005
@@ -15,6 +15,7 @@
 #include "config.h"
 #endif
 
+#include "winlib.h"
 #include "ls8tel.h"
 
 /*

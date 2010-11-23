@@ -1,11 +1,7 @@
-/* $Id: ulaw.h,v 1.1.2.1 2010/06/17 14:20:22 uehira Exp $ */
+/* $Id: ulaw.h,v 1.1.2.2 2010/11/23 03:50:20 uehira Exp $ */
 
 #ifndef _ULAW_H_
 #define _ULAW_H_
-
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
 
 /************************************************************************/
 /*      Copyright 1989 by Rich Gopstein and Harris Corporation          */

@@ -1,4 +1,9 @@
- $Id: ChangeLog,v 1.131.2.25.2.140 2010/11/23 03:50:20 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.141 2010/11/24 10:41:26 uehira Exp $
+
+2010-11-24  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 2.1.16 released.
+	* configure.in : check 'statfs()' if 'struct statfs' exists.
+	                 for NetBSD (appealed by K. OHTAKE)
 
 2010-11-23  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* Version 2.1.15 released.

@@ -1,4 +1,8 @@
- $Id: ChangeLog,v 1.113.2.58 2010/11/08 15:19:50 uehira Exp $
+ $Id: ChangeLog,v 1.113.2.59 2010/11/25 07:41:45 uehira Exp $
+
+2010-11-25  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 1.2.9 released.
+	* src/wtape.c : conflict "SIZE_MAX" in Linux (/usr/include/stdint.h).
 
 2010-11-09  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* Version 1.2.8 released.

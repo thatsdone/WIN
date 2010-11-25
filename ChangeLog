@@ -1,7 +1,11 @@
- $Id: ChangeLog,v 1.131.2.25.2.137.2.6 2010/11/25 06:42:36 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.137.2.7 2010/11/25 07:24:01 uehira Exp $
+
+2010-11-25  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 2.1.16 released.
+	* src/evdetect.c : fixed a bug.
+	* src/wtape.c : conflict "SIZE_MAX" in Linux (/usr/include/stdint.h).
 
 2010-11-24  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
-	* Version 2.1.16 released.
 	* configure.in : check 'statfs()' if 'struct statfs' exists.
 	                 for NetBSD (appealed by K. OHTAKE)
 

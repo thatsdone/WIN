@@ -1,4 +1,4 @@
-/* $Id: wtape.c,v 1.12.2.4.2.9 2010/09/21 11:56:59 uehira Exp $ */
+/* $Id: wtape.c,v 1.12.2.4.2.9.2.1 2010/11/25 07:24:01 uehira Exp $ */
 /*
   program "wtape.c"
   8/23/89 - 8/8/90, 6/27/91, 12/24/91, 2/29/92  urabe
@@ -16,6 +16,7 @@
   2004.1.29 avoid odd byte block size
   2005.8.10 bug in strcmp2()/strncmp2() fixed : 0-6 > 7-9
   2010.2.16 64bit clean? (uehira)
+  2010.11.25 SIZE_MAX --> WTAPE_SIZE_MAX (conflict in Linux systems) (uehira)
 */
 
 #ifdef HAVE_CONFIG_H
@@ -49,7 +50,7 @@
 #include "winlib.h"
 
 #define   DEBUGFLAG 1
-#define   SIZE_MAX  2000000
+#define   WTAPE_SIZE_MAX  2000000
 #define   NAMLEN    80
 /* #define   N_EXABYTE 8 */  /* moved to winlib.h */
 #define   DEFAULT_WAIT_MIN  0
@@ -57,9 +58,9 @@
 #define   WIN_FILENAME_MAX 1024
 
 static const char rcsid[] = 
-  "$Id: wtape.c,v 1.12.2.4.2.9 2010/09/21 11:56:59 uehira Exp $";
+  "$Id: wtape.c,v 1.12.2.4.2.9.2.1 2010/11/25 07:24:01 uehira Exp $";
 
-static uint8_w buf[SIZE_MAX];
+static uint8_w buf[WTAPE_SIZE_MAX];
 static int init_flag,wfm,new_tape,switch_req,fd_exb,exb_status[N_EXABYTE],
   exb_busy,n_exb;
 static char name_buf[WIN_FILENAME_MAX],name_start[NAMLEN],
@@ -636,7 +637,7 @@ main(int argc, char *argv[])
         /* read one sec */
         re=read(f_get,buf,4); /* read size */
         j=mkuint4(buf);      /* record size */
-        if(j<4 || j>SIZE_MAX) break;
+        if(j<4 || j>WTAPE_SIZE_MAX) break;
         re=read(f_get,buf+4,j-4); /* read rest (data) */
         if(re==0) break;
         if((buf[8]&0xf0)!=(last_min&0xf0) && init_flag==0)

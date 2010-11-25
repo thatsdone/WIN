@@ -1,4 +1,4 @@
-/* $Id: evdetect.c,v 1.1.2.6 2010/09/27 07:53:55 uehira Exp $ */
+/* $Id: evdetect.c,v 1.1.2.6.2.1 2010/11/25 07:24:01 uehira Exp $ */
 
 /*
  * evedetect.c
@@ -136,7 +136,7 @@
 #define WIN_FILENAME_MAX 1024
 
 static const char  rcsid[] =
-   "$Id: evdetect.c,v 1.1.2.6 2010/09/27 07:53:55 uehira Exp $";
+   "$Id: evdetect.c,v 1.1.2.6.2.1 2010/11/25 07:24:01 uehira Exp $";
 
 char *progname, *logfile;
 int  syslog_mode = 0, exit_status;
@@ -1112,7 +1112,7 @@ main(int argc, char *argv[])
               tm1[5]=(-1);
               adj_time(tm1);
 	    }
-	    snprintf(timebuf1, sizeof(textbuf1), "%02d%02d%02d%02d.%02d",
+	    snprintf(timebuf1, sizeof(timebuf1), "%02d%02d%02d%02d.%02d",
 		     tm1[0], tm1[1], tm1[2], tm1[3], tm1[4]);
           }
 	  if (strlen(timebuf1) >= 11 && strcmp2(timebuf1, timebuf2) >= 0)

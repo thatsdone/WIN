@@ -1,11 +1,11 @@
 dnl ------------------------------------------------------------------------- 
-dnl $Id: configure.in,v 1.98.2.17.2.43.2.3 2010/11/23 05:25:17 uehira Exp $
+dnl $Id: configure.in,v 1.98.2.17.2.43.2.4 2010/11/25 06:42:36 uehira Exp $
 dnl -------------------------------------------------------------------------
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT
 AC_CONFIG_SRCDIR([src/win.c])
 AC_CANONICAL_TARGET
-AM_INIT_AUTOMAKE(WIN_pkg, 2.1.15-SEVO)
+AM_INIT_AUTOMAKE(WIN_pkg, 2.1.16-SEVO)
 AC_CONFIG_HEADERS([config.h])
 AC_ARG_PROGRAM
 
@@ -128,8 +128,24 @@ AC_CHECK_TYPE(socklen_t,,
 
 AC_STRUCT_ST_BLOCKS
 AC_STRUCT_TM
-AC_CHECK_MEMBERS(struct tm.tm_gmtoff,,,[#include <time.h> #include <sys/time.h>])
-AC_CHECK_MEMBER(struct statfs.f_bavail,,,[#include <sys/mount.h>])
+AC_CHECK_MEMBERS(struct tm.tm_gmtoff,,,[
+#if TM_IN_SYS_TIME
+#include <sys/time.h>
+#else
+#include <time.h>
+#endif
+])
+ AC_CHECK_MEMBER(struct statfs.f_bavail,,,[
+#if HAVE_SYS_PARAM_H
+#include <sys/param.h>
+#endif
+#ifdef HAVE_SYS_MOUNT_H
+#include <sys/mount.h>
+#endif
+#ifdef HAVE_SYS_VFS_H
+#include <sys/vfs.h>
+#endif
+])
 dnl AC_STRUCT_TIMEZONE
 AC_C_BIGENDIAN
 AC_C_CHAR_UNSIGNED
@@ -154,7 +170,12 @@ AC_TYPE_SIGNAL
 dnl by autoscan
 AC_CHECK_FUNCS([alarm bzero floor gethostbyname gettimeofday inet_ntoa memset mkdir pow rint rmdir select socket sqrt strchr strerror strrchr strtol tzset])
 
-AC_CHECK_FUNCS([mktime timelocal select socket strerror strtol snprintf statfs statfs64 statvfs mkdtemp])
+AC_CHECK_FUNCS([mktime timelocal select socket strerror strtol snprintf statfs64 statvfs mkdtemp])
+
+dnl for NetBSD
+if test "$ac_cv_member_struct_statfs_f_bavail" = yes; then
+   AC_CHECK_FUNCS([statfs])
+fi
 
 dnl check struct statfs.f_bavail size.
 AC_MSG_CHECKING(size of struct statfs.f_bavail)

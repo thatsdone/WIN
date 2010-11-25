@@ -1,4 +1,4 @@
-/* $Id: wtape.c,v 1.13 2010/02/16 11:15:58 uehira Exp $ */
+/* $Id: wtape.c,v 1.14 2010/11/25 07:39:37 uehira Exp $ */
 /*
   program "wtape.c"
   8/23/89 - 8/8/90, 6/27/91, 12/24/91, 2/29/92  urabe
@@ -15,6 +15,7 @@
             SIZE_MAX  1000000->2000000
   2004.1.29 avoid odd byte block size
   2005.8.10 bug in strcmp2()/strncmp2() fixed : 0-6 > 7-9
+  2010.11.25 SIZE_MAX --> WTAPE_SIZE_MAX (conflict in Linux systems) (uehira)
 */
 
 #ifdef HAVE_CONFIG_H
@@ -47,14 +48,14 @@
 #include "subst_func.h"
 
 #define   DEBUGFLAG 1
-#define   SIZE_MAX  2000000
+#define   WTAPE_SIZE_MAX  2000000
 #define   NAMLEN    80
 #define   N_EXABYTE 8
 #define   DEFAULT_WAIT_MIN  0
 #define   DEFAULT_PARAM_FILE  "wtape.prm"
 #define   WIN_FILENAME_MAX 1024
 
-  unsigned char buf[SIZE_MAX];
+  unsigned char buf[WTAPE_SIZE_MAX];
   int init_flag,wfm,new_tape,switch_req,fd_exb,exb_status[N_EXABYTE],
     exb_busy,n_exb;
   char name_buf[WIN_FILENAME_MAX],name_start[NAMLEN],exb_name[N_EXABYTE][20],
@@ -65,7 +66,7 @@
   int  wait_min;
   char param_name[WIN_FILENAME_MAX];
   char *progname;
-  static char rcsid[]="$Id: wtape.c,v 1.13 2010/02/16 11:15:58 uehira Exp $";
+  static char rcsid[]="$Id: wtape.c,v 1.14 2010/11/25 07:39:37 uehira Exp $";
 
 switch_sig()
   {
@@ -636,7 +637,7 @@ main(argc,argv)
         /* read one sec */
         re=read(f_get,(char *)buf,4); /* read size */
         j=mklong(buf);      /* record size */
-        if(j<4 || j>SIZE_MAX) break;
+        if(j<4 || j>WTAPE_SIZE_MAX) break;
         re=read(f_get,(char *)buf+4,j-4); /* read rest (data) */
         if(re==0) break;
         if((buf[8]&0xf0)!=(last_min&0xf0) && init_flag==0)

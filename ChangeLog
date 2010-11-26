@@ -1,7 +1,11 @@
- $Id: ChangeLog,v 1.131.2.25.2.137.2.7 2010/11/25 07:24:01 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.137.2.8 2010/11/26 08:35:32 uehira Exp $
+
+2010-11-26  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 2.1.16 released.
+	* src/winlib.c : check system type using AC_CHECK_SIZEOF.
+	* configure.in : for cross-compile (Linux)
 
 2010-11-25  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
-	* Version 2.1.16 released.
 	* src/evdetect.c : fixed a bug.
 	* src/wtape.c : conflict "SIZE_MAX" in Linux (/usr/include/stdint.h).
 

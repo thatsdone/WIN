@@ -1,5 +1,5 @@
 dnl ------------------------------------------------------------------------- 
-dnl $Id: configure.in,v 1.98.2.17.2.43.2.4 2010/11/25 06:42:36 uehira Exp $
+dnl $Id: configure.in,v 1.98.2.17.2.43.2.5 2010/11/26 08:35:32 uehira Exp $
 dnl -------------------------------------------------------------------------
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT
@@ -156,6 +156,7 @@ AC_CHECK_SIZEOF(char)
 AC_CHECK_SIZEOF(float)
 AC_CHECK_SIZEOF(double)
 AC_CHECK_SIZEOF(int64_t)
+AC_CHECK_SIZEOF(int *)
 
 dnl Checks for library functions.
 AC_PROG_GCC_TRADITIONAL
@@ -240,6 +241,14 @@ AC_RUN_IFELSE([AC_LANG_SOURCE([[
 	  ],
 	  AC_MSG_ERROR(unkouwn type)
 	  )
+],
+[
+	case "$host" in
+	      *-*-linux*)
+	      AC_MSG_RESULT(long) 
+	      AC_DEFINE([STRUCT_STATFS_F_BAVAIL_LONG],1,[Define 'STRUCT_STATFS_F_BAVAIL_LONG'])
+	      ;;
+	esac
 ])
 
 dnl -------------------------------------------------------------------------

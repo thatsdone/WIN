@@ -1,5 +1,5 @@
 dnl ------------------------------------------------------------------------- 
-dnl $Id: configure.in,v 1.98.2.17.2.43.2.5 2010/11/26 08:35:32 uehira Exp $
+dnl $Id: configure.in,v 1.98.2.17.2.43.2.6 2010/11/27 10:13:04 uehira Exp $
 dnl -------------------------------------------------------------------------
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT
@@ -173,7 +173,7 @@ AC_CHECK_FUNCS([alarm bzero floor gethostbyname gettimeofday inet_ntoa memset mk
 
 AC_CHECK_FUNCS([mktime timelocal select socket strerror strtol snprintf statfs64 statvfs mkdtemp])
 
-dnl for NetBSD
+dnl for !NetBSD
 if test "$ac_cv_member_struct_statfs_f_bavail" = yes; then
    AC_CHECK_FUNCS([statfs])
 fi

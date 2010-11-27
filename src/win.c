@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.46.2.6.2.35.2.1 2010/11/09 08:02:28 uehira Exp $
+   $Id: win.c,v 1.46.2.6.2.35.2.2 2010/11/27 10:13:04 uehira Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -23,10 +23,10 @@
 #else
 #define NAME_PRG      "win32"
 #endif
-#define WIN_VERSION   "2010.11.9(+Hi-net) 64bit (SEVO)"
+#define WIN_VERSION   "2010.11.27(+Hi-net) (SEVO)"
 
 static const char rcsid[] =
-  "$Id: win.c,v 1.46.2.6.2.35.2.1 2010/11/09 08:02:28 uehira Exp $";
+  "$Id: win.c,v 1.46.2.6.2.35.2.2 2010/11/27 10:13:04 uehira Exp $";
 
 #define DEBUG_AP      0   /* for debugging auto-pick */
 /* 5:sr, 4:ch, 3:sec, 2:find_pick, 1:all */

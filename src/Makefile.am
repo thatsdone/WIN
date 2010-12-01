@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.38.2.10.2.25 2010/11/23 03:50:20 uehira Exp $
+# $Id: Makefile.am,v 1.38.2.10.2.26 2010/12/01 11:47:47 uehira Exp $
 #
 
 if SUNOS4
@@ -185,7 +185,7 @@ uninstall-local:
 ### shared library
 libwinsystem_la_SOURCES = $(WIN_LIBH) $(WIN_LIBC)
 libwinsystem_la_LDFLAGS = -version-info 0:0:0
-libwinsystem_la_LIBADD = -lm
+libwinsystem_la_LIBADD = -lm  $(LTLIBOBJS)
 
 libwinlog_la_SOURCES =  $(WIN_LOG) $(DAEMON_MODE) $(UDP_UTILITY) $(TCP_UTILITY)
 libwinlog_la_LDFLAGS = -version-info 0:0:0
@@ -279,9 +279,11 @@ wdiskts_LDADD = $(WIN_LOG_LTLIB) $(WIN_SYSTEM_LTLIB) @LIBSHMGET@ $(GC_CHECK_LIB)
 
 ras2rpdl_SOURCES = ras2util.c $(WIN_LIBH)
 ras2rpdl_CFLAGS = -DRPDL
+ras2rpdl_LDADD = $(LTLIBOBJS)
 
 ras2lips_SOURCES = ras2util.c $(WIN_LIBH)
 ras2lips_CFLAGS = -DLIPS
+ras2lips_LDADD = $(LTLIBOBJS)
 
 file_older_SOURCES = file_older.c $(SUBFUNC_H)
 

@@ -1,4 +1,9 @@
- $Id: ChangeLog,v 1.131.2.25.2.143 2010/11/26 08:15:54 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.144 2010/12/01 11:47:46 uehira Exp $
+
+2010-12-01  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 2.1.17 released.
+	* added substitution functions :
+	  src/fileblocks.c, src/memcmp.c, src/malloc.c, src/realloc.c
 
 2010-11-26  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* Version 2.1.16 released.

@@ -1,11 +1,11 @@
 dnl ------------------------------------------------------------------------- 
-dnl $Id: configure.in,v 1.98.2.17.2.43.2.6 2010/11/27 10:13:04 uehira Exp $
+dnl $Id: configure.in,v 1.98.2.17.2.43.2.7 2010/12/03 01:54:07 uehira Exp $
 dnl -------------------------------------------------------------------------
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT
 AC_CONFIG_SRCDIR([src/win.c])
 AC_CANONICAL_TARGET
-AM_INIT_AUTOMAKE(WIN_pkg, 2.1.16-SEVO)
+AM_INIT_AUTOMAKE(WIN_pkg, 2.1.17-SEVO)
 AC_CONFIG_HEADERS([config.h])
 AC_ARG_PROGRAM
 
@@ -163,9 +163,8 @@ AC_PROG_GCC_TRADITIONAL
 AC_FUNC_MEMCMP
 AC_FUNC_FORK
 AC_FUNC_MALLOC
-AC_FUNC_MKTIME
+#AC_FUNC_MKTIME
 AC_FUNC_REALLOC
-AC_FUNC_STRTOD
 AC_TYPE_SIGNAL
 
 dnl by autoscan

@@ -1,5 +1,5 @@
 /*
- * $Id: insert_trg.c,v 1.6.4.4.2.8 2010/10/08 03:24:35 uehira Exp $
+ * $Id: insert_trg.c,v 1.6.4.4.2.9 2010/12/07 04:58:33 uehira Exp $
  * Insert sorted timeout data to event data.
  *
  *------------ sample of parameter file ------------
@@ -69,7 +69,7 @@
 #define BUF_SIZE 1024
 
 static const char rcsid[]=
-  "$Id: insert_trg.c,v 1.6.4.4.2.8 2010/10/08 03:24:35 uehira Exp $";
+  "$Id: insert_trg.c,v 1.6.4.4.2.9 2010/12/07 04:58:33 uehira Exp $";
 
 char *progname;
 
@@ -196,7 +196,7 @@ do_insert(int tim[], struct Cnt_file *cnt)
   WIN_bs  sizes;
   WIN_bs  data_num,data_num_save;
   WIN_bs  array_size_of_data;
-  uint8_w  *data,*datam,*datat,*tmpbuf;
+  uint8_w  *data,*datam,*datat,*tmpbuf,*datatmp;
   uint8_w  *datas;
   uint8_w  size_arr[WIN_BLOCKSIZE_LEN];
   uint8_w  *ptrd,*ptw,*ptrs;
@@ -262,8 +262,9 @@ do_insert(int tim[], struct Cnt_file *cnt)
       data_num+=size_save;
       if (array_size_of_data < data_num) {
 	array_size_of_data = data_num << 1;
-	if((data=REALLOC(uint8_w,data,array_size_of_data))==NULL)
+	if((datatmp=REALLOC(uint8_w,data,array_size_of_data))==NULL)
 	  memory_error();
+	data=datatmp;
       }
       memcpy(data+data_num_save,tmpbuf,size_save);
       data_num_save=data_num;

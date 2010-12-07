@@ -1,4 +1,4 @@
-/* $Id: elist.c,v 1.9.4.2.2.7 2010/10/12 00:54:09 uehira Exp $ */
+/* $Id: elist.c,v 1.9.4.2.2.8 2010/12/07 04:58:33 uehira Exp $ */
 
 /* program elist.c    2/5/91 - 2/25/91 ,  4/16/92, 4/22/92  urabe */
 /*                      6/10/92, 8/18/92, 10/25/92, 6/8/93, 1/5/94  */
@@ -56,7 +56,7 @@
 #endif
 
 static const char rcsid[] =
-  "$Id: elist.c,v 1.9.4.2.2.7 2010/10/12 00:54:09 uehira Exp $";
+  "$Id: elist.c,v 1.9.4.2.2.8 2010/12/07 04:58:33 uehira Exp $";
 
 /* prototypes */
 static char *getname(char *, int);
@@ -142,6 +142,7 @@ main(int argc,char *argv[])
   int i,npick,t[6],ton[6],init,j,m,k,kk,no_file,noise,not_noise,re,search,
     npick_lim,c,reverse,hidenoise,kkk,pn,fn,sn,mn,nstn,delete;
   double pt,pe,pomc,st,se,somc,mag;
+  void *ptrcheck;
 
   *ppfile=(*eefile)=0;
   reverse=delete=1;
@@ -289,13 +290,18 @@ main(int argc,char *argv[])
 
     if(++i==npick_lim)
       {
-      if((pk=(struct Pk *)realloc((char *)pk,sizeof(*pk)*(npick_lim+NPICK)))==NULL)
+      ptrcheck=realloc((char *)pk,sizeof(*pk)*(npick_lim+NPICK));
+      if(ptrcheck==NULL)
         {
         fprintf(stderr,"realloc failed !  Npicks=%d (size=%zu)\n",
           npick_lim,sizeof(*pk)*npick_lim);
         break;
         }
-      else npick_lim+=NPICK;
+      else
+	{
+	  pk = (struct Pk *)ptrcheck;
+	  npick_lim+=NPICK;
+	}
 /*printf("npick_lim=%d\n",npick_lim);*/
       }
     }

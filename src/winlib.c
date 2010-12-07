@@ -1,4 +1,4 @@
-/* $Id: winlib.c,v 1.1.2.4.2.31 2010/11/26 08:15:55 uehira Exp $ */
+/* $Id: winlib.c,v 1.1.2.4.2.32 2010/12/07 04:58:34 uehira Exp $ */
 
 /*-
  * winlib.c  (Uehira Kenji)
@@ -727,6 +727,7 @@ read_onesec_win(FILE *fp, uint8_w **rbuf)
   uint8_w        sz[WIN_BSLEN];
   WIN_bs         size;
   static size_t  sizesave;
+  void *q;
 
   /* printf("%d\n", sizesave); */
   if (fread(sz, 1, WIN_BSLEN, fp) != WIN_BSLEN)
@@ -737,11 +738,12 @@ read_onesec_win(FILE *fp, uint8_w **rbuf)
     sizesave = 0;
   if (size > sizesave) {
     sizesave = (size << 1);
-    *rbuf = (uint8_w *)realloc(*rbuf, sizesave);
-    if (*rbuf == NULL) {
+    q = realloc(*rbuf, sizesave);
+    if (q == NULL) {
       (void)fprintf(stderr, "%s\n", strerror(errno));
       exit(1);
     }
+    *rbuf = (uint8_w *)q;
   }
 
   (void)memcpy(*rbuf, sz, WIN_BSLEN);

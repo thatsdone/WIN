@@ -1,6 +1,10 @@
 #
-# $Id: Makefile.am,v 1.38.2.10.2.26 2010/12/01 11:47:47 uehira Exp $
+# $Id: Makefile.am,v 1.38.2.10.2.27 2010/12/07 04:58:32 uehira Exp $
 #
+
+# Version number of shared libraries.
+LIB_WINSYSTEM_VERSION = -version-info 0:1:0
+LIB_WINLOG_VERSION = -version-info 0:0:0
 
 if SUNOS4
 RECVNMX =
@@ -184,11 +188,11 @@ uninstall-local:
 
 ### shared library
 libwinsystem_la_SOURCES = $(WIN_LIBH) $(WIN_LIBC)
-libwinsystem_la_LDFLAGS = -version-info 0:0:0
+libwinsystem_la_LDFLAGS = $(LIB_WINSYSTEM_VERSION)
 libwinsystem_la_LIBADD = -lm  $(LTLIBOBJS)
 
 libwinlog_la_SOURCES =  $(WIN_LOG) $(DAEMON_MODE) $(UDP_UTILITY) $(TCP_UTILITY)
-libwinlog_la_LDFLAGS = -version-info 0:0:0
+libwinlog_la_LDFLAGS = $(LIB_WINLOG_VERSION)
 libwinlog_la_LIBADD = @LIBNSL@ @LIBSOCKET@
 
 #####----- Sources -----

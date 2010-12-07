@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.46.2.6.2.36 2010/11/27 09:37:19 uehira Exp $
+   $Id: win.c,v 1.46.2.6.2.37 2010/12/07 04:58:33 uehira Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -26,7 +26,7 @@
 #define WIN_VERSION   "2010.11.27(+Hi-net)"
 
 static const char rcsid[] =
-  "$Id: win.c,v 1.46.2.6.2.36 2010/11/27 09:37:19 uehira Exp $";
+  "$Id: win.c,v 1.46.2.6.2.37 2010/12/07 04:58:33 uehira Exp $";
 
 #define DEBUG_AP      0   /* for debugging auto-pick */
 /* 5:sr, 4:ch, 3:sec, 2:find_pick, 1:all */
@@ -1427,6 +1427,7 @@ make_sec_table()
 #else
    uint8_w  gh[5];
 #endif
+   void  *q;
 
   if(flag_save==1)  /* LOAD */
     {
@@ -1496,8 +1497,10 @@ reset_blockmode:
             ft.ptr[ft.len].size=0;
             ft.ptr[ft.len++].offset=ptr;
             if(ft.len%100==0)
-              if((ft.ptr=(struct File_Ptr *)realloc(ft.ptr,
-                sizeof(*(ft.ptr))*(ft.len+100)))==NULL) emalloc("ft.ptr");
+              if((q=realloc(ft.ptr,sizeof(*(ft.ptr))*(ft.len+100)))==NULL)
+		emalloc("ft.ptr");
+	      else
+		ft.ptr = (struct File_Ptr *)q;
             }
           memcpy(ft.ptr[ft.len].time,t,WIN_TM_LEN);
           }
@@ -1506,8 +1509,10 @@ reset_blockmode:
       ft.ptr[ft.len].size=size;
       ft.ptr[ft.len++].offset=ptr;
       if(ft.len%100==0)
-        if((ft.ptr=(struct File_Ptr *)realloc(ft.ptr,
-          sizeof(*(ft.ptr))*(ft.len+100)))==NULL) emalloc("ft.ptr");
+        if((q=realloc(ft.ptr,sizeof(*(ft.ptr))*(ft.len+100)))==NULL)
+	  emalloc("ft.ptr");
+	else
+	  ft.ptr=(struct File_Ptr *)q;
       lseek(ft.fd,(off_t)(ptr+=size),0);
       }
     if(ft.len==0)
@@ -2164,6 +2169,7 @@ init_process(int argc, char *argv[], int args)
     uint32_w i;
     uint8_w  c[4];
     } *swp;
+  void  *q;
 
   /* open parameter file */
   if((fp=open_file(ft.param_file,"parameter"))) fclose(fp);
@@ -2607,8 +2613,10 @@ just_map:
 
     if(kk>ft.n_ch)  /* if larger than already allocated */
       {
-      if((ft.stn=(struct Stn *)realloc(ft.stn,
-        sizeof(*ft.stn)*kk))==NULL) emalloc("ft.stn");
+      if((q=realloc(ft.stn,sizeof(*ft.stn)*kk))==NULL)
+	emalloc("ft.stn");
+      else
+	ft.stn=(struct Stn *)q;
       for(i=ft.n_ch;i<kk;i++)
         {
         strcpy(ft.stn[i].name,"****");
@@ -10416,6 +10424,7 @@ read_final(char *final_file, struct Hypo *hypo)
   int i;
   char textbuf[LINELEN],ulat,ulon;
   double lat,lon;
+  void  *q;
 
   hypo->valid=0;
   if((fp=fopen(final_file,"r"))==NULL) return (0);
@@ -10442,11 +10451,15 @@ read_final(char *final_file, struct Hypo *hypo)
     &hypo->along0,&hypo->xe0,&hypo->dep0,&hypo->ze0);
   if(fgets(textbuf,LINELEN,fp)==NULL) return (1);
   sscanf(textbuf,"%d",&hypo->ndata);
-  if(hypo->fnl==0)
-    hypo->fnl=(struct Fnl *)malloc(sizeof(*hypo->fnl)*hypo->ndata);
-  else hypo->fnl=(struct Fnl *)realloc(hypo->fnl,
-         sizeof(*hypo->fnl)*hypo->ndata);
-  if(hypo->fnl==0) emalloc("hypo->fnl");
+  /* if(hypo->fnl==NULL) */
+  /*   hypo->fnl=(struct Fnl *)malloc(sizeof(*hypo->fnl)*hypo->ndata); */
+  /* else hypo->fnl=(struct Fnl *)realloc(hypo->fnl, */
+  /*        sizeof(*hypo->fnl)*hypo->ndata); */
+  q=realloc(hypo->fnl,sizeof(*hypo->fnl)*hypo->ndata);
+  if(q==NULL)
+    emalloc("hypo->fnl");
+  else
+    hypo->fnl=(struct Fnl *)q;
   for(i=0;i<hypo->ndata;i++)
     {
     fgets(textbuf,LINELEN,fp);

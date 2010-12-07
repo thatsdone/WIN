@@ -1,4 +1,4 @@
-/* $Id: winadd.c,v 1.4.4.3.2.10 2010/10/07 14:20:47 uehira Exp $ */
+/* $Id: winadd.c,v 1.4.4.3.2.10.2.1 2010/12/07 06:44:21 uehira Exp $ */
 
 /*
  * winadd.c  (Uehira Kenji)
@@ -66,7 +66,7 @@ typedef struct data_index  INDX;
 
 /* global variables */
 static const char rcsid[] =
-   "$Id: winadd.c,v 1.4.4.3.2.10 2010/10/07 14:20:47 uehira Exp $";
+   "$Id: winadd.c,v 1.4.4.3.2.10.2.1 2010/12/07 06:44:21 uehira Exp $";
 static int  dummy_flag, verbose_flag, chsort_flag;
 
 /* prototypes */
@@ -180,6 +180,7 @@ win_file_read(char *name, WIN_ch **ch, int *ch_num, int *ch_num_arr,
   time_t          time_tmp;
   WIN_ch  ch_tmp;
   int             i, ss;
+  void  *q;
   
   if (NULL == (fp = fopen(name, "r"))) {
     (void)fprintf(stderr, "Warring! Skip file : %s\n", name);
@@ -214,8 +215,9 @@ win_file_read(char *name, WIN_ch **ch, int *ch_num, int *ch_num_arr,
     if (i == *time_num) {
       (*time_num)++;
       if (*time_num > *time_num_arr) {
-	if(NULL == (*time = REALLOC(time_t, *time, *time_num_arr + TIME_INC)))
+	if(NULL == (q = realloc(*time, (size_t)(sizeof(time_t)*(*time_num_arr + TIME_INC)))))
 	  memory_error();
+	*time = (time_t *)q;
 	*time_num_arr += TIME_INC;
       }
       (*time)[i] = time_tmp;
@@ -232,8 +234,9 @@ win_file_read(char *name, WIN_ch **ch, int *ch_num, int *ch_num_arr,
       if (i == *ch_num) {
 	(*ch_num)++;
 	if (*ch_num > *ch_num_arr) {
-	  if (NULL == (*ch = REALLOC(WIN_ch, *ch, *ch_num + CH_INC)))
+	  if (NULL == (q = realloc(*ch, (size_t)(sizeof(WIN_ch)*(*ch_num + CH_INC)))))
 	    memory_error();
+	  *ch = (WIN_ch *)q;
 	  *ch_num_arr += CH_INC;
 	}
 	(*ch)[i] = ch_tmp;
@@ -591,6 +594,7 @@ win_file_read_from_buf(uint8_w *rawbuf, off_t rawsize,
   time_t          time_tmp;
   WIN_ch          ch_tmp;
   int             i, ss;
+  void    *q;
 
   ptr = rawbuf;
   ptr_limit = rawbuf + rawsize;
@@ -612,8 +616,9 @@ win_file_read_from_buf(uint8_w *rawbuf, off_t rawsize,
     if (i == *time_num) {
       (*time_num)++;
       if (*time_num > *time_num_arr) {
-	if(NULL == (*time = REALLOC(time_t, *time, *time_num_arr + TIME_INC)))
+	if(NULL == (q = realloc(*time, (size_t)(sizeof(time_t)*(*time_num_arr + TIME_INC)))))
 	  memory_error();
+	*time = (time_t *)q;
 	*time_num_arr += TIME_INC;
       }
       (*time)[i] = time_tmp;
@@ -629,8 +634,9 @@ win_file_read_from_buf(uint8_w *rawbuf, off_t rawsize,
       if (i == *ch_num) {
 	(*ch_num)++;
 	if (*ch_num > *ch_num_arr) {
-	  if (NULL == (*ch = REALLOC(WIN_ch, *ch, *ch_num + CH_INC)))
+	  if (NULL == (q = realloc(*ch, (size_t)(sizeof(WIN_ch)*(*ch_num + CH_INC)))))
 	    memory_error();
+	  *ch = (WIN_ch *)q;
 	  *ch_num_arr += CH_INC;
 	}
 	(*ch)[i] = ch_tmp;

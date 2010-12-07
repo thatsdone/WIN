@@ -1,4 +1,4 @@
-/* $Id: insert_raw.c,v 1.6.4.2.2.7 2010/10/12 01:40:28 uehira Exp $ */
+/* $Id: insert_raw.c,v 1.6.4.2.2.7.2.1 2010/12/07 06:44:20 uehira Exp $ */
 
 /*
  * Insert sorted timeout data to raw data.
@@ -49,7 +49,7 @@
 #define BUF_SIZE 1024
 
 static const char rcsid[] =
-  "$Id: insert_raw.c,v 1.6.4.2.2.7 2010/10/12 01:40:28 uehira Exp $";
+  "$Id: insert_raw.c,v 1.6.4.2.2.7.2.1 2010/12/07 06:44:20 uehira Exp $";
 
 static char *progname;
 
@@ -167,7 +167,7 @@ do_insert(int tim[], struct Cnt_file *cnt)
   WIN_bs  sizem,sizew;
   WIN_bs  data_num,data_num_save;
   WIN_bs  array_size_of_data;
-  uint8_w  *data,*datam,*datar,*tmpbuf;
+  uint8_w  *data,*datam,*datar,*tmpbuf,*datatmp;
   uint8_w  size_arr[WIN_BLOCKSIZE_LEN];
   uint8_w  *ptrd;
   int  dtime[WIN_TIME_LEN],drtime[WIN_TIME_LEN],dtime_tmp[WIN_TIME_LEN];
@@ -229,8 +229,9 @@ do_insert(int tim[], struct Cnt_file *cnt)
       data_num+=size_save;
       if (array_size_of_data < data_num) {
 	array_size_of_data = data_num << 1;
-	if((data=REALLOC(uint8_w,data,array_size_of_data))==NULL)
+	if((datatmp=REALLOC(uint8_w,data,array_size_of_data))==NULL)
 	  memory_error();
+	data=datatmp;
       }
       memcpy(data+data_num_save,tmpbuf,size_save);
       data_num_save=data_num;

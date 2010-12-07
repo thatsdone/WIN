@@ -1,11 +1,11 @@
 dnl ------------------------------------------------------------------------- 
-dnl $Id: configure.in,v 1.98.2.17.2.43.2.7 2010/12/03 01:54:07 uehira Exp $
+dnl $Id: configure.in,v 1.98.2.17.2.43.2.8 2010/12/07 06:44:20 uehira Exp $
 dnl -------------------------------------------------------------------------
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT
 AC_CONFIG_SRCDIR([src/win.c])
 AC_CANONICAL_TARGET
-AM_INIT_AUTOMAKE(WIN_pkg, 2.1.17-SEVO)
+AM_INIT_AUTOMAKE(WIN_pkg, 2.1.18-SEVO)
 AC_CONFIG_HEADERS([config.h])
 AC_ARG_PROGRAM
 
@@ -16,10 +16,10 @@ dnl AC_CYGWIN
 
 dnl set default CFLAGS and FFLAGS
 if test x"$CFLAGS" = x; then
-	CFLAGS="-pipe -O"
+	CFLAGS="-pipe -O2"
 fi
 if test x"$FFLAGS" = x; then
- 	FFLAGS="-O"
+ 	FFLAGS="-O2"
 fi
 
 dnl Checks for programs.
@@ -54,7 +54,7 @@ dnl Checks for libraries.
 AC_CHECK_LIB(nsl, gethostbyname,
 	[ac_cv_lib_nsl_gethostbyname="yes"], 
 	[ac_cv_lib_nsl_gethostbyname="no"])
-if test "$ac_cv_lib_nsl_gethostbyname" = yes; then
+if test x"$ac_cv_lib_nsl_gethostbyname" = xyes; then
 	LIBNSL="-lnsl"
 else
 	LIBNSL=""
@@ -64,7 +64,7 @@ AC_SUBST(LIBNSL)
 AC_CHECK_LIB(socket, connect,
 	[ac_cv_lib_socket_connect="yes"],
 	[ac_cv_lib_socket_connect="no"])
-if test "$ac_cv_lib_socket_connect" = yes; then
+if test x"$ac_cv_lib_socket_connect" = xyes; then
 	LIBSOCKET="-lsocket"
 else
 	LIBSOCKET=""
@@ -78,7 +78,7 @@ cygwin*)
 	AC_CHECK_LIB(cygipc, shmget,
 		[ac_cv_lib_cygipc_shmget="yes"],
 		[ac_cv_lib_cygipc_shmget="no"])
-	if test "$ac_cv_lib_cygipc_shmget" = yes; then
+	if test x"$ac_cv_lib_cygipc_shmget" = xyes; then
 		LIBSHMGET="-lcygipc"
 	else
 		AC_MSG_WARN(Test for libcygipc.a failed. Please install cygipc package and set LDFLAGS (if you needed).)
@@ -87,7 +87,8 @@ cygwin*)
 esac
 AC_SUBST(LIBSHMGET)
 
-dnl AC_CHECK_LIB(m, main)
+# Checks for libraries.
+AC_CHECK_LIB([m], [sqrt])
 
 dnl Checks for header files.
 AC_PATH_X
@@ -173,7 +174,7 @@ AC_CHECK_FUNCS([alarm bzero floor gethostbyname gettimeofday inet_ntoa memset mk
 AC_CHECK_FUNCS([mktime timelocal select socket strerror strtol snprintf statfs64 statvfs mkdtemp])
 
 dnl for !NetBSD
-if test "$ac_cv_member_struct_statfs_f_bavail" = yes; then
+if test x"$ac_cv_member_struct_statfs_f_bavail" = xyes; then
    AC_CHECK_FUNCS([statfs])
 fi
 
@@ -261,7 +262,7 @@ AC_ARG_ENABLE(ipv6,
 AC_MSG_RESULT($ts_cv_disableipv6)
 
 dnl automated checks for ipv6 support.
-if test "$ts_cv_disableipv6" = no; then
+if test x"$ts_cv_disableipv6" = xno; then
 	AC_MSG_CHECKING(for ipv6 support)
 	AC_CACHE_VAL(ts_cv_ipv6, [dnl
 	AC_TRY_COMPILE([#define INET6
@@ -270,7 +271,7 @@ if test "$ts_cv_disableipv6" = no; then
 		[int x = IPPROTO_IPV6; struct in6_addr a;],
 		[ts_cv_ipv6="yes"], [ts_cv_ipv6="no"])])
 	AC_MSG_RESULT($ts_cv_ipv6)
-	if test "$ts_cv_ipv6" = yes; then
+	if test x"$ts_cv_ipv6" = xyes; then
 		AC_DEFINE([INET6],1,[Define 'INET6'])
 		AM_CONDITIONAL(IPV6, true)
 	fi
@@ -283,7 +284,7 @@ AC_MSG_CHECKING(if --enable-debug option specified)
 AC_ARG_ENABLE(debug,
 	[  --enable-debug          Build a debugging version.],
 	[ts_cv_debug="yes"], [ts_cv_debug="no"])
-if test "$ts_cv_debug" = yes; then
+if test x"$ts_cv_debug" = xyes; then
 	AC_DEFINE([DEBUG],1,[Define 'DEBUG'])
 	CFLAGS=" -Wall -pipe -g"
 	FFLAGS=" -g $AM_ADD_FFLAGS"
@@ -302,10 +303,10 @@ AC_ARG_ENABLE(statfs64,
 	[  --enable-statfs64       Use statfs64() instead of statfs() if it works.],
 	[ts_cv_statfs64="yes"], [ts_cv_statfs64="no"])
 AC_MSG_RESULT($ts_cv_statfs64)
-if test $ac_statfs64 = "yes" -a $ts_cv_statfs64 = "yes"; then
+if test x$ac_statfs64 = "xyes" -a x$ts_cv_statfs64 = "xyes"; then
    	AC_DEFINE([USE_LARGE_FS],1,[Define 'USE_LARGE_FS'])
 fi
-if test $ac_statfs64 = "no" -a $ts_cv_statfs64 = "yes"; then
+if test x$ac_statfs64 = "xno" -a x$ts_cv_statfs64 = "xyes"; then
    	AC_MSG_WARN(--enable-statfs64 specified but not activated.)
 fi
 
@@ -317,7 +318,7 @@ AC_MSG_CHECKING(if --disable-fortran option specified)
 AC_ARG_ENABLE(fortran,
 	[  --disable-fortran       Build WITHOUT fortran program.(i.e. hypomh)],
 	[ts_cv_nofortran="yes"], [ts_cv_nofortran="no"])
-if test "$ts_cv_nofortran" = yes; then
+if test x"$ts_cv_nofortran" = xyes; then
 	AM_CONDITIONAL(NO_FORTRAN, true)
 fi
 AC_MSG_RESULT($ts_cv_debug)
@@ -331,11 +332,11 @@ AC_ARG_ENABLE(memory-leak-check,
 	[  --enable-memory-leak-check     Build a memory leak check version.],
 	[ts_cv_memory_leak_check="yes"], [ts_cv_memory_leak_check="no"])
 AC_MSG_RESULT($ts_cv_memory_leak_check)
-if test "$ts_cv_memory_leak_check" = yes; then
+if test x"$ts_cv_memory_leak_check" = xyes; then
 	AC_CHECK_HEADER(gc.h, [have_gc_header="yes"], [have_gc_header="no"])
 	AC_CHECK_LIB(gc,GC_malloc,[have_gc_lib="yes"], [have_gc_lib="no"])
 
-	if test "$have_gc_header" = yes -a "$have_gc_lib" = yes; then
+	if test x"$have_gc_header" = xyes -a x"$have_gc_lib" = xyes; then
 		AC_DEFINE([GC_MEMORY_LEAK_TEST],1,[Define 'GC_MEMORY_LEAK_TEST'])
 		CFLAGS="-DFIND_LEAK $CFLAGS"
 		AM_CONDITIONAL(GC_MEMORY_LEAK_TEST, true)

@@ -1,4 +1,4 @@
-/* $Id: raw_time.c,v 1.4.4.3.2.11 2010/10/13 01:22:05 uehira Exp $ */
+/* $Id: raw_time.c,v 1.4.4.3.2.11.2.1 2010/12/07 06:44:20 uehira Exp $ */
 
 /* raw_time.c -- online version of wtime(1W) */
 
@@ -54,7 +54,7 @@
 
 
 static const char rcsid[] =
-  "$Id: raw_time.c,v 1.4.4.3.2.11 2010/10/13 01:22:05 uehira Exp $";
+  "$Id: raw_time.c,v 1.4.4.3.2.11.2.1 2010/12/07 06:44:20 uehira Exp $";
 
 char *progname, *logfile;
 int  syslog_mode, exit_status;
@@ -96,7 +96,7 @@ main(int argc, char *argv[])
   WIN_sr  srdum;
   int   c, sr_shift;
   int   i;
-
+  void  *q1, *q2;
 
   if ((progname = strrchr(argv[0], '/')) != NULL)
     progname++;
@@ -253,10 +253,10 @@ main(int argc, char *argv[])
 	/* check sampling rate */
 	if (sr_check[chn] == 0) {
 	  sr_check[chn] = sr;
-	  sbuf[chn] =
-	    (int32_w *)realloc(sbuf[chn], (size_t)(sr * sizeof(int32_w)));
-	  if (sbuf[chn] == NULL)
+	  q1 = realloc(sbuf[chn], (size_t)(sr * sizeof(int32_w)));
+	  if (q1 == NULL)
 	    err_sys("malloc sbuf[ch]");
+	  sbuf[chn] = (int32_w *)q1;
 	}
 	else if (sr_check[chn] != sr) {
 	  (void)snprintf(msg, sizeof(msg), "%04X: %dHz-->%dHz\n",
@@ -268,10 +268,12 @@ main(int argc, char *argv[])
 	  
 	if (fixbuf_num < sr) {
 	  /*  printf("sr=%d\n",sr); */
-	  fixbuf1 = (int32_w *)realloc(fixbuf1, (size_t)(sr * sizeof(int32_w)));
-	  fixbuf2 = (int32_w *)realloc(fixbuf2, (size_t)(sr * sizeof(int32_w)));
-	  if (fixbuf1 == NULL || fixbuf2 == NULL)
+	  q1 = realloc(fixbuf1, (size_t)(sr * sizeof(int32_w)));
+	  q2 = realloc(fixbuf2, (size_t)(sr * sizeof(int32_w)));
+	  if (q1 == NULL || q2 == NULL)
 	    err_sys("fixbuf realloc");
+	  fixbuf1 = (int32_w *)q1;
+	  fixbuf2 = (int32_w *)q2;
 	  fixbuf_num = sr;
 	}
 

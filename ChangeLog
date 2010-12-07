@@ -1,4 +1,8 @@
- $Id: ChangeLog,v 1.131.2.25.2.137.2.9 2010/12/03 01:54:06 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.137.2.10 2010/12/07 06:44:19 uehira Exp $
+
+2010-12-07  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* realloc() memory leak check.
+	* libwinsystem.so : bump revision number.
 
 2010-12-03  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* Version 2.1.17 released.

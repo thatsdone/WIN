@@ -1,8 +1,14 @@
- $Id: ChangeLog,v 1.131.2.25.2.137.2.10 2010/12/07 06:44:19 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.137.2.11 2010/12/08 08:55:58 uehira Exp $
+
+2010-12-08  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 2.1.18 released.
+	* imported win pickfile related libraries.
+	* src/winpickfile.[ch] : added.
+	* src/Makefile.am : libwinsystem.so (bump current & age number: 1:0:1)
 
 2010-12-07  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* realloc() memory leak check.
-	* libwinsystem.so : bump revision number.
+	* src/Makefile.am : libwinsystem.so (bump revision number: 0:1:0)
 
 2010-12-03  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* Version 2.1.17 released.

@@ -1,4 +1,4 @@
-/* $Id: wmacros.h,v 1.1.2.1 2010/11/23 03:50:20 uehira Exp $ */
+/* $Id: wmacros.h,v 1.1.2.2 2010/12/08 09:58:22 uehira Exp $ */
 
 #ifndef _WMACROS_H_
 #define _WMACROS_H_
@@ -18,6 +18,7 @@
 #define WIN_CH_MAX_NUM  WIN_CHMAX   /* 2^16 */
 #define WIN_STANAME_LEN    11   /* (length of station code)+1 */
 #define WIN_STACOMP_LEN     7   /* (length of component code)+1 */
+#define WIN_LABEL_LEN      19   /* (length of label)+1 */
 
 #define SR_MON       5   /* sampling rate of MON */
 #define TIME_OFFSET ((time_t)0)  /* time(0) offset */
@@ -103,6 +104,9 @@
 /* memory malloc utility macro */
 #ifndef MALLOC
 #define MALLOC(type, n) (type*)malloc((size_t)(sizeof(type)*(n)))
+#endif
+#ifndef CALLOC
+#define CALLOC(type, n) calloc((size_t)n, sizeof(type))
 #endif
 #ifndef REALLOC
 #define REALLOC(type, ptr, n) \

@@ -1,4 +1,4 @@
-/* $Id: winlib.h,v 1.1.2.7.2.45 2010/11/23 03:50:20 uehira Exp $ */
+/* $Id: winlib.h,v 1.1.2.7.2.46 2010/12/08 09:58:22 uehira Exp $ */
 
 #ifndef _WIN_LIB_H_
 #define _WIN_LIB_H_
@@ -98,9 +98,6 @@ typedef uint32_w  WIN_bs;   /* win blocksize */
 typedef uint16_w  WIN_ch;
 typedef  int32_w  WIN_sr;   /* 0 < sr < 2^20 */
 
-#include "ls7000.h"
-#include "ls8tel.h"
-
 /* WIN system macros */
 #include "wmacros.h"
 
@@ -110,9 +107,12 @@ typedef  int32_w  WIN_sr;   /* 0 < sr < 2^20 */
 /* WIN system constant */
 #include "wconst.h"
 
+#include "ls7000.h"
+#include "ls8tel.h"
+#include "winpickfile.h"
+
 /** prototypes **/
 #include "wproto.h"
-
 /* MT device */
 #if HAVE_SYS_MTIO_H
 int mt_pos(int, int, int);

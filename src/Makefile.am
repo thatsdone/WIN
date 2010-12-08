@@ -1,9 +1,9 @@
 #
-# $Id: Makefile.am,v 1.38.2.10.2.27 2010/12/07 04:58:32 uehira Exp $
+# $Id: Makefile.am,v 1.38.2.10.2.28 2010/12/08 09:58:22 uehira Exp $
 #
 
 # Version number of shared libraries.
-LIB_WINSYSTEM_VERSION = -version-info 0:1:0
+LIB_WINSYSTEM_VERSION = -version-info 1:0:1
 LIB_WINLOG_VERSION = -version-info 0:0:0
 
 if SUNOS4
@@ -93,9 +93,9 @@ WIN_LOG = win_log.h win_log.c win_externs.h winlib_log.c
 UDP_UTILITY = udpu.h udp_accept.c udp_dest.c
 TCP_UTILITY = tcpu.h tcp_connect.c
 
-WIN_INCLUDABLE=wconst.h wmacros.h wproto.h wstruct.h  win_log.h filter.h pltxy.h ulaw.h daemon_mode.h udpu.h tcpu.h ls7000.h ls8tel.h 
+WIN_INCLUDABLE=wconst.h wmacros.h wproto.h wstruct.h  win_log.h filter.h pltxy.h ulaw.h daemon_mode.h udpu.h tcpu.h ls7000.h ls8tel.h winpickfile.h
 WIN_LIBH=winlib.h $(WIN_INCLUDABLE) $(SUBFUNC_H)
-WIN_LIBC=winlib.c filter.c pltxy.c ulaw.c
+WIN_LIBC=winlib.c filter.c pltxy.c ulaw.c winpickfile.c
 
 #WIN_SYSTEM_LIB = libwinsystem.a
 WIN_SYSTEM_LTLIB = libwinsystem.la

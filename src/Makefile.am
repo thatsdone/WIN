@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.38.2.10.2.28 2010/12/08 09:58:22 uehira Exp $
+# $Id: Makefile.am,v 1.38.2.10.2.29 2010/12/09 02:42:25 uehira Exp $
 #
 
 # Version number of shared libraries.
@@ -118,63 +118,63 @@ include_HEADERS = $(WINSYSTEM_H) $(WIN_INCLUDABLE) winraw_bp.h
 DISTCLEANFILES = $(WINSYSTEM_H)
 
 install-exec-hook:
-	(rm -f @bindir@/send_mon; cd @bindir@ && @LN_S@ send_raw send_mon)
-	(rm -f @bindir@/sendt_raw; cd @bindir@ && @LN_S@ send_raw sendt_raw)
-	(rm -f @bindir@/sendt_mon; cd @bindir@ && @LN_S@ send_raw sendt_mon)
-	(rm -f @bindir@/send_rawd; cd @bindir@ && @LN_S@ send_raw send_rawd)
-	(rm -f @bindir@/send_mond; cd @bindir@ && @LN_S@ send_raw send_mond)
-	(rm -f @bindir@/sendt_rawd; cd @bindir@ && @LN_S@ send_raw sendt_rawd)
-	(rm -f @bindir@/sendt_mond; cd @bindir@ && @LN_S@ send_raw sendt_mond)
-	(rm -f @bindir@/send_mon_old;\
-			cd @bindir@ && @LN_S@ send_raw_old send_mon_old)
-	(rm -f @bindir@/sendt_raw_old;\
-			cd @bindir@ && @LN_S@ send_raw_old sendt_raw_old)
-	(rm -f @bindir@/sendt_mon_old;\
-			cd @bindir@ && @LN_S@ send_raw_old sendt_mon_old)
-	(rm -f @bindir@/wdiskd; cd @bindir@ && @LN_S@ wdisk wdiskd)
-	(rm -f @bindir@/wdisk60; cd @bindir@ && @LN_S@ wdisk wdisk60)
-	(rm -f @bindir@/wdisk60d; cd @bindir@ && @LN_S@ wdisk wdisk60d)
-	(rm -f @bindir@/orderd; cd @bindir@ && @LN_S@ order orderd)
-	(rm -f @bindir@/recvtd; cd @bindir@ && @LN_S@ recvt recvtd)
-	(rm -f @bindir@/relayd; cd @bindir@ && @LN_S@ relay relayd)
-	(rm -f @bindir@/relaymd; cd @bindir@ && @LN_S@ relaym relaymd)
-	(rm -f @bindir@/raw_mond; cd @bindir@ && @LN_S@ raw_mon raw_mond)
-	(rm -f @bindir@/raw_timed; cd @bindir@ && @LN_S@ raw_time raw_timed)
-	(rm -f @bindir@/raw_rawd; cd @bindir@ && @LN_S@ raw_raw raw_rawd)
-	(rm -f @bindir@/wdisktsd; cd @bindir@ && @LN_S@ wdiskts wdisktsd)
-	(rm -f @bindir@/recvstatus2d; cd @bindir@ && @LN_S@ recvstatus2 recvstatus2d)
-	(rm -f @bindir@/recvstatus3d; cd @bindir@ && @LN_S@ recvstatus3 recvstatus3d)
-	(rm -f @bindir@/recvstatus4d; cd @bindir@ && @LN_S@ recvstatus4 recvstatus4d)
-	(rm -f @bindir@/ls8tel16_rawd; cd @bindir@ && @LN_S@ ls8tel16_raw ls8tel16_rawd)
-	(rm -f @bindir@/recvt_LS7000d; cd @bindir@ && @LN_S@ recvt_LS7000 recvt_LS7000d)
+	(rm -f $(DESTDIR)@bindir@/send_mon; cd $(DESTDIR)@bindir@ && @LN_S@ send_raw send_mon)
+	(rm -f $(DESTDIR)@bindir@/sendt_raw; cd $(DESTDIR)@bindir@ && @LN_S@ send_raw sendt_raw)
+	(rm -f $(DESTDIR)@bindir@/sendt_mon; cd $(DESTDIR)@bindir@ && @LN_S@ send_raw sendt_mon)
+	(rm -f $(DESTDIR)@bindir@/send_rawd; cd $(DESTDIR)@bindir@ && @LN_S@ send_raw send_rawd)
+	(rm -f $(DESTDIR)@bindir@/send_mond; cd $(DESTDIR)@bindir@ && @LN_S@ send_raw send_mond)
+	(rm -f $(DESTDIR)@bindir@/sendt_rawd; cd $(DESTDIR)@bindir@ && @LN_S@ send_raw sendt_rawd)
+	(rm -f $(DESTDIR)@bindir@/sendt_mond; cd $(DESTDIR)@bindir@ && @LN_S@ send_raw sendt_mond)
+	(rm -f $(DESTDIR)@bindir@/send_mon_old;\
+			cd $(DESTDIR)@bindir@ && @LN_S@ send_raw_old send_mon_old)
+	(rm -f $(DESTDIR)@bindir@/sendt_raw_old;\
+			cd $(DESTDIR)@bindir@ && @LN_S@ send_raw_old sendt_raw_old)
+	(rm -f $(DESTDIR)@bindir@/sendt_mon_old;\
+			cd $(DESTDIR)@bindir@ && @LN_S@ send_raw_old sendt_mon_old)
+	(rm -f $(DESTDIR)@bindir@/wdiskd; cd $(DESTDIR)@bindir@ && @LN_S@ wdisk wdiskd)
+	(rm -f $(DESTDIR)@bindir@/wdisk60; cd $(DESTDIR)@bindir@ && @LN_S@ wdisk wdisk60)
+	(rm -f $(DESTDIR)@bindir@/wdisk60d; cd $(DESTDIR)@bindir@ && @LN_S@ wdisk wdisk60d)
+	(rm -f $(DESTDIR)@bindir@/orderd; cd $(DESTDIR)@bindir@ && @LN_S@ order orderd)
+	(rm -f $(DESTDIR)@bindir@/recvtd; cd $(DESTDIR)@bindir@ && @LN_S@ recvt recvtd)
+	(rm -f $(DESTDIR)@bindir@/relayd; cd $(DESTDIR)@bindir@ && @LN_S@ relay relayd)
+	(rm -f $(DESTDIR)@bindir@/relaymd; cd $(DESTDIR)@bindir@ && @LN_S@ relaym relaymd)
+	(rm -f $(DESTDIR)@bindir@/raw_mond; cd $(DESTDIR)@bindir@ && @LN_S@ raw_mon raw_mond)
+	(rm -f $(DESTDIR)@bindir@/raw_timed; cd $(DESTDIR)@bindir@ && @LN_S@ raw_time raw_timed)
+	(rm -f $(DESTDIR)@bindir@/raw_rawd; cd $(DESTDIR)@bindir@ && @LN_S@ raw_raw raw_rawd)
+	(rm -f $(DESTDIR)@bindir@/wdisktsd; cd $(DESTDIR)@bindir@ && @LN_S@ wdiskts wdisktsd)
+	(rm -f $(DESTDIR)@bindir@/recvstatus2d; cd $(DESTDIR)@bindir@ && @LN_S@ recvstatus2 recvstatus2d)
+	(rm -f $(DESTDIR)@bindir@/recvstatus3d; cd $(DESTDIR)@bindir@ && @LN_S@ recvstatus3 recvstatus3d)
+	(rm -f $(DESTDIR)@bindir@/recvstatus4d; cd $(DESTDIR)@bindir@ && @LN_S@ recvstatus4 recvstatus4d)
+	(rm -f $(DESTDIR)@bindir@/ls8tel16_rawd; cd $(DESTDIR)@bindir@ && @LN_S@ ls8tel16_raw ls8tel16_rawd)
+	(rm -f $(DESTDIR)@bindir@/recvt_LS7000d; cd $(DESTDIR)@bindir@ && @LN_S@ recvt_LS7000 recvt_LS7000d)
 
 uninstall-local:
-	rm -f @bindir@/send_mon
-	rm -f @bindir@/sendt_raw
-	rm -f @bindir@/sendt_mon
-	rm -f @bindir@/send_rawd
-	rm -f @bindir@/send_mond
-	rm -f @bindir@/sendt_rawd
-	rm -f @bindir@/sendt_mond
-	rm -f @bindir@/send_mon_old;
-	rm -f @bindir@/sendt_raw_old;
-	rm -f @bindir@/sendt_mon_old;
-	rm -f @bindir@/wdiskd
-	rm -f @bindir@/wdisk60
-	rm -f @bindir@/wdisk60d
-	rm -f @bindir@/orderd
-	rm -f @bindir@/recvtd
-	rm -f @bindir@/relayd
-	rm -f @bindir@/relaymd
-	rm -f @bindir@/raw_mond
-	rm -f @bindir@/raw_timed
-	rm -f @bindir@/raw_rawd
-	rm -f @bindir@/wdisktsd
-	rm -f @bindir@/recvstatus2d
-	rm -f @bindir@/recvstatus3d
-	rm -f @bindir@/recvstatus4d
-	rm -f @bindir@/ls8tel16_rawd
-	rm -f @bindir@/recvt_LS7000d
+	rm -f $(DESTDIR)@bindir@/send_mon
+	rm -f $(DESTDIR)@bindir@/sendt_raw
+	rm -f $(DESTDIR)@bindir@/sendt_mon
+	rm -f $(DESTDIR)@bindir@/send_rawd
+	rm -f $(DESTDIR)@bindir@/send_mond
+	rm -f $(DESTDIR)@bindir@/sendt_rawd
+	rm -f $(DESTDIR)@bindir@/sendt_mond
+	rm -f $(DESTDIR)@bindir@/send_mon_old;
+	rm -f $(DESTDIR)@bindir@/sendt_raw_old;
+	rm -f $(DESTDIR)@bindir@/sendt_mon_old;
+	rm -f $(DESTDIR)@bindir@/wdiskd
+	rm -f $(DESTDIR)@bindir@/wdisk60
+	rm -f $(DESTDIR)@bindir@/wdisk60d
+	rm -f $(DESTDIR)@bindir@/orderd
+	rm -f $(DESTDIR)@bindir@/recvtd
+	rm -f $(DESTDIR)@bindir@/relayd
+	rm -f $(DESTDIR)@bindir@/relaymd
+	rm -f $(DESTDIR)@bindir@/raw_mond
+	rm -f $(DESTDIR)@bindir@/raw_timed
+	rm -f $(DESTDIR)@bindir@/raw_rawd
+	rm -f $(DESTDIR)@bindir@/wdisktsd
+	rm -f $(DESTDIR)@bindir@/recvstatus2d
+	rm -f $(DESTDIR)@bindir@/recvstatus3d
+	rm -f $(DESTDIR)@bindir@/recvstatus4d
+	rm -f $(DESTDIR)@bindir@/ls8tel16_rawd
+	rm -f $(DESTDIR)@bindir@/recvt_LS7000d
 
 ######----- Libraries -----
 ### static library

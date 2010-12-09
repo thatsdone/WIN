@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.25.2.4 2008/04/07 06:00:46 uehira Exp $
+# $Id: Makefile.am,v 1.25.2.5 2010/12/09 04:20:11 uehira Exp $
 #
 #  Makefile.am in man subdirectory.
 #
@@ -26,25 +26,52 @@ man_MANS = $(WIN_MAN)
 EXTRA_DIST = $(WIN_MAN)
 
 install-data-hook:
-	(rm -f $(man1dir)/eventsrtape.1; cd $(man1dir) && @LN_S@ events.1 eventsrtape.1)
+	(rm -f $(DESTDIR)$(man1dir)/eventsrtape.1; cd $(DESTDIR)$(man1dir) && @LN_S@ events.1 eventsrtape.1)
 
-	(rm -f $(man1dir)/send_mon.1; cd $(man1dir) && @LN_S@ send_raw.1 send_mon.1)
-	(rm -f $(man1dir)/sendt_mon.1; cd $(man1dir) && @LN_S@ send_raw.1 sendt_mon.1)
-	(rm -f $(man1dir)/sendt_raw.1; cd $(man1dir) && @LN_S@ send_raw.1 sendt_raw.1)
-	(rm -f $(man1dir)/send_rawd.1; cd $(man1dir) && @LN_S@ send_raw.1 send_rawd.1)
-	(rm -f $(man1dir)/send_mond.1; cd $(man1dir) && @LN_S@ send_raw.1 send_mond.1)
-	(rm -f $(man1dir)/sendt_mond.1; cd $(man1dir) && @LN_S@ send_raw.1 sendt_mond.1)
-	(rm -f $(man1dir)/sendt_rawd.1; cd $(man1dir) && @LN_S@ send_raw.1 sendt_rawd.1)
-	(rm -f $(man1dir)/wdisk60.1; cd $(man1dir) && @LN_S@ wdisk.1 wdisk60.1)
-	(rm -f $(man1dir)/wdiskd.1; cd $(man1dir) && @LN_S@ wdisk.1 wdiskd.1)
-	(rm -f $(man1dir)/wdisk60d.1; cd $(man1dir) && @LN_S@ wdisk.1 wdisk60d.1)
-	(rm -f $(man1dir)/orderd.1; cd $(man1dir) && @LN_S@ order.1 orderd.1)
-	(rm -f $(man1dir)/recvtd.1; cd $(man1dir) && @LN_S@ recvt.1 recvtd.1)
-	(rm -f $(man1dir)/relayd.1; cd $(man1dir) && @LN_S@ relay.1 relayd.1)
-	(rm -f $(man1dir)/relaymd.1; cd $(man1dir) && @LN_S@ relaym.1 relaymd.1)
-	(rm -f $(man1dir)/raw_mond.1; cd $(man1dir) && @LN_S@ raw_mon.1 raw_mond.1)
-	(rm -f $(man1dir)/raw_rawd.1; cd $(man1dir) && @LN_S@ raw_raw.1 raw_rawd.1)
-	(rm -f $(man1dir)/wdisktsd.1; cd $(man1dir) && @LN_S@ wdiskts.1 wdisktsd.1)
-	(rm -f $(man1dir)/raw_timed.1; cd $(man1dir) && @LN_S@ raw_time.1 raw_timed.1)
-	(rm -f $(man1dir)/recvstatus3d.1; cd $(man1dir) && @LN_S@ recvstatus3.1 recvstatus3d.1)
-	(rm -f $(man1dir)/ls8tel16_rawd.1; cd $(man1dir) && @LN_S@ ls8tel16_raw.1 ls8tel16_rawd.1)
+	(rm -f $(DESTDIR)$(man1dir)/send_mon.1; cd $(DESTDIR)$(man1dir) && @LN_S@ send_raw.1 send_mon.1)
+	(rm -f $(DESTDIR)$(man1dir)/sendt_mon.1; cd $(DESTDIR)$(man1dir) && @LN_S@ send_raw.1 sendt_mon.1)
+	(rm -f $(DESTDIR)$(man1dir)/sendt_raw.1; cd $(DESTDIR)$(man1dir) && @LN_S@ send_raw.1 sendt_raw.1)
+	(rm -f $(DESTDIR)$(man1dir)/send_rawd.1; cd $(DESTDIR)$(man1dir) && @LN_S@ send_raw.1 send_rawd.1)
+	(rm -f $(DESTDIR)$(man1dir)/send_mond.1; cd $(DESTDIR)$(man1dir) && @LN_S@ send_raw.1 send_mond.1)
+	(rm -f $(DESTDIR)$(man1dir)/sendt_mond.1; cd $(DESTDIR)$(man1dir) && @LN_S@ send_raw.1 sendt_mond.1)
+	(rm -f $(DESTDIR)$(man1dir)/sendt_rawd.1; cd $(DESTDIR)$(man1dir) && @LN_S@ send_raw.1 sendt_rawd.1)
+	(rm -f $(DESTDIR)$(man1dir)/wdisk60.1; cd $(DESTDIR)$(man1dir) && @LN_S@ wdisk.1 wdisk60.1)
+	(rm -f $(DESTDIR)$(man1dir)/wdiskd.1; cd $(DESTDIR)$(man1dir) && @LN_S@ wdisk.1 wdiskd.1)
+	(rm -f $(DESTDIR)$(man1dir)/wdisk60d.1; cd $(DESTDIR)$(man1dir) && @LN_S@ wdisk.1 wdisk60d.1)
+	(rm -f $(DESTDIR)$(man1dir)/orderd.1; cd $(DESTDIR)$(man1dir) && @LN_S@ order.1 orderd.1)
+	(rm -f $(DESTDIR)$(man1dir)/recvtd.1; cd $(DESTDIR)$(man1dir) && @LN_S@ recvt.1 recvtd.1)
+	(rm -f $(DESTDIR)$(man1dir)/relayd.1; cd $(DESTDIR)$(man1dir) && @LN_S@ relay.1 relayd.1)
+	(rm -f $(DESTDIR)$(man1dir)/relaymd.1; cd $(DESTDIR)$(man1dir) && @LN_S@ relaym.1 relaymd.1)
+	(rm -f $(DESTDIR)$(man1dir)/raw_mond.1; cd $(DESTDIR)$(man1dir) && @LN_S@ raw_mon.1 raw_mond.1)
+	(rm -f $(DESTDIR)$(man1dir)/raw_rawd.1; cd $(DESTDIR)$(man1dir) && @LN_S@ raw_raw.1 raw_rawd.1)
+	(rm -f $(DESTDIR)$(man1dir)/wdisktsd.1; cd $(DESTDIR)$(man1dir) && @LN_S@ wdiskts.1 wdisktsd.1)
+	(rm -f $(DESTDIR)$(man1dir)/raw_timed.1; cd $(DESTDIR)$(man1dir) && @LN_S@ raw_time.1 raw_timed.1)
+	(rm -f $(DESTDIR)$(man1dir)/recvstatus3d.1; cd $(DESTDIR)$(man1dir) && @LN_S@ recvstatus3.1 recvstatus3d.1)
+	(rm -f $(DESTDIR)$(man1dir)/ls8tel16_rawd.1; cd $(DESTDIR)$(man1dir) && @LN_S@ ls8tel16_raw.1 ls8tel16_rawd.1)
+
+uninstall-local:
+	rm -f $(DESTDIR)$(man1dir)/eventsrtape.1
+
+	rm -f $(DESTDIR)$(man1dir)/send_mon.1
+	rm -f $(DESTDIR)$(man1dir)/sendt_mon.1
+	rm -f $(DESTDIR)$(man1dir)/sendt_raw.1
+	rm -f $(DESTDIR)$(man1dir)/send_rawd.1
+	rm -f $(DESTDIR)$(man1dir)/send_mond.1
+	rm -f $(DESTDIR)$(man1dir)/sendt_mond.1
+	rm -f $(DESTDIR)$(man1dir)/sendt_rawd.1
+	rm -f $(DESTDIR)$(man1dir)/wdisk60.1
+	rm -f $(DESTDIR)$(man1dir)/wdiskd.1
+	rm -f $(DESTDIR)$(man1dir)/wdisk60d.1
+	rm -f $(DESTDIR)$(man1dir)/orderd.1
+	rm -f $(DESTDIR)$(man1dir)/recvtd.1
+	rm -f $(DESTDIR)$(man1dir)/relayd.1
+	rm -f $(DESTDIR)$(man1dir)/relaymd.1
+	rm -f $(DESTDIR)$(man1dir)/raw_mond.1
+	rm -f $(DESTDIR)$(man1dir)/raw_rawd.1
+	rm -f $(DESTDIR)$(man1dir)/wdisktsd.1
+	rm -f $(DESTDIR)$(man1dir)/raw_timed.1
+	rm -f $(DESTDIR)$(man1dir)/recvstatus2d.1
+	rm -f $(DESTDIR)$(man1dir)/recvstatus3d.1
+	rm -f $(DESTDIR)$(man1dir)/recvstatus4d.1
+	rm -f $(DESTDIR)$(man1dir)/ls8tel16_rawd.1
+	rm -f $(DESTDIR)$(man1dir)/recvt_LS7000d.1

@@ -1,4 +1,9 @@
- $Id: ChangeLog,v 1.113.2.59 2010/11/25 07:41:45 uehira Exp $
+ $Id: ChangeLog,v 1.113.2.60 2010/12/09 04:20:11 uehira Exp $
+
+2010-12-09  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 1.2.10 released.
+	* compatibility for DESTDIR option.
+	* configure.in : portable sh script.
 
 2010-11-25  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* Version 1.2.9 released.

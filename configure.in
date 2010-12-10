@@ -1,5 +1,5 @@
 dnl ------------------------------------------------------------------------- 
-dnl $Id: configure.in,v 1.98.2.17.2.53 2010/12/09 02:42:23 uehira Exp $
+dnl $Id: configure.in,v 1.98.2.17.2.54 2010/12/10 08:37:15 uehira Exp $
 dnl -------------------------------------------------------------------------
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT
@@ -136,7 +136,7 @@ AC_CHECK_MEMBERS(struct tm.tm_gmtoff,,,[
 #include <time.h>
 #endif
 ])
- AC_CHECK_MEMBER(struct statfs.f_bavail,,,[
+AC_CHECK_MEMBER(struct statfs.f_bavail,,,[
 #if HAVE_SYS_PARAM_H
 #include <sys/param.h>
 #endif

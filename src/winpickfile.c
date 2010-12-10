@@ -1,4 +1,4 @@
-/* $Id: winpickfile.c,v 1.1.4.1 2010/12/08 09:58:22 uehira Exp $ */
+/* $Id: winpickfile.c,v 1.1.4.2 2010/12/10 08:37:15 uehira Exp $ */
 
 /*
  * Copyright (c) 2001-2010
@@ -596,9 +596,10 @@ void
 win_pickfile_close(struct win_pickfile *wp)
 {
 
-  if (wp->sta_num > 0)
+  if (wp->sta_num > 0) {
     free(wp->station);
-  wp->station = NULL;
+    wp->station = NULL;
+  }
 }
 
 int

@@ -1,4 +1,8 @@
- $Id: ChangeLog,v 1.131.2.25.2.147 2010/12/09 02:42:23 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.148 2010/12/10 08:37:15 uehira Exp $
+
+2010-12-10  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/winpickfile.c : fixed a potential bug.
+	* src/Makefile.am : libwinsystem.so (revision number: 1:1:1)
 
 2010-12-09  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* compatibility for DESTDIR option.

@@ -1,9 +1,9 @@
 #
-# $Id: Makefile.am,v 1.38.2.10.2.24.2.6 2010/12/09 03:25:36 uehira Exp $
+# $Id: Makefile.am,v 1.38.2.10.2.24.2.7 2010/12/10 08:37:46 uehira Exp $
 #
 
 # Version number of shared libraries.
-LIB_WINSYSTEM_VERSION = -version-info 1:0:1
+LIB_WINSYSTEM_VERSION = -version-info 1:1:1
 LIB_WINLOG_VERSION = -version-info 0:0:0
 
 if SUNOS4

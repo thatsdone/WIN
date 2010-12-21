@@ -1,4 +1,4 @@
-/* $Id: wproto.h,v 1.1.2.1 2010/11/23 03:50:20 uehira Exp $ */
+/* $Id: w_proto.h,v 1.1.4.1 2010/12/21 03:11:43 uehira Exp $ */
 
 #ifndef _WPROTO_H_
 #define _WPROTO_H_

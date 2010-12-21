@@ -1,4 +1,10 @@
- $Id: ChangeLog,v 1.131.2.25.2.148 2010/12/10 08:37:15 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.149 2010/12/21 03:11:43 uehira Exp $
+
+2010-12-21  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Renamed 'wconst.h' to 'w_const.h'.
+	* Renamed 'wmacros.h' to 'w_macros.h'.
+	* Renamed 'wproto.h' to 'w_proto.h'.
+	* Renamed 'wstruct.h' to 'w_struct.h'.
 
 2010-12-10  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* src/winpickfile.c : fixed a potential bug.

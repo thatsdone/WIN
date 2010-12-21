@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.38.2.10.2.30 2010/12/10 08:37:15 uehira Exp $
+# $Id: Makefile.am,v 1.38.2.10.2.31 2010/12/21 03:11:43 uehira Exp $
 #
 
 # Version number of shared libraries.
@@ -93,7 +93,7 @@ WIN_LOG = win_log.h win_log.c win_externs.h winlib_log.c
 UDP_UTILITY = udpu.h udp_accept.c udp_dest.c
 TCP_UTILITY = tcpu.h tcp_connect.c
 
-WIN_INCLUDABLE=wconst.h wmacros.h wproto.h wstruct.h  win_log.h filter.h pltxy.h ulaw.h daemon_mode.h udpu.h tcpu.h ls7000.h ls8tel.h winpickfile.h
+WIN_INCLUDABLE=w_const.h w_macros.h w_proto.h w_struct.h win_log.h filter.h pltxy.h ulaw.h daemon_mode.h udpu.h tcpu.h ls7000.h ls8tel.h winpickfile.h
 WIN_LIBH=winlib.h $(WIN_INCLUDABLE) $(SUBFUNC_H)
 WIN_LIBC=winlib.c filter.c pltxy.c ulaw.c winpickfile.c
 

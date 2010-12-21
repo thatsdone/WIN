@@ -1,4 +1,4 @@
-/* $Id: wconst.h,v 1.1.2.1 2010/11/23 03:50:20 uehira Exp $ */
+/* $Id: w_const.h,v 1.1.4.1 2010/12/21 03:11:43 uehira Exp $ */
 
 #ifndef _WCONST_H_
 #define _WCONST_H_

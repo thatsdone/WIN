@@ -1,5 +1,5 @@
 dnl ------------------------------------------------------------------------- 
-dnl $Id: configure.in,v 1.98.2.17.2.54 2010/12/10 08:37:15 uehira Exp $
+dnl $Id: configure.in,v 1.98.2.17.2.55 2010/12/21 03:11:43 uehira Exp $
 dnl -------------------------------------------------------------------------
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT
@@ -519,20 +519,20 @@ typedef uint16_w  WIN_ch;
 typedef  int32_w  WIN_sr;   /* 0 < sr < 2^20 */
 
 /* WIN system macros */
-#include <wmacros.h>
+#include <w_macros.h>
 
 /* WIN system struct declarations */
-#include <wstruct.h>
+#include <w_struct.h>
 
 /* WIN system constant */
-#include <wconst.h>
+#include <w_const.h>
 
 #include <ls7000.h>
 #include <ls8tel.h>
 #include <winpickfile.h>
 
 /** prototypes **/
-#include <wproto.h>
+#include <w_proto.h>
 _EOF_
 
 	if test x$ac_cv_header_sys_mtio_h = xyes; then

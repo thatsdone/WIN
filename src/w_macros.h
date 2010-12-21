@@ -1,4 +1,4 @@
-/* $Id: wmacros.h,v 1.1.2.2 2010/12/08 09:58:22 uehira Exp $ */
+/* $Id: w_macros.h,v 1.1.4.1 2010/12/21 03:11:43 uehira Exp $ */
 
 #ifndef _WMACROS_H_
 #define _WMACROS_H_

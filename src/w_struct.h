@@ -1,4 +1,4 @@
-/* $Id: wstruct.h,v 1.1.4.1 2010/11/23 05:25:18 uehira Exp $ */
+/* $Id: w_struct.h,v 1.1.2.1 2010/12/21 02:58:12 uehira Exp $ */
 
 #ifndef _WSTRUCT_H_
 #define _WSTRUCT_H_

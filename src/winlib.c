@@ -1,4 +1,4 @@
-/* $Id: winlib.c,v 1.1.2.4.2.32 2010/12/07 04:58:34 uehira Exp $ */
+/* $Id: winlib.c,v 1.1.2.4.2.33 2010/12/22 01:22:23 uehira Exp $ */
 
 /*-
  * winlib.c  (Uehira Kenji)
@@ -1001,6 +1001,33 @@ get_sysch(const uint8_w *buf, WIN_ch *ch)
   gsize = win_chheader_info(buf, ch, &sr, &i);
 
   return(gsize);
+}
+
+/*-
+ * channel header information for MON data
+ *  return group size (byte)
+ * input  : *ptr
+ * output : ch  : channel number
+ -*/
+uint32_w
+get_sysch_mon(const uint8_w *ptr, WIN_ch *ch)
+{
+  uint32_w  gs;
+  int   i, j;
+
+  /* channel number */
+  *ch = (((WIN_ch)ptr[0]) << 8) + (WIN_ch)ptr[1];
+
+  /* groupe size */
+  gs = 2;
+  for (i = 0; i < SR_MON; i++) {
+    j = (ptr[gs] & 0x03) * 2;
+    gs += j + 1;
+    if (j == 0)
+      gs++;
+  }
+
+  return(gs);
 }
 
 /*** make mon data ***/

@@ -1,15 +1,25 @@
 #! /bin/sh
 #
-# $Id: daily_windiff,v 1.1.2.1 2010/12/21 10:25:47 uehira Exp $
+# $Id: daily_windiff,v 1.1.2.2 2010/12/22 01:22:23 uehira Exp $
 #
 # Output only whether win files differ.
 #
 
 . win.conf
 
+MON_mode=no
+while getopts "m" _opt; do
+    case "$_opt" in
+        m) MON_mode=yes ;;
+        *) err 3 'USAGE: daily_wimdiff [-m] date dir1 dir2' ;;
+    esac
+done
+shift $(($OPTIND - 1))
+
 if [ -z "$1" -o ! -d "$2" -o ! -d "$3" ]; then
-    echo "daily_rawdiff date rawdir1 rawdir2"
+    echo "daily_wimdiff [-m] date dir1 dir2"
     echo "   date: YYMMDD"
+    echo "   -m: MON mode"
     exit 1
 fi
 
@@ -23,7 +33,11 @@ TMPFILE=`mktemp -t ${tempfoo}` || exit 1
 
 (cd $2 && ls "$1"*) | while read file
 do
+    if [ "$MON_mode" = yes ]; then
+	echo "windiffq -m $2/$file $3/$file" >> $TMPFILE
+    else
 	echo "windiffq $2/$file $3/$file" >> $TMPFILE
+    fi
 done
 
 /bin/sh $TMPFILE

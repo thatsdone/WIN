@@ -1,4 +1,4 @@
-/* $Id: wck.c,v 1.5.4.1.2.8 2010/09/21 11:56:59 uehira Exp $ */
+/* $Id: wck.c,v 1.5.4.1.2.9 2010/12/22 01:22:23 uehira Exp $ */
 /*- 
    program "wck.c"
 	"wck" checks a win format data file
@@ -37,7 +37,7 @@
 #define DEBUG1  0
 
 static const char rcsid[] =
-  "$Id: wck.c,v 1.5.4.1.2.8 2010/09/21 11:56:59 uehira Exp $";
+  "$Id: wck.c,v 1.5.4.1.2.9 2010/12/22 01:22:23 uehira Exp $";
 
 char *progname;
 static unsigned long count[WIN_CHMAX];
@@ -134,16 +134,13 @@ main(int argc, char *argv[])
      do
        {
 /*        sysch=(WIN_ch)ptr[1]+(((WIN_ch)ptr[0]<<8)); */
-       gs=win_chheader_info(ptr,&sysch,&sr,&size);
+       if(mode&MON)
+	 gs=get_sysch_mon(ptr,&sysch);
+       else
+	 gs=win_chheader_info(ptr,&sysch,&sr,&size);
        if(mode&(COUNT|TABLE)) count[sysch]++;
        if(mode&MON)
          {
-         gs=2;
-         for(i=0;i<SR_MON;i++) {
-           j=(ptr[gs]&0x03)*2;
-           gs+=j+1;
-           if(j==0) gs++;
-           }
          if(!(mode&(COUNT|TABLE)) && sec==ss) {
            printf("%4d : ch %04hX    %3d Hz  %4u B\n",nch+1,sysch,SR_MON,gs);
            }

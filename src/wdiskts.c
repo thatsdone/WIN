@@ -1,4 +1,4 @@
-/* $Id: wdiskts.c,v 1.6.2.5.2.11.2.1 2010/12/07 06:44:20 uehira Exp $ */
+/* $Id: wdiskts.c,v 1.6.2.5.2.11.2.2 2010/12/22 14:39:56 uehira Exp $ */
 
 /*-
   2005.8.10 urabe bug in strcmp2() fixed : 0-6 > 7-9 
@@ -70,14 +70,8 @@
 
 #define   NAMELEN  1025
 
-/* memory malloc utility macro */
-/* #define MALLOC(type, n) (type*)malloc((size_t)(sizeof(type)*(n))) */
-/* #define REALLOC(type, ptr, n) \ */
-/* (type*)realloc((void *)ptr, (size_t)(sizeof(type)*(n))) */
-/* #define FREE(a)         (void)free((void *)(a)) */
-
 static const char rcsid[] =
-  "$Id: wdiskts.c,v 1.6.2.5.2.11.2.1 2010/12/07 06:44:20 uehira Exp $";
+  "$Id: wdiskts.c,v 1.6.2.5.2.11.2.2 2010/12/22 14:39:56 uehira Exp $";
 
 char *progname,*logfile;
 int  daemon_mode, syslog_mode, exit_status;
@@ -112,7 +106,6 @@ sort_buf()
      size_t point;
      size_t len;
    } **indx;
-   void  *q;
 
    status=0;
    tim_num=(size_t)0;
@@ -133,11 +126,10 @@ sort_buf()
        if(tim_tmp==tim_list[i]) break;
      if(i==tim_num){ /* new time stamp */
        tim_num++;
-       if((q=realloc(tim_list, (size_t)(sizeof(time_t)*tim_num)))==NULL){
+       if((tim_list = REALLOC(time_t, tim_list, tim_num))==NULL){
 	 status=1;
 	 goto end_1;
        }
-       tim_list = (time_t *)q;
        tim_list[i]=tim_tmp;
      }
      /* read & compare channel number */
@@ -147,11 +139,10 @@ sort_buf()
 	 if(ch_tmp==ch_list[i]) break;
        if(i==ch_num){ /* new channel */
 	 ch_num++;
-	 if((q=realloc(ch_list,(size_t)(sizeof(WIN_ch)*ch_num)))==NULL){
+	 if((ch_list = REALLOC(WIN_ch, ch_list, ch_num))==NULL){
 	   status=1;
 	   goto end_1;
 	 }
-	 ch_list = (WIN_ch *)q;
 	 ch_list[i]=ch_tmp;
        }
        ptr+=gsize;

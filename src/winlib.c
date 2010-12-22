@@ -1,4 +1,4 @@
-/* $Id: winlib.c,v 1.1.2.4.2.30.2.3 2010/12/22 01:46:07 uehira Exp $ */
+/* $Id: winlib.c,v 1.1.2.4.2.30.2.4 2010/12/22 14:39:57 uehira Exp $ */
 
 /*-
  * winlib.c  (Uehira Kenji)
@@ -727,7 +727,6 @@ read_onesec_win(FILE *fp, uint8_w **rbuf)
   uint8_w        sz[WIN_BSLEN];
   WIN_bs         size;
   static size_t  sizesave;
-  void *q;
 
   /* printf("%d\n", sizesave); */
   if (fread(sz, 1, WIN_BSLEN, fp) != WIN_BSLEN)
@@ -738,12 +737,11 @@ read_onesec_win(FILE *fp, uint8_w **rbuf)
     sizesave = 0;
   if (size > sizesave) {
     sizesave = (size << 1);
-    q = realloc(*rbuf, sizesave);
-    if (q == NULL) {
+    *rbuf = REALLOC(uint8_w, *rbuf, sizesave);
+    if (*rbuf == NULL) {
       (void)fprintf(stderr, "%s\n", strerror(errno));
       exit(1);
     }
-    *rbuf = (uint8_w *)q;
   }
 
   (void)memcpy(*rbuf, sz, WIN_BSLEN);
@@ -771,11 +769,11 @@ read_onesec_win2(FILE *fp, uint8_w **in_buf, uint8_w **out_buf)
     return (0);
   re = mkuint4(tmpa);
   if (*in_buf == NULL) {
-    *in_buf = (uint8_w *)malloc(size = (size_t)(re << 1));
-    *out_buf = (uint8_w *)malloc(size = (size_t)(re << 1));
+    *in_buf = MALLOC(uint8_w, (size = (size_t)(re << 1)));
+    *out_buf = MALLOC(uint8_w, (size = (size_t)(re << 1)));
   } else if (re > size) {
-    *in_buf = (uint8_w *)realloc(*in_buf, size = (size_t)(re << 1));
-    *out_buf = (uint8_w *)realloc(*out_buf, size = (size_t)(re << 1));
+    *in_buf = REALLOC(uint8_w, *in_buf, (size = (size_t)(re << 1)));
+    *out_buf = REALLOC(uint8_w, *out_buf, (size = (size_t)(re << 1)));
   }
   if ((*in_buf == NULL) || (*out_buf == NULL)) {
     perror("read_onesec_win2()");
@@ -1339,11 +1337,11 @@ int
   int           **m;
   int		  i       , j;
 
-  if (NULL == (m = (int **)malloc((size_t) (sizeof(int *) * nrow)))) {
+  if (NULL == (m = MALLOC(int *, nrow))) {
     (void)fprintf(stderr, "malloc error\n");
     exit(1);
   }
-  if (NULL == (m[0] = (int *)malloc((size_t) (sizeof(int) * nrow * ncol)))) {
+  if (NULL == (m[0] = MALLOC(int, nrow * ncol))) {
     (void)fprintf(stderr, "malloc error\n");
     exit(1);
   }
@@ -1547,7 +1545,7 @@ str2double(char *t, int n, int m, double *d)
 
   /* May be need length of 't'.*/
   /* if (strlen(t) < n + m) {....} */
-  if ((tb = (char *)malloc(sizeof(char) * (m + 1))) == NULL) {
+  if ((tb = MALLOC(char, m + 1)) == NULL) {
     (void)fprintf(stderr, "str2double : malloc error\n");
     exit(1);
   }
@@ -1557,7 +1555,7 @@ str2double(char *t, int n, int m, double *d)
     *d = 100.0;
   else
     *d = atof(tb);
-  free(tb);
+  FREE(tb);
 }
 
 time_t

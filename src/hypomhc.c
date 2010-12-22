@@ -1,5 +1,5 @@
 /*-
-  $Id: hypomhc.c,v 1.7.2.2.2.5.2.1 2010/11/09 08:02:28 uehira Exp $
+  $Id: hypomhc.c,v 1.7.2.2.2.5.2.2 2010/12/22 14:39:56 uehira Exp $
    hypomhc.c    : main program for hypocenter location
      original version was made on March 13, 1984 and
      modified by N.H. on Feb. 8, 1985, May 8, 1985.
@@ -50,8 +50,9 @@
 #include <floatingpoint.h>
 #endif
 
-#include "pltxy.h"
-#include "subst_func.h"
+#include "winlib.h"
+/* #include "pltxy.h" */
+/* #include "subst_func.h" */
 
 #define    VPVS2   3.0		/* (Vp/Vs)^2 */
 #define    VPVS    (sqrt(VPVS2))/* Vp/Vs */
@@ -81,7 +82,7 @@ struct struct_data {
 };
 typedef struct struct_data STRUCT;
 
-struct station_data {
+struct station_data_hypomh {
   char		  sa1     [11];	/* STATION ABBREVIATION   (WITHIN 10
 				 * CHARACTERS) */
   char		  pola1   [2];	/* POLARITY OF THE FIRST MOTION                 */
@@ -100,7 +101,7 @@ struct station_data {
   double	  xst   , yst;
   int		  flag;		/* structure flag 1=special */
 };
-typedef struct station_data STATION;
+typedef struct station_data_hypomh STATION;
 
 struct station_for_calc_data {
   int		  org_num;
@@ -148,12 +149,12 @@ str2double_h(char *t, int n, int m, double *d)
   if (strlen(t) < n + m)
     *d = 9999.0;
   else {
-    if (NULL == (tb = (char *)malloc(sizeof(char) * (m + 1))))
+    if (NULL == (tb = (char *)win_xmalloc(sizeof(char) * (m + 1))))
       memory_error();
     strncpy(tb, t + n, m);
     tb[m] = '\0';
     *d = atof(tb);
-    free(tb);
+    FREE(tb);
   }
 }
 
@@ -201,11 +202,11 @@ rxinc(int id, double pp, double y1, int l1,
   }
   /* printf("k1=%d  l1=%d\n",k1,l1); OK */
 
-  if (NULL == (sn = (double *)malloc(sizeof(double) * (strc->n1 + 1))))
+  if (NULL == (sn = (double *)win_xmalloc(sizeof(double) * (strc->n1 + 1))))
     memory_error();
-  if (NULL == (cn = (double *)malloc(sizeof(double) * (strc->n1 + 1))))
+  if (NULL == (cn = (double *)win_xmalloc(sizeof(double) * (strc->n1 + 1))))
     memory_error();
-  if (NULL == (rn = (double *)malloc(sizeof(double) * (strc->n1 + 1))))
+  if (NULL == (rn = (double *)win_xmalloc(sizeof(double) * (strc->n1 + 1))))
     memory_error();
   for (i = k1; i <= l1; ++i) {
     j = i + 1;
@@ -241,9 +242,9 @@ rxinc(int id, double pp, double y1, int l1,
   }
   *x /= pp;
   *a /= -(pp * sn[lm]);
-  free(sn);
-  free(cn);
-  free(rn);
+  FREE(sn);
+  FREE(cn);
+  FREE(rn);
 }
 
 static void
@@ -256,9 +257,9 @@ rtinc(double pp, double y1, int l1, double y2, int l2, double *tt, STRUCT *strc)
   if (y1 == y2)
     return;
 
-  if (NULL == (sn = (double *)malloc(sizeof(double) * (strc->n1 + 1))))
+  if (NULL == (sn = (double *)win_xmalloc(sizeof(double) * (strc->n1 + 1))))
     memory_error();
-  if (NULL == (cn = (double *)malloc(sizeof(double) * (strc->n1 + 1))))
+  if (NULL == (cn = (double *)win_xmalloc(sizeof(double) * (strc->n1 + 1))))
     memory_error();
   k1 = l2 - 1;
   for (i = k1; i <= l1; ++i) {
@@ -287,8 +288,8 @@ rtinc(double pp, double y1, int l1, double y2, int l2, double *tt, STRUCT *strc)
 #endif
   }
 
-  free(sn);
-  free(cn);
+  FREE(sn);
+  FREE(cn);
 }
 
 static void
@@ -387,9 +388,9 @@ travel(double rr, double ya, double yb, int *np, double *ang, double *trv,
 
   ta0 = 0.0;  /* supress warnning */
   /* First, malloc */
-  if (NULL == (xc = (double *)malloc(sizeof(double) * (strc->n1 + 1))))
+  if (NULL == (xc = (double *)win_xmalloc(sizeof(double) * (strc->n1 + 1))))
     memory_error();
-  if (NULL == (tac = (double *)malloc(sizeof(double) * (strc->n1 + 1))))
+  if (NULL == (tac = (double *)win_xmalloc(sizeof(double) * (strc->n1 + 1))))
     memory_error();
 
   /* begin */
@@ -464,8 +465,8 @@ line55:
       bng[*np - 1] = tag;
     }
   }
-  free(xc);
-  free(tac);
+  FREE(xc);
+  FREE(tac);
 }
 
 static void
@@ -571,9 +572,9 @@ main(int argc, char *argv[])
       sstanum--;
       if (sstanum < 0)
 	sstanum = 0;
-      ssta = (char **)calloc(sstanum, sizeof(char *));
+      ssta = (char **)win_xcalloc(sstanum, sizeof(char *));
       for (j = 0; j < sstanum; ++j)
-	ssta[j] = (char *)calloc(11, sizeof(char));
+	ssta[j] = (char *)win_xcalloc(11, sizeof(char));
       rewind(fp_sch);
       j = 0;
       while (!feof(fp_sch)) {
@@ -682,15 +683,15 @@ main(int argc, char *argv[])
   vst[3] = '\0';
   strc.n1 = nn + 1;
 
-  if (NULL == (strc.vr = (double *)malloc(sizeof(double) * (strc.n1 + 1))))
+  if (NULL == (strc.vr = (double *)win_xmalloc(sizeof(double) * (strc.n1 + 1))))
     memory_error();
-  if (NULL == (strc.y = (double *)malloc(sizeof(double) * (strc.n1 + 1))))
+  if (NULL == (strc.y = (double *)win_xmalloc(sizeof(double) * (strc.n1 + 1))))
     memory_error();
-  if (NULL == (th = (double *)malloc(sizeof(double) * (strc.n1))))
+  if (NULL == (th = (double *)win_xmalloc(sizeof(double) * (strc.n1))))
     memory_error();
-  if (NULL == (strc.vlg = (double *)malloc(sizeof(double) * (strc.n1))))
+  if (NULL == (strc.vlg = (double *)win_xmalloc(sizeof(double) * (strc.n1))))
     memory_error();
-  if (NULL == (strc.v = (double *)malloc(sizeof(double) * (strc.n1))))
+  if (NULL == (strc.v = (double *)win_xmalloc(sizeof(double) * (strc.n1))))
     memory_error();
   /*-  This part is Original
      if(vb <= va)
@@ -736,7 +737,7 @@ main(int argc, char *argv[])
   }
   fprintf(fp_21, "     %5d%10.4lf%10.4lf\n",
 	  strc.n1, strc.y[strc.n1], strc.vr[strc.n1]);
-  free(th);
+  FREE(th);
 
   /****** Read Special Struct data *****/
   if (smode) {
@@ -747,15 +748,15 @@ main(int argc, char *argv[])
     svst[3] = '\0';
     strc1.n1 = nn + 1;
 
-    if (NULL == (strc1.vr = (double *)malloc(sizeof(double) * (strc1.n1 + 1))))
+    if (NULL == (strc1.vr = (double *)win_xmalloc(sizeof(double) * (strc1.n1 + 1))))
       memory_error();
-    if (NULL == (strc1.y = (double *)malloc(sizeof(double) * (strc1.n1 + 1))))
+    if (NULL == (strc1.y = (double *)win_xmalloc(sizeof(double) * (strc1.n1 + 1))))
       memory_error();
-    if (NULL == (th = (double *)malloc(sizeof(double) * (strc1.n1))))
+    if (NULL == (th = (double *)win_xmalloc(sizeof(double) * (strc1.n1))))
       memory_error();
-    if (NULL == (strc1.vlg = (double *)malloc(sizeof(double) * (strc1.n1))))
+    if (NULL == (strc1.vlg = (double *)win_xmalloc(sizeof(double) * (strc1.n1))))
       memory_error();
-    if (NULL == (strc1.v = (double *)malloc(sizeof(double) * (strc1.n1))))
+    if (NULL == (strc1.v = (double *)win_xmalloc(sizeof(double) * (strc1.n1))))
       memory_error();
     /* vlct = 0.0; */
     for (i = 0; i <= strc1.n1; ++i)	/* nn+2 */
@@ -791,7 +792,7 @@ main(int argc, char *argv[])
     }
     fprintf(fp_21, "     %5d%10.4lf%10.4lf\n",
 	    strc1.n1, strc1.y[strc1.n1], strc1.vr[strc1.n1]);
-    free(th);
+    FREE(th);
   }				/* if (smode) */
 #if DEBUGS
   printf("%lf %lf\n", zmin, zmax);
@@ -843,7 +844,7 @@ main(int argc, char *argv[])
   printf("na = %d\n", na);
   printf("%02d %02d %02d %02d:%02d\n", iyr, mnt, idy, ihr, min);
 #endif
-  if (NULL == (sta = (STATION *) malloc(sizeof(STATION) * na)))
+  if (NULL == (sta = (STATION *) win_xmalloc(sizeof(STATION) * na)))
     memory_error();
   for (i = 0; i < na; ++i) {
     fgets(txtbuf, LINELEN, fp_13);
@@ -891,8 +892,8 @@ main(int argc, char *argv[])
   fprintf(fp_21, " ***** EARTHQUAKE %02d%02d%02d%02d%02d *****\n",
 	  iyr, mnt, idy, ihr, min);
   k = npd = nsd = 0;
-  /* if(NULL == (calc=(FOR_CALC *)malloc(sizeof(FOR_CALC)*na))) */
-  if (NULL == (calc = (FOR_CALC *) calloc(na, sizeof(FOR_CALC))))
+  /* if(NULL == (calc=(FOR_CALC *)win_xmalloc(sizeof(FOR_CALC)*na))) */
+  if (NULL == (calc = (FOR_CALC *) win_xcalloc(na, sizeof(FOR_CALC))))
     memory_error();
   for (i = 0; i < na; ++i) {
     fprintf(fp_21,
@@ -1046,11 +1047,11 @@ line150:
     as += calc[i].vpt + calc[i].vst;
   }
   for (i = 0; i < nd; ++i) {
-    /* if(NULL == (calc[i].fp=(double *)malloc(sizeof(double)*nd))) */
-    if (NULL == (calc[i].fp = (double *)calloc(nd, sizeof(double))))
+    /* if(NULL == (calc[i].fp=(double *)win_xmalloc(sizeof(double)*nd))) */
+    if (NULL == (calc[i].fp = (double *)win_xcalloc(nd, sizeof(double))))
       memory_error();
-    /* if(NULL == (calc[i].fs=(double *)malloc(sizeof(double)*nd))) */
-    if (NULL == (calc[i].fs = (double *)calloc(nd, sizeof(double))))
+    /* if(NULL == (calc[i].fs=(double *)win_xmalloc(sizeof(double)*nd))) */
+    if (NULL == (calc[i].fs = (double *)win_xcalloc(nd, sizeof(double))))
       memory_error();
   }
   for (i = 0; i < nd; ++i)
@@ -1064,18 +1065,18 @@ line150:
       calc[i].fp[j] *= calc[j].vpt;
       calc[i].fs[j] *= calc[j].vst;
     }
-  if (NULL == (ang = (double *)malloc(sizeof(double) * (strc.n1 + 1))))
+  if (NULL == (ang = (double *)win_xmalloc(sizeof(double) * (strc.n1 + 1))))
     memory_error();
-  if (NULL == (trv = (double *)malloc(sizeof(double) * (strc.n1 + 1))))
+  if (NULL == (trv = (double *)win_xmalloc(sizeof(double) * (strc.n1 + 1))))
     memory_error();
-  if (NULL == (bng = (double *)malloc(sizeof(double) * (strc.n1 + 1))))
+  if (NULL == (bng = (double *)win_xmalloc(sizeof(double) * (strc.n1 + 1))))
     memory_error();
   if (smode) {
-    if (NULL == (ang1 = (double *)malloc(sizeof(double) * (strc1.n1 + 1))))
+    if (NULL == (ang1 = (double *)win_xmalloc(sizeof(double) * (strc1.n1 + 1))))
       memory_error();
-    if (NULL == (trv1 = (double *)malloc(sizeof(double) * (strc1.n1 + 1))))
+    if (NULL == (trv1 = (double *)win_xmalloc(sizeof(double) * (strc1.n1 + 1))))
       memory_error();
-    if (NULL == (bng1 = (double *)malloc(sizeof(double) * (strc1.n1 + 1))))
+    if (NULL == (bng1 = (double *)win_xmalloc(sizeof(double) * (strc1.n1 + 1))))
       memory_error();
   }
   for (;;) {

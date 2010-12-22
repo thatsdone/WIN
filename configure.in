@@ -1,5 +1,5 @@
 dnl ------------------------------------------------------------------------- 
-dnl $Id: configure.in,v 1.98.2.17.2.43.2.14 2010/12/22 01:46:06 uehira Exp $
+dnl $Id: configure.in,v 1.98.2.17.2.43.2.15 2010/12/22 14:39:55 uehira Exp $
 dnl -------------------------------------------------------------------------
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT

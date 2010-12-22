@@ -1,4 +1,4 @@
-/* $Id: shmdump.c,v 1.21.4.6.2.16.2.1 2010/12/07 06:44:20 uehira Exp $ */
+/* $Id: shmdump.c,v 1.21.4.6.2.16.2.2 2010/12/22 14:39:56 uehira Exp $ */
 
 /*  program "shmdump.c" 6/14/94 urabe */
 /*  revised 5/29/96 */
@@ -72,7 +72,7 @@ struct Filter
 };
 
 static const char rcsid[] =
-  "$Id: shmdump.c,v 1.21.4.6.2.16.2.1 2010/12/07 06:44:20 uehira Exp $";
+  "$Id: shmdump.c,v 1.21.4.6.2.16.2.2 2010/12/22 14:39:56 uehira Exp $";
 
 static char *progname,outfile[256];
 static int win;
@@ -273,7 +273,6 @@ main(int argc, char *argv[])
   static double dbuf[MAX_SR];
   float flt_fl, flt_fh, flt_fp, flt_fs, flt_ap, flt_as;
   int chid;              /* filter var end */
-  void  *q;
 
   if((progname=strrchr(argv[0],'/')) != NULL) progname++;
   else progname=argv[0];
@@ -423,7 +422,7 @@ main(int argc, char *argv[])
     {
     shm_key_in=0;
     bufsize_in=MAXMESG*100;
-    if((shm_in=(struct Shm *)malloc(bufsize_in))==0) err_sys_local("malloc inbuf");
+    if((shm_in=(struct Shm *)win_xmalloc(bufsize_in))==0) err_sys_local("malloc inbuf");
     zero=0;
     }
 
@@ -450,7 +449,7 @@ main(int argc, char *argv[])
     {
     if(all) bufsize=MAXMESG*100;
     else bufsize=MAXMESG*nch;
-    if((buf=(uint8_w *)malloc(bufsize))==0) err_sys_local("malloc outbuf");
+    if((buf=(uint8_w *)win_xmalloc(bufsize))==0) err_sys_local("malloc outbuf");
     }
 
   /* alloc flt & uv */
@@ -458,9 +457,9 @@ main(int argc, char *argv[])
     filter_flag = 0;
   if(filter_flag) {
     /* fprintf(stderr,"nch=%d\n", nch); */
-    if((flt=(struct Filter *)malloc(nch*sizeof(struct Filter)))==0)
+    if((flt=(struct Filter *)win_xmalloc(nch*sizeof(struct Filter)))==0)
       err_sys_local("malloc filter");
-    if((uv=(double (*)[MAX_FILT*4])malloc(nch*sizeof(double[MAX_FILT*4])))==0)
+    if((uv=(double (*)[MAX_FILT*4])win_xmalloc(nch*sizeof(double[MAX_FILT*4])))==0)
       err_sys_local("malloc uv");
     for(j=0;j<nch;j++)
       for(i=0;i<MAX_FILT*4;i++)
@@ -522,7 +521,7 @@ reset:
         if(sizeof(long)*4+size_in>bufsize_in)
           {
           bufsize_in=sizeof(long)*4+size_in+MAXMESG*100;
-          if((q=realloc(shm_in,bufsize_in))==NULL)
+          if((shm_in=(struct Shm *)win_xrealloc(shm_in,bufsize_in))==NULL)
             {
 #if XINETD
 #else
@@ -530,7 +529,6 @@ reset:
 #endif
             exit(1);
             }
-	  shm_in=(struct Shm *)q;
           }
         if(fread(shm_in->d+4,1,size_in-4,stdin)==0) end=1;
         }
@@ -619,7 +617,7 @@ reset:
             if(ptw-buf+gs>bufsize)
               {
               bufsize=ptw-buf+gs+MAXMESG*100;
-              if((q=realloc(buf,bufsize))==NULL)
+              if((buf=(uint8_w *)win_xrealloc(buf,bufsize))==NULL)
                 {
 #if XINETD
 #else
@@ -627,7 +625,6 @@ reset:
 #endif
                 exit(1);
                 }
-	      buf=(uint8_w *)q;
               }
             if(memcmp(buf+4,tms,6)) /* new time */
               {

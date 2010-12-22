@@ -1,4 +1,4 @@
-/* $Id: recvt_LS7000.c,v 1.1.2.3.2.16 2010/10/13 12:18:18 uehira Exp $ */
+/* $Id: recvt_LS7000.c,v 1.1.2.3.2.16.2.1 2010/12/22 14:39:56 uehira Exp $ */
 
 /*- 
  * "recvt_LS7000.c"  uehira
@@ -60,7 +60,7 @@
 #define N_PNOS    62    /* length of packet nos. history >=2 */
 
 static const char rcsid[] =
-  "$Id: recvt_LS7000.c,v 1.1.2.3.2.16 2010/10/13 12:18:18 uehira Exp $";
+  "$Id: recvt_LS7000.c,v 1.1.2.3.2.16.2.1 2010/12/22 14:39:56 uehira Exp $";
 
 static uint8_w rbuff[MAXMESG],rbuf[MAXMESG],ch_table[WIN_CHMAX];
 static char *chfile[N_CHFILE];
@@ -736,11 +736,11 @@ main(int argc, char *argv[])
     }
 
   if((chhist.ts=
-      (time_t (*)[WIN_CHMAX])malloc(WIN_CHMAX*chhist.n*sizeof(time_t)))==NULL)
+      (time_t (*)[WIN_CHMAX])win_xmalloc(WIN_CHMAX*chhist.n*sizeof(time_t)))==NULL)
     {
     chhist.n=N_HIST;
     if((chhist.ts=
-        (time_t (*)[WIN_CHMAX])malloc(WIN_CHMAX*chhist.n*sizeof(time_t)))==NULL)
+        (time_t (*)[WIN_CHMAX])win_xmalloc(WIN_CHMAX*chhist.n*sizeof(time_t)))==NULL)
       {
       fprintf(stderr,"malloc failed (chhist.ts)\n");
       exit(1);

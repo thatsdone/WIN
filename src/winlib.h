@@ -1,4 +1,4 @@
-/* $Id: winlib.h,v 1.1.2.7.2.44.2.3 2010/12/21 02:58:12 uehira Exp $ */
+/* $Id: winlib.h,v 1.1.2.7.2.44.2.4 2010/12/22 14:39:57 uehira Exp $ */
 
 #ifndef _WIN_LIB_H_
 #define _WIN_LIB_H_
@@ -100,6 +100,29 @@ typedef  int32_w  WIN_sr;   /* 0 < sr < 2^20 */
 
 /* WIN system macros */
 #include "w_macros.h"
+
+/* memory malloc utility macro */
+#ifndef MALLOC
+#define MALLOC(type, n) (type *)win_xmalloc((size_t)(sizeof(type)*(n)))
+#endif
+#ifndef CALLOC
+#define CALLOC(type, n) (type *)win_xcalloc((size_t)n, sizeof(type))
+#endif
+#ifndef REALLOC
+#define REALLOC(type, ptr, n) \
+(type *)win_xrealloc((void *)ptr, (size_t)(sizeof(type)*(n)))
+#endif
+#ifndef FREE
+#define FREE(a)         win_xfree((void *)(a))
+#endif
+
+#define  SWAP32(a)  a = ((((a) << 24)) | (((a) << 8) & 0xff0000) |	\
+			(((a) >> 8) & 0xff00) | (((a) >> 24) & 0xff))
+#define  SWAP16(a)  a = ((((a) << 8) & 0xff00) | (((a) >> 8) & 0xff))
+#define  MKSWAP16(a)  (uint16_w)((((a) << 8) & 0xff00) | (((a) >> 8) & 0xff))
+#define  SWAPF(a)  *(int32_w *)&(a) =\
+    (((*(int32_w *)&(a)) << 24) | (((*(int32_w *)&(a)) << 8) & 0xff0000) | \
+     (((*(int32_w *)&(a)) >> 8) & 0xff00) | (((*(int32_w *)&(a)) >> 24) & 0xff))
 
 /* WIN system struct declarations */
 #include "w_struct.h"

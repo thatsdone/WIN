@@ -1,4 +1,4 @@
-/* $Id: wtime.c,v 1.3.2.3.2.11 2010/09/17 11:55:53 uehira Exp $ */
+/* $Id: wtime.c,v 1.3.2.3.2.11.2.1 2010/12/22 14:39:58 uehira Exp $ */
 
 /*
   program "wtime.c"
@@ -37,7 +37,7 @@
 #define   DEBUG1  0
 
 static const char  rcsid[] =
-   "$Id: wtime.c,v 1.3.2.3.2.11 2010/09/17 11:55:53 uehira Exp $";
+   "$Id: wtime.c,v 1.3.2.3.2.11.2.1 2010/12/22 14:39:58 uehira Exp $";
 
 static uint8_w *rbuf=NULL,*wbuf;
 static int32_w *sbuf[WIN_CHMAX];
@@ -72,7 +72,7 @@ chloop(uint8_w *old_buf, uint8_w *new_buf)
   do
     {
     ptr1+=win2fix(ptr1,fixbuf1,&ch,&sr); /* returns group size in bytes */
-    if(!sbuf[ch]) sbuf[ch]=(int32_w *)malloc(sizeof(int32_w)*sr);
+    if(!sbuf[ch]) sbuf[ch]=MALLOC(int32_w, sr);
     if(ltime!=ltime_ch[ch]+1) for(i=0;i<sr;i++) sbuf[ch][i]=fixbuf1[0]; 
     sr_shift=(ms_add*sr+500)/1000;
     for(i=0;i<sr_shift;i++) fixbuf2[i]=sbuf[ch][sr-sr_shift+i];

@@ -1,4 +1,4 @@
-/* $Id: ras2util.c,v 1.1.2.2 2010/09/21 10:53:48 uehira Exp $ */
+/* $Id: ras2util.c,v 1.1.2.2.2.1 2010/12/22 14:39:56 uehira Exp $ */
 /********************************************************/
 /*  ras2util.c   97.10.31-97.11.27             urabe    */
 /*               98.3.4      LITTLE ENDIAN    uehira    */
@@ -26,7 +26,7 @@
 #define A4_FRAME_YP     4516      /* framebuffer's height (pixel) */
 
 static const char rcsid[] =
-  "$Id: ras2util.c,v 1.1.2.2 2010/09/21 10:53:48 uehira Exp $";
+  "$Id: ras2util.c,v 1.1.2.2.2.1 2010/12/22 14:39:56 uehira Exp $";
 
 /* prototypes */
 static int read_header(FILE  *, int32_w *, int32_w *);
@@ -110,7 +110,7 @@ one_page(FILE *fp, int inv)
   if(read_header(fp,&height,&width)) fprintf(stderr,"header error.\n");
   else
     {
-    if ((buf=(int8_w *)malloc(height*width)) == NULL)
+    if ((buf=MALLOC(int8_w, height*width)) == NULL)
       fprintf(stderr, "Allocate error\n");
     else
       {
@@ -135,7 +135,7 @@ one_page(FILE *fp, int inv)
 	printf("\033\022G3,%d,%d,%4.2f,4,,,%zu@",width*8,height,SCALE,size);
 #endif
 	fwrite(buf,1,size,stdout);
-	free(buf);
+	FREE(buf);
       }
     }
   printf("\014");    /* form-feed */

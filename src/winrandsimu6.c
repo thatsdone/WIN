@@ -1,4 +1,4 @@
-/* $Id: winrandsimu6.c,v 1.1.4.5 2010/10/07 15:45:58 uehira Exp $ */
+/* $Id: winrandsimu6.c,v 1.1.4.5.2.1 2010/12/22 14:39:57 uehira Exp $ */
 
 /*  WIN random simulater, real-time version
      write 100Hz 3000ch data to stdout as WIN-text or shared memory
@@ -52,7 +52,7 @@
 #define USE_RND_DELAY
 
 static const char rcsid[] =
-  "$Id: winrandsimu6.c,v 1.1.4.5 2010/10/07 15:45:58 uehira Exp $";
+  "$Id: winrandsimu6.c,v 1.1.4.5.2.1 2010/12/22 14:39:57 uehira Exp $";
 
 static key_t shmkey_out;
 static struct Shm *shm_out;
@@ -111,14 +111,12 @@ main(int argc, char *argv[])
   shm_size=shm_size*1000;
   nch=NCH; sch=STACH;
 
-  if((ev=(int *)malloc((size_t)(nch*sizeof(int))))==NULL){
+  if((ev=(int *)win_xmalloc((size_t)(nch*sizeof(int))))==NULL){
     fprintf(stderr,"Malloc Error.\n");
-    free(ev);
     exit(0);
   }
-  if((de=(int *)malloc((size_t)(nch*sizeof(int))))==NULL){
+  if((de=(int *)win_xmalloc((size_t)(nch*sizeof(int))))==NULL){
     fprintf(stderr,"Malloc Error.\n");
-    free(de);
     exit(0);
   }
 
@@ -190,7 +188,7 @@ main(int argc, char *argv[])
   fprintf(stderr,"Count = %d\n",count);
 #endif
 
-  free(de); free(ev);
+  FREE(de); FREE(ev);
   exit(0);
 }
 

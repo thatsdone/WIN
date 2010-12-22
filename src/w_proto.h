@@ -1,4 +1,4 @@
-/* $Id: w_proto.h,v 1.1.2.2 2010/12/22 01:46:07 uehira Exp $ */
+/* $Id: w_proto.h,v 1.1.2.3 2010/12/22 14:39:56 uehira Exp $ */
 
 #ifndef _WPROTO_H_
 #define _WPROTO_H_
@@ -28,7 +28,7 @@ uint32_w win_get_chhdr(const uint8_w *, WIN_ch *, WIN_sr *);
 uint32_w get_sysch(const uint8_w *, WIN_ch *);
 uint32_w get_sysch_mon(const uint8_w *, WIN_ch *);
 void get_mon(WIN_sr, int32_w *, int32_w (*)[]);
-uint8_w *compress_mon(int32_w *, uint8_w *);
+uint8_w * compress_mon(int32_w *, uint8_w *);
 void make_mon(uint8_w *, uint8_w *);
 void t_bcd(time_t, uint8_w *);
 time_t bcd_t(uint8_w *);
@@ -39,7 +39,7 @@ int ch_cmpq(const void *, const void *);
 void rmemo5(char [], int []);
 void rmemo6(char [], int []);
 int wmemo5(char [], int []);
-int **i_matrix(int, int);
+int ** i_matrix(int, int);
 WIN_bs get_merge_data(uint8_w *, uint8_w *, WIN_bs *, uint8_w *, WIN_bs *);
 WIN_ch get_sysch_list(uint8_w *, WIN_bs, WIN_ch []);
 WIN_ch get_chlist_chfile(FILE *, WIN_ch []);
@@ -51,6 +51,12 @@ time_t shift_sec(uint8_w *, int);
 int read_param_line(FILE *, char [], int);
 int dir_check(char *);
 time_t check_ts(uint8_w *, time_t, time_t);
+
+/* win_xmalloc etc. */
+void * win_xmalloc(size_t);
+void * win_xrealloc(void *, size_t);
+void * win_xcalloc(size_t, size_t);
+void win_xfree(void *);
 
 /* winlib_log.c */
 int find_oldest(char *, char *);

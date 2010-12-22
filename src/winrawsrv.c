@@ -1,4 +1,4 @@
-/* $Id: winrawsrv.c,v 1.1.4.6.2.4 2010/10/13 12:18:18 uehira Exp $ */
+/* $Id: winrawsrv.c,v 1.1.4.6.2.4.2.1 2010/12/22 14:39:58 uehira Exp $ */
 
 /* winrawsrv.c -- raw data request server */
 
@@ -51,7 +51,7 @@
 #define FNAMEMAX     1024
 
 static const char rcsid[] =
-  "$Id: winrawsrv.c,v 1.1.4.6.2.4 2010/10/13 12:18:18 uehira Exp $";
+  "$Id: winrawsrv.c,v 1.1.4.6.2.4.2.1 2010/12/22 14:39:58 uehira Exp $";
 
 char *progname, *logfile;
 int  syslog_mode, exit_status;
@@ -362,7 +362,7 @@ do_request(const char req[], const char rawdir[])
   }
 
   /* prepare buffer for rawfile */
-  if ((rawbuf = (uint8_t *)malloc((size_t)rawsize)) == NULL) {
+  if ((rawbuf = MALLOC(uint8_t, rawsize)) == NULL) {
     (void)snprintf(msg, sizeof(msg), "malloc: %s", (char *)strerror(errno));
     write_log(msg);
     return (-1);
@@ -373,7 +373,7 @@ do_request(const char req[], const char rawdir[])
     (void)snprintf(msg, sizeof(msg), "%s: %s",
 		   rawpath, (char *)strerror(errno));
     write_log(msg);
-    free(rawbuf);
+    FREE(rawbuf);
     return (-1);
   }
 
@@ -381,7 +381,7 @@ do_request(const char req[], const char rawdir[])
   if (fread(rawbuf, 1, (size_t)rawsize, fp) < (size_t)rawsize) {
     write_log("fread: few data");
     (void)fclose(fp);
-    free(rawbuf);
+    FREE(rawbuf);
     return (-1);
   }	  
   (void)fclose(fp);
@@ -391,7 +391,7 @@ do_request(const char req[], const char rawdir[])
     sptr = rawbuf;
     send_size = (size_t)rawsize;
   } else {
-    if ((rawbuf1 = (uint8_t *)malloc((size_t)rawsize)) == NULL) {
+    if ((rawbuf1 = MALLOC(uint8_t, rawsize)) == NULL) {
       (void)snprintf(msg, sizeof(msg), "malloc: %s",
 		     (char *)strerror(errno));
       write_log(msg);
@@ -403,8 +403,8 @@ do_request(const char req[], const char rawdir[])
       if (send_size == 0) {
 	(void)snprintf(msg, sizeof(msg), "%s size is 0 byte", rawpath);
 	write_log(msg);
-	free(rawbuf);
-	free(rawbuf1);
+	FREE(rawbuf);
+	FREE(rawbuf1);
 	return (-1);
       }
 
@@ -437,8 +437,8 @@ do_request(const char req[], const char rawdir[])
     write_log(msg);
   }
   
-  free(rawbuf);
-  free(rawbuf1);
+  FREE(rawbuf);
+  FREE(rawbuf1);
 
   return (0);
 }

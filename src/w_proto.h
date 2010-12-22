@@ -1,4 +1,4 @@
-/* $Id: w_proto.h,v 1.1.2.1 2010/12/21 02:58:12 uehira Exp $ */
+/* $Id: w_proto.h,v 1.1.2.2 2010/12/22 01:46:07 uehira Exp $ */
 
 #ifndef _WPROTO_H_
 #define _WPROTO_H_
@@ -26,6 +26,7 @@ void WIN_version(void);
 uint32_w win_chheader_info(const uint8_w *, WIN_ch *, WIN_sr *, int *);
 uint32_w win_get_chhdr(const uint8_w *, WIN_ch *, WIN_sr *);
 uint32_w get_sysch(const uint8_w *, WIN_ch *);
+uint32_w get_sysch_mon(const uint8_w *, WIN_ch *);
 void get_mon(WIN_sr, int32_w *, int32_w (*)[]);
 uint8_w *compress_mon(int32_w *, uint8_w *);
 void make_mon(uint8_w *, uint8_w *);

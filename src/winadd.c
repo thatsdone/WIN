@@ -1,4 +1,4 @@
-/* $Id: winadd.c,v 1.4.4.3.2.10.2.1 2010/12/07 06:44:21 uehira Exp $ */
+/* $Id: winadd.c,v 1.4.4.3.2.10.2.2 2010/12/22 01:46:07 uehira Exp $ */
 
 /*
  * winadd.c  (Uehira Kenji)
@@ -15,7 +15,9 @@
  *               -s : channel sort mode.
  *  2010/09/16  added a option (-m).
  *               -m : only try memory mode.
- */
+ *  2010/12/21  added a option (-M).
+ *               -M : MON mode.
+  */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -66,8 +68,9 @@ typedef struct data_index  INDX;
 
 /* global variables */
 static const char rcsid[] =
-   "$Id: winadd.c,v 1.4.4.3.2.10.2.1 2010/12/07 06:44:21 uehira Exp $";
-static int  dummy_flag, verbose_flag, chsort_flag;
+   "$Id: winadd.c,v 1.4.4.3.2.10.2.2 2010/12/22 01:46:07 uehira Exp $";
+
+static int  dummy_flag, verbose_flag, chsort_flag, MON_mode;
 
 /* prototypes */
 static void memory_mode_run(int, char *[]);
@@ -95,10 +98,14 @@ main(int argc, char *argv[])
   dummy_flag = 1;
   verbose_flag =  chsort_flag = 0;
   f_mode = m_mode = 0;
-  while ((c = getopt(argc, argv, "fnmsvh")) != -1) {
+  MON_mode = 0;
+  while ((c = getopt(argc, argv, "fnMmsvh")) != -1) {
     switch (c) {
     case 'f':   /* force file mode */
       f_mode = 1;
+      break;
+    case 'M':   /* MON mode */
+      MON_mode = 1;
       break;
     case 'm':   /* only try memory mode */
       m_mode = 1;
@@ -126,6 +133,13 @@ main(int argc, char *argv[])
     exit(0);
   }
 
+  if (verbose_flag) {
+    if (MON_mode)
+      (void)fputs("MON mode\n", stderr);
+    else
+      (void)fputs("RAW mode\n", stderr);
+  }
+
 #if DEBUG
   fprintf(stderr,"verbose flag = %d, dummy flag=%d\n",
 	  verbose_flag, dummy_flag);
@@ -149,6 +163,8 @@ usage(void)
   (void)fprintf(stderr, "%s\n", rcsid);
   (void)fputs("Usage : winadd [options] file1 file2 ... > output\n", stderr);
   (void)fputs("  options : -f         : force file mode.\n", stderr);
+  (void)fputs("            -M         : MON mode. Inputs are MON files.\n",
+	      stderr);
   (void)fputs("            -m         : only try memory mode.\n", stderr);
   (void)fputs("            -n         : do not append dummy headers.\n",
 	      stderr);
@@ -176,10 +192,9 @@ win_file_read(char *name, WIN_ch **ch, int *ch_num, int *ch_num_arr,
   uint8_w   tt[WIN_TIME_LEN], re_c[4];
   uint8_w   *ptr, *buf;
   WIN_bs   re, re_debug, gsize;
-  WIN_sr          srdummy;
   time_t          time_tmp;
   WIN_ch  ch_tmp;
-  int             i, ss;
+  int             i;
   void  *q;
   
   if (NULL == (fp = fopen(name, "r"))) {
@@ -225,7 +240,10 @@ win_file_read(char *name, WIN_ch **ch, int *ch_num, int *ch_num_arr,
 
     /* read & compare channel number */
     while (ptr < buf + re) {
-      gsize = win_chheader_info(ptr, &ch_tmp, &srdummy, &ss);
+      if (MON_mode)
+	gsize = get_sysch_mon(ptr, &ch_tmp);
+      else
+	gsize = get_sysch(ptr, &ch_tmp);
 
       /* ch number */
       for (i = 0; i < *ch_num; ++i)
@@ -259,10 +277,9 @@ get_index(char *name, INDX **indx, WIN_ch *ch, int ch_num,
   uint8_w  *ptr, *buf;
   unsigned long  point;
   WIN_bs  re, gsize;
-  WIN_sr         srdummy;
   time_t         time_tmp;
   WIN_ch ch_tmp;
-  int            i, ss;
+  int            i;
   int            time_sfx, ch_sfx;
    
   if (NULL == (fp = fopen(name, "r"))) {
@@ -296,7 +313,10 @@ get_index(char *name, INDX **indx, WIN_ch *ch, int ch_num,
     time_sfx = i;
     /* read & compare channel number */
     while (ptr < buf + re){
-      gsize = win_chheader_info(ptr, &ch_tmp, &srdummy, &ss);
+      if (MON_mode)
+	gsize = get_sysch_mon(ptr, &ch_tmp);
+      else
+	gsize = get_sysch(ptr, &ch_tmp);
       
       /* ch number */
       for (i = 0; i < ch_num; ++i)
@@ -590,10 +610,9 @@ win_file_read_from_buf(uint8_w *rawbuf, off_t rawsize,
   uint8_w   tt[WIN_TIME_LEN];
   uint8_w   *ptr, *ptr_limit, *buf;
   WIN_bs   re, gsize;
-  WIN_sr          srdummy;
   time_t          time_tmp;
   WIN_ch          ch_tmp;
-  int             i, ss;
+  int             i;
   void    *q;
 
   ptr = rawbuf;
@@ -625,7 +644,10 @@ win_file_read_from_buf(uint8_w *rawbuf, off_t rawsize,
     }
     /* read & compare channel number */
     while (ptr < buf + re) {
-      gsize = win_chheader_info(ptr, &ch_tmp, &srdummy, &ss);
+      if (MON_mode)
+	gsize = get_sysch_mon(ptr, &ch_tmp);
+      else
+	gsize = get_sysch(ptr, &ch_tmp);
 
       /* ch number */
       for (i = 0; i < *ch_num; ++i)
@@ -655,11 +677,10 @@ get_index_from_buf(uint8_w *rawbuf, off_t rawsize, int main_sfx,
 {
   uint8_w  tt[WIN_TIME_LEN];
   uint8_w  *ptr, *ptr_limit, *buf;
-  WIN_sr         srdummy;
   WIN_bs  re, gsize;
   time_t         time_tmp;
   WIN_ch         ch_tmp;
-  int            i, ss;
+  int            i;
   int            time_sfx, ch_sfx;
   unsigned long  point;
 
@@ -687,7 +708,10 @@ get_index_from_buf(uint8_w *rawbuf, off_t rawsize, int main_sfx,
 
     /* read & compare channel number */
     while (ptr < buf + re){
-      gsize = win_chheader_info(ptr, &ch_tmp, &srdummy, &ss);
+      if (MON_mode)
+	gsize = get_sysch_mon(ptr, &ch_tmp);
+      else
+	gsize = get_sysch(ptr, &ch_tmp);
 
       /* ch number */
       for (i = 0; i < ch_num; ++i)
@@ -779,6 +803,12 @@ memory_mode_run(int argcc, char *argvv[])
     raw_size[i] = sb.st_size;
     if (verbose_flag)
       (void)fprintf(stderr, "%s: %lld bytes\n", argvv[i], raw_size[i]);
+    /* skip 0 byte file. */
+    if (raw_size[i] == 0) {
+      (void)fprintf(stderr, "%s: %lld bytes. Skip!\n", argvv[i], raw_size[i]);
+      fopen_flag[i] = 0;
+      continue;
+    }
 
     /* malloc memory. unless get memory, memory mode tunes off */
     rawbuf[i] = MALLOC(uint8_w, raw_size[i]);

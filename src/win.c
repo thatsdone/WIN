@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.46.2.6.2.38 2010/12/07 06:44:55 uehira Exp $
+   $Id: win.c,v 1.46.2.6.2.39 2010/12/22 13:09:19 uehira Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -26,7 +26,7 @@
 #define WIN_VERSION   "2010.12.7(+Hi-net)"
 
 static const char rcsid[] =
-  "$Id: win.c,v 1.46.2.6.2.38 2010/12/07 06:44:55 uehira Exp $";
+  "$Id: win.c,v 1.46.2.6.2.39 2010/12/22 13:09:19 uehira Exp $";
 
 #define DEBUG_AP      0   /* for debugging auto-pick */
 /* 5:sr, 4:ch, 3:sec, 2:find_pick, 1:all */
@@ -1427,17 +1427,16 @@ make_sec_table()
 #else
    uint8_w  gh[5];
 #endif
-   void  *q;
 
   if(flag_save==1)  /* LOAD */
     {
     read(ft.fd_save,&ft.len,sizeof(ft.len));
     read(ft.fd_save,&ft.n_ch,sizeof(ft.n_ch));
     read(ft.fd_save,&size_max,sizeof(size_max));
-    if((ft.idx2ch=(WIN_ch *)malloc(sizeof(*ft.idx2ch)*ft.n_ch))==NULL)
+    if((ft.idx2ch=(WIN_ch *)win_xmalloc(sizeof(*ft.idx2ch)*ft.n_ch))==NULL)
       emalloc("ft.idx2ch");
-    if((ft.sr=(WIN_sr *)malloc(sizeof(*ft.sr)*ft.n_ch))==NULL) emalloc("ft.sr");
-    if((ft.ptr=(struct File_Ptr *)malloc(sizeof(*ft.ptr)*ft.len))==NULL)
+    if((ft.sr=(WIN_sr *)win_xmalloc(sizeof(*ft.sr)*ft.n_ch))==NULL) emalloc("ft.sr");
+    if((ft.ptr=(struct File_Ptr *)win_xmalloc(sizeof(*ft.ptr)*ft.len))==NULL)
       emalloc("ft.ptr");
     read(ft.fd_save,ft.ptr,sizeof(*ft.ptr)*ft.len);
     read(ft.fd_save,&ft.sr_max,sizeof(ft.sr_max));
@@ -1447,7 +1446,7 @@ make_sec_table()
     }
   else
     {
-    if((ft.ptr=(struct File_Ptr *)malloc(sizeof(*(ft.ptr))*100))==NULL)
+    if((ft.ptr=(struct File_Ptr *)win_xmalloc(sizeof(*(ft.ptr))*100))==NULL)
       emalloc("ft.ptr");
   /* get the number of sec blocks and make sec pointers */
 reset_blockmode:
@@ -1497,10 +1496,8 @@ reset_blockmode:
             ft.ptr[ft.len].size=0;
             ft.ptr[ft.len++].offset=ptr;
             if(ft.len%100==0)
-              if((q=realloc(ft.ptr,sizeof(*(ft.ptr))*(ft.len+100)))==NULL)
+              if((ft.ptr = (struct File_Ptr *)win_xrealloc(ft.ptr,sizeof(*(ft.ptr))*(ft.len+100)))==NULL)
 		emalloc("ft.ptr");
-	      else
-		ft.ptr = (struct File_Ptr *)q;
             }
           memcpy(ft.ptr[ft.len].time,t,WIN_TM_LEN);
           }
@@ -1509,10 +1506,8 @@ reset_blockmode:
       ft.ptr[ft.len].size=size;
       ft.ptr[ft.len++].offset=ptr;
       if(ft.len%100==0)
-        if((q=realloc(ft.ptr,sizeof(*(ft.ptr))*(ft.len+100)))==NULL)
+        if((ft.ptr=(struct File_Ptr *)win_xrealloc(ft.ptr,sizeof(*(ft.ptr))*(ft.len+100)))==NULL)
 	  emalloc("ft.ptr");
-	else
-	  ft.ptr=(struct File_Ptr *)q;
       lseek(ft.fd,(off_t)(ptr+=size),0);
       }
     if(ft.len==0)
@@ -1564,9 +1559,9 @@ reset_blockmode:
       if(ii==0)
         {
         for(i=0;i<N_CH_NAME;i++) ft.ch2idx[i]=(-1);
-        if((ft.idx2ch=(WIN_ch *)malloc(sizeof(*ft.idx2ch)*ft.n_ch))==NULL)
+        if((ft.idx2ch=(WIN_ch *)win_xmalloc(sizeof(*ft.idx2ch)*ft.n_ch))==NULL)
           emalloc("ft.idx2ch");
-        if((ft.sr=(WIN_sr *)malloc(sizeof(*ft.sr)*ft.n_ch))==NULL)
+        if((ft.sr=(WIN_sr *)win_xmalloc(sizeof(*ft.sr)*ft.n_ch))==NULL)
           emalloc("ft.sr");
         }
       }
@@ -1588,17 +1583,17 @@ reset_blockmode:
       }
     }
   ft.pick=(struct Pick_Time (*)[4])
-    malloc(sizeof(struct Pick_Time)*4*ft.n_ch);
+    win_xmalloc(sizeof(struct Pick_Time)*4*ft.n_ch);
   ft.pick_save=(struct Pick_Time (*)[4])
-    malloc(sizeof(struct Pick_Time)*4*ft.n_ch);
+    win_xmalloc(sizeof(struct Pick_Time)*4*ft.n_ch);
   ft.pick_calc=(struct Pick_Time (*)[4])
-    malloc(sizeof(struct Pick_Time)*4*ft.n_ch);
+    win_xmalloc(sizeof(struct Pick_Time)*4*ft.n_ch);
   for(i=0;i<ft.n_ch;i++) for(j=0;j<4;j++)
     ft.pick[i][j].valid=ft.pick_calc[i][j].valid=0;
   ft.pick_calc_ot.valid=0;
 
 /* make one second buffer */
-  if((ft.secbuf=(uint8_w *)malloc(size_max))==NULL) emalloc("ft.secbuf");
+  if((ft.secbuf=(uint8_w *)win_xmalloc(size_max))==NULL) emalloc("ft.secbuf");
   ft.ptr_secbuf=(-1);
   }
 
@@ -1633,11 +1628,11 @@ read_one_sec(int32_w ptr, WIN_ch sys_ch, register int32_w *abuf, int spike)
 
   if(n_sbuf==0)
     {
-    sbuf_index=(struct Sbuf_Index *)malloc(sizeof(*sbuf_index)*N_SBUF);
+    sbuf_index=(struct Sbuf_Index *)win_xmalloc(sizeof(*sbuf_index)*N_SBUF);
     for(i=0;i<N_SBUF;i++)
       {
       sbuf_index[i].sr=0;  /* OLD : (short)(-1) */
-      if((sbuf[i]=(int32_w *)malloc(sizeof(int32_w)*SR_SBUF))==NULL) break;
+      if((sbuf[i]=(int32_w *)win_xmalloc(sizeof(int32_w)*SR_SBUF))==NULL) break;
       }
     n_sbuf=i;
     }
@@ -2169,7 +2164,6 @@ init_process(int argc, char *argv[], int args)
     uint32_w i;
     uint8_w  c[4];
     } *swp;
-  void  *q;
 
   /* open parameter file */
   if((fp=open_file(ft.param_file,"parameter"))) fclose(fp);
@@ -2393,9 +2387,9 @@ init_process(int argc, char *argv[], int args)
   if(ft.n_ch*(HEIGHT_TEXT+1)>32767) pixels_per_trace=32767/ft.n_ch;
   else pixels_per_trace=HEIGHT_TEXT+1;
   ppt_half=pixels_per_trace/2;
-  if((ft.pos2idx=(int16_w *)malloc(sizeof(*ft.pos2idx)*ft.n_ch))==NULL)
+  if((ft.pos2idx=(int16_w *)win_xmalloc(sizeof(*ft.pos2idx)*ft.n_ch))==NULL)
     emalloc("ft.pos2idx");
-  if((ft.idx2pos=(int16_w *)malloc(sizeof(*ft.idx2pos)*ft.n_ch))==NULL)
+  if((ft.idx2pos=(int16_w *)win_xmalloc(sizeof(*ft.idx2pos)*ft.n_ch))==NULL)
     emalloc("ft.idx2pos");
 
   bcd_dec(tmd,ft.ptr[0].time);
@@ -2465,9 +2459,9 @@ init_process(int argc, char *argv[], int args)
     }
   n_stations=(++i);
 
-  if((rflag=(uint16_w *)malloc(sizeof(*rflag)*i))==NULL)
+  if((rflag=(uint16_w *)win_xmalloc(sizeof(*rflag)*i))==NULL)
     emalloc("rflag");
-  if((stations=(char (*)[STNLEN])malloc(sizeof(char)*STNLEN*i))==NULL)
+  if((stations=(char (*)[STNLEN])win_xmalloc(sizeof(char)*STNLEN*i))==NULL)
     emalloc("stations");
 
   if((fp=open_file(fname1,"zone table"))==NULL) stations[0][0]=0;
@@ -2512,7 +2506,7 @@ just_map:
   else alat0=100.0;
 
   /* initialize station table "ft.stn" */
-  if((ft.stn=(struct Stn *)malloc(sizeof(*ft.stn)*ft.n_ch))==NULL)
+  if((ft.stn=(struct Stn *)win_xmalloc(sizeof(*ft.stn)*ft.n_ch))==NULL)
     emalloc("ft.stn");
   for(i=0;i<ft.n_ch;i++)
     {
@@ -2608,15 +2602,12 @@ just_map:
     rewind(fp);
 
     if(just_hypo)
-      if((ft.idx2ch=(WIN_ch *)malloc(sizeof(*ft.idx2ch)*kk))==NULL)
+      if((ft.idx2ch=(WIN_ch *)win_xmalloc(sizeof(*ft.idx2ch)*kk))==NULL)
         emalloc("ft.idx2ch");
 
     if(kk>ft.n_ch)  /* if larger than already allocated */
       {
-      if((q=realloc(ft.stn,sizeof(*ft.stn)*kk))==NULL)
-	emalloc("ft.stn");
-      else
-	ft.stn=(struct Stn *)q;
+      if((ft.stn=(struct Stn *)win_xrealloc(ft.stn,sizeof(*ft.stn)*kk))==NULL)
       for(i=ft.n_ch;i<kk;i++)
         {
         strcpy(ft.stn[i].name,"****");
@@ -2777,8 +2768,8 @@ just_map:
     }
   else fprintf(stderr,"%d data chs\n",ft.n_ch);
 
-  if(rflag) free((char *)rflag);
-  if(stations) free((char *)stations);
+  if(rflag) FREE(rflag);
+  if(stations) FREE(stations);
 
   for(i=0;i<ft.n_ch;i++) ft.stn[i].ch_order=ft.stn[i].order;
 
@@ -2872,7 +2863,7 @@ set_period(int idx, struct Pick_Time *pt)
   for(i=0;i<n;i++) if((db[i]>=0.0 && db[i-1]<0.0) ||
     (db[i]<=0.0 && db[i-1]>0.0)) dj+=0.5;
   if((pt->period=1000.0*(double)n/(dj*(double)ft.sr[idx]))>500) pt->period=500;
-  free(db);
+  FREE(db);
   }
 
 static void
@@ -2932,7 +2923,7 @@ alloc_mem(size_t size, char *mes)   /* 64bit OK */
   {
   char *almem,tb[100];
 
-  if((almem=(void *)malloc(size))==NULL)
+  if((almem=(void *)win_xmalloc(size))==NULL)
     {
     snprintf(tb,sizeof(tb),"%s(%zu)",mes,size);
     emalloc(tb);
@@ -3170,7 +3161,7 @@ fprintf(stderr,"nm=%d n=%d m=%d sd=%f zero=%f\n",nm,n,m,sd,zero);
   digfil(db,db2,n,c,m,rec,&sd);   /* apply AR filter (db->db2) */
   for(i=0;i<n;i++) db2[i]-=db[i];   /* take residuals (db2-db) */
   for(i=0;i<n;i++) db2[i]*=db2[i];  /* take squares */
-  free(db);
+  FREE(db);
 
   if(iph==P) level=LEVEL_3;
   else level=0.0;
@@ -3239,7 +3230,7 @@ fprintf(stderr,"%d %f %f %f %f %f\n",i,db[i],sqrt(dj),sum,sump,d);
 fprintf(stderr,"f=%f dj=%f n1=%d pol=%d rat=%f\n",
 freq,dj,n1,pt.polarity,sum);
 #endif
-      free(db);
+      FREE(db);
       }
     show_pick(idx,&pt,iph);
     ret=1;
@@ -3249,12 +3240,12 @@ fail:
 fprintf(stderr,"out: %04X(%d) %2d.%03d-%2d.%03d pol=%d\n",ft.idx2ch[idx],iph,
 pt.sec1,pt.msec1,pt.sec2,pt.msec2,pt.polarity);
 #endif
-  free(db2);
-  free(aic);
-  free(sd1);
-  free(sd2);
-  free(c);
-  free(rec);
+  FREE(db2);
+  FREE(aic);
+  FREE(sd1);
+  FREE(sd2);
+  FREE(c);
+  FREE(rec);
   return (ret);
   }
 
@@ -3562,7 +3553,7 @@ auto_pick_pick(int sec_now, int hint)
               smeadl(db,n,&zero);
               if((j=get_max(db,n,&n_max,&n_min,&c_max,&c_min))==0) break;
               }
-            free(db);
+            FREE(db);
             if(--k<0 || strcmp(ft.stn[ft.pos2idx[k]].name,ft.stn[idx].name))
               break;
             idx=ft.pos2idx[k];
@@ -3575,7 +3566,7 @@ auto_pick_pick(int sec_now, int hint)
           sec=pt.sec1+msec/1000;
           msec%=1000;
           set_max(fabs(db[n_max]),sec,msec,ft.idx2ch[idx]);
-          free(db);
+          FREE(db);
           }
         }
       else cancel_picks(ft.stn[idx].name,-1);
@@ -3960,12 +3951,12 @@ fprintf(stderr,"%2d.%03d - %2d.%03d\n",pt1.sec1,pt1.msec1,pt1.sec2,pt1.msec2);
         n=getdata(idxs,pt1,&db,&i); /* get data of the range pt1 */ 
         smeadl(db,n,&zero);     /* offset nulling */
         get_max(db,n,&n_max,&n_min,&c_max,&c_min);  /* search MAX */
-        if(db[n_max]==db[n_min]) {free(db);continue;}
+        if(db[n_max]==db[n_min]) {FREE(db);continue;}
 #if DEBUG_AP>=2
 fprintf(stderr,"n=%d n_max=%d n_min=%d\n",n,n_max,n_min);
 #endif
         if(db[n_max]<-db[n_min]) n_max=n_min;
-        free(db);
+        FREE(db);
         msec=(n_max*1000)/ft.sr[idxs]+pt1.msec1;
         sec=pt1.sec1+msec/1000;
         msec%=1000;     /* sec.msec is the time of MAX */
@@ -4006,7 +3997,7 @@ get_trigch()
   int i,k,j,jj;
 
   if(ft.trigch==NULL)
-    if((ft.trigch=(int16_w *)malloc(sizeof(*ft.trigch)*ft.n_ch))==NULL)
+    if((ft.trigch=(int16_w *)win_xmalloc(sizeof(*ft.trigch)*ft.n_ch))==NULL)
       emalloc("ft.trigch");
   /* select V/VH chs */
   k=j=0;
@@ -4047,7 +4038,7 @@ evdet(Evdet *ev, int singl)
   else {sec_start=0;save=1;}
   get_trigch(); /* select vertical component chs -> ft.trigch */
   done=0;
-  if(tbl==NULL && (tbl=(Evdet_Tbl *)malloc(sizeof(*tbl)*ft.n_trigch))==NULL)
+  if(tbl==NULL && (tbl=(Evdet_Tbl *)win_xmalloc(sizeof(*tbl)*ft.n_trigch))==NULL)
     emalloc("tbl");
 /* get AR models from one of the first 5 sec */
 /* get first trig level from RMS of AR filter output */
@@ -4810,23 +4801,23 @@ main(int argc, char *argv[])
       }
     }
   if(init_process(argc,argv,optind)==0) exit(1);
-  if(NULL == (dbuf  =(double *)malloc((ft.sr_max+1)*sizeof(double)))){
+  if(NULL == (dbuf  =(double *)win_xmalloc((ft.sr_max+1)*sizeof(double)))){
      fprintf(stderr, "Cannot malloc dbuf\n");
      exit(1);
   }
-  if(NULL == (dbuf2 =(double *)malloc((ft.sr_max+1)*sizeof(double)))){
+  if(NULL == (dbuf2 =(double *)win_xmalloc((ft.sr_max+1)*sizeof(double)))){
      fprintf(stderr, "Cannot malloc dbuf2\n");
      exit(1);
   }
-  if(NULL == (buf   =  (int32_w *)malloc((ft.sr_max+1)*sizeof(int32_w)))){
+  if(NULL == (buf   =  (int32_w *)win_xmalloc((ft.sr_max+1)*sizeof(int32_w)))){
      fprintf(stderr, "Cannot malloc buf\n");
      exit(1);
   }
-  if(NULL == (buf2  =  (int32_w *)malloc((ft.sr_max+1)*sizeof(int32_w)))){
+  if(NULL == (buf2  =  (int32_w *)win_xmalloc((ft.sr_max+1)*sizeof(int32_w)))){
      fprintf(stderr, "Cannot malloc buf2\n");
      exit(1);
   }
-  if(NULL == (points=(lPoint *)malloc((ft.sr_max+1)*sizeof(lPoint)))){
+  if(NULL == (points=(lPoint *)win_xmalloc((ft.sr_max+1)*sizeof(lPoint)))){
      fprintf(stderr, "Cannot malloc points\n");
      exit(1);
   }
@@ -5012,7 +5003,7 @@ bg: if(map_only) goto skip_mon;
   ft.n_mon=(ft.len-1)/ft.len_mon+1;   /* n of bitmaps */
   fprintf(stderr,"%d sec x %d chs (%d bitmap(s))\n",ft.len,ft.n_ch,ft.n_mon);
   if(background && flag_save!=2) goto bg1;
-  if((mon=(lBitmap *)malloc(sizeof(lBitmap)*ft.n_mon))==NULL) emalloc("mon");
+  if((mon=(lBitmap *)win_xmalloc(sizeof(lBitmap)*ft.n_mon))==NULL) emalloc("mon");
   base_sec=0;
   width_mon_max=0;
   for(i_mon=0;i_mon<ft.n_mon;i_mon++)
@@ -5020,7 +5011,7 @@ bg: if(map_only) goto skip_mon;
     if((mon_len=ft.len-base_sec)>ft.len_mon) mon_len=ft.len_mon;
     if((width_mon=mon_len*PIXELS_PER_SEC_MON)>width_mon_max)
       width_mon_max=width_mon;
-    if((buf_mon=(uint8_w *)malloc(p2w(width_mon)*height_mon*2))
+    if((buf_mon=(uint8_w *)win_xmalloc(p2w(width_mon)*height_mon*2))
       ==NULL) break;
     for(i=0;i<p2w(width_mon)*height_mon*2;i++) buf_mon[i]=0x00;
     fprintf(stderr,"map #%d/%d : %d sec x %d chs (%d x %d)",
@@ -5059,7 +5050,7 @@ bg: if(map_only) goto skip_mon;
       invert_bits(buf_mon,p2w(width_mon)*height_mon*2);
       write(ft.fd_save,buf_mon,(width_mon+15)/16*height_mon*2);
       }
-    free(buf_mon);
+    FREE(buf_mon);
     base_sec+=mon_len;
     }
   if(i_mon<ft.n_mon)
@@ -7349,7 +7340,7 @@ load_data_prep(int btn) /* return=1 means success */
   if(just_hypo)
     {
     ft.pick=(struct Pick_Time (*)[4])
-      malloc(sizeof(struct Pick_Time)*4*ft.n_ch);
+      win_xmalloc(sizeof(struct Pick_Time)*4*ft.n_ch);
     for(i=0;i<ft.n_ch;i++) for(j=0;j<4;j++) ft.pick[i][j].valid=0;
     }
   /*cancel_picks(NULL,-1);*/    /* cancel all picks */
@@ -7411,7 +7402,7 @@ load_data_prep(int btn) /* return=1 means success */
   if(just_hypo)
     {
     ft.len=sec_max+1;
-    if((ft.ptr=(struct File_Ptr *)malloc(sizeof(*(ft.ptr))*ft.len))==NULL)
+    if((ft.ptr=(struct File_Ptr *)win_xmalloc(sizeof(*(ft.ptr))*ft.len))==NULL)
       emalloc("ft.ptr");
     lsec_begin=time2lsec(tm_begin);
     for(i=0;i<ft.len;i++)
@@ -7544,7 +7535,7 @@ replot_mon(int replot_locate)
     ft.n_mon=(ft.len-1)/ft.len_mon+1;*/   /* n of bitmaps */
   fprintf(stderr,"%d sec x %d chs (%d bitmap(s))\n",ft.len,ft.n_ch,ft.n_mon);
   /*if(background && flag_save!=2) goto bg1;
-    if((mon=(lBitmap *)malloc(sizeof(lBitmap)*ft.n_mon))==0) emalloc("mon");*/
+    if((mon=(lBitmap *)win_xmalloc(sizeof(lBitmap)*ft.n_mon))==0) emalloc("mon");*/
   base_sec=0;
   width_mon_max=0;
   for(i_mon=0;i_mon<ft.n_mon;i_mon++)
@@ -7552,7 +7543,7 @@ replot_mon(int replot_locate)
     if((mon_len=ft.len-base_sec)>ft.len_mon) mon_len=ft.len_mon;
     if((width_mon=mon_len*PIXELS_PER_SEC_MON)>width_mon_max)
       width_mon_max=width_mon;
-    if((buf_mon=(uint8_w *)malloc(p2w(width_mon)*height_mon*2))
+    if((buf_mon=(uint8_w *)win_xmalloc(p2w(width_mon)*height_mon*2))
       ==NULL) break;
     for(i=0;i<p2w(width_mon)*height_mon*2;i++) buf_mon[i]=0x00;
     fprintf(stderr,"map #%d/%d : %d sec x %d chs (%d x %d)",
@@ -8312,7 +8303,7 @@ put_map(int idx)  /* 0:redraw all, 1:plot only hypocenters, */
     if((fp=fopen(ft.map_file,"r")))
       {
       fseek(fp,0L,2);
-      if((mapdata=(MapData *)malloc(size=ftell(fp)))==NULL)
+      if((mapdata=(MapData *)win_xmalloc(size=ftell(fp)))==NULL)
         emalloc("mapdata");
       fseek(fp,0L,0);
       fread(mapdata,1,size,fp);
@@ -10155,7 +10146,7 @@ load_data(int btn) /* return=1 means success */
   if(just_hypo)
     {
     ft.pick=(struct Pick_Time (*)[4])
-      malloc(sizeof(struct Pick_Time)*4*ft.n_ch);
+      win_xmalloc(sizeof(struct Pick_Time)*4*ft.n_ch);
     for(i=0;i<ft.n_ch;i++) for(j=0;j<4;j++) ft.pick[i][j].valid=0;
     }
   cancel_picks(NULL,-1);    /* cancel all picks */
@@ -10217,7 +10208,7 @@ load_data(int btn) /* return=1 means success */
   if(just_hypo)
     {
     ft.len=sec_max+1;
-    if((ft.ptr=(struct File_Ptr *)malloc(sizeof(*(ft.ptr))*ft.len))==NULL)
+    if((ft.ptr=(struct File_Ptr *)win_xmalloc(sizeof(*(ft.ptr))*ft.len))==NULL)
       emalloc("ft.ptr");
     lsec_begin=time2lsec(tm_begin);
     for(i=0;i<ft.len;i++)
@@ -10424,7 +10415,6 @@ read_final(char *final_file, struct Hypo *hypo)
   int i;
   char textbuf[LINELEN],ulat,ulon;
   double lat,lon;
-  void  *q;
 
   hypo->valid=0;
   if((fp=fopen(final_file,"r"))==NULL) return (0);
@@ -10452,14 +10442,12 @@ read_final(char *final_file, struct Hypo *hypo)
   if(fgets(textbuf,LINELEN,fp)==NULL) return (1);
   sscanf(textbuf,"%d",&hypo->ndata);
   /* if(hypo->fnl==NULL) */
-  /*   hypo->fnl=(struct Fnl *)malloc(sizeof(*hypo->fnl)*hypo->ndata); */
-  /* else hypo->fnl=(struct Fnl *)realloc(hypo->fnl, */
+  /*   hypo->fnl=(struct Fnl *)win_xmalloc(sizeof(*hypo->fnl)*hypo->ndata); */
+  /* else hypo->fnl=(struct Fnl *)win_xrealloc(hypo->fnl, */
   /*        sizeof(*hypo->fnl)*hypo->ndata); */
-  q=realloc(hypo->fnl,sizeof(*hypo->fnl)*hypo->ndata);
-  if(q==NULL)
+  hypo->fnl=(struct Fnl *)win_xrealloc(hypo->fnl,sizeof(*hypo->fnl)*hypo->ndata);
+  if(hypo->fnl==NULL)
     emalloc("hypo->fnl");
-  else
-    hypo->fnl=(struct Fnl *)q;
   for(i=0;i<hypo->ndata;i++)
     {
     fgets(textbuf,LINELEN,fp);
@@ -11424,7 +11412,7 @@ read_filter_file()
         ft.filt[i].order=MAX_FILT*4;
         }
       else ft.filt[i].order=j;
-      ft.filt[i].coef=(double *)malloc(sizeof(double)*j);
+      ft.filt[i].coef=(double *)win_xmalloc(sizeof(double)*j);
       j=0;
       while(fgets(text_buf,LINELEN,fc))
         {
@@ -11521,7 +11509,7 @@ get_filter(int filt, struct Filt *f, WIN_sr sr, int iz)
     n=getdata(idx,pt,&x,&i);
     getar(x,n,&f->gn_filt,&f->m_filt,f->coef,&zero,0);
     sprintf(f->tfilt," AR ORDER=%-2d ",f->m_filt);
-    free(x);
+    FREE(x);
     }
   else if(ft.filt[filt].order>0)
     {
@@ -11661,9 +11649,9 @@ fpeaut(int l, int n, int lagh, double *cxx, double *ofpe, double *osd,
   else
     abnum = 8;
   /* fprintf(stderr,"l=%d abnum=%d\n", l,abnum); */
-  if ((a = (double *)malloc(sizeof(double) * abnum)) == NULL)
+  if ((a = (double *)win_xmalloc(sizeof(double) * abnum)) == NULL)
       emalloc("fpeaut : a");
-  if ((b = (double *)malloc(sizeof(double) * abnum)) == NULL)
+  if ((b = (double *)win_xmalloc(sizeof(double) * abnum)) == NULL)
       emalloc("fpeaut : b");
 
   for(m=1;m<=l;m++)
@@ -11704,8 +11692,8 @@ fpeaut(int l, int n, int lagh, double *cxx, double *ofpe, double *osd,
       }
     }
 /*fprintf(stderr,"\n");*/
-  free(a);
-  free(b);
+  FREE(a);
+  FREE(b);
   }
 
 static int
@@ -11723,12 +11711,12 @@ getar(double *x, int n, double *sd, int *m, double *c, double *z, int lh)
 
   lagh=(int)(3.0*sqrt((double)n));
   if(lh>0 && lh<lagh) lagh=lh;
-  if ((cxx=(double *)malloc(sizeof(double)*(lagh+1))) == NULL)
+  if ((cxx=(double *)win_xmalloc(sizeof(double)*(lagh+1))) == NULL)
     emalloc("getar:cxx");
   autcor(x,n,lagh,cxx,z);
   fpeaut(lagh,n,lagh,cxx,&fpe,sd,m,c);
   if(*sd<0.0) *sd=0.0;
-  free(cxx);
+  FREE(cxx);
   if(*m==lagh) return (-1);
   return (*m);
   }

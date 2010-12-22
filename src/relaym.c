@@ -1,4 +1,4 @@
-/* $Id: relaym.c,v 1.8.2.1.2.7 2010/10/13 12:18:18 uehira Exp $ */
+/* $Id: relaym.c,v 1.8.2.1.2.8 2010/12/22 13:09:19 uehira Exp $ */
 
 /*
  * 2004-11-26 MF relay.c:
@@ -63,7 +63,7 @@
 #define MAXMSG       1025
 
 static const char rcsid[] =
-  "$Id: relaym.c,v 1.8.2.1.2.7 2010/10/13 12:18:18 uehira Exp $";
+  "$Id: relaym.c,v 1.8.2.1.2.8 2010/12/22 13:09:19 uehira Exp $";
 
 /* destination host info. */
 struct hostinfo {
@@ -426,7 +426,7 @@ read_param(const char *prm, int *hostnum)
       continue;
 
     /* save host information */
-    if ((hinf = (struct hostinfo *)malloc(sizeof(struct hostinfo))) == NULL)
+    if ((hinf = (struct hostinfo *)win_xmalloc(sizeof(struct hostinfo))) == NULL)
       continue;
     memset(hinf, 0, sizeof(struct hostinfo));
     (void)strcpy(hinf->hostname, hname);

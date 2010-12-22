@@ -1,4 +1,4 @@
-/* $Id: winpickfile.c,v 1.1.4.2 2010/12/10 08:37:15 uehira Exp $ */
+/* $Id: winpickfile.c,v 1.1.4.3 2010/12/22 13:09:21 uehira Exp $ */
 
 /*
  * Copyright (c) 2001-2010
@@ -149,12 +149,9 @@ malloc_wpbuf(struct wp_buf *wbuf)
   for(i = 0; i < wbuf->lnum; ++i)
     if ((wbuf->buf[i] = MALLOC(char, PICKBUF)) == NULL) {
       (void)fprintf(stderr, "Cannot malloc in 'malloc_wpbuf'\n");
-      for (j = 0; j < i; ++j) {
-	free(wbuf->buf[j]);
-	wbuf->buf[j] = NULL;
-      }
-      free(wbuf->buf);
-      wbuf->buf = NULL;
+      for (j = 0; j < i; ++j)
+	FREE(wbuf->buf[j]);
+      FREE(wbuf->buf);
       return (1);
     }
 
@@ -169,12 +166,9 @@ free_wpbuf(struct wp_buf *wbuf)
 {
   int  i;
 
-  for (i = 0; i < wbuf->lnum; ++i) {
-    free(wbuf->buf[i]);
-    wbuf->buf[i] = NULL;
-  }
-  free(wbuf->buf);
-  wbuf->buf = NULL;
+  for (i = 0; i < wbuf->lnum; ++i)
+    FREE(wbuf->buf[i]);
+  FREE(wbuf->buf);
 }
 
 /*
@@ -596,10 +590,8 @@ void
 win_pickfile_close(struct win_pickfile *wp)
 {
 
-  if (wp->sta_num > 0) {
-    free(wp->station);
-    wp->station = NULL;
-  }
+  if (wp->sta_num > 0)
+    FREE(wp->station);
 }
 
 int
@@ -654,8 +646,7 @@ win_pickfile_read(char *pickname, struct win_pickfile *wp)
       /*  (void)fprintf(stderr, "  %d pick file: %s\n", status, pickname); */
       if (status < 0) {
 	(void)fprintf(stderr, "Invalid pick file: %s\n", pickname);
-	free(wp->station);
-	wp->station = NULL;
+	FREE(wp->station);
 	free_wpbuf(&wbuf);
 	return (1);
       }
@@ -675,8 +666,7 @@ win_pickfile_read(char *pickname, struct win_pickfile *wp)
       wp->hypo_flag = FLAG_HYPO;
       if (win_pickfile_hypo_data(&wbuf, &wp->hypo)) {
 	(void)fprintf(stderr, "Invalid pick file: %s\n", pickname);
-	free(wp->station);
-	wp->station = NULL;
+	FREE(wp->station);
 	free_wpbuf(&wbuf);
 	return (1);
       }
@@ -685,8 +675,7 @@ win_pickfile_read(char *pickname, struct win_pickfile *wp)
 	if (win_pickfile_final_data(wbuf.buf[wbuf.f_pos + 5 + i],
 				    &wp->station[i])) {
 	  (void)fprintf(stderr, "Invalid pick file: %s\n", pickname);
-	  free(wp->station);
-	  wp->station = NULL;
+	  FREE(wp->station);
 	  free_wpbuf(&wbuf);
 	  return (1);
 	}

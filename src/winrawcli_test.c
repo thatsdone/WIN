@@ -1,4 +1,4 @@
-/* $Id: winrawcli_test.c,v 1.1.4.2.2.5 2010/11/01 13:16:02 uehira Exp $ */
+/* $Id: winrawcli_test.c,v 1.1.4.2.2.6 2010/12/22 13:09:21 uehira Exp $ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -29,7 +29,7 @@
 #define MAXMSG       1025
 
 static const char rcsid[] =
-  "$Id: winrawcli_test.c,v 1.1.4.2.2.5 2010/11/01 13:16:02 uehira Exp $";
+  "$Id: winrawcli_test.c,v 1.1.4.2.2.6 2010/12/22 13:09:21 uehira Exp $";
 
 char *progname, *logfile;
 int  syslog_mode, exit_status;
@@ -146,7 +146,7 @@ main(int argc, char *argv[])
       (void)snprintf(msg, sizeof(msg), "%s %d", wrbp_buf, rsize);
       write_log(msg);
       
-      if ((rawbuf = (uint8_t *)malloc((size_t)rsize)) == NULL) {
+      if ((rawbuf = MALLOC(uint8_t, rsize)) == NULL) {
 	(void)snprintf(msg, sizeof(msg), "malloc: %s",
 		       (char *)strerror(errno));
 	err_sys(msg);
@@ -163,7 +163,7 @@ main(int argc, char *argv[])
       
       fwrite(rawbuf, 1, rsize, stdout);
       
-      free(rawbuf);
+      FREE(rawbuf);
     } else  /* SIZE ERR */
       write_log(wrbp_buf);
   }

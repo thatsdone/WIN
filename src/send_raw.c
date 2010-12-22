@@ -1,4 +1,4 @@
-/* $Id: send_raw.c,v 1.24.2.4.2.18 2010/10/13 12:18:18 uehira Exp $ */
+/* $Id: send_raw.c,v 1.24.2.4.2.19 2010/12/22 13:09:19 uehira Exp $ */
 /*
     program "send_raw/send_mon.c"   1/24/94 - 1/25/94,5/25/94 urabe
                                     6/15/94 - 6/16/94
@@ -102,7 +102,7 @@
 #define REQ_TIMO  10   /* timeout (sec) for request */
 
 static const char  rcsid[] =
-   "$Id: send_raw.c,v 1.24.2.4.2.18 2010/10/13 12:18:18 uehira Exp $";
+   "$Id: send_raw.c,v 1.24.2.4.2.19 2010/12/22 13:09:19 uehira Exp $";
 
 static int sock,raw,tow,all,n_ch,negate_channel,mtu,nbuf,slptime,
   no_resend;
@@ -656,7 +656,7 @@ main(int argc, char *argv[])
   for(i=0;i<NBUF;i++)
     { /* allocate buffers */
     psize[i]=(-1);
-    if((sbuf[i]=(uint8_w *)malloc(mtu-28+8))==NULL){
+    if((sbuf[i]=(uint8_w *)win_xmalloc(mtu-28+8))==NULL){
       snprintf(tbuf,sizeof(tbuf),"malloc failed. nbuf=%d\n",i);
       write_log(tbuf);
       break;

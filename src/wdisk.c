@@ -1,4 +1,4 @@
-/* $Id: wdisk.c,v 1.17.2.8.2.12 2010/12/07 04:58:33 uehira Exp $ */
+/* $Id: wdisk.c,v 1.17.2.8.2.13 2010/12/22 13:09:19 uehira Exp $ */
 /*
   program "wdisk.c"   4/16/93-5/13/93,7/2/93,7/5/94  urabe
                       1/6/95 bug in adj_time fixed (tm[0]--)
@@ -107,7 +107,7 @@
 #define   NAMELEN  1025
 
 static const char rcsid[] =
-  "$Id: wdisk.c,v 1.17.2.8.2.12 2010/12/07 04:58:33 uehira Exp $";
+  "$Id: wdisk.c,v 1.17.2.8.2.13 2010/12/22 13:09:19 uehira Exp $";
 
 char *progname,*logfile;
 int  daemon_mode, syslog_mode, exit_status;
@@ -318,7 +318,6 @@ main(int argc, char *argv[])
    key_t shmkey;
    int c;
    struct Shm  *shm=NULL;
-   void  *q;
    
    if((progname=strrchr(argv[0],'/')) != NULL) progname++;
    else progname=argv[0];
@@ -365,7 +364,7 @@ main(int argc, char *argv[])
 	 exit(1);
        }
      shmkey=0;
-     buf=(uint8_w *)malloc((size_t)(bufsiz=BUFSZ));
+     buf=(uint8_w *)win_xmalloc((size_t)(bufsiz=BUFSZ));
      }
    strcpy(outdir,argv[1]);
    if(argc>2) count_max=atoi(argv[2]);
@@ -431,17 +430,13 @@ main(int argc, char *argv[])
      size=mkuint4(buf);
      if(size>bufsiz)
        {
-       if(size>BUFLIM || (q=realloc(buf,(size_t)size))==NULL)
+       if(size>BUFLIM || (buf=(uint8_w *)win_xrealloc(buf,(size_t)size))==NULL)
 	 {
 	 sprintf(tbuf,"malloc size=%d",size);
 	 write_log(tbuf);
 	 end_program();
 	 }
-       else
-	 {
-	 buf = (uint8_w *)q;
-	 bufsiz=size;
-	 }
+       else bufsiz=size;
        }
      if(fread(buf+4,size-4,1,stdin)<1) end_program();
      }
@@ -529,17 +524,13 @@ main(int argc, char *argv[])
         size=mkuint4(buf);
         if(size>bufsiz)
           {
-	  if(size>BUFLIM || (q=realloc(buf,(size_t)size))==NULL)
+	  if(size>BUFLIM || (buf=(uint8_w *)win_xrealloc(buf,(size_t)size))==NULL)
             {
             sprintf(tbuf,"malloc size=%d",size);
 	    write_log(tbuf);
             end_program();
             }
-          else
-	    {
-	    buf = (uint8_w *)q;
-	    bufsiz=size;
-	    }
+          else bufsiz=size;
           }
         if(fread(buf+4,size-4,1,stdin)<1) end_program();
         }

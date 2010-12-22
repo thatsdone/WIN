@@ -1,6 +1,11 @@
- $Id: ChangeLog,v 1.131.2.25.2.150 2010/12/22 01:22:22 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.151 2010/12/22 13:09:18 uehira Exp $
 
 2010-12-22  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/win_xmalloc.c : added.
+	malloc() --> win_xmalloc() or MALLOC()
+	realloc() --> win_xrealloc() or REALLOC()
+	calloc() --> win_xcalloc() or CALLOC().
+	free() --> win_xfree() or FREE().
 	* src/winlib.c : added get_sysch_mon().
 	* src/winadd.c : added -M option.
 

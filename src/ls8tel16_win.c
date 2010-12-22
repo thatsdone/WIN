@@ -1,4 +1,4 @@
-/* $Id: ls8tel16_win.c,v 1.2.4.2.2.5 2010/12/07 04:58:33 uehira Exp $ */
+/* $Id: ls8tel16_win.c,v 1.2.4.2.2.6 2010/12/22 13:09:19 uehira Exp $ */
 
 /*
  * Copyright (c) 2005
@@ -34,7 +34,7 @@
 /* #include "win_system.h" */
 
 static const char  rcsid[] =
-   "$Id: ls8tel16_win.c,v 1.2.4.2.2.5 2010/12/07 04:58:33 uehira Exp $";
+   "$Id: ls8tel16_win.c,v 1.2.4.2.2.6 2010/12/22 13:09:19 uehira Exp $";
 
 static char  *progname;
 
@@ -55,7 +55,6 @@ main(int argc, char *argv[])
   WIN_sr         sr;
   static int32_w fixbuf[HEADER_4B];
   int            i, c;
-  void           *q;
 
   /* get program name */
   if ((progname = strrchr(argv[0], '/')) == NULL)
@@ -83,12 +82,11 @@ main(int argc, char *argv[])
     /* malloc obuf */
     if (obuf_size < (dsize << 3)) {
       obuf_size = (dsize << 3);
-      q = realloc(obuf, obuf_size);
-      if (q == NULL) {
+      obuf = (uint8_w *)win_xrealloc(obuf, obuf_size);
+      if (obuf == NULL) {
 	(void)fprintf(stderr, "%s\n", strerror(errno));
 	exit(1);
       }
-      obuf = (uint8_w *)q;
     }
     ptw = obuf + WIN_BLOCKSIZE_LEN;
     ptw_limit = obuf + obuf_size;

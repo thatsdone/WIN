@@ -1,4 +1,4 @@
-/* $Id: winrawreq.c,v 1.1.2.4.2.6 2010/10/13 12:18:18 uehira Exp $ */
+/* $Id: winrawreq.c,v 1.1.2.4.2.7 2010/12/22 13:09:21 uehira Exp $ */
 
 /* winrawreq.c -- raw data request client */
 
@@ -48,7 +48,7 @@
 #define MAXMSG       1025
 
 static const char rcsid[] =
-  "$Id: winrawreq.c,v 1.1.2.4.2.6 2010/10/13 12:18:18 uehira Exp $";
+  "$Id: winrawreq.c,v 1.1.2.4.2.7 2010/12/22 13:09:21 uehira Exp $";
 
 
 char *progname, *logfile;
@@ -461,7 +461,7 @@ do_get_data(const char *host, const char *port, const char *fname,
     (void)snprintf(msg, sizeof(msg), "%d %s %d", id, wrbp_buf, rsize);
     write_log(msg);
     
-    if ((rawbuf = (uint8_t *)malloc((size_t)rsize)) == NULL) {
+    if ((rawbuf = MALLOC(uint8_t, rsize)) == NULL) {
       (void)snprintf(msg, sizeof(msg), "malloc: %s",
 		     (char *)strerror(errno));
       write_log(msg);
@@ -494,7 +494,7 @@ do_get_data(const char *host, const char *port, const char *fname,
 	  }
 	}  /* !oflag */
       }
-      free(rawbuf);
+      FREE(rawbuf);
     }
   } else { /* SIZE ERR */
     write_log(wrbp_buf);
@@ -551,7 +551,7 @@ network_output(uint8_t *rawbuf, uint32_t rsize)
   fprintf(stderr, "MTU=%d MSU=%d\n", mtu, mss);
 #endif
 
-  if ((sbuf = (uint8_t *)malloc(mss + 8)) == NULL) {
+  if ((sbuf = MALLOC(uint8_t, mss + 8)) == NULL) {
     /* +8 for overrun by "size" and "time" */
     write_log("malloc");
     return (-1);
@@ -658,7 +658,7 @@ network_output(uint8_t *rawbuf, uint32_t rsize)
 #endif	    
   }
   
-  free(sbuf);
+  FREE(sbuf);
   (void)close(osock);
 
   return (status);

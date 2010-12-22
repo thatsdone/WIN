@@ -1,4 +1,4 @@
-/* $Id: w_macros.h,v 1.1.4.1 2010/12/21 03:11:43 uehira Exp $ */
+/* $Id: w_macros.h,v 1.1.4.2 2010/12/22 13:09:19 uehira Exp $ */
 
 #ifndef _WMACROS_H_
 #define _WMACROS_H_
@@ -92,28 +92,5 @@
 
 #define WED       "wed"
 #define RTAPE     "rtape"
-
-#define  SWAP32(a)  a = ((((a) << 24)) | (((a) << 8) & 0xff0000) |	\
-			(((a) >> 8) & 0xff00) | (((a) >> 24) & 0xff))
-#define  SWAP16(a)  a = ((((a) << 8) & 0xff00) | (((a) >> 8) & 0xff))
-#define  MKSWAP16(a)  (uint16_w)((((a) << 8) & 0xff00) | (((a) >> 8) & 0xff))
-#define  SWAPF(a)  *(int32_w *)&(a) =\
-    (((*(int32_w *)&(a)) << 24) | (((*(int32_w *)&(a)) << 8) & 0xff0000) | \
-     (((*(int32_w *)&(a)) >> 8) & 0xff00) | (((*(int32_w *)&(a)) >> 24) & 0xff))
-
-/* memory malloc utility macro */
-#ifndef MALLOC
-#define MALLOC(type, n) (type*)malloc((size_t)(sizeof(type)*(n)))
-#endif
-#ifndef CALLOC
-#define CALLOC(type, n) calloc((size_t)n, sizeof(type))
-#endif
-#ifndef REALLOC
-#define REALLOC(type, ptr, n) \
-(type*)realloc((void *)ptr, (size_t)(sizeof(type)*(n)))
-#endif
-#ifndef FREE
-#define FREE(a)         (void)free((void *)(a))
-#endif
 
 #endif  /* !_WMACROS_H_*/

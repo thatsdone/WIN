@@ -37,7 +37,7 @@
 #define SR 250
 
 static const char rcsid[] =
-  "$Id: wintowin.c,v 1.5.2.5.2.8 2010/10/07 15:06:50 uehira Exp $";
+  "$Id: wintowin.c,v 1.5.2.5.2.9 2010/12/22 13:09:21 uehira Exp $";
 
 /* prototypes */
 static int tokenize(char *, char *[], size_t);
@@ -139,16 +139,16 @@ main(int argc, char *argv[])
     }
 
 /*
-    outbuf= (char **)malloc(sizeof(char *) * (mdim));
+    outbuf= (char **)win_xmalloc(sizeof(char *) * (mdim));
     for (k = 0; k < mdim; k++) {
-        outbuf[k] = (char *)malloc(sizeof(char) * (4+4*SR));
+        outbuf[k] = (char *)win_xmalloc(sizeof(char) * (4+4*SR));
     }
  */
-    outbuf= (uint8_w **)malloc(sizeof(uint8_w *) * (mdim));
+    outbuf= (uint8_w **)win_xmalloc(sizeof(uint8_w *) * (mdim));
     for (k = 0; k < mdim; k++) {
-      outbuf[k] = (uint8_w *)malloc(sizeof(uint8_w) * (4+4*SR));
+      outbuf[k] = (uint8_w *)win_xmalloc(sizeof(uint8_w) * (4+4*SR));
     }
-    chsize=(int *)malloc(sizeof(int) * mdim);
+    chsize=(int *)win_xmalloc(sizeof(int) * mdim);
 
     while (fgets(buf, sizeof(buf), stdin) != NULL) {
 	sscanf(buf, "%2x %2x %2x %2x %2x %2x %d", &t[0], &t[1], &t[2], &t[3], &t[4], &t[5], &nch);

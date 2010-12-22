@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.38.2.10.2.24.2.9 2010/12/22 01:46:07 uehira Exp $
+# $Id: Makefile.am,v 1.38.2.10.2.24.2.10 2010/12/22 01:57:26 uehira Exp $
 #
 
 # Version number of shared libraries.
@@ -149,6 +149,7 @@ install-exec-hook:
 	(rm -f $(DESTDIR)@bindir@/recvstatus4d; cd $(DESTDIR)@bindir@ && @LN_S@ recvstatus4 recvstatus4d)
 	(rm -f $(DESTDIR)@bindir@/ls8tel16_rawd; cd $(DESTDIR)@bindir@ && @LN_S@ ls8tel16_raw ls8tel16_rawd)
 	(rm -f $(DESTDIR)@bindir@/recvt_LS7000d; cd $(DESTDIR)@bindir@ && @LN_S@ recvt_LS7000 recvt_LS7000d)
+	(rm -f $(DESTDIR)@bindir@/raw_clipd; cd $(DESTDIR)@bindir@ && @LN_S@ raw_clip raw_clipd)
 
 uninstall-local:
 	rm -f $(DESTDIR)@bindir@/send_mon
@@ -177,6 +178,7 @@ uninstall-local:
 	rm -f $(DESTDIR)@bindir@/recvstatus4d
 	rm -f $(DESTDIR)@bindir@/ls8tel16_rawd
 	rm -f $(DESTDIR)@bindir@/recvt_LS7000d
+	rm -f $(DESTDIR)@bindir@/raw_clipd
 
 ######----- Libraries -----
 ### static library

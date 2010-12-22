@@ -1,6 +1,6 @@
 #! /bin/sh
 #
-# $Id: daily_windiff,v 1.1.2.2 2010/12/22 01:22:23 uehira Exp $
+# $Id: daily_windiff,v 1.1.2.3 2010/12/22 01:26:32 uehira Exp $
 #
 # Output only whether win files differ.
 #
@@ -11,13 +11,13 @@ MON_mode=no
 while getopts "m" _opt; do
     case "$_opt" in
         m) MON_mode=yes ;;
-        *) err 3 'USAGE: daily_wimdiff [-m] date dir1 dir2' ;;
+        *) err 3 'USAGE: daily_windiff [-m] date dir1 dir2' ;;
     esac
 done
 shift $(($OPTIND - 1))
 
 if [ -z "$1" -o ! -d "$2" -o ! -d "$3" ]; then
-    echo "daily_wimdiff [-m] date dir1 dir2"
+    echo "daily_windiff [-m] date dir1 dir2"
     echo "   date: YYMMDD"
     echo "   -m: MON mode"
     exit 1

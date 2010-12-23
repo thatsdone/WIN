@@ -1,4 +1,4 @@
-/* $Id: winpickfile.c,v 1.1.2.3 2010/12/22 14:39:57 uehira Exp $ */
+/* $Id: winpickfile.c,v 1.1.2.4 2010/12/23 03:30:33 uehira Exp $ */
 
 /*
  * Copyright (c) 2001-2010
@@ -249,7 +249,7 @@ get_wpbuf(char *fname, struct wp_buf *wbuf)
 static int
 win_pickfile_hypo_data(struct wp_buf *wbuf, struct hypo_data *hypo)
 {
-  static const int  tpos[] = {WPH_YR, WPH_MON, WPH_DAY, WPH_HOUR, WPH_MIN};
+  static const int  tpos[5] = {WPH_YR, WPH_MON, WPH_DAY, WPH_HOUR, WPH_MIN};
   int  sec;
   int  i;
 

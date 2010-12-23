@@ -1,4 +1,4 @@
-/* $Id: ls7000.h,v 1.1.2.1.2.1 2010/11/23 05:25:17 uehira Exp $ */
+/* $Id: ls7000.h,v 1.1.2.1.2.2 2010/12/23 03:30:32 uehira Exp $ */
 
 /*
  * Copyright (c) 2009
@@ -39,8 +39,8 @@
 #define LS7_A8_DIR       "A8"
 #define LS7_A9_DIR       "A9"
 
-static int LS7_A8_speed[] = {1200, 2400, 4800, 9600, 19200, 38400};
-static int LS7_A8_sampling[] = {200, 100, -1, 20, -1, -1, -1, -1, -1, 80, 10, 2};
+static int LS7_A8_speed[6] = {1200, 2400, 4800, 9600, 19200, 38400};
+static int LS7_A8_sampling[12] = {200, 100, -1, 20, -1, -1, -1, -1, -1, 80, 10, 2};
 static uint8_w LS7_A8_gain_mask = 0xF0;
 static uint8_w LS7_A8_bit_mask = 0x0F;
 

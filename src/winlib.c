@@ -1,4 +1,4 @@
-/* $Id: winlib.c,v 1.1.2.4.2.34 2010/12/22 13:09:20 uehira Exp $ */
+/* $Id: winlib.c,v 1.1.2.4.2.35 2010/12/23 03:07:07 uehira Exp $ */
 
 /*-
  * winlib.c  (Uehira Kenji)
@@ -59,9 +59,9 @@ mktime2(struct tm *mt) /* high-speed version of mktime() */
   static struct tm *m;
   time_t t;
   register int i,j,ye;
-  static int dm[] = {
+  static int dm[12] = {
     31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
-  static int dy[] = {
+  static int dy[72] = {
     365, 365, 366, 365, 365, 365, 366, 365, 365, 365, 366, 365, /* 1970-81 */
     365, 365, 366, 365, 365, 365, 366, 365, 365, 365, 366, 365, /* 1982-93 */
     365, 365, 366, 365, 365, 365, 366, 365, 365, 365, 366, 365, /* 1994-2005 */

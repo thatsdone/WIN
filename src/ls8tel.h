@@ -1,4 +1,4 @@
-/* $Id: ls8tel.h,v 1.2.2.2.2.5 2010/11/23 03:50:20 uehira Exp $ */
+/* $Id: ls8tel.h,v 1.2.2.2.2.6 2010/12/23 03:07:05 uehira Exp $ */
 
 /*
  * Copyright (c) 2005
@@ -30,10 +30,10 @@
 #define LS8_AMP_MAX  32767
 #define LS8_AMP_MIN  -32768
 
-static int A8_speed[] = {1200, 2400, 4800, 9600, 19200};
-static int A8_sampling[] = {200, 100};
+static int A8_speed[5] = {1200, 2400, 4800, 9600, 19200};
+static int A8_sampling[2] = {200, 100};
 static uint8_w A8_gain_mask = 0x7F;
-static int A8_gain[] = {0, 2, 10, 30, 100, 300, 900};
+static int A8_gain[7] = {0, 2, 10, 30, 100, 300, 900};
 
 uint32_w ls8tel16_fix(uint8_w *, int32_w *, WIN_ch *, WIN_sr *);
 

@@ -1,7 +1,10 @@
- $Id: ChangeLog,v 1.131.2.25.2.152 2010/12/22 13:12:01 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.153 2010/12/23 03:07:05 uehira Exp $
+
+2010-12-23  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 2.1.19 released.
+	* Explicitly specify array bounds.
 
 2010-12-22  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
-	* Version 2.1.19 released.
 	* src/win_xmalloc.c : added.
 	malloc() --> win_xmalloc() or MALLOC()
 	realloc() --> win_xrealloc() or REALLOC()

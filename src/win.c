@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.46.2.6.2.35.2.6 2010/12/24 04:06:45 uehira Exp $
+   $Id: win.c,v 1.46.2.6.2.35.2.7 2010/12/24 04:16:32 uehira Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -26,7 +26,7 @@
 #define WIN_VERSION   "2010.12.24(+Hi-net) (SEVO)"
 
 static const char rcsid[] =
-  "$Id: win.c,v 1.46.2.6.2.35.2.6 2010/12/24 04:06:45 uehira Exp $";
+  "$Id: win.c,v 1.46.2.6.2.35.2.7 2010/12/24 04:16:32 uehira Exp $";
 
 #define DEBUG_AP      0   /* for debugging auto-pick */
 /* 5:sr, 4:ch, 3:sec, 2:find_pick, 1:all */
@@ -2530,6 +2530,7 @@ just_map:
       ft.pos2idx[i]=ft.idx2pos[i]=(-1);
       }
   }
+
   /* open channel table file */
   if(map_only || use_default_chfile) fp=open_file(fname,"channel table");
   else

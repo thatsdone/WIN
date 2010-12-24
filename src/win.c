@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.54 2010/09/06 02:05:02 uehira Exp $
+   $Id: win.c,v 1.55 2010/12/24 04:20:18 uehira Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -21,7 +21,7 @@
 #else
 #define NAME_PRG      "win32"
 #endif
-#define WIN_VERSION   "2010.6.16(+Hi-net)"
+#define WIN_VERSION   "2010.12.24(+Hi-net)"
 #define DEBUG_AP      0   /* for debugging auto-pick */
 /* 5:sr, 4:ch, 3:sec, 2:find_pick, 1:all */
 /************ HOW TO COMPILE THE PROGRAM **************************
@@ -2353,23 +2353,25 @@ just_map:
   else alat0=100.0;
 
   /* initialize station table "ft.stn" */
-  if((ft.stn=(struct Stn *)malloc(sizeof(*ft.stn)*ft.n_ch))==0)
-    emalloc("ft.stn");
-  for(i=0;i<ft.n_ch;i++)
-    {
-    strcpy(ft.stn[i].name,"****");
-    strcpy(ft.stn[i].comp,"**");
-    ft.stn[i].scale=ft.stn[i].psup_scale=4;
-    strcpy(ft.stn[i].unit,"*****");
-    ft.stn[i].units_per_bit=1.0;
-    ft.stn[i].invert=ft.stn[i].offset=0;
-    ft.stn[i].rflag=ft.stn[i].order=0;
-    ft.stn[i].north=ft.stn[i].east=ft.stn[i].x=ft.stn[i].y=0.0;
-    ft.stn[i].z=0;
-    ft.stn[i].stcp=ft.stn[i].stcs=0.0;
-    ft.stn[i].psup=0;
-    ft.pos2idx[i]=ft.idx2pos[i]=(-1);
-    }
+  if (!map_only) {  /* ft.n_ch = 0 */
+    if((ft.stn=(struct Stn *)malloc(sizeof(*ft.stn)*ft.n_ch))==0)
+      emalloc("ft.stn");
+    for(i=0;i<ft.n_ch;i++)
+      {
+      strcpy(ft.stn[i].name,"****");
+      strcpy(ft.stn[i].comp,"**");
+      ft.stn[i].scale=ft.stn[i].psup_scale=4;
+      strcpy(ft.stn[i].unit,"*****");
+      ft.stn[i].units_per_bit=1.0;
+      ft.stn[i].invert=ft.stn[i].offset=0;
+      ft.stn[i].rflag=ft.stn[i].order=0;
+      ft.stn[i].north=ft.stn[i].east=ft.stn[i].x=ft.stn[i].y=0.0;
+      ft.stn[i].z=0;
+      ft.stn[i].stcp=ft.stn[i].stcs=0.0;
+      ft.stn[i].psup=0;
+      ft.pos2idx[i]=ft.idx2pos[i]=(-1);
+      }
+  }
 
   /* open channel table file */
   if(map_only || use_default_chfile) fp=open_file(fname,"channel table");

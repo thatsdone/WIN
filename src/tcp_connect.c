@@ -1,4 +1,4 @@
-/* $Id: tcp_connect.c,v 1.1.2.2 2006/05/08 04:15:29 uehira Exp $ */
+/* $Id: tcp_connect.c,v 1.1.2.3 2010/12/28 12:55:43 uehira Exp $ */
 
 /*
  * Copyright (c) 2006
@@ -43,7 +43,6 @@ tcp_connect(const char *hostname, const char *port,
 {
   int  sockfd, gai_error;
   struct addrinfo  hints, *res, *ai;
-  int  sock_bufsiz;
   char  hbuf[NI_MAXHOST], sbuf[NI_MAXSERV];
   char buf[1024];
 

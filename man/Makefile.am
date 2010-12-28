@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.25.2.5 2010/12/09 04:20:11 uehira Exp $
+# $Id: Makefile.am,v 1.25.2.6 2010/12/28 12:55:38 uehira Exp $
 #
 #  Makefile.am in man subdirectory.
 #
@@ -16,14 +16,21 @@ WIN_MAN = _bj.1 _update.1 automan.1 autopick.1 cormeisei.1 dat.1 dewin.1 \
         insert_raw2.1 wadd2.1 recvstatus.1 recvstatus2.1 select_stations.1 \
 	wed.1 wex.1 win.1 win2fix.1 winform.1 winformat.1 wtape.1 wtime.1 \
 	win2raw.1 shmx.1 shmz.1 shmck.1 wintowin.1 wintosac.1 wchasn.1 clean_nmx.1 winadd.1 \
-	pick2pick.1 relaym.1 raw_time.1 recvstatus3.1 mkpicknoise.1 \
+	pick2pick.1 raw_time.1 mkpicknoise.1 \
 	ls8tel16_win.1 ls8tel16_raw.1 ls8tel_STM.1 ls8tel_STS.1 \
+	ls7000_A8.1 ls7000_A9.1 split_win.1\
 	intro_win.1
 
-man_MANS = $(WIN_MAN)
+if IPV6
+IPV6_MAN = relaym.1 recvstatus3.1 recvt_LS7000.1 recvstatus4.1
+else
+IPV6_MAN =
+endif
+
+man_MANS = $(WIN_MAN) $(IPV6_MAN)
 
 # EXTRA_DIST = $(WIN_MAN) makefile.1 win.1.original winformat.org
-EXTRA_DIST = $(WIN_MAN)
+EXTRA_DIST = $(WIN_MAN) $(IPV6_MAN)
 
 install-data-hook:
 	(rm -f $(DESTDIR)$(man1dir)/eventsrtape.1; cd $(DESTDIR)$(man1dir) && @LN_S@ events.1 eventsrtape.1)
@@ -46,8 +53,11 @@ install-data-hook:
 	(rm -f $(DESTDIR)$(man1dir)/raw_rawd.1; cd $(DESTDIR)$(man1dir) && @LN_S@ raw_raw.1 raw_rawd.1)
 	(rm -f $(DESTDIR)$(man1dir)/wdisktsd.1; cd $(DESTDIR)$(man1dir) && @LN_S@ wdiskts.1 wdisktsd.1)
 	(rm -f $(DESTDIR)$(man1dir)/raw_timed.1; cd $(DESTDIR)$(man1dir) && @LN_S@ raw_time.1 raw_timed.1)
+	(rm -f $(DESTDIR)$(man1dir)/recvstatus2d.1; cd $(DESTDIR)$(man1dir) && @LN_S@ recvstatus2.1 recvstatus2d.1)
 	(rm -f $(DESTDIR)$(man1dir)/recvstatus3d.1; cd $(DESTDIR)$(man1dir) && @LN_S@ recvstatus3.1 recvstatus3d.1)
+	(rm -f $(DESTDIR)$(man1dir)/recvstatus4d.1; cd $(DESTDIR)$(man1dir) && @LN_S@ recvstatus4.1 recvstatus4d.1)
 	(rm -f $(DESTDIR)$(man1dir)/ls8tel16_rawd.1; cd $(DESTDIR)$(man1dir) && @LN_S@ ls8tel16_raw.1 ls8tel16_rawd.1)
+	(rm -f $(DESTDIR)$(man1dir)/recvt_LS7000d.1; cd $(DESTDIR)$(man1dir) && @LN_S@ recvt_LS7000.1 recvt_LS7000d.1)
 
 uninstall-local:
 	rm -f $(DESTDIR)$(man1dir)/eventsrtape.1

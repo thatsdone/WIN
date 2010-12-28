@@ -1,4 +1,4 @@
-/* $Id: ch2tky2jgd.c,v 1.2 2005/02/02 15:49:27 uehira Exp $ */
+/* $Id: ch2tky2jgd.c,v 1.2.2.1 2010/12/28 12:55:45 uehira Exp $ */
 
 /* ch2tky2jgd.c (tky2jgd_c.c) */
 /* 2004.8.30  urabe */

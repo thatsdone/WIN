@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# $Id: manplain,v 1.1 2000/04/30 10:10:38 urabe Exp $
+# $Id: manplain,v 1.1.4.1 2010/12/28 12:55:40 uehira Exp $
 #
 sed '
 s/.//g

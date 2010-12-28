@@ -1,15 +1,17 @@
-/* $Id: relaym.c,v 1.7.2.3 2010/06/13 03:52:30 uehira Exp $ */
+/* $Id: relaym.c,v 1.7.2.4 2010/12/28 12:55:43 uehira Exp $ */
 
 /*
- * 2005-06-22 MF relay.c:
- *   - -N for don't change (and ignore) packet numbers
- *
  * 2004-11-26 MF relay.c:
  *   - check_pno() and read_chfile() brought from relay.c
  *   - with host contol but without channel control (-f)
  *   - write host statistics on HUP signal
  *   - no packet info (-n)
  *   - maximize size of receive socket buffer (-b)
+ *
+ * 2005-06-22 MF relay.c:
+ *   - -N for don't change (and ignore) packet numbers
+ *
+ * 2010-10-04 64bit check.
  */
 
 #ifdef HAVE_CONFIG_H
@@ -18,8 +20,14 @@
 
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
 #include <netdb.h>
+#include <sys/select.h>
+
 #include <netinet/in.h>
+#if HAVE_ARPA_INET_H
+#include <arpa/inet.h>
+#endif
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -27,6 +35,7 @@
 #include <signal.h>
 #include <unistd.h>
 #include <errno.h>
+#include <syslog.h>
 
 #if TIME_WITH_SYS_TIME
 #include <sys/time.h>
@@ -39,13 +48,9 @@
 #endif  /* !HAVE_SYS_TIME_H */
 #endif  /* !TIME_WITH_SYS_TIME */
 
-#include <syslog.h>
-
+#include "winlib.h"
 #include "daemon_mode.h"
-#include "subst_func.h"
 #include "udpu.h"
-#include "win_log.h"
-
 
 #define MAXMESG   2048
 #define N_PACKET  64     /* N of old packets to be requested */  
@@ -53,13 +58,12 @@
 #define MAXSQ     256    /* squence number (0 - 255) [unsigned char : 0xff] */
 #define N_HOST    100    /* max. number of host */
 #define N_DHOST   128    /* max. number of destination host */
-#define WINCHNUM  65536  /* max. number of win channels : 2^16 (2 bytes) */
 
 #define MAXNAMELEN   1025
 #define MAXMSG       1025
 
 static const char rcsid[] =
-  "$Id: relaym.c,v 1.7.2.3 2010/06/13 03:52:30 uehira Exp $";
+  "$Id: relaym.c,v 1.7.2.4 2010/12/28 12:55:43 uehira Exp $";
 
 /* destination host info. */
 struct hostinfo {
@@ -76,16 +80,16 @@ struct hostinfo {
 };
 
 char *progname, *logfile;
-int  daemon_mode, syslog_mode;
-int  exit_status;
+int  exit_status, syslog_mode;
 
-static ssize_t        psize[BUFNO];   /* packet size of reception data */
-static unsigned char  sbuf[BUFNO][MAXMESG];  /* buffer for reception data */
-static unsigned char  sq[N_DHOST], sq_f[N_DHOST];
+static int            daemon_mode;
+static ssize_t        psize[BUFNO];
+static uint8_w        sbuf[BUFNO][MAXMESG];
+static uint8_w        sq[N_DHOST];
 static int            sqindx[N_DHOST][MAXSQ];
-static char           chfile[MAXNAMELEN];
+static char           *chfile;
 static int            no_pinfo, n_host, negate_channel;
-static unsigned char  ch_table[WINCHNUM];
+static uint8_w        ch_table[WIN_CHMAX];
 
 struct {
   char  host_[NI_MAXHOST];  /* host address */
@@ -95,18 +99,18 @@ struct {
 struct {
   char host[NI_MAXHOST];
   char port[NI_MAXSERV];
-  int  no;
-  unsigned char nos[256/8];
-  unsigned int n_bytes;
-  unsigned int n_packets;
+  int32_w  no;
+  uint8_w  nos[256/8];
+  unsigned long n_bytes;
+  unsigned long n_packets;
 } static ht[N_HOST];
 
+/* prototypes */
 static void usage(void);
 static struct hostinfo * read_param(const char *, int *);
 static int check_pno(struct sockaddr *, unsigned int, unsigned int,
-		     int, socklen_t, int, int, int);
+		     int, socklen_t, ssize_t, int, int);
 static void read_chfile(void);
-
 int main(int, char *[]);
 
 int
@@ -125,7 +129,7 @@ main(int argc, char *argv[])
   fd_set  rset, rset1;
   struct timeval  timeout, tv1, tv2;
   double  idletime;
-  unsigned char   no_f;
+  uint8_w  no_f;
   int  bufno, bufno_f;
   int  destnum;
   int  c;
@@ -134,7 +138,7 @@ main(int argc, char *argv[])
   FILE  *fp;
   int   i, j;
 
-  if (progname = strrchr(argv[0], '/'))
+  if ((progname = strrchr(argv[0], '/')) != NULL)
     progname++;
   else
     progname = argv[0];
@@ -144,9 +148,9 @@ main(int argc, char *argv[])
   if (strcmp(progname, "relaymd") == 0)
     daemon_mode = 1;
 
-  chfile[0] = '\0';
+  chfile = NULL;
   delay = noreq = no_pinfo = negate_channel = nopno = 0;
-  sockbuf = 256;  /* default socket buffer size in KB */
+  sockbuf = DEFAULT_RCVBUF;  /* default socket buffer size in KB */
 
   while ((c = getopt(argc, argv, "b:Dd:f:Nnr")) != -1)
     switch (c) {
@@ -160,7 +164,7 @@ main(int argc, char *argv[])
       delay = atoi(optarg);
       break;
     case 'f':           /* host control file */
-      strcpy(chfile, optarg);
+      chfile=optarg;
       break;
     case 'N':           /* no pno */
       nopno = no_pinfo = noreq = 1;
@@ -352,16 +356,13 @@ main(int argc, char *argv[])
 	    sbuf[bufno][1] = no_f;            /* old packet no. */
 	    re = sendto(hinf->sock, sbuf[bufno],
 			psize[bufno], 0, hinf->sa, hinf->salen);
-	    (void)getnameinfo(sa1, fromlen1,
-			      host_, sizeof(host_), port_, sizeof(port_),
-			      NI_DGRAM | NI_NUMERICHOST | NI_NUMERICSERV);
 	    (void)snprintf(msg, sizeof(msg), 
-			   "request from %s:%s and resend to %s:%s #%d(#%d) as #%d, %d B",
+			   "request from %s:%s and resend to %s:%s #%d(#%d) as #%d, %zd B",
 			   host_, port_,
 			   hinf->host_, hinf->port_,
 			   no_f, bufno_f, sq[hinf->ID], re);
 	    write_log(msg);
-	    
+
 	    /* clear and set index */
 	    for (hinf2 = hinf_top; hinf2 != NULL; hinf2 = hinf2->next) {
 	      for (i = 0; i < MAXSQ; ++i)
@@ -389,6 +390,7 @@ static void
 usage(void)
 {
 
+  WIN_version();
   (void)fprintf(stderr, "%s\n", rcsid);
   (void)fprintf(stderr, "Usage of %s :\n", progname);
   if (daemon_mode)
@@ -424,7 +426,7 @@ read_param(const char *prm, int *hostnum)
       continue;
 
     /* save host information */
-    if ((hinf = (struct hostinfo *)malloc(sizeof(struct hostinfo))) == NULL)
+    if ((hinf = (struct hostinfo *)win_xmalloc(sizeof(struct hostinfo))) == NULL)
       continue;
     memset(hinf, 0, sizeof(struct hostinfo));
     (void)strcpy(hinf->hostname, hname);
@@ -450,22 +452,24 @@ read_param(const char *prm, int *hostnum)
  */
 static int
 check_pno(struct sockaddr *from_addr, unsigned int pn, unsigned int pn_f,
-	  int sock, socklen_t fromlen, int n, int nr, int nopno)
-     /* struct sockaddr_in *from_addr;  sender address */
-     /* unsigned int pn,pn_f;           present and former packet Nos. */
-     /* int sock;                       socket */
-     /* int fromlen;                    length of from_addr */
-     /* int n;                          size of packet */
-     /* int nr;                         no resend request if 1 */
-     /* int nopno;                      don't check pno */
+	  int sock, socklen_t fromlen, ssize_t n, int nr, int nopno)
+/* struct sockaddr_in *from_addr;  sender address */
+/* unsigned int pn,pn_f;           present and former packet Nos. */
+/* int sock;                       socket */
+/* int fromlen;                    length of from_addr */
+/* ssize_t n;                          size of packet */
+/* int nr;                         no resend request if 1 */
+/* int nopno;                      don't check pno */
+
+/* global : hostlist, n_host, no_pinfo */
 {
   int i, j;
   char host_[NI_MAXHOST];  /* host address */
   char port_[NI_MAXSERV];  /* port No. */
   unsigned int pn_1;
   static unsigned int 
-    mask[] = {0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01};
-  unsigned char pnc;
+    mask[8] = {0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01};
+  uint8_w  pnc;
   char  tb[MAXMESG];
 
   j = (-1);
@@ -527,7 +531,7 @@ check_pno(struct sockaddr *from_addr, unsigned int pn, unsigned int pn_f,
     if (!nr && (pn != pn_1)) {
       if (((pn - pn_1) & 0xff) < N_PACKET)
 	do {   /* send request-resend packet(s) */
-	  pnc = pn_1;
+	  pnc = (uint8_w)pn_1;
 	  if (sendto(sock, &pnc, 1, 0, from_addr, fromlen) < 0)
 	    err_sys("check_pno: sendto");
 	  (void)snprintf(tb, sizeof(tb), "request resend %s:%s #%d",
@@ -572,9 +576,10 @@ read_chfile(void)
   char   tb[MAXMESG], tb1[MAXMESG];
   char   sbuf[NI_MAXSERV];
   static time_t  ltime, ltime_p;
+  time_t  tdif, tdif2;
 
   n_host = 0;
-  if (chfile[0] != '\0') {
+  if (chfile != NULL) {
     if ((fp = fopen(chfile, "r")) == NULL) {
       (void)snprintf(tb, sizeof(tb),
 		     "channel list file '%s' not open", chfile);
@@ -585,9 +590,9 @@ read_chfile(void)
     }
 
     if (negate_channel)
-      for (i = 0; i < WINCHNUM; i++) ch_table[i] = 1;
+      for (i = 0; i < WIN_CHMAX; i++) ch_table[i] = 1;
     else
-      for (i = 0; i < WINCHNUM; i++) ch_table[i] = 0;
+      for (i = 0; i < WIN_CHMAX; i++) ch_table[i] = 0;
     ii = 0;
 
     while (fgets(tbuf, sizeof(tbuf), fp) != NULL) {
@@ -598,9 +603,9 @@ read_chfile(void)
 
       if (tbuf[0] == '*') {   /* match any channel */
 	if (negate_channel)
-	  for (i = 0; i < WINCHNUM; i++) ch_table[i] = 0;
+	  for (i = 0; i < WIN_CHMAX; i++) ch_table[i] = 0;
 	else
-	  for (i = 0; i < WINCHNUM; i++) ch_table[i] = 1;
+	  for (i = 0; i < WIN_CHMAX; i++) ch_table[i] = 1;
       } else if (n_host == 0
 		 && (strcmp(tb1, "+") == 0 || strcmp(tb1, "-") == 0)) {
 	if (tbuf[0] == '+')
@@ -677,46 +682,47 @@ read_chfile(void)
 
     j = 0;
     if (negate_channel) {
-      for (i = 0; i < WINCHNUM; i++)
+      for (i = 0; i < WIN_CHMAX; i++)
 	if (ch_table[i] == 0)
 	  j++;
-      if (j == WINCHNUM)
+      if (j == WIN_CHMAX)
 	(void)snprintf(tb, sizeof(tb), "-all channels");
       else
 	(void)snprintf(tb, sizeof(tb), "-%d channels", j);
     } else {
-      for (i = 0; i < WINCHNUM; i++)
+      for (i = 0; i < WIN_CHMAX; i++)
 	if (ch_table[i] == 1)
 	  j++;
-      if (j == WINCHNUM)
+      if (j == WIN_CHMAX)
 	(void)snprintf(tb, sizeof(tb), "all channels");
       else
 	(void)snprintf(tb, sizeof(tb), "%d channels", j);
     }
     write_log(tb);
-  } else {   /* if (chfile[0] != '\0') */
-    for(i = 0; i < WINCHNUM; i++)
+  } else {   /* if (chfile != NULL) */
+    for(i = 0; i < WIN_CHMAX; i++)
       /* If there is no chfile, get all channel */
       ch_table[i] = 1;
     n_host = 0;
     write_log("all channels");
-  }   /* if (chfile[0] != '\0') */
+  }   /* if (chfile != NULL) */
 
   time(&ltime);
-  j = ltime - ltime_p;
-  k = j / 2;
+  tdif = ltime - ltime_p;
+  tdif2 = tdif / 2;
   if (ht[0].host[0] != '\0') {
     (void)snprintf(tb, sizeof(tb),
-		   "statistics in %d s (pkts, B, pkts/s, B/s)", j);
+		   "statistics in %ld s (pkts, B, pkts/s, B/s)", tdif);
     write_log(tb);
   }
   for (i = 0; i < N_HOST; i++) {  /* print statistics for hosts */
     if (ht[i].host[0] == '\0')
       break;
     (void)snprintf(tb, sizeof(tb),
-		   "src %s:%s   %u %u %u %u",
+		   "src %s:%s   %lu %lu %lu %lu",
 		   ht[i].host, ht[i].port, ht[i].n_packets, ht[i].n_bytes,
-		   (ht[i].n_packets + k) / j, (ht[i].n_bytes + k) / j);
+		   (ht[i].n_packets + tdif2) / tdif,
+		   (ht[i].n_bytes + tdif2) / tdif);
     write_log(tb);
     ht[i].n_packets = ht[i].n_bytes = 0;
   }

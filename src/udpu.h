@@ -1,4 +1,4 @@
-/* $Id: udpu.h,v 1.2 2004/11/26 13:55:39 uehira Exp $ */
+/* $Id: udpu.h,v 1.2.2.1 2010/12/28 12:55:43 uehira Exp $ */
 
 /*
  * Copyright (c) 2001-2004
@@ -10,12 +10,12 @@
 #ifndef _UDPU_H_
 #define _UDPU_H_
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <netinet/in.h>
+
+#define MIN_RECV_BUFSIZ  16   /* min. bufsize for recipt in KB */
+#define MIN_SEND_BUFSIZ  16   /* min. bufsize for transmit in KB */
 
 struct conntable {
   struct conntable  *next;
@@ -27,5 +27,10 @@ struct conntable {
 int udp_dest(const char *, const char *, struct sockaddr *, socklen_t *);
 struct conntable * udp_accept(const char *, int *, int );
 #endif  /* INET6 */
+
+/* IPv4 only version */
+int udp_dest4(const char *, const uint16_t, struct sockaddr_in *,
+	      int, const uint16_t);
+int udp_accept4(const uint16_t, int);
 
 #endif  /* !_UDPU_H_ */

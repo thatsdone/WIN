@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.1 2005/02/02 15:36:35 uehira Exp $
+# $Id: Makefile.am,v 1.1.2.1 2010/12/28 12:55:45 uehira Exp $
 #
 
 noinst_PROGRAMS = ch2tky2jgd delta final2tky2jgd map2tky2jgd tky2jgd2ch1 \

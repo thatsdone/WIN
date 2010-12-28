@@ -1,4 +1,4 @@
-/* $Id: sends.c,v 1.6.2.1 2009/01/05 14:55:55 uehira Exp $ */
+/* $Id: sends.c,v 1.6.2.2 2010/12/28 12:55:43 uehira Exp $ */
 /*   program "sends"   2000.3.20 urabe                   */
 /*   2000.3.21 */
 /*   2000.4.17 */
@@ -37,17 +37,21 @@
 #endif
 #include <netdb.h>
 #include <unistd.h>
+#if HAVE_STROPTS_H
 #include <stropts.h>
+#endif
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/stat.h>
+#if HAVE_SYS_SER_SYNC_H
 #include <sys/ser_sync.h>
+#endif
 #include <errno.h>
 #if AURORA
 #include "/opt/AURAacs/syncuser.h"
 #endif
 
-#include "subst_func.h"
+#include "winlib.h"
 
 #define DEBUG       0
 #define DEBUG1      0
@@ -58,63 +62,8 @@
 
 int sock,psize[BUFNO];
 unsigned char sbuf[BUFNO][MAXMESG],rbuf[MAXMESG];
-char *progname,logfile[256];
-
-mklong(ptr)       
-  unsigned char *ptr;
-  {
-  unsigned long a;
-  a=((ptr[0]<<24)&0xff000000)+((ptr[1]<<16)&0xff0000)+
-    ((ptr[2]<<8)&0xff00)+(ptr[3]&0xff);
-  return a;       
-  }
-
-get_time(rt)
-  int *rt;
-  {
-  struct tm *nt;
-  unsigned long ltime;
-  time(&ltime);
-  nt=localtime(&ltime);
-  rt[0]=nt->tm_year%100;
-  rt[1]=nt->tm_mon+1;
-  rt[2]=nt->tm_mday;
-  rt[3]=nt->tm_hour;
-  rt[4]=nt->tm_min;
-  rt[5]=nt->tm_sec;
-  }
-
-write_log(logfil,ptr)
-  char *logfil;
-  char *ptr;
-  {
-  FILE *fp;
-  int tm[6];
-  if(*logfil) fp=fopen(logfil,"a");
-  else fp=stdout;
-  get_time(tm);
-  fprintf(fp,"%02d%02d%02d.%02d%02d%02d %s %s\n",
-    tm[0],tm[1],tm[2],tm[3],tm[4],tm[5],progname,ptr);
-  if(*logfil) fclose(fp);
-  }
-
-ctrlc()
-  {
-  write_log(logfile,"end");
-  close(sock);
-  exit(0);
-  }
-
-err_sys(ptr)
-  char *ptr;
-  {
-  perror(ptr);
-  write_log(logfile,ptr);
-  if(strerror(errno)) write_log(logfile,strerror(errno));
-  write_log(logfile,"end");
-  close(sock);
-  exit(1);
-  }
+char *progname, *logfile;
+int  syslog_mode = 0, exit_status = EXIT_SUCCESS;
 
 get_packet(bufno,no)
   int bufno;  /* present(next) bufno */
@@ -124,10 +73,10 @@ get_packet(bufno,no)
   if((i=bufno-1)<0) i=BUFNO-1;
   while(i!=bufno && psize[i]>0)
     {
-    if(sbuf[i][2]==no) return i;
+    if(sbuf[i][2]==no) return (i);
     if(--i<0) i=BUFNO-1;
     }
-  return -1;  /* not found */
+  return (-1);  /* not found */
   }
 
 #if AURORA
@@ -180,7 +129,7 @@ read_aurora(fd)
        }
     }
   }
-  return rdataptr.len;
+  return (rdataptr.len);
 }
 
 config_aurora(fd,baud)
@@ -327,16 +276,10 @@ main(argc,argv)
   struct sockaddr_in to_addr,from_addr;
   struct hostent *h;
   unsigned short to_port;
-  int size,re,shmid;
+  int size,re;
   unsigned char *ptr,*ptr_save,*ptr_lim,*ptw,*ptw_save,device[80],
     no,no_f,host_name[100],tbuf[100],nop;
-  struct Shm {
-    unsigned long p;    /* write point */
-    unsigned long pl;   /* write limit */
-    unsigned long r;    /* latest */
-    unsigned long c;    /* counter */
-    unsigned char d[1];   /* data buffer */
-    } *shm;
+  struct Shm  *shm;
   extern int optind;
   extern char *optarg;
   struct timeval timeout,tp;
@@ -382,16 +325,17 @@ main(argc,argv)
 
   shm_key=atoi(argv[1+optind]);
   strcpy(device,argv[2+optind]);
-  *logfile=0;
-  if(argc>3+optind) strcpy(logfile,argv[3+optind]);
+  logfile=NULL;
+  if(argc>3+optind) logfile=argv[3+optind];
     
   /* shared memory */
-  if((shmid=shmget(shm_key,0,0))<0) err_sys("shmget");
-  if((shm=(struct Shm *)shmat(shmid,(char *)0,0))==(struct Shm *)-1)
-    err_sys("shmat");
+  shm = Shm_read(shm_key, "start");
+  /* if((shmid=shmget(shm_key,0,0))<0) err_sys("shmget"); */
+  /* if((shm=(struct Shm *)shmat(shmid,(void *)0,0))==(struct Shm *)-1) */
+  /*   err_sys("shmat"); */
 
-  sprintf(tbuf,"start shm_key=%d id=%d",shm_key,shmid);
-  write_log(logfile,tbuf);
+  /* sprintf(tbuf,"start shm_key=%d id=%d",shm_key,shmid); */
+  /* write_log(tbuf); */
 
   if(to_port)
     {
@@ -403,7 +347,7 @@ main(argc,argv)
     if(bind(sock,(struct sockaddr *)&to_addr,sizeof(to_addr))<0)
       err_sys("bind");
     sprintf(tbuf,"accept resend request at localhost:%d",to_port);
-    write_log(logfile,tbuf);
+    write_log(tbuf);
     }
 
   if((fd=open(device,O_RDWR))<0) err_sys("open HDLC device");
@@ -416,32 +360,32 @@ main(argc,argv)
 
   if(baud) sprintf(tbuf,"use internal TX clock %d bps",baud);
   else sprintf(tbuf,"use external TX clock");
-  write_log(logfile,tbuf);
+  write_log(tbuf);
 
-  signal(SIGPIPE,(void *)ctrlc);
-  signal(SIGINT,(void *)ctrlc);
-  signal(SIGTERM,(void *)ctrlc);
+  signal(SIGPIPE,(void *)end_program);
+  signal(SIGINT,(void *)end_program);
+  signal(SIGTERM,(void *)end_program);
   for(i=0;i<BUFNO;i++) psize[i]=(-1);
   no=bufno=0;
 
 reset:
   while(shm->r==(-1)) sleep(1);
   c_save=shm->c;
-  size=mklong(ptr_save=shm->d+(shp=shm->r));
+  size=mkuint4(ptr_save=shm->d+(shp=shm->r));
 
-  while(1)
+  for(;;)
     {
     if(shp+size>shm->pl) shp=0; /* advance pointer */
     else shp+=size;
     while(shm->p==shp) usleep(10000);
-    i=mklong(ptr_save);
+    i=mkuint4(ptr_save);
     if(shm->c<c_save || i!=size)
       {   /* previous block has been destroyed */
-      write_log(logfile,"reset");
+      write_log("reset");
       goto reset;
       }
     c_save=shm->c;
-    size=mklong(ptr_save=ptr=shm->d+shp);
+    size=mkuint4(ptr_save=ptr=shm->d+shp);
     ptr_lim=ptr+size;
     ptr+=4; /* size */
     ptr+=4; /* tow */
@@ -475,7 +419,7 @@ reset:
       nop=no++;
       }
 /* resend if requested */
-    if(sock>=0) while(1)
+    if(sock>=0) for(;;)
       {
       i=1<<sock;
       timeout.tv_sec=timeout.tv_usec=0;
@@ -497,14 +441,14 @@ reset:
 #endif
           sprintf(tbuf,"resend for %s:%d #%d as #%d, %d B",
             inet_ntoa(from_addr.sin_addr),ntohs(from_addr.sin_port),no_f,no,re);
-          write_log(logfile,tbuf);
+          write_log(tbuf);
           if(++bufno==BUFNO) bufno=0;
           no++;
           }
         }
       else break;
       }
-    else while(1)
+    else for(;;)
       {
       i=1<<fd;
       timeout.tv_sec=timeout.tv_usec=0;
@@ -526,7 +470,7 @@ reset:
           fprintf(stderr,"\n");
 #endif
           sprintf(tbuf,"resend for line #%d as #%d, %d B",no_f,no,re);
-          write_log(logfile,tbuf);
+          write_log(tbuf);
           if(++bufno==BUFNO) bufno=0;
           no++;
           }

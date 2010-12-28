@@ -1,6 +1,6 @@
 #! /bin/sh
 #
-# $Id: mkpicknoise,v 1.1 2005/05/17 15:27:53 uehira Exp $
+# $Id: mkpicknoise,v 1.1.2.1 2010/12/28 12:55:40 uehira Exp $
 #
 
 tempfoo=`basename $0`

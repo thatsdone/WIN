@@ -1,4 +1,4 @@
-/* $Id: ls8tel.h,v 1.1.2.1 2005/06/14 10:18:15 uehira Exp $ */
+/* $Id: ls8tel.h,v 1.1.2.2 2010/12/28 12:55:42 uehira Exp $ */
 
 /*
  * Copyright (c) 2005
@@ -13,13 +13,6 @@
 
 #ifndef _LS8TEL_H_
 #define _LS8TEL_H_
-
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
-#include "win_system.h"
-
 
 #define LS8_PHDER_LEN  5     /* LS8000SH packet header length */
 #define LS8_PID        4     /* position of packet ID (A1, A8 or A9) */
@@ -37,11 +30,11 @@
 #define LS8_AMP_MAX  32767
 #define LS8_AMP_MIN  -32768
 
-static int A8_speed[] = {1200, 2400, 4800, 9600, 19200};
-static int A8_sampling[] = {200, 100};
-static unsigned char A8_gain_mask = 0x7F;
-static int A8_gain[] = {0, 2, 10, 30, 100, 300, 900};
+static int A8_speed[5] = {1200, 2400, 4800, 9600, 19200};
+static int A8_sampling[2] = {200, 100};
+static uint8_w A8_gain_mask = 0x7F;
+static int A8_gain[7] = {0, 2, 10, 30, 100, 300, 900};
 
-WIN_blocksize ls8tel16_fix(unsigned char *, long *, long *, long *);
+uint32_w ls8tel16_fix(uint8_w *, int32_w *, WIN_ch *, WIN_sr *);
 
 #endif  /*_LS8TEL_H_ */

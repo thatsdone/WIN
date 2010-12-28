@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# $Id: make_day_LP,v 1.2 2000/04/30 10:10:38 urabe Exp $
+# $Id: make_day_LP,v 1.2.4.1 2010/12/28 12:55:40 uehira Exp $
 #
 ymd=`echo $1|cut -c1-6`
 cd /dat/LP

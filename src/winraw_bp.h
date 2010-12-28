@@ -1,4 +1,4 @@
-/* $Id: winraw_bp.h,v 1.1.2.2 2006/05/08 04:15:30 uehira Exp $ */
+/* $Id: winraw_bp.h,v 1.1.2.3 2010/12/28 12:55:44 uehira Exp $ */
 
 /*-
  * Copyright (c) 2006-
@@ -16,11 +16,7 @@
 #ifndef _WINRAW_BP_H_
 #define _WINRAW_BP_H_
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
-#define WRBP_VERSION  "0.1"   /* protocol version */
+#define WRBP_VERSION  "1.0"   /* protocol version */
 
 #define WRBP_CLEN      128    /* command length */
 #define WRBP_MSG      1024    /*  length */
@@ -33,8 +29,6 @@
 #define WRBP_OK       "OK"
 #define WRBP_ERR      "ERR"
 
-
 #define MIN_SEC       60
-
 
 #endif  /* !_WINRAW_BP_H_ */

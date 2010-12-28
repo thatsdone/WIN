@@ -1,5 +1,5 @@
 #!/bin/sh
-# $Id: clean_nmx,v 1.1 2002/09/05 05:16:57 urabe Exp $
+# $Id: clean_nmx,v 1.1.2.1 2010/12/28 12:55:40 uehira Exp $
 # clean_nmx ([dir] ([period]))
 #
 if [ "$1" ]

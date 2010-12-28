@@ -1,4 +1,4 @@
-/* $Id: final2tky2jgd.c,v 1.2 2005/02/02 15:49:27 uehira Exp $ */
+/* $Id: final2tky2jgd.c,v 1.2.2.1 2010/12/28 12:55:45 uehira Exp $ */
 
 /* final2tky2jgd.c */
 /* 2005.1.20 urabe */

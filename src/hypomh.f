@@ -1,4 +1,4 @@
-C $Id: hypomh.f,v 1.7 2003/06/09 04:35:28 urabe Exp $
+C $Id: hypomh.f,v 1.7.2.1 2010/12/28 12:55:41 uehira Exp $
 C HYPOMH   : main program for hypocenter location
 C           original version was made on March 13, 1984  and
 C            modified by N.H. on Feb. 8, 1985, May 8, 1985.

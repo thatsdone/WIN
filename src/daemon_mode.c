@@ -1,4 +1,4 @@
-/* $Id: daemon_mode.c,v 1.2.2.1 2006/05/08 04:15:29 uehira Exp $ */
+/* $Id: daemon_mode.c,v 1.2.2.2 2010/12/28 12:55:41 uehira Exp $ */
 
 /*-
  * Daemon mode utility

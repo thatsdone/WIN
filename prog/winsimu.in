@@ -1,6 +1,6 @@
 #! @TCLSH@
 
-# $Id: winsimu.in,v 1.1 2004/10/20 07:41:31 tsuru Exp $
+# $Id: winsimu.in,v 1.1.2.1 2010/12/28 12:55:40 uehira Exp $
 
 if { $argc < 1 } {
     puts "winsimu -sSPEED --> print simulation data"

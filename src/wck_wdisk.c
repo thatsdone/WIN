@@ -1,5 +1,10 @@
 /*
- * $Id: wck_wdisk.c,v 1.1.2.1 2007/08/27 09:08:42 uehira Exp $
+ * $Id: wck_wdisk.c,v 1.1.2.2 2010/12/28 12:55:43 uehira Exp $
+ */
+
+/*
+ * 2002.03.03  Uehira.
+ * 2010.09.17  64bit check
  */
 
 #ifdef HAVE_CONFIG_H
@@ -11,15 +16,15 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "win_system.h"
-#include "subst_func.h"
+#include "winlib.h"
+/* #include "win_system.h" */
 
 static const char  rcsid[] =
-   "$Id: wck_wdisk.c,v 1.1.2.1 2007/08/27 09:08:42 uehira Exp $";
+   "$Id: wck_wdisk.c,v 1.1.2.2 2010/12/28 12:55:43 uehira Exp $";
+
 char  *progname;
 
 static void usage();
-static WIN_blocksize read_data(FILE *, unsigned char **);
 int main(int, char *[]);
 
 #define  MIN  60
@@ -30,9 +35,9 @@ main(int argc, char *argv[])
   FILE  *chfp, *fp;
   static struct channel_tbl  tbl[WIN_CH_MAX_NUM];
   static int  **index;
-  static unsigned char  *mainbuf;
+  static uint8_w  *mainbuf;
   static WIN_ch  trg_ch[WIN_CH_MAX_NUM], trg_chnum;
-  WIN_blocksize  mainsize;
+  WIN_bs  mainsize;
   int  chnum, sec, tim[WIN_TIME_LEN], cflag, secsave, lflag;
   char  nsave[WIN_STANAME_LEN];
   char *rname;
@@ -89,12 +94,12 @@ main(int argc, char *argv[])
 #endif
 
   /* initialize */
-  index = imatrix(chnum, MIN + 1);
+  index = i_matrix(chnum, MIN + 1);
   mainbuf = NULL;
   sec = 0;
 
   /* data loop */
-  while ((mainsize = read_data(fp, &mainbuf)) != 0) {
+  while ((mainsize = read_onesec_win(fp, &mainbuf)) != 0) {
 #if DEBUG > 5
     (void)printf("mainsize = %d [bytes]\n", mainsize);
 #endif
@@ -128,7 +133,7 @@ main(int argc, char *argv[])
     sec++;
     if (sec == MIN)
       break;
-  }  /* while (mainsize = read_data(fp, &mainbuf)) */
+  }  /* while (mainsize = read_onesec_win(fp, &mainbuf)) */
   if (fp != stdin)
     (void)fclose(fp);
 
@@ -221,31 +226,11 @@ main(int argc, char *argv[])
   exit(0);
 }
 
-
-static WIN_blocksize
-read_data(FILE *fp, unsigned char **ptr)
-{
-  WIN_blocksize  re, size;
-
-  if (fread(&re, 1, WIN_BLOCKSIZE_LEN, fp) != WIN_BLOCKSIZE_LEN)
-    return (0);
-  re = LongFromBigEndian(re);
-  if (*ptr == NULL)
-    *ptr = (unsigned char *)malloc(size = re * 2);
-  else if (re > size)
-    *ptr=(unsigned char *)realloc(*ptr, size = re * 2);
-  *(WIN_blocksize *)*ptr = re;
-  if (fread(*ptr + WIN_BLOCKSIZE_LEN, 1, re - WIN_BLOCKSIZE_LEN, fp) != 
-      re - WIN_BLOCKSIZE_LEN)
-    return (0);
-
-  return (re);
-}
-
 static void
 usage()
 {
 
+  WIN_version();
   (void)fprintf(stderr, "%s\n", rcsid);
   (void)fprintf(stderr, "Usage : %s [-r] [chfile] ([file])\n", progname);
 }

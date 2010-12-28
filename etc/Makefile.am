@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.1 2002/01/17 11:26:14 uehira Exp $
+# $Id: Makefile.am,v 1.1.2.1 2010/12/28 12:55:37 uehira Exp $
 #
 #  Makefile.am in etc subdirectory.
 #

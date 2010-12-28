@@ -1,4 +1,4 @@
-/* $Id: raw_clip.c,v 1.1.2.2 2005/06/13 09:40:18 uehira Exp $ */
+/* $Id: raw_clip.c,v 1.1.2.3 2010/12/28 12:55:42 uehira Exp $ */
 
 /* raw_clip.c -- clip waveform data */
 
@@ -8,7 +8,8 @@
  *    uehira@sevo.kyushu-u.ac.jp
  *    Institute of Seismology and Volcanology, Kyushu University.
  *
- *   2005-06-08  Initial version.  imported from raw_shift.c
+ *   2005-06-08  Initial version. imported from raw_shift.c
+ *   2010-11-09  64bit clean. eobsize_in(auto).
  */
 
 
@@ -44,25 +45,23 @@
 #include "gc_leak_detector.h"
 #endif
 #include "daemon_mode.h"
-#include "subst_func.h"
-#include "win_log.h"
-#include "win_system.h"
+#include "winlib.h"
 
 #define MAX_SR      HEADER_4B
 
 #define BELL        0
-#define DEBUG       0
+/* #define DEBUG       0 */
 
 static char rcsid[] =
-  "$Id: raw_clip.c,v 1.1.2.2 2005/06/13 09:40:18 uehira Exp $";
+  "$Id: raw_clip.c,v 1.1.2.3 2010/12/28 12:55:42 uehira Exp $";
 
 char *progname, *logfile;
-int  daemon_mode, syslog_mode;
-int  exit_status;
+int  syslog_mode, exit_status;
 
+static int     daemon_mode;
 static char    *chfile;
-static unsigned char	ch_table[WIN_CH_MAX_NUM];
-static int		n_ch, negate_channel;
+static uint8_w	ch_table[WIN_CH_MAX_NUM];
+static int	n_ch, negate_channel;
 
 /* prototypes */
 static void read_chfile(void);
@@ -75,22 +74,23 @@ main(int argc, char *argv[])
   FILE            *fp_log;
   struct Shm      *shr, *shm;
   key_t		  inkey, outkey;
-  int		  shmid_in, shmid_out;
-  unsigned long	  uni;
+  /* int		  shmid_in, shmid_out; */
+  uint32_w	  uni;
   char		  tb[1024];
-  unsigned char  *ptr, *ptw, *ptr_lim, *ptr_save;
-  unsigned long	  c_save;
-  WIN_ch          ch;
-  WIN_sr          sr;
-  long            ch1, sr1;
-  WIN_blocksize   gs;
-  int		  gs1;
-  static long	  buf1[MAX_SR], buf2[MAX_SR];
-  long            min, max;
+  uint8_w         *ptr, *ptw, *ptr_lim, *ptr_save;
+  unsigned long	  c_save;  /* 64bit ok */
+  WIN_ch          ch, ch1;
+  WIN_sr          sr, sr1;
+  WIN_bs          gs, gs1;
+  static int32_w  buf1[MAX_SR], buf2[MAX_SR];
+  int32_w         min, max;
   int             c;
-  int		  i, j, k, size, n, size_shm, tow, rest, bits_shift;
+  int		  i, tow, rest, bits_shift;
+  size_t          size_shm;
+  WIN_bs          size;
+  int             eobsize_in, eobsize_in_count;
 
-  if (progname = strrchr(argv[0], '/'))
+  if ((progname = strrchr(argv[0], '/')) != NULL)
     progname++;
   else
     progname = argv[0];
@@ -115,9 +115,9 @@ main(int argc, char *argv[])
   if (argc < 4)
     usage();
 
-  inkey = (key_t)atoi(argv[0]);
-  outkey = (key_t)atoi(argv[1]);
-  size_shm = atoi(argv[2]) * 1000;
+  inkey = (key_t)atol(argv[0]);
+  outkey = (key_t)atol(argv[1]);
+  size_shm = (size_t)atol(argv[2]) * 1000;
   bits_shift = atoi(argv[3]) - 1;
   if (bits_shift < 0 || 31 < bits_shift) {
     (void)fprintf(stderr, "bit num must 1 - 32\n");
@@ -129,6 +129,7 @@ main(int argc, char *argv[])
 
   /* channel file */
   rest = 1;
+  eobsize_in = 0;
   if (argc > 4) {
     if (strcmp("-", argv[4]) == 0)
       chfile = NULL;
@@ -171,21 +172,23 @@ main(int argc, char *argv[])
 
   /***** shared memory *****/
   /* in shared memory */
-  if ((shmid_in = shmget(inkey, 0, 0)) == -1)
-    err_sys("shmget in");
-  if ((shr = (struct Shm *)shmat(shmid_in, 0, 0)) == (struct Shm *)-1)
-    err_sys("shmat in");
+  shr = Shm_read(inkey, "in");
+  /* if ((shmid_in = shmget(inkey, 0, 0)) == -1) */
+  /*   err_sys("shmget in"); */
+  /* if ((shr = (struct Shm *)shmat(shmid_in, 0, 0)) == (struct Shm *)-1) */
+  /*   err_sys("shmat in"); */
 
   /* out shared memory */
-  if ((shmid_out = shmget(outkey, size_shm, IPC_CREAT | 0644)) == -1)
-    err_sys("shmget out");
-  if ((shm = (struct Shm *)shmat(shmid_out, 0, 0)) == (struct Shm *)-1)
-    err_sys("shmat out");
+  shm = Shm_create(outkey, size_shm, "out");
+  /* if ((shmid_out = shmget(outkey, size_shm, IPC_CREAT | 0644)) == -1) */
+  /*   err_sys("shmget out"); */
+  /* if ((shm = (struct Shm *)shmat(shmid_out, 0, 0)) == (struct Shm *)-1) */
+  /*   err_sys("shmat out"); */
 
-  (void)snprintf(tb, sizeof(tb),
-		 "start in_key=%d id=%d out_key=%d id=%d size=%d",
-		 inkey, shmid_in, outkey, shmid_out, size_shm);
-  write_log(tb);
+  /* (void)snprintf(tb, sizeof(tb), */
+  /* 		 "start in_key=%d id=%d out_key=%d id=%d size=%d", */
+  /* 		 inkey, shmid_in, outkey, shmid_out, size_shm); */
+  /* write_log(tb); */
   (void)snprintf(tb, sizeof(tb),
 		 "%d bit: %d -- %d", bits_shift + 1, min, max);
   write_log(tb);
@@ -198,18 +201,42 @@ main(int argc, char *argv[])
 
 reset:
   /* initialize buffer */
-  shm->p = shm->c = 0;
-  shm->pl = (size_shm - sizeof(*shm)) / 10 * 9;
-  shm->r = (-1);
-  ptr = shr->d;
+  Shm_init(shm, size_shm);
+  /* shm->p = shm->c = 0; */
+  /* shm->pl = (size_shm - sizeof(*shm)) / 10 * 9; */
+  /* shm->r = (-1); */
+  /* ptr = shr->d; */  /* verbose */
   while (shr->r == (-1))
     sleep(1);
   ptr = shr->d + shr->r;
   tow = (-1);
 
+  size = mkuint4(ptr);
+  if (mkuint4(ptr + size - 4) == size)
+    eobsize_in = 1;
+  else
+    eobsize_in = 0;
+  eobsize_in_count = eobsize_in;
+  snprintf(tb, sizeof(tb), "eobsize_in=%d", eobsize_in);
+  write_log(tb);
+
   /***** main loop *****/
   for (;;) {
-    ptr_lim = ptr + (size = mklong(ptr_save = ptr));
+    /* ptr_lim = ptr + (size = mkuint4(ptr_save = ptr)); */
+    size = mkuint4(ptr_save = ptr);
+    if (mkuint4(ptr + size - 4) == size) {
+      if (++eobsize_in_count == 0)
+	eobsize_in_count = 1;
+    } else
+      eobsize_in_count = 0;
+    if (eobsize_in && eobsize_in_count == 0)
+      goto reset;
+    if (!eobsize_in && eobsize_in_count > 3)
+      goto reset;
+    ptr_lim = ptr + size;
+    if(eobsize_in)
+      ptr_lim -= 4;
+
     c_save = shr->c;
     ptr += WIN_BLOCKSIZE_LEN;
 #if DEBUG
@@ -220,8 +247,8 @@ reset:
     /* make output data */
     ptw = shm->d + shm->p;
     ptw += 4;			/* size (4) */
-    uni = time(0);
-    i = uni - mklong(ptr);
+    uni = (uint32_w)(time(NULL) - TIME_OFFSET);
+    i = uni - mkuint4(ptr);
     if (i >= 0 && i < 1440) {	/* with tow */
       if (tow != 1) {
 	(void)snprintf(tb, sizeof(tb), "with TOW (diff=%ds)", i);
@@ -253,7 +280,7 @@ reset:
       gs = win_get_chhdr(ptr, &ch, &sr);
       if (ch_table[ch]) {
 #if DEBUG
-	fprintf(stderr, " %d", gs);
+	fprintf(stderr, " %u", gs);
 #endif
 	if (sr < MAX_SR) {
 	  win2fix(ptr, buf1, &ch1, &sr1);
@@ -266,9 +293,9 @@ reset:
 	      buf2[i] = buf1[i];
 	    /*  printf("%d %d\n", buf1[i], buf2[i]); */
 	  }
-	  ptw += (gs1 = winform(buf2, ptw, (int)sr1, (unsigned short)ch1));
+	  ptw += (gs1 = winform(buf2, ptw, sr1, ch1));
 #if DEBUG
-	  fprintf(stderr, "->%d ", gs1);
+	  fprintf(stderr, "->%u ", gs1);
 #endif
 	} else {
 	  memcpy(ptw, ptr, gs);
@@ -285,8 +312,8 @@ reset:
       i = 14;
     else
       i = 10;
-    if ((uni = ptw - (shm->d + shm->p)) > i) {
-      uni = ptw - (shm->d + shm->p);
+    if((uni = (uint32_w)(ptw - (shm->d + shm->p))) > i) {
+      /* uni = ptw - (shm->d + shm->p); */ /* verbose */
       shm->d[shm->p] = uni >> 24;	/* size (H) */
       shm->d[shm->p + 1] = uni >> 16;
       shm->d[shm->p + 2] = uni >> 8;
@@ -312,11 +339,11 @@ reset:
     fprintf(stderr, "\007");
     fflush(stderr);
 #endif
-    if ((ptr = ptr_lim) > shr->d + shr->pl)
+    if ((ptr = ptr_save + size) > shr->d + shr->pl)
       ptr = shr->d;
     while (ptr == shr->d + shr->p)
       usleep(100000);
-    if (shr->c < c_save || mklong(ptr_save) != size) {
+    if (shr->c < c_save || mkuint4(ptr_save) != size) {
       write_log("reset");
       goto reset;
     }
@@ -331,7 +358,7 @@ static void
 read_chfile(void)
 {
   FILE           *fp;
-  int		  i       , j, k;
+  int		  i, j, k;
   char		  tbuf[1024];
 
   if (chfile != NULL) {
@@ -367,7 +394,7 @@ read_chfile(void)
 	i++;
       }
 #if DEBUG
-      fprintf(stderr, "\n", k);
+      fprintf(stderr, "\n");
 #endif
       n_ch = j;
       if (negate_channel)
@@ -400,13 +427,13 @@ static void
 usage(void)
 {
 
+  WIN_version();
   (void)fprintf(stderr, "%s\n", rcsid);
   (void)fprintf(stderr, "Usage of %s :\n", progname);
   (void)fprintf(stderr,
 		" usage : '%s [in_key] [out_key] [shm_size(KB)] [bits]\\\n",
 		progname);
   (void)fprintf(stderr,
-		"                       (-/[ch_file]/-[ch_file]/+[ch_file] ([log file]))'\n",
-		progname);
+		"                       (-/[ch_file]/-[ch_file]/+[ch_file] ([log file]))'\n");
   exit(1);
 }

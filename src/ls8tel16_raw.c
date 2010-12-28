@@ -1,4 +1,4 @@
-/* $Id: ls8tel16_raw.c,v 1.1.2.2 2005/06/25 11:16:34 uehira Exp $ */
+/* $Id: ls8tel16_raw.c,v 1.1.2.3 2010/12/28 12:55:42 uehira Exp $ */
 
 /*
  * Copyright (c) 2005
@@ -13,6 +13,7 @@
  *  Don't input normal winformat data.
  *
  *  2005-06-10  Initial version.
+ *  2010-10-12  64bit clean.
  */
 
 #ifdef HAVE_CONFIG_H
@@ -22,6 +23,7 @@
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
+#include <sys/stat.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -46,10 +48,10 @@
 #ifdef GC_MEMORY_LEAK_TEST
 #include "gc_leak_detector.h"
 #endif
+
 #include "daemon_mode.h"
-#include "subst_func.h"
-#include "win_log.h"
-#include "win_system.h"
+#include "winlib.h"
+/* #include "win_system.h" */
 #include "ls8tel.h"
 
 #define MAX_SR      HEADER_4B
@@ -57,15 +59,15 @@
 #define BELL        0
 /*  #define DEBUG       0 */
 
-static char rcsid[] =
-  "$Id: ls8tel16_raw.c,v 1.1.2.2 2005/06/25 11:16:34 uehira Exp $";
+static const char rcsid[] =
+  "$Id: ls8tel16_raw.c,v 1.1.2.3 2010/12/28 12:55:42 uehira Exp $";
 
 char *progname, *logfile;
-int  daemon_mode, syslog_mode;
-int  exit_status;
+int  syslog_mode, exit_status;
 
+static int              daemon_mode;
 static char             *chfile;
-static unsigned char	ch_table[WIN_CH_MAX_NUM];
+static uint8_w	        ch_table[WIN_CH_MAX_NUM];
 static int		n_ch, negate_channel;
 
 /* prototypes */
@@ -79,21 +81,20 @@ main(int argc, char *argv[])
   FILE            *fp_log;
   struct Shm      *shr, *shm;
   key_t		  inkey, outkey;
-  int		  shmid_in, shmid_out;
-  int             size_shm;
-  unsigned long	  uni;
-  unsigned char   *ptr, *ptw, *ptr_lim, *ptr_save;
+  /* int		  shmid_in, shmid_out; */
+  size_t          size_shm;
+  uint32_w	  uni;
+  uint8_w   *ptr, *ptw, *ptr_lim, *ptr_save;
   unsigned long	  c_save;
-  WIN_ch          ch;
-  WIN_sr          sr;
-  long            ch1, sr1;
-  WIN_blocksize   gs;
-  static long    fixbuf[MAX_SR];
+  WIN_ch          ch, ch1;
+  WIN_sr          sr, sr1;
+  WIN_bs          gs, gs1;
+  static int32_w  fixbuf[MAX_SR];
   char		  tb[1024];
-  int             tow, size, gs1;
+  int             tow, size;
   int             c, rest, i;
 
-  if (progname = strrchr(argv[0], '/'))
+  if ((progname = strrchr(argv[0], '/')) != NULL)
     progname++;
   else
     progname = argv[0];
@@ -118,9 +119,9 @@ main(int argc, char *argv[])
   if (argc < 3)
     usage();
 
-  inkey = (key_t)atoi(argv[0]);
-  outkey = (key_t)atoi(argv[1]);
-  size_shm = atoi(argv[2]) * 1000;
+  inkey = (key_t)atol(argv[0]);
+  outkey = (key_t)atol(argv[1]);
+  size_shm = (size_t)atol(argv[2]) * 1000;
 
   /* channel file */
   rest = 1;
@@ -165,21 +166,23 @@ main(int argc, char *argv[])
 
   /***** shared memory *****/
   /* in shared memory */
-  if ((shmid_in = shmget(inkey, 0, 0)) == -1)
-    err_sys("shmget in");
-  if ((shr = (struct Shm *)shmat(shmid_in, 0, 0)) == (struct Shm *)-1)
-    err_sys("shmat in");
+  shr = Shm_read(inkey, "in");
+  /* if ((shmid_in = shmget(inkey, 0, 0)) == -1) */
+  /*   err_sys("shmget in"); */
+  /* if ((shr = (struct Shm *)shmat(shmid_in, (void *)0, 0)) == (struct Shm *)-1) */
+  /*   err_sys("shmat in"); */
 
   /* out shared memory */
-  if ((shmid_out = shmget(outkey, size_shm, IPC_CREAT | 0644)) == -1)
-    err_sys("shmget out");
-  if ((shm = (struct Shm *)shmat(shmid_out, 0, 0)) == (struct Shm *)-1)
-    err_sys("shmat out");
+  shm = Shm_create(outkey, size_shm, "out");
+  /* if ((shmid_out = shmget(outkey, size_shm, IPC_CREAT | 0644)) == -1) */
+  /*   err_sys("shmget out"); */
+  /* if ((shm = (struct Shm *)shmat(shmid_out, (void *)0, 0)) == (struct Shm *)-1) */
+  /*   err_sys("shmat out"); */
 
-  (void)snprintf(tb, sizeof(tb),
-		 "start in_key=%d id=%d out_key=%d id=%d size=%d",
-		 inkey, shmid_in, outkey, shmid_out, size_shm);
-  write_log(tb);
+  /* (void)snprintf(tb, sizeof(tb), */
+  /* 		 "start in_key=%d id=%d out_key=%d id=%d size=%d", */
+  /* 		 inkey, shmid_in, outkey, shmid_out, size_shm); */
+  /* write_log(tb); */
 
   /* set signal handler */
   signal(SIGTERM, (void *)end_program);
@@ -189,9 +192,10 @@ main(int argc, char *argv[])
 
 reset:
   /* initialize buffer */
-  shm->p = shm->c = 0;
-  shm->pl = (size_shm - sizeof(*shm)) / 10 * 9;
-  shm->r = (-1);
+  Shm_init(shm, size_shm);
+  /*   shm->p = shm->c = 0; */
+  /*   shm->pl = (size_shm - sizeof(*shm)) / 10 * 9; */
+  /*   shm->r = (-1); */
   ptr = shr->d;
   while (shr->r == (-1))
     sleep(1);
@@ -200,7 +204,7 @@ reset:
 
   /***** main loop *****/
   for (;;) {
-    ptr_lim = ptr + (size = mklong(ptr_save = ptr));
+    ptr_lim = ptr + (size = mkuint4(ptr_save = ptr));
     c_save = shr->c;
     ptr += WIN_BLOCKSIZE_LEN;
 #if DEBUG
@@ -211,8 +215,8 @@ reset:
     /* make output data */
     ptw = shm->d + shm->p;
     ptw += 4;			/* size (4) */
-    uni = time(0);
-    i = uni - mklong(ptr);
+    uni=(uint32_w)(time(NULL) - TIME_OFFSET);
+    i = uni - mkuint4(ptr);
     if (i >= 0 && i < 1440) {	/* with tow */
       if (tow != 1) {
 	(void)snprintf(tb, sizeof(tb), "with TOW (diff=%ds)", i);
@@ -252,7 +256,7 @@ reset:
 	    write_log("reset: input data is not LS8TEL format?");
 	    goto reset;
 	  }
-	  ptw += (gs1 = winform(fixbuf, ptw, (int)sr1, (unsigned short)ch1));
+	  ptw += (gs1 = winform(fixbuf, ptw, sr1, ch1));
 #if DEBUG
 	  fprintf(stderr, "->%d ", gs1);
 #endif
@@ -271,8 +275,7 @@ reset:
       i = 14;
     else
       i = 10;
-    if ((uni = ptw - (shm->d + shm->p)) > i) {
-      uni = ptw - (shm->d + shm->p);
+    if ((uni = (uint32_w)(ptw - (shm->d + shm->p))) > i) {
       shm->d[shm->p] = uni >> 24;	/* size (H) */
       shm->d[shm->p + 1] = uni >> 16;
       shm->d[shm->p + 2] = uni >> 8;
@@ -285,7 +288,7 @@ reset:
       else
 	for (i = 0; i < 6; i++)
 	  printf("%02X", shm->d[shm->p + 4 + i]);
-      printf(" : %d M\n", uni);
+      printf(" : %u M\n", uni);
 #endif
 
       shm->r = shm->p;
@@ -302,7 +305,7 @@ reset:
       ptr = shr->d;
     while (ptr == shr->d + shr->p)
       usleep(100000);
-    if (shr->c < c_save || mklong(ptr_save) != size) {
+    if (shr->c < c_save || mkuint4(ptr_save) != size) {
       write_log("reset");
       goto reset;
     }
@@ -353,7 +356,7 @@ read_chfile(void)
 	i++;
       }
 #if DEBUG
-      fprintf(stderr, "\n", k);
+      fprintf(stderr, "\n");
 #endif
       n_ch = j;
       if (negate_channel)
@@ -386,6 +389,7 @@ static void
 usage(void)
 {
 
+  WIN_version();
   (void)fprintf(stderr, "%s\n", rcsid);
   (void)fprintf(stderr, "Usage of %s :\n", progname);
   if (daemon_mode) {
@@ -393,15 +397,13 @@ usage(void)
 		  "   %s [in_key] [out_key] [shm_size(KB)]\\\n",
 		  progname);
     (void)fprintf(stderr,
-		  "                       (-/[ch_file]/-[ch_file]/+[ch_file] ([log file]))\n",
-		  progname);
+		  "                       (-/[ch_file]/-[ch_file]/+[ch_file] ([log file]))\n");
   } else {
     (void)fprintf(stderr,
 		  "   %s (-D) [in_key] [out_key] [shm_size(KB)]\\\n",
 		  progname);
     (void)fprintf(stderr,
-		  "                       (-/[ch_file]/-[ch_file]/+[ch_file] ([log file]))\n",
-		  progname);
+		  "                       (-/[ch_file]/-[ch_file]/+[ch_file] ([log file]))\n");
   }
   exit(1);
 }

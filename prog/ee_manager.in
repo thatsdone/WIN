@@ -1,7 +1,7 @@
 #! @PERL@
 
 #
-# $Id: ee_manager.in,v 1.1.2.2 2010/09/06 02:12:40 uehira Exp $
+# $Id: ee_manager.in,v 1.1.2.3 2010/12/28 12:55:40 uehira Exp $
 #   Uehira Kenji (1996.5.28)
 # 
 $WINDIR = $ENV{'WINDIR'};

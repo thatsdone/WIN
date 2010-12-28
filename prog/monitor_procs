@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# $Id: monitor_procs,v 1.4.2.1 2008/04/07 05:51:40 uehira Exp $
+# $Id: monitor_procs,v 1.4.2.2 2010/12/28 12:55:40 uehira Exp $
 #
 # monitor_procs list : list ps output in _win
 # monitor_procs kill : kill all procs in _win

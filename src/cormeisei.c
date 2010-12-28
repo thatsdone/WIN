@@ -1,4 +1,4 @@
-/* $Id: cormeisei.c,v 1.6.2.1 2007/06/16 08:42:04 uehira Exp $ */
+/* $Id: cormeisei.c,v 1.6.2.2 2010/12/28 12:55:41 uehira Exp $ */
 /* "cormeisei.c"    June'97 Ide changed from*/
 /* "raw_raw.c"      3/4/96 urabe */
 /*                  revised on 5/20/96 */
@@ -19,18 +19,22 @@
 /*                  2002.5.31 MAX_SEC_SIZE 500000 -> 1000000 */
 /*                  2005.2.20 added fclose() in read_chfile() */
 /*                  2007.1.15 MAX_SEC_SIZE 1000000 -> 5000000 */
+/*                  2010.10.8 64bit check? & fixed bugs. (Uehira) */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
 
+#include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
+
 #include <stdio.h>
 #include <signal.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/types.h>
-#include <sys/ipc.h>
-#include <sys/shm.h>
+#include <unistd.h>
+#include <errno.h>
 
 #if TIME_WITH_SYS_TIME
 #include <sys/time.h>
@@ -43,19 +47,19 @@
 #endif  /* !HAVE_SYS_TIME_H */
 #endif  /* !TIME_WITH_SYS_TIME */
 
-#include <sys/types.h>
-#include <unistd.h>
-#include <errno.h>
+#include "winlib.h"
 
-#include "subst_func.h"
-
-#define DEBUG     0
+/* #define DEBUG     0 */
 #define DEBUG1    0
 #ifndef CH_TOTAL
 #define CH_TOTAL  200  /* max N of meisei chs */
 #endif
 #ifndef MAX_SEC_SIZE
 #define MAX_SEC_SIZE  5000000  /* max size of one sec data in bytes */
+#endif
+
+#if CH_TOTAL > 32767
+#error CH_TOTAL must be less than 32768
 #endif
 
 #define XPM       30
@@ -67,82 +71,41 @@
 #define IBL       27
 #define TDLYL     1.35
 
-short ch_tableh[65536], ch_tablel[65536];
-char *progname,logfile[256],chfile[256];
-int n_chh, ch_orderh[CH_TOTAL], n_chl, ch_orderl[CH_TOTAL];
+static const char rcsid[] =
+  "$Id: cormeisei.c,v 1.6.2.2 2010/12/28 12:55:41 uehira Exp $";
 
-mklong(ptr)
-  unsigned char *ptr;
-  {
-  unsigned long a;
-  a=((ptr[0]<<24)&0xff000000)+((ptr[1]<<16)&0xff0000)+
-    ((ptr[2]<<8)&0xff00)+(ptr[3]&0xff);
-  return a;
-  }
+static short ch_tableh[WIN_CHMAX], ch_tablel[WIN_CHMAX];
+static char *chfile;
+static int n_chh, ch_orderh[CH_TOTAL], n_chl, ch_orderl[CH_TOTAL];
 
-get_time(rt)
-int *rt;
-{
-  struct tm *nt;
-  unsigned long ltime;
-  time(&ltime);
-  nt=localtime(&ltime);
-  rt[0]=nt->tm_year%100;
-  rt[1]=nt->tm_mon+1;
-  rt[2]=nt->tm_mday;
-  rt[3]=nt->tm_hour;
-  rt[4]=nt->tm_min;
-  rt[5]=nt->tm_sec;
-}
+char *progname,*logfile;
+int syslog_mode=0, exit_status=0;
 
-write_log(logfil,ptr)
-char *logfil;
-char *ptr;
-{
-  FILE *fp;
-  int tm[6];
-  if(*logfil) fp=fopen(logfil,"a");
-  else fp=stdout;
-  get_time(tm);
-  fprintf(fp,"%02d%02d%02d.%02d%02d%02d %s %s\n",
-    tm[0],tm[1],tm[2],tm[3],tm[4],tm[5],progname,ptr);
-  if(*logfil) fclose(fp);
-}
+/* prototypes */
+static void read_chfile(void);
+int main(int, char *[]);
 
-ctrlc()
-{
-  write_log(logfile,"end");
-  exit(0);
-}
-
-err_sys(ptr)
-char *ptr;
-{
-  perror(ptr);
-  write_log(logfile,ptr);
-  if(strerror(errno)) write_log(logfile,strerror(errno));
-  ctrlc();
-}
-
+static void
 read_chfile()
 {
 FILE *fp;
 int i,jh,jl,k,sp;
 char tbuf[256];
+
   if((fp=fopen(chfile,"r"))!=NULL) {
 #if DEBUG
     fprintf(stderr,"ch_file=%s\n",chfile);
 #endif
     n_chh=0;
     n_chl=0;
-    for(i=0;i<65536;i++) ch_tableh[i]=(-1);
-    for(i=0;i<65536;i++) ch_tablel[i]=(-1);
+    for(i=0;i<WIN_CHMAX;i++) ch_tableh[i]=(-1);
+    for(i=0;i<WIN_CHMAX;i++) ch_tablel[i]=(-1);
     i=jh=jl=0;
-    while(fgets(tbuf,256,fp)) {
+    while(fgets(tbuf,sizeof(tbuf),fp)) {
       if(*tbuf=='#') continue;
       sscanf(tbuf,"%x %d",&k,&sp);
       k&=0xffff;
-      if(ch_tableh[k]<0 && sp == 100){
+      if((ch_tableh[k] < 0) && (sp == 100) && (jh < CH_TOTAL)){
 #if DEBUG
       fprintf(stderr,"100Hz %04X",k);
 #endif
@@ -150,7 +113,7 @@ char tbuf[256];
         ch_orderh[jh]=k;
         jh++;
       }
-      if(ch_tablel[k]<0 && sp == 20){
+      if((ch_tablel[k] < 0) && (sp == 20) && (jl < CH_TOTAL)){
 #if DEBUG
       fprintf(stderr,"20Hz %04X",k);
 #endif
@@ -160,209 +123,44 @@ char tbuf[256];
       }
     }
 #if DEBUG
-    fprintf(stderr,"\n",k);
+    fprintf(stderr,"\n");
 #endif
     n_chh=jh;
     n_chl=jl;
     sprintf(tbuf,"100Hz %d channels  20Hz %d channels",n_chh,n_chl);
-    write_log(logfile,tbuf);
+    write_log(tbuf);
     fclose(fp);
   } else {
 #if DEBUG
     fprintf(stderr,"ch_file '%s' not open\n",chfile);
 #endif
     sprintf(tbuf,"channel list file '%s' not open",chfile);
-    write_log(logfile,tbuf);
-    write_log(logfile,"end");
+    write_log(tbuf);
+    write_log("end");
     exit(1);
   }
   signal(SIGHUP,(void *)read_chfile);
 }
 
-/* winform.c  4/30/91   urabe */
-/* winform converts fixed-sample-size-data into win's format */
-/* winform returns the length in bytes of output data */
-
-winform(inbuf,outbuf,sr,sys_ch)
-  long *inbuf;      /* input data array for one sec*/
-  unsigned char *outbuf;  /* output data array for one sec */
-  int sr;         /* n of data (i.e. sampling rate) */
-  unsigned short sys_ch;  /* 16 bit long channel ID number */
-  {
-  int dmin,dmax,aa,bb,br,i,byte_leng;
-  long *ptr;
-  unsigned char *buf;
-
-  /* differentiate and obtain min and max */
-  ptr=inbuf;
-  bb=(*ptr++);
-  dmax=dmin=0;
-  for(i=1;i<sr;i++)
-    {
-    aa=(*ptr);
-    *ptr++=br=aa-bb;
-    bb=aa;
-    if(br>dmax) dmax=br;
-    else if(br<dmin) dmin=br;
-    }
-
-  /* determine sample size */
-  if(((dmin&0xfffffff8)==0xfffffff8 || (dmin&0xfffffff8)==0) &&
-    ((dmax&0xfffffff8)==0xfffffff8 || (dmax&0xfffffff8)==0)) byte_leng=0;
-  else if(((dmin&0xffffff80)==0xffffff80 || (dmin&0xffffff80)==0) &&
-    ((dmax&0xffffff80)==0xffffff80 || (dmax&0xffffff80)==0)) byte_leng=1;
-  else if(((dmin&0xffff8000)==0xffff8000 || (dmin&0xffff8000)==0) &&
-    ((dmax&0xffff8000)==0xffff8000 || (dmax&0xffff8000)==0)) byte_leng=2;
-  else if(((dmin&0xff800000)==0xff800000 || (dmin&0xff800000)==0) &&
-    ((dmax&0xff800000)==0xff800000 || (dmax&0xff800000)==0)) byte_leng=3;
-  else byte_leng=4;
-  /* make a 4 byte long header */
-  buf=outbuf;
-  *buf++=(sys_ch>>8)&0xff;
-  *buf++=sys_ch&0xff;
-  *buf++=(byte_leng<<4)|(sr>>8);
-  *buf++=sr&0xff;
-
-  /* first sample is always 4 byte long */
-  *buf++=inbuf[0]>>24;
-  *buf++=inbuf[0]>>16;
-  *buf++=inbuf[0]>>8;
-  *buf++=inbuf[0];
-  /* second and after */
-  switch(byte_leng)
-    {
-    case 0:
-      for(i=1;i<sr-1;i+=2)
-        *buf++=(inbuf[i]<<4)|(inbuf[i+1]&0xf);
-      if(i==sr-1) *buf++=(inbuf[i]<<4);
-      break;
-    case 1:
-      for(i=1;i<sr;i++)
-        *buf++=inbuf[i];
-      break;
-    case 2:
-      for(i=1;i<sr;i++)
-        {
-        *buf++=inbuf[i]>>8;
-        *buf++=inbuf[i];
-        }
-      break;
-    case 3:
-      for(i=1;i<sr;i++)
-        {
-        *buf++=inbuf[i]>>16;
-        *buf++=inbuf[i]>>8;
-        *buf++=inbuf[i];
-        }
-      break;
-    case 4:
-      for(i=1;i<sr;i++)
-        {
-        *buf++=inbuf[i]>>24;
-        *buf++=inbuf[i]>>16;
-        *buf++=inbuf[i]>>8;
-        *buf++=inbuf[i];
-        }
-      break;
-    }
-  return (int)(buf-outbuf);
-  }
-
-win2fix(ptr,abuf,sys_ch,sr) /* returns group size in bytes */
-  unsigned char *ptr; /* input */
-  register long *abuf;/* output */
-  long *sys_ch;       /* sys_ch */
-  long *sr;           /* sr */
-  {
-  int b_size,g_size;
-  register int i,s_rate;
-  register unsigned char *dp;
-  unsigned int gh;
-  short shreg;
-  int inreg;
-
-  dp=ptr;
-  gh=((dp[0]<<24)&0xff000000)+((dp[1]<<16)&0xff0000)+
-    ((dp[2]<<8)&0xff00)+(dp[3]&0xff);
-  dp+=4;
-  *sr=s_rate=gh&0xfff;
-/*  if(s_rate>MAX_SR) return 0;*/
-  if(b_size=(gh>>12)&0xf) g_size=b_size*(s_rate-1)+8;
-  else g_size=(s_rate>>1)+8;
-  *sys_ch=(gh>>16)&0xffff;
-
-  /* read group */
-  abuf[0]=((dp[0]<<24)&0xff000000)+((dp[1]<<16)&0xff0000)+
-    ((dp[2]<<8)&0xff00)+(dp[3]&0xff);
-  dp+=4;
-  if(s_rate==1) return g_size;  /* normal return */
-  switch(b_size)
-    {
-    case 0:
-      for(i=1;i<s_rate;i+=2)
-        {
-        abuf[i]=abuf[i-1]+((*(char *)dp)>>4);
-        abuf[i+1]=abuf[i]+(((char)(*(dp++)<<4))>>4);
-        }
-      break;
-    case 1:
-      for(i=1;i<s_rate;i++)
-        abuf[i]=abuf[i-1]+(*(char *)(dp++));
-      break;
-    case 2:
-      for(i=1;i<s_rate;i++)
-        {
-        shreg=((dp[0]<<8)&0xff00)+(dp[1]&0xff);
-        dp+=2;
-        abuf[i]=abuf[i-1]+shreg;
-        }
-      break;
-    case 3:
-      for(i=1;i<s_rate;i++)
-        {
-        inreg=((dp[0]<<24)&0xff000000)+((dp[1]<<16)&0xff0000)+
-          ((dp[2]<<8)&0xff00);
-        dp+=3;
-        abuf[i]=abuf[i-1]+(inreg>>8);
-        }
-      break;
-    case 4:
-      for(i=1;i<s_rate;i++)
-        {
-        inreg=((dp[0]<<24)&0xff000000)+((dp[1]<<16)&0xff0000)+
-          ((dp[2]<<8)&0xff00)+(dp[3]&0xff);
-        dp+=4;
-        abuf[i]=abuf[i-1]+inreg;
-        }
-      break;
-    default:
-      return 0; /* bad header */
-    }
-  return g_size;  /* normal return */
-  }
-
-main(argc,argv)
-int argc;
-char *argv[];
+int
+main(int argc, char *argv[])
 {
-  FILE *fp;
-  struct Shm {
-    unsigned long p;    /* write point */
-    unsigned long pl;   /* write limit */
-    unsigned long r;    /* latest */
-    unsigned long c;    /* counter */
-    unsigned char d[1];   /* data buffer */
-    } *shr,*shm;
+  struct Shm  *shr,*shm;
   key_t rawkey,monkey;
-  int shmid_raw,shmid_mon;
-  unsigned long uni;
-  char tb[100];
-  unsigned char *ptr,*ptw,tm[6],*ptr_lim,*ptr_save;
-  static unsigned char dbuf[12][MAX_SEC_SIZE],ch_flagh[12][CH_TOTAL],
+  /* int shmid_raw,shmid_mon; */
+  uint32_w uni;  /* 64bit ok */
+  /* char tb[100]; */
+  uint8_w *ptr,*ptw,*ptr_lim,*ptr_save;
+  static uint8_w dbuf[12][MAX_SEC_SIZE],ch_flagh[12][CH_TOTAL],
     ch_flagl[12][CH_TOTAL];
-  int sr,i,j,k,size,n,size_shm,itdl,itdh,ich,ch;
-  unsigned long c_save;
-  int gs,gh,wf;
+  int i,k,itdl,itdh,ich;
+  uint32_w  size;
+  size_t  size_shm;
+  WIN_sr  sr;
+  uint16_w ch;
+  unsigned long c_save;  /* 64bit ok */
+  int wf;
+  uint32_w  gs;
   int iah=IAH,ibh=IBH;
   int ial=IAL,ibl=IBL;
   int idb01=0,idb02=0,idb03=0,idb04=0,idb05=0,idb06=0;
@@ -373,9 +171,9 @@ char *argv[];
   int iddx07,iddx08,iddx09,iddx10,iddx11,iddx12;
   float tdlyh=TDLYH;
   float tdlyl=TDLYL;
-  static long dath[14][CH_TOTAL][101],datl[14][CH_TOTAL][21];
-  long dt[500],xp[XPM],*pd1,*pd2;
-  double yp[YPM],dout[500],*pdd;
+  static int32_w dath[14][CH_TOTAL][101],datl[14][CH_TOTAL][21];
+  int32_w dt[500],*pd1,*pd2;
+  double dout[500],*pdd;
 
   static double ach[30]=
      {2.4880006e-001, 1.7382422e-001, -3.5318485e-001, 3.6853228e-001,
@@ -410,45 +208,52 @@ char *argv[];
      -1.7613769e-001, 2.9050579e-001, -3.6852992e-001, 3.5318485e-001,
      -1.7382806e-001, -2.4879237e-001, 1.0000000e+000};
 
-  if(progname=strrchr(argv[0],'/')) progname++;
+  if((progname=strrchr(argv[0],'/')) != NULL) progname++;
   else progname=argv[0];
   if(argc<5)
     {
+    WIN_version();
+    fprintf(stderr, "%s\n", rcsid);
     fprintf(stderr,
       " usage : '%s [in_key] [out_key] [shm_size(KB)] [ch_file] ([log file])'\n",
       progname);
     exit(1);
     }
-  rawkey=atoi(argv[1]);
-  monkey=atoi(argv[2]);
-  size_shm=atoi(argv[3])*1000;
-  strcpy(chfile,argv[4]);
-  if(argc>5) strcpy(logfile,argv[5]);
+  rawkey=atol(argv[1]);
+  monkey=atol(argv[2]);
+  size_shm=atol(argv[3])*1000;
+  chfile=argv[4];
+  if(argc>5) logfile=argv[5];
+  else logfile=NULL;
     
   read_chfile();
 
+  write_log("start");
   /* in shared memory */
-  if((shmid_raw=shmget(rawkey,0,0))<0) err_sys("shmget in");
-  if((shr=(struct Shm *)shmat(shmid_raw,(char *)0,0))==
-      (struct Shm *)-1) err_sys("shmat in");
+  shr = Shm_read(rawkey, "in");
+  /* if((shmid_raw=shmget(rawkey,0,0))<0) err_sys("shmget in"); */
+  /* if((shr=(struct Shm *)shmat(shmid_raw,(void *)0,0))== */
+  /*     (struct Shm *)-1) err_sys("shmat in"); */
 
   /* out shared memory */
-  if((shmid_mon=shmget(monkey,size_shm,IPC_CREAT|0666))<0) err_sys("shmget out");
-  if((shm=(struct Shm *)shmat(shmid_mon,(char *)0,0))==(struct Shm *)-1)
-    err_sys("shmat out");
+  shm = Shm_create(monkey, size_shm, "out");
+  /* if((shmid_mon=shmget(monkey,size_shm,IPC_CREAT|0666))<0) err_sys("shmget out"); */
+  /* if((shm=(struct Shm *)shmat(shmid_mon,(void *)0,0))==(struct Shm *)-1) */
+  /*   err_sys("shmat out"); */
 
-  sprintf(tb,"start in_key=%d id=%d out_key=%d id=%d size=%d",
-    rawkey,shmid_raw,monkey,shmid_mon,size_shm);
-  write_log(logfile,tb);
+  /* sprintf(tb,"start in_key=%d id=%d out_key=%d id=%d size=%d", */
+  /*   rawkey,shmid_raw,monkey,shmid_mon,size_shm); */
+  /* write_log(tb); */
 
-  signal(SIGTERM,(void *)ctrlc);
-  signal(SIGINT,(void *)ctrlc);
+  signal(SIGTERM,(void *)end_program);
+  signal(SIGINT,(void *)end_program);
 
 reset:
   /* initialize buffer */
-  shm->p=shm->c=0;
-  shm->pl=(size_shm-sizeof(*shm))/10*9;
-  shm->r=(-1);
+  Shm_init(shm, size_shm);
+  /* shm->p=shm->c=0; */
+  /*   shm->pl=(size_shm-sizeof(*shm))/10*9; */
+  /*   shm->r=(-1); */
 
   ptr=shr->d;
   while(shr->r==(-1)) sleep(1);
@@ -487,13 +292,13 @@ reset:
   fprintf(stderr,"20Hz itd = %d \n",itdl);
 #endif
 
-  while(1) {
-    ptr_lim=ptr+(size=mklong(ptr_save=ptr));
+  for(;;) {
+    ptr_lim=ptr+(size=mkuint4(ptr_save=ptr));
     c_save=shm->c;
     ptr+=4;
 #if DEBUG1
     for(i=0;i<6;i++) fprintf(stderr,"%02X",ptr[i]);
-    fprintf(stderr," : %d R wf=%d um=%d\n",size,wf,idb01);
+    fprintf(stderr," : %u R wf=%d um=%d\n",size,wf,idb01);
 #endif
   /* make output data */
     ptw=shm->d+shm->p;
@@ -615,15 +420,15 @@ reset:
     idx10=idx11;
     idx11=idx12;
     idx12=i;
-    if((uni=ptw-(shm->d+shm->p))>10) {
-      uni=ptw-(shm->d+shm->p);
+    if((uni=(uint32_w)(ptw-(shm->d+shm->p)))>10) {
+      /* uni=(uint32_w)(ptw-(shm->d+shm->p)); */
       shm->d[shm->p  ]=uni>>24; /* size (H) */
       shm->d[shm->p+1]=uni>>16;
       shm->d[shm->p+2]=uni>>8;
       shm->d[shm->p+3]=uni;     /* size (L) */
 #if DEBUG1
       for(i=0;i<6;i++)fprintf(stderr,"%02X",shm->d[shm->p+4+i]);
-      fprintf(stderr," : %d M um=%d\n",uni,idb01);
+      fprintf(stderr," : %u M um=%d\n",uni,idb01);
 #endif
       shm->r=shm->p;
       if(ptw>shm->d+shm->pl) ptw=shm->d;
@@ -663,29 +468,30 @@ reset:
     j=0;
 #endif
     do {   /* loop for ch's */
-      gh=mklong(ptr);
-      ch=(gh>>16)&0xffff;
-      sr=gh&0xfff;
+      /* gh=mkuint4(ptr); */
+      /* ch=(gh>>16)&0xffff; */
+      /* sr=gh&0xfff; */
+      gs = win_get_chhdr(ptr, &ch, &sr);
       if((ich=ch_tableh[ch])>=0 && sr==100){
-        gs=win2fix(ptr,dath[idx12][ich],&ch,&sr);
+        (void)win2fix(ptr,dath[idx12][ich],&ch,&sr);
         ch_flagh[iddx12][ich]=1;
 #if DEBUG
         fprintf(stderr,"+");
 #endif
       } else if((ich=ch_tablel[ch])>=0 && sr==20){
-        gs=win2fix(ptr,datl[idx12][ich],&ch,&sr);
+        (void)win2fix(ptr,datl[idx12][ich],&ch,&sr);
         ch_flagl[iddx12][ich]=1;
 #if DEBUG
         fprintf(stderr,"+");
 #endif
       } else {
-        if((gh>>12)&0xf) gs=((gh>>12)&0xf)*(sr-1)+8;
-        else gs=(sr>>1)+8;
+        /* if((gh>>12)&0xf) gs=((gh>>12)&0xf)*(sr-1)+8; */
+        /* else gs=(sr>>1)+8; */
         for(i=0;i<gs;i++) dbuf[iddx12][idb12+i]=ptr[i];
         idb12+=gs;
       }
 #if DEBUG
-      fprintf(stderr,"%d ",gs);
+      fprintf(stderr,"%u ",gs);
 #endif
       ptr+=gs;
 #if DEBUG1
@@ -715,8 +521,8 @@ reset:
     if(wf<1) wf++;
     if((ptr=ptr_lim)>shr->d+shr->pl) ptr=shr->d;
     while(ptr==shr->d+shr->p) usleep(100000);
-    if(mklong(ptr_save)!=size) {
-      write_log(logfile,"reset");
+    if(mkuint4(ptr_save)!=size) {
+      write_log("reset");
       goto reset;
     }
   }

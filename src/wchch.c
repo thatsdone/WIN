@@ -1,4 +1,5 @@
-/* $Id: wchch.c,v 1.5 2005/02/20 13:56:18 urabe Exp $ */
+/* $Id: wchch.c,v 1.5.2.1 2010/12/28 12:55:43 uehira Exp $ */
+
 /*
 program "wchch.c"
 "wchch" changes channel no. in a win format data file
@@ -7,6 +8,8 @@ program "wchch.c"
 2000.4.17   wabort
 2003.10.29 exit()->exit(0)
 2005.2.20 added fclose() in read_chfile()
+2009.7.31  64bit clean. High sampling clean(?) (Uehira)
+2010.9.17 replace read_data() with read_onesec_win2() (Uehira)
 */
 
 #ifdef HAVE_CONFIG_H
@@ -14,33 +17,46 @@ program "wchch.c"
 #endif
 
 #include  <stdio.h>
+#include  <stdlib.h>
 #include  <signal.h>
 
-#include "subst_func.h"
+#include "winlib.h"
 
-#define   DEBUG   0
+/* #define   DEBUG   0 */
 #define   DEBUG1  0
-#define SWAPL(a) a=(((a)<<24)|((a)<<8)&0xff0000|((a)>>8)&0xff00|((a)>>24)&0xff)
 
-unsigned char *buf,*outbuf;
-unsigned short ch_table[65536];
+static const char rcsid[] =
+  "$Id: wchch.c,v 1.5.2.1 2010/12/28 12:55:43 uehira Exp $";
 
+static uint8_w *buf=NULL,*outbuf;
+static WIN_ch ch_table[WIN_CHMAX];
+
+/* prototypes */
+static void wabort(void);
+static int read_chfile(char *);
+static void get_one_record(void);
+static WIN_bs select_ch(WIN_ch *, uint8_w *, uint8_w *);
+static void usage(void);
+int main(int, char *[]);
+
+static void
 wabort() {exit(0);}
 
-read_chfile(chfile)
-  char *chfile;
+static int
+read_chfile(char *chfile)
   {
   FILE *fp;
   int i,j,k;
   char tbuf[1024];
+
   if((fp=fopen(chfile,"r"))!=NULL)
     {
 #if DEBUG
     fprintf(stderr,"ch_file=%s\n",chfile);
 #endif
-    for(i=0;i<65536;i++) ch_table[i]=i;
-    i=0;
-    while(fgets(tbuf,1024,fp))
+    for(i=0;i<WIN_CHMAX;i++) ch_table[i]=(WIN_ch)i;
+    /* i=0; */   /* what for? */
+    while(fgets(tbuf,sizeof(tbuf),fp) != NULL)
       {
       if(*tbuf=='#' || sscanf(tbuf,"%x%x",&k,&j)<0) continue;
       k&=0xffff;  
@@ -50,8 +66,8 @@ read_chfile(chfile)
 #endif
       if(k!=j && ch_table[k]==k)
         {
-        ch_table[k]=j;
-        i++;
+        ch_table[k]=(WIN_ch)j;
+        /* i++; */   /* what for? */
         }
       }
 #if DEBUG
@@ -62,22 +78,23 @@ read_chfile(chfile)
   else
     {
     fprintf(stderr,"ch_file '%s' not open\n",chfile);
-    return 0;
+    return (0);
     }
-  return 1;
+  return (1);
   }
 
+static void
 get_one_record()
   {
-  int i,re;
-  while(read_data()>0)
+
+  while(read_onesec_win2(stdin,&buf,&outbuf)>0)
     {
     /* read one sec */
     if(select_ch(ch_table,buf,outbuf)>10)
       /* write one sec */
-      if((re=fwrite(outbuf,1,mklong(outbuf),stdout))==0) exit(1);
+      if(fwrite(outbuf,1,mkuint4(outbuf),stdout)==0) exit(1);
 #if DEBUG1      
-    fprintf(stderr,"in:%d B out:%d B\n",mklong(buf),mklong(outbuf));
+    fprintf(stderr,"in:%d B out:%d B\n",mkuint4(buf),mkuint4(outbuf));
 #endif
     }
 #if DEBUG1
@@ -85,88 +102,82 @@ get_one_record()
 #endif
   }
 
-mklong(ptr)
-  unsigned char *ptr;
+static WIN_bs
+select_ch(WIN_ch *table, uint8_w *old_buf, uint8_w *new_buf)
   {
-  unsigned long a;
-  a=((ptr[0]<<24)&0xff000000)+((ptr[1]<<16)&0xff0000)+
-    ((ptr[2]<<8)&0xff00)+(ptr[3]&0xff);
-  return a;
-  }
+  int i,ss;
+  WIN_bs size, new_size;
+  uint8_w *ptr,*new_ptr,*ptr_lim;
+  uint32_w gsize;
+  WIN_ch ch;
+  WIN_sr sr;
 
-read_data()
-  {
-  static unsigned int size;
-  int re,i;
-  if(fread(&re,1,4,stdin)==0) return 0;
-  i=1;if(*(char *)&i) SWAPL(re);
-  if(buf==0)
-    {
-    buf=(unsigned char *)malloc(size=re*2);
-    outbuf=(unsigned char *)malloc(size=re*2);
-    }
-  else if(re>size)
-    {
-    buf=(unsigned char *)realloc(buf,size=re*2);
-    outbuf=(unsigned char *)realloc(outbuf,size=re*2);
-    }
-  buf[0]=re>>24;
-  buf[1]=re>>16;
-  buf[2]=re>>8;
-  buf[3]=re;
-  re=fread(buf+4,1,re-4,stdin);
-  return re;
-  }
-
-select_ch(table,old_buf,new_buf)
-  unsigned char *old_buf,*new_buf;
-  unsigned short *table;
-  {
-  int ch,i,j,size,gsize,new_size,sr;
-  unsigned char *ptr,*new_ptr,*ptr_lim;
-  unsigned int gh;
-
-  size=mklong(old_buf);
+  size=mkuint4(old_buf);
   ptr_lim=old_buf+size;
-  ptr=old_buf+4;
-  new_ptr=new_buf+4;
+  ptr=old_buf+WIN_BSLEN;
+  new_ptr=new_buf+WIN_BSLEN;
   for(i=0;i<6;i++) *new_ptr++=(*ptr++);
   new_size=10;
   do
     {
-    gh=mklong(ptr);
-    ch=gh>>16;
-    sr=gh&0xfff;
-    if((gh>>12)&0xf) gsize=((gh>>12)&0xf)*(sr-1)+8;
-    else gsize=(sr>>1)+8;
+    gsize=win_chheader_info(ptr,&ch,&sr,&ss);
+/*     gh=mkuint4(ptr); */
+/*     ch=gh>>16; */
+/*     sr=gh&0xfff; */
+/*     if((gh>>12)&0xf) gsize=((gh>>12)&0xf)*(sr-1)+8; */
+/*     else gsize=(sr>>1)+8; */
     *new_ptr++=table[ch]>>8;
     *new_ptr++=table[ch];
-    ptr+=2;
+    if (sr < HEADER_4B)
+      ptr+=2;
+    else if (sr < HEADER_5B)
+      ptr+=3;
+    else {
+      fprintf(stderr, "Invalid sampling rate.\n");
+      exit(1);
+    }
     new_size+=gsize;
-    gsize-=2;
+    if (sr < HEADER_4B)
+      gsize-=2;
+    else if (sr < HEADER_5B)
+      gsize-=3;
+    else {
+      fprintf(stderr, "Invalid sampling rate.\n");
+      exit(1);
+    }
     while(gsize-->0) *new_ptr++=(*ptr++);
     } while(ptr<ptr_lim);
   new_buf[0]=new_size>>24;
   new_buf[1]=new_size>>16;
   new_buf[2]=new_size>>8;
   new_buf[3]=new_size;
-  return new_size;
+  return (new_size);
   }
 
-main(argc,argv)
-  int argc;
-  char *argv[];
+static void
+usage()
+{
+
+  WIN_version();
+  fprintf(stderr, "%s\n", rcsid);
+  fprintf(stderr," usage of 'wchch' :\n");
+  fprintf(stderr,"   'wchch [ch conv table] <[in_file] >[out_file]'\n");
+}
+
+int
+main(int argc, char *argv[])
   {
+
   signal(SIGINT,(void *)wabort);
   signal(SIGTERM,(void *)wabort);
 
   if(argc<2)
     {
-    fprintf(stderr," usage of 'wchch' :\n");
-    fprintf(stderr,"   'wchch [ch conv table] <[in_file] >[out_file]'\n");
-    exit(0);
+    usage();
+    exit(1);
     }
 
-  if(read_chfile(argv[1])>0) get_one_record();
+  if(!read_chfile(argv[1])) exit(1);
+  get_one_record();
   exit(0);
   }

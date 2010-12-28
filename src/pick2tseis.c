@@ -1,4 +1,4 @@
-/* $Id: pick2tseis.c,v 1.3 2002/01/13 06:57:51 uehira Exp $ */
+/* $Id: pick2tseis.c,v 1.3.2.1 2010/12/28 12:55:42 uehira Exp $ */
 /* pick2tseis.c */
 /* 98.02.20 tsuru */
 /* input (stdin)   : a list of pick file names (ls -l) */
@@ -9,12 +9,19 @@
 #endif
 
 #include  <stdio.h>
+#include  <stdlib.h>
+#include  <string.h>
 
 #include "subst_func.h"
 
-main(argc, argv)
-int argc;
-char ** argv;
+static const char rcsid[] =
+   "$Id: pick2tseis.c,v 1.3.2.1 2010/12/28 12:55:42 uehira Exp $";
+
+/* prototypes */
+int main(int, char *[]);
+
+int
+main(int argc, char *argv[])
 {
   FILE  *fp;
   int flag;
@@ -23,15 +30,16 @@ char ** argv;
   int yr, mo, dy, hr, mi, nstn;
   float sec, dt, lon, elon, lat, elat, dep, edep, mag;
   int fmt;
+
   sscanf(argv[1],"-A%d",&fmt);
-  while (fgets(tbuf,255,stdin)) {
+  while (fgets(tbuf,sizeof(tbuf),stdin) != NULL) {
     i=sscanf(tbuf,"%s%s%s%s%s%s%s%s%s%s",item[0],item[1],item[2],item[3],
       item[4],item[5],item[6],item[7],item[8],item[9]);
 /*    strcpy(owner,item[2]); */
     strcpy(fname,item[i - 1]);
     if((fp=fopen(fname,"r"))==NULL) continue;
     flag=1;
-    while(fgets(buf,255,fp)) {
+    while(fgets(buf,sizeof(tbuf),fp) != NULL) {
       if(flag&&strncmp(buf,"#p",2)==0) {
         *diag=0;
         *wvid=0;
@@ -48,21 +56,21 @@ char ** argv;
         sscanf(item[4],"%d",&mi); sscanf(item[5],"%f",&sec);
         sscanf(item[6],"%f",&lat);sscanf(item[7],"%f",&lon);
         sscanf(item[8],"%f",&dep);sscanf(item[9],"%f",&mag);
-        fgets(buf,255,fp);
+        fgets(buf,sizeof(buf),fp);
         sscanf(buf+3,"%s%s%s%s%s",item[0],item[1],item[2],item[3],item[4]);
         sscanf(item[2],"%f",&elat);
         sscanf(item[3],"%f",&elon);
         sscanf(item[4],"%f",&edep);
         
-        fgets(buf,255,fp);
-        fgets(buf,255,fp);
-        fgets(buf,255,fp);
+        fgets(buf,sizeof(buf),fp);
+        fgets(buf,sizeof(buf),fp);
+        fgets(buf,sizeof(buf),fp);
         sscanf(buf+ 3,"%s%s%s%s%s%s%s%s%s%s%s%s%s%s)",
           item[0],item[1],item[2],item[3],item[4],item[5],item[6], 
           item[7],item[8],item[9],item[10],item[11],item[12],item[13]);
         sscanf(item[0],"%d",&n); nstn=n;
-        for(i=0;i<n;i++) fgets(buf,255,fp);
-        fgets(buf,255,fp);
+        for(i=0;i<n;i++) fgets(buf,sizeof(buf),fp);
+        fgets(buf,sizeof(buf),fp);
         sscanf(buf+3,"%s%s",item[0],item[1]);
         sscanf(item[0],"%f",&dt);
         if(yr>80) yr=1900+yr;
@@ -93,4 +101,5 @@ edep, mag, nstn, fname, wvid, owner, diag);
     }
     fclose(fp);
   }
+  exit(0);
 }

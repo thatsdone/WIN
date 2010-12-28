@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# $Id: dist_tbl,v 1.2 2000/04/30 10:10:37 urabe Exp $
+# $Id: dist_tbl,v 1.2.4.1 2010/12/28 12:55:40 uehira Exp $
 #
 # run this script when /dat/etc/*.tbl was changed on tkyryu
 cd /dat/etc

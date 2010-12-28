@@ -1,5 +1,5 @@
 /*-
-  $Id: hypomhc.c,v 1.6.2.3 2009/01/05 14:55:54 uehira Exp $
+  $Id: hypomhc.c,v 1.6.2.4 2010/12/28 12:55:41 uehira Exp $
    hypomhc.c    : main program for hypocenter location
      original version was made on March 13, 1984 and
      modified by N.H. on Feb. 8, 1985, May 8, 1985.
@@ -50,7 +50,9 @@
 #include <floatingpoint.h>
 #endif
 
-#include "subst_func.h"
+#include "winlib.h"
+/* #include "pltxy.h" */
+/* #include "subst_func.h" */
 
 #define    VPVS2   3.0		/* (Vp/Vs)^2 */
 #define    VPVS    (sqrt(VPVS2))/* Vp/Vs */
@@ -80,7 +82,7 @@ struct struct_data {
 };
 typedef struct struct_data STRUCT;
 
-struct station_data {
+struct station_data_hypomh {
   char		  sa1     [11];	/* STATION ABBREVIATION   (WITHIN 10
 				 * CHARACTERS) */
   char		  pola1   [2];	/* POLARITY OF THE FIRST MOTION                 */
@@ -99,7 +101,7 @@ struct station_data {
   double	  xst   , yst;
   int		  flag;		/* structure flag 1=special */
 };
-typedef struct station_data STATION;
+typedef struct station_data_hypomh STATION;
 
 struct station_for_calc_data {
   int		  org_num;
@@ -122,69 +124,37 @@ struct station_for_calc_data {
 };
 typedef struct station_for_calc_data FOR_CALC;
 
-str2double(t, n, m, d)
-  char           *t;
-  int		  n       , m;
-  double         *d;
+/* prototypes */
+static void str2double_h(char *, int, int, double *);
+static void where(STRUCT *, double, int *);
+static void rxinc(int, double, double, int,
+		  double, int, double *, double *, STRUCT *);
+static void rtinc(double, double, int, double, int, double *, STRUCT *);
+static void rpcod(double, int, double, int, double *, double *, STRUCT *);
+static void rxcod(double, int, double, int, double, double *,
+		  double *, STRUCT *);
+static void trvel(double, int, double, int, double, double *, STRUCT *);
+static void travel(double, double, double, int *, double *, double *,
+		   double *, STRUCT *);
+static void usage(void);
+static void end_hypomhc(int);
+static void memory_error(void);
+int main(int, char *[]);
+
+static void
+str2double_h(char *t, int n, int m, double *d)
 {
   char           *tb;
 
   if (strlen(t) < n + m)
     *d = 9999.0;
   else {
-    if (NULL == (tb = (char *)malloc(sizeof(char) * (m + 1)))) {
-      fputs("hypomhc : Allocation failure !!\n", stderr);
-      exit(0);
-    }
+    if (NULL == (tb = (char *)win_xmalloc(sizeof(char) * (m + 1))))
+      memory_error();
     strncpy(tb, t + n, m);
     tb[m] = '\0';
     *d = atof(tb);
-    free(tb);
-  }
-}
-
-/* PLTXY TRANSFORMS (X,Y) TO (ALAT,ALONG) IF IND.EQ.1  */
-/* PLTXY TRANSFORMS (ALAT,ALONG) TO (X,Y) IF IND.EQ.0  */
-pltxy(alt0, alng0, alat, along, x, y, ind)
-  double	  alt0  , alng0, *alat, *along, *x, *y;
-  int		  ind;
-{
-  static double	  a = 6.378160e3, e2 = 6.6944541e-3, e12 = 6.7395719e-3,
-  		  d = 5.72958e1;
-  double	  rd    , rlat, slat, clat, v2, al, ph1, rph1, rph2, an, c1, c2,
-  		  rlato      , slato, tphi1, cphi1, r;
-
-  rd = 1.0e0 / d;
-  if (ind == 0) {
-    rlat = rd * (*alat);
-    slat = sin(rlat);
-    clat = cos(rlat);
-    v2 = 1.0e0 + e12 * clat * clat;
-    al = (*along) - alng0;
-    ph1 = (*alat) + (v2 * al * al * slat * clat) / (2.0e0 * d);
-    rph1 = ph1 * rd;
-    rph2 = (ph1 + alt0) * 0.5e0 * rd;
-    r = a * (1.0e0 - e2) / sqrt(pow(1.0e0 - e2 * pow(sin(rph2), 2.0), 3.0));
-    an = a / sqrt(1.0e0 - e2 * pow(sin(rph1), 2.0));
-    c1 = d / r;
-    c2 = d / an;
-    *y = (ph1 - alt0) / c1;
-    *x = (al * clat) / c2 + (al * al * al * clat * cos(2.0e0 * rlat)) / (6.0e0 * c2 * d * d);
-  } else {
-    rlato = alt0 * rd;
-    slato = sin(rlato);
-    r = a * (1.0e0 - e2) / sqrt(pow(1.0e0 - e2 * slato * slato, 3.0));
-    an = a / sqrt(1.0e0 - e2 * slato * slato);
-    v2 = 1.0e0 + e12 * pow(cos(rlato), 2.0);
-    c1 = d / r;
-    c2 = d / an;
-    ph1 = alt0 + c1 * (*y);
-    rph1 = ph1 * rd;
-    tphi1 = tan(rph1);
-    cphi1 = cos(rph1);
-    *alat = ph1 - (c2 * (*x)) * (c2 * (*x)) * v2 * tphi1 / (2.0e0 * d);
-    *along = alng0 + c2 * (*x) / cphi1 - pow(c2 * (*x), 3.0) *
-      (1.0e0 + 2.0e0 * tphi1 * tphi1) / (6.0e0 * d * d * cphi1);
+    FREE(tb);
   }
 }
 
@@ -195,10 +165,8 @@ pltxy(alt0, alng0, alat, along, x, y, ind)
    yy : Depth
    *ln : Layer number of the given depth
 */
-where(strc, yy, ln)
-  int            *ln;
-  double	  yy;
-  STRUCT         *strc;
+static void
+where(STRUCT *strc, double yy, int *ln)
 {
   int		  i;
 
@@ -212,36 +180,34 @@ where(strc, yy, ln)
    IF ID=0, Y1 TO Y2 (Y1.GT.Y2)
    IF ID=1, Y2 TO Y1 (Y2.GT.Y1)
 */
-rxinc(id, pp, y1, l1, y2, l2, x, a, strc)
-  int		  id      , l1, l2;
-  double	  pp    , y1, y2, *x, *a;
-  STRUCT         *strc;
+static void
+rxinc(int id, double pp, double y1, int l1,
+      double y2, int l2, double *x, double *a, STRUCT *strc)
 {
-  int		  k1      , lm, i, j;
+  int		  k1, lm = -1, i, j;
   double         *sn, *cn, *rn;
 
   *x = *a = 0.0;
   if (y1 == y2)
     return;
 
-  if (NULL == (sn = (double *)malloc(sizeof(double) * (strc->n1 + 1)))) {
-    fputs("hypomhc : Allocation failure !!\n", stderr);
-    exit(0);
-  }
-  if (NULL == (cn = (double *)malloc(sizeof(double) * (strc->n1 + 1)))) {
-    fputs("hypomhc : Allocation failure !!\n", stderr);
-    exit(0);
-  }
-  if (NULL == (rn = (double *)malloc(sizeof(double) * (strc->n1 + 1)))) {
-    fputs("hypomhc : Allocation failure !!\n", stderr);
-    exit(0);
-  }
   k1 = l2 - 1;
   if (id == 0)
     lm = l1 + 1;
   else if (id == 1)
     lm = l2 + 1;
+  else {
+    fputs("hypomhc : rxinc() error !!\n", stderr);
+    end_hypomhc(1);
+  }
   /* printf("k1=%d  l1=%d\n",k1,l1); OK */
+
+  if (NULL == (sn = (double *)win_xmalloc(sizeof(double) * (strc->n1 + 1))))
+    memory_error();
+  if (NULL == (cn = (double *)win_xmalloc(sizeof(double) * (strc->n1 + 1))))
+    memory_error();
+  if (NULL == (rn = (double *)win_xmalloc(sizeof(double) * (strc->n1 + 1))))
+    memory_error();
   for (i = k1; i <= l1; ++i) {
     j = i + 1;
     if (i == l1)
@@ -276,15 +242,13 @@ rxinc(id, pp, y1, l1, y2, l2, x, a, strc)
   }
   *x /= pp;
   *a /= -(pp * sn[lm]);
-  free(sn);
-  free(cn);
-  free(rn);
+  FREE(sn);
+  FREE(cn);
+  FREE(rn);
 }
 
-rtinc(pp, y1, l1, y2, l2, tt, strc)
-  double	  pp    , y1, y2, *tt;
-  int		  l1      , l2;
-  STRUCT         *strc;
+static void
+rtinc(double pp, double y1, int l1, double y2, int l2, double *tt, STRUCT *strc)
 {
   double         *sn, *cn, cnr;
   int		  k1      , i, j;
@@ -293,14 +257,10 @@ rtinc(pp, y1, l1, y2, l2, tt, strc)
   if (y1 == y2)
     return;
 
-  if (NULL == (sn = (double *)malloc(sizeof(double) * (strc->n1 + 1)))) {
-    fputs("hypomhc : Allocation failure !!\n", stderr);
-    exit(0);
-  }
-  if (NULL == (cn = (double *)malloc(sizeof(double) * (strc->n1 + 1)))) {
-    fputs("hypomhc : Allocation failure !!\n", stderr);
-    exit(0);
-  }
+  if (NULL == (sn = (double *)win_xmalloc(sizeof(double) * (strc->n1 + 1))))
+    memory_error();
+  if (NULL == (cn = (double *)win_xmalloc(sizeof(double) * (strc->n1 + 1))))
+    memory_error();
   k1 = l2 - 1;
   for (i = k1; i <= l1; ++i) {
     j = i + 1;
@@ -328,14 +288,13 @@ rtinc(pp, y1, l1, y2, l2, tt, strc)
 #endif
   }
 
-  free(sn);
-  free(cn);
+  FREE(sn);
+  FREE(cn);
 }
 
-rpcod(y1, l1, y2, l2, xc, tac, strc)
-  double	  y1    , y2, *xc, *tac;
-  int		  l1      , l2;
-  STRUCT         *strc;
+static void
+rpcod(double y1, int l1, double y2, int l2, double *xc, double *tac,
+      STRUCT *strc)
 {
   int		  i       , j;
   double	  pp    , xa, xb, sc, a, b;
@@ -356,10 +315,9 @@ rpcod(y1, l1, y2, l2, xc, tac, strc)
   }
 }
 
-rxcod(y1, l1, y2, l2, ta, x, a, strc)
-  double	  y1    , y2, ta, *x, *a;
-  int		  l1      , l2;
-  STRUCT         *strc;
+static void
+rxcod(double y1, int l1, double y2, int l2, double ta, double *x,
+      double *a, STRUCT *strc)
 {
   double	  pp    , pn, xd, b, yn;
   int		  nl;
@@ -382,10 +340,8 @@ rxcod(y1, l1, y2, l2, ta, x, a, strc)
 }
 
 /* COMPUTATION OF TRAVEL TIME */
-trvel(y1, l1, y2, l2, ta, tt, strc)
-  double	  y1    , y2, ta, *tt;
-  int		  l1      , l2;
-  STRUCT         *strc;
+static void
+trvel(double y1, int l1, double y2, int l2, double ta, double *tt, STRUCT *strc)
 {
   double	  pp    , pn, yn, td;
   int		  nl;
@@ -419,27 +375,24 @@ trvel(y1, l1, y2, l2, ta, tt, strc)
    TRV : TRAVEL TIMES
    BNG : INCIDENT ANGLES FROM DOWNWARD
 */
-travel(rr, ya, yb, np, ang, trv, bng, strc)
-  double	  rr    , ya, yb, *ang, *trv, *bng;
-  int            *np;
-  STRUCT         *strc;
+static void
+travel(double rr, double ya, double yb, int *np, double *ang, double *trv,
+       double *bng, STRUCT *strc)
 {
-  double	  y1    , y2;
+  double	  y1, y2;
   double         *xc, *tac;
-  int		  l1      , l2;
-  int		  i       , j, k;
-  double	  t1    , t2, x1, x2, ta1, ta2, xr, ta0, t0, x0, a0, dt0, dta, tag;
-  double	  dtc   , sang;
+  int		  l1, l2;
+  int		  i, j, k;
+  double	  t1, t2, x1, x2, ta1, ta2, xr, ta0, t0, x0, a0, dt0, dta, tag;
+  double	  dtc, sang;
 
+  ta0 = 0.0;  /* supress warnning */
   /* First, malloc */
-  if (NULL == (xc = (double *)malloc(sizeof(double) * (strc->n1 + 1)))) {
-    fputs("hypomhc : Allocation failure !!\n", stderr);
-    exit(0);
-  }
-  if (NULL == (tac = (double *)malloc(sizeof(double) * (strc->n1 + 1)))) {
-    fputs("hypomhc : Allocation failure !!\n", stderr);
-    exit(0);
-  }
+  if (NULL == (xc = (double *)win_xmalloc(sizeof(double) * (strc->n1 + 1))))
+    memory_error();
+  if (NULL == (tac = (double *)win_xmalloc(sizeof(double) * (strc->n1 + 1))))
+    memory_error();
+
   /* begin */
   if (ya >= yb) {
     y1 = ya;
@@ -512,18 +465,21 @@ line55:
       bng[*np - 1] = tag;
     }
   }
-  free(xc);
-  free(tac);
+  FREE(xc);
+  FREE(tac);
 }
 
+static void
 usage()
 {
+
   fputs("Usage : hypomhc <STATION, STRUCTURE> <ARRIVAL TIME DATA> <FINAL RESULTS> <REPORT> (<INITIAL GUESS>)\n", stderr);
 }
 
-end_hypomhc(status)
-  int		  status;
+static void
+end_hypomhc(int status)
 {
+
 #if (defined(__FreeBSD__) && (__FreeBSD__ < 4))
   fpresetsticky(FP_X_DZ | FP_X_INV);
   fpsetmask(FP_X_DZ | FP_X_INV);
@@ -531,16 +487,17 @@ end_hypomhc(status)
   exit(status);
 }
 
+static void
 memory_error()
 {
+
   fputs("hypomhc : Allocation failure !!\n", stderr);
   end_hypomhc(2);
 }
 
 /****** Begin MAIN ******/
-main(argc, argv)
-  int		  argc;
-  char          **argv;
+int
+main(int argc, char *argv[])
 {
   FILE           *fp_11, *fp_init, *fp_13, *fp_21, *fp_22;
   double	  alat00, alng00, dept00, elat00, elng00, edpt00;
@@ -564,7 +521,7 @@ main(argc, argv)
   double	  ccp   , al2, alp, vxm[3], xm1[3], as;
   int		  jj      , ln, ln1, np, np1;
   double         *ang, *trv, *bng;
-  double         *ang1, *trv1, *bng1;
+  double         *ang1 = NULL, *trv1 = NULL, *bng1 = NULL; /* supress warning */
   double	  sn    , cn, vre, srb, src, wpt, wst, bcp;
   double	  xw     [3], rmx, rvx[3], aa, sra;	/* sra=0.0 need? */
   double	  zm1   , zm2, xmc[3] /* shokika? */ , acp /* shokika? */ ;
@@ -586,9 +543,9 @@ main(argc, argv)
 
   int		  cflag = 0, sflag = 0, smode = 0;
   char		  sstrname[1024], schname[1024];
-  FILE           *fp_sstr, *fp_sch;
-  int		  sstanum;
-  char          **ssta;
+  FILE           *fp_sstr = NULL, *fp_sch;
+  int		  sstanum = 0;
+  char          **ssta = NULL;
 
 #if (defined(__FreeBSD__) && (__FreeBSD__ < 4))
   /* allow divide by zero -- Inf */
@@ -615,9 +572,9 @@ main(argc, argv)
       sstanum--;
       if (sstanum < 0)
 	sstanum = 0;
-      ssta = (char **)calloc(sstanum, sizeof(char *));
+      ssta = (char **)win_xcalloc(sstanum, sizeof(char *));
       for (j = 0; j < sstanum; ++j)
-	ssta[j] = (char *)calloc(11, sizeof(char));
+	ssta[j] = (char *)win_xcalloc(11, sizeof(char));
       rewind(fp_sch);
       j = 0;
       while (!feof(fp_sch)) {
@@ -661,6 +618,7 @@ main(argc, argv)
     smode = 1;
 
   sra = acp = xmc[0] = xmc[1] = xmc[2] = 0.0;
+  rsl[0] = rsl[1] = rsl[2] = 0.0;  /* supress warning */
 
   printf("************ HYPOMH ***********\n");
 
@@ -725,15 +683,15 @@ main(argc, argv)
   vst[3] = '\0';
   strc.n1 = nn + 1;
 
-  if (NULL == (strc.vr = (double *)malloc(sizeof(double) * (strc.n1 + 1))))
+  if (NULL == (strc.vr = (double *)win_xmalloc(sizeof(double) * (strc.n1 + 1))))
     memory_error();
-  if (NULL == (strc.y = (double *)malloc(sizeof(double) * (strc.n1 + 1))))
+  if (NULL == (strc.y = (double *)win_xmalloc(sizeof(double) * (strc.n1 + 1))))
     memory_error();
-  if (NULL == (th = (double *)malloc(sizeof(double) * (strc.n1))))
+  if (NULL == (th = (double *)win_xmalloc(sizeof(double) * (strc.n1))))
     memory_error();
-  if (NULL == (strc.vlg = (double *)malloc(sizeof(double) * (strc.n1))))
+  if (NULL == (strc.vlg = (double *)win_xmalloc(sizeof(double) * (strc.n1))))
     memory_error();
-  if (NULL == (strc.v = (double *)malloc(sizeof(double) * (strc.n1))))
+  if (NULL == (strc.v = (double *)win_xmalloc(sizeof(double) * (strc.n1))))
     memory_error();
   /*-  This part is Original
      if(vb <= va)
@@ -779,7 +737,7 @@ main(argc, argv)
   }
   fprintf(fp_21, "     %5d%10.4lf%10.4lf\n",
 	  strc.n1, strc.y[strc.n1], strc.vr[strc.n1]);
-  free(th);
+  FREE(th);
 
   /****** Read Special Struct data *****/
   if (smode) {
@@ -790,15 +748,15 @@ main(argc, argv)
     svst[3] = '\0';
     strc1.n1 = nn + 1;
 
-    if (NULL == (strc1.vr = (double *)malloc(sizeof(double) * (strc1.n1 + 1))))
+    if (NULL == (strc1.vr = (double *)win_xmalloc(sizeof(double) * (strc1.n1 + 1))))
       memory_error();
-    if (NULL == (strc1.y = (double *)malloc(sizeof(double) * (strc1.n1 + 1))))
+    if (NULL == (strc1.y = (double *)win_xmalloc(sizeof(double) * (strc1.n1 + 1))))
       memory_error();
-    if (NULL == (th = (double *)malloc(sizeof(double) * (strc1.n1))))
+    if (NULL == (th = (double *)win_xmalloc(sizeof(double) * (strc1.n1))))
       memory_error();
-    if (NULL == (strc1.vlg = (double *)malloc(sizeof(double) * (strc1.n1))))
+    if (NULL == (strc1.vlg = (double *)win_xmalloc(sizeof(double) * (strc1.n1))))
       memory_error();
-    if (NULL == (strc1.v = (double *)malloc(sizeof(double) * (strc1.n1))))
+    if (NULL == (strc1.v = (double *)win_xmalloc(sizeof(double) * (strc1.n1))))
       memory_error();
     /* vlct = 0.0; */
     for (i = 0; i <= strc1.n1; ++i)	/* nn+2 */
@@ -834,7 +792,7 @@ main(argc, argv)
     }
     fprintf(fp_21, "     %5d%10.4lf%10.4lf\n",
 	    strc1.n1, strc1.y[strc1.n1], strc1.vr[strc1.n1]);
-    free(th);
+    FREE(th);
   }				/* if (smode) */
 #if DEBUGS
   printf("%lf %lf\n", zmin, zmax);
@@ -886,7 +844,7 @@ main(argc, argv)
   printf("na = %d\n", na);
   printf("%02d %02d %02d %02d:%02d\n", iyr, mnt, idy, ihr, min);
 #endif
-  if (NULL == (sta = (STATION *) malloc(sizeof(STATION) * na)))
+  if (NULL == (sta = (STATION *) win_xmalloc(sizeof(STATION) * na)))
     memory_error();
   for (i = 0; i < na; ++i) {
     fgets(txtbuf, LINELEN, fp_13);
@@ -894,17 +852,17 @@ main(argc, argv)
     sta[i].sa1[10] = '\0';
     strncpy(sta[i].pola1, txtbuf + 11, 1);
     sta[i].pola1[1] = '\0';
-    str2double(txtbuf, 12, 8, &sta[i].pt1);
-    str2double(txtbuf, 20, 6, &sta[i].pe1);
-    str2double(txtbuf, 26, 8, &sta[i].st1);
-    str2double(txtbuf, 34, 6, &sta[i].se1);
-    str2double(txtbuf, 40, 6, &xt);
-    str2double(txtbuf, 46, 9, &sta[i].amp);
-    str2double(txtbuf, 55, 11, &sta[i].alat);
-    str2double(txtbuf, 66, 11, &sta[i].alng);
-    str2double(txtbuf, 77, 7, &sta[i].ahgt);
-    str2double(txtbuf, 84, 7, &sta[i].stcp);
-    str2double(txtbuf, 91, 7, &sta[i].stcs);
+    str2double_h(txtbuf, 12, 8, &sta[i].pt1);
+    str2double_h(txtbuf, 20, 6, &sta[i].pe1);
+    str2double_h(txtbuf, 26, 8, &sta[i].st1);
+    str2double_h(txtbuf, 34, 6, &sta[i].se1);
+    str2double_h(txtbuf, 40, 6, &xt);
+    str2double_h(txtbuf, 46, 9, &sta[i].amp);
+    str2double_h(txtbuf, 55, 11, &sta[i].alat);
+    str2double_h(txtbuf, 66, 11, &sta[i].alng);
+    str2double_h(txtbuf, 77, 7, &sta[i].ahgt);
+    str2double_h(txtbuf, 84, 7, &sta[i].stcp);
+    str2double_h(txtbuf, 91, 7, &sta[i].stcs);
 
     if (sta[i].stcp == 9999.0)
       sta[i].stcp = 0.0;
@@ -934,8 +892,8 @@ main(argc, argv)
   fprintf(fp_21, " ***** EARTHQUAKE %02d%02d%02d%02d%02d *****\n",
 	  iyr, mnt, idy, ihr, min);
   k = npd = nsd = 0;
-  /* if(NULL == (calc=(FOR_CALC *)malloc(sizeof(FOR_CALC)*na))) */
-  if (NULL == (calc = (FOR_CALC *) calloc(na, sizeof(FOR_CALC))))
+  /* if(NULL == (calc=(FOR_CALC *)win_xmalloc(sizeof(FOR_CALC)*na))) */
+  if (NULL == (calc = (FOR_CALC *) win_xcalloc(na, sizeof(FOR_CALC))))
     memory_error();
   for (i = 0; i < na; ++i) {
     fprintf(fp_21,
@@ -1089,11 +1047,11 @@ line150:
     as += calc[i].vpt + calc[i].vst;
   }
   for (i = 0; i < nd; ++i) {
-    /* if(NULL == (calc[i].fp=(double *)malloc(sizeof(double)*nd))) */
-    if (NULL == (calc[i].fp = (double *)calloc(nd, sizeof(double))))
+    /* if(NULL == (calc[i].fp=(double *)win_xmalloc(sizeof(double)*nd))) */
+    if (NULL == (calc[i].fp = (double *)win_xcalloc(nd, sizeof(double))))
       memory_error();
-    /* if(NULL == (calc[i].fs=(double *)malloc(sizeof(double)*nd))) */
-    if (NULL == (calc[i].fs = (double *)calloc(nd, sizeof(double))))
+    /* if(NULL == (calc[i].fs=(double *)win_xmalloc(sizeof(double)*nd))) */
+    if (NULL == (calc[i].fs = (double *)win_xcalloc(nd, sizeof(double))))
       memory_error();
   }
   for (i = 0; i < nd; ++i)
@@ -1107,21 +1065,21 @@ line150:
       calc[i].fp[j] *= calc[j].vpt;
       calc[i].fs[j] *= calc[j].vst;
     }
-  if (NULL == (ang = (double *)malloc(sizeof(double) * (strc.n1 + 1))))
+  if (NULL == (ang = (double *)win_xmalloc(sizeof(double) * (strc.n1 + 1))))
     memory_error();
-  if (NULL == (trv = (double *)malloc(sizeof(double) * (strc.n1 + 1))))
+  if (NULL == (trv = (double *)win_xmalloc(sizeof(double) * (strc.n1 + 1))))
     memory_error();
-  if (NULL == (bng = (double *)malloc(sizeof(double) * (strc.n1 + 1))))
+  if (NULL == (bng = (double *)win_xmalloc(sizeof(double) * (strc.n1 + 1))))
     memory_error();
   if (smode) {
-    if (NULL == (ang1 = (double *)malloc(sizeof(double) * (strc1.n1 + 1))))
+    if (NULL == (ang1 = (double *)win_xmalloc(sizeof(double) * (strc1.n1 + 1))))
       memory_error();
-    if (NULL == (trv1 = (double *)malloc(sizeof(double) * (strc1.n1 + 1))))
+    if (NULL == (trv1 = (double *)win_xmalloc(sizeof(double) * (strc1.n1 + 1))))
       memory_error();
-    if (NULL == (bng1 = (double *)malloc(sizeof(double) * (strc1.n1 + 1))))
+    if (NULL == (bng1 = (double *)win_xmalloc(sizeof(double) * (strc1.n1 + 1))))
       memory_error();
   }
-  while (1) {
+  for (;;) {
     jj = 0;
 line200:
     where(&strc, xm1[2], &ln);
@@ -1379,7 +1337,7 @@ line200:
 	if (calc[i].se > 0.0)
 	  calc[i].rst -= cot;
       }
-      break;			/* exit while(1) loop */
+      break;			/* exit for(;;) loop */
     }
     /* i.e. ll != lm */
     for (i = 0; i < 3; ++i) {
@@ -1398,7 +1356,7 @@ line200:
     sra = srb;
     acp = bcp;
     ll++;
-  }				/* while(1) */
+  }				/* for(;;) */
 end_NLINV:
   if (judg >= 10)
     goto HYPEND;

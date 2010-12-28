@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# $Id: wtB,v 1.1 2000/04/30 10:10:39 urabe Exp $
+# $Id: wtB,v 1.1.4.1 2010/12/28 12:55:40 uehira Exp $
 #
 set -x
 drive=B         # tape drive A/B

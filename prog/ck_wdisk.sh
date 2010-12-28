@@ -1,6 +1,6 @@
 #! /bin/sh
 #
-# $Id: ck_wdisk.sh,v 1.1 2002/05/03 10:49:48 uehira Exp $
+# $Id: ck_wdisk.sh,v 1.1.2.1 2010/12/28 12:55:40 uehira Exp $
 #
 
 rawdir=/dat/raw

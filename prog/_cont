@@ -1,6 +1,6 @@
 #! /bin/sh
 #
-# $Id: _cont,v 1.2 2000/04/30 10:10:37 urabe Exp $
+# $Id: _cont,v 1.2.4.1 2010/12/28 12:55:39 uehira Exp $
 #
 pid=`ps -agxw | cut -c-6,18- | awk '$3 ~ /(^|\/)'$1'$/{print $1}'`
 if [ -n "$pid" ]

@@ -1,4 +1,4 @@
-/* $Id: timeout.c,v 1.3 2002/01/13 06:57:52 uehira Exp $ */
+/* $Id: timeout.c,v 1.3.2.1 2010/12/28 12:55:43 uehira Exp $ */
 /* program timeout.c     11/21/90,8/27/91,11/18/92  urabe */
 /* "timeout" executes a program with timeout */
 /* usage : timeout [time(sec)] [command line] */
@@ -7,16 +7,26 @@
 #include        "config.h"
 #endif
 
+#include        <sys/types.h>
+#include        <sys/wait.h>
+
 #include	<stdio.h>
+#include	<stdlib.h>
 #include	<signal.h>
+#include	<unistd.h>
 
 #include        "subst_func.h"
 
-main(argc,argv)
-	int argc;
-	char *argv[];
+static const char rcsid[] =
+  "$Id: timeout.c,v 1.3.2.1 2010/12/28 12:55:43 uehira Exp $";
+
+/* prototypes */
+int main(int, char *[]);
+
+int
+main(int argc, char *argv[])
 	{
-	int pid,pid_com,pid_to;
+	pid_t pid,pid_com,pid_to;
 	
 	if((pid_com=fork())==0)		/* child - rcp */
 		{
@@ -47,4 +57,5 @@ main(argc,argv)
 		{
 		exit(1);
 		}
+	exit(0);
 	}

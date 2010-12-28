@@ -1,4 +1,4 @@
-/* $Id: subst_func.h,v 1.3 2002/05/03 10:49:49 uehira Exp $ */
+/* $Id: subst_func.h,v 1.3.2.1 2010/12/28 12:55:43 uehira Exp $ */
 
 /*
  * Copyright (c) 2001
@@ -42,7 +42,7 @@ static int snprintf(char *, size_t, const char *, ...);
 static int
 snprintf(char *buf, size_t size, const char *fmt, ...)
 {
-  int  n;
+  size_t   n;
   va_list  ap;
 
   va_start(ap, fmt);
@@ -56,7 +56,7 @@ snprintf(char *buf, size_t size, const char *fmt, ...)
     (void)fprintf(stderr, "snprintf: '%s' overflowed array", fmt);
     exit(1);
   }
-  return(n);
+  return((int)n);  /* warning: conversion from 'size_t' may lose accuracy */
 }
 #endif /* !HAVE_SNPRINTF */
 

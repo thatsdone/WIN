@@ -1,6 +1,6 @@
- $Id: ChangeLog,v 1.131.2.25.2.137.2.20 2010/12/28 02:37:23 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.137.2.21 2010/12/28 12:52:17 uehira Exp $
 
-2010-12-24  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+2010-12-28  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* Version 2.1.19 released.
 	* src/win.c : avoid 0 byte malloc request in just_hypo mode.
 

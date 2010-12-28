@@ -1,4 +1,9 @@
- $Id: ChangeLog,v 1.113.2.60 2010/12/09 04:20:11 uehira Exp $
+ $Id: ChangeLog,v 1.113.2.60.2.1 2010/12/28 12:38:09 uehira Exp $
+
+2010-12-28  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 1.2.11 released.
+	* src/win.c : avoid 0 byte malloc request in map & just_hypo mode.
+	* make new branch 'RELENG_1-SEVO'
 
 2010-12-09  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* Version 1.2.10 released.

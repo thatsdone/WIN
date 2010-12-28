@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.55 2010/12/24 04:20:18 uehira Exp $
+   $Id: win.c,v 1.56 2010/12/28 02:40:36 uehira Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -2353,7 +2353,7 @@ just_map:
   else alat0=100.0;
 
   /* initialize station table "ft.stn" */
-  if (!map_only) {  /* ft.n_ch = 0 */
+  if (!map_only && !just_hypo) {  /* ft.n_ch = 0 */
     if((ft.stn=(struct Stn *)malloc(sizeof(*ft.stn)*ft.n_ch))==0)
       emalloc("ft.stn");
     for(i=0;i<ft.n_ch;i++)

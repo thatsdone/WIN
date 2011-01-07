@@ -1,4 +1,4 @@
-/* $Id: order.c,v 1.11.4.5.2.14 2010/11/03 13:07:06 uehira Exp $ */
+/* $Id: order.c,v 1.11.4.5.2.15 2011/01/07 08:48:26 uehira Exp $ */
 /*  program "order.c" 1/26/94 - 2/7/94, 6/14/94 urabe */
 /*                              1/6/95 bug in adj_time(tm[0]--) fixed */
 /*                              3/17/95 write_log() */
@@ -59,7 +59,7 @@
 #define NAMELEN  1025
 
 static const char rcsid[] =
-  "$Id: order.c,v 1.11.4.5.2.14 2010/11/03 13:07:06 uehira Exp $";
+  "$Id: order.c,v 1.11.4.5.2.15 2011/01/07 08:48:26 uehira Exp $";
 
 char *progname,*logfile;
 int  daemon_mode, syslog_mode, exit_status;
@@ -171,7 +171,11 @@ main(int argc, char *argv[])
 	daemon_mode = 1;  /* daemon mode */
 	break;   
       case 'l':   /* output late packets (i.e. order2 mode) */
-        strcpy(tbuf,optarg);
+        /* strcpy(tbuf,optarg); */
+	if (snprintf(tbuf, sizeof(tbuf), "%s", optarg) >= sizeof(tbuf)) {
+	  fprintf(stderr,"'%s': -l option : Buffer overrun!\n",progname);
+	  exit(1);
+	}
         if((ptrc=strchr(tbuf,':'))==0)
           {
           fprintf(stderr,"-l option requires [shm_key_late]:[shm_size_late(KB)]\n");

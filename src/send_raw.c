@@ -1,4 +1,4 @@
-/* $Id: send_raw.c,v 1.24.2.4.2.19 2010/12/22 13:09:19 uehira Exp $ */
+/* $Id: send_raw.c,v 1.24.2.4.2.20 2011/01/07 08:48:26 uehira Exp $ */
 /*
     program "send_raw/send_mon.c"   1/24/94 - 1/25/94,5/25/94 urabe
                                     6/15/94 - 6/16/94
@@ -102,7 +102,7 @@
 #define REQ_TIMO  10   /* timeout (sec) for request */
 
 static const char  rcsid[] =
-   "$Id: send_raw.c,v 1.24.2.4.2.19 2010/12/22 13:09:19 uehira Exp $";
+   "$Id: send_raw.c,v 1.24.2.4.2.20 2011/01/07 08:48:26 uehira Exp $";
 
 static int sock,raw,tow,all,n_ch,negate_channel,mtu,nbuf,slptime,
   no_resend;
@@ -472,8 +472,8 @@ main(int argc, char *argv[])
         break;
       case 'i':   /* interface (ordinary IP address) which sends mcast */
         /* strcpy(interface,optarg); */
-	if (snprintf(interface, sizeof(interface), "%s", optarg)
-	    >= sizeof(interface))
+	if (snprintf(interface, sizeof(interface),
+		     "%s", optarg) >= sizeof(interface))
 	  {
 	    fprintf(stderr, "Buffer overrun.\n");
 	    exit(1);

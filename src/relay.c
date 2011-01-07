@@ -1,32 +1,36 @@
-/* $Id: relay.c,v 1.15.4.3.2.10 2010/10/13 12:18:18 uehira Exp $ */
-/* "relay.c"      5/23/94-5/25/94,6/15/94-6/16/94,6/23/94,3/16/95 urabe */
-/*                3/26/95 check_packet_no; port# */
-/*                5/24/96 added processing of "host table full" */
-/*                5/28/96 bzero -> memset */
-/*                5/31/96 bug fix */
-/*                6/11/96 discard duplicated resent packets */ 
-/*                6/23/97 SNDBUF/RCVBUF=65535 */ 
-/*                97.9.3               &50000 */ 
-/*                98.6.30 FreeBSD */ 
-/*                2000.4.24/2001.11.14 strerror() */
-/*                2001.11.14 ntohs() */
-/*                2002.12.10 multicast(-i,-t), stdin(to_port=0), src_port(-p) */
-/*                2003.3.25 bug fixed in optind */
-/*                2003.3.26 bug fixed in psize for stdin  */
-/*                2003.9.9 no req resend(-r), receive mcast(-g), send delay(-d) */
-/*                2003.10.26 "sinterface" */
-/*                2004.9.9 fixed a bug in -s option ("sinterface") */
-/*                2004.10.26 daemon mode (Uehira) */
-/*                2004.11.15 check_pno() and read_chfile() brought from recvt.c */
-/*                           with host contol but without channel control (-f) */
-/*                2004.11.15 write host statistics on HUP signal */
-/*                2004.11.15 no packet info (-n) */
-/*                2004.11.15 corrected byte-order of port no. in log */
-/*                2004.11.16 maximize size of receive socket buffer (-b) */
-/*                2004.11.26 some systems (exp. Linux), select(2) changes timeout value */
-/*                2005.2.20 added fclose() in read_chfile() */
-/*                2005.5.18 -N for don't change (and ignore) packet numbers */
-/*                2010.9.30 64bit clean?  */
+/* $Id: relay.c,v 1.15.4.3.2.11 2011/01/07 08:48:26 uehira Exp $ */
+/*-
+ "relay.c"      5/23/94-5/25/94,6/15/94-6/16/94,6/23/94,3/16/95 urabe
+                3/26/95 check_packet_no; port#
+                5/24/96 added processing of "host table full"
+                5/28/96 bzero -> memset
+                5/31/96 bug fix
+                6/11/96 discard duplicated resent packets 
+                6/23/97 SNDBUF/RCVBUF=65535 
+                97.9.3               &50000 
+                98.6.30 FreeBSD 
+                2000.4.24/2001.11.14 strerror()
+                2001.11.14 ntohs()
+                2002.12.10 multicast(-i,-t), stdin(to_port=0), src_port(-p)
+                2003.3.25 bug fixed in optind
+                2003.3.26 bug fixed in psize for stdin 
+                2003.9.9 no req resend(-r), receive mcast(-g), send delay(-d)
+                2003.10.26 "sinterface"
+                2004.9.9 fixed a bug in -s option ("sinterface")
+                2004.10.26 daemon mode (Uehira)
+                2004.11.15 check_pno() and read_chfile() brought from recvt.c
+                           with host contol but without channel control (-f)
+                2004.11.15 write host statistics on HUP signal
+                2004.11.15 no packet info (-n)
+                2004.11.15 corrected byte-order of port no. in log
+                2004.11.16 maximize size of receive socket buffer (-b)
+                2004.11.26 some systems (exp. Linux), select(2) changes timeout value
+                2005.2.20 added fclose() in read_chfile()
+                2005.5.18 -N for don't change (and ignore) packet numbers
+                2010.9.30 64bit clean?
+		2011.1.7 -e for automatically reload chfile
+		            if packet comes from deny host.
+-*/
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -77,7 +81,7 @@
 #define N_HOST    100   /* max N of hosts */  
 
 static const char rcsid[] =
-  "$Id: relay.c,v 1.15.4.3.2.10 2010/10/13 12:18:18 uehira Exp $";
+  "$Id: relay.c,v 1.15.4.3.2.11 2011/01/07 08:48:26 uehira Exp $";
 
 static int sock_in,sock_out;   /* socket */
 static uint8_w sbuf[BUFNO][MAXMESG],ch_table[WIN_CHMAX];
@@ -85,7 +89,8 @@ static int negate_channel,hostlist[N_HOST][2],n_host,no_pinfo,
     n_ch;
 static ssize_t  psize[BUFNO];
 static int  daemon_mode;
-static char host_name[100],*chfile;
+static char *host_name,*chfile;
+static int auto_reload_chfile;
 
 char *progname, *logfile;
 int  syslog_mode, exit_status;
@@ -114,7 +119,7 @@ read_chfile()
   {
   FILE *fp;
   int i,j,k,ii;
-  char tbuf[1024],hostname[80],tb[256];
+  char tbuf[1024],hostname[1024],tb[256];
   struct hostent *h;
   static time_t ltime,ltime_p;
   time_t  tdif, tdif2;
@@ -133,7 +138,7 @@ read_chfile()
       while(fgets(tbuf,sizeof(tbuf),fp))
         {
         *hostname=0;
-        if(sscanf(tbuf,"%s",hostname)==0) continue;
+        if(sscanf(tbuf,"%s",hostname)==0) continue;  /* buffer overrun ok */
         if(*hostname==0 || *hostname=='#') continue;
         if(*tbuf=='*') /* match any channel */
           {
@@ -217,9 +222,10 @@ read_chfile()
       fprintf(stderr,"ch_file '%s' not open\n",chfile);
 #endif
       snprintf(tb,sizeof(tb),"channel list file '%s' not open",chfile);
-      write_log(tb);
-      write_log("end");
-      exit(1);
+      err_sys(tb);
+      /* write_log(tb); */
+      /* write_log("end"); */
+      /* exit(1); */
       }
     }
   else
@@ -285,12 +291,15 @@ check_pno(struct sockaddr_in *from_addr, unsigned int pn, unsigned int pn_f,
       {
       if(!no_pinfo)
         {
-	  snprintf(tb,sizeof(tb),"deny packet from host %d.%d.%d.%d:%d",
+	snprintf(tb,sizeof(tb),"deny packet from host %d.%d.%d.%d:%d",
           ((uint8_w *)&host_)[0],((uint8_w *)&host_)[1],
-          ((uint8_w *)&host_)[2],((uint8_w *)&host_)[3],ntohs(port_));
-        write_log(tb);
+	 ((uint8_w *)&host_)[2],((uint8_w *)&host_)[3],ntohs(port_));
+	write_log(tb);
         }
-      return (-1);
+      /* automatically reload chfile */
+      if (auto_reload_chfile)
+	read_chfile();
+       return (-2);
       }
     }
   if(nopno) return (0);
@@ -387,11 +396,11 @@ usage()
   fprintf(stderr, "%s\n", rcsid);
   if (daemon_mode)
     fprintf(stderr,
-	    " usage : '%s (-Nnr) (-b [sbuf(KB)]) (-d [delay_ms]) (-f [host_file]) (-g [mcast_group]) (-i [interface]) (-h [len(s)]) (-s [sinterface]) (-p [src port]) (-t [ttl]) [in_port] [host] [host_port] ([log file])'\n",
+	    " usage : '%s (-eNnr) (-b [sbuf(KB)]) (-d [delay_ms]) (-f [host_file]) (-g [mcast_group]) (-i [interface]) (-h [len(s)]) (-s [sinterface]) (-p [src port]) (-t [ttl]) [in_port] [host] [host_port] ([log file])'\n",
 	    progname);
   else
     fprintf(stderr,
-	    " usage : '%s (-NnrD) (-b [sbuf(KB)]) (-d [delay_ms]) (-f [host_file]) (-g [mcast_group]) (-i [interface]) (-h [len(s)]) (-s [sinterface]) (-p [src port]) (-t [ttl]) [in_port] [host] [host_port] ([log file])'\n",
+	    " usage : '%s (-eNnrD) (-b [sbuf(KB)]) (-d [delay_ms]) (-f [host_file]) (-g [mcast_group]) (-i [interface]) (-h [len(s)]) (-s [sinterface]) (-p [src port]) (-t [ttl]) [in_port] [host] [host_port] ([log file])'\n",
 	    progname);
 }
 
@@ -427,8 +436,9 @@ main(int argc, char *argv[])
   ttl=1;
   no_pinfo=src_port=delay=noreq=negate_channel=nopno=0;
   sockbuf=DEFAULT_RCVBUF;
+  auto_reload_chfile = 0;
 
-  while((c=getopt(argc,argv,"b:Dd:f:g:i:Nnp:rs:t:T:"))!=-1)
+  while((c=getopt(argc,argv,"b:Dd:ef:g:i:Nnp:rs:t:T:"))!=-1)
     {
     switch(c)
       {
@@ -441,14 +451,27 @@ main(int argc, char *argv[])
       case 'd':   /* delay time in msec */
         delay=atoi(optarg);
         break;
+      case 'e':  /* automatically reload chfile if packet comes from denyhost */
+	auto_reload_chfile = 1;
+	break;
       case 'f':   /* host control file */
         chfile=optarg;
         break;
       case 'g':   /* multicast group for input (multicast IP address) */
-        strcpy(mcastgroup,optarg);
+        /* strcpy(mcastgroup,optarg); */
+	if (snprintf(mcastgroup, sizeof(mcastgroup), "%s", optarg)
+	    >= sizeof(mcastgroup)) {
+	  fprintf(stderr,"'%s': -g option : Buffer overrun!\n",progname);
+	  exit(1);
+	}
         break;
       case 'i':   /* interface (ordinary IP address) which receive mcast */
-        strcpy(interface,optarg);
+        /* strcpy(interface,optarg); */
+	if (snprintf(interface, sizeof(interface), "%s", optarg)
+	    >= sizeof(interface)) {
+	  fprintf(stderr,"'%s': -i option : Buffer overrun!\n",progname);
+	  exit(1);
+	}
         break;
       case 'N':   /* no pno */
         nopno=no_pinfo=noreq=1;
@@ -463,7 +486,12 @@ main(int argc, char *argv[])
         noreq=1;
         break;
       case 's':   /* interface (ordinary IP address) which sends mcast */
-        strcpy(sinterface,optarg);
+        /* strcpy(sinterface,optarg); */
+	if (snprintf(sinterface, sizeof(sinterface), "%s", optarg)
+	    >= sizeof(sinterface)) {
+	  fprintf(stderr,"'%s': -s option : Buffer overrun!\n",progname);
+	  exit(1);
+	}
         break;
       case 'T':   /* ttl for MCAST */
       case 't':   /* ttl for MCAST */
@@ -489,7 +517,7 @@ main(int argc, char *argv[])
 	      "daemon mode cannnot active in case of data from STDIN\n");
       exit(1);
     }
-  strcpy(host_name,argv[2+optind]);
+  host_name=argv[2+optind];
   host_port=atoi(argv[3+optind]);
   if(argc>4+optind) logfile=argv[4+optind];
   else

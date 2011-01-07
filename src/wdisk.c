@@ -1,4 +1,4 @@
-/* $Id: wdisk.c,v 1.17.2.8.2.13 2010/12/22 13:09:19 uehira Exp $ */
+/* $Id: wdisk.c,v 1.17.2.8.2.14 2011/01/07 08:48:26 uehira Exp $ */
 /*
   program "wdisk.c"   4/16/93-5/13/93,7/2/93,7/5/94  urabe
                       1/6/95 bug in adj_time fixed (tm[0]--)
@@ -107,13 +107,13 @@
 #define   NAMELEN  1025
 
 static const char rcsid[] =
-  "$Id: wdisk.c,v 1.17.2.8.2.13 2010/12/22 13:09:19 uehira Exp $";
+  "$Id: wdisk.c,v 1.17.2.8.2.14 2011/01/07 08:48:26 uehira Exp $";
 
 char *progname,*logfile;
 int  daemon_mode, syslog_mode, exit_status;
 
 static char tbuf[NAMELEN],latest[NAMELEN],oldest[NAMELEN],busy[NAMELEN],
-  outdir[NAMELEN];
+  *outdir;
 /* static unsigned char *buf; */
 static int count,count_max,mode;
 static FILE *fd;
@@ -127,6 +127,7 @@ static int64_t check_space(char *, int64_t *);
 #endif
 static int switch_file(int *);
 static void wmemo(char *, char *);
+static void bfov_error(void);
 static void usage(void);
 int main(int , char *[]);
 
@@ -145,10 +146,8 @@ check_space(char *path, int64_t *fsbsize)  /* 64bit ok */
 #endif
   char  path1[NAMELEN];
 
-  if (snprintf(path1, sizeof(path1), "%s/.", path) >= sizeof(path1)) {
-    write_log("path1[]: buffer overflow");
-    end_program();
-  }
+  if (snprintf(path1, sizeof(path1), "%s/.", path) >= sizeof(path1))
+    bfov_error();
 #if USE_LARGE_FS
   if (statfs64(path1, &fsbuf) < 0)
 #else
@@ -179,17 +178,15 @@ switch_file(int *tm)
       printf("closed fd=%p\n",fd);
 #endif
       if (!nflag) {
-	strcpy(latest,busy);
+	strcpy(latest,busy);  /* ok */
 	wmemo(WDISK_LATEST,latest);
       }
    }
 
    /* delete oldest file */
    if (smode) {
-     if (snprintf(tbuf,sizeof(tbuf),"%s/%s",outdir,WDISK_MAX) >= sizeof(tbuf)) {
-       write_log("tbuf[]: buffer overflow");
-       end_program();
-     }
+     if (snprintf(tbuf,sizeof(tbuf),"%s/%s",outdir,WDISK_MAX) >= sizeof(tbuf))
+       bfov_error();
      if((fp=fopen(tbuf,"r")) != NULL){
        fscanf(fp,"%d",&count_max);
        fclose(fp);
@@ -215,11 +212,8 @@ switch_file(int *tm)
 #endif
        if (space_raw < freeb || count == 0)
 	 break;
-       if (snprintf(tbuf, sizeof(tbuf), "%s/%s", outdir, oldst)
-	   >= sizeof(tbuf)) {
-	 write_log("tbuf[]: buffer overflow");
-	 end_program();
-       }
+       if (snprintf(tbuf, sizeof(tbuf), "%s/%s", outdir, oldst) >= sizeof(tbuf))
+	 bfov_error();
        unlink(tbuf);
        sync();
        sync();
@@ -228,14 +222,12 @@ switch_file(int *tm)
      }
 
      if (!nflag) {
-       strcpy(oldest,oldst);
+       strcpy(oldest,oldst);  /* ok */
        wmemo(WDISK_OLDEST,oldest);
      }
    } else {  /* !smode */
-     if (snprintf(tbuf,sizeof(tbuf),"%s/%s",outdir,WDISK_MAX) >= sizeof(tbuf)) {
-       write_log("tbuf[]: buffer overflow");
-       end_program();
-     }
+     if (snprintf(tbuf,sizeof(tbuf),"%s/%s",outdir,WDISK_MAX) >= sizeof(tbuf))
+       bfov_error();
      if((fp=fopen(tbuf,"r")) != NULL){
        fscanf(fp,"%d",&count_max);
        fclose(fp);
@@ -244,7 +236,9 @@ switch_file(int *tm)
      else count_max=0;
      
      while((count=find_oldest(outdir,oldst))>=count_max && count_max){
-       sprintf(tbuf,"%s/%s",outdir,oldst);
+       /* sprintf(tbuf,"%s/%s",outdir,oldst); */
+       if (snprintf(tbuf,sizeof(tbuf),"%s/%s",outdir,oldst) >= sizeof(tbuf))
+	 bfov_error();
        unlink(tbuf);
        count--;
 #if DEBUG
@@ -252,14 +246,22 @@ switch_file(int *tm)
 #endif
      }
      if (!nflag) {
-       strcpy(oldest,oldst);
+       strcpy(oldest,oldst);  /* ok */
        wmemo(WDISK_OLDEST,oldest);
      }
    }
    /* make new file name */
-   if(mode==60) sprintf(busy,"%02d%02d%02d%02d",tm[0],tm[1],tm[2],tm[3]);
-   else sprintf(busy,"%02d%02d%02d%02d.%02d",tm[0],tm[1],tm[2],tm[3],tm[4]);
-   sprintf(tbuf,"%s/%s",outdir,busy);
+   if(mode==60) {
+     if (snprintf(busy,sizeof(busy),"%02d%02d%02d%02d",
+		  tm[0],tm[1],tm[2],tm[3]) >= sizeof(busy))
+       bfov_error();
+   } else {
+     if (snprintf(busy,sizeof(busy),"%02d%02d%02d%02d.%02d",
+		  tm[0],tm[1],tm[2],tm[3],tm[4]) >= sizeof(busy))
+       bfov_error();
+   }
+   if (snprintf(tbuf,sizeof(tbuf),"%s/%s",outdir,busy) >= sizeof(tbuf))
+     bfov_error();
    /* open new file */
    if((fd=fopen(tbuf,"a+"))==NULL) err_sys(tbuf);
    count++;
@@ -268,7 +270,8 @@ switch_file(int *tm)
 #endif
    if (!nflag) {
      wmemo(WDISK_BUSY,busy);
-     sprintf(tbuf,"%s/%s",outdir,WDISK_COUNT);
+     if (snprintf(tbuf,sizeof(tbuf),"%s/%s",outdir,WDISK_COUNT) >= sizeof(tbuf))
+       bfov_error();
      fp=fopen(tbuf,"w+");
      fprintf(fp,"%d\n",count);
      fclose(fp);
@@ -281,10 +284,20 @@ wmemo(char *f, char *c)
 {
    FILE *fp;
 
-   sprintf(tbuf,"%s/%s",outdir,f);
+   if (snprintf(tbuf,sizeof(tbuf),"%s/%s",outdir,f) >= sizeof(tbuf))
+     bfov_error();
    fp=fopen(tbuf,"w+");
    fprintf(fp,"%s\n",c);
    fclose(fp);
+}
+
+static void
+bfov_error()
+{
+
+  write_log("Buffer overrun!");
+  exit_status = EXIT_FAILURE;
+  end_program();
 }
 
 static void
@@ -366,10 +379,14 @@ main(int argc, char *argv[])
      shmkey=0;
      buf=(uint8_w *)win_xmalloc((size_t)(bufsiz=BUFSZ));
      }
-   strcpy(outdir,argv[1]);
+   /* strcpy(outdir,argv[1]); */
+   outdir = argv[1];
    if(argc>2) count_max=atoi(argv[2]);
    else count_max=0;
-   sprintf(tbuf,"%s/%s",outdir,WDISK_MAX);
+   if (snprintf(tbuf,sizeof(tbuf),"%s/%s",outdir,WDISK_MAX) >= sizeof(tbuf)) {
+     fprintf(stderr,"'%s': Buffer overrun!\n",progname);
+     exit(1);
+   }
    fp=fopen(tbuf,"w+");
    if (smode)
      fprintf(fp,"%d MB\n",count_max);
@@ -421,7 +438,7 @@ main(int argc, char *argv[])
      if(mkuint4(shm->d+shp+size-4)==size) eobsize=1;
      else eobsize=0;
      eobsize_count=eobsize;
-     sprintf(tbuf,"eobsize=%d",eobsize);
+     snprintf(tbuf,sizeof(tbuf),"eobsize=%d",eobsize);
      write_log(tbuf);
      }
    else
@@ -432,7 +449,7 @@ main(int argc, char *argv[])
        {
        if(size>BUFLIM || (buf=(uint8_w *)win_xrealloc(buf,(size_t)size))==NULL)
 	 {
-	 sprintf(tbuf,"malloc size=%d",size);
+	 snprintf(tbuf,sizeof(tbuf),"malloc size=%d",size);
 	 write_log(tbuf);
 	 end_program();
 	 }
@@ -453,7 +470,7 @@ main(int argc, char *argv[])
       else ptr=buf+4;
       if(!bcd_dec(tm,ptr)) /* YMDhms */
         {
-        sprintf(tbuf,
+	snprintf(tbuf,sizeof(tbuf),
           "illegal time %02X%02X%02X.%02X%02X%02X:%02X%02X%02X.%02X%02X%02X (%d)",
           ptr[0],ptr[1],ptr[2],ptr[3],ptr[4],ptr[5],
           ptr[6],ptr[7],ptr[8],ptr[9],ptr[10],ptr[11],size);
@@ -526,7 +543,7 @@ main(int argc, char *argv[])
           {
 	  if(size>BUFLIM || (buf=(uint8_w *)win_xrealloc(buf,(size_t)size))==NULL)
             {
-            sprintf(tbuf,"malloc size=%d",size);
+	    snprintf(tbuf,sizeof(tbuf),"malloc size=%d",size);
 	    write_log(tbuf);
             end_program();
             }

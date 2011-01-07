@@ -1,6 +1,14 @@
- $Id: ChangeLog,v 1.131.2.25.2.155 2010/12/28 02:43:47 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.156 2011/01/07 08:48:26 uehira Exp $
 
-2010-12-24  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+2011-01-07  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 2.1.20 released.
+	* src/recvt.c : added -e option. fixed buffer overflow.
+	* src/relay.c : added -e option. fixed buffer overflow.
+	* src/order.c : fixed buffer overflow.
+	* src/send_raw.c : fixed buffer overflow.
+	* src/wdisk.c : fixed buffer overflow.
+
+2010-12-28  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* Version 2.1.19 released.
 	* src/win.c : avoid 0 byte malloc request in just_hypo mode.
 

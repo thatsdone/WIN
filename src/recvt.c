@@ -1,4 +1,4 @@
-/* $Id: recvt.c,v 1.29.2.3.2.36 2011/01/07 10:09:01 uehira Exp $ */
+/* $Id: recvt.c,v 1.29.2.3.2.37 2011/01/07 10:32:40 uehira Exp $ */
 /*-
  "recvt.c"      4/10/93 - 6/2/93,7/2/93,1/25/94    urabe
                 2/3/93,5/25/94,6/16/94 
@@ -114,7 +114,7 @@
 #define N_PNOS    62    /* length of packet nos. history >=2 */
 
 static const char rcsid[] =
-  "$Id: recvt.c,v 1.29.2.3.2.36 2011/01/07 10:09:01 uehira Exp $";
+  "$Id: recvt.c,v 1.29.2.3.2.37 2011/01/07 10:32:40 uehira Exp $";
 
 static uint8_w rbuf[MAXMESG],ch_table[WIN_CHMAX];
 static char *chfile[N_CHFILE];
@@ -874,7 +874,7 @@ main(int argc, char *argv[])
       if (daemon_mode)
 	syslog_mode = 1;
     }
-
+  
   if((chhist.ts=
       (time_t (*)[WIN_CHMAX])win_xmalloc(WIN_CHMAX*chhist.n*sizeof(time_t)))==NULL)
     {
@@ -888,14 +888,16 @@ main(int argc, char *argv[])
     /* Later, insert some warning messages into here. */
     }
 
-   /* daemon mode */
-   if (daemon_mode) {
-     daemon_init(progname, LOG_USER, syslog_mode);
-     umask(022);
-   }
-
-  snprintf(tb,sizeof(tb),"n_hist=%d size=%zd req_delay=%d",chhist.n,
-    WIN_CHMAX*chhist.n*sizeof(time_t),req_delay);
+  /* daemon mode */
+  if (daemon_mode) {
+    daemon_init(progname, LOG_USER, syslog_mode);
+    umask(022);
+  }
+  
+  snprintf(tb,sizeof(tb),
+	   "n_hist=%d size=%zd req_delay=%d auto_reload_chfile=%d",
+	   chhist.n,WIN_CHMAX*chhist.n*sizeof(time_t),req_delay,
+	   auto_reload_chfile);
   write_log(tb);
 
   /* shared memory */

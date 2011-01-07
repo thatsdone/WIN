@@ -1,4 +1,4 @@
-/* $Id: relay.c,v 1.15.4.3.2.11 2011/01/07 08:48:26 uehira Exp $ */
+/* $Id: relay.c,v 1.15.4.3.2.12 2011/01/07 10:32:40 uehira Exp $ */
 /*-
  "relay.c"      5/23/94-5/25/94,6/15/94-6/16/94,6/23/94,3/16/95 urabe
                 3/26/95 check_packet_no; port#
@@ -81,7 +81,7 @@
 #define N_HOST    100   /* max N of hosts */  
 
 static const char rcsid[] =
-  "$Id: relay.c,v 1.15.4.3.2.11 2011/01/07 08:48:26 uehira Exp $";
+  "$Id: relay.c,v 1.15.4.3.2.12 2011/01/07 10:32:40 uehira Exp $";
 
 static int sock_in,sock_out;   /* socket */
 static uint8_w sbuf[BUFNO][MAXMESG],ch_table[WIN_CHMAX];
@@ -526,15 +526,17 @@ main(int argc, char *argv[])
       if (daemon_mode)
 	syslog_mode = 1;
     }
+  
+  /* daemon mode */
+  if (daemon_mode) {
+    daemon_init(progname, LOG_USER, syslog_mode);
+    umask(022);
+  }
 
-   /* daemon mode */
-   if (daemon_mode) {
-     daemon_init(progname, LOG_USER, syslog_mode);
-     umask(022);
-   }
-
-   snprintf(tb,sizeof(tb),"start in_port=%d to host '%s' port=%d",
-	    to_port,host_name,host_port);
+  snprintf(tb,sizeof(tb),"start in_port=%d to host '%s' port=%d",
+	   to_port,host_name,host_port);
+  write_log(tb);
+  snprintf(tb,sizeof(tb),"auto_reload_chfile=%d",auto_reload_chfile);
   write_log(tb);
 
   if(to_port>0)

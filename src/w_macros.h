@@ -1,4 +1,4 @@
-/* $Id: w_macros.h,v 1.1.4.2 2010/12/22 13:09:19 uehira Exp $ */
+/* $Id: w_macros.h,v 1.1.4.3 2011/01/08 08:41:03 uehira Exp $ */
 
 #ifndef _WMACROS_H_
 #define _WMACROS_H_
@@ -16,6 +16,10 @@
 
 #define WIN_CHMAX    65536   /* Max. number of channel: 2^16 */
 #define WIN_CH_MAX_NUM  WIN_CHMAX   /* 2^16 */
+
+#define WIN_STANAME        10   /* (length of station code) */
+#define WIN_STACOMP         6   /* (length of component code) */
+#define WIN_LABEL          18   /* (length of label) */
 #define WIN_STANAME_LEN    11   /* (length of station code)+1 */
 #define WIN_STACOMP_LEN     7   /* (length of component code)+1 */
 #define WIN_LABEL_LEN      19   /* (length of label)+1 */

@@ -1,4 +1,4 @@
-/* $Id: recvt.c,v 1.27.2.5 2010/12/28 12:55:42 uehira Exp $ */
+/* $Id: recvt.c,v 1.27.2.6 2011/01/08 01:22:03 uehira Exp $ */
 /*-
  "recvt.c"      4/10/93 - 6/2/93,7/2/93,1/25/94    urabe
                 2/3/93,5/25/94,6/16/94 
@@ -55,6 +55,8 @@
 		2009.1.8  64bit?
                 2010.10.4 fixed bug in check_pno().
                           ht[].pnos[] : unsigned int --> int
+		2011.1.7 -e for automatically reload chfile
+		          if packet comes from deny host.
 -*/
 
 #ifdef HAVE_CONFIG_H
@@ -112,11 +114,12 @@
 #define N_PNOS    62    /* length of packet nos. history >=2 */
 
 static const char rcsid[] =
-  "$Id: recvt.c,v 1.27.2.5 2010/12/28 12:55:42 uehira Exp $";
+  "$Id: recvt.c,v 1.27.2.6 2011/01/08 01:22:03 uehira Exp $";
 
 static uint8_w rbuf[MAXMESG],ch_table[WIN_CHMAX];
 static char *chfile[N_CHFILE];
 static int n_ch,negate_channel,hostlist[N_HOST][3],n_host,no_pinfo,n_chfile;
+static int auto_reload_chfile;
 static int daemon_mode;
 
 char *progname, *logfile;
@@ -158,7 +161,7 @@ read_chfile()
   FILE *fp;
   int i,k,ii,i_chfile;
   time_t tdif, tdif2;
-  char tbuf[1024],host_name[80],tb[256],*ptr;
+  char tbuf[1024],host_name[1024],tb[256],*ptr;
   struct hostent *h;
   static time_t ltime,ltime_p;
 
@@ -173,10 +176,10 @@ read_chfile()
       if(negate_channel) for(i=0;i<WIN_CHMAX;i++) ch_table[i]=1;
       else for(i=0;i<WIN_CHMAX;i++) ch_table[i]=0;
       ii=0;
-      while(fgets(tbuf,sizeof(tbuf),fp))
+      while(fgets(tbuf,sizeof(tbuf),fp) != NULL)
         {
         *host_name=0;
-        if(sscanf(tbuf,"%s",host_name)==0) continue;
+        if(sscanf(tbuf,"%s",host_name)==0) continue;  /* buffer overrun ok */
         if(*host_name==0 || *host_name=='#') continue;
         if(*tbuf=='*') /* match any channel */
           {
@@ -256,9 +259,10 @@ read_chfile()
       fprintf(stderr,"ch_file '%s' not open\n",chfile[0]);
 #endif
       snprintf(tb,sizeof(tb),"channel list file '%s' not open",chfile[0]);
-      write_log(tb);
-      write_log("end");
-      exit(1);
+      err_sys(tb);
+      /* write_log(tb); */
+      /* write_log("end"); */
+      /* exit(1); */
       }
     }
   else
@@ -337,7 +341,7 @@ check_pno(struct sockaddr_in *from_addr, unsigned int pn, unsigned int pn_f,
 /*  int nr;                         no resend request if 1 */
 /*  int req_delay;                  packet count for delayed resend-request */
 
-/*  global : hostlist, n_host, no_pinfo  */
+/*  global : hostlist, n_host, no_pinfo, auto_reload_chfile */
 /*  uinsiged int OK  */
   {
   int i,j,k,seg,dup;
@@ -370,7 +374,10 @@ check_pno(struct sockaddr_in *from_addr, unsigned int pn, unsigned int pn_f,
           ((uint8_w *)&host_)[2],((uint8_w *)&host_)[3],ntohs(port_));
         write_log(tb);
         }
-      return (-1);
+      /* automatically reload chfile */
+      if (auto_reload_chfile)
+	read_chfile();
+      return (-2);
       }
     }
   for(i=0;i<N_HOST;i++)
@@ -671,14 +678,14 @@ usage()
   fprintf(stderr, "%s\n", rcsid);
   if (daemon_mode)
     fprintf(stderr,
-	    " usage : '%s (-AaBnMNr) (-d [len(s)]) (-m [pre(m)]) (-p [post(m)]) \\\n\
+	    " usage : '%s (-AaBenMNr) (-d [len(s)]) (-m [pre(m)]) (-p [post(m)]) \\\n\
               (-i [interface]) (-g [mcast_group]) (-s sbuf(KB)) \\\n\
               (-o [src_host]:[src_port]) (-f [ch file]) \\\n\
               [port] [shm_key] [shm_size(KB)] ([ctl file]/- ([log file]))'\n",
 	    progname);
   else
     fprintf(stderr,
-	    " usage : '%s (-AaBDnMNr) (-d [len(s)]) (-m [pre(m)]) (-p [post(m)]) \\\n\
+	    " usage : '%s (-AaBDenMNr) (-d [len(s)]) (-m [pre(m)]) (-p [post(m)]) \\\n\
               (-i [interface]) (-g [mcast_group]) (-s sbuf(KB)) \\\n\
               (-o [src_host]:[src_port]) (-f [ch file]) (-y [req_delay])\\\n\
               [port] [shm_key] [shm_size(KB)] ([ctl file]/- ([log file]))'\n",
@@ -722,12 +729,13 @@ main(int argc, char *argv[])
 
   all=no_pinfo=mon=eobsize=noreq=no_ts=no_pno=0;
   pre=post=0;
+  auto_reload_chfile = 0;
   *interface=(*mcastgroup)=(*host_name)=0;
   sbuf=DEFAULT_RCVBUF;
   chhist.n=N_HIST;
   n_chfile=1;
   req_delay=0;
-  while((c=getopt(argc,argv,"AaBDd:f:g:i:m:MNno:p:rs:y:"))!=-1)
+  while((c=getopt(argc,argv,"AaBDd:ef:g:i:m:MNno:p:rs:y:"))!=-1)
     {
     switch(c)
       {
@@ -746,9 +754,9 @@ main(int argc, char *argv[])
       case 'd':   /* length of packet history in sec */
         chhist.n=atoi(optarg);
         break;
-      case 'i':   /* interface (ordinary IP address) which receive mcast */
-        strcpy(interface,optarg);
-        break;
+      case 'e':  /* automatically reload chfile if packet comes from denyhost */
+	auto_reload_chfile = 1;
+	break;
       case 'f':   /* channel list file */
 	if (n_chfile < N_CHFILE)
 	  chfile[n_chfile++]=optarg;
@@ -757,7 +765,20 @@ main(int argc, char *argv[])
 		  "Num exceeded. Ignore channel list file: %s\n", optarg);
         break;
       case 'g':   /* multicast group (multicast IP address) */
-        strcpy(mcastgroup,optarg);
+        /* strcpy(mcastgroup,optarg); */
+	if (snprintf(mcastgroup, sizeof(mcastgroup), "%s", optarg)
+	    >= sizeof(mcastgroup)) {
+	  fprintf(stderr,"'%s': -g option : Buffer overrun!\n",progname);
+	  exit(1);
+	}
+        break;
+      case 'i':   /* interface (ordinary IP address) which receive mcast */
+        /* strcpy(interface,optarg); */
+	if (snprintf(interface, sizeof(interface), "%s", optarg)
+	    >= sizeof(interface)) {
+	  fprintf(stderr,"'%s': -i option : Buffer overrun!\n",progname);
+	  exit(1);
+	}
         break;
       case 'm':   /* time limit before RT in minutes */
         pre=atol(optarg);
@@ -773,7 +794,11 @@ main(int argc, char *argv[])
         no_pinfo=1;
         break;
       case 'o':   /* host and port for request */
-        strcpy(tb2,optarg);
+        /* strcpy(tb2,optarg); */
+	if (snprintf(tb2, sizeof(tb2), "%s", optarg) >= sizeof(tb2)) {
+	  fprintf(stderr,"'%s': -o option : Buffer overrun!\n",progname);
+	  exit(1);
+	}
         if((ptr=(uint8_w *)strchr(tb2,':')))
           {
           *ptr=0;
@@ -785,7 +810,7 @@ main(int argc, char *argv[])
           usage();
           exit(1);
           }
-        strcpy(host_name,tb2);
+        strcpy(host_name,tb2);  /* ok */
         break;
       case 'p':   /* time limit after RT in minutes */
         post=atol(optarg);
@@ -849,7 +874,7 @@ main(int argc, char *argv[])
       if (daemon_mode)
 	syslog_mode = 1;
     }
-
+  
   if((chhist.ts=
       (time_t (*)[WIN_CHMAX])win_xmalloc(WIN_CHMAX*chhist.n*sizeof(time_t)))==NULL)
     {
@@ -863,14 +888,16 @@ main(int argc, char *argv[])
     /* Later, insert some warning messages into here. */
     }
 
-   /* daemon mode */
-   if (daemon_mode) {
-     daemon_init(progname, LOG_USER, syslog_mode);
-     umask(022);
-   }
-
-  snprintf(tb,sizeof(tb),"n_hist=%d size=%zd req_delay=%d",chhist.n,
-    WIN_CHMAX*chhist.n*sizeof(time_t),req_delay);
+  /* daemon mode */
+  if (daemon_mode) {
+    daemon_init(progname, LOG_USER, syslog_mode);
+    umask(022);
+  }
+  
+  snprintf(tb,sizeof(tb),
+	   "n_hist=%d size=%zd req_delay=%d auto_reload_chfile=%d",
+	   chhist.n,WIN_CHMAX*chhist.n*sizeof(time_t),req_delay,
+	   auto_reload_chfile);
   write_log(tb);
 
   /* shared memory */

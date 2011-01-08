@@ -1,4 +1,12 @@
- $Id: ChangeLog,v 1.113.2.61 2010/12/28 12:55:36 uehira Exp $
+ $Id: ChangeLog,v 1.113.2.62 2011/01/08 01:22:03 uehira Exp $
+
+2011-01-07  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 2.1.20 released.
+	* src/recvt.c : added -e option. fixed buffer overflow.
+	* src/relay.c : added -e option. fixed buffer overflow.
+	* src/order.c : fixed buffer overflow.
+	* src/send_raw.c : fixed buffer overflow.
+	* src/wdisk.c : fixed buffer overflow.
 
 2010-12-28  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* Version 2.1.19 released.

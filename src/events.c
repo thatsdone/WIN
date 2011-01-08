@@ -1,4 +1,4 @@
-/* $Id: events.c,v 1.8.2.4.2.8 2010/10/25 10:31:51 uehira Exp $ */
+/* $Id: events.c,v 1.8.2.4.2.8.2.1 2011/01/08 08:53:09 uehira Exp $ */
 
 /****************************************************************************
 *****************************************************************************
@@ -141,7 +141,7 @@ sso     /dat/etc/sso.station    cut-jc3
 #define DIR_W  3
 
 static const char rcsid[] =
-  "$Id: events.c,v 1.8.2.4.2.8 2010/10/25 10:31:51 uehira Exp $";
+  "$Id: events.c,v 1.8.2.4.2.8.2.1 2011/01/08 08:53:09 uehira Exp $";
 
 #if defined(STRUCT_STATFS_F_BAVAIL_LONG)
 static long space_raw,used_raw;
@@ -333,7 +333,7 @@ get_trig(char *trigfile, int init_flag, char *tbuf, char *pbuf)
 again:sleep(30);
       }    /* loop (2) */
     offset=ofs;
-    strcpy(pbuf,tbuf);
+    strcpy(pbuf,tbuf);  /* ok */
     if(*tbuf==' ') continue;
     if(init_flag && strncmp(tbuf+14,"on",2)) continue;
       /* if init_flag, wait only 'on' */
@@ -569,17 +569,29 @@ main(int argc, char *argv[])
     switch(c)
       {
       case 'f':
-        strcpy(tapeunit,optarg);
+        /* strcpy(tapeunit,optarg); */
+	if (snprintf(tapeunit, sizeof(tapeunit), "%s", optarg)
+	    >= sizeof(tapeunit)) {
+	  fprintf(stderr,"-f option : Buffer overrun!\n");
+	  exit(1);
+	}
         break;
       case 'u':
 	if (snprintf(file_used, sizeof(file_used),
-		     "%s/%s", optarg, EVENTS_USED) >= sizeof(file_used))
-	  fprintf(stderr, "Buffer overrun: 'file_used'.\n");
-	print_usage();
-	exit(1);
+		     "%s/%s", optarg, EVENTS_USED) >= sizeof(file_used)) {
+	  fprintf(stderr, "-u option : Buffer overrun: 'file_used'.\n");
+	  print_usage();
+	  exit(1);
+	}
         break;
       case 'x':
-        strcpy(xzones[ix++],optarg);
+        /* strcpy(xzones[ix++],optarg); */
+	if (snprintf(xzones[ix], sizeof(xzones[ix]),
+		     "%s", optarg) >= sizeof(xzones[ix])) {
+	  fprintf(stderr,"-x option : Buffer overrun!\n");
+	  exit(1);
+	}
+	ix++;
         break;
       case 'h':
       default:
@@ -760,7 +772,7 @@ printf("lastline=%s\n",lastline);
       continue;
       }
     sscanf(textbuf,"%s",file_name);
-    strcpy(zone_list,mess2);    /* first triggered area */
+    strcpy(zone_list,mess2);    /* first triggered area */ /* ok */
 
     /* write to BUSY file */
     if (snprintf(textbuf,sizeof(textbuf),

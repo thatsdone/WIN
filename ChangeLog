@@ -1,7 +1,14 @@
- $Id: ChangeLog,v 1.131.2.25.2.137.2.22 2011/01/08 02:03:21 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.137.2.23 2011/01/08 08:53:08 uehira Exp $
+
+2011-01-08  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 2.1.20 released.
+	* src/events.c : buffer overflow check.
+	* src/pmon.c : buffer overflow check.
+	* src/recvt_LS7000.c : fixed buffer overflow.
+	* src/relaym.c : fixed buffer overflow.
+	* src/wdiskts.c : fixed buffer overflow.
 
 2011-01-07  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
-	* Version 2.1.20 released.
 	* src/recvt.c : added -e option. fixed buffer overflow.
 	* src/relay.c : added -e option. fixed buffer overflow.
 	* src/order.c : fixed buffer overflow.

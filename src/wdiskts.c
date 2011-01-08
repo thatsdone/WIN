@@ -1,4 +1,4 @@
-/* $Id: wdiskts.c,v 1.6.2.5.2.11.2.2 2010/12/22 14:39:56 uehira Exp $ */
+/* $Id: wdiskts.c,v 1.6.2.5.2.11.2.3 2011/01/08 08:53:09 uehira Exp $ */
 
 /*-
   2005.8.10 urabe bug in strcmp2() fixed : 0-6 > 7-9 
@@ -71,13 +71,13 @@
 #define   NAMELEN  1025
 
 static const char rcsid[] =
-  "$Id: wdiskts.c,v 1.6.2.5.2.11.2.2 2010/12/22 14:39:56 uehira Exp $";
+  "$Id: wdiskts.c,v 1.6.2.5.2.11.2.3 2011/01/08 08:53:09 uehira Exp $";
 
 char *progname,*logfile;
 int  daemon_mode, syslog_mode, exit_status;
 
 static char tbuf[NAMELEN],latest[NAMELEN],oldest[NAMELEN],busy[NAMELEN],
-  outdir[NAMELEN];
+  *outdir;
 static int count,count_max,mode;
 static FILE *fd;
 static uint8_w  *datbuf,*sortbuf,*datbuf_tmp;
@@ -88,6 +88,7 @@ static jmp_buf  mx;
 static int sort_buf(void);
 static int switch_file(int *);
 static void wmemo(char *, char *);
+static void bfov_error(void);
 int main(int, char *[]);
 
 static int
@@ -287,11 +288,12 @@ switch_file(int *tm)
 #if DEBUG
       printf("closed fd=%p\n",fd);
 #endif
-      strcpy(latest,busy);
+      strcpy(latest,busy);  /* ok */
       wmemo(WDISKT_LATEST,latest);
    }
    /* delete oldest file */
-   sprintf(tbuf,"%s/%s",outdir,WDISKT_MAX);
+   if (snprintf(tbuf,sizeof(tbuf), "%s/%s",outdir,WDISKT_MAX) >= sizeof(tbuf))
+     bfov_error();
    if((fp=fopen(tbuf,"r")) != NULL){
       fscanf(fp,"%d",&count_max);
       fclose(fp);
@@ -300,20 +302,29 @@ switch_file(int *tm)
    else count_max=0;
    
    while((count=find_oldest(outdir,oldst))>=count_max && count_max){
-      sprintf(tbuf,"%s/%s",outdir,oldst);
+     if (snprintf(tbuf,sizeof(tbuf),"%s/%s",outdir,oldst) >= sizeof(tbuf))
+       bfov_error();
       unlink(tbuf);
       count--;
 #if DEBUG
       printf("%s deleted\n",tbuf);
 #endif
    }
-   strcpy(oldest,oldst);
+   strcpy(oldest,oldst);  /* ok */
    wmemo(WDISKT_OLDEST,oldest);
    
    /* make new file name */
-   if(mode==60) sprintf(busy,"%02d%02d%02d%02d",tm[0],tm[1],tm[2],tm[3]);
-   else sprintf(busy,"%02d%02d%02d%02d.%02d",tm[0],tm[1],tm[2],tm[3],tm[4]);
-   sprintf(tbuf,"%s/%s",outdir,busy);
+   if(mode==60) {
+     if (snprintf(busy,sizeof(busy),"%02d%02d%02d%02d",
+		  tm[0],tm[1],tm[2],tm[3]) >= sizeof(busy))
+       bfov_error();
+   } else {
+     if (snprintf(busy,sizeof(busy),"%02d%02d%02d%02d.%02d",
+		  tm[0],tm[1],tm[2],tm[3],tm[4]) >= sizeof(busy))
+       bfov_error();
+   }
+   if (snprintf(tbuf,sizeof(tbuf),"%s/%s",outdir,busy) >= sizeof(tbuf))
+     bfov_error();
    /* open new file */
    if((fd=fopen(tbuf,"a+"))==NULL) err_sys(tbuf);
    count++;
@@ -321,7 +332,8 @@ switch_file(int *tm)
    if(fd!=NULL) printf("%s opened fd=%p\n",tbuf,fd);
 #endif
    wmemo(WDISKT_BUSY,busy);
-   sprintf(tbuf,"%s/%s",outdir,WDISKT_COUNT);
+   if (snprintf(tbuf,sizeof(tbuf),"%s/%s",outdir,WDISKT_COUNT) >= sizeof(tbuf))
+     bfov_error();
    fp=fopen(tbuf,"w+");
    fprintf(fp,"%d\n",count);
    fclose(fp);
@@ -333,10 +345,20 @@ wmemo(char *f, char *c)
 {
    FILE *fp;
 
-   sprintf(tbuf,"%s/%s",outdir,f);
+   if (snprintf(tbuf,sizeof(tbuf),"%s/%s",outdir,f) >= sizeof(tbuf))
+     bfov_error();
    fp=fopen(tbuf,"w+");
    fprintf(fp,"%s\n",c);
    fclose(fp);
+}
+
+static void
+bfov_error()
+{
+
+  write_log("Buffer overrun!");
+  exit_status = EXIT_FAILURE;
+  end_program();
 }
 
 int
@@ -371,10 +393,14 @@ main(int argc, char *argv[])
    }
    
    shmkey=atol(argv[1]);
-   strcpy(outdir,argv[2]);
+   /* strcpy(outdir,argv[2]); */
+   outdir=argv[2];
    if(argc>3) count_max=atoi(argv[3]);
    else count_max=0;
-   sprintf(tbuf,"%s/%s",outdir,WDISKT_MAX);
+   if (snprintf(tbuf,sizeof(tbuf),"%s/%s",outdir,WDISKT_MAX) >= sizeof(tbuf)) {
+     fprintf(stderr,"'%s': Buffer overrun!\n",progname);
+     exit(1);
+   }
    fp=fopen(tbuf,"w+");
    fprintf(fp,"%d\n",count_max);
    fclose(fp);
@@ -423,7 +449,7 @@ main(int argc, char *argv[])
       if(mode==60) i=time_cmp(tm,tm_save,4);
       else i=time_cmp(tm,tm_save,5);
       if(i==-1){ /* system clock jump to past */
-	sprintf(tbuf,
+	snprintf(tbuf,sizeof(tbuf),
 	"system clock %02d%02d%02d.%02d%02d%02d->%02d%02d%02d.%02d%02d%02d",
 	tm_save[0],tm_save[1],tm_save[2],tm_save[3],tm_save[4],tm_save[5],
 	tm[0],tm[1],tm[2],tm[3],tm[4],tm[5]);

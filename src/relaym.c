@@ -1,4 +1,4 @@
-/* $Id: relaym.c,v 1.8.2.1.2.7.2.1 2010/12/22 14:39:56 uehira Exp $ */
+/* $Id: relaym.c,v 1.8.2.1.2.7.2.2 2011/01/08 08:53:09 uehira Exp $ */
 
 /*
  * 2004-11-26 MF relay.c:
@@ -63,7 +63,7 @@
 #define MAXMSG       1025
 
 static const char rcsid[] =
-  "$Id: relaym.c,v 1.8.2.1.2.7.2.1 2010/12/22 14:39:56 uehira Exp $";
+  "$Id: relaym.c,v 1.8.2.1.2.7.2.2 2011/01/08 08:53:09 uehira Exp $";
 
 /* destination host info. */
 struct hostinfo {
@@ -411,7 +411,7 @@ read_param(const char *prm, int *hostnum)
 {
   FILE  *fp;
   struct hostinfo  *hinf_top = NULL, *hinf, **hinft = &hinf_top;
-  char  buf[MAXMSG], hname[MAXNAMELEN], port[MAXNAMELEN];
+  char  buf[MAXNAMELEN], hname[MAXNAMELEN], port[MAXNAMELEN];
 
   if ((fp = fopen(prm, "r")) == NULL) {
     fprintf(stderr, "%s : %s\n", prm, strerror(errno));
@@ -422,15 +422,15 @@ read_param(const char *prm, int *hostnum)
   while(fgets(buf, sizeof(buf), fp) != NULL) { 
     if (buf[0] == '#')   /* skip comment */
       continue;
-    if (sscanf(buf, "%s %s", hname, port) < 2)
+    if (sscanf(buf, "%s %s", hname, port) < 2)  /* buffer overrun ok */
       continue;
 
     /* save host information */
     if ((hinf = (struct hostinfo *)win_xmalloc(sizeof(struct hostinfo))) == NULL)
       continue;
     memset(hinf, 0, sizeof(struct hostinfo));
-    (void)strcpy(hinf->hostname, hname);
-    (void)strcpy(hinf->port, port);
+    (void)strcpy(hinf->hostname, hname);  /* buffer overrun ok */
+    (void)strcpy(hinf->port, port);       /* buffer overrun ok */
     hinf->sa = (struct sockaddr *)&hinf->ss;
     hinf->ID = (*hostnum);
     *hinft = hinf;
@@ -517,8 +517,8 @@ check_pno(struct sockaddr *from_addr, unsigned int pn, unsigned int pn_f,
   }
 
   if (j < 0) {
-    (void)strcpy(ht[i].host, host_);
-    (void)strcpy(ht[i].port, port_);
+    (void)strcpy(ht[i].host, host_);  /* buffer overrun ok */
+    (void)strcpy(ht[i].port, port_);  /* buffer overrun ok */
     ht[i].no = pn;
     ht[i].nos[pn >> 3] |= mask[pn & 0x07]; /* set bit for the packet no */
     (void)snprintf(tb, sizeof(tb), "registered host %s:%s (%d)",
@@ -598,7 +598,7 @@ read_chfile(void)
     while (fgets(tbuf, sizeof(tbuf), fp) != NULL) {
       if (tbuf[0] == '#') continue;   /* skip comment line */
       tb1[0] = '\0';
-      if (sscanf(tbuf, "%s", tb1) == 0) continue;
+      if (sscanf(tbuf, "%s", tb1) == 0) continue;   /* buffer overrun ok */
       if (tb1[0] == '\0') continue;
 
       if (tbuf[0] == '*') {   /* match any channel */

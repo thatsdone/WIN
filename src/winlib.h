@@ -1,4 +1,4 @@
-/* $Id: winlib.h,v 1.1.2.7.2.44.2.4 2010/12/22 14:39:57 uehira Exp $ */
+/* $Id: winlib.h,v 1.1.2.7.2.44.2.5 2011/01/08 08:53:09 uehira Exp $ */
 
 #ifndef _WIN_LIB_H_
 #define _WIN_LIB_H_
@@ -123,6 +123,9 @@ typedef  int32_w  WIN_sr;   /* 0 < sr < 2^20 */
 #define  SWAPF(a)  *(int32_w *)&(a) =\
     (((*(int32_w *)&(a)) << 24) | (((*(int32_w *)&(a)) << 8) & 0xff0000) | \
      (((*(int32_w *)&(a)) >> 8) & 0xff00) | (((*(int32_w *)&(a)) >> 24) & 0xff))
+
+#define STRING(n) STRING_AGAIN(n)
+#define STRING_AGAIN(n) #n
 
 /* WIN system struct declarations */
 #include "w_struct.h"

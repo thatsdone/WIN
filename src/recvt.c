@@ -1,4 +1,4 @@
-/* $Id: recvt.c,v 1.29.2.3.2.37 2011/01/07 10:32:40 uehira Exp $ */
+/* $Id: recvt.c,v 1.29.2.3.2.38 2011/01/11 08:30:38 uehira Exp $ */
 /*-
  "recvt.c"      4/10/93 - 6/2/93,7/2/93,1/25/94    urabe
                 2/3/93,5/25/94,6/16/94 
@@ -114,7 +114,7 @@
 #define N_PNOS    62    /* length of packet nos. history >=2 */
 
 static const char rcsid[] =
-  "$Id: recvt.c,v 1.29.2.3.2.37 2011/01/07 10:32:40 uehira Exp $";
+  "$Id: recvt.c,v 1.29.2.3.2.38 2011/01/11 08:30:38 uehira Exp $";
 
 static uint8_w rbuf[MAXMESG],ch_table[WIN_CHMAX];
 static char *chfile[N_CHFILE];
@@ -308,24 +308,26 @@ read_chfile()
 
   time(&ltime);
   tdif=ltime-ltime_p;
-  tdif2=tdif/2;
-  if(ht[0].host)
-    {
-    snprintf(tb,sizeof(tb),"statistics in %ld s (pkts, B, pkts/s, B/s)",tdif);
-    write_log(tb);
-    }
-  for(i=0;i<N_HOST;i++) /* print statistics for hosts */
-    {
-    if(ht[i].host==0) break;
-    snprintf(tb,sizeof(tb),"  src %d.%d.%d.%d:%d   %lu %lu %lu %lu",
-	    ((uint8_w *)&ht[i].host)[0],((uint8_w *)&ht[i].host)[1],
-	    ((uint8_w *)&ht[i].host)[2],((uint8_w *)&ht[i].host)[3],
-	    ntohs(ht[i].port),ht[i].n_packets,ht[i].n_bytes,
-	    (ht[i].n_packets+tdif2)/tdif,(ht[i].n_bytes+tdif2)/tdif);
-    write_log(tb);
-    ht[i].n_packets=ht[i].n_bytes=0;
-    }
-  ltime_p=ltime;
+  if (tdif != 0) {
+    tdif2=tdif/2;
+    if(ht[0].host)
+      {
+      snprintf(tb,sizeof(tb),"statistics in %ld s (pkts, B, pkts/s, B/s)",tdif);
+      write_log(tb);
+      }
+    for(i=0;i<N_HOST;i++) /* print statistics for hosts */
+      {
+      if(ht[i].host==0) break;
+      snprintf(tb,sizeof(tb),"  src %d.%d.%d.%d:%d   %lu %lu %lu %lu",
+	       ((uint8_w *)&ht[i].host)[0],((uint8_w *)&ht[i].host)[1],
+	       ((uint8_w *)&ht[i].host)[2],((uint8_w *)&ht[i].host)[3],
+	       ntohs(ht[i].port),ht[i].n_packets,ht[i].n_bytes,
+	       (ht[i].n_packets+tdif2)/tdif,(ht[i].n_bytes+tdif2)/tdif);
+      write_log(tb);
+      ht[i].n_packets=ht[i].n_bytes=0;
+      }
+    ltime_p=ltime;
+  }
   signal(SIGHUP,(void *)read_chfile);
   }
 

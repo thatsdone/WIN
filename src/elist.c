@@ -1,4 +1,4 @@
-/* $Id: elist.c,v 1.9.4.2.2.7.2.2 2010/12/22 14:39:56 uehira Exp $ */
+/* $Id: elist.c,v 1.9.4.2.2.7.2.3 2011/01/12 16:57:05 uehira Exp $ */
 
 /* program elist.c    2/5/91 - 2/25/91 ,  4/16/92, 4/22/92  urabe */
 /*                      6/10/92, 8/18/92, 10/25/92, 6/8/93, 1/5/94  */
@@ -56,7 +56,7 @@
 #endif
 
 static const char rcsid[] =
-  "$Id: elist.c,v 1.9.4.2.2.7.2.2 2010/12/22 14:39:56 uehira Exp $";
+  "$Id: elist.c,v 1.9.4.2.2.7.2.3 2011/01/12 16:57:05 uehira Exp $";
 
 /* prototypes */
 static char *getname(char *, int);
@@ -66,7 +66,7 @@ int main(int, char *[]);
 /* end of prototypes */
 
 static void
-bfov_err()
+bfov_err(void)
 {
 
   fprintf(stderr, "Buffer overrun!\n");
@@ -90,7 +90,7 @@ getname(char *name, int id)
   }
 
 static void
-print_usage()
+print_usage(void)
   {
 
   WIN_version();

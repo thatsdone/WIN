@@ -1,4 +1,4 @@
-/* $Id: relay.c,v 1.15.4.3.2.10.2.1 2011/01/08 02:03:22 uehira Exp $ */
+/* $Id: relay.c,v 1.15.4.3.2.10.2.2 2011/01/12 16:57:06 uehira Exp $ */
 /*-
  "relay.c"      5/23/94-5/25/94,6/15/94-6/16/94,6/23/94,3/16/95 urabe
                 3/26/95 check_packet_no; port#
@@ -81,7 +81,7 @@
 #define N_HOST    100   /* max N of hosts */  
 
 static const char rcsid[] =
-  "$Id: relay.c,v 1.15.4.3.2.10.2.1 2011/01/08 02:03:22 uehira Exp $";
+  "$Id: relay.c,v 1.15.4.3.2.10.2.2 2011/01/12 16:57:06 uehira Exp $";
 
 static int sock_in,sock_out;   /* socket */
 static uint8_w sbuf[BUFNO][MAXMESG],ch_table[WIN_CHMAX];
@@ -115,7 +115,7 @@ static void usage(void);
 int main(int, char *[]);
 
 static void
-read_chfile()
+read_chfile(void)
   {
   FILE *fp;
   int i,j,k,ii;
@@ -389,7 +389,7 @@ get_packet(int bufno, uint8_w no)
   }
 
 static void
-usage()
+usage(void)
 {
 
   WIN_version();

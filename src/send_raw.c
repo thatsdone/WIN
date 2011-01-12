@@ -1,4 +1,4 @@
-/* $Id: send_raw.c,v 1.24.2.4.2.18.2.2 2011/01/08 02:03:22 uehira Exp $ */
+/* $Id: send_raw.c,v 1.24.2.4.2.18.2.3 2011/01/12 16:57:06 uehira Exp $ */
 /*
     program "send_raw/send_mon.c"   1/24/94 - 1/25/94,5/25/94 urabe
                                     6/15/94 - 6/16/94
@@ -102,7 +102,7 @@
 #define REQ_TIMO  10   /* timeout (sec) for request */
 
 static const char  rcsid[] =
-   "$Id: send_raw.c,v 1.24.2.4.2.18.2.2 2011/01/08 02:03:22 uehira Exp $";
+   "$Id: send_raw.c,v 1.24.2.4.2.18.2.3 2011/01/12 16:57:06 uehira Exp $";
 
 static int sock,raw,tow,all,n_ch,negate_channel,mtu,nbuf,slptime,
   no_resend;
@@ -142,7 +142,7 @@ get_packet(int bufno, uint8_w no)
   }
 
 static void
-read_chfile()
+read_chfile(void)
   {
   FILE *fp;
   int i,j,k;
@@ -355,7 +355,7 @@ recv_pkts(int sock, struct sockaddr_in *to_addr, uint8_w *no,
   }
 
 static void
-usage()
+usage(void)
 {
 
   WIN_version();

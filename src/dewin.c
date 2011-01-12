@@ -1,4 +1,4 @@
-/* $Id: dewin.c,v 1.4.4.3.2.10.2.1 2010/12/23 03:30:32 uehira Exp $ */
+/* $Id: dewin.c,v 1.4.4.3.2.10.2.2 2011/01/12 16:57:05 uehira Exp $ */
 
 /* program dewin  1994.4.11-4.20  urabe */
 /*                1996.2.23 added -n option */
@@ -36,7 +36,7 @@
 #define MAX_SR      HEADER_5B
 
 static const char  rcsid[] =
-   "$Id: dewin.c,v 1.4.4.3.2.10.2.1 2010/12/23 03:30:32 uehira Exp $";
+   "$Id: dewin.c,v 1.4.4.3.2.10.2.2 2011/01/12 16:57:05 uehira Exp $";
 
 static int32_w buf[MAX_SR];
 static double dbuf[MAX_SR];
@@ -61,7 +61,7 @@ static void get_filter(WIN_sr, struct Filter *);
 int main(int, char *[]);
 
 static void
-wabort() {exit(0);}
+wabort(void) {exit(0);}
 
 /* bcd_dec(dest,sour) */
 /*   char *sour; */
@@ -73,7 +73,7 @@ wabort() {exit(0);}
 /*   } */
 
 static void
-print_usage()
+print_usage(void)
   {
 
   WIN_version();
@@ -141,6 +141,7 @@ main(int argc, char *argv[])
   WIN_sr  sr, sr_save;
   WIN_ch sysch;
   static uint8_w *mainbuf=NULL;
+  size_t  mainbuf_siz;
   FILE *f_main,*f_filter;
   uint8_w cc;
   char  txtbuf[LINELEN];
@@ -251,7 +252,7 @@ main(int argc, char *argv[])
 
   sr_save=0;
   sec=i=0;
-  while((mainsize=read_onesec_win(f_main,&mainbuf))){
+  while((mainsize=read_onesec_win(f_main,&mainbuf,&mainbuf_siz))){
      if((sr=read_one_sec(mainbuf,sysch,buf))==0) continue;
      bcd_dec(time3,mainbuf+4);
      if(sr_save==0){

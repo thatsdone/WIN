@@ -1,4 +1,4 @@
-/* $Id: shmdump.c,v 1.21.4.6.2.16.2.2 2010/12/22 14:39:56 uehira Exp $ */
+/* $Id: shmdump.c,v 1.21.4.6.2.16.2.3 2011/01/12 16:57:06 uehira Exp $ */
 
 /*  program "shmdump.c" 6/14/94 urabe */
 /*  revised 5/29/96 */
@@ -72,7 +72,7 @@ struct Filter
 };
 
 static const char rcsid[] =
-  "$Id: shmdump.c,v 1.21.4.6.2.16.2.2 2010/12/22 14:39:56 uehira Exp $";
+  "$Id: shmdump.c,v 1.21.4.6.2.16.2.3 2011/01/12 16:57:06 uehira Exp $";
 
 static char *progname,outfile[256];
 static int win;
@@ -174,7 +174,7 @@ bcd_dec2(int *dest, uint8_w *sour)	/* 64 bit ok */
   }
 
 static void
-ctrlc()	/* 64 bit ok */
+ctrlc(void)	/* 64 bit ok */
   {
   char tb[1024];
 
@@ -214,7 +214,7 @@ get_filter(WIN_sr sr, struct Filter *f)  /* 64 bit ok */
 }
 
 static void
-usage()
+usage(void)
 {
 
   WIN_version();

@@ -1,4 +1,4 @@
-/* $Id: wadd2.c,v 1.4.4.3.2.5 2010/09/17 03:38:47 uehira Exp $ */
+/* $Id: wadd2.c,v 1.4.4.3.2.5.2.1 2011/01/12 16:57:07 uehira Exp $ */
 /* program "wadd2.c"
   "wadd" puts two win data files together
   7/24/91 - 7/25/91, 4/20/94,6/27/94-6/28/94,7/12/94   urabe
@@ -33,12 +33,13 @@
 #define   TEMPNAME  "wadd2.tmp"
 
 static const char  rcsid[] =
-   "$Id: wadd2.c,v 1.4.4.3.2.5 2010/09/17 03:38:47 uehira Exp $";
+   "$Id: wadd2.c,v 1.4.4.3.2.5.2.1 2011/01/12 16:57:07 uehira Exp $";
 
 
 /* prototypes */
 static WIN_bs copy_ch(int, WIN_ch [], uint8_w *, int, uint8_w *);
 static void werror(void);
+static void bfov_error(void);
 int main(int, char *[]);
 
 static WIN_bs
@@ -89,12 +90,20 @@ copy_ch(int makelist, WIN_ch sys_ch[],
   }
 
 static void
-werror()
+werror(void)
   {
 
   perror("fwrite");
   exit(1);
   }
+
+static void
+bfov_error(void)
+{
+
+  (void)fprintf(stderr,"wadd2 : Buffer overrun!\n");
+  exit(1);
+}
 
 int
 main(int argc, char *argv[])
@@ -107,6 +116,7 @@ main(int argc, char *argv[])
   static char tmpfile1[NAMLEN],textbuf[NAMLEN],new_file[NAMLEN];
   static uint8_w  selbuf[MAXSIZE];
   static uint8_w *mainbuf=NULL,*subbuf=NULL;
+  size_t  mainbuf_siz, subbuf_siz;
   static WIN_ch sysch[WIN_CHMAX];
 
   if(argc<3)
@@ -141,20 +151,14 @@ main(int argc, char *argv[])
       {
 	if (snprintf(tmpfile1,sizeof(tmpfile1),
 		     "%s/%s.%d",argv[3],TEMPNAME,getpid()) >= sizeof(tmpfile1))
-	  {
-	    (void)fprintf(stderr, "buffer overrun.\n");
-	    exit(1);
-	  }
+	  bfov_error();
       }
     }
   else
     {
       if (snprintf(tmpfile1,sizeof(tmpfile1),
 		   "%s.%d",TEMPNAME,getpid()) >= sizeof(tmpfile1))
-	{
-	  (void)fprintf(stderr, "buffer overrun.\n");
-	  exit(1);
-	}
+	bfov_error();
     }
 
   if(*tmpfile1 && (f_out=fopen(tmpfile1,"w+"))==NULL)
@@ -165,10 +169,10 @@ main(int argc, char *argv[])
 
   mainend=subend=0;
 
-  if((mainsize=read_onesec_win(f_main,&mainbuf))==0) mainend=1;
+  if((mainsize=read_onesec_win(f_main,&mainbuf,&mainbuf_siz))==0) mainend=1;
   else bcd_dec(dec_main,mainbuf+4);
 
-  if((subsize=read_onesec_win(f_sub,&subbuf))==0) subend=1;
+  if((subsize=read_onesec_win(f_sub,&subbuf,&subbuf_siz))==0) subend=1;
   else bcd_dec(dec_sub,subbuf+4);
 
   while(mainend==0 || subend==0) /* MAIN LOOP */
@@ -192,14 +196,14 @@ main(int argc, char *argv[])
     if(re<=0) /* output main */
       {
       ptr+=copy_ch(1,sysch,mainbuf+4,mainsize-4,ptr);
-      if((mainsize=read_onesec_win(f_main,&mainbuf))==0) mainend=1;
+      if((mainsize=read_onesec_win(f_main,&mainbuf,&mainbuf_siz))==0) mainend=1;
       else bcd_dec(dec_main,mainbuf+4);
       }
     if(re>=0) /* output sub */
       {
       if(re>0) ptr+=copy_ch(1,sysch,subbuf+4,subsize-4,ptr);
       else ptr+=copy_ch(0,sysch,subbuf+4,subsize-4,ptr);
-      if((subsize=read_onesec_win(f_sub,&subbuf))==0) subend=1;
+      if((subsize=read_onesec_win(f_sub,&subbuf,&subbuf_siz))==0) subend=1;
       else bcd_dec(dec_sub,subbuf+4);
       }
 
@@ -230,29 +234,20 @@ main(int argc, char *argv[])
       {
 	if (snprintf(new_file,sizeof(new_file),"%s/%s",argv[3],ptrs)
 	    >= sizeof(new_file))
-	  {
-	    (void)fprintf(stderr, "buffer overrun.\n");
-	    exit(1);
-	  }
+	  bfov_error();
       }
     else
       {
 	/* strcpy(new_file,argv[1]); */
 	if (snprintf(new_file,sizeof(new_file),"%s",argv[1])
 	    >= sizeof(new_file))
-	  {
-	    (void)fprintf(stderr, "buffer overrun.\n");
-	    exit(1);
-	  }
+	  bfov_error();
       }
     /* newfile holds path of outfile */
 /*    sprintf(textbuf,"mv %s %s",tmpfile1,new_file);*/
     if (snprintf(textbuf,sizeof(textbuf),"cp %s %s;rm %s",
 		 tmpfile1,new_file,tmpfile1) >= sizeof(textbuf))
-      {
-	(void)fprintf(stderr, "buffer overrun.\n");
-	exit(1);
-      }
+      bfov_error();
     system(textbuf);
     }
 

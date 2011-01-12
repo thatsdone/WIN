@@ -1,4 +1,4 @@
-/* $Id: recvstatus2.c,v 1.6.8.8.2.1 2010/12/22 14:39:56 uehira Exp $ */
+/* $Id: recvstatus2.c,v 1.6.8.8.2.2 2011/01/12 16:57:06 uehira Exp $ */
 
 /* modified from "recvstatus.c" */
 /* 2002.6.19 recvstatus2 receive A8/A9 packets from Datamark LS-7000XT */
@@ -66,7 +66,7 @@
 /* #define DEBUG   0 */
 
 static const char rcsid[] =
-  "$Id: recvstatus2.c,v 1.6.8.8.2.1 2010/12/22 14:39:56 uehira Exp $";
+  "$Id: recvstatus2.c,v 1.6.8.8.2.2 2011/01/12 16:57:06 uehira Exp $";
 
 char *progname, *logfile = NULL;
 int syslog_mode = 0, exit_status = EXIT_SUCCESS;
@@ -79,7 +79,7 @@ static void usage(void);
 int main(int, char *[]);
 
 static void
-usage()
+usage(void)
 {
 
   WIN_version();

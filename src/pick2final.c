@@ -1,4 +1,4 @@
-/* $Id: pick2final.c,v 1.4.8.1 2010/09/20 08:40:03 uehira Exp $ */
+/* $Id: pick2final.c,v 1.4.8.1.2.1 2011/01/12 16:57:06 uehira Exp $ */
 /* pick2final.c */
 /* 8/22/91, 5/22/92, 7/9/92, 97.10.3 urabe */
 /* input (stdin)   : a list of pick file names (ls -l) */
@@ -17,13 +17,13 @@
 #include "subst_func.h"
 
 static const char rcsid[] =
-   "$Id: pick2final.c,v 1.4.8.1 2010/09/20 08:40:03 uehira Exp $";
+   "$Id: pick2final.c,v 1.4.8.1.2.1 2011/01/12 16:57:06 uehira Exp $";
 
 /* prototypes */
 int main(void);
 
 int
-main()
+main(void)
   {
   FILE *fp;
   int flag;

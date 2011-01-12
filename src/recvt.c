@@ -1,4 +1,4 @@
-/* $Id: recvt.c,v 1.29.2.3.2.33.2.3 2011/01/11 08:47:46 uehira Exp $ */
+/* $Id: recvt.c,v 1.29.2.3.2.33.2.4 2011/01/12 16:57:06 uehira Exp $ */
 /*-
  "recvt.c"      4/10/93 - 6/2/93,7/2/93,1/25/94    urabe
                 2/3/93,5/25/94,6/16/94 
@@ -114,7 +114,7 @@
 #define N_PNOS    62    /* length of packet nos. history >=2 */
 
 static const char rcsid[] =
-  "$Id: recvt.c,v 1.29.2.3.2.33.2.3 2011/01/11 08:47:46 uehira Exp $";
+  "$Id: recvt.c,v 1.29.2.3.2.33.2.4 2011/01/12 16:57:06 uehira Exp $";
 
 static uint8_w rbuf[MAXMESG],ch_table[WIN_CHMAX];
 static char *chfile[N_CHFILE];
@@ -156,7 +156,7 @@ int main(int, char *[]);
 
 
 static void
-read_chfile()
+read_chfile(void)
   {
   FILE *fp;
   int i,k,ii,i_chfile;
@@ -673,7 +673,7 @@ send_req(int sock, struct sockaddr_in *host_addr)
   }
 
 static void
-usage()
+usage(void)
 {
 
   WIN_version();

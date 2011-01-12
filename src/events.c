@@ -1,4 +1,4 @@
-/* $Id: events.c,v 1.8.2.4.2.8.2.1 2011/01/08 08:53:09 uehira Exp $ */
+/* $Id: events.c,v 1.8.2.4.2.8.2.2 2011/01/12 16:57:05 uehira Exp $ */
 
 /****************************************************************************
 *****************************************************************************
@@ -141,7 +141,7 @@ sso     /dat/etc/sso.station    cut-jc3
 #define DIR_W  3
 
 static const char rcsid[] =
-  "$Id: events.c,v 1.8.2.4.2.8.2.1 2011/01/08 08:53:09 uehira Exp $";
+  "$Id: events.c,v 1.8.2.4.2.8.2.2 2011/01/12 16:57:05 uehira Exp $";
 
 #if defined(STRUCT_STATFS_F_BAVAIL_LONG)
 static long space_raw,used_raw;
@@ -163,7 +163,7 @@ static void print_usage(void);
 int main(int, char *[]);
 
 static void
-owari_bfov()
+owari_bfov(void)
 {
 
   (void)fprintf(stderr, "Buffer Overrun!\n");
@@ -171,7 +171,7 @@ owari_bfov()
 }
 
 static void
-owari()
+owari(void)
   {
   char textbuf[LEN];
   int status;
@@ -519,7 +519,7 @@ read_param(FILE *f_param, char *textbuf)
   }
 
 static void
-print_usage()
+print_usage(void)
   {
 
   WIN_version();

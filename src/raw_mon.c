@@ -1,4 +1,4 @@
-/* $Id: raw_mon.c,v 1.6.4.4.2.11 2010/10/13 12:18:18 uehira Exp $ */
+/* $Id: raw_mon.c,v 1.6.4.4.2.11.2.1 2011/01/12 16:57:06 uehira Exp $ */
 /* "raw_mon.c"      7/2/93,6/17/94,6/28/94    urabe */
 /*                  3/17/95 write_log(), 4/17/95 MAX_SR safety */
 /*                  usleep -> sleep */
@@ -55,7 +55,7 @@
 /* #define SR_MON      5 */
 
 static const char rcsid[] =
-  "$Id: raw_mon.c,v 1.6.4.4.2.11 2010/10/13 12:18:18 uehira Exp $";
+  "$Id: raw_mon.c,v 1.6.4.4.2.11.2.1 2011/01/12 16:57:06 uehira Exp $";
 
 char *progname,*logfile;
 int  daemon_mode, syslog_mode;
@@ -71,7 +71,7 @@ static void read_chfile(void);
 int main(int argc,char *argv[]);
 
 static void
-read_chfile()
+read_chfile(void)
   {
   FILE *fp;
   int i,j,k;

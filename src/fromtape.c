@@ -1,4 +1,4 @@
-/* $Id: fromtape.c,v 1.7.2.3.2.10 2010/09/21 11:56:58 uehira Exp $ */
+/* $Id: fromtape.c,v 1.7.2.3.2.10.2.1 2011/01/12 16:57:05 uehira Exp $ */
 /*
   program "fromtape.c"
   12/10/90 - 12/13/90, 9/19/91, 10/30/91, 6/19/92  urabe
@@ -49,7 +49,7 @@
 /* #define   TIME3   "9008031718" */  /* 10 m / fm after this time */
 
 static const char rcsid[] =
-  "$Id: fromtape.c,v 1.7.2.3.2.10 2010/09/21 11:56:58 uehira Exp $";
+  "$Id: fromtape.c,v 1.7.2.3.2.10.2.1 2011/01/12 16:57:05 uehira Exp $";
 
 static uint8_w wbuf[SIZE_WBUF],buf[MAXSIZE];
 static int fd_exb,dec_start[6],dec_end[6],min_reserve,
@@ -94,7 +94,7 @@ end_process(int value)
   }
 
 static void
-print_usage()
+print_usage(void)
   {
 
   WIN_version();
@@ -233,7 +233,7 @@ main(int argc, char *argv[])
   }
 
 static void
-get_pos()
+get_pos(void)
   {
   int i,try_count,fm_count,bl_count,bl_count_last,advanced,
     sec_togo,sec_togo_last;

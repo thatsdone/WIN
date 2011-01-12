@@ -1,4 +1,4 @@
-/* $Id: raw_100.c,v 1.5.4.3.2.11 2010/10/13 12:18:17 uehira Exp $ */
+/* $Id: raw_100.c,v 1.5.4.3.2.11.2.1 2011/01/12 16:57:06 uehira Exp $ */
 /* "raw_100.c"    97.6.23 - 6.30 urabe */
 /*                  modified from raw_raw.c */
 /*                  97.8.4 bug fixed (output empty block) */
@@ -45,7 +45,7 @@
 #define SR        100
 
 static const char rcsid[] =
-  "$Id: raw_100.c,v 1.5.4.3.2.11 2010/10/13 12:18:17 uehira Exp $";
+  "$Id: raw_100.c,v 1.5.4.3.2.11.2.1 2011/01/12 16:57:06 uehira Exp $";
 
 static uint8_w ch_table[WIN_CHMAX];
 static char *chfile;
@@ -59,7 +59,7 @@ static void read_chfile(void);
 int main(int, char *[]);
 
 static void
-read_chfile()
+read_chfile(void)
   {
   FILE *fp;
   int i,j,k;

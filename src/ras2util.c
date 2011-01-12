@@ -1,4 +1,4 @@
-/* $Id: ras2util.c,v 1.1.2.2.2.1 2010/12/22 14:39:56 uehira Exp $ */
+/* $Id: ras2util.c,v 1.1.2.2.2.2 2011/01/12 16:57:06 uehira Exp $ */
 /********************************************************/
 /*  ras2util.c   97.10.31-97.11.27             urabe    */
 /*               98.3.4      LITTLE ENDIAN    uehira    */
@@ -26,7 +26,7 @@
 #define A4_FRAME_YP     4516      /* framebuffer's height (pixel) */
 
 static const char rcsid[] =
-  "$Id: ras2util.c,v 1.1.2.2.2.1 2010/12/22 14:39:56 uehira Exp $";
+  "$Id: ras2util.c,v 1.1.2.2.2.2 2011/01/12 16:57:06 uehira Exp $";
 
 /* prototypes */
 static int read_header(FILE  *, int32_w *, int32_w *);
@@ -144,7 +144,7 @@ one_page(FILE *fp, int inv)
 #undef SCALE
 
 static void
-wabort() {exit(9);}
+wabort(void) {exit(9);}
 
 int
 main(int argc, char *argv[])

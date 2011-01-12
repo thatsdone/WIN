@@ -1,4 +1,4 @@
-/* $Id: ecore2.c,v 1.4.4.3.2.8 2010/10/11 07:49:00 uehira Exp $ */
+/* $Id: ecore2.c,v 1.4.4.3.2.8.2.1 2011/01/12 16:57:05 uehira Exp $ */
 
 /*
   program "ecore2.c"   4/16/93-5/13/93,7/2/93,7/5/94  urabe
@@ -84,7 +84,7 @@
 #define	NUMLEN		256
 
 static const char rcsid[] = 
-  "$Id: ecore2.c,v 1.4.4.3.2.8 2010/10/11 07:49:00 uehira Exp $";
+  "$Id: ecore2.c,v 1.4.4.3.2.8.2.1 2011/01/12 16:57:05 uehira Exp $";
 
 char	*progname, *logfile;
 int     syslog_mode = 0, exit_status;
@@ -108,7 +108,7 @@ void read_chtbl(void);
 int main(int, char *[]);
 
 void
-read_chtbl()
+read_chtbl(void)
 {
   FILE	*fp;
   int	i,nch;

@@ -1,4 +1,4 @@
-/* $Id: pmon.c,v 1.14.2.5.2.15.2.1 2011/01/08 08:53:09 uehira Exp $ */
+/* $Id: pmon.c,v 1.14.2.5.2.15.2.2 2011/01/12 16:57:06 uehira Exp $ */
 /************************************************************************
 *************************************************************************
 **  program "pmon.c" for NEWS/SPARC                             *********
@@ -251,7 +251,7 @@
 0xf0,0x1e,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x40,0x00,0x06,0x10,0xc0,0x00,0x00};
 
 static const char  rcsid[] =
-   "$Id: pmon.c,v 1.14.2.5.2.15.2.1 2011/01/08 08:53:09 uehira Exp $";
+   "$Id: pmon.c,v 1.14.2.5.2.15.2.2 2011/01/12 16:57:06 uehira Exp $";
 
 char *progname,*logfile;
 int  syslog_mode = 0, exit_status;
@@ -324,7 +324,7 @@ static void usage(void);
 int main(int, char *[]);
 
 static void
-bfov_err()
+bfov_err(void)
 {
 
   write_log("Buffer overflow");
@@ -678,7 +678,7 @@ read_one_sec(int *sec)
   }
 
 static void
-get_offset()
+get_offset(void)
   {
   int i,ch;
 
@@ -915,7 +915,7 @@ tbl[ch].status,data,tbl[ch].cnt);
   }
 
 static void
-hangup()
+hangup(void)
   {
 
   req_print=1;
@@ -923,7 +923,7 @@ hangup()
   }
 
 static void
-owari()
+owari(void)
   {
 
   close(fd);
@@ -1184,7 +1184,7 @@ get_lastline(char *fname, char *lastline)
   }
 
 static void
-usage()
+usage(void)
 {
 
   WIN_version();

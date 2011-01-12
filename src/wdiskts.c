@@ -1,4 +1,4 @@
-/* $Id: wdiskts.c,v 1.6.2.5.2.11.2.3 2011/01/08 08:53:09 uehira Exp $ */
+/* $Id: wdiskts.c,v 1.6.2.5.2.11.2.4 2011/01/12 16:57:07 uehira Exp $ */
 
 /*-
   2005.8.10 urabe bug in strcmp2() fixed : 0-6 > 7-9 
@@ -71,7 +71,7 @@
 #define   NAMELEN  1025
 
 static const char rcsid[] =
-  "$Id: wdiskts.c,v 1.6.2.5.2.11.2.3 2011/01/08 08:53:09 uehira Exp $";
+  "$Id: wdiskts.c,v 1.6.2.5.2.11.2.4 2011/01/12 16:57:07 uehira Exp $";
 
 char *progname,*logfile;
 int  daemon_mode, syslog_mode, exit_status;
@@ -92,7 +92,7 @@ static void bfov_error(void);
 int main(int, char *[]);
 
 static int
-sort_buf()
+sort_buf(void)
 {
    uint32_w  re,gsize;
    uint8_w  *ptr,*ptr_dat,tt[6],*ptw,*ptw_size;
@@ -353,7 +353,7 @@ wmemo(char *f, char *c)
 }
 
 static void
-bfov_error()
+bfov_error(void)
 {
 
   write_log("Buffer overrun!");

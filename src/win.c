@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.46.2.6.2.35.2.8 2010/12/28 02:37:23 uehira Exp $
+   $Id: win.c,v 1.46.2.6.2.35.2.9 2011/01/12 16:57:07 uehira Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -23,10 +23,10 @@
 #else
 #define NAME_PRG      "win32"
 #endif
-#define WIN_VERSION   "2010.12.28(+Hi-net) (SEVO)"
+#define WIN_VERSION   "2011.1.13(+Hi-net) (SEVO)"
 
 static const char rcsid[] =
-  "$Id: win.c,v 1.46.2.6.2.35.2.8 2010/12/28 02:37:23 uehira Exp $";
+  "$Id: win.c,v 1.46.2.6.2.35.2.9 2011/01/12 16:57:07 uehira Exp $";
 
 #define DEBUG_AP      0   /* for debugging auto-pick */
 /* 5:sr, 4:ch, 3:sec, 2:find_pick, 1:all */
@@ -1418,7 +1418,7 @@ lsec2time(time_t sec, int *tarray)
 }
 
 static void
-make_sec_table()
+make_sec_table(void)
   {
   int i,ii,j,tm[WIN_TM_LEN];
   size_t  ptr;
@@ -2113,7 +2113,7 @@ read_one_sec_mon(int32_w ptr, WIN_ch sys_ch, register int32_w *abuf, int32_w pps
   }
 
 static void
-print_usage()
+print_usage(void)
   {
   fprintf(stderr,"usage of '%s' :\n",NAME_PRG);
   fprintf(stderr,"   %s ([-options]) ([data file name])\n",NAME_PRG);
@@ -2511,9 +2511,7 @@ just_map:
   else alat0=100.0;
 
   /* initialize station table "ft.stn" */
-  /* printf("%d  %d\n", sizeof(*ft.stn), ft.n_ch); */
-  ft.stn=NULL;
-  if (!map_only && !just_hypo) { /* ft.n_ch = 0 */
+  if (!map_only && !just_hypo) {  /* ft.n_ch = 0 */
     if((ft.stn=(struct Stn *)win_xmalloc(sizeof(*ft.stn)*ft.n_ch))==NULL)
       emalloc("ft.stn");
     for(i=0;i<ft.n_ch;i++)
@@ -3293,7 +3291,7 @@ cancel_picks(char *name, int idx)  /* cancel picks */
 
 /* cancel calculated picks */
 static int
-cancel_picks_calc()
+cancel_picks_calc(void)
   {
   int i,j,jj,k,idx;
 
@@ -4001,7 +3999,7 @@ fprintf(stderr,"%2d.%03d : %2d.%03d\n",pt.sec1,pt.msec1,pt.sec2,pt.msec2);
   }
 
 static void
-get_trigch()
+get_trigch(void)
   {
   int i,k,j,jj;
 
@@ -4559,7 +4557,7 @@ mapconv(int argc, char *argv[], int args)
   }
 
 static void
-bye_entry()
+bye_entry(void)
  {
 
    got_hup=1;
@@ -4587,7 +4585,7 @@ end_process(int ret)
   }
 
 static void
-set_geometry()
+set_geometry(void)
   {
 
   /* geometry for MECHA */
@@ -5118,7 +5116,7 @@ skip_mon:
 /***** end of main() *****/
 
 static void
-bye_process()
+bye_process(void)
   {
 
   signal(SIGHUP,(void *)end_process);
@@ -5126,7 +5124,7 @@ bye_process()
   }
 
 static void
-do_auto_pick()
+do_auto_pick(void)
   {
 
   if(background) fprintf(stderr,"AUTO-PICK mode\n");
@@ -5143,7 +5141,7 @@ do_auto_pick()
   }
 
 static void
-do_auto_pick_hint()
+do_auto_pick_hint(void)
   {
 
   if(background) fprintf(stderr,"AUTO-PICK W/HINT mode\n");
@@ -5164,7 +5162,7 @@ do_auto_pick_hint()
   }
 
 static void
-do_just_hypo()
+do_just_hypo(void)
   {
 
   fprintf(stderr,"JUST-HYPO mode\n");
@@ -5176,7 +5174,7 @@ do_just_hypo()
   }
 
 static void
-proc_alarm()
+proc_alarm(void)
   {
 
   read_hypo=1;
@@ -5187,7 +5185,7 @@ proc_alarm()
   }
 
 static void
-do_map()
+do_map(void)
   {
 
   other_epis=1;
@@ -5203,7 +5201,7 @@ do_map()
   }
 
 static void
-window_main_loop()
+window_main_loop(void)
   {
 
   while (1)
@@ -5234,7 +5232,7 @@ auto_wrap_off()
 */
 
 static void
-open_save()
+open_save(void)
   {
 #define MAGIC 601
   int32_w magic;
@@ -5698,7 +5696,7 @@ close_zoom(int izoom)
   }
 
 static void
-proc_main()
+proc_main(void)
   {
   static struct Pick_Time pt;
   int xx,yy,x,y,i,j,k,kk,ring_bell,plot_flag,xshift,yshift;
@@ -6670,7 +6668,7 @@ get_max(double *db, int n, int *n_max, int *n_min, int *c_max, int *c_min)
   }
 
 static void
-put_function()
+put_function(void)
   {
   int y;
 
@@ -6686,7 +6684,7 @@ put_function()
   }
 
 static void
-put_function_map()
+put_function_map(void)
   {
   char textbuf[10];
 
@@ -6706,7 +6704,7 @@ put_function_map()
   }
 
 static void
-put_init_depth()
+put_init_depth(void)
   {
   char textbuf[LINELEN];
 
@@ -6717,7 +6715,7 @@ put_init_depth()
   }
 
 static void
-put_function_mecha()
+put_function_mecha(void)
   {
   char textbuf[LINELEN];
   put_funcs(func_mech,0);
@@ -6727,14 +6725,14 @@ put_function_mecha()
   }
 
 static void
-put_function_psup()
+put_function_psup(void)
   {
 
   put_funcs(func_psup,0);
   }
 
 static int
-put_main()
+put_main(void)
   {
   int i;
 
@@ -7116,7 +7114,7 @@ make_visible(int idx)
   }
 
 static void
-list_line()
+list_line(void)
   {
   int i;
 
@@ -7171,7 +7169,7 @@ adj_sec_win(int *tm, double *se, int *tmc, double *sec)
   }
 
 static void
-calc_mec()
+calc_mec(void)
 {
   char text_buf[LINELEN];
   char final_name[NAMLEN], mecout_name[NAMLEN], ps_name[NAMLEN];
@@ -7215,7 +7213,7 @@ calc_mec()
 
 /* get calculated arrival times for all stations */
 static void
-get_calc()
+get_calc(void)
 {
   int iz,i,j,tm_p[7],tm_s[7],tm_ot[7],tm_base[6];
   time_t lsec_bs;
@@ -7642,7 +7640,7 @@ replot_mon(int replot_locate)
 }
 
 static int
-reorder()
+reorder(void)
 {
   int i,j,k,kk;
 
@@ -7674,7 +7672,7 @@ reorder()
 
 /* get calculated delta  for all stations */
 static int
-get_delta()
+get_delta(void)
 {
   int i,j,k,tm_ot[7],tm_base[6],b,kk,ll;
   time_t lsec_bs;
@@ -8050,7 +8048,7 @@ output_pick(FILE *fp)
   }
 
 static void
-wait_mouse()
+wait_mouse(void)
   {
   XEvent xevent;
 
@@ -9457,7 +9455,7 @@ check_year(int code, int *ptr, int low, int high)
   }
 
 static void
-proc_map()
+proc_map(void)
   {
   double alat,along,xd,yd,x_cent,y_cent,cs,sn,arg,ala,alo;
   int i,j,x,y,xzero,yzero,plot,ring_bell;
@@ -10359,7 +10357,7 @@ load_data(int btn) /* return=1 means success */
   }
 
 static void
-init_mecha()
+init_mecha(void)
   {
   char textbuf[LINELEN];
 
@@ -10382,7 +10380,7 @@ init_mecha()
   }
 
 static void
-proc_mecha()
+proc_mecha(void)
   {
   int ring_bell,x,y;
   double phi1,theta1,phi2,theta2;
@@ -10595,7 +10593,7 @@ read_final(char *final_file, struct Hypo *hypo)
 /*   } */
 
 static int
-put_mecha()
+put_mecha(void)
   {
   char textbuf[LINELEN],p;
   int i,x,y;
@@ -10665,7 +10663,7 @@ switch_psup(int idx, int sw)
   }
 
 static void
-init_psup()
+init_psup(void)
   {
 
   if(flag_hypo==0)
@@ -10687,7 +10685,7 @@ init_psup()
   }
 
 static void
-bell()
+bell(void)
   {
 
   if(background || auto_flag || auto_flag_hint) return;
@@ -10701,7 +10699,7 @@ bell()
 #define y2x(y)  (pu.x1+(double)(y-pu.yy1)/pu.pixels_per_km)
 
 static void
-proc_psup()
+proc_psup(void)
   {
   int ring_bell,x,y,idx,i,j;
   char textbuf[30],textbuf1[30];
@@ -11045,7 +11043,7 @@ proc_psup()
   }
 
 static int
-put_psup()
+put_psup(void)
   {
   int i,j,k,n=0;
   char textbuf[LINELEN];
@@ -11478,7 +11476,7 @@ read_parameter(int n, char *tbuf)
   }
 
 static int
-read_filter_file()
+read_filter_file(void)
   {
   FILE *fp,*fc;
   int i,j;
@@ -11568,7 +11566,7 @@ read_filter_file()
   }
 
 static int
-read_label_file()
+read_label_file(void)
   {
   FILE *fp;
   int i;

@@ -1,4 +1,4 @@
-/* $Id: pick2finalb.c,v 1.4.4.2.2.3 2010/09/20 08:35:59 uehira Exp $ */
+/* $Id: pick2finalb.c,v 1.4.4.2.2.3.2.1 2011/01/12 16:57:06 uehira Exp $ */
 /* pick2finalb.c */
 /* 8/22/91, 5/22/92, 7/9/92, 8/19/92, 5/25/93, 6/1/93 urabe */
 /* 97.10.3 FreeBSD */
@@ -20,13 +20,13 @@
 #include "winlib.h"
 
 static const char rcsid[] =
-   "$Id: pick2finalb.c,v 1.4.4.2.2.3 2010/09/20 08:35:59 uehira Exp $";
+   "$Id: pick2finalb.c,v 1.4.4.2.2.3.2.1 2011/01/12 16:57:06 uehira Exp $";
 
 /* prototypes */
 int main(void);
 
 int
-main()
+main(void)
   {
   FILE *fp;
   int flag;

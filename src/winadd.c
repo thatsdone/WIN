@@ -1,4 +1,4 @@
-/* $Id: winadd.c,v 1.4.4.3.2.10.2.3 2010/12/22 14:39:57 uehira Exp $ */
+/* $Id: winadd.c,v 1.4.4.3.2.10.2.4 2011/01/12 16:57:08 uehira Exp $ */
 
 /*
  * winadd.c  (Uehira Kenji)
@@ -68,7 +68,7 @@ typedef struct data_index  INDX;
 
 /* global variables */
 static const char rcsid[] =
-   "$Id: winadd.c,v 1.4.4.3.2.10.2.3 2010/12/22 14:39:57 uehira Exp $";
+   "$Id: winadd.c,v 1.4.4.3.2.10.2.4 2011/01/12 16:57:08 uehira Exp $";
 
 static int  dummy_flag, verbose_flag, chsort_flag, MON_mode;
 

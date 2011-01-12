@@ -1,4 +1,4 @@
-/* $Id: recvt_LS7000.c,v 1.1.2.3.2.18 2011/01/08 08:41:03 uehira Exp $ */
+/* $Id: recvt_LS7000.c,v 1.1.2.3.2.19 2011/01/12 15:44:30 uehira Exp $ */
 
 /*- 
  * "recvt_LS7000.c"  uehira
@@ -60,7 +60,7 @@
 #define N_PNOS    62    /* length of packet nos. history >=2 */
 
 static const char rcsid[] =
-  "$Id: recvt_LS7000.c,v 1.1.2.3.2.18 2011/01/08 08:41:03 uehira Exp $";
+  "$Id: recvt_LS7000.c,v 1.1.2.3.2.19 2011/01/12 15:44:30 uehira Exp $";
 
 static uint8_w rbuff[MAXMESG],rbuf[MAXMESG],ch_table[WIN_CHMAX];
 static char *chfile[N_CHFILE];
@@ -99,7 +99,7 @@ int main(int, char *[]);
 
 
 static void
-read_chfile()
+read_chfile(void)
   {
   FILE *fp;
   int i,k,ii,i_chfile;
@@ -550,7 +550,7 @@ wincpy2(uint8_w *ptw, time_t ts, uint8_w *ptr, ssize_t size, int mon,
   }
 
 static void
-usage()
+usage(void)
 {
 
   WIN_version();

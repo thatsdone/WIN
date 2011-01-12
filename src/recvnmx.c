@@ -1,4 +1,4 @@
-/* $Id: recvnmx.c,v 1.16.4.4.2.17 2010/12/22 13:09:19 uehira Exp $ */
+/* $Id: recvnmx.c,v 1.16.4.4.2.18 2011/01/12 15:44:30 uehira Exp $ */
 /* "recvnmx.c"    2001.7.18-19 modified from recvt.c and nmx2raw.c  urabe */
 /*                2001.8.18 */
 /*                2001.10.5 workaround for hangup */
@@ -80,7 +80,7 @@
 #define MAXCH     1024
 
 static const char rcsid[] =
-  "$Id: recvnmx.c,v 1.16.4.4.2.17 2010/12/22 13:09:19 uehira Exp $";
+  "$Id: recvnmx.c,v 1.16.4.4.2.18 2011/01/12 15:44:30 uehira Exp $";
 
 char *progname,*logfile;
 int  syslog_mode = 0, exit_status;
@@ -510,7 +510,7 @@ ch2idx(int32_w *rbuf[], struct Nmx_Packet *pk, int winch)
 }
 
 static void
-read_ch_map()  
+read_ch_map(void)  
 {
   char tb[256],mdl[256];
   FILE *fp;
@@ -556,7 +556,7 @@ read_ch_map()
 }
 
 static void
-usage()
+usage(void)
 {
 
   WIN_version();

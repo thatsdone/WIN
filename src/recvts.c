@@ -49,7 +49,7 @@
 #define MAXMESG   2048
 
 static const char rcsid[] =
-  "$Id: recvts.c,v 1.11.4.4.2.11 2010/10/13 12:18:18 uehira Exp $";
+  "$Id: recvts.c,v 1.11.4.4.2.12 2011/01/12 15:44:30 uehira Exp $";
 
 /* extern const int sys_nerr; */
 /* extern const char *const sys_errlist[]; */
@@ -70,7 +70,7 @@ static void usage(void);
 int main(int, char *[]);
 
 static void
-read_chfile()
+read_chfile(void)
   {
   FILE *fp;
   int i,j,k;
@@ -235,7 +235,7 @@ get_packet(int fd, uint8_w *pbuf)
   }
 
 static void
-usage()
+usage(void)
 {
 
   WIN_version();

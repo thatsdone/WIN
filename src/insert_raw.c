@@ -1,4 +1,4 @@
-/* $Id: insert_raw.c,v 1.6.4.2.2.8 2010/12/07 04:58:33 uehira Exp $ */
+/* $Id: insert_raw.c,v 1.6.4.2.2.9 2011/01/12 15:44:29 uehira Exp $ */
 
 /*
  * Insert sorted timeout data to raw data.
@@ -49,7 +49,7 @@
 #define BUF_SIZE 1024
 
 static const char rcsid[] =
-  "$Id: insert_raw.c,v 1.6.4.2.2.8 2010/12/07 04:58:33 uehira Exp $";
+  "$Id: insert_raw.c,v 1.6.4.2.2.9 2011/01/12 15:44:29 uehira Exp $";
 
 static char *progname;
 
@@ -84,7 +84,7 @@ end_prog(int status)
 }
 
 static void
-bfov_error()
+bfov_error(void)
 {
 
   fprintf(stderr,"'%s': Buffer overrun!\n",progname);
@@ -92,7 +92,7 @@ bfov_error()
 }
 
 static void
-memory_error()
+memory_error(void)
 {
 
   fprintf(stderr,"'%s': cannot allocate memory.\n",progname);
@@ -101,7 +101,7 @@ memory_error()
 
 /* print usage */
 static void
-print_usage()
+print_usage(void)
 {
 
   WIN_version();

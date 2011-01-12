@@ -1,4 +1,4 @@
-/* $Id: winlib.c,v 1.1.2.4.2.35 2010/12/23 03:07:07 uehira Exp $ */
+/* $Id: winlib.c,v 1.1.2.4.2.36 2011/01/12 15:44:32 uehira Exp $ */
 
 /*-
  * winlib.c  (Uehira Kenji)
@@ -722,24 +722,24 @@ strcmp2(char *s1, char *s2)
 }
 
 WIN_bs
-read_onesec_win(FILE *fp, uint8_w **rbuf)
+read_onesec_win(FILE *fp, uint8_w **rbuf, size_t *rbuf_size)
 {
   uint8_w        sz[WIN_BSLEN];
   WIN_bs         size;
-  static size_t  sizesave;
 
-  /* printf("%d\n", sizesave); */
   if (fread(sz, 1, WIN_BSLEN, fp) != WIN_BSLEN)
     return (0);
   size = mkuint4(sz);
 
   if (*rbuf == NULL)
-    sizesave = 0;
-  if (size > sizesave) {
-    sizesave = (size << 1);
-    *rbuf = REALLOC(uint8_w, *rbuf, sizesave);
+    *rbuf_size = 0;
+  (void)fprintf(stderr, "%u %zu\n", size, *rbuf_size);
+  if (size > *rbuf_size) {
+    *rbuf_size = (size << 1);
+    *rbuf = REALLOC(uint8_w, *rbuf, *rbuf_size);
+    (void)fprintf(stderr, "ZZ %u %zu\n", size, *rbuf_size);
     if (*rbuf == NULL) {
-      (void)fprintf(stderr, "%s\n", strerror(errno));
+      (void)fprintf(stderr, "read_onesec_win() : %s \n", strerror(errno));
       exit(1);
     }
   }
@@ -759,9 +759,8 @@ read_onesec_win(FILE *fp, uint8_w **rbuf)
 }
 
 WIN_bs
-read_onesec_win2(FILE *fp, uint8_w **in_buf, uint8_w **out_buf)
+read_onesec_win2(FILE *fp, uint8_w **in_buf, uint8_w **out_buf, size_t *size)
 {
-  static size_t  size;
   WIN_bs  re, reout;
   uint8_w  tmpa[4];
 
@@ -769,11 +768,11 @@ read_onesec_win2(FILE *fp, uint8_w **in_buf, uint8_w **out_buf)
     return (0);
   re = mkuint4(tmpa);
   if (*in_buf == NULL) {
-    *in_buf = MALLOC(uint8_w, (size = (size_t)(re << 1)));
-    *out_buf = MALLOC(uint8_w, (size = (size_t)(re << 1)));
-  } else if (re > size) {
-    *in_buf = REALLOC(uint8_w, *in_buf, (size = (size_t)(re << 1)));
-    *out_buf = REALLOC(uint8_w, *out_buf, (size = (size_t)(re << 1)));
+    *in_buf = MALLOC(uint8_w, (*size = (size_t)(re << 1)));
+    *out_buf = MALLOC(uint8_w, (*size = (size_t)(re << 1)));
+  } else if (re > *size) {
+    *in_buf = REALLOC(uint8_w, *in_buf, (*size = (size_t)(re << 1)));
+    *out_buf = REALLOC(uint8_w, *out_buf, (*size = (size_t)(re << 1)));
   }
   if ((*in_buf == NULL) || (*out_buf == NULL)) {
     perror("read_onesec_win2()");

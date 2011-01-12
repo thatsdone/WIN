@@ -1,4 +1,4 @@
-/* $Id: wed.c,v 1.5.4.3.2.7 2010/09/17 10:20:52 uehira Exp $ */
+/* $Id: wed.c,v 1.5.4.3.2.8 2011/01/12 15:44:31 uehira Exp $ */
 /* program "wed.c"
 	"wed" edits a win format data file by time range and channles
 	6/26/91,7/13/92,3/11/93,4/20/94,8/5/94,12/8/94   urabe
@@ -28,9 +28,10 @@
 #define	DEBUG1 0
 
 static const char  rcsid[] =
-  "$Id: wed.c,v 1.5.4.3.2.7 2010/09/17 10:20:52 uehira Exp $";
+  "$Id: wed.c,v 1.5.4.3.2.8 2011/01/12 15:44:31 uehira Exp $";
 
 static uint8_w  *buf=NULL, *outbuf;
+static size_t  cbufsiz;  /* buffer size of buf[] & outbuf[] */
 static int  leng, dec_start[6], dec_end[6], dec_now[6], nch;
 static WIN_ch  sysch[WIN_CHMAX];
 static FILE  *f_param;
@@ -42,14 +43,14 @@ static WIN_bs select_ch(WIN_ch *, int, uint8_w *, uint8_w *);
 int main(int, char *[]);
 
 static void
-wabort()
+wabort(void)
 {
 
   exit(0);
 }
 
 static void
-get_one_record()
+get_one_record(void)
 {
   int  i;
   size_t  outsize;
@@ -70,7 +71,7 @@ get_one_record()
 #endif
   /* read first block */
   do {
-    if (read_onesec_win2(stdin, &buf, &outbuf) == 0) {
+    if (read_onesec_win2(stdin, &buf, &outbuf, &cbufsiz) == 0) {
       exit(1);
     }
     bcd_dec(dec_now, buf + 4);
@@ -94,7 +95,7 @@ get_one_record()
     if (leng >= 0 && time_cmp(dec_now, dec_end, 6) == 0)
       break;
     /* read one sec */
-    if (read_onesec_win2(stdin, &buf, &outbuf) == 0)
+    if (read_onesec_win2(stdin, &buf, &outbuf, &cbufsiz) == 0)
       break;
     bcd_dec(dec_now, buf + 4);
     if (leng >= 0 && time_cmp(dec_now, dec_end, 6) > 0)

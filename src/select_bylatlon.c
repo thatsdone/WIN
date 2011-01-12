@@ -1,4 +1,4 @@
-/* $Id: select_bylatlon.c,v 1.1.4.4 2010/10/07 13:21:22 uehira Exp $ */
+/* $Id: select_bylatlon.c,v 1.1.4.5 2011/01/12 15:44:30 uehira Exp $ */
 
 /* Imported from $WIN: select_stations.c,v 1.3 2004/01/29 01:58:16 urabe Exp $ */
 /* select_stations  1999.11.9  urabe */
@@ -19,7 +19,7 @@
 /* #define DEBUG 0 */
 
 static const char rcsid[] =
-  "$Id: select_bylatlon.c,v 1.1.4.4 2010/10/07 13:21:22 uehira Exp $";
+  "$Id: select_bylatlon.c,v 1.1.4.5 2011/01/12 15:44:30 uehira Exp $";
 
 /* prototypes */
 static void print_usage(void);
@@ -28,7 +28,7 @@ static void get_dist_and_azim(double, double, double, double,
 int main(int, char *[]);
 
 static void
-print_usage()
+print_usage(void)
   {
 
   fprintf(stderr,"%s\n", rcsid);

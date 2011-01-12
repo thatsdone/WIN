@@ -1,4 +1,4 @@
-/* $Id: evdetect.c,v 1.1.2.7 2010/11/25 07:18:32 uehira Exp $ */
+/* $Id: evdetect.c,v 1.1.2.8 2011/01/12 15:44:29 uehira Exp $ */
 
 /*
  * evedetect.c
@@ -136,7 +136,7 @@
 #define WIN_FILENAME_MAX 1024
 
 static const char  rcsid[] =
-   "$Id: evdetect.c,v 1.1.2.7 2010/11/25 07:18:32 uehira Exp $";
+   "$Id: evdetect.c,v 1.1.2.8 2011/01/12 15:44:29 uehira Exp $";
 
 char *progname, *logfile;
 int  syslog_mode = 0, exit_status;
@@ -417,7 +417,7 @@ read_one_sec(int *sec)
 }
 
 static void
-check_trg()
+check_trg(void)
 {
   int i,ch;
   double data;
@@ -577,7 +577,7 @@ check_trg()
 }
 
 static void
-hangup()
+hangup(void)
 {
   
   /* req_print = 1; */
@@ -585,7 +585,7 @@ hangup()
 }
 
 static void
-owari()
+owari(void)
 {
 
   (void)close(fd);
@@ -671,7 +671,7 @@ get_lastline(char *fname, char *lastline)
 }
 
 static void
-usage()
+usage(void)
 {
 
   WIN_version();

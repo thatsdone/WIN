@@ -1,5 +1,5 @@
 /*
- * $Id: wck_wdisk.c,v 1.1.4.3.2.3 2010/09/17 11:06:21 uehira Exp $
+ * $Id: wck_wdisk.c,v 1.1.4.3.2.4 2011/01/12 15:44:31 uehira Exp $
  */
 
 /*
@@ -20,11 +20,11 @@
 /* #include "win_system.h" */
 
 static const char  rcsid[] =
-   "$Id: wck_wdisk.c,v 1.1.4.3.2.3 2010/09/17 11:06:21 uehira Exp $";
+   "$Id: wck_wdisk.c,v 1.1.4.3.2.4 2011/01/12 15:44:31 uehira Exp $";
 
 char  *progname;
 
-static void usage();
+static void usage(void);
 int main(int, char *[]);
 
 #define  MIN  60
@@ -36,6 +36,7 @@ main(int argc, char *argv[])
   static struct channel_tbl  tbl[WIN_CH_MAX_NUM];
   static int  **index;
   static uint8_w  *mainbuf;
+  size_t  mainbuf_size;
   static WIN_ch  trg_ch[WIN_CH_MAX_NUM], trg_chnum;
   WIN_bs  mainsize;
   int  chnum, sec, tim[WIN_TIME_LEN], cflag, secsave, lflag;
@@ -99,7 +100,7 @@ main(int argc, char *argv[])
   sec = 0;
 
   /* data loop */
-  while ((mainsize = read_onesec_win(fp, &mainbuf)) != 0) {
+  while ((mainsize = read_onesec_win(fp, &mainbuf, &mainbuf_size)) != 0) {
 #if DEBUG > 5
     (void)printf("mainsize = %d [bytes]\n", mainsize);
 #endif
@@ -133,7 +134,7 @@ main(int argc, char *argv[])
     sec++;
     if (sec == MIN)
       break;
-  }  /* while (mainsize = read_onesec_win(fp, &mainbuf)) */
+  }  /* while (mainsize = read_onesec_win(fp, &mainbuf, &mainbuf_size)) */
   if (fp != stdin)
     (void)fclose(fp);
 
@@ -227,7 +228,7 @@ main(int argc, char *argv[])
 }
 
 static void
-usage()
+usage(void)
 {
 
   WIN_version();

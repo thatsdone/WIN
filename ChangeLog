@@ -1,4 +1,10 @@
- $Id: ChangeLog,v 1.131.2.25.2.158 2011/01/11 08:30:37 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.159 2011/01/12 15:44:28 uehira Exp $
+
+2011-01-12  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 2.1.21 released.
+	* read_onesec_win(), read_onesec_win2() : fixed a bug. These bugs
+	damaged 'wadd' and 'wadd2' fatally.
+	* always specify void even if a function accepts no arguments.
 
 2011-01-11  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* Version 2.1.20 released.

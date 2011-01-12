@@ -1,4 +1,4 @@
-/* $Id: raw_raw.c,v 1.9.4.3.2.10 2010/10/12 15:32:07 uehira Exp $ */
+/* $Id: raw_raw.c,v 1.9.4.3.2.11 2011/01/12 15:44:30 uehira Exp $ */
 
 /* "raw_raw.c"    97.8.5 urabe */
 /*                  modified from raw_100.c */
@@ -50,7 +50,7 @@
 #define BELL        0
 
 static const char rcsid[] =
-  "$Id: raw_raw.c,v 1.9.4.3.2.10 2010/10/12 15:32:07 uehira Exp $";
+  "$Id: raw_raw.c,v 1.9.4.3.2.11 2011/01/12 15:44:30 uehira Exp $";
 
 static uint8_w ch_table[WIN_CHMAX];
 static char *chfile;
@@ -66,7 +66,7 @@ static void usage(void);
 int main(int, char *[]);
 
 static void
-read_chfile()
+read_chfile(void)
   {
   FILE *fp;
   int i,j,k;
@@ -137,7 +137,7 @@ read_chfile()
   }
 
 static void
-usage()
+usage(void)
 {
 
   WIN_version();

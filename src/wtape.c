@@ -1,4 +1,4 @@
-/* $Id: wtape.c,v 1.12.2.4.2.10 2010/11/25 07:18:32 uehira Exp $ */
+/* $Id: wtape.c,v 1.12.2.4.2.11 2011/01/12 15:44:32 uehira Exp $ */
 /*
   program "wtape.c"
   8/23/89 - 8/8/90, 6/27/91, 12/24/91, 2/29/92  urabe
@@ -58,7 +58,7 @@
 #define   WIN_FILENAME_MAX 1024
 
 static const char rcsid[] = 
-  "$Id: wtape.c,v 1.12.2.4.2.10 2010/11/25 07:18:32 uehira Exp $";
+  "$Id: wtape.c,v 1.12.2.4.2.11 2011/01/12 15:44:32 uehira Exp $";
 
 static uint8_w buf[WTAPE_SIZE_MAX];
 static int init_flag,wfm,new_tape,switch_req,fd_exb,exb_status[N_EXABYTE],
@@ -95,7 +95,7 @@ int main(int, char *[]);
 
 
 static void
-switch_sig()
+switch_sig(void)
   {
 
   switch_req=1;
@@ -144,7 +144,7 @@ mt_doit(int fd, int ope, int count)
 /*   } */
 
 static void
-init_param()
+init_param(void)
   {
   char tb[WIN_FILENAME_MAX],*ptr;
   FILE *fp;
@@ -303,7 +303,7 @@ adj_time_wtape(int *tm)
   }
 
 static void
-ctrlc()
+ctrlc(void)
   {
 
   close_exb("ON INT");
@@ -464,7 +464,7 @@ switch_unit(int unit)
   }
 
 static void
-usage()
+usage(void)
 {
 
   WIN_version();

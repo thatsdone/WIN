@@ -1,4 +1,4 @@
-/* $Id: find_picks.c,v 1.4.2.1.2.2 2010/09/27 07:53:55 uehira Exp $ */
+/* $Id: find_picks.c,v 1.4.2.1.2.3 2011/01/12 15:44:29 uehira Exp $ */
 
 /* find_picks */
 /* search for pick files in pick dir */
@@ -38,13 +38,13 @@
 #define NAMLEN 256
 
 static const char rcsid[] =
-   "$Id: find_picks.c,v 1.4.2.1.2.2 2010/09/27 07:53:55 uehira Exp $";
+   "$Id: find_picks.c,v 1.4.2.1.2.3 2011/01/12 15:44:29 uehira Exp $";
 
 /* prototypes */
 int main(void);
 
 int
-main()
+main(void)
   {
   FILE *fp;
   struct dirent *dir_ent;

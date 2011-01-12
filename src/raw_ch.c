@@ -1,4 +1,4 @@
-/* $Id: raw_ch.c,v 1.4.4.3.2.8 2010/10/12 13:38:30 uehira Exp $ */
+/* $Id: raw_ch.c,v 1.4.4.3.2.9 2011/01/12 15:44:30 uehira Exp $ */
 /* "raw_ch.c"    99.12.8 urabe */
 /*                  modified from raw_raw.c */
 /*                  byte-order-free */
@@ -40,7 +40,7 @@
 #define BELL        0
 
 static const char rcsid[] =
-  "$Id: raw_ch.c,v 1.4.4.3.2.8 2010/10/12 13:38:30 uehira Exp $";
+  "$Id: raw_ch.c,v 1.4.4.3.2.9 2011/01/12 15:44:30 uehira Exp $";
 
 static int32_w ch_table[WIN_CHMAX];
 static char *chfile;
@@ -54,7 +54,7 @@ static void read_chfile(void);
 int main(int, char *[]);
 
 static void
-read_chfile()
+read_chfile(void)
   {
   FILE *fp;
   int i,j,k,kk;

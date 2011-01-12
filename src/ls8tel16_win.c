@@ -1,4 +1,4 @@
-/* $Id: ls8tel16_win.c,v 1.2.4.2.2.6 2010/12/22 13:09:19 uehira Exp $ */
+/* $Id: ls8tel16_win.c,v 1.2.4.2.2.7 2011/01/12 15:44:29 uehira Exp $ */
 
 /*
  * Copyright (c) 2005
@@ -34,7 +34,7 @@
 /* #include "win_system.h" */
 
 static const char  rcsid[] =
-   "$Id: ls8tel16_win.c,v 1.2.4.2.2.6 2010/12/22 13:09:19 uehira Exp $";
+   "$Id: ls8tel16_win.c,v 1.2.4.2.2.7 2011/01/12 15:44:29 uehira Exp $";
 
 static char  *progname;
 
@@ -49,7 +49,7 @@ main(int argc, char *argv[])
   uint32_w       dsize, gsize;
   uint8_w  *dbuf = NULL, *ptr, *ptr_limit;
   uint8_w  *obuf = NULL, *ptw, *ptw_limit;
-  size_t         obuf_size = 0;
+  size_t         obuf_size = 0, dbuf_siz;
   int            dtime[WIN_TIME_LEN];
   WIN_ch         ch;
   WIN_sr         sr;
@@ -74,7 +74,7 @@ main(int argc, char *argv[])
   argv += optind;
 
   /*** 1sec data loop ***/
-  while ((dsize = read_onesec_win(stdin, &dbuf)) != 0) {
+  while ((dsize = read_onesec_win(stdin, &dbuf, &dbuf_siz)) != 0) {
     /* skip invalid time stamp */
     if (bcd_dec(dtime, dbuf + WIN_BLOCKSIZE_LEN) == 0)
       continue;
@@ -121,7 +121,7 @@ main(int argc, char *argv[])
 
     /* output to stdout */
     (void)fwrite(obuf, wsize, 1, stdout);
-  } /* while ((dsize = read_onesec_win(stdin, &dbuf)) != 0) */
+  } /* while ((dsize = read_onesec_win(stdin, &dbuf, &dbuf_siz)) != 0) */
 
 #ifdef GC_MEMORY_LEAK_TEST
   CHECK_LEAKS();

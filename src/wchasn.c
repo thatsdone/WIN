@@ -1,4 +1,4 @@
-/* $Id: wchasn.c,v 1.1.4.2.2.1 2009/08/25 04:00:16 uehira Exp $ */
+/* $Id: wchasn.c,v 1.1.4.2.2.2 2011/01/12 15:44:31 uehira Exp $ */
 
 /*-
   2009.7.31  64bit check.
@@ -17,7 +17,7 @@
 /* #include "win_system.h" */
 
 static const char  rcsid[] =
-   "$Id: wchasn.c,v 1.1.4.2.2.1 2009/08/25 04:00:16 uehira Exp $";
+   "$Id: wchasn.c,v 1.1.4.2.2.2 2011/01/12 15:44:31 uehira Exp $";
 static char  *progname;
 
 static void usage(void);
@@ -31,6 +31,7 @@ main(int argc, char *argv[])
   WIN_sr  srdummy;
   WIN_bs  dsize, gsize;
   uint8_w  *dbuf = NULL, *ptr, *ptr_limit;
+  size_t  dbuf_siz;
   int  dtime[WIN_TIME_LEN], ssdummy;
 
   /* get program name */
@@ -47,7 +48,7 @@ main(int argc, char *argv[])
   (void)fprintf(stderr, "CH = 0x%04X\n", chinit);
 	
   /*** 1sec data loop ***/
-  while ((dsize = read_onesec_win(stdin, &dbuf)) != 0) {
+  while ((dsize = read_onesec_win(stdin, &dbuf, &dbuf_siz)) != 0) {
     /* skip invalid time stamp */
     if (bcd_dec(dtime, dbuf + WIN_BLOCKSIZE_LEN) == 0)
       continue;
@@ -69,7 +70,7 @@ main(int argc, char *argv[])
 
     /* output data */
     (void)fwrite(dbuf, 1, dsize, stdout);
-  } /* while ((dsize = read_onesec_win(stdin, &dbuf)) != 0) */
+  } /* while ((dsize = read_onesec_win(stdin, &dbuf, &dbuf_siz)) != 0) */
 
   exit(0);
 }

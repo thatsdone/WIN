@@ -1,4 +1,4 @@
-/* $Id: wadd.c,v 1.6.4.3.2.8 2010/09/17 01:02:04 uehira Exp $ */
+/* $Id: wadd.c,v 1.6.4.3.2.9 2011/01/12 15:44:30 uehira Exp $ */
 /* program "wadd.c"
   "wadd" puts two win data files together
   7/24/91 - 7/25/91, 4/20/94,6/27/94-6/28/94,7/12/94   urabe
@@ -32,13 +32,14 @@
 #define   TEMPNAME  "wadd.tmp"
 
 static const char  rcsid[] =
-   "$Id: wadd.c,v 1.6.4.3.2.8 2010/09/17 01:02:04 uehira Exp $";
+   "$Id: wadd.c,v 1.6.4.3.2.9 2011/01/12 15:44:30 uehira Exp $";
 
 /* prototypes */
 static int get_syschnum(uint8_w *, WIN_ch []);
 static void make_skel(uint8_w *, uint8_w *);
 static WIN_bs elim_ch(WIN_ch [], int, uint8_w *, uint8_w []);
 static void werror(void);
+static void bfov_error(void);
 int main(int, char *[]);
 
 static int
@@ -138,12 +139,20 @@ elim_ch(WIN_ch sys_ch[], int n_ch, uint8_w *old_buf, uint8_w new_buf[])
   }
 
 static void
-werror()
+werror(void)
   {
 
   perror("fwrite");
   exit(1);
   }
+
+static void
+bfov_error(void)
+{
+
+  (void)fprintf(stderr,"wadd : Buffer overrun!\n");
+  exit(1);
+}
 
 int
 main(int argc, char *argv[])
@@ -157,6 +166,7 @@ main(int argc, char *argv[])
   static char  tmpfile1[NAMLEN],tmpfile2[NAMLEN], tmpfile3[NAMLEN],
     textbuf[NAMLEN],new_file[NAMLEN],chfile1[NAMLEN],chfile2[NAMLEN];
   static  uint8_w *mainbuf=NULL,*selbuf=NULL;
+  size_t  mainbuf_size, selbuf_size;
   static WIN_ch sysch[WIN_CHMAX];
   int  slen;
 
@@ -175,10 +185,9 @@ main(int argc, char *argv[])
     perror("fopen");
     exit(1);
     }
-  if (snprintf(chfile1,sizeof(chfile1),"%s.ch",argv[1]) >= sizeof(chfile1)) {
-    (void)fprintf(stderr, "buffer overrun.\n");
-    exit(1);
-  }
+  if (snprintf(chfile1,sizeof(chfile1),"%s.ch",argv[1]) >= sizeof(chfile1))
+    bfov_error();
+
   if((fp=fopen(chfile1,"r"))==NULL) *chfile1=0;
   else fclose(fp);
 
@@ -187,10 +196,8 @@ main(int argc, char *argv[])
     perror("fopen");
     exit(1);
     }
-  if (snprintf(chfile2,sizeof(chfile2),"%s.ch",argv[2]) >= sizeof(chfile2)) {
-    (void)fprintf(stderr, "buffer overrun.\n");
-    exit(1);
-  }
+  if (snprintf(chfile2,sizeof(chfile2),"%s.ch",argv[2]) >= sizeof(chfile2))
+    bfov_error();
   if((fp=fopen(chfile2,"r"))==NULL) *chfile2=0;
   else fclose(fp);
 
@@ -198,43 +205,25 @@ main(int argc, char *argv[])
     {
     if (snprintf(tmpfile1,sizeof(tmpfile1),
 		 "%s/%s.%d",argv[3],TEMPNAME,getpid()) >= sizeof(tmpfile1))
-      {
-	(void)fprintf(stderr, "buffer overrun.\n");
-	exit(1);
-      }
+      bfov_error();
     if (snprintf(tmpfile2,sizeof(tmpfile2),
 		 "%s/%s_ch.%d",argv[3],TEMPNAME,getpid()) >= sizeof(tmpfile2))
-      {
-	(void)fprintf(stderr, "buffer overrun.\n");
-	exit(1);
-      }
+      bfov_error();
     if (snprintf(tmpfile3,sizeof(tmpfile3),
 		 "%s/%s_chs.%d",argv[3],TEMPNAME,getpid()) >= sizeof(tmpfile3))
-      {
-	(void)fprintf(stderr, "buffer overrun.\n");
-	exit(1);
-      }
+      bfov_error();
     }
   else
     {
     if (snprintf(tmpfile1,sizeof(tmpfile1),
 		 "%s.%d",TEMPNAME,getpid()) >= sizeof(tmpfile1))
-      {
-	(void)fprintf(stderr, "buffer overrun.\n");
-	exit(1);
-      }
+      bfov_error();
     if (snprintf(tmpfile2,sizeof(tmpfile2),
 		 "%s_ch.%d",TEMPNAME,getpid()) >= sizeof(tmpfile2))
-      {
-	(void)fprintf(stderr, "buffer overrun.\n");
-	exit(1);
-      }
+      bfov_error();
     if (snprintf(tmpfile3,sizeof(tmpfile3),
 		 "%s_chs.%d",TEMPNAME,getpid()) >= sizeof(tmpfile3))
-      {
-	(void)fprintf(stderr, "buffer overrun.\n");
-	exit(1);
-      }
+      bfov_error();
     }
 
   if((f_out=fopen(tmpfile1,"w+"))==NULL)
@@ -245,7 +234,7 @@ main(int argc, char *argv[])
 
   init=1;
   mainend=subend=0;
-  if((mainsize=read_onesec_win(f_main,&mainbuf))==0)
+  if((mainsize=read_onesec_win(f_main,&mainbuf,&mainbuf_size))==0)
     {
     mainend=1;
     nch=0;
@@ -258,7 +247,7 @@ main(int argc, char *argv[])
     printf("nch=%d\n",nch);
 #endif
     }
-  if((subsize=read_onesec_win(f_sub,&selbuf))==0) subend=1;
+  if((subsize=read_onesec_win(f_sub,&selbuf,&selbuf_size))==0) subend=1;
   else
     {
     if((subsize=elim_ch(sysch,nch,selbuf,subbuf))<=10) subend=1;
@@ -298,7 +287,8 @@ main(int argc, char *argv[])
       else
       if((re=fwrite(mainbuf,1,mainsize,f_out))==0) werror();
       init=0;
-      if((mainsize=read_onesec_win(f_main,&mainbuf))==0) mainend=1;
+      if((mainsize=read_onesec_win(f_main,&mainbuf,&mainbuf_size))==0)
+	mainend=1;
       else bcd_dec(dec_start,mainbuf+4);
       }     
     else if(mainend || re==1) /* skip sub until main */
@@ -307,7 +297,8 @@ main(int argc, char *argv[])
         {
         if((re=fwrite(subbuf,1,subsize,f_out))==0) werror();
         }
-      if((subsize=read_onesec_win(f_sub,&selbuf))==0) subend=1;
+      if((subsize=read_onesec_win(f_sub,&selbuf,&selbuf_size))==0)
+	subend=1;
       else
         {
         if((subsize=elim_ch(sysch,nch,selbuf,subbuf))<=10) subend=1;
@@ -322,9 +313,11 @@ main(int argc, char *argv[])
       if((re=fwrite(mainbuf+4,1,mainsize-4,f_out))==0) werror();
       if((re=fwrite(subbuf+10,1,subsize-10,f_out))==0) werror();
       init=0;
-      if((mainsize=read_onesec_win(f_main,&mainbuf))==0) mainend=1;
+      if((mainsize=read_onesec_win(f_main,&mainbuf,&mainbuf_size))==0)
+	mainend=1;
       else bcd_dec(dec_start,mainbuf+4);
-      if((subsize=read_onesec_win(f_sub,&selbuf))<=10) subend=1;
+      if((subsize=read_onesec_win(f_sub,&selbuf,&selbuf_size))<=10)
+	subend=1;
       else
         {
         if((subsize=elim_ch(sysch,nch,selbuf,subbuf))<=10) subend=1;
@@ -346,23 +339,17 @@ main(int argc, char *argv[])
     slen = snprintf(new_file,sizeof(new_file),"%s/%s",argv[3],ptr);
   else
     slen = snprintf(new_file,sizeof(new_file),"%s",ptr);
-  if (slen >= sizeof(new_file)) {
-    (void)fprintf(stderr, "buffer overrun.\n");
-    exit(1);
-  }
-  if (snprintf(textbuf,sizeof(textbuf),"%s.sv",new_file) >= sizeof(textbuf)) {
-    (void)fprintf(stderr, "buffer overrun.\n");
-    exit(1);
-  }
+  if (slen >= sizeof(new_file))
+    bfov_error();
+  if (snprintf(textbuf,sizeof(textbuf),"%s.sv",new_file) >= sizeof(textbuf))
+    bfov_error();
   unlink(textbuf);  /* remove bitmap file if exists */
   if(strcmp(argv[1],new_file)) rename(tmpfile1,new_file);
   else
     {
     if (snprintf(textbuf,sizeof(textbuf),
-		 "cp %s %s",tmpfile1,argv[1]) >= sizeof(textbuf)) {
-      (void)fprintf(stderr, "buffer overrun.\n");
-      exit(1);
-    }
+		 "cp %s %s",tmpfile1,argv[1]) >= sizeof(textbuf))
+      bfov_error();
     system(textbuf);
     unlink(tmpfile1);
     }
@@ -371,55 +358,43 @@ main(int argc, char *argv[])
   else if(*chfile1)
     {
     if (snprintf(textbuf,sizeof(textbuf),
-		 "cp %s %s",chfile1,tmpfile2) >= sizeof(textbuf)) {
-      (void)fprintf(stderr, "buffer overrun.\n");
-      exit(1);
-    }
+		 "cp %s %s",chfile1,tmpfile2) >= sizeof(textbuf))
+      bfov_error();
     system(textbuf);
     if(*chfile2)
       {
       if (snprintf(textbuf,sizeof(textbuf),
 		   "egrep -v '^#|^$' %s|awk '{print \"^\" $1}'>%s",
-		   tmpfile2,tmpfile3) >= sizeof(textbuf)) {
-	(void)fprintf(stderr, "buffer overrun.\n");
-	exit(1);
-      }
+		   tmpfile2,tmpfile3) >= sizeof(textbuf))
+	bfov_error();
       system(textbuf);
       if (snprintf(textbuf,sizeof(textbuf),
 		   "egrep -f %s -v %s >> %s",
-		   tmpfile3,chfile2,tmpfile2) >= sizeof(textbuf)) {
-	(void)fprintf(stderr, "buffer overrun.\n");
-	exit(1);
-      }
+		   tmpfile3,chfile2,tmpfile2) >= sizeof(textbuf))
+	bfov_error();
       system(textbuf);
       }
     }
   else if(*chfile2)
     {
     if (snprintf(textbuf,sizeof(textbuf),
-		 "cp %s %s",chfile2,tmpfile2) >= sizeof(textbuf)) {
-      (void)fprintf(stderr, "buffer overrun.\n");
-      exit(1);
-    }
+		 "cp %s %s",chfile2,tmpfile2) >= sizeof(textbuf))
+      bfov_error();
     system(textbuf);
     }
   if(strcmp(argv[1],new_file))
     {
     /* strcat(new_file,".ch"); */
     if (snprintf(new_file, sizeof(new_file), "%s.ch", new_file)
-	>= sizeof(new_file)) {
-      (void)fprintf(stderr, "buffer overrun.\n");
-      exit(1);
-    }
+	>= sizeof(new_file))
+      bfov_error();
     rename(tmpfile2,new_file);
     }
   else
     {
     if (snprintf(textbuf,sizeof(textbuf),
-		 "cp %s %s",tmpfile2,chfile1) >= sizeof(textbuf)) {
-      (void)fprintf(stderr, "buffer overrun.\n");
-      exit(1);
-    }
+		 "cp %s %s",tmpfile2,chfile1) >= sizeof(textbuf))
+      bfov_error();
     system(textbuf);
     unlink(tmpfile2);
     }

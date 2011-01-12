@@ -1,4 +1,4 @@
- $Id: ChangeLog,v 1.131.2.25.2.159 2011/01/12 15:44:28 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.160 2011/01/12 17:14:36 uehira Exp $
 
 2011-01-12  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* Version 2.1.21 released.
@@ -52,7 +52,6 @@
 
 2010-12-10  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* src/winpickfile.c : fixed a potential bug.
-	* src/Makefile.am : libwinsystem.so (revision number: 1:1:1)
 
 2010-12-09  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* compatibility for DESTDIR option.
@@ -62,11 +61,9 @@
 	* Version 2.1.18 released.
 	* imported win pickfile related libraries.
 	* src/winpickfile.[ch] : added.
-	* src/Makefile.am : libwinsystem.so (bump current & age number: 1:0:1)
 
 2010-12-07  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* realloc() memory leak check.
-	* src/Makefile.am : libwinsystem.so (bump revision number: 0:1:0)
 
 2010-12-01  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* Version 2.1.17 released.

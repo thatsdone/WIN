@@ -1,4 +1,4 @@
-/* $Id: wadd.c,v 1.6.4.3.2.9 2011/01/12 15:44:30 uehira Exp $ */
+/* $Id: wadd.c,v 1.6.4.3.2.10 2011/01/12 15:51:41 uehira Exp $ */
 /* program "wadd.c"
   "wadd" puts two win data files together
   7/24/91 - 7/25/91, 4/20/94,6/27/94-6/28/94,7/12/94   urabe
@@ -32,7 +32,7 @@
 #define   TEMPNAME  "wadd.tmp"
 
 static const char  rcsid[] =
-   "$Id: wadd.c,v 1.6.4.3.2.9 2011/01/12 15:44:30 uehira Exp $";
+   "$Id: wadd.c,v 1.6.4.3.2.10 2011/01/12 15:51:41 uehira Exp $";
 
 /* prototypes */
 static int get_syschnum(uint8_w *, WIN_ch []);
@@ -182,7 +182,7 @@ main(int argc, char *argv[])
 
   if((f_main=fopen(argv[1],"r"))==NULL)
     {
-    perror("fopen");
+    perror(argv[1]);
     exit(1);
     }
   if (snprintf(chfile1,sizeof(chfile1),"%s.ch",argv[1]) >= sizeof(chfile1))
@@ -193,7 +193,7 @@ main(int argc, char *argv[])
 
   if((f_sub=fopen(argv[2],"r"))==NULL)
     {
-    perror("fopen");
+    perror(argv[2]);
     exit(1);
     }
   if (snprintf(chfile2,sizeof(chfile2),"%s.ch",argv[2]) >= sizeof(chfile2))

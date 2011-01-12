@@ -1,4 +1,4 @@
-/* $Id: winlib.c,v 1.1.2.4.2.36 2011/01/12 15:44:32 uehira Exp $ */
+/* $Id: winlib.c,v 1.1.2.4.2.37 2011/01/12 16:29:11 uehira Exp $ */
 
 /*-
  * winlib.c  (Uehira Kenji)
@@ -733,11 +733,11 @@ read_onesec_win(FILE *fp, uint8_w **rbuf, size_t *rbuf_size)
 
   if (*rbuf == NULL)
     *rbuf_size = 0;
-  (void)fprintf(stderr, "%u %zu\n", size, *rbuf_size);
+  /* (void)fprintf(stderr, "%u %zu\n", size, *rbuf_size); */
   if (size > *rbuf_size) {
     *rbuf_size = (size << 1);
     *rbuf = REALLOC(uint8_w, *rbuf, *rbuf_size);
-    (void)fprintf(stderr, "ZZ %u %zu\n", size, *rbuf_size);
+    /* (void)fprintf(stderr, "ZZ %u %zu\n", size, *rbuf_size); */
     if (*rbuf == NULL) {
       (void)fprintf(stderr, "read_onesec_win() : %s \n", strerror(errno));
       exit(1);

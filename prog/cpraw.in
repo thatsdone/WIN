@@ -1,0 +1,56 @@
+#! @BASH@
+#
+# $Id: cpraw.in,v 1.1.2.1 2011/01/23 01:27:35 uehira Exp $
+#
+# copy raw data which was wrtitten by 'wdisk' to other directory.
+# disk version of 'wtape'.
+#
+
+if [ ! -d "$1" -o ! -d "$2" ]; then
+    echo "cpraw rawdir distdir (logfile)"
+    exit 1
+fi
+
+CTLFILE="$1/USED"
+if [ ! -f "$CTLFILE" ]; then
+    if [ ! -f "$1/OLDEST" ]; then
+	echo "$1 is not WIN raw dir. Exit."
+	exit 1
+    fi
+    CTLFILE="$1/OLDEST"
+fi
+#echo $CTLFILE
+
+used_raw=`cat $CTLFILE`
+echo "USED=$used_raw"
+
+c=0
+for file in `ls $1 | grep ^[0-8]`
+do
+    if [[ $file > $used_raw ]]; then
+	if [ $c -eq 0 ]; then
+	    first_raw="$file"
+	    c=1
+	fi
+#	echo "$file $used_raw"
+#	cp -v $1/$file $2
+#	echo "$?"
+	if ! cp -v $1/$file $2; then
+	    break
+	fi
+	file_latest="$file"
+	#echo "file_latest=$file_latest"
+    fi
+done
+
+#echo "file_latest=$file_latest file=$file"
+
+# write to USES
+echo $file_latest > $1/USED
+
+# log file
+if [ "$3" ]; then
+    echo "`date "+%Y-%m-%d"` : $first_raw --> $file_latest" >> $3
+fi
+
+exit 0

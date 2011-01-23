@@ -1,4 +1,7 @@
- $Id: ChangeLog,v 1.131.2.25.2.160 2011/01/12 17:14:36 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.161 2011/01/23 01:27:34 uehira Exp $
+
+2011-01-23  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* prog/cpraw : added bash script.
 
 2011-01-12  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* Version 2.1.21 released.

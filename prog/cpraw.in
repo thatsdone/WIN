@@ -1,6 +1,6 @@
 #! @BASH@
 #
-# $Id: cpraw.in,v 1.1.2.1 2011/01/23 01:27:35 uehira Exp $
+# $Id: cpraw.in,v 1.1.2.2 2011/01/23 02:08:03 uehira Exp $
 #
 # copy raw data which was wrtitten by 'wdisk' to other directory.
 # disk version of 'wtape'.
@@ -45,7 +45,7 @@ done
 
 #echo "file_latest=$file_latest file=$file"
 
-# write to USES
+# write to USED
 echo $file_latest > $1/USED
 
 # log file

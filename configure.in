@@ -1,11 +1,11 @@
 dnl ------------------------------------------------------------------------- 
-dnl $Id: configure.in,v 1.98.2.17.2.43.2.17 2011/01/12 16:57:05 uehira Exp $
+dnl $Id: configure.in,v 1.98.2.17.2.43.2.18 2011/01/24 12:16:48 uehira Exp $
 dnl -------------------------------------------------------------------------
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT
 AC_CONFIG_SRCDIR([src/win.c])
 AC_CANONICAL_TARGET
-AM_INIT_AUTOMAKE(WIN_pkg, 2.1.21-SEVO)
+AM_INIT_AUTOMAKE(WIN_pkg, 2.1.22-SEVO)
 AC_CONFIG_HEADERS([config.h])
 AC_ARG_PROGRAM
 
@@ -398,6 +398,14 @@ freebsd*)
 esac
 
 dnl ---------------------------------------
+dnl check bash
+dnl ---------------------------------------
+AC_PATH_PROGS(BASH, bash, :)
+if test $BASH = ":"; then
+	AC_MSG_WARN(Test for bash failed. Please install bash program.)
+fi
+       
+dnl ---------------------------------------
 dnl check perl
 dnl ---------------------------------------
 AC_PATH_PROGS(PERL, perl, :)
@@ -581,6 +589,7 @@ AC_CONFIG_FILES([Makefile src/Makefile man/Makefile etc/Makefile pick/Makefile
 	prog/final2mf
 	prog/wincd
 	prog/pick2pick
+	prog/cpraw
 	prog/winmap2pickfile
 	])
 AC_OUTPUT

@@ -1,6 +1,6 @@
 #! @BASH@
 #
-# $Id: cpraw.in,v 1.1.2.2 2011/01/23 02:08:03 uehira Exp $
+# $Id: cpraw.in,v 1.1.2.3 2011/01/24 10:31:23 uehira Exp $
 #
 # copy raw data which was wrtitten by 'wdisk' to other directory.
 # disk version of 'wtape'.
@@ -36,6 +36,7 @@ do
 #	cp -v $1/$file $2
 #	echo "$?"
 	if ! cp -v $1/$file $2; then
+	    rm -v $2/$file
 	    break
 	fi
 	file_latest="$file"

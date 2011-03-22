@@ -1,4 +1,4 @@
-/* $Id: recvstatus4.c,v 1.1.2.6 2010/09/30 14:51:03 uehira Exp $ */
+/* $Id: recvstatus4.c,v 1.1.2.7 2011/03/22 07:32:47 uehira Exp $ */
 
 /* 
  * recvstatus4 :
@@ -47,7 +47,7 @@
 #define PATHMAX      1024
 
 static const char rcsid[] =
-  "$Id: recvstatus4.c,v 1.1.2.6 2010/09/30 14:51:03 uehira Exp $";
+  "$Id: recvstatus4.c,v 1.1.2.7 2011/03/22 07:32:47 uehira Exp $";
 
 char *progname, *logfile;
 int  exit_status, syslog_mode;
@@ -75,6 +75,8 @@ main(int argc, char *argv[])
   char  msg[MAXMSG];
   uint8_w  rbuf[MAXMSG], *ptr;
   int  c, chnum;
+  char mcastgroup[256]; /* multicast address */
+  char interface[256]; /* multicast interface */
 #if DEBUG
   int  i = 0;
   char host_[NI_MAXHOST];  /* host address */
@@ -93,10 +95,24 @@ main(int argc, char *argv[])
   
   sockbuf = DEFAULT_RCVBUF;  /* default socket buffer size in KB */
 
-  while ((c = getopt(argc, argv, "D")) != -1)
+  while ((c = getopt(argc, argv, "Dg:i:")) != -1)
     switch (c) {
     case 'D':
       daemon_mode = 1;  /* daemon mode */
+      break;
+    case 'g':   /* multicast group (multicast IP address) */
+      if (snprintf(mcastgroup, sizeof(mcastgroup), "%s", optarg)
+	  >= sizeof(mcastgroup)) {
+	fprintf(stderr,"'%s': -g option : Buffer overrun!\n",progname);
+	exit(1);
+      }
+      break;
+    case 'i':   /* interface (ordinary IP address) which receive mcast */
+      if (snprintf(interface, sizeof(interface), "%s", optarg)
+	  >= sizeof(interface)) {
+	fprintf(stderr,"'%s': -i option : Buffer overrun!\n",progname);
+	exit(1);
+      }
       break;
     default:
       usage();
@@ -160,6 +176,11 @@ main(int argc, char *argv[])
   if ((ct_top = udp_accept(input_port, &maxsoc, sockbuf)) == NULL)
     err_sys("udp_accept");
   maxsoc++;
+
+  if(*mcastgroup) {
+    for (ct = ct_top; ct != NULL; ct = ct->next)
+      mcast_join(ct->soc, mcastgroup, interface);
+  }
 
   FD_ZERO(&rset);
 
@@ -270,11 +291,11 @@ usage(void)
   (void)fprintf(stderr, "Usage of %s :\n", progname);
   if (daemon_mode)
     (void)fprintf(stderr,
-		  "  %s [in_port] [dir] (logfile)\n",
+		  "  %s (-g [mcast_group]) (-i [interface]) [in_port] [dir] (logfile)\n",
 		  progname);
   else
     (void)fprintf(stderr,
-		  "  %s (-D) [in_port] [dir] (logfile)\n",
+		  "  %s (-D) (-g [mcast_group]) (-i [interface]) [in_port] [dir] (logfile)\n",
 		  progname);
 
   exit(1);

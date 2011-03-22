@@ -1,4 +1,4 @@
-/* $Id: recvt.c,v 1.29.2.3.2.39 2011/01/12 15:44:30 uehira Exp $ */
+/* $Id: recvt.c,v 1.29.2.3.2.40 2011/03/22 07:32:47 uehira Exp $ */
 /*-
  "recvt.c"      4/10/93 - 6/2/93,7/2/93,1/25/94    urabe
                 2/3/93,5/25/94,6/16/94 
@@ -114,7 +114,7 @@
 #define N_PNOS    62    /* length of packet nos. history >=2 */
 
 static const char rcsid[] =
-  "$Id: recvt.c,v 1.29.2.3.2.39 2011/01/12 15:44:30 uehira Exp $";
+  "$Id: recvt.c,v 1.29.2.3.2.40 2011/03/22 07:32:47 uehira Exp $";
 
 static uint8_w rbuf[MAXMESG],ch_table[WIN_CHMAX];
 static char *chfile[N_CHFILE];
@@ -713,7 +713,7 @@ main(int argc, char *argv[])
   uint16_t  to_port,host_port;  /*- 64bit ok -*/
   struct Shm  *sh;
   char tb[256],tb2[256];
-  struct ip_mreq stMreq;  /*- 64bit ok -*/
+  /* struct ip_mreq stMreq; */  /*- 64bit ok -*/
   char mcastgroup[256]; /* multicast address */
   char interface[256]; /* multicast interface */
   time_t ts,sec,sec_p;  /*- 64bit ok -*/
@@ -943,11 +943,12 @@ main(int argc, char *argv[])
   /* if(bind(sock,(struct sockaddr *)&to_addr,sizeof(to_addr))<0) err_sys("bind"); */
 
   if(*mcastgroup){
-    stMreq.imr_multiaddr.s_addr=inet_addr(mcastgroup);
-    if(*interface) stMreq.imr_interface.s_addr=inet_addr(interface);
-    else stMreq.imr_interface.s_addr=INADDR_ANY;
-    if(setsockopt(sock,IPPROTO_IP,IP_ADD_MEMBERSHIP,(char *)&stMreq,
-      sizeof(stMreq))<0) err_sys("IP_ADD_MEMBERSHIP setsockopt error\n");
+/*     stMreq.imr_multiaddr.s_addr=inet_addr(mcastgroup); */
+/*     if(*interface) stMreq.imr_interface.s_addr=inet_addr(interface); */
+/*     else stMreq.imr_interface.s_addr=INADDR_ANY; */
+/*     if(setsockopt(sock,IPPROTO_IP,IP_ADD_MEMBERSHIP,(char *)&stMreq, */
+/*       sizeof(stMreq))<0) err_sys("IP_ADD_MEMBERSHIP setsockopt error\n"); */
+    mcast_join(sock, mcastgroup, interface);
   }
 
   if(*host_name) /* host_name and host_port specified */

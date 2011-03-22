@@ -1,4 +1,4 @@
-/* $Id: winrawreq.c,v 1.1.2.4.2.7 2010/12/22 13:09:21 uehira Exp $ */
+/* $Id: winrawreq.c,v 1.1.2.4.2.8 2011/03/22 07:32:47 uehira Exp $ */
 
 /* winrawreq.c -- raw data request client */
 
@@ -48,7 +48,7 @@
 #define MAXMSG       1025
 
 static const char rcsid[] =
-  "$Id: winrawreq.c,v 1.1.2.4.2.7 2010/12/22 13:09:21 uehira Exp $";
+  "$Id: winrawreq.c,v 1.1.2.4.2.8 2011/03/22 07:32:47 uehira Exp $";
 
 
 char *progname, *logfile;
@@ -533,7 +533,7 @@ network_output(uint8_t *rawbuf, uint32_t rsize)
 
   status = 0;
   memset(&oss, 0, sizeof(oss));  /* need not ? */
-  if ((osock = udp_dest(ohost, oport, osa, &osalen)) < 0) {
+  if ((osock = udp_dest(ohost, oport, osa, &osalen, NULL)) < 0) {
     write_log("udp_dest");
     return (-1);
   }

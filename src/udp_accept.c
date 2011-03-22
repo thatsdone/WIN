@@ -1,7 +1,7 @@
-/* $Id: udp_accept.c,v 1.3.8.1 2010/09/29 16:06:35 uehira Exp $ */
+/* $Id: udp_accept.c,v 1.3.8.2 2011/03/22 07:32:47 uehira Exp $ */
 
 /*
- * Copyright (c) 2001-2004
+ * Copyright (c) 2001-2011
  *   Uehira Kenji / All Rights Reserved.
  *    uehira@sevo.kyushu-u.ac.jp
  *    Institute of Seismology and Volcanology, Kyushu University.
@@ -18,6 +18,8 @@
 #include <sys/time.h>
 #include <sys/param.h>
 
+#include <net/if.h>
+
 #include <netinet/in.h>
 #if HAVE_ARPA_INET_H
 #include <arpa/inet.h>
@@ -33,12 +35,12 @@
 #include "udpu.h"
 #include "win_log.h"
 
-#ifdef INET6
 /*
  * Accept packets from "port".
  *  Return all available sockets or NULL pointer.
  *  listen IPv6 & IPv4 address.
  */
+#ifdef INET6
 struct conntable *
 udp_accept(const char *port, int *maxsoc, int sockbuf)
 {
@@ -169,4 +171,63 @@ udp_accept4(const uint16_t port, int sockbuf)
   }
 
   return (sockfd);
+}
+
+/*
+ * Join multicast group
+ *   (IPv4 & IPv6 version)
+ */
+void
+mcast_join(const int sockfd, const char *mcastgroup, const char *interface)
+{
+  struct ip_mreq  stMreq;
+#ifdef INET6
+  struct ipv6_mreq  stMreq6;
+#endif
+  int  status;
+  char  tb[1024];
+
+  switch (sockfd_to_family(sockfd)) {
+  case AF_INET:
+    status = inet_pton(AF_INET, mcastgroup, &stMreq.imr_multiaddr);
+    (void)snprintf(tb, sizeof(tb), "mcast IPv4 inet_pton status = %d", status);
+    write_log(tb);
+    if (status == 0)  /* Invalid format */
+      break;
+    else if (status == -1)  /* error */
+      err_sys("inet_pton");
+    if(*interface)
+      stMreq.imr_interface.s_addr = inet_addr(interface);
+    else
+      stMreq.imr_interface.s_addr = INADDR_ANY;
+    if (setsockopt(sockfd, IPPROTO_IP, IP_ADD_MEMBERSHIP, &stMreq,
+		   sizeof(stMreq)) < 0)
+      err_sys("IP_ADD_MEMBERSHIP setsockopt error");
+    break;
+
+#ifdef INET6
+  case AF_INET6:
+    status = inet_pton(AF_INET6, mcastgroup, &stMreq6.ipv6mr_multiaddr);
+    (void)snprintf(tb, sizeof(tb), "mcast IPv6 inet_pton status = %d", status);
+    write_log(tb);
+    if (status == 0)  /* Invalid format */
+      break;
+    else if (status == -1)  /* error */
+      err_sys("inet_pton");
+    if(*interface) {
+      stMreq6.ipv6mr_interface = if_nametoindex(interface);
+      if (stMreq6.ipv6mr_interface == 0)
+	err_sys("stMreq6.ipv6imr_interface");
+    } else
+      stMreq6.ipv6mr_interface = 0;
+    if (setsockopt(sockfd, IPPROTO_IPV6, IPV6_JOIN_GROUP, &stMreq6,
+		   sizeof(stMreq6)) < 0)
+      err_sys("IPV6_JOIN_GROUP setsockopt error");
+    break;
+#endif  /* INET6 */
+
+  default:
+    /* errno = EPROTPNOSUPPORT; */
+    err_sys("mcast_join");
+  }
 }

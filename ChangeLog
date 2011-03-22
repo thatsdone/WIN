@@ -1,7 +1,10 @@
- $Id: ChangeLog,v 1.131.2.25.2.162 2011/03/22 02:28:44 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.163 2011/03/22 07:32:46 uehira Exp $
 
 2011-03-22  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 2.1.22 released.
 	* remove autotool related files.
+	* src/recvt46.c, src/send_raw46.c : added.
+	* multicast option : recvstatus2, recvstatus3, recvstatus4, relaym
 
 2011-01-23  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* prog/cpraw : added bash script.

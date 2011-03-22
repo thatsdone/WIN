@@ -1,4 +1,4 @@
-/* $Id: winlib_log.c,v 1.1.2.4 2010/09/29 16:06:35 uehira Exp $ */
+/* $Id: winlib_log.c,v 1.1.2.5 2011/03/22 07:32:47 uehira Exp $ */
 
 /*-
  * winlib.c  (Uehira Kenji)
@@ -10,6 +10,7 @@
 #endif
 
 #include <sys/types.h>
+#include <sys/socket.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
 
@@ -127,3 +128,16 @@ Shm_create(key_t shmkey, size_t shmsize, char *msg)
   return (shm);
 }
 
+sa_family_t
+sockfd_to_family(int sockfd)
+{
+  struct sockaddr_storage  ss;
+  struct sockaddr *sa =  (struct sockaddr *)&ss;
+  socklen_t  len;
+
+  len = sizeof(ss);
+  if (getsockname(sockfd, sa, &len) < 0)
+    err_sys("getsockname");
+
+  return (sa->sa_family);
+}

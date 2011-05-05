@@ -1,4 +1,4 @@
-/* $Id: pick2finalb_SEVO.c,v 1.1.6.2 2011/01/12 16:57:06 uehira Exp $ */
+/* $Id: pick2finalb_SEVO.c,v 1.1.6.3 2011/05/05 04:28:59 uehira Exp $ */
 /* pick2finalb.c */
 /* 8/22/91, 5/22/92, 7/9/92, 8/19/92, 5/25/93, 6/1/93 urabe */
 /* 97.10.3 FreeBSD */
@@ -20,7 +20,7 @@
 #include "winlib.h"
 
 static const char rcsid[] =
-   "$Id: pick2finalb_SEVO.c,v 1.1.6.2 2011/01/12 16:57:06 uehira Exp $";
+   "$Id: pick2finalb_SEVO.c,v 1.1.6.3 2011/05/05 04:28:59 uehira Exp $";
 
 /* prototypes */
 int main(void);
@@ -81,12 +81,12 @@ main(void)
         *d.diag=(*d.owner)=0;
         if(*diagsave) strncpy(d.diag,diagsave,4);
         if(*owner) strncpy(d.owner,owner,4);
-        i=1;if(*(char *)&i)
-          {
-          SWAPF(d.alat);
-          SWAPF(d.along);   
-          SWAPF(d.dep);
-          }
+        /* i=1;if(*(char *)&i) */
+        /*   { */
+        /*   SWAPF(d.alat); */
+        /*   SWAPF(d.along);    */
+        /*   SWAPF(d.dep); */
+        /*   } */
 	/* Modify for SEVO after Dr. Kodo Umakoshi */
 	fgets(buf,255,fp); fgets(buf,255,fp); fgets(buf,255,fp);
 	fgets(buf,255,fp);
@@ -100,9 +100,9 @@ main(void)
 	/*  fprintf(stderr, "%s: prms=%lf, stnum=%d, stsnum=%d, srms=%lf, inide=%lf\n", */
 	/*  		fname, prms, stnum, stsnum, srms, inide); */
 	if (strncmp(owner,"auto",4) != 0)
-	  fwrite(&d,sizeof(d),1,stdout);
+	  (void)FinalB_write(d,stdout);
 	else if (prms<=1.0 && stnum>=5 && stsnum>= 1 && srms<=5.0 && inide<=5.0)
-	  fwrite(&d,sizeof(d),1,stdout);
+	  (void)FinalB_write(d,stdout);
         break;
         }
       }

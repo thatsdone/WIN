@@ -1,4 +1,4 @@
-/* $Id: recvstatus2.c,v 1.6.8.8.2.2 2011/01/12 16:57:06 uehira Exp $ */
+/* $Id: recvstatus2.c,v 1.6.8.8.2.3 2011/05/05 04:15:57 uehira Exp $ */
 
 /* modified from "recvstatus.c" */
 /* 2002.6.19 recvstatus2 receive A8/A9 packets from Datamark LS-7000XT */
@@ -66,7 +66,7 @@
 /* #define DEBUG   0 */
 
 static const char rcsid[] =
-  "$Id: recvstatus2.c,v 1.6.8.8.2.2 2011/01/12 16:57:06 uehira Exp $";
+  "$Id: recvstatus2.c,v 1.6.8.8.2.3 2011/05/05 04:15:57 uehira Exp $";
 
 char *progname, *logfile = NULL;
 int syslog_mode = 0, exit_status = EXIT_SUCCESS;
@@ -85,9 +85,9 @@ usage(void)
   WIN_version();
   (void)fprintf(stderr, "%s\n", rcsid);
   if (daemon_mode)
-    (void)fprintf(stderr, " usage : '%s (-r) [port] ([log dir])'\n", progname);
+    (void)fprintf(stderr, " usage : '%s (-r) (-g [mcast_group]) (-i [interface]) [port] ([log dir])'\n", progname);
   else
-    (void)fprintf(stderr, " usage : '%s (-Dr) [port] ([log dir])'\n", progname);
+    (void)fprintf(stderr, " usage : '%s (-Dr) (-g [mcast_group]) (-i [interface]) [port] ([log dir])'\n", progname);
 }
 
 int
@@ -113,6 +113,8 @@ main(int argc, char *argv[])
   DIR *dir_ptr;
   FILE *fp;
   int  chtmp;
+  char mcastgroup[256]; /* multicast address */
+  char interface[256]; /* multicast interface */
 
   if((progname=strrchr(argv[0],'/')) != NULL) progname++;
   else progname=argv[0];
@@ -122,14 +124,29 @@ main(int argc, char *argv[])
   if (strcmp(progname, "recvstatus2d") == 0)
     daemon_mode = 1;
 
+  *interface=(*mcastgroup)=0;
   rcs=0;
-  while((c=getopt(argc,argv,"Dr"))!=-1)
+  while((c=getopt(argc,argv,"Dg:i:r"))!=-1)
     {
     switch(c)
       {
       case 'D':
 	daemon_mode = 1;  /* daemon mode */
 	break;
+      case 'g':   /* multicast group (multicast IP address) */
+	if (snprintf(mcastgroup, sizeof(mcastgroup), "%s", optarg)
+	    >= sizeof(mcastgroup)) {
+	  fprintf(stderr,"'%s': -g option : Buffer overrun!\n",progname);
+	  exit(1);
+	}
+        break;
+      case 'i':   /* interface (ordinary IP address) which receive mcast */
+	if (snprintf(interface, sizeof(interface), "%s", optarg)
+	    >= sizeof(interface)) {
+	  fprintf(stderr,"'%s': -i option : Buffer overrun!\n",progname);
+	  exit(1);
+	}
+        break;
       case 'r':   /* do rcs check-in */
         rcs=1;
         break;
@@ -174,6 +191,10 @@ main(int argc, char *argv[])
   /* to_addr.sin_port=htons(to_port); */
 
   /* if(bind(sock,(struct sockaddr *)&to_addr,sizeof(to_addr))<0) err_sys("bind"); */
+
+  /* multicast */
+  if(*mcastgroup)
+    mcast_join(sock, mcastgroup, interface);
 
   signal(SIGTERM,(void *)end_program);
   signal(SIGINT,(void *)end_program);

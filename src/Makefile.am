@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.38.2.10.2.24.2.12 2011/01/12 17:13:30 uehira Exp $
+# $Id: Makefile.am,v 1.38.2.10.2.24.2.13 2011/05/05 04:15:56 uehira Exp $
 #
 
 # Version number of shared libraries.
@@ -31,7 +31,7 @@ OFFLINE_X=win win32
 endif
 
 if IPV6
-IPV6_PGM = relaym recvstatus3 recvstatus4 winrawreq rawsrv_info recvt_LS7000
+IPV6_PGM = relaym recvstatus3 recvstatus4 winrawreq rawsrv_info recvt46 send_raw46
 else
 IPV6_PGM =
 endif
@@ -60,8 +60,8 @@ GC_CHECK_INCLUDE =
 GC_CHECK_LIB =
 endif
 
-ONLINE_SO=recvt send_raw recvstatus recvstatus2 send_raw_old relay\
-	recvnmx $(ONL_SOL2) $(IPV6_PGM)
+ONLINE_SO=recvt send_raw recvstatus recvstatus2 send_raw_old relay \
+	recvnmx recvt_LS7000 $(ONL_SOL2) $(IPV6_PGM)
 TAPE_USER_MATH=pmon elist events evdetect
 ONLINE_MATH=ecore ecore2 raw_time winrandsimu6
 OFFLINE_USER_MATH=wtime
@@ -135,6 +135,13 @@ install-exec-hook:
 	(rm -f $(DESTDIR)@bindir@/send_mond; cd $(DESTDIR)@bindir@ && @LN_S@ send_raw send_mond)
 	(rm -f $(DESTDIR)@bindir@/sendt_rawd; cd $(DESTDIR)@bindir@ && @LN_S@ send_raw sendt_rawd)
 	(rm -f $(DESTDIR)@bindir@/sendt_mond; cd $(DESTDIR)@bindir@ && @LN_S@ send_raw sendt_mond)
+	(rm -f $(DESTDIR)@bindir@/send_mon46; cd $(DESTDIR)@bindir@ && @LN_S@ send_raw46 send_mon46)
+	(rm -f $(DESTDIR)@bindir@/sendt_raw46; cd $(DESTDIR)@bindir@ && @LN_S@ send_raw46 sendt_raw46)
+	(rm -f $(DESTDIR)@bindir@/sendt_mon46; cd $(DESTDIR)@bindir@ && @LN_S@ send_raw46 sendt_mon46)
+	(rm -f $(DESTDIR)@bindir@/send_raw46d; cd $(DESTDIR)@bindir@ && @LN_S@ send_raw46 send_raw46d)
+	(rm -f $(DESTDIR)@bindir@/send_mon46d; cd $(DESTDIR)@bindir@ && @LN_S@ send_raw46 send_mon46d)
+	(rm -f $(DESTDIR)@bindir@/sendt_raw46d; cd $(DESTDIR)@bindir@ && @LN_S@ send_raw46 sendt_raw46d)
+	(rm -f $(DESTDIR)@bindir@/sendt_mon46d; cd $(DESTDIR)@bindir@ && @LN_S@ send_raw46 sendt_mon46d)
 	(rm -f $(DESTDIR)@bindir@/send_mon_old;\
 			cd $(DESTDIR)@bindir@ && @LN_S@ send_raw_old send_mon_old)
 	(rm -f $(DESTDIR)@bindir@/sendt_raw_old;\
@@ -146,6 +153,7 @@ install-exec-hook:
 	(rm -f $(DESTDIR)@bindir@/wdisk60d; cd $(DESTDIR)@bindir@ && @LN_S@ wdisk wdisk60d)
 	(rm -f $(DESTDIR)@bindir@/orderd; cd $(DESTDIR)@bindir@ && @LN_S@ order orderd)
 	(rm -f $(DESTDIR)@bindir@/recvtd; cd $(DESTDIR)@bindir@ && @LN_S@ recvt recvtd)
+	(rm -f $(DESTDIR)@bindir@/recvt46d; cd $(DESTDIR)@bindir@ && @LN_S@ recvt recvt46d)
 	(rm -f $(DESTDIR)@bindir@/relayd; cd $(DESTDIR)@bindir@ && @LN_S@ relay relayd)
 	(rm -f $(DESTDIR)@bindir@/relaymd; cd $(DESTDIR)@bindir@ && @LN_S@ relaym relaymd)
 	(rm -f $(DESTDIR)@bindir@/raw_mond; cd $(DESTDIR)@bindir@ && @LN_S@ raw_mon raw_mond)
@@ -167,6 +175,13 @@ uninstall-local:
 	rm -f $(DESTDIR)@bindir@/send_mond
 	rm -f $(DESTDIR)@bindir@/sendt_rawd
 	rm -f $(DESTDIR)@bindir@/sendt_mond
+	rm -f $(DESTDIR)@bindir@/send_mon46
+	rm -f $(DESTDIR)@bindir@/sendt_raw46
+	rm -f $(DESTDIR)@bindir@/sendt_mon46
+	rm -f $(DESTDIR)@bindir@/send_raw46d
+	rm -f $(DESTDIR)@bindir@/send_mon46d
+	rm -f $(DESTDIR)@bindir@/sendt_raw46d
+	rm -f $(DESTDIR)@bindir@/sendt_mon46d
 	rm -f $(DESTDIR)@bindir@/send_mon_old;
 	rm -f $(DESTDIR)@bindir@/sendt_raw_old;
 	rm -f $(DESTDIR)@bindir@/sendt_mon_old;
@@ -175,6 +190,7 @@ uninstall-local:
 	rm -f $(DESTDIR)@bindir@/wdisk60d
 	rm -f $(DESTDIR)@bindir@/orderd
 	rm -f $(DESTDIR)@bindir@/recvtd
+	rm -f $(DESTDIR)@bindir@/recvt46d
 	rm -f $(DESTDIR)@bindir@/relayd
 	rm -f $(DESTDIR)@bindir@/relaymd
 	rm -f $(DESTDIR)@bindir@/raw_mond
@@ -266,6 +282,7 @@ pick2finalb_SEVO_LDADD = $(WIN_SYSTEM_LTLIB)
 pick2final_SOURCES = pick2final.c $(SUBFUNC_H)
 
 finalb2final_SOURCES = finalb2final.c $(WIN_LIBH)
+finalb2final_LDADD = $(WIN_NORMAL_LIB)
 
 final2finalb_SOURCES = final2finalb.c $(WIN_LIBH)
 final2finalb_LDADD = $(WIN_NORMAL_LIB)
@@ -376,8 +393,14 @@ find_picks_LDADD = $(WIN_NORMAL_LIB)
 recvt_SOURCES = recvt.c $(WIN_LIBH)
 recvt_LDADD = $(WIN_LOG_LTLIB) $(WIN_NORMAL_LIB) @LIBNSL@ @LIBSOCKET@ @LIBSHMGET@
 
+recvt46_SOURCES = recvt46.c $(WIN_LIBH)
+recvt46_LDADD = $(WIN_LOG_LTLIB) $(WIN_NORMAL_LIB) @LIBNSL@ @LIBSOCKET@ @LIBSHMGET@
+
 send_raw_SOURCES = send_raw.c $(WIN_LIBH)
 send_raw_LDADD = $(WIN_LOG_LTLIB) $(WIN_NORMAL_LIB) @LIBNSL@ @LIBSOCKET@ @LIBSHMGET@
+
+send_raw46_SOURCES = send_raw46.c $(WIN_LIBH)
+send_raw46_LDADD = $(WIN_LOG_LTLIB) $(WIN_NORMAL_LIB) @LIBNSL@ @LIBSOCKET@ @LIBSHMGET@
 
 send_raw_old_SOURCES = send_raw_old.c $(WIN_LIBH)
 send_raw_old_LDADD = $(WIN_LOG_LTLIB) $(WIN_NORMAL_LIB) @LIBNSL@ @LIBSOCKET@ @LIBSHMGET@

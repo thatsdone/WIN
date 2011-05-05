@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.16.2.2.4.5 2011/01/24 12:16:48 uehira Exp $
+# $Id: Makefile.am,v 1.16.2.2.4.6 2011/05/05 04:15:56 uehira Exp $
 #
 #  Makefile.am in prog subdirectory.
 #
@@ -27,6 +27,10 @@ WIN_WISH_BIN = win_m shmx shmz winsimu shmck
 # perl script
 WIN_PERL_PROG = ch2mf.in ee_manager.in final2mf.in wincd.in pick2pick.in datej.pl.in winmap2pickfile.in
 WIN_PERL_BIN = ch2mf ee_manager final2mf wincd pick2pick datej.pl winmap2pickfile
+
+# bash scripst
+WIN_BASH_PROG = cpraw.in
+WIN_BASH_BIN = cpraw
 
 # bash scripst
 WIN_BASH_PROG = cpraw.in

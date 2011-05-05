@@ -1,4 +1,4 @@
-/* $Id: pick2finalb.c,v 1.4.4.2.2.3.2.1 2011/01/12 16:57:06 uehira Exp $ */
+/* $Id: pick2finalb.c,v 1.4.4.2.2.3.2.2 2011/05/05 04:15:57 uehira Exp $ */
 /* pick2finalb.c */
 /* 8/22/91, 5/22/92, 7/9/92, 8/19/92, 5/25/93, 6/1/93 urabe */
 /* 97.10.3 FreeBSD */
@@ -20,7 +20,7 @@
 #include "winlib.h"
 
 static const char rcsid[] =
-   "$Id: pick2finalb.c,v 1.4.4.2.2.3.2.1 2011/01/12 16:57:06 uehira Exp $";
+   "$Id: pick2finalb.c,v 1.4.4.2.2.3.2.2 2011/05/05 04:15:57 uehira Exp $";
 
 /* prototypes */
 int main(void);
@@ -79,13 +79,14 @@ main(void)
         *d.diag=(*d.owner)=0;
         if(*diagsave) strncpy(d.diag,diagsave,4);
         if(*owner) strncpy(d.owner,owner,4);
-        i=1;if(*(char *)&i)
-          {
-          SWAPF(d.alat);
-          SWAPF(d.along);   
-          SWAPF(d.dep);
-          }
-        fwrite(&d,sizeof(d),1,stdout);
+/*         i=1;if(*(char *)&i) */
+/*           { */
+/*           SWAPF(d.alat); */
+/*           SWAPF(d.along);    */
+/*           SWAPF(d.dep); */
+/*           } */
+/*         fwrite(&d,sizeof(d),1,stdout); */
+	(void)FinalB_write(d, stdout);
         break;
         }
       }

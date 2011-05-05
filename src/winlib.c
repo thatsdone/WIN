@@ -1,4 +1,4 @@
-/* $Id: winlib.c,v 1.1.2.4.2.30.2.6 2011/01/12 16:57:08 uehira Exp $ */
+/* $Id: winlib.c,v 1.1.2.4.2.30.2.7 2011/05/05 04:15:59 uehira Exp $ */
 
 /*-
  * winlib.c  (Uehira Kenji)
@@ -1658,5 +1658,55 @@ check_ts(uint8_w *ptr, time_t pre, time_t post)
   printf("diff %ld s out of range (%lds - %lds)\n", diff, pre, post);
 #endif
   return (0);
+}
+
+size_t
+FinalB_read(struct FinalB *d, FILE *fp)
+{
+  size_t  b;
+  int  i;
+
+  b = 0;
+  b += fread(d->time, sizeof(int8_w), 8, fp) * sizeof(int8_w);
+  b += fread(&d->alat, sizeof(float), 1, fp) * sizeof(float);
+  b += fread(&d->along, sizeof(float), 1, fp) * sizeof(float);
+  b += fread(&d->dep, sizeof(float), 1, fp) * sizeof(float);
+  b += fread(d->diag, sizeof(char), 4, fp) * sizeof(char);
+  b += fread(d->owner, sizeof(char),4, fp) * sizeof(char);
+
+  /* endian check */
+  i = 1;
+  if (*(char *)&i) {
+    SWAPF(d->alat);
+    SWAPF(d->along);
+    SWAPF(d->dep);
+  }
+
+  return (b);
+}
+
+size_t
+FinalB_write(struct FinalB d, FILE *fp)
+{
+  size_t  b;
+  int  i;
+
+  /* endian check */
+  i = 1;
+  if (*(char *)&i) {
+    SWAPF(d.alat);
+    SWAPF(d.along);
+    SWAPF(d.dep);
+  }
+
+  b = 0;
+  b += fwrite(d.time, sizeof(int8_w), 8, fp) * sizeof(int8_w);
+  b += fwrite(&d.alat, sizeof(float), 1, fp) * sizeof(float);
+  b += fwrite(&d.along, sizeof(float), 1, fp) * sizeof(float);
+  b += fwrite(&d.dep, sizeof(float), 1, fp) * sizeof(float);
+  b += fwrite(d.diag, sizeof(char), 4, fp) * sizeof(char);
+  b += fwrite(d.owner, sizeof(char), 4, fp) * sizeof(char);
+
+  return (b);
 }
 

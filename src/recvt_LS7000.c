@@ -1,4 +1,4 @@
-/* $Id: recvt_LS7000.c,v 1.1.2.3.2.16.2.3 2011/01/12 16:57:06 uehira Exp $ */
+/* $Id: recvt_LS7000.c,v 1.1.2.3.2.16.2.4 2011/05/05 04:15:57 uehira Exp $ */
 
 /*- 
  * "recvt_LS7000.c"  uehira
@@ -60,7 +60,7 @@
 #define N_PNOS    62    /* length of packet nos. history >=2 */
 
 static const char rcsid[] =
-  "$Id: recvt_LS7000.c,v 1.1.2.3.2.16.2.3 2011/01/12 16:57:06 uehira Exp $";
+  "$Id: recvt_LS7000.c,v 1.1.2.3.2.16.2.4 2011/05/05 04:15:57 uehira Exp $";
 
 static uint8_w rbuff[MAXMESG],rbuf[MAXMESG],ch_table[WIN_CHMAX];
 static char *chfile[N_CHFILE];
@@ -589,7 +589,7 @@ main(int argc, char *argv[])
   uint16_t  to_port;  /*- 64bit ok -*/
   struct Shm  *sh;
   char tb[256];
-  struct ip_mreq stMreq;
+  /* struct ip_mreq stMreq; */
   char mcastgroup[256]; /* multicast address */
   char interface[256]; /* multicast interface */
   time_t ts,sec,sec_p;
@@ -789,7 +789,7 @@ main(int argc, char *argv[])
   else {
     snprintf(tb, sizeof(tb), "Status packets relay to %s:%s",
 	     host_status, port_status);
-    if ((sock_status = udp_dest(host_status, port_status, sa, &salen)) < 0)
+    if ((sock_status = udp_dest(host_status, port_status, sa, &salen, NULL)) < 0)
       err_sys("udp_dest");
 
     /* printf("sock_status = %d\n", sock_status); */
@@ -836,11 +836,12 @@ main(int argc, char *argv[])
   /* if(bind(sock,(struct sockaddr *)&to_addr,sizeof(to_addr))<0) err_sys("bind"); */
 
   if(*mcastgroup){
-    stMreq.imr_multiaddr.s_addr=inet_addr(mcastgroup);
-    if(*interface) stMreq.imr_interface.s_addr=inet_addr(interface);
-    else stMreq.imr_interface.s_addr=INADDR_ANY;
-    if(setsockopt(sock,IPPROTO_IP,IP_ADD_MEMBERSHIP,(char *)&stMreq,
-      sizeof(stMreq))<0) err_sys("IP_ADD_MEMBERSHIP setsockopt error\n");
+/*     stMreq.imr_multiaddr.s_addr=inet_addr(mcastgroup); */
+/*     if(*interface) stMreq.imr_interface.s_addr=inet_addr(interface); */
+/*     else stMreq.imr_interface.s_addr=INADDR_ANY; */
+/*     if(setsockopt(sock,IPPROTO_IP,IP_ADD_MEMBERSHIP,(char *)&stMreq, */
+/*       sizeof(stMreq))<0) err_sys("IP_ADD_MEMBERSHIP setsockopt error\n"); */
+    mcast_join(sock, mcastgroup, interface);
   }
 
   if(noreq) write_log("resend request disabled");

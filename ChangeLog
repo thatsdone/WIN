@@ -1,4 +1,15 @@
- $Id: ChangeLog,v 1.131.2.25.2.137.2.27 2011/01/24 12:16:48 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.137.2.28 2011/05/05 04:15:55 uehira Exp $
+
+2011-05-05  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 2.1.23 released.
+	* win, win_m : removed two options : -w, -B
+	* finalb data : read & write each member of 'struct FinalB'.
+
+2011-03-22  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 2.1.22 released.
+	* remove autotool related files.
+	* src/recvt46.c, src/send_raw46.c : added.
+	* multicast option : recvstatus2, recvstatus3, recvstatus4, relaym
 
 2011-01-24  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* prog/cpraw : added bash script.

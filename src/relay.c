@@ -1,4 +1,4 @@
-/* $Id: relay.c,v 1.15.4.3.2.10.2.2 2011/01/12 16:57:06 uehira Exp $ */
+/* $Id: relay.c,v 1.15.4.3.2.10.2.3 2011/05/05 04:15:57 uehira Exp $ */
 /*-
  "relay.c"      5/23/94-5/25/94,6/15/94-6/16/94,6/23/94,3/16/95 urabe
                 3/26/95 check_packet_no; port#
@@ -81,7 +81,7 @@
 #define N_HOST    100   /* max N of hosts */  
 
 static const char rcsid[] =
-  "$Id: relay.c,v 1.15.4.3.2.10.2.2 2011/01/12 16:57:06 uehira Exp $";
+  "$Id: relay.c,v 1.15.4.3.2.10.2.3 2011/05/05 04:15:57 uehira Exp $";
 
 static int sock_in,sock_out;   /* socket */
 static uint8_w sbuf[BUFNO][MAXMESG],ch_table[WIN_CHMAX];
@@ -418,11 +418,11 @@ main(int argc, char *argv[])
   uint16_t  host_port,src_port;
   uint8_w no,no_f;
   char tb[256];
-  struct ip_mreq stMreq;
+  /* struct ip_mreq stMreq; */
   char mcastgroup[256]; /* multicast address */
   char interface[256]; /* multicast interface for receive */
   char sinterface[256]; /* multicast interface for send */
-  in_addr_t  mif; /* multicast interface address */
+  /* in_addr_t  mif;  *//* multicast interface address */
 
   if((progname=strrchr(argv[0],'/')) != NULL) progname++;
   else progname=argv[0];
@@ -565,11 +565,12 @@ main(int argc, char *argv[])
     /* in multicast */
     if(*mcastgroup)
       {
-      stMreq.imr_multiaddr.s_addr=inet_addr(mcastgroup);
-      if(*interface) stMreq.imr_interface.s_addr=inet_addr(interface);
-      else stMreq.imr_interface.s_addr=INADDR_ANY;
-      if(setsockopt(sock_in,IPPROTO_IP,IP_ADD_MEMBERSHIP,(char *)&stMreq,
-        sizeof(stMreq))<0) err_sys("IP_ADD_MEMBERSHIP setsockopt error\n");
+/*       stMreq.imr_multiaddr.s_addr=inet_addr(mcastgroup); */
+/*       if(*interface) stMreq.imr_interface.s_addr=inet_addr(interface); */
+/*       else stMreq.imr_interface.s_addr=INADDR_ANY; */
+/*       if(setsockopt(sock_in,IPPROTO_IP,IP_ADD_MEMBERSHIP,(char *)&stMreq, */
+/*         sizeof(stMreq))<0) err_sys("IP_ADD_MEMBERSHIP setsockopt error\n"); */
+	mcast_join(sock_in, mcastgroup, interface);
       }
     }
 
@@ -607,18 +608,19 @@ main(int argc, char *argv[])
   /*   err_sys("bind_out"); */
 
   /* out multicast */
-  if(*sinterface)
-    {
-    mif=inet_addr(sinterface);
-    if(setsockopt(sock_out,IPPROTO_IP,IP_MULTICAST_IF,&mif,sizeof(mif))<0)
-      err_sys("IP_MULTICAST_IF setsockopt error\n");
-    }
-  if(ttl>1)
-    {
-    no=ttl;
-    if(setsockopt(sock_out,IPPROTO_IP,IP_MULTICAST_TTL,&no,sizeof(no))<0)
-      err_sys("IP_MULTICAST_TTL setsockopt error\n");
-    }
+  mcast_set_outopt(sock_out, sinterface, ttl);
+/*   if(*sinterface) */
+/*     { */
+/*     mif=inet_addr(sinterface); */
+/*     if(setsockopt(sock_out,IPPROTO_IP,IP_MULTICAST_IF,&mif,sizeof(mif))<0) */
+/*       err_sys("IP_MULTICAST_IF setsockopt error\n"); */
+/*     } */
+/*   if(ttl>1) */
+/*     { */
+/*     no=ttl; */
+/*     if(setsockopt(sock_out,IPPROTO_IP,IP_MULTICAST_TTL,&no,sizeof(no))<0) */
+/*       err_sys("IP_MULTICAST_TTL setsockopt error\n"); */
+/*     } */
 
   if(nopno) write_log("packet numbers pass through");
   if(noreq) write_log("resend request disabled");

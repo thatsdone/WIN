@@ -1,4 +1,4 @@
-/* $Id: send_raw.c,v 1.24.2.4.2.18.2.3 2011/01/12 16:57:06 uehira Exp $ */
+/* $Id: send_raw.c,v 1.24.2.4.2.18.2.4 2011/05/05 04:15:57 uehira Exp $ */
 /*
     program "send_raw/send_mon.c"   1/24/94 - 1/25/94,5/25/94 urabe
                                     6/15/94 - 6/16/94
@@ -102,7 +102,7 @@
 #define REQ_TIMO  10   /* timeout (sec) for request */
 
 static const char  rcsid[] =
-   "$Id: send_raw.c,v 1.24.2.4.2.18.2.3 2011/01/12 16:57:06 uehira Exp $";
+   "$Id: send_raw.c,v 1.24.2.4.2.18.2.4 2011/05/05 04:15:57 uehira Exp $";
 
 static int sock,raw,tow,all,n_ch,negate_channel,mtu,nbuf,slptime,
   no_resend;
@@ -398,7 +398,7 @@ main(int argc, char *argv[])
   char  tbuf[1024];
   struct Shm  *shm,*shw;
   char interface[256]; /* multicast interface */
-  in_addr_t  mif; /* multicast interface address */
+  /* in_addr_t  mif; */ /* multicast interface address */
 
   if((progname=strrchr(argv[0],'/')) != NULL) progname++;
   else progname=argv[0];
@@ -637,18 +637,19 @@ main(int argc, char *argv[])
     write_log(tbuf);
     }
 
-  if(*interface)
-    {
-    mif=inet_addr(interface);
-    if(setsockopt(sock,IPPROTO_IP,IP_MULTICAST_IF,(char *)&mif,sizeof(mif))<0)
-      err_sys("IP_MULTICAST_IF setsockopt error");
-    }
-  if(ttl>1)
-    {
-    no=ttl;
-    if(setsockopt(sock,IPPROTO_IP,IP_MULTICAST_TTL,&no,sizeof(no))<0)
-      err_sys("IP_MULTICAST_TTL setsockopt error");
-    }
+  mcast_set_outopt(sock, interface, ttl);
+/*   if(*interface) */
+/*     { */
+/*     mif=inet_addr(interface); */
+/*     if(setsockopt(sock,IPPROTO_IP,IP_MULTICAST_IF,(char *)&mif,sizeof(mif))<0) */
+/*       err_sys("IP_MULTICAST_IF setsockopt error"); */
+/*     } */
+/*   if(ttl>1) */
+/*     { */
+/*     no=ttl; */
+/*     if(setsockopt(sock,IPPROTO_IP,IP_MULTICAST_TTL,&no,sizeof(no))<0) */
+/*       err_sys("IP_MULTICAST_TTL setsockopt error"); */
+/*     } */
 
   signal(SIGPIPE,(void *)end_program);
   signal(SIGINT,(void *)end_program);

@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.46.2.6.2.48 2011/05/05 02:14:41 uehira Exp $
+   $Id: win.c,v 1.46.2.6.2.49 2011/05/05 02:44:30 uehira Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -26,7 +26,7 @@
 #define WIN_VERSION   "2011.5.5(+Hi-net)"
 
 static const char rcsid[] =
-  "$Id: win.c,v 1.46.2.6.2.48 2011/05/05 02:14:41 uehira Exp $";
+  "$Id: win.c,v 1.46.2.6.2.49 2011/05/05 02:44:30 uehira Exp $";
 
 #define DEBUG_AP      0   /* for debugging auto-pick */
 /* 5:sr, 4:ch, 3:sec, 2:find_pick, 1:all */
@@ -4647,7 +4647,7 @@ main(int argc, char *argv[])
   mon_offset=just_hypo=just_hypo_offset=0;
   /* flag_save=sec_block=1; */
   sec_block=1;
-  flag_save=0;  /* .sv obsoluted. */
+  flag_save=0;  /* .sv obsolete. */
   *ft.final_opt=0;
   dot='.';
   *chstr=0;
@@ -4712,7 +4712,8 @@ main(int argc, char *argv[])
         break;
       case 'w':   /* save MON bitmap */
         /* flag_save=2; */
-	flag_save=0;  /* obsolute */
+	flag_save=0;  /* obsolete */
+	fprintf(stderr, "'-w' option is obsolete.\n");
         break;
       case 'x':   /* just calculate hypocenter */
         strcpy(ft.save_file,optarg);
@@ -4724,6 +4725,7 @@ main(int argc, char *argv[])
         break;
       case 'B':   /* don't use MON bitmap */
         flag_save=0;
+	fprintf(stderr, "'-B' option is obsolete.\n");
         break;
       case 'C':   /* cursor color */
         strcpy(cursor_color,optarg);

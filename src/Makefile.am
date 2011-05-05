@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.38.2.10.2.34 2011/03/22 07:32:46 uehira Exp $
+# $Id: Makefile.am,v 1.38.2.10.2.35 2011/05/05 01:24:51 uehira Exp $
 #
 
 # Version number of shared libraries.
@@ -275,6 +275,7 @@ pick2finalb_LDADD = $(WIN_NORMAL_LIB)
 pick2final_SOURCES = pick2final.c $(SUBFUNC_H)
 
 finalb2final_SOURCES = finalb2final.c $(WIN_LIBH)
+finalb2final_LDADD = $(WIN_NORMAL_LIB)
 
 final2finalb_SOURCES = final2finalb.c $(WIN_LIBH)
 final2finalb_LDADD = $(WIN_NORMAL_LIB)

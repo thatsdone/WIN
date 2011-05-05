@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.46.2.6.2.46 2011/01/12 16:58:08 uehira Exp $
+   $Id: win.c,v 1.46.2.6.2.47 2011/05/05 01:24:52 uehira Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -23,10 +23,10 @@
 #else
 #define NAME_PRG      "win32"
 #endif
-#define WIN_VERSION   "2011.1.13(+Hi-net)"
+#define WIN_VERSION   "2011.5.5(+Hi-net)"
 
 static const char rcsid[] =
-  "$Id: win.c,v 1.46.2.6.2.46 2011/01/12 16:58:08 uehira Exp $";
+  "$Id: win.c,v 1.46.2.6.2.47 2011/05/05 01:24:52 uehira Exp $";
 
 #define DEBUG_AP      0   /* for debugging auto-pick */
 /* 5:sr, 4:ch, 3:sec, 2:find_pick, 1:all */
@@ -2128,12 +2128,12 @@ print_usage(void)
   fprintf(stderr,"                  r    - do 'auto-pick' with prelim. hypo\n");
   fprintf(stderr,"                  s [server(:port)] - pick file server & port\n");
   fprintf(stderr,"                  t    - copy data-file to local\n");
-  fprintf(stderr,"                  w    - write bitmap (.sv) file\n");
+  /* fprintf(stderr,"                  w    - write bitmap (.sv) file\n"); */
   fprintf(stderr,"                  x [pick file] - just calculate hypocenter\n");
   fprintf(stderr,"                  z [mode] - Expert mode\n");
   fprintf(stderr,"                     a     - AUTPK/EVDET Button OFF\n");
   fprintf(stderr,"                     c     - CALC. LINE OFF\n");
-  fprintf(stderr,"                  B    - don't use bitmap (.sv) file\n");
+  /* fprintf(stderr,"                  B    - don't use bitmap (.sv) file\n"); */
   fprintf(stderr,"                  C [color] - set color of cursor\n");
   fprintf(stderr,"                  S    - don't assume second blocks\n");
   fprintf(stderr,"                  _    - use '_' in pick file names\n");
@@ -4645,7 +4645,9 @@ main(int argc, char *argv[])
   background=map_only=mc=bye=auto_flag=auto_flag_hint=not_save=autpk_but_off=calc_line_off=0;
   copy_file=got_hup=ft.ch_exclusive=0;
   mon_offset=just_hypo=just_hypo_offset=0;
-  flag_save=sec_block=1;
+  /* flag_save=sec_block=1; */
+  sec_block=1;
+  flag_save=0;  /* .sv obsoluted. */
   *ft.final_opt=0;
   dot='.';
   *chstr=0;
@@ -4709,7 +4711,8 @@ main(int argc, char *argv[])
         copy_file=1;
         break;
       case 'w':   /* save MON bitmap */
-        flag_save=2;
+        /* flag_save=2; */
+	flag_save=0;  /* obsolute */
         break;
       case 'x':   /* just calculate hypocenter */
         strcpy(ft.save_file,optarg);
@@ -8846,14 +8849,15 @@ is_a_file:  fread(textbuf,1,20,fp);
               fwrite(&hypo,sizeof(hypo),1,fp_othrs);
               n_hypo++;
               }
-            else while(fread(&hypob,sizeof(hypob),1,fp)>0)
+            /* else while(fread(&hypob,sizeof(hypob),1,fp)>0) */
+            else while(FinalB_read(&hypob,fp)>0)
               { /* binary format file */
-              swp=(union Swp *)&hypob.alat;
-              swp->i=(swp->c[0]<<24)+(swp->c[1]<<16)+(swp->c[2]<<8)+swp->c[3];
-              swp=(union Swp *)&hypob.along;
-              swp->i=(swp->c[0]<<24)+(swp->c[1]<<16)+(swp->c[2]<<8)+swp->c[3];
-              swp=(union Swp *)&hypob.dep;
-              swp->i=(swp->c[0]<<24)+(swp->c[1]<<16)+(swp->c[2]<<8)+swp->c[3];
+              /* swp=(union Swp *)&hypob.alat; */
+/*               swp->i=(swp->c[0]<<24)+(swp->c[1]<<16)+(swp->c[2]<<8)+swp->c[3]; */
+/*               swp=(union Swp *)&hypob.along; */
+/*               swp->i=(swp->c[0]<<24)+(swp->c[1]<<16)+(swp->c[2]<<8)+swp->c[3]; */
+/*               swp=(union Swp *)&hypob.dep; */
+/*               swp->i=(swp->c[0]<<24)+(swp->c[1]<<16)+(swp->c[2]<<8)+swp->c[3]; */
               strncpy(hypo.o,hypob.owner,4);
               for(ptr=hypob.diag;ptr<hypob.diag+4;ptr++) *ptr=toupper(*ptr);
               if(strncmp(hypob.diag,"BLAST",4)==0) hypo.blast=1;

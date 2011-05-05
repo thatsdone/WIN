@@ -1,4 +1,9 @@
- $Id: ChangeLog,v 1.131.2.25.2.163 2011/03/22 07:32:46 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.164 2011/05/05 01:24:50 uehira Exp $
+
+2011-05-05  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 2.1.23 released.
+	* win, win_m : removed two options : -w, -B
+	* finalb data : read & write each member of 'struct FinalB'.
 
 2011-03-22  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* Version 2.1.22 released.

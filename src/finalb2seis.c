@@ -1,4 +1,4 @@
-/* $Id: finalb2seis.c,v 1.3.4.1.2.2 2010/09/20 07:38:37 uehira Exp $ */
+/* $Id: finalb2seis.c,v 1.3.4.1.2.3 2011/05/05 01:24:52 uehira Exp $ */
 /******************************************************************/
 /*    finalb2seis.c                8/19/92-6/1/93 urabe           */
 /*    How to use (for example),                                   */
@@ -17,7 +17,7 @@
 #include "winlib.h"
 
 static const char rcsid[] =
-   "$Id: finalb2seis.c,v 1.3.4.1.2.2 2010/09/20 07:38:37 uehira Exp $";
+   "$Id: finalb2seis.c,v 1.3.4.1.2.3 2011/05/05 01:24:52 uehira Exp $";
 
 /* prototypes */
 int main(int, char *[]);
@@ -46,7 +46,7 @@ main(int argc, char *argv[])
     }
   j=0;
   start=1;
-  while(fread(&d,sizeof(d),1,stdin)>0)
+  while(FinalB_read(&d,stdin)>0)
     {
     if(argc>2 && strncmp(argv[2],d.owner,4)) continue;
     if(start)
@@ -124,12 +124,12 @@ main(int argc, char *argv[])
     i=d.time[5]*10+d.time[6];
     b[5]=(uint8_w)(i%256);
     b[6]=(uint8_w)(i/256);
-    i=1;if(*(char *)&i)
-      {
-      SWAPF(d.alat);  
-      SWAPF(d.along);
-      SWAPF(d.dep);
-      }
+/*     i=1;if(*(char *)&i) */
+/*       { */
+/*       SWAPF(d.alat);   */
+/*       SWAPF(d.along); */
+/*       SWAPF(d.dep); */
+/*       } */
     b[7]=(uint8_w)d.along;
     b[8]=(uint8_w)((d.along-(float)b[7])*60.0);
     b[9]=(uint8_w)((d.along-(float)b[7]-((float)b[8])/60.0)*3600.0+0.5);

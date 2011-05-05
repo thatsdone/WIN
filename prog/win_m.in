@@ -1,7 +1,7 @@
 #! @WISH@
 
 #
-# $Id: win_m.in,v 1.5.6.1 2009/02/19 07:41:56 uehira Exp $
+# $Id: win_m.in,v 1.5.6.2 2011/05/05 01:24:51 uehira Exp $
 #  win_m : ＷＩＮのピックマネージャー
 #
 #    Uehira Kenji (Original 96.2.29)
@@ -532,10 +532,10 @@ proc disp_win_option {} {
 	    -onvalue "-o" -offvalue "" -variable O_o -font $FONT
     checkbutton $w.select.t -text "t    - copy data-file to local"\
 	    -onvalue "-t" -offvalue "" -variable O_t -font $FONT
-    checkbutton $w.select.w -text "w    - write bitmap (.sv) file"\
-	    -onvalue "-w" -offvalue "" -variable O_w -font $FONT
-    checkbutton $w.select.b -text "B    - don't use bitmap (.sv) file"\
-	    -onvalue "-B" -offvalue "" -variable O_B -font $FONT
+#    checkbutton $w.select.w -text "w    - write bitmap (.sv) file"\
+#	    -onvalue "-w" -offvalue "" -variable O_w -font $FONT
+#    checkbutton $w.select.b -text "B    - don't use bitmap (.sv) file"\
+#	    -onvalue "-B" -offvalue "" -variable O_B -font $FONT
     checkbutton $w.select.s -text "S    - stack picture in memory"\
 	    -onvalue "-S" -offvalue "" -variable O_S -font $FONT
 
@@ -546,8 +546,10 @@ proc disp_win_option {} {
     button $w.det.default -text "DEFAULT" -width 15\
 	    -command "win_op_default $w"
     
-    pack $w.select.f $w.select.o $w.select.t $w.select.w\
-	    $w.select.b $w.select.s -side top -anchor w
+#    pack $w.select.f $w.select.o $w.select.t $w.select.w\
+#	    $w.select.b $w.select.s -side top -anchor w
+    pack $w.select.f $w.select.o $w.select.t\
+	    $w.select.s -side top -anchor w
     pack $w.det.ok $w.det.default -side left -padx 5
     pack $w.entry $w.select $w.det -side top -pady 5
 }

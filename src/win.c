@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.46.2.6.2.47 2011/05/05 01:24:52 uehira Exp $
+   $Id: win.c,v 1.46.2.6.2.48 2011/05/05 02:14:41 uehira Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -26,7 +26,7 @@
 #define WIN_VERSION   "2011.5.5(+Hi-net)"
 
 static const char rcsid[] =
-  "$Id: win.c,v 1.46.2.6.2.47 2011/05/05 01:24:52 uehira Exp $";
+  "$Id: win.c,v 1.46.2.6.2.48 2011/05/05 02:14:41 uehira Exp $";
 
 #define DEBUG_AP      0   /* for debugging auto-pick */
 /* 5:sr, 4:ch, 3:sec, 2:find_pick, 1:all */
@@ -8850,7 +8850,7 @@ is_a_file:  fread(textbuf,1,20,fp);
               n_hypo++;
               }
             /* else while(fread(&hypob,sizeof(hypob),1,fp)>0) */
-            else while(FinalB_read(&hypob,fp)>0)
+            else while(FinalB_read(&hypob,fp)==FinalB_SIZE)
               { /* binary format file */
               /* swp=(union Swp *)&hypob.alat; */
 /*               swp->i=(swp->c[0]<<24)+(swp->c[1]<<16)+(swp->c[2]<<8)+swp->c[3]; */

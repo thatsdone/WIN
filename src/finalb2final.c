@@ -1,4 +1,4 @@
-/* $Id: finalb2final.c,v 1.3.4.1.2.3 2011/05/05 01:24:52 uehira Exp $ */
+/* $Id: finalb2final.c,v 1.3.4.1.2.4 2011/05/05 02:14:41 uehira Exp $ */
 /******************************************************************/
 /*    finalb2final.c              6/10/94 urabe                   */
 /*    97.10.3 FreeBSD    99.4.19 byte-order-free                  */
@@ -14,7 +14,7 @@
 #include "winlib.h"
 
 static const char rcsid[] =
-   "$Id: finalb2final.c,v 1.3.4.1.2.3 2011/05/05 01:24:52 uehira Exp $";
+   "$Id: finalb2final.c,v 1.3.4.1.2.4 2011/05/05 02:14:41 uehira Exp $";
 
 /* prototypes */
 int main(int, char *[]);
@@ -30,7 +30,7 @@ main(int argc, char *argv[])
   /*   } d; */
   struct FinalB  d;      /* 28 bytes / event */
 
-  while(FinalB_read(&d,stdin)>0)
+  while(FinalB_read(&d,stdin)==FinalB_SIZE)
     {
 /*     i=1;if(*(char *)&i) */
 /*       { */

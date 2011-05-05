@@ -1,4 +1,4 @@
-/* $Id: finalb2seis.c,v 1.3.4.1.2.3 2011/05/05 01:24:52 uehira Exp $ */
+/* $Id: finalb2seis.c,v 1.3.4.1.2.4 2011/05/05 02:14:41 uehira Exp $ */
 /******************************************************************/
 /*    finalb2seis.c                8/19/92-6/1/93 urabe           */
 /*    How to use (for example),                                   */
@@ -17,7 +17,7 @@
 #include "winlib.h"
 
 static const char rcsid[] =
-   "$Id: finalb2seis.c,v 1.3.4.1.2.3 2011/05/05 01:24:52 uehira Exp $";
+   "$Id: finalb2seis.c,v 1.3.4.1.2.4 2011/05/05 02:14:41 uehira Exp $";
 
 /* prototypes */
 int main(int, char *[]);
@@ -46,7 +46,7 @@ main(int argc, char *argv[])
     }
   j=0;
   start=1;
-  while(FinalB_read(&d,stdin)>0)
+  while(FinalB_read(&d,stdin)==FinalB_SIZE)
     {
     if(argc>2 && strncmp(argv[2],d.owner,4)) continue;
     if(start)

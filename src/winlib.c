@@ -1,4 +1,4 @@
-/* $Id: winlib.c,v 1.1.2.4.2.38 2011/05/05 01:24:55 uehira Exp $ */
+/* $Id: winlib.c,v 1.1.2.4.2.39 2011/05/05 02:14:43 uehira Exp $ */
 
 /*-
  * winlib.c  (Uehira Kenji)
@@ -1667,12 +1667,12 @@ FinalB_read(struct FinalB *d, FILE *fp)
   int  i;
 
   b = 0;
-  b += fread(d->time, sizeof(int8_w), 8, fp);
-  b += fread(&d->alat, sizeof(float), 1, fp);
-  b += fread(&d->along, sizeof(float), 1, fp);
-  b += fread(&d->dep, sizeof(float), 1, fp);
-  b += fread(d->diag, sizeof(char), 4, fp);
-  b += fread(d->owner, sizeof(char), 4, fp);
+  b += fread(d->time, sizeof(int8_w), 8, fp) * sizeof(int8_w);
+  b += fread(&d->alat, sizeof(float), 1, fp) * sizeof(float);
+  b += fread(&d->along, sizeof(float), 1, fp) * sizeof(float);
+  b += fread(&d->dep, sizeof(float), 1, fp) * sizeof(float);
+  b += fread(d->diag, sizeof(char), 4, fp) * sizeof(char);
+  b += fread(d->owner, sizeof(char),4, fp) * sizeof(char);
 
   /* endian check */
   i = 1;
@@ -1700,12 +1700,12 @@ FinalB_write(struct FinalB d, FILE *fp)
   }
 
   b = 0;
-  b += fwrite(d.time, sizeof(int8_w), 8, fp);
-  b += fwrite(&d.alat, sizeof(float), 1, fp);
-  b += fwrite(&d.along, sizeof(float), 1, fp);
-  b += fwrite(&d.dep, sizeof(float), 1, fp);
-  b += fwrite(d.diag, sizeof(char), 4, fp);
-  b += fwrite(d.owner, sizeof(char), 4, fp);
+  b += fwrite(d.time, sizeof(int8_w), 8, fp) * sizeof(int8_w);
+  b += fwrite(&d.alat, sizeof(float), 1, fp) * sizeof(float);
+  b += fwrite(&d.along, sizeof(float), 1, fp) * sizeof(float);
+  b += fwrite(&d.dep, sizeof(float), 1, fp) * sizeof(float);
+  b += fwrite(d.diag, sizeof(char), 4, fp) * sizeof(char);
+  b += fwrite(d.owner, sizeof(char), 4, fp) * sizeof(char);
 
   return (b);
 }

@@ -1,4 +1,4 @@
-/* $Id: w_macros.h,v 1.1.2.4 2011/01/08 08:53:09 uehira Exp $ */
+/* $Id: w_macros.h,v 1.1.2.5 2011/05/05 04:22:16 uehira Exp $ */
 
 #ifndef _WMACROS_H_
 #define _WMACROS_H_
@@ -42,6 +42,9 @@
 
 /* default transmit buffer size of socket (in KB) */
 #define  DEFAULT_SNDBUF  256
+
+/* structure of binary hypo file 'FinalB' (28 bytes / event) */
+#define FinalB_SIZE  28
 
 /*** process control file ***/
 #define N_LATEST     "LATEST"

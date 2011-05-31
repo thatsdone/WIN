@@ -1,4 +1,9 @@
- $Id: ChangeLog,v 1.131.2.25.2.164 2011/05/05 01:24:50 uehira Exp $
+ $Id: ChangeLog,v 1.131.2.25.2.165 2011/05/31 00:31:41 uehira Exp $
+
+2011-05-31  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 2.1.24 released.
+	* imported 'wincat' and 'shmsimu'
+	  developed by TSURUOKA Hiroshi (tsuru@eri.u-tokyo.ac.jp).
 
 2011-05-05  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* Version 2.1.23 released.

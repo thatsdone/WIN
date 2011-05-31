@@ -1,0 +1,90 @@
+#! @PERL@
+
+# $Id: wincat.in,v 1.1.2.1 2011/05/31 00:31:42 uehira Exp $
+# "wcat for HARVEST"   98.09.28 Hiroshi TSURUOKA
+# usage wcat DATDIR YR1 MO1 DY1 HR1 MI1 LEN
+# e.g.
+# 	wcat /dat/raw 1998 1 1 0 0 20
+
+if ( $#ARGV < 0 ) {
+	print "usage wincat /dat/raw YR MO DY HR MI LEN\n";
+	print " e.g. wincat /dat/raw 1998 1 1 0 0 20\n";
+	exit;
+}
+
+$CAT='/bin/cat';
+$DATDIR=$ARGV[0];
+$YR1=$ARGV[1]; $MO1=$ARGV[2]; $DY1=$ARGV[3]; $HR1=$ARGV[4]; $MI1=$ARGV[5];
+$LEN=$ARGV[6];
+
+$n=$LEN;
+$yr=$YR1; $mo=$MO1; $dy=$DY1;$hr=$HR1;$mi=$MI1;
+for($i=0;$i<$n;$i++){
+	$RAWFILE=sprintf("%02d%02d%02d%02d.%02d", $yr%100, $mo, $dy, $hr, $mi);
+    if ( -f "$DATDIR/$RAWFILE" ) {
+	system("$CAT $DATDIR/$RAWFILE");
+    }
+	$mi=$mi+1;
+	if ( $mi >= 60 ) { $mi = 0; $hr=$hr+1;}
+	if ( $hr >= 24 ) { 
+		$hr = 0; 
+		$dy=$dy+1;
+		$jul = &julday($mo, $dy, $yr);
+		@mdy = &caldat($jul);
+		$yr = $mdy[2];
+		$mo = $mdy[0];
+		$dy = $mdy[1];
+	}
+}
+
+
+# NR f77 -> perl
+# 1997/07/11 H. TSURUOKA
+sub julday{
+  local($mm, $id, $iyyy) = @_;
+  local($igreg, $jy, $jm, $ja, $julday);
+  $igreg=15+31*(10+12*1582);
+  if ($iyyy==0) {print "there is no year zero.\n";}
+  if ($iyyy<0) {$iyyy=$iyyy+1;}
+  if ($mm>2) {
+     $jy=$iyyy;
+     $jm=$mm+1;
+  } else {
+     $jy=$iyyy-1;
+     $jm=$mm+13;
+  }
+  $julday=int(365.25*$jy)+int(30.6001*$jm)+$id+1720995;
+  if ($id+31*($mm+12*$iyyy)>=$igreg) {
+     $ja=int(0.01*$jy);
+     $julday=$julday+2-$ja+int(0.25*$ja);
+  }
+  return $julday;
+}
+
+sub caldat{
+local($julian) = @_;
+local($mm, $id, $iyyy);
+local($jalpha, $ja, $jb, $jc, $jd, $je);
+   $mdy[3] = ($julian+1) % 7;
+   $igreg=2299161;
+   if($julian>=$igreg){
+     $jalpha=int((($julian-1867216)-0.25)/36524.25);
+     $ja=$julian+1+$jalpha-int(0.25*$jalpha);
+   } else {
+     $ja=$julian;
+   }
+   $jb=$ja+1524;
+   $jc=int(6680.+(($jb-2439870)-122.1)/365.25);
+   $jd=365*$jc+int(0.25*$jc);
+   $je=int(($jb-$jd)/30.6001);
+   $id=$jb-$jd-int(30.6001*$je);
+   $mm=$je-1;
+   if($mm>12){$mm=$mm-12;}
+   $iyyy=$jc-4715;
+   if($mm>2){$iyyy=$iyyy-1;}
+   if($iyyy<=0){$iyyy=$iyyy-1;}
+   $mdy[0] = $mm;
+   $mdy[1] = $id;
+   $mdy[2] = $iyyy;
+   return @mdy;
+}

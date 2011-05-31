@@ -1,0 +1,53 @@
+#! @TCLSH@
+
+# $Id: shmsimu.in,v 1.2.2.1 2011/05/31 02:42:58 uehira Exp $
+
+if { $argc < 1 } {
+    puts "shmsimu            --> make simulation data"
+    puts "shmsimu -p -sSPEED --> print simulation data"
+    exit
+}
+
+set version 1.0
+set fpin stdin
+set fpout stdout
+set fp $fpin 
+set cat 0
+set speed 1
+for { set j 0 } { $j < $argc } { incr j } {
+    set tmpargv [lindex $argv $j]
+    set optflag [string range $tmpargv 0 1]
+    if { $optflag == "-p" } {
+	set cat 1
+    } elseif { $optflag == "-s" } {
+	set speed [string range $tmpargv 2 [string length $tmpargv]]
+    }
+}
+
+if { $cat == 0 } {
+    set tm0 [clock clicks -milliseconds]
+}
+while {![eof $fp]} {
+    if { $cat == 0 } {
+	set tm [clock clicks -milliseconds]
+	set dtm [expr $tm - $tm0]
+	puts "DT $dtm"
+    } else {
+	gets $fp line
+	scan $line "DT %d" dtm
+	set ms [expr $dtm/$speed]
+	after $ms
+    }
+    gets $fp line
+    scan $line "%d %d %d %d %d %d %d" yr mo dy hr mi sc nch
+    puts $line
+    for { set i 0 } { $i < $nch } { incr i } {
+	gets $fp tmpdata
+	puts $tmpdata
+    }
+    flush $fpout
+    if { $cat == 0 } {
+	set tm0 $tm
+    }
+}
+close $fp

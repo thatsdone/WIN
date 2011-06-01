@@ -1,4 +1,5 @@
-/* $Id: elist.c,v 1.11 2010/10/11 09:17:46 uehira Exp $ */
+/* $Id: elist.c,v 1.12 2011/06/01 11:09:20 uehira Exp $ */
+
 /* program elist.c    2/5/91 - 2/25/91 ,  4/16/92, 4/22/92  urabe */
 /*                      6/10/92, 8/18/92, 10/25/92, 6/8/93, 1/5/94  */
 /*      4/21/94,12/5/94,6/2/95 bug in dat_dir fixed */
@@ -8,22 +9,41 @@
 /*      2001.2.9 use "tac", instead of "tail -r", for Linux */
 /*      2001.2.20 increase size of line-buffer to avoid overflow */
 /*      2001.8.22 use pickers name read from #p line if exists */
+/*      2010.10.12 fixed buf. 64bit check. */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
 
+#include <sys/types.h>
+#include <sys/stat.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <dirent.h>   /* opendir(), readdir() */
+#include <unistd.h>
 #include <math.h>
 #include <ctype.h>
 #include <pwd.h>
 
-#include "subst_func.h"
+#if HAVE_DIRENT_H  /* opendir(), readdir() */
+# include <dirent.h>
+# define DIRNAMLEN(dirent) strlen((dirent)->d_name)
+#else
+# define dirent direct
+# define DIRNAMLEN(dirent) (dirent)->d_namlen
+# if HAVE_SYS_NDIR_H
+#  include <sys/ndir.h>
+# endif
+# if HAVE_SYS_DIR_H
+#  include <sys/dir.h>
+# endif
+# if HAVE_NDIR_H
+#  include <ndir.h>
+# endif
+#endif
+
+#include "winlib.h"
 
 #define   NAMLEN    128
 #define   LINELEN   256
@@ -35,136 +55,46 @@
 #define   TAIL    "tail -r"
 #endif
 
-adj_time(tm)
-  int *tm;
-  {
-  if(tm[5]==60)
-    {
-    tm[5]=0;
-    if(++tm[4]==60)
-      {
-      tm[4]=0;
-      if(++tm[3]==24)
-        {
-        tm[3]=0;
-        tm[2]++;
-        switch(tm[1])
-          {
-          case 2:
-            if(tm[0]%4)
-              {
-              if(tm[2]==29)
-                {
-                tm[2]=1;
-                tm[1]++;
-                }
-              break;
-              }
-            else
-              {
-              if(tm[2]==30)
-                {
-                tm[2]=1;
-                tm[1]++;
-                }
-              break;
-              }
-          case 4:
-          case 6:
-          case 9:
-          case 11:
-            if(tm[2]==31)
-              {
-              tm[2]=1;
-              tm[1]++;
-              }
-            break;
-          default:
-            if(tm[2]==32)
-              {
-              tm[2]=1;
-              tm[1]++;
-              }
-            break;
-          }
-        if(tm[1]==13)
-          {
-          tm[1]=1;
-          if(++tm[0]==100) tm[0]=0;
-          }
-        }
-      }
-    }
-  else if(tm[5]==-1)
-    {
-    tm[5]=59;
-    if(--tm[4]==-1)
-      {
-      tm[4]=59;
-      if(--tm[3]==-1)
-        {
-        tm[3]=23;
-        if(--tm[2]==0)
-          {
-          switch(--tm[1])
-            {
-            case 2:
-              if(tm[0]%4) tm[2]=28;else tm[2]=29;
-              break;
-            case 4:
-            case 6:
-            case 9:
-            case 11:  
-              tm[2]=30;
-              break;
-            default:
-              tm[2]=31;  
-              break;
-            }
-          if(tm[1]==0)
-            {  
-            tm[1]=12;
-            if(--tm[0]==-1) tm[0]=99;
-            }
-          }
-        }
-      }
-    }
-  }
+static const char rcsid[] =
+  "$Id: elist.c,v 1.12 2011/06/01 11:09:20 uehira Exp $";
 
-time_cmp(t1,t2,i)
-  int *t1,*t2,i;
-  {
-  int cntr;
-  cntr=0;
-  if(t1[cntr]<70 && t2[cntr]>70) return 1;
-  if(t1[cntr]>70 && t2[cntr]<70) return -1;
-  for(;cntr<i;cntr++)
-    {
-    if(t1[cntr]>t2[cntr]) return 1;
-    if(t1[cntr]<t2[cntr]) return -1;
-    }
-  return 0;
-  }
+/* prototypes */
+static char *getname(char *, int);
+static void bfov_err(void);
+static void print_usage(void);
+int main(int, char *[]);
+/* end of prototypes */
 
-char *getname(name,id)
-  char *name;
-  int id;
+static void
+bfov_err(void)
+{
+
+  fprintf(stderr, "Buffer overrun!\n");
+  exit(1);
+}
+
+static char *
+getname(char *name, int id)
   {
   static char t[10];
   struct passwd *pwd;
-  if(*name) return name;
-  if(pwd=getpwuid(id)) return pwd->pw_name;
+
+  if(*name) return (name);
+  if((pwd=getpwuid(id))) return (pwd->pw_name);
   else
     {
     sprintf(t,"%d",id);
-    return t;
+    return (t);
     }
 /*  else return ".";*/
   }
 
-print_usage()
+static void
+print_usage(void)
   {
+
+  WIN_version();
+  fprintf(stderr, "%s\n", rcsid);
   fprintf(stderr,"Usage :  elist (-hupon) [pick dir] [pmon.out file] ([data dir] ([request dir] ..))\n");
   fprintf(stderr,"    If 'data dir' is specified, 'NOISE' files will be deleted.\n");
   fprintf(stderr,"    -h  hide 'NOISE only' events\n");
@@ -176,24 +106,23 @@ print_usage()
   exit(1);
   }
 
-str2double(t,n,m,d)
-  char *t;
-  int n,m;
-  double *d;
-  { 
-  char tb[20];
-  strncpy(tb,t+n,m);
-  tb[m]=0;
-  if(tb[0]=='*') *d=100.0;
-  else *d=atof(tb);
-  }
+/* str2double(t,n,m,d) */
+/*   char *t; */
+/*   int n,m; */
+/*   double *d; */
+/*   {  */
+/*   char tb[20]; */
+/*   strncpy(tb,t+n,m); */
+/*   tb[m]=0; */
+/*   if(tb[0]=='*') *d=100.0; */
+/*   else *d=atof(tb); */
+/*   } */
 
-main(argc,argv)
-  int argc;
-  char *argv[];
+int
+main(int argc,char *argv[])
   {
-  extern int optind;
-  extern char *optarg;
+/*   extern int optind; */
+/*   extern char *optarg; */
   FILE *fp,*fa,*fee,*fpp;
   struct dirent *dir_ent;
   struct stat st_buf;
@@ -201,7 +130,7 @@ main(argc,argv)
   struct Pk {
     char dfname[14],diagnos[20],fname[18],name[10],near[12];
     uid_t user;
-    u_short mode;
+    mode_t mode;  /* OLD : u_short */
     int hypo,mech,pick,np,ns,nm;
     float lat,lon,dep,mag;
     } *pk;
@@ -212,8 +141,8 @@ main(argc,argv)
     tmpfile[NAMLEN];
   int i,npick,t[6],ton[6],init,j,m,k,kk,no_file,noise,not_noise,re,search,
     npick_lim,c,reverse,hidenoise,kkk,pn,fn,sn,mn,nstn,delete;
-  long dp;
   double pt,pe,pomc,st,se,somc,mag;
+  void *ptrcheck;
 
   *ppfile=(*eefile)=0;
   reverse=delete=1;
@@ -283,7 +212,7 @@ main(argc,argv)
     }
 
   npick_lim=NPICK;
-  if((pk=(struct Pk *)malloc(sizeof(*pk)*npick_lim))==0)
+  if((pk=(struct Pk *)win_xmalloc(sizeof(*pk)*npick_lim))==NULL)
     {
     fprintf(stderr,"malloc (Npicks=%d) failed !\n",npick_lim);
     exit(1);
@@ -294,7 +223,9 @@ main(argc,argv)
     {
     if(*dir_ent->d_name=='.') continue;
     strcpy(pk[i].fname,dir_ent->d_name);
-    sprintf(filename,"%s/%s",pick_dir,dir_ent->d_name);
+    if (snprintf(filename,sizeof(filename),"%s/%s",
+		 pick_dir,dir_ent->d_name) >= sizeof(filename))
+      bfov_err();
 
     if((fp=fopen(filename,"r"))==NULL)
       {
@@ -305,14 +236,14 @@ main(argc,argv)
     stat(filename,&st_buf);
     pk[i].user=st_buf.st_uid;
     pk[i].mode=st_buf.st_mode;
-    fgets(textbuf,LINELEN,fp);
+    fgets(textbuf,sizeof(textbuf),fp);
     pk[i].diagnos[0]=pk[i].name[0]=0;
     sscanf(textbuf,"%*s%s%s%s",pk[i].dfname,pk[i].diagnos,pk[i].name);
     pk[i].diagnos[5]=pk[i].name[5]=0;
     pk[i].pick=pk[i].hypo=pk[i].mech=pk[i].np=pk[i].ns=pk[i].nm=0;
     pk[i].mag=9.9;
     pn=sn=fn=mn=0;
-    while(fgets(textbuf,LINELEN,fp)!=NULL)
+    while(fgets(textbuf,sizeof(textbuf),fp)!=NULL)
       {
       if(strncmp(textbuf,"#p",2)==0)
         {
@@ -334,7 +265,7 @@ main(argc,argv)
         if(fn==5) sscanf(textbuf,"%*s%d",&nstn);
         if(fn>5 && fn<=5+nstn)
           {
-          sscanf(textbuf,"%*s%s",pk[i].near);
+	  sscanf(textbuf,"%*s%s",pk[i].near);
           str2double(textbuf,39+3,7,&pt);
           str2double(textbuf,46+3,6,&pe);
           str2double(textbuf,52+3,7,&pomc);
@@ -359,13 +290,18 @@ main(argc,argv)
 
     if(++i==npick_lim)
       {
-      if((pk=(struct Pk *)realloc((char *)pk,sizeof(*pk)*(npick_lim+NPICK)))==0)
+      ptrcheck=win_xrealloc((char *)pk,sizeof(*pk)*(npick_lim+NPICK));
+      if(ptrcheck==NULL)
         {
-        fprintf(stderr,"realloc failed !  Npicks=%d (size=%d)\n",
+        fprintf(stderr,"realloc failed !  Npicks=%d (size=%zu)\n",
           npick_lim,sizeof(*pk)*npick_lim);
         break;
         }
-      else npick_lim+=NPICK;
+      else
+	{
+	  pk = (struct Pk *)ptrcheck;
+	  npick_lim+=NPICK;
+	}
 /*printf("npick_lim=%d\n",npick_lim);*/
       }
     }
@@ -383,7 +319,8 @@ fprintf(fpp,"pickfile          trgfile       picker P   S   M Lat.  Lon.   Dep. 
 fprintf(fpp,"-----------------------------------------------------------------------------\n");
       fclose(fpp);
       }
-    sprintf(tbuf,"sort >> %s",ppfile);
+    if (snprintf(tbuf,sizeof(tbuf),"sort >> %s",ppfile) >= sizeof(tbuf))
+      bfov_err();
     if((fpp=popen(tbuf,"w"))==NULL)
       fprintf(stderr,"pipe '%s' not open.\n",tbuf);    
     else
@@ -406,7 +343,9 @@ fprintf(fpp,"-------------------------------------------------------------------
     exit(1);
     }
 
-  sprintf(tmpfile,"/tmp/elist.%d",getpid());
+  if (snprintf(tmpfile,sizeof(tmpfile),
+	       "/tmp/elist.%d",getpid()) >= sizeof(tmpfile))
+    bfov_err();
   if((fee=fopen(tmpfile,"w"))==NULL)
     {
     fprintf(stderr,"tempfile '%s' not open.\n",tmpfile);
@@ -416,7 +355,7 @@ fprintf(fpp,"-------------------------------------------------------------------
 #define ON 1
 #define OFF 0
   search=ON;
-  while(fgets(textbuf,LINELEN,fp))
+  while(fgets(textbuf,sizeof(textbuf),fp))
     {
     if(*textbuf==' ') continue;
     *mes1=(*mes2)=(*mes3)=0;
@@ -437,7 +376,7 @@ fprintf(fpp,"-------------------------------------------------------------------
       {
       if(strcmp(mes1,"off,")) continue;
       if(time_cmp(t,ton,6)<0) continue;
-      if(ptr=strchr(textbuf,'\n')) *ptr=0;
+      if((ptr=strchr(textbuf,'\n')) != NULL) *ptr=0;
       if(*mes2) strcpy(gbuf,strchr(textbuf,*mes2));
       else *gbuf=0;
 /*printf("OFF=%02d%02d%02d.%02d%02d%02d",t[0],t[1],t[2],t[3],t[4],t[5]);*/
@@ -451,24 +390,44 @@ fprintf(fpp,"-------------------------------------------------------------------
       m=(int)(-2.36+2.85*log10((double)i+3.0*sqrt((double)i))+0.5);
           /* After Tsumura */
 /*printf("i=%d, M=%d\n",i,m);*/
-      sprintf(outbuf,"%02d%02d%02d.%02d%02d%02d",
-        ton[0],ton[1],ton[2],ton[3],ton[4],ton[5]);
-      sprintf(textbuf,"%02d%02d%02d.%02d%02d%02d",
-        ton[0],ton[1],ton[2],ton[3],ton[4],ton[5]);
+      if (snprintf(outbuf,sizeof(outbuf),"%02d%02d%02d.%02d%02d%02d",
+		   ton[0],ton[1],ton[2],
+		   ton[3],ton[4],ton[5]) >= sizeof(outbuf))
+	bfov_err();
+      if (snprintf(textbuf,sizeof(textbuf),"%02d%02d%02d.%02d%02d%02d",
+		   ton[0],ton[1],ton[2],
+		   ton[3],ton[4],ton[5]) >= sizeof(textbuf))
+	bfov_err();
       no_file=0;
       if(*dat_dir)
         {
-        sprintf(name_dat,"%s/%s",dat_dir,textbuf);
-        sprintf(name_ch,"%s.ch",name_dat);
-        sprintf(name_sv,"%s.sv",name_dat);
+	if (snprintf(name_dat,sizeof(name_dat),"%s/%s",
+		     dat_dir,textbuf) >= sizeof(name_dat))
+	  bfov_err();
+        if (snprintf(name_ch,sizeof(name_ch),
+		     "%s.ch",name_dat) >= sizeof(name_ch))
+	  bfov_err();
+        if (snprintf(name_sv,sizeof(name_sv),
+		     "%s.sv",name_dat) >= sizeof(name_sv))
+	  bfov_err();
         if((fa=fopen(name_dat,"r"))==NULL) no_file=1;
         else fclose(fa);
         }
       if(*req_dir[0])
         {
-        sprintf(tbuf,"test \"`ls %s/%s ",req_dir[0],textbuf);
-        if(*req_dir[1]) sprintf(tbuf+strlen(tbuf),"%s/%s ",req_dir[1],textbuf);
-        if(*req_dir[2]) sprintf(tbuf+strlen(tbuf),"%s/%s ",req_dir[2],textbuf);
+	if (snprintf(tbuf,sizeof(tbuf),
+		     "test \"`ls %s/%s ",req_dir[0],textbuf) >= sizeof(tbuf))
+	  bfov_err();
+        if(*req_dir[1])
+	  if (snprintf(tbuf+strlen(tbuf),sizeof(tbuf)-strlen(tbuf),
+		       "%s/%s ",req_dir[1],textbuf)
+	      >= sizeof(tbuf)-strlen(tbuf))
+	    bfov_err();
+        if(*req_dir[2])
+	  if (snprintf(tbuf+strlen(tbuf),sizeof(tbuf)-strlen(tbuf),
+		       "%s/%s ",req_dir[2],textbuf)
+	      >= sizeof(tbuf)-strlen(tbuf))
+	    bfov_err();
         strcat(tbuf,"2>/dev/null`\"");
         re=system(tbuf); /* re==0 if flag file exists */
         }
@@ -495,7 +454,11 @@ fprintf(fpp,"-------------------------------------------------------------------
               }
             outbuf[kkk+kk]=0;
             }
-          else sprintf(outbuf+strlen(outbuf)," %-.5s",ptr);
+          else {
+	    if (snprintf(outbuf+strlen(outbuf),sizeof(outbuf)-strlen(outbuf),
+			 " %-.5s",ptr) >= sizeof(outbuf)-strlen(outbuf))
+	      bfov_err();
+	  }
           if(strlen(ptr)<5)
             {
             for(kk=0;kk<5-strlen(ptr);kk++) strcat(outbuf," ");
@@ -507,7 +470,9 @@ fprintf(fpp,"-------------------------------------------------------------------
             if(strcmp(pk[i].diagnos,"NOISE")==0 || 
               strcmp(pk[i].diagnos,"noise")==0) noise=1;
             else not_noise=1;
-            sprintf(outbuf+strlen(outbuf),"%s",pk[i].diagnos);
+            if (snprintf(outbuf+strlen(outbuf),sizeof(outbuf)-strlen(outbuf),
+			 "%s",pk[i].diagnos) >= sizeof(outbuf)-strlen(outbuf))
+	      bfov_err();
             for(k=0;k<5-strlen(pk[i].diagnos);k++) strcat(outbuf," ");
             }
           else
@@ -538,7 +503,9 @@ fprintf(fpp,"-------------------------------------------------------------------
         }
       for(i=0;i<m;i++) strcat(outbuf,"*");
       for(i=m;i<7;i++) strcat(outbuf," ");
-      sprintf(outbuf+strlen(outbuf),"  %s %s",group,gbuf);
+      if (snprintf(outbuf+strlen(outbuf),sizeof(outbuf)-strlen(outbuf),
+		   "  %s %s",group,gbuf) >= sizeof(outbuf)-strlen(outbuf))
+	bfov_err();
 /*    if(*dat_dir && no_file==1 && noise==1 && not_noise==0)*/
       if(noise==1 && not_noise==0)
         {
@@ -564,8 +531,15 @@ fprintf(fpp,"-------------------------------------------------------------------
     fprintf(fee," date   time                       M      triggered\n");
     fprintf(fee,"---------------------------------------------------\n");
     fclose(fee);
-    if(reverse) sprintf(tbuf,"%s %s >> %s",TAIL,tmpfile,eefile);
-    else sprintf(tbuf,"cat %s >> %s",tmpfile,eefile);
+    if(reverse) {
+      if (snprintf(tbuf,sizeof(tbuf),
+		   "%s %s >> %s",TAIL,tmpfile,eefile) >= sizeof(tbuf))
+	bfov_err();
+    } else {
+      if (snprintf(tbuf,sizeof(tbuf),
+		   "cat %s >> %s",tmpfile,eefile) >= sizeof(tbuf))
+	bfov_err();
+    }
     system(tbuf);
     }
   else
@@ -575,8 +549,13 @@ fprintf(fpp,"-------------------------------------------------------------------
     printf(" date   time                       M      triggered\n");
     printf("---------------------------------------------------\n");
     fflush(stdout);
-    if(reverse) sprintf(tbuf,"%s %s",TAIL,tmpfile);
-    else sprintf(tbuf,"cat %s",tmpfile);
+    if(reverse) {
+      if (snprintf(tbuf,sizeof(tbuf),"%s %s",TAIL,tmpfile) >= sizeof(tbuf))
+	bfov_err();
+    } else {
+      if (snprintf(tbuf,sizeof(tbuf),"cat %s",tmpfile) >= sizeof(tbuf))
+	bfov_err();
+    }
     system(tbuf);
     }
   unlink(tmpfile);

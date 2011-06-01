@@ -1,6 +1,6 @@
-/* $Id: winrawsrv.c,v 1.4 2007/06/23 09:28:20 uehira Exp $ */
+/* $Id: winrawsrv.c,v 1.5 2011/06/01 11:09:22 uehira Exp $ */
 
-/* winrawsrv.c -- raw data server */
+/* winrawsrv.c -- raw data request server */
 
 /*
  * Copyright (c) 2006 -
@@ -9,6 +9,8 @@
  *    Institute of Seismology and Volcanology, Kyushu University.
  *
  *   2006-05-02  Initial version.
+ *   2008-02-12  STAT : output file size of raw data described in LATEST.
+ *                    : bump protocol version up to 1.0.   
  */
 
 
@@ -35,7 +37,7 @@
 #include "gc_leak_detector.h"
 #endif
 #include "daemon_mode.h"
-#include "win_log.h"
+#include "winlib.h"
 #include "winraw_bp.h"
 
 #define DEBUG1       0
@@ -48,12 +50,13 @@
 #define MAXMSG       1024
 #define FNAMEMAX     1024
 
-static char rcsid[] =
-  "$Id: winrawsrv.c,v 1.4 2007/06/23 09:28:20 uehira Exp $";
+static const char rcsid[] =
+  "$Id: winrawsrv.c,v 1.5 2011/06/01 11:09:22 uehira Exp $";
 
 char *progname, *logfile;
-int  daemon_mode, syslog_mode;
-int  exit_status;
+int  syslog_mode, exit_status;
+
+static int  daemon_mode;
 static char  fmt[8];
 static char  msg[MAXMSG + 1];
 
@@ -84,8 +87,11 @@ main(int argc, char *argv[])
   char  wrbp_buf[WRBP_CLEN], cmd[WRBP_CLEN];
   int             c;
   ssize_t   recvnum;
-  
-  if (progname = strrchr(argv[0], '/'))
+  struct stat  fi;
+  char   lrawfname[FNAMEMAX];
+  off_t  lasize;  /* raw file size of LATEST */
+
+  if ((progname = strrchr(argv[0], '/')) != NULL)
     progname++;
   else
     progname = argv[0];
@@ -163,8 +169,8 @@ main(int argc, char *argv[])
     (void)getnameinfo(sa, fromlen, host_, sizeof(host_),
 		      port_, sizeof(port_), NI_NUMERICHOST | NI_NUMERICSERV);
     (void)snprintf(wrbp_buf, WRBP_CLEN,
-		   "WIN raw_data backup server (version %s) at %s starting.", 
-		   WRBP_VERSION, host_, port_);
+		   "Welcome to WIN raw_data backup server (%s:%s, version %s)",
+		   host_, port_, WRBP_VERSION);
     (void)writen(1, wrbp_buf, WRBP_CLEN);
 
     /********** wait request : main loop ***********/
@@ -200,6 +206,18 @@ main(int argc, char *argv[])
 	} else {
 	  (void)fscanf(fp, fmt, &LATEST);
 	  (void)fclose(fp);
+
+	  /* raw file size of LATET */
+	  if (snprintf(lrawfname, sizeof(lrawfname), "%s/%s", rdirname, LATEST)
+	      > sizeof(lrawfname))
+	    write_log("Buffer overrun");
+	  if (stat(lrawfname, &fi)) {
+	    (void)snprintf(msg, sizeof(msg), "%s: stat: %s",
+			   lafname, (char *)strerror(errno));
+	    write_log(msg);
+	    lasize = -1;
+	  } else
+	    lasize = fi.st_size;
 	}
 	/* COUNT */
 	if ((fp = fopen(cnfname, "r")) == NULL) {
@@ -223,9 +241,10 @@ main(int argc, char *argv[])
 	  (void)fclose(fp);
 	}
 	/* reply */
-	(void)snprintf(wrbp_buf, WRBP_CLEN, "%s : %s=%s %s=%s %s=%s %s=%s",
+	(void)snprintf(wrbp_buf, WRBP_CLEN,
+		       "%s : %s=%s %s=%s (%d) %s=%s %s=%s",
 		       rdirname, RAW_OLDEST, OLDEST, RAW_LATEST, LATEST,
-		       RAW_COUNT, COUNT, RAW_MAX, MAX, strlen(MAX));
+		       (int)lasize, RAW_COUNT, COUNT, RAW_MAX, MAX); 
 	(void)writen(1, wrbp_buf, WRBP_CLEN);
       }	else if (strcmp(cmd, WRBP_REQ) == 0) {  /*-- REQ --*/
 	if (do_request(wrbp_buf + strlen(cmd) + 1, rdirname)) {
@@ -249,6 +268,7 @@ static void
 usage(void)
 {
 
+  WIN_version();
   (void)fprintf(stderr, "%s\n", rcsid);
   (void)fprintf(stderr, "Usage : %s rawdir\n", progname);
   exit(1);
@@ -332,7 +352,7 @@ do_request(const char req[], const char rawdir[])
   }
   rawsize = fi.st_size;
 #if DEBUG
-  (void)snprintf(msg, sizeof(msg), "%s %d", rawpath, rawsize);
+  (void)snprintf(msg, sizeof(msg), "%s %lld", rawpath, rawsize);
   write_log(msg);
 #endif
   if (rawsize == 0) {
@@ -342,7 +362,7 @@ do_request(const char req[], const char rawdir[])
   }
 
   /* prepare buffer for rawfile */
-  if ((rawbuf = (uint8_t *)malloc((size_t)rawsize)) == NULL) {
+  if ((rawbuf = MALLOC(uint8_t, rawsize)) == NULL) {
     (void)snprintf(msg, sizeof(msg), "malloc: %s", (char *)strerror(errno));
     write_log(msg);
     return (-1);
@@ -353,7 +373,7 @@ do_request(const char req[], const char rawdir[])
     (void)snprintf(msg, sizeof(msg), "%s: %s",
 		   rawpath, (char *)strerror(errno));
     write_log(msg);
-    free(rawbuf);
+    FREE(rawbuf);
     return (-1);
   }
 
@@ -361,7 +381,7 @@ do_request(const char req[], const char rawdir[])
   if (fread(rawbuf, 1, (size_t)rawsize, fp) < (size_t)rawsize) {
     write_log("fread: few data");
     (void)fclose(fp);
-    free(rawbuf);
+    FREE(rawbuf);
     return (-1);
   }	  
   (void)fclose(fp);
@@ -371,7 +391,7 @@ do_request(const char req[], const char rawdir[])
     sptr = rawbuf;
     send_size = (size_t)rawsize;
   } else {
-    if ((rawbuf1 = (uint8_t *)malloc((size_t)rawsize)) == NULL) {
+    if ((rawbuf1 = MALLOC(uint8_t, rawsize)) == NULL) {
       (void)snprintf(msg, sizeof(msg), "malloc: %s",
 		     (char *)strerror(errno));
       write_log(msg);
@@ -383,8 +403,8 @@ do_request(const char req[], const char rawdir[])
       if (send_size == 0) {
 	(void)snprintf(msg, sizeof(msg), "%s size is 0 byte", rawpath);
 	write_log(msg);
-	free(rawbuf);
-	free(rawbuf1);
+	FREE(rawbuf);
+	FREE(rawbuf1);
 	return (-1);
       }
 
@@ -417,8 +437,8 @@ do_request(const char req[], const char rawdir[])
     write_log(msg);
   }
   
-  free(rawbuf);
-  free(rawbuf1);
+  FREE(rawbuf);
+  FREE(rawbuf1);
 
   return (0);
 }
@@ -429,23 +449,6 @@ select_raw(uint8_t src[], off_t srcsize, uint8_t dest[], int8_t seclist[])
   uint32_t  rsize, bsize;
   uint8_t   *ptr, *ptw, *ptr_limit;
   int       sec;
-  static int b2d[]={
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 9,-1,-1,-1,-1,-1,-1,  /* 0x00 - 0x0F */
-    10,11,12,13,14,15,16,17,18,19,-1,-1,-1,-1,-1,-1,
-    20,21,22,23,24,25,26,27,28,29,-1,-1,-1,-1,-1,-1,
-    30,31,32,33,34,35,36,37,38,39,-1,-1,-1,-1,-1,-1,
-    40,41,42,43,44,45,46,47,48,49,-1,-1,-1,-1,-1,-1,
-    50,51,52,53,54,55,56,57,58,59,-1,-1,-1,-1,-1,-1,
-    60,61,62,63,64,65,66,67,68,69,-1,-1,-1,-1,-1,-1,
-    70,71,72,73,74,75,76,77,78,79,-1,-1,-1,-1,-1,-1,
-    80,81,82,83,84,85,86,87,88,89,-1,-1,-1,-1,-1,-1,
-    90,91,92,93,94,95,96,97,98,99,-1,-1,-1,-1,-1,-1,  /* 0x90 - 0x9F */
-    -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
-    -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
-    -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
-    -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
-    -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
-    -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1};
 
   rsize = 0;
   ptr = src;

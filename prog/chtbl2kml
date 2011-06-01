@@ -1,0 +1,36 @@
+#! /bin/sh
+#
+# $Id: chtbl2kml,v 1.2 2011/06/01 11:09:20 uehira Exp $
+#  Convert channels table to KML format (Only location info).
+#    for Google Earth, Google map, etc.
+#
+
+tempfoo=`basename $0`
+
+if [ $# -lt 1 ]; then
+    echo ${tempfoo} chfile
+    exit 1
+fi
+
+CHFILE=$1
+
+echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+echo "<kml xmlns=\"http://earth.google.com/kml/2.1\">"
+echo "<Document>"
+echo "<name>Seismic Stations</name>"
+
+grep -v '#' $CHFILE  | awk  'NF>15 {print $4,$14,$15,$16}' | sort | uniq |
+while read sta lat lon alti
+do
+    # echo ${sta} ${lon} ${lat} ${alti}
+    echo -n "   <Placemark>"
+    echo -n "<name>${sta}</name>"
+    echo -n "<description><![CDATA[<ul><li>Lat: ${lat}</li><li>Lon: ${lon}</li><li>${alti} m</li></ul>]]></description>"
+    echo -n "<Point><coordinates>${lon},${lat},${alti}</coordinates></Point>"
+    echo "</Placemark>"
+done
+
+
+echo "</Document>"
+echo "</kml>"
+

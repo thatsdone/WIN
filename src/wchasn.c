@@ -1,6 +1,8 @@
-/*
- * $Id: wchasn.c,v 1.1 2003/08/09 02:11:51 uehira Exp $
- */
+/* $Id: wchasn.c,v 1.2 2011/06/01 11:09:22 uehira Exp $ */
+
+/*-
+  2009.7.31  64bit check.
+  -*/
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -11,11 +13,11 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "win_system.h"
-#include "subst_func.h"
+#include "winlib.h"
+/* #include "win_system.h" */
 
 static const char  rcsid[] =
-   "$Id: wchasn.c,v 1.1 2003/08/09 02:11:51 uehira Exp $";
+   "$Id: wchasn.c,v 1.2 2011/06/01 11:09:22 uehira Exp $";
 static char  *progname;
 
 static void usage(void);
@@ -27,9 +29,10 @@ main(int argc, char *argv[])
   unsigned int  chtmp;
   WIN_ch  ch, chinit, chdummy;
   WIN_sr  srdummy;
-  WIN_blocksize  dsize, gsize;
-  unsigned char  *dbuf = NULL, *ptr, *ptr_limit;
-  int  dtime[WIN_TIME_LEN];
+  WIN_bs  dsize, gsize;
+  uint8_w  *dbuf = NULL, *ptr, *ptr_limit;
+  size_t  dbuf_siz;
+  int  dtime[WIN_TIME_LEN], ssdummy;
 
   /* get program name */
   if ((progname = strrchr(argv[0], '/')) == NULL)
@@ -45,7 +48,7 @@ main(int argc, char *argv[])
   (void)fprintf(stderr, "CH = 0x%04X\n", chinit);
 	
   /*** 1sec data loop ***/
-  while ((dsize = read_onesec_win(stdin, &dbuf)) != 0) {
+  while ((dsize = read_onesec_win(stdin, &dbuf, &dbuf_siz)) != 0) {
     /* skip invalid time stamp */
     if (bcd_dec(dtime, dbuf + WIN_BLOCKSIZE_LEN) == 0)
       continue;
@@ -59,14 +62,15 @@ main(int argc, char *argv[])
       ptr[0] = ch >> 8;
       ptr[1] = ch;
 
-      gsize = win_get_chhdr(ptr, &chdummy, &srdummy);
+      /* gsize = win_get_chhdr(ptr, &chdummy, &srdummy); */
+      gsize = win_chheader_info(ptr, &chdummy, &srdummy, &ssdummy);
       ptr += gsize;
       ch++;
     } while (ptr < ptr_limit);
 
     /* output data */
     (void)fwrite(dbuf, 1, dsize, stdout);
-  } /* while ((dsize = read_onesec_win(stdin, &dbuf)) != 0) */
+  } /* while ((dsize = read_onesec_win(stdin, &dbuf, &dbuf_siz)) != 0) */
 
   exit(0);
 }
@@ -75,6 +79,7 @@ static void
 usage(void)
 {
 
+  WIN_version();
   (void)fprintf(stderr, "%s\n", rcsid);
   (void)fprintf(stderr, "Usage : %s [CH(in hex)] <[in_file] >[out_file]\n",
 		progname);

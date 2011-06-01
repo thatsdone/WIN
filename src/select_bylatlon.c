@@ -1,4 +1,4 @@
-/* $Id: select_bylatlon.c,v 1.1 2009/11/09 10:13:18 uehira Exp $ */
+/* $Id: select_bylatlon.c,v 1.2 2011/06/01 11:09:21 uehira Exp $ */
 
 /* Imported from $WIN: select_stations.c,v 1.3 2004/01/29 01:58:16 urabe Exp $ */
 /* select_stations  1999.11.9  urabe */
@@ -12,60 +12,26 @@
 #include <stdlib.h>
 #include <math.h>
 
+#include "pltxy.h"
 #include "subst_func.h"
 
 #define NAME_PRG "select_bylatlon"
-#define DEBUG 0
+/* #define DEBUG 0 */
 
-/*  this program was translated from HYPOMH(HIRATA and MATSU'URA) */
-/*  PLTXY TRANSFORMS (X,Y) TO (ALAT,ALONG) IF IND.EQ.1  */
-/*  PLTXY TRANSFORMS (ALAT,ALONG) TO (X,Y) IF IND.EQ.0  */
-pltxy(alt0,alng0,alat,along,x,y,ind)
-  double alt0,alng0,*alat,*along,*x,*y;
-  int ind;
-  { 
-  static double a=6.378160e3,e2=6.6944541e-3,e12=6.7395719e-3,d=5.72958e1;
-  double rd,rlat,slat,clat,v2,al,ph1,rph1,rph2,an,c1,c2,rlato,slato,
-    tphi1,cphi1,r;
-  rd=1.0e0/d;
-  if(ind==0)
-    {    
-    rlat=rd*(*alat);
-    slat=sin(rlat);
-    clat=cos(rlat);
-    v2=1.0e0+e12*clat*clat;
-    al=(*along)-alng0;
-    ph1=(*alat)+(v2*al*al*slat*clat)/(2.0e0*d);
-    rph1=ph1*rd;
-    rph2=(ph1+alt0)*0.5e0*rd;
-    r=a*(1.0e0-e2)/sqrt(pow(1.0e0-e2*pow(sin(rph2),2.0),3.0));
-    an=a/sqrt(1.0e0-e2*pow(sin(rph1),2.0));
-    c1=d/r;
-    c2=d/an;
-    *y=(ph1-alt0)/c1;
-    *x=(al*clat)/c2+(al*al*al*clat*cos(2.0e0*rlat))/(6.0e0*c2*d*d);
-    }
-  else
-    {
-    rlato=alt0*rd;
-    slato=sin(rlato);
-    r=a*(1.0e0-e2)/sqrt(pow(1.0e0-e2*slato*slato,3.0));
-    an=a/sqrt(1.0e0-e2*slato*slato);
-    v2=1.0e0+e12*pow(cos(rlato),2.0);
-    c1=d/r;
-    c2=d/an;
-    ph1=alt0+c1*(*y);
-    rph1=ph1*rd;
-    tphi1=tan(rph1);
-    cphi1=cos(rph1);
-    *alat=ph1-(c2*(*x))*(c2*(*x))*v2*tphi1/(2.0e0*d);
-    *along=alng0+c2*(*x)/cphi1-pow(c2*(*x),3.0)*
-      (1.0e0+2.0e0*tphi1*tphi1)/(6.0e0*d*d*cphi1);
-    }
-  }
-  
-print_usage() 
+static const char rcsid[] =
+  "$Id: select_bylatlon.c,v 1.2 2011/06/01 11:09:21 uehira Exp $";
+
+/* prototypes */
+static void print_usage(void);
+static void get_dist_and_azim(double, double, double, double, 
+			      double *, double *);
+int main(int, char *[]);
+
+static void
+print_usage(void)
   {
+
+  fprintf(stderr,"%s\n", rcsid);
   fprintf(stderr,"usage of '%s' :\n",NAME_PRG);
   fprintf(stderr,"   %s [stations_file] [polygon_file]\n",NAME_PRG);
   fprintf(stderr,"       stationss_file : file lines with Lat/Long\n");
@@ -87,14 +53,17 @@ print_usage()
 39 136
 */
 
-get_dist_and_azim(x0,y0,x1,y1,d,a)
-  double x0,y0; /* start point */
-  double x1,y1; /* end point */
-  double *d,*a; /* distance and azimuth */
+static void
+get_dist_and_azim(double x0, double y0, double x1, double y1,
+		  double *d, double *a)
+/*  double x0,y0;    start point */
+/*  double x1,y1;    end point */
+/*  double *d,*a;    distance and azimuth */
   {
 #define PI          3.141592654
   int i,i0,i1;
   double x00,y00,x11,y11,x2,y2,d0,d1,d2;
+
   x00=x0;
   y00=y0;
   x11=x1;
@@ -148,24 +117,22 @@ printf(" (%8.3f,%8.3f) (%8.3f,%8.3f) ",x0,y0,x1,y1);
 #if DEBUG
 printf("(%8.3f,%8.3f) d=%8.3f,a=%8.3f\n",x2,y2,*d,*a);
 #endif
+#undef PI
   }
 
-main(argc,argv)
-  int argc;
-  char *argv[];
+int
+main(int argc, char *argv[])
   {
   FILE *f1,*f2;
-  int init,init2,i;
+  int init,init2;
   char ta[256],tb[256];
-  double alat0,along0,alat,along,x00,y00,d,a,dmin,amin;
-  double alat1,along1,x,y,x0,y0,x1,y1,xa,ya,xb,yb;
-  extern int optind;
-  extern char *optarg;
+  double alat0,along0,x00,y00,d,a,dmin,amin;
+  double alat1,along1,x0,y0,x1,y1,xa,ya,xb,yb;
 
   if(argc<3)
     {
     print_usage();
-    exit(0);
+    exit(1);
     }
   f1=fopen(argv[1],"r"); /* list of points */
   f2=fopen(argv[2],"r"); /* list of a polygon */
@@ -174,7 +141,7 @@ main(argc,argv)
     {
     if(*tb=='#') continue;
     alat0=along0=0.0;
-    sscanf(tb,"%lf%lf%",&alat0,&along0);
+    sscanf(tb,"%lf%lf",&alat0,&along0);
     if(alat0==0.0 || along0==0.0) continue;
 #if DEBUG
     printf("%s",tb);
@@ -231,4 +198,6 @@ printf("d=%8.3f,a=%8.3f ,dmin=%8.3f,amin=%8.3f",d,a,dmin,amin);
       printf("x %s",tb);
 #endif
     }
+
+  exit(0);
   }

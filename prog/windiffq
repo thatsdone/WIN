@@ -1,0 +1,60 @@
+#! /bin/sh
+#
+# $Id: windiffq,v 1.2 2011/06/01 11:09:20 uehira Exp $
+#
+# Output only whether win files differ.
+#
+
+MON_mode=no
+while getopts "m" _opt; do
+    case "$_opt" in
+        m) MON_mode=yes ;;
+        *) err 3 'USAGE: windiffq [-m] win1 win2' ;;
+    esac
+done
+shift $(($OPTIND - 1))
+
+if [ ! -f "$1" -o ! -f "$2" ]; then
+    echo "windiffq [-m] win1 win2"
+    exit 1
+fi
+
+# make output temporary files
+if [ -z "TMPDIR" ]; then
+    TMPDIR=/tmp
+fi
+
+# First, check file size.
+size1=`wc -c $1 | awk '{print $1}'`
+size2=`wc -c $2 | awk '{print $1}'`
+
+if [ $size1 -ne $size2 ]; then
+    echo "Files $1 and $2 differ"
+    exit 1
+fi
+
+tempfoo=`basename $0`
+TMPFILE1=`mktemp -t ${tempfoo}` || exit 1
+TMPFILE2=`mktemp -t ${tempfoo}` || exit 1
+
+if [ "$MON_mode" = yes ]; then
+    winadd -nsM $1 > $TMPFILE1
+    winadd -nsM $2 > $TMPFILE2
+else
+    winadd -ns $1 > $TMPFILE1
+    winadd -ns $2 > $TMPFILE2
+fi
+
+# md5 $TMPFILE1 $TMPFILE2
+diff -rq $TMPFILE1 $TMPFILE2 > /dev/null 2>&1
+
+RET=$?
+#echo $RET
+
+if [ $RET -eq 1 ]; then
+    echo "Files $1 and $2 differ"
+fi
+
+rm -f $TMPFILE1 $TMPFILE2
+
+exit $RET

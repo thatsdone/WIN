@@ -1,4 +1,4 @@
-/* $Id: recvnmx.c,v 1.18 2008/12/31 08:03:56 uehira Exp $ */
+/* $Id: recvnmx.c,v 1.19 2011/06/01 11:09:21 uehira Exp $ */
 /* "recvnmx.c"    2001.7.18-19 modified from recvt.c and nmx2raw.c  urabe */
 /*                2001.8.18 */
 /*                2001.10.5 workaround for hangup */
@@ -10,19 +10,46 @@
 /*                2002.7.5  Trident */
 /*                2002.8.9  process re-tx packets properly */
 /*                2005.4.14 NP format */
+/*                2010.10.13 64bit check? */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
+#endif
+
+#include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
+#include <sys/socket.h>
+
+#include <netinet/in.h>
+#if HAVE_ARPA_INET_H
+#include <arpa/inet.h>
 #endif
 
 #include <stdio.h>
 #include <signal.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/types.h>
-#include <sys/ipc.h>
-#include <sys/shm.h>
-#include <dirent.h>
+#include <unistd.h>
+#include <netdb.h>
+#include <errno.h>
+
+#if HAVE_DIRENT_H
+# include <dirent.h>
+# define DIRNAMLEN(dirent) strlen((dirent)->d_name)
+#else
+# define dirent direct
+# define DIRNAMLEN(dirent) (dirent)->d_namlen
+# if HAVE_SYS_NDIR_H
+#  include <sys/ndir.h>
+# endif
+# if HAVE_SYS_DIR_H
+#  include <sys/dir.h>
+# endif
+# if HAVE_NDIR_H
+#  include <ndir.h>
+# endif
+#endif
 
 #if TIME_WITH_SYS_TIME
 #include <sys/time.h>
@@ -35,17 +62,10 @@
 #endif  /* !HAVE_SYS_TIME_H */
 #endif  /* !TIME_WITH_SYS_TIME */
 
-#include <sys/socket.h>
-#include <netinet/in.h>
-#if HAVE_ARPA_INET_H
-#include <arpa/inet.h>
-#endif
-#include <netdb.h>
-#include <errno.h>
+#include "winlib.h"
+#include "udpu.h"
 
-#include "subst_func.h"
-
-#define DEBUG     0
+/* #define DEBUG     0 */
 #define DEBUG1    0
 #define DEBUG2    0
 #define DEBUG3    0
@@ -59,21 +79,22 @@
 #define BUFSIZE   ((16*NB+MAXSR+1)*4)
 #define MAXCH     1024
 
-char *progname,logfile[256],chmapfile[1024];
-struct ip_mreq stMreq;
-unsigned short station,chmap[65536];
-int use_chmap;
-char *model[32]={"HRD","ORION","RM3","RM4","LYNX","CYGNUS","EUROPA","CARINA",
-    "TimeServer","TRIDENT","JANUS","TAURUS",
-    "012","013","014","015","016","017","018","019",
-    "020","021","022","023","024","025","026","027","028","029","030","031"};
-struct Shm {
-  unsigned long p;    /* write point */
-  unsigned long pl;   /* write limit */
-  unsigned long r;    /* latest */
-  unsigned long c;    /* counter */
-  unsigned char d[1]; /* data buffer */
-};
+static const char rcsid[] =
+  "$Id: recvnmx.c,v 1.19 2011/06/01 11:09:21 uehira Exp $";
+
+char *progname,*logfile;
+int  syslog_mode = 0, exit_status;
+
+static char chmapfile[1024];
+/* static struct ip_mreq stMreq; */
+static uint16_w station,chmap[WIN_CHMAX];
+static int use_chmap;
+static char *model[32]=
+  {"HRD","ORION","RM3","RM4","LYNX","CYGNUS","EUROPA","CARINA",
+   "TimeServer","TRIDENT","JANUS","TAURUS",
+   "012","013","014","015","016","017","018","019",
+   "020","021","022","023","024","025","026","027","028","029","030","031"};
+
 struct Nmx_Packet {
   int npformat;
   int ptype;
@@ -93,172 +114,45 @@ struct Nmx_Packet {
   int last;
   struct {
     int bundle_type;
-    union {char c[16];char cc[4][4];unsigned char uc[4][4];} u;
+    union {int8_w c[16];int8_w cc[4][4];uint8_w uc[4][4];} u;
   } b[NB];
   struct {
     unsigned int bundle_type;
-    union {char c[60];char cc[15][4];unsigned char uc[15][4];} u;
+    union {int8_w c[60];int8_w cc[15][4];uint8_w uc[15][4];} u;
   } b2[NB];
   int crc_calculated;
   int crc_given;
   int bpp;
 };
-static unsigned char d2b[]={
-    0x00,0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x09,
-    0x10,0x11,0x12,0x13,0x14,0x15,0x16,0x17,0x18,0x19,
-    0x20,0x21,0x22,0x23,0x24,0x25,0x26,0x27,0x28,0x29,
-    0x30,0x31,0x32,0x33,0x34,0x35,0x36,0x37,0x38,0x39,
-    0x40,0x41,0x42,0x43,0x44,0x45,0x46,0x47,0x48,0x49,
-    0x50,0x51,0x52,0x53,0x54,0x55,0x56,0x57,0x58,0x59,
-    0x60,0x61,0x62,0x63,0x64,0x65,0x66,0x67,0x68,0x69,
-    0x70,0x71,0x72,0x73,0x74,0x75,0x76,0x77,0x78,0x79,
-    0x80,0x81,0x82,0x83,0x84,0x85,0x86,0x87,0x88,0x89,
-    0x90,0x91,0x92,0x93,0x94,0x95,0x96,0x97,0x98,0x99};
 
-get_time(rt)
-  int *rt;
-  {
-  struct tm *nt;
-  unsigned long ltime;
-  time(&ltime);
-  nt=localtime(&ltime);
-  rt[0]=nt->tm_year%100;
-  rt[1]=nt->tm_mon+1;
-  rt[2]=nt->tm_mday;
-  rt[3]=nt->tm_hour;
-  rt[4]=nt->tm_min;
-  rt[5]=nt->tm_sec;
-  }
+/* prototypes */
+static WIN_bs write_shm(int, int, time_t, int32_w *, struct Shm *,
+			int, size_t);
+static int parse_one_packet_np(uint8_w *, ssize_t, struct Nmx_Packet *);
+static int parse_one_packet(uint8_w *, ssize_t, struct Nmx_Packet *);
+static int bundle2fix_np(struct Nmx_Packet *, int32_w *);
+static int bundle2fix(struct Nmx_Packet *, int32_w *);
+static int proc_soh(struct Nmx_Packet *);
+static int ch2idx(int32_w *[], struct Nmx_Packet *, int);
+static void read_ch_map(void);
+static void usage(void);
+int main(int, char *[]);
 
-write_log(logfil,ptr)
-  char *logfil;
-  char *ptr;
-  {
-  FILE *fp;
-  int tm[6];
-  if(*logfil) fp=fopen(logfil,"a");
-  else fp=stdout;
-  get_time(tm);
-  fprintf(fp,"%02d%02d%02d.%02d%02d%02d %s %s\n",
-    tm[0],tm[1],tm[2],tm[3],tm[4],tm[5],progname,ptr);
-  if(*logfil) fclose(fp);
-  }
-
-ctrlc()
-  {
-  write_log(logfile,"end");
-  exit(0);
-  }
-
-err_sys(ptr)
-  char *ptr;
-  {
-  perror(ptr);
-  write_log(logfile,ptr);
-  if(strerror(errno)) write_log(logfile,strerror(errno));
-  ctrlc();
-  }
-
-/* winform.c  4/30/91,99.4.19   urabe */
-/* winform converts fixed-sample-size-data into win's format */
-/* winform returns the length in bytes of output data */
-
-winform(inbuf,outbuf,sr,sys_ch)
-  long *inbuf;      /* input data array for one sec*/
-  unsigned char *outbuf;  /* output data array for one sec */
-  int sr;         /* n of data (i.e. sampling rate) */
-  unsigned short sys_ch;  /* 16 bit long channel ID number */
-  {
-  int dmin,dmax,aa,bb,br,i,byte_leng;
-  long *ptr;
-  unsigned char *buf;
-
-  /* differentiate and obtain min and max */
-  ptr=inbuf;
-  bb=(*ptr++);
-  dmax=dmin=0;
-  for(i=1;i<sr;i++)
-    {
-    aa=(*ptr);
-    *ptr++=br=aa-bb;
-    bb=aa;
-    if(br>dmax) dmax=br;
-    else if(br<dmin) dmin=br;
-    }
-
-  /* determine sample size */
-  if(((dmin&0xfffffff8)==0xfffffff8 || (dmin&0xfffffff8)==0) &&
-    ((dmax&0xfffffff8)==0xfffffff8 || (dmax&0xfffffff8)==0)) byte_leng=0;
-  else if(((dmin&0xffffff80)==0xffffff80 || (dmin&0xffffff80)==0) &&
-    ((dmax&0xffffff80)==0xffffff80 || (dmax&0xffffff80)==0)) byte_leng=1;
-  else if(((dmin&0xffff8000)==0xffff8000 || (dmin&0xffff8000)==0) &&
-    ((dmax&0xffff8000)==0xffff8000 || (dmax&0xffff8000)==0)) byte_leng=2;
-  else if(((dmin&0xff800000)==0xff800000 || (dmin&0xff800000)==0) &&
-    ((dmax&0xff800000)==0xff800000 || (dmax&0xff800000)==0)) byte_leng=3;
-  else byte_leng=4;
-  /* make a 4 byte long header */
-  buf=outbuf;
-  *buf++=(sys_ch>>8)&0xff;
-  *buf++=sys_ch&0xff;
-  *buf++=(byte_leng<<4)|(sr>>8);
-  *buf++=sr&0xff;
-
-  /* first sample is always 4 byte long */
-  *buf++=inbuf[0]>>24;
-  *buf++=inbuf[0]>>16;
-  *buf++=inbuf[0]>>8;
-  *buf++=inbuf[0];
-  /* second and after */
-  switch(byte_leng)
-    {
-    case 0:
-      for(i=1;i<sr-1;i+=2)
-        *buf++=(inbuf[i]<<4)|(inbuf[i+1]&0xf);
-      if(i==sr-1) *buf++=(inbuf[i]<<4);
-      break;
-    case 1:
-      for(i=1;i<sr;i++)
-        *buf++=inbuf[i];
-      break;
-    case 2:
-      for(i=1;i<sr;i++)
-        {
-        *buf++=inbuf[i]>>8;
-        *buf++=inbuf[i];
-        }
-      break;
-    case 3:
-      for(i=1;i<sr;i++)
-        {
-        *buf++=inbuf[i]>>16;
-        *buf++=inbuf[i]>>8;
-        *buf++=inbuf[i];
-        }
-      break;
-    case 4:
-      for(i=1;i<sr;i++)
-        {
-        *buf++=inbuf[i]>>24;
-        *buf++=inbuf[i]>>16;
-        *buf++=inbuf[i]>>8;
-        *buf++=inbuf[i];
-        }
-      break;
-    }
-  return (int)(buf-outbuf);
-  }
-
-int write_shm(int ch,int sr,time_t tim,int *buf,struct Shm *shm,int eobsize,int pl)
+static WIN_bs
+write_shm(int ch, int sr, time_t tim, int32_w *buf, struct Shm *shm,
+	  int eobsize, size_t pl)
 {
   struct tm *t;
-  unsigned char *ptw,*ptw_save,*ptw_save2;
-  unsigned long uni;
+  uint8_w *ptw,*ptw_save,*ptw_save2;
+  uint32_w uni;
+#if DEBUG
   int i;
+#endif
 
-  if(ch<0) return 0;
+  if(ch<0) return (0);
   ptw=ptw_save=shm->d+shm->p;
   ptw+=4;          /* size (4) */
-  uni=time(0);
+  uni=(uint32_w)(time(NULL)-TIME_OFFSET);
   *ptw++=uni>>24;  /* tow (H) */
   *ptw++=uni>>16;
   *ptw++=uni>>8;
@@ -270,7 +164,7 @@ int write_shm(int ch,int sr,time_t tim,int *buf,struct Shm *shm,int eobsize,int 
   *ptw++=d2b[t->tm_hour];
   *ptw++=d2b[t->tm_min];
   *ptw++=d2b[t->tm_sec];
-  ptw+=winform(buf,ptw,sr,ch);
+  ptw+=winform(buf,ptw,(WIN_sr)sr,(WIN_ch)ch);
   ptw_save2=ptw;
   if(eobsize) ptw+=4;
   uni=ptw-ptw_save;
@@ -294,95 +188,80 @@ int write_shm(int ch,int sr,time_t tim,int *buf,struct Shm *shm,int eobsize,int 
   if(!eobsize && ptw>shm->d+shm->pl) ptw=shm->d;
   shm->p=ptw-shm->d;
   shm->c++;
-  return uni;
+  return (uni);
 }
 
-unsigned long mklong(ptr)
-  unsigned char *ptr;
-  {
-  unsigned long a;
-  a=((ptr[0]<<24)&0xff000000)+((ptr[1]<<16)&0xff0000)+
-    ((ptr[2]<<8)&0xff00)+(ptr[3]&0xff);
-  return a;
-  }
-
-unsigned short mkshort(ptr)
-  unsigned char *ptr;
-  {
-  unsigned short a;
-  a=((ptr[0]<<8)&0xff00)+(ptr[1]&0xff);
-  return a;
-  }
-
-parse_one_packet_np(unsigned char *inbuf,int len,struct Nmx_Packet *pk)
+static int
+parse_one_packet_np(uint8_w *inbuf, ssize_t len, struct Nmx_Packet *pk)
 {
 #define SIGNATURE_NP 0x4E50
 #define TAURUS 0xE80B
-  unsigned short signature,size;
-  unsigned short mdl;
-  unsigned char *ptr;
+  uint16_w signature,size;
+  uint16_w mdl;
+  uint8_w *ptr;
   unsigned long long t,thigh,tlow;
   int x1,x2,x3,x5,ch,i,j;
+
   ptr=inbuf;
-  signature=mkshort(ptr);
-  if(signature!=SIGNATURE_NP) return -1;
+  signature=mkuint2(ptr);
+  if(signature!=SIGNATURE_NP) return (-1);
   ptr+=2;
-  size=mkshort(ptr);
-  if(size!=len) return -1;
+  size=mkuint2(ptr);
+  if(size!=len) return (-1);
   ptr+=2;
-  pk->seq=mklong(ptr);
+  pk->seq=mkuint4(ptr);
   ptr+=8;
-  thigh=mklong(ptr);
+  thigh=mkuint4(ptr);
   ptr+=4;
-  tlow=mklong(ptr);
+  tlow=mkuint4(ptr);
   ptr+=4;
   t=tlow+(thigh<<32);
   pk->tim=t/(unsigned long long)1000000000;
   pk->t=localtime(&pk->tim);
   pk->subsec=(t%(unsigned long long)1000000000)/100000;
-  pk->lat=0.000001*(double)((long)mklong(ptr));
+  pk->lat=0.000001*(double)((long)mkuint4(ptr));
   ptr+=4;
-  pk->lon=0.000001*(double)((long)mklong(ptr));
+  pk->lon=0.000001*(double)((long)mkuint4(ptr));
   ptr+=4;
-  pk->alt=(short)mkshort(ptr);
+  pk->alt=(short)mkuint2(ptr);
   ptr+=2;
-  mdl=(short)mkshort(ptr);
-  if(mdl!=TAURUS) return -1;
+  mdl=(short)mkuint2(ptr);
+  if(mdl!=TAURUS) return (-1);
   pk->model=11;
   ptr+=2;
-  pk->serno=mkshort(ptr);
+  pk->serno=mkuint2(ptr);
   ptr+=2;
   ch=(*ptr);
   if(ch==151) pk->ch=0;
   else if(ch==153) pk->ch=1;
   else if(ch==155) pk->ch=2;
-  else return -1;
+  else return (-1);
   ptr+=1;
   ptr+=2;
-  size=mkshort(ptr); /* payload size */
+  size=mkuint2(ptr); /* payload size */
   pk->bpp=(size-14)/64;
   ptr+=2;
-  x1=mkshort(ptr); /* payload chid */
+  x1=mkuint2(ptr); /* payload chid */
   ptr+=2;
-  x2=mkshort(ptr);
+  x2=mkuint2(ptr);
   ptr+=2;
-  x3=mkshort(ptr);
+  x3=mkuint2(ptr);
   ptr+=2;
-  pk->ns=mkshort(ptr);
+  pk->ns=mkuint2(ptr);
   ptr+=2;
-  x5=mkshort(ptr);
+  x5=mkuint2(ptr);
   ptr+=2;
-  pk->sr=mkshort(ptr);
+  pk->sr=mkuint2(ptr);
   ptr+=2;
   for(i=0;i<pk->bpp;i++)
     {
-    pk->b2[i].bundle_type=mklong(ptr);
+    pk->b2[i].bundle_type=mkuint4(ptr);
     ptr+=4;
     for(j=0;j<60;j++) pk->b2[i].u.c[j]=(*ptr++);
     if(i==0)
       {
-      pk->first=mklong(pk->b2[i].u.uc[0]);
-      pk->last=mklong(pk->b2[i].u.uc[1]);
+      pk->first=mkuint4(pk->b2[i].u.uc[0]);
+      pk->last=mkuint4(pk->b2[i].u.uc[1]);
       }
     }
 /* printf("size=%d seq=%d tim=%lu.%04lu lat=%f lon=%f alt=%d\n",
@@ -391,22 +270,24 @@ printf("model=%d serno=%d ch=%d size=%d ns=%d sr=%d bpp=%d first=%d last=%d\n",
 model,pk->serno,pk->ch,size,pk->ns,pk->sr,pk->bpp,pk->first,pk->last);
 */
   pk->ptype=1; /* assumed */
-  return pk->bpp;
+  return (pk->bpp);
 }
 
-parse_one_packet(unsigned char *inbuf,int len,struct Nmx_Packet *pk)
+static int
+parse_one_packet(uint8_w *inbuf, ssize_t len, struct Nmx_Packet *pk)
 {
 #define SIGNATURE 0x7ABCDE0F
 #define MES_DATA 1
   int srtab[32]={0,1,2,5,10,20,40,50,80,100,125,200,250,500,1000,25,120};
-  unsigned char *ptr,b,*ptr_lim;
+  uint8_w *ptr,b,*ptr_lim;
   int nb,cnt,sr,i,oldest,signature,mestype,length;
+
   nb=cnt=0;
   i=0;
   signature=inbuf[i+3]+(inbuf[i+2]<<8)+(inbuf[i+1]<<16)+(inbuf[i]<<24); 
   i=4;
   mestype=inbuf[i+3]+(inbuf[i+2]<<8)+(inbuf[i+1]<<16)+(inbuf[i]<<24); 
-  if(signature!=SIGNATURE || mestype!=MES_DATA) return -1;
+  if(signature!=SIGNATURE || mestype!=MES_DATA) return (-1);
   i=8;
   length=inbuf[i+3]+(inbuf[i+2]<<8)+(inbuf[i+1]<<16)+(inbuf[i]<<24); 
   i=12;
@@ -453,15 +334,18 @@ parse_one_packet(unsigned char *inbuf,int len,struct Nmx_Packet *pk)
   printf("(%d %d %02X)",nb,cnt,b);
 #endif
   }
-  return pk->bpp=nb-1;
+  return (pk->bpp=nb-1);
 }
 
-int bundle2fix_np(struct Nmx_Packet *pk,int *dbuf)
+static int
+bundle2fix_np(struct Nmx_Packet *pk, int32_w *dbuf)
   {
 #define GPB 15 /* groups/bundle */
-  int n,i,j,k,difsize[GPB],data,flag,diff0;
-  long diff4;
-  short diff2;
+  int n,i,j,k,difsize[GPB],flag;
+  int32_w  data, diff0; 
+  int32_w diff4;
+  int16_w diff2;
+
   n=flag=0;
 /* don't use the first difference (why?) -> diff0 */
   dbuf[n++]=data=pk->first;
@@ -482,29 +366,32 @@ int bundle2fix_np(struct Nmx_Packet *pk,int *dbuf)
         }
       else if(difsize[i]==2)
         {
-        diff2=mkshort(pk->b2[k].u.uc[i]);
+        diff2=mkuint2(pk->b2[k].u.uc[i]);
         if(flag==0) {diff0=diff2;flag=1;}
         else dbuf[n++]=data=data+diff2;
-        diff2=mkshort(pk->b2[k].u.uc[i]+2);
+        diff2=mkuint2(pk->b2[k].u.uc[i]+2);
         dbuf[n++]=data=data+diff2;
         }
       else if(difsize[i]==3)
         {
-        diff4=mklong(pk->b2[k].u.uc[i]);
+        diff4=mkuint4(pk->b2[k].u.uc[i]);
         if(flag==0) {diff0=diff4;flag=1;}
         else dbuf[n++]=data=data+diff4;
         }
       }
     }
 /*printf("n=%d first=%d last=%d\n",n,dbuf[0],dbuf[n-1]);*/
-  return n;
+  return (n);
   }
 
-int bundle2fix(struct Nmx_Packet *pk,int *dbuf)
+static int
+bundle2fix(struct Nmx_Packet *pk, int32_w *dbuf)
 {
-  int n,i,j,k,difsize[4],data;
-  long diff4;
-  short diff2;
+  int n,i,j,k,difsize[4];
+  int32_w data;
+  int32_w diff4;
+  int16_w diff2;
+
   n=0;
   dbuf[n++]=data=pk->first;
   for(k=0;k<pk->bpp;k++){
@@ -529,21 +416,23 @@ int bundle2fix(struct Nmx_Packet *pk,int *dbuf)
       }
     }
   }
-  return n;
+  return (n);
 }
 
+static int
 proc_soh(struct Nmx_Packet *pk)
 {
   struct tm *t;
   time_t tim;
-  unsigned char tb[256],*ptr;
-  union {unsigned char c[4];float f;} u;
+  char tb[256];
+  union {uint8_w c[4];float f;} u;
   int i,j;
+
   sprintf(tb,"%02X %02d/%02d/%02d %02d:%02d:%02d %s#%d p#%d",
     pk->ptype,pk->t->tm_year%100,pk->t->tm_mon+1,pk->t->tm_mday,pk->t->tm_hour,
     pk->t->tm_min,pk->t->tm_sec,model[pk->model],pk->serno,pk->seq);
 #if SOH
-  write_log(logfile,tb);
+  write_log(tb);
 #endif
   for(i=0;i<pk->bpp;i++){ /* decode time */
     tim=pk->b[i].u.uc[0][0]+(pk->b[i].u.uc[0][1]<<8)+
@@ -570,36 +459,38 @@ proc_soh(struct Nmx_Packet *pk)
       case 39:
       case 7:
         for(j=4;j<16;j+=2)
-          sprintf(tb+strlen(tb),"%02X%02X ",(unsigned char)pk->b[i].u.c[j],
-            (unsigned char)pk->b[i].u.c[j+1]);
+          sprintf(tb+strlen(tb),"%02X%02X ",(uint8_w)pk->b[i].u.c[j],
+            (uint8_w)pk->b[i].u.c[j+1]);
         break;
       default:
         for(j=4;j<16;j++)
-          sprintf(tb+strlen(tb),"%02X",(unsigned char)pk->b[i].u.c[j]);
+          sprintf(tb+strlen(tb),"%02X",(uint8_w)pk->b[i].u.c[j]);
     }
 #if SOH
-    write_log(logfile,tb);
+    write_log(tb);
 #endif
   }
-  return 0;
+  return (0);
 }
 
-ch2idx(int *rbuf[],struct Nmx_Packet *pk,int winch)
+static int
+ch2idx(int32_w *rbuf[], struct Nmx_Packet *pk, int winch)
 {
   char tb[256];
   static int m[MAXCH],s[MAXCH],c[MAXCH],n_idx;
-  int i,bufsize;
+  int i;
+
   for(i=0;i<n_idx;i++){
     if(pk->model==m[i] && pk->serno==s[i] && pk->ch==c[i]) break;
   }
   if(i==n_idx){
     if(n_idx==MAXCH){
       fprintf(stderr,"n_idx=%d at limit.\n",n_idx);
-      return -1;
+      return (-1);
       }
-    if((rbuf[i]=(int *)malloc(BUFSIZE))==NULL){
+    if((rbuf[i]=(int32_w *)win_xmalloc(BUFSIZE))==NULL){
       fprintf(stderr,"malloc failed. n_idx=%d\n",n_idx);
-      return -1;
+      return (-1);
       }
     m[i]=pk->model;
     s[i]=pk->serno;
@@ -608,39 +499,41 @@ ch2idx(int *rbuf[],struct Nmx_Packet *pk,int winch)
     sprintf(tb,"registered model=%d(%s) serno=%d ch=%d idx=%d",
       pk->model,model[pk->model],pk->serno,pk->ch,i);
     if(winch>=0) sprintf(tb+strlen(tb)," winch=%04X",winch);
-    write_log(logfile,tb);
+    write_log(tb);
     if(pk->npformat)
       {
       sprintf(tb,"NP : GPS POS = %fN %fE %dm",pk->lat,pk->lon,pk->alt);
-      write_log(logfile,tb);
+      write_log(tb);
       }
   }
-  return i;
+  return (i);
 }
 
-read_ch_map()  
+static void
+read_ch_map(void)  
 {
   char tb[256],mdl[256];
   FILE *fp;
-  int i,j,k,serno,ch;
+  int i,k,serno,ch;
+
   /* read channel map file */
   if(*chmapfile){
     if((fp=fopen(chmapfile,"r"))!=NULL) {
       k=0;
-      for(i=0;i<65536;i++) chmap[i]=0xffff;
+      for(i=0;i<WIN_CHMAX;i++) chmap[i]=0xffff;
       while(fgets(tb,256,fp)) {
         if(*tb=='#') continue;
         sscanf(tb,"%s%d%x",mdl,&serno,&ch);
         if(serno>2047) {
           sprintf(tb,"S/N '%d' illegal !",serno);
-          write_log(logfile,tb);
+          write_log(tb);
           fprintf(stderr,"%s\n",tb);
           exit(1);
         }
         for(i=0;i<32;i++) if(strcmp(mdl,model[i])==0) break;
         if(i==32) {
           sprintf(tb,"model '%s' not registered !",mdl);
-          write_log(logfile,tb);
+          write_log(tb);
           fprintf(stderr,"%s\n",tb);
           exit(1);
         }
@@ -650,11 +543,11 @@ read_ch_map()
     fclose(fp);
     use_chmap=1;
     sprintf(tb,"%d lines read from ch_map file '%s'",k,chmapfile);
-    write_log(logfile,tb);
+    write_log(tb);
     }
     else{
       sprintf(tb,"ch_map file '%s' not open !",chmapfile);
-      write_log(logfile,tb);
+      write_log(tb);
       fprintf(stderr,"channel map file '%s' not open!\n",chmapfile);
       exit(1);
     }
@@ -662,22 +555,36 @@ read_ch_map()
   signal(SIGHUP,(void *)read_ch_map);
 }
 
-main(argc,argv)
-  int argc;
-  char *argv[];
+static void
+usage(void)
+{
+
+  WIN_version();
+  (void)fprintf(stderr, "%s\n", rcsid);
+  fprintf(stderr,
+	  " usage : '%s (-c [ch_map]) (-i [interface]) (-m [mcast_group]) (-vBn) \\\n\
+         (-d [fragdir]) [port] [shm_key] [shm_size(KB)] ([log file])'\n",progname);
+}
+
+int
+main(int argc, char *argv[])
   {
   char tb[256];
   DIR *dir_ptr;
   FILE *fp;
-  unsigned char pbuf[MAXMESG];
-  int *rbuf[MAXCH],*ptr,idx,seq_rbuf[MAXCH],fsize_rbuf[MAXCH];
+  uint8_w pbuf[MAXMESG];
+  int idx,seq_rbuf[MAXCH],fsize_rbuf[MAXCH];
+  int32_w *rbuf[MAXCH];
   time_t tim_rbuf[MAXCH];
-  unsigned long uni;
+  /* unsigned long uni; */
   struct Nmx_Packet pk;
-  int i,j,k,size_shm,n,fd,baud,c,oldest,nn,verbose,rbuf_ptr,sock,fromlen,winch,
-    eobsize,pl,nr;
+  int i,j,k,c,verbose,rbuf_ptr,sock,winch,eobsize,nr;
+  socklen_t  fromlen;
+  WIN_bs nn;
+  size_t  size_shm, pl;
+  ssize_t  n;
   key_t shm_key;
-  int shmid;
+  /* int shmid; */
   struct Shm *shm;
   char name[100];
   char fragdir[1024]; /* directory for fragment data */
@@ -685,17 +592,14 @@ main(argc,argv)
   char interface[256];  /* multicast interface */
 #define MCASTGROUP  "224.0.1.1"
 #define TO_PORT   32000
-  unsigned char *p;
-  struct sockaddr_in to_addr,from_addr;
-  unsigned short to_port;
-  extern int optind;
-  extern char *optarg;
+  struct sockaddr_in from_addr;
+  uint16_t to_port;
+  /* extern int optind; */
+  /* extern char *optarg; */
 
-  if(progname=strrchr(argv[0],'/')) progname++;
+  if((progname=strrchr(argv[0],'/')) != NULL) progname++;
   else progname=argv[0];
-  sprintf(tb,
-    " usage : '%s (-c [ch_map]) (-i [interface]) (-m [mcast_group]) (-vBn) \\\n\
-         (-d [fragdir]) [port] [shm_key] [shm_size(KB)] ([log file])'",progname);
+  exit_status = EXIT_SUCCESS;
 
   station=verbose=use_chmap=eobsize=pk.npformat=0;
   *interface=(*mcastgroup)=(*chmapfile)=(*fragdir)=0;
@@ -726,60 +630,66 @@ main(argc,argv)
         break;
       default:
         fprintf(stderr," option -%c unknown\n",c);
-        fprintf(stderr,"%s\n",tb);
+        usage();
         exit(1);
       }
     }
   optind--;
   if(argc<4+optind)
     {
-    fprintf(stderr,"%s\n",tb);
+    usage();
     exit(1);
     }
   to_port=atoi(argv[1+optind]);
-  shm_key=atoi(argv[2+optind]);
-  size_shm=atoi(argv[3+optind])*1000;
-  *logfile=0;
-  if(argc>4+optind) strcpy(logfile,argv[4+optind]);
+  shm_key=atol(argv[2+optind]);
+  size_shm=atol(argv[3+optind])*1000;
+  if(argc>4+optind) logfile=argv[4+optind];
+  else logfile=NULL;
 
-  if((sock=socket(AF_INET,SOCK_DGRAM,0))<0) err_sys("socket");
-  i=65535;
-  if(setsockopt(sock,SOL_SOCKET,SO_RCVBUF,(char *)&i,sizeof(i))<0)
-    {
-    i=50000;
-    if(setsockopt(sock,SOL_SOCKET,SO_RCVBUF,(char *)&i,sizeof(i))<0)
-      err_sys("SO_RCVBUF setsockopt error\n");
-    }
-  memset((char *)&to_addr,0,sizeof(to_addr));
-  to_addr.sin_family=AF_INET;
-  to_addr.sin_addr.s_addr=htonl(INADDR_ANY);
-  to_addr.sin_port=htons(to_port);
-  if(bind(sock,(struct sockaddr *)&to_addr,sizeof(to_addr))<0) err_sys("bind");
+  sock = udp_accept4(to_port, 64);
+  /* if((sock=socket(AF_INET,SOCK_DGRAM,0))<0) err_sys("socket"); */
+  /* i=65535; */
+  /* if(setsockopt(sock,SOL_SOCKET,SO_RCVBUF,(char *)&i,sizeof(i))<0) */
+  /*   { */
+  /*   i=50000; */
+  /*   if(setsockopt(sock,SOL_SOCKET,SO_RCVBUF,(char *)&i,sizeof(i))<0) */
+  /*     err_sys("SO_RCVBUF setsockopt error\n"); */
+  /*   } */
+  /* memset((char *)&to_addr,0,sizeof(to_addr)); */
+  /* to_addr.sin_family=AF_INET; */
+  /* to_addr.sin_addr.s_addr=htonl(INADDR_ANY); */
+  /* to_addr.sin_port=htons(to_port); */
+  /* if(bind(sock,(struct sockaddr *)&to_addr,sizeof(to_addr))<0) err_sys("bind"); */
 
   if(*mcastgroup)
     {
-    stMreq.imr_multiaddr.s_addr=inet_addr(mcastgroup);
-    if(*interface) stMreq.imr_interface.s_addr=inet_addr(interface);
-    else stMreq.imr_interface.s_addr=INADDR_ANY;
-    if(setsockopt(sock,IPPROTO_IP,IP_ADD_MEMBERSHIP,(char *)&stMreq,
-      sizeof(stMreq))<0) err_sys("IP_ADD_MEMBERSHIP setsockopt error\n");
+/*     stMreq.imr_multiaddr.s_addr=inet_addr(mcastgroup); */
+/*     if(*interface) stMreq.imr_interface.s_addr=inet_addr(interface); */
+/*     else stMreq.imr_interface.s_addr=INADDR_ANY; */
+/*     if(setsockopt(sock,IPPROTO_IP,IP_ADD_MEMBERSHIP,(char *)&stMreq, */
+/*       sizeof(stMreq))<0) err_sys("IP_ADD_MEMBERSHIP setsockopt error\n"); */
+      mcast_join(sock, mcastgroup, interface);
     }
-  signal(SIGTERM,(void *)ctrlc);
-  signal(SIGINT,(void *)ctrlc);
-  signal(SIGPIPE,(void *)ctrlc);
+  signal(SIGTERM,(void *)end_program);
+  signal(SIGINT,(void *)end_program);
+  signal(SIGPIPE,(void *)end_program);
 
   /* out shared memory */
-  if((shmid=shmget(shm_key,size_shm,IPC_CREAT|0666))<0) err_sys("shmget");
-  if((shm=(struct Shm *)shmat(shmid,(char *)0,0))==(struct Shm *)-1)
-    err_sys("shmat");
+  write_log("start");
+  shm = Shm_create(shm_key, size_shm, "out");
+  /* if((shmid=shmget(shm_key,size_shm,IPC_CREAT|0666))<0) err_sys("shmget"); */
+  /* if((shm=(struct Shm *)shmat(shmid,(void *)0,0))==(struct Shm *)-1) */
+  /*   err_sys("shmat"); */
 
-  sprintf(tb,"start out_key=%d id=%d size=%d",shm_key,shmid,size_shm);
-  write_log(logfile,tb);
+  /* sprintf(tb,"start out_key=%d id=%d size=%d",shm_key,shmid,size_shm); */
+  /* write_log(tb); */
 
   /* initialize buffer */
-  shm->p=shm->c=0;
-  shm->pl=pl=(size_shm-sizeof(*shm))/10*9;
-  shm->r=(-1);
+  Shm_init(shm, size_shm);
+  pl = shm->pl;
+  /*   shm->p=shm->c=0; */
+  /*   shm->pl=pl=(size_shm-sizeof(*shm))/10*9; */
+  /*   shm->r=(-1); */
 
   read_ch_map();
 
@@ -789,7 +699,7 @@ main(argc,argv)
     else closedir(dir_ptr);
     }
 
-  while(1)
+  for(;;)
     {
     fromlen=sizeof(from_addr);
     n=recvfrom(sock,pbuf,MAXMESG,0,(struct sockaddr *)&from_addr,&fromlen);
@@ -863,14 +773,14 @@ main(argc,argv)
             if((fp=fopen(name,"w+"))==NULL)
               {
               sprintf(tb,"file %s not open for write",name);
-              write_log(logfile,tb);
+              write_log(tb);
               }
             else
               {
               if(fwrite(rbuf[idx],4,fsize_rbuf[idx],fp)<fsize_rbuf[idx])
                 {
                 sprintf(tb,"file %s write failed",name);
-                write_log(logfile,tb);
+                write_log(tb);
                 }
               fclose(fp);
               }
@@ -882,7 +792,7 @@ main(argc,argv)
               {
               sprintf(tb,"file %s size=%d inconsistent (%d)",
                 name,nr,pk.sr-fsize_rbuf[idx]);
-              write_log(logfile,tb);
+              write_log(tb);
               }
             fclose(fp);
             unlink(name);
@@ -922,14 +832,14 @@ main(argc,argv)
             if((fp=fopen(name,"w+"))==NULL)
               {
               sprintf(tb,"file %s not open for write",name);
-              write_log(logfile,tb);
+              write_log(tb);
               }
             else
               {
               if(fwrite(rbuf[idx]+rbuf_ptr,4,pk.sr-rbuf_ptr,fp)<pk.sr-rbuf_ptr)
                 {
                 sprintf(tb,"file %s write failed",name);
-                write_log(logfile,tb);
+                write_log(tb);
                 }
               fclose(fp);
               j=1; /* skip the first sec */
@@ -941,7 +851,7 @@ main(argc,argv)
             if(nr!=rbuf_ptr && nr!=rbuf_ptr+1)
               {
               sprintf(tb,"file %s size=%d inconsistent (%d)",name,nr,rbuf_ptr);
-              write_log(logfile,tb);
+              write_log(tb);
               }
             fclose(fp);
             unlink(name);

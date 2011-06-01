@@ -1,4 +1,4 @@
-/* $Id: rtape.c,v 1.10 2008/12/31 08:03:56 uehira Exp $ */
+/* $Id: rtape.c,v 1.11 2011/06/01 11:09:21 uehira Exp $ */
 /*
   program "rtape.c"
   9/16/89 - 11/06/90, 6/26/91, 10/30/91, 6/26/92  urabe
@@ -16,39 +16,49 @@
   2005.3.15 introduced blpersec (blocks/sec) factor
             MAXSIZE : 1M -> 2M, TRY_LIMIT : 10 -> 16
   2005.8.10 bug in strcmp2() fixed : 0-6 > 7-9
+  2010.9.17 64bit check (Uehira)
 */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
 
-#include  <stdio.h>
-#include  <stdlib.h>
 #include  <sys/types.h>
 #include  <sys/fcntl.h>
 #include  <sys/ioctl.h>
 #include  <sys/stat.h>
 #include  <sys/mtio.h>
 
-#include "subst_func.h"
+#include  <stdio.h>
+#include  <stdlib.h>
+#include  <string.h>
+#include  <unistd.h>
 
-#define   DEBUG     0
-#define   TRY_LIMIT 16
+#include "winlib.h"
+
+/* #define   DEBUG     0 */
+/* #define   TRY_LIMIT 16 */  /* moved to winlib.h */
 #define   NAMLEN    256
 #define   MAXSIZE   2000000
 
-#define   TIME1   "9005151102"  /* 10 m / fm before this time */
-#define   TIME2   "9005161000"  /* no fms before this time */
+/* moved to winlib.h */
+/* #define   TIME1   "9005151102" */  /* 10 m / fm before this time */
+/* #define   TIME2   "9005161000" */  /* no fms before this time */
                     /* 60 m / fm after this time */
-#define   TIME3   "9008031718"  /* 10 m / fm after this time */
+/* #define   TIME3   "9008031718" */  /* 10 m / fm after this time */
 
-  unsigned char buf[MAXSIZE],outbuf[MAXSIZE];
-  int fd_exb,f_get,leng,dec_start[6],dec_end[6],dec_begin[6],
-    dec_buf1[6],dec_now[6],ext,fm_type,nch,sysch[65536],old_format;
-  char name_file[NAMLEN],path[NAMLEN],textbuf[80],
-    param_file[NAMLEN],name_prev[NAMLEN],dev_file[NAMLEN];
-  FILE *f_param;
-  int e_ch[241]={
+static const char  rcsid[] =
+   "$Id: rtape.c,v 1.11 2011/06/01 11:09:21 uehira Exp $";
+
+static uint8_w buf[MAXSIZE],outbuf[MAXSIZE];
+static int fd_exb,f_get,leng,dec_start[6],dec_end[6],dec_begin[6],
+  dec_buf1[6],dec_now[6],ext,fm_type,nch,sysch[WIN_CHMAX],old_format;
+static char name_file[NAMLEN],path[NAMLEN],textbuf[80],
+  param_file[NAMLEN],name_prev[NAMLEN],dev_file[NAMLEN];
+static FILE *f_param;
+
+/* moved to winlib.h */
+/*  int e_ch[241]={
     0x0000,0x0001,0x0002,0x0003,0x0004,0x0005,0x0006,0x0007,
     0x0008,0x0009,0x000A,0x000B,0x000C,0x000D,0x000E,0x000F,
     0x0010,0x0011,0x0012,0x0013,0x0014,0x0015,0x0016,0x0017,
@@ -79,176 +89,30 @@
     0x00D8,0x00D9,0x00DA,0x00DB,0x00DC,0x00DD,0x00DE,0x00DF,
     0x00E5,0x00E6,0x00E7,0x00E8,0x00E9,0x00EA,0x00EB,0x00EC,
     0x00ED,0x00EE,0x00EF,0x00F0,0x00F1,0x00F2,0x00F3,0x00F4,
-    0x00F5};
+    0x00F5};*/
 
-strcmp2(s1,s2)        
-char *s1,*s2;
-{
-  if((*s1>='0' && *s1<='5') && (*s2<='9' && *s2>='6')) return 1;
-  else if((*s1<='9' && *s1>='7') && (*s2>='0' && *s2<='6')) return -1;
-  else return strcmp(s1,s2);
-}
+/* prototypes */
+static void end_process(int);
+static void print_usage(void);
+static int get_one_record(int);
+static void select_ch(uint8_w *, uint8_w *, int);
+int main(int, char *[]);
 
-adj_time(tm)
-  int *tm;
+static void
+end_process(int value)
   {
-  if(tm[5]==60)
-    {
-    tm[5]=0;
-    if(++tm[4]==60)
-      {
-      tm[4]=0;
-      if(++tm[3]==24)
-        {
-        tm[3]=0;
-        tm[2]++;
-        switch(tm[1])
-          {
-          case 2:
-            if(tm[0]%4==0)
-              {
-              if(tm[2]==30)
-                {
-                tm[2]=1;
-                tm[1]++;
-                }
-              break;
-              }
-            else
-              {
-              if(tm[2]==29)
-                {
-                tm[2]=1;
-                tm[1]++;
-                }
-              break;
-              }
-          case 4:
-          case 6:
-          case 9:
-          case 11:
-            if(tm[2]==31)
-              {
-              tm[2]=1;
-              tm[1]++;
-              }
-            break;
-          default:
-            if(tm[2]==32)
-              {
-              tm[2]=1;
-              tm[1]++;
-              }
-            break;
-          }
-        if(tm[1]==13)
-          {
-          tm[1]=1;
-          if(++tm[0]==100) tm[0]=0;
-          }
-        }
-      }
-    }
-  else if(tm[5]==-1)
-    {
-    tm[5]=59;
-    if(--tm[4]==-1)
-      {
-      tm[4]=59;
-      if(--tm[3]==-1)
-        {
-        tm[3]=23;
-        if(--tm[2]==0)
-          {
-          switch(--tm[1])
-            {
-            case 2:
-              if(tm[0]%4==0)
-                tm[2]=29;else tm[2]=28;
-              break;
-            case 4:
-            case 6:
-            case 9:
-            case 11:
-              tm[2]=30;
-              break;
-            default:
-              tm[2]=31;
-              break;
-            }
-          if(tm[1]==0)
-            {
-            tm[1]=12;
-            if(--tm[0]==-1) tm[0]=99;
-            }
-          }
-        }
-      }
-    }
-  }
 
-bcd_dec(dest,sour)
-  unsigned char *sour;
-  int *dest;
-  {
-  static int b2d[]={
-     0, 1, 2, 3, 4, 5, 6, 7, 8, 9,-1,-1,-1,-1,-1,-1,  /* 0x00 - 0x0F */  
-    10,11,12,13,14,15,16,17,18,19,-1,-1,-1,-1,-1,-1,
-    20,21,22,23,24,25,26,27,28,29,-1,-1,-1,-1,-1,-1,
-    30,31,32,33,34,35,36,37,38,39,-1,-1,-1,-1,-1,-1,
-    40,41,42,43,44,45,46,47,48,49,-1,-1,-1,-1,-1,-1,
-    50,51,52,53,54,55,56,57,58,59,-1,-1,-1,-1,-1,-1,
-    60,61,62,63,64,65,66,67,68,69,-1,-1,-1,-1,-1,-1,
-    70,71,72,73,74,75,76,77,78,79,-1,-1,-1,-1,-1,-1,
-    80,81,82,83,84,85,86,87,88,89,-1,-1,-1,-1,-1,-1,
-    90,91,92,93,94,95,96,97,98,99,-1,-1,-1,-1,-1,-1,  /* 0x90 - 0x9F */
-    -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
-    -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
-    -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
-    -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
-    -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
-    -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1};
-  int i;
-  i=b2d[sour[0]];
-  if(i>=0 && i<=99) dest[0]=i; else return 0;
-  i=b2d[sour[1]];
-  if(i>=1 && i<=12) dest[1]=i; else return 0;
-  i=b2d[sour[2]];
-  if(i>=1 && i<=31) dest[2]=i; else return 0;
-  i=b2d[sour[3]];
-  if(i>=0 && i<=23) dest[3]=i; else return 0;
-  i=b2d[sour[4]];
-  if(i>=0 && i<=59) dest[4]=i; else return 0;
-  i=b2d[sour[5]];
-  if(i>=0 && i<=60) dest[5]=i; else return 0;
-  return 1;
-  }
-
-time_cmp(t1,t2,i)
-  int *t1,*t2,i;  
-  {
-  int cntr;
-  cntr=0;
-  if(t1[cntr]<70 && t2[cntr]>70) return 1;
-  if(t1[cntr]>70 && t2[cntr]<70) return -1;
-  for(;cntr<i;cntr++)
-    {
-    if(t1[cntr]>t2[cntr]) return 1;
-    if(t1[cntr]<t2[cntr]) return -1;
-    } 
-  return 0;  
-  }
-
-end_process(value)
-  int value;
-  {
   close(fd_exb);
   printf("***** rtape end *****\n");
   exit(value);
   }
 
-print_usage()
+static void
+print_usage(void)
   {
+
+  WIN_version();
+  printf("%s\n", rcsid);
   printf("   usage of 'rtape' :\n");
   printf("     'rtape (-f [tape device]) [schedule file] [output path] ([ch list file])'\n");
   printf("     example of schedule file :\n");
@@ -259,61 +123,13 @@ print_usage()
   printf("         '101d 101e 101f 1020 1021 1022 1029 102a 102b'\n");
   }
 
-mt_pos(fmc,blc)
-  int fmc,blc;
-  {
-  struct mtop exb_param;
-  int re;
-  re=0;
-  if(fmc)
-    {
-    if(fmc>0)
-      {
-      exb_param.mt_op=MTFSF;
-      exb_param.mt_count=fmc;
-      }
-    else
-      {
-      exb_param.mt_op=MTBSF;
-      exb_param.mt_count=(-fmc);
-      }
-    if((re=ioctl(fd_exb,MTIOCTOP,(char *)&exb_param))==-1)
-      {
-      perror("error in space fms");
-      printf("processing continues ... ");
-      fflush(stdout);
-      return re;
-      }
-    }
-  if(blc)
-    {
-    if(blc>0)
-      {
-      exb_param.mt_op=MTFSR;
-      exb_param.mt_count=blc;
-      }
-    else
-      {
-      exb_param.mt_op=MTBSR;
-      exb_param.mt_count=(-blc);
-      }
-    if((re=ioctl(fd_exb,MTIOCTOP,(char *)&exb_param))==-1)
-      {
-      perror("error in space records");
-      printf("processing continues ... ");
-      fflush(stdout);
-      return re;
-      }
-    }
-  return re;
-  }
-
-get_one_record(blocking)
-  int blocking;
+static int
+get_one_record(int blocking)
   {
   int i,re,try_count,fm_count,bl_count,bl_count_last,advanced,
     sec_togo,sec_togo_last;
   static double blpersec=1.0;
+
   for(i=0;i<6;i++) dec_end[i]=dec_start[i];
   for(i=leng-1;i>0;i--)
     {
@@ -395,11 +211,12 @@ get_one_record(blocking)
     bl_count_last=bl_count;
     printf(" skipping %d fms and %d blks ...",fm_count,bl_count);
     fflush(stdout);
-    mt_pos(fm_count,bl_count);  /* positioning */
-    read_exb();  /* read one block */
-    bcd_dec(dec_now,(char *)buf+4);
+    mt_pos(fm_count,bl_count,fd_exb);  /* positioning */
+    if (read_exb1(dev_file, fd_exb, buf, sizeof(buf)) < 0)  /* read one block */
+      end_process(1);
+    bcd_dec(dec_now,buf+4);
     printf("\n%02x%02x%02x %02x%02x%02x  %5d",buf[4],buf[5],
-      buf[6],buf[7],buf[8],buf[9],mklong(buf));
+      buf[6],buf[7],buf[8],buf[9],mkuint4(buf));
     fflush(stdout);
     } while(time_cmp(dec_start,dec_now,6));
   if((f_get=open(name_file,O_RDWR|O_CREAT|O_TRUNC,0664))==-1)
@@ -409,107 +226,101 @@ get_one_record(blocking)
     fclose(f_param);
     end_process(1);
     }
-  while(1)
+  for(;;)
     {
     select_ch(buf,outbuf,old_format);
   /* write one sec */
-    re=write(f_get,(char *)outbuf,mklong(outbuf));
+    re=write(f_get,(char *)outbuf,mkuint4(outbuf));
     if(time_cmp(dec_now,dec_end,6)==0) break;
   /* read one sec */
-    read_exb();
-    bcd_dec(dec_now,(char *)buf+4);
+    if (read_exb1(dev_file, fd_exb, buf, sizeof(buf)) < 0)
+      end_process(1);
+    bcd_dec(dec_now,buf+4);
     if(time_cmp(dec_now,dec_end,6)>0) break;
     printf("\r%02x%02x%02x %02x%02x%02x  %5d",buf[4],buf[5],
-      buf[6],buf[7],buf[8],buf[9],mklong(buf));
+      buf[6],buf[7],buf[8],buf[9],mkuint4(buf));
     fflush(stdout);
     }
   printf(" : done\n");
+
+  return(0);
   }
 
-read_exb()
-  {
-  int cnt,re,size,blocking,dec[6];
-  char *ptr;
-  cnt=0;
-  while(1)
-    {
-    while((re=read(fd_exb,(char *)buf,MAXSIZE))==0)
-      { /* file mark */
-      close(fd_exb);
-      if((fd_exb=open(dev_file,O_RDONLY))==-1)
-        {
-        perror("exabyte unit cannot open : ");
-        exit(1);
-        }
-      }
-    if(re>0)
-      {
-      blocking=1;
-      size=mklong(buf);
-      if(size<0) continue;
-      if(bcd_dec(dec,(char *)buf+4)==0) continue;
-#if DEBUG
-      printf("(%d/%d)",re,size);
-#endif
-      ptr=(char *)buf;
-      while(size>re)
-        {
-        re=read(fd_exb,ptr+=re,size-=re);
-        blocking++;
-#if DEBUG
-        printf("(%d/%d)",re,size);
-#endif
-        }
-      if(re>0) break;
-      }
-    /* error */
-    perror("exabyte");
-    cnt++;
-    if(cnt==TRY_LIMIT/2) mt_pos(-2,0); /* overrun ? */
-    else if(cnt==TRY_LIMIT) end_process(1);
-    }
-  return blocking;
-  }
+/* read_exb() */
+/*   { */
+/*   int cnt,re,size,blocking,dec[6]; */
+/*   char *ptr; */
+/*   cnt=0; */
+/*   for(;;) */
+/*     { */
+/*     while((re=read(fd_exb,(char *)buf,MAXSIZE))==0) */
+/*       { /\* file mark *\/ */
+/*       close(fd_exb); */
+/*       if((fd_exb=open(dev_file,O_RDONLY))==-1) */
+/*         { */
+/*         perror("exabyte unit cannot open : "); */
+/*         exit(1); */
+/*         } */
+/*       } */
+/*     if(re>0) */
+/*       { */
+/*       blocking=1; */
+/*       size=mkuint4(buf); */
+/*       if(size<0) continue; */
+/*       if(bcd_dec(dec,(char *)buf+4)==0) continue; */
+/* #if DEBUG */
+/*       printf("(%d/%d)",re,size); */
+/* #endif */
+/*       ptr=(char *)buf; */
+/*       while(size>re) */
+/*         { */
+/*         re=read(fd_exb,ptr+=re,size-=re); */
+/*         blocking++; */
+/* #if DEBUG */
+/*         printf("(%d/%d)",re,size); */
+/* #endif */
+/*         } */
+/*       if(re>0) break; */
+/*       } */
+/*     /\* error *\/ */
+/*     perror("exabyte"); */
+/*     cnt++; */
+/*     if(cnt==TRY_LIMIT/2) mt_pos(-2,0,fd_exb); /\* overrun ? *\/ */
+/*     else if(cnt==TRY_LIMIT) end_process(1); */
+/*     } */
+/*   return blocking; */
+/*   } */
 
-mklong(ptr)       
-  unsigned char *ptr;
+static void
+select_ch(uint8_w *old_buf, uint8_w *new_buf, int old_form)
   {
-  unsigned long a;
-  a=((ptr[0]<<24)&0xff000000)+((ptr[1]<<16)&0xff0000)+
-    ((ptr[2]<<8)&0xff00)+(ptr[3]&0xff);
-  return a;       
-  }
+  int i,sr;
+  uint32_w  gsize;
+  WIN_bs  new_size;
+  uint8_w *ptr,*new_ptr,*ptr_lim;
+  uint32_w  gh;
+  WIN_ch  chtmp;
 
-select_ch(old_buf,new_buf,old_form)
-  unsigned char *old_buf,*new_buf;
-  int old_form;
-  {
-  int i,j,size,gsize,new_size,sr;
-  unsigned char *ptr,*new_ptr,*ptr_lim;
-  unsigned int gh;
-  size=mklong(old_buf);
-  ptr_lim=old_buf+size;
+  ptr_lim=old_buf+mkuint4(old_buf);
   ptr=old_buf+4;
   new_ptr=new_buf+4;
   for(i=0;i<6;i++) *new_ptr++=(*ptr++);
   new_size=10;
   do
     {
-    gh=mklong(ptr);
-    i=gh>>16;
     if(old_form)
       {
-      if((i&0xff00)==0) i=e_ch[i%241];  /* sys_ch */
+      gh=mkuint4(ptr);
+      chtmp=gh>>16;
+      if((chtmp&0xff00)==0) chtmp=e_ch[chtmp%241];  /* sys_ch */
       sr=gh&0xfff;
       gsize=((gh>>12)&0xf)*sr+4;
       }
     else
       {
-      sr=gh&0xfff;
-      if((gh>>12)&0xf) gsize=((gh>>12)&0xf)*(sr-1)+8;
-      else gsize=(sr>>1)+8;
+      gsize = get_sysch(ptr, &chtmp);
       }
-    if(sysch[i])
+    if(sysch[chtmp])
       {
       new_size+=gsize;
       while(gsize-->0) *new_ptr++=(*ptr++);
@@ -522,13 +333,9 @@ select_ch(old_buf,new_buf,old_form)
   new_buf[3]=new_size;
   }
 
-main(argc,argv)
-  int argc;
-  char *argv[];
+int
+main(int argc, char *argv[])
   {
-  char *ptr;
-  extern int optind;
-  extern char *optarg;
   int i,c,optbase,blocking;
 
   printf("***** rtape start *****\n");
@@ -557,8 +364,9 @@ main(argc,argv)
     }
 
   /* read one block */
-  if((blocking=read_exb())<=0) blocking=1;
-  bcd_dec(dec_begin,(char *)buf+4);
+  /* if((blocking=read_exb1(dev_file, fd_exb, buf, sizeof(buf)))<=0) blocking=1; */
+  if((blocking=read_exb1(dev_file, fd_exb, buf, sizeof(buf)))==0) blocking=1;
+  bcd_dec(dec_begin,buf+4);
   for(i=0;i<6;i++) dec_now[i]=dec_begin[i];
   sprintf(textbuf,"%02x%02x%02x%02x%02x",buf[4],buf[5],buf[6],buf[7],buf[8]);
   old_format=0;
@@ -571,7 +379,7 @@ main(argc,argv)
   else if(strcmp2(textbuf,TIME3)<0) fm_type=60;
   else fm_type=10;
   printf("%02x%02x%02x %02x%02x%02x  %d (type=%d)\n",buf[4],buf[5],
-    buf[6],buf[7],buf[8],buf[9],mklong(buf),fm_type);
+    buf[6],buf[7],buf[8],buf[9],mkuint4(buf),fm_type);
 
   if(argc<2+optbase)
     {
@@ -579,7 +387,7 @@ main(argc,argv)
     end_process(0);
     }
 
-  for(i=0;i<65536;i++) sysch[i]=1;
+  for(i=0;i<WIN_CHMAX;i++) sysch[i]=1;
   if(argc>2+optbase) sscanf(argv[2+optbase],"%s",path);
   else strcpy(path,".");
   if(argc>3+optbase)
@@ -589,7 +397,7 @@ main(argc,argv)
       perror("fopen");
       end_process(1);
       }
-    for(i=0;i<65536;i++) sysch[i]=0;
+    for(i=0;i<WIN_CHMAX;i++) sysch[i]=0;
     while(fscanf(f_param,"%x",&i)!=EOF)
       {
       i&=0xffff;
@@ -597,7 +405,7 @@ main(argc,argv)
       printf(" %03X",i);
       }
     nch=0;
-    for(i=0;i<65536;i++) if(sysch[i]) nch++;
+    for(i=0;i<WIN_CHMAX;i++) if(sysch[i]) nch++;
     printf("\n  <- %d chs according to '%s'\n",nch,argv[3+optbase]);
     fclose(f_param);
     }
@@ -608,7 +416,7 @@ main(argc,argv)
     end_process(1);
     }
   ext=0;
-  while(fgets(textbuf,80,f_param)!=NULL)
+  while(fgets(textbuf,sizeof(textbuf),f_param)!=NULL)
     {
     if(*textbuf=='#') continue;
     sscanf(textbuf,"%2d%2d%2d %2d%2d%2d %d",
@@ -622,7 +430,7 @@ main(argc,argv)
     else ext=0;
     printf("output file name = %s\n",name_file);
     strcpy(name_prev,name_file);
-    get_one_record(blocking);
+    (void)get_one_record(blocking);
     close(f_get);
     }
   fclose(f_param);

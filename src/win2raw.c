@@ -1,6 +1,8 @@
-/*
- * $Id: win2raw.c,v 1.7 2006/03/24 15:57:29 uehira Exp $
- */
+/* $Id: win2raw.c,v 1.8 2011/06/01 11:09:22 uehira Exp $ */
+
+/*-
+  2009.7.31  64bit check
+  -*/
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -12,11 +14,11 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "win_system.h"
-#include "subst_func.h"
+#include "winlib.h"
+/* #include "win_system.h" */
 
 static const char  rcsid[] =
-   "$Id: win2raw.c,v 1.7 2006/03/24 15:57:29 uehira Exp $";
+   "$Id: win2raw.c,v 1.8 2011/06/01 11:09:22 uehira Exp $";
 static char  *progname;
 
 static void usage(void);
@@ -37,8 +39,9 @@ main(int argc, char *argv[])
   FILE  *fpin, *fpraw = NULL;
   int  c, uflag = 0, vflag = 0, mode = 5, submode = 0;
   char  *rawdir, fullname[NAMELEN];
-  unsigned char  *dbuf = NULL;
-  WIN_blocksize  dsize;
+  uint8_w  *dbuf = NULL;
+  size_t  dbuf_siz;
+  WIN_bs  dsize;
   int  dtime[WIN_TIME_LEN], dtime_save[5];
   int  i;
 
@@ -108,7 +111,7 @@ main(int argc, char *argv[])
     dtime_save[i] = -1;
 
   /*** main loop ***/
-  while ((dsize = read_onesec_win(fpin, &dbuf)) != 0) {
+  while ((dsize = read_onesec_win(fpin, &dbuf, &dbuf_siz)) != 0) {
     /* skip invalid time stamp */
     if (bcd_dec(dtime, dbuf + WIN_BLOCKSIZE_LEN) == 0)
       continue;
@@ -172,7 +175,7 @@ main(int argc, char *argv[])
       (void)fprintf(stderr, "Error ocuurred when output raw data\n");
       exit(1);
     }
-  } /* while ((dsize = read_onesec_win(fpin, &dbuf)) != 0) */
+  } /* while ((dsize = read_onesec_win(fpin, &dbuf& &dbuf_siz)) != 0) */
 
   /* close final output file */
   if (fpraw == NULL) {
@@ -206,6 +209,7 @@ static void
 usage(void)
 {
 
+  WIN_version();
   (void)fprintf(stderr, "%s\n", rcsid);
   (void)fprintf(stderr, "Usage : %s [options] rawdir [data]\n", progname);
   (void)fprintf(stderr, "   options: -u    : unlink input data file\n");

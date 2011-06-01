@@ -1,4 +1,4 @@
-/* $Id: recvstatus3.c,v 1.8 2006/02/08 15:33:35 uehira Exp $ */
+/* $Id: recvstatus3.c,v 1.9 2011/06/01 11:09:21 uehira Exp $ */
 
 /* 
  * recvstatus3 :
@@ -8,6 +8,7 @@
 /*
  * 2005-04-26  Initial version.
  * 2005-05-18  close security hall.
+ * 2010-09-30  64bit check.
  */
 
 #ifdef HAVE_CONFIG_H
@@ -15,7 +16,6 @@
 #endif
 
 #include <sys/types.h>
-#include <sys/stat.h>
 #include <sys/socket.h>
 #include <netdb.h>
 #include <netinet/in.h>
@@ -41,25 +41,23 @@
 #include <syslog.h>
 
 #include "daemon_mode.h"
-#include "subst_func.h"
 #include "udpu.h"
-#include "win_log.h"
+#include "winlib.h"
 #include "ls8tel.h"
 
 #define MAXMSG       1025
 #define PATHMAX      1024
 
-static char rcsid[] =
-  "$Id: recvstatus3.c,v 1.8 2006/02/08 15:33:35 uehira Exp $";
+static const char rcsid[] =
+  "$Id: recvstatus3.c,v 1.9 2011/06/01 11:09:21 uehira Exp $";
 
 char *progname, *logfile;
-int  daemon_mode, syslog_mode;
-int  exit_status;
+int  exit_status, syslog_mode;
 
+static int  daemon_mode;
 
+/* prototypes */
 static void usage(void);
-static int dir_check(char *);
-
 int main(int, char *[]);
 
 int
@@ -71,22 +69,24 @@ main(int argc, char *argv[])
   struct sockaddr *sa = (struct sockaddr *)&ss;
   socklen_t   fromlen;
   ssize_t     psize;
-  int  maxsoc, maxsoc1;
+  int  maxsoc;
   fd_set  rset;
   FILE  *fp;
   int  sockbuf;
   char  *dirtop, dirname[PATHMAX], filename[PATHMAX], *ptname;
   size_t  dsize;
   char  msg[MAXMSG];
-  unsigned char  rbuf[MAXMSG], *ptr;
+  uint8_w  rbuf[MAXMSG], *ptr;
   int  c, chnum;
+  char mcastgroup[256]; /* multicast address */
+  char interface[256]; /* multicast interface */
 #if DEBUG
   int  i = 0;
   char host_[NI_MAXHOST];  /* host address */
   char port_[NI_MAXSERV];  /* port No. */
 #endif
 
-  if (progname = strrchr(argv[0], '/'))
+  if ((progname = strrchr(argv[0], '/')) != NULL)
     progname++;
   else
     progname = argv[0];
@@ -96,12 +96,26 @@ main(int argc, char *argv[])
   if (strcmp(progname, "recvstatus3d") == 0)
     daemon_mode = 1;
   
-  sockbuf = 256;  /* default socket buffer size in KB */
+  sockbuf = DEFAULT_RCVBUF;  /* default socket buffer size in KB */
 
-  while ((c = getopt(argc, argv, "D")) != -1)
+  while ((c = getopt(argc, argv, "Dg:i:")) != -1)
     switch (c) {
     case 'D':
       daemon_mode = 1;  /* daemon mode */
+      break;
+    case 'g':   /* multicast group (multicast IP address) */
+      if (snprintf(mcastgroup, sizeof(mcastgroup), "%s", optarg)
+	  >= sizeof(mcastgroup)) {
+	fprintf(stderr,"'%s': -g option : Buffer overrun!\n",progname);
+	exit(1);
+      }
+      break;
+    case 'i':   /* interface (ordinary IP address) which receive mcast */
+      if (snprintf(interface, sizeof(interface), "%s", optarg)
+	  >= sizeof(interface)) {
+	fprintf(stderr,"'%s': -i option : Buffer overrun!\n",progname);
+	exit(1);
+      }
       break;
     default:
       usage();
@@ -166,6 +180,11 @@ main(int argc, char *argv[])
     err_sys("udp_accept");
   maxsoc++;
 
+  if(*mcastgroup) {
+    for (ct = ct_top; ct != NULL; ct = ct->next)
+      mcast_join(ct->soc, mcastgroup, interface);
+  }
+
   FD_ZERO(&rset);
 
   /***** main loop *****/
@@ -193,7 +212,7 @@ main(int argc, char *argv[])
       (void)getnameinfo(sa, fromlen,
 			host_, sizeof(host_), port_, sizeof(port_),
 			NI_DGRAM | NI_NUMERICHOST | NI_NUMERICSERV);
-      (void)printf("%s : %s : %d byte(s)\n", host_, port_, psize);
+      (void)printf("%s : %s : %zd byte(s)\n", host_, port_, psize);
 #endif
 
 #if DEBUG
@@ -250,14 +269,14 @@ main(int argc, char *argv[])
 	dsize = fwrite(ptr, 1, LS8_A8_DLEN, fp);
 	if (dsize != LS8_A8_DLEN) {
 	  (void)snprintf(msg, sizeof(msg),
-			 "strange A8 packet: %d bytes\n", dsize);
+			 "strange A8 packet: %zu bytes\n", dsize);
 	  write_log(msg);
 	}
       } else if (rbuf[LS8_PID] == 0xA9) {
 	dsize = fwrite(ptr, 1, LS8_A9_DLEN, fp);
 	if (dsize != LS8_A9_DLEN) {
 	  (void)snprintf(msg, sizeof(msg),
-			 "strange A9 packet: %d bytes\n", dsize);
+			 "strange A9 packet: %zu bytes\n", dsize);
 	  write_log(msg);
 	}
       }
@@ -266,42 +285,20 @@ main(int argc, char *argv[])
   }  /* for (;;) (main loop) */
 }
 
-/* check dir exists or not. If doesn't, make it.
- * return : 1: make dir, 0: dir already exists, -1: error */
-static int
-dir_check(char *path)
-
-{
-  struct stat sb;
-
-  if (stat(path, &sb) < 0) {
-    if (errno == ENOENT) {  /* if no such dir, make dir */
-      if (mkdir(path, S_IRWXU | S_IRWXG | S_IRWXO) < 0)
-	return (-1);
-      else
-	return (1);
-    } else
-      return (-1);
-  }
-  else if (!S_ISDIR(sb.st_mode))
-    return (-1);  /* path exists, but not directory */  
-
-  return (0);
-}
-
 static void
 usage(void)
 {
 
+  WIN_version();
   (void)fprintf(stderr, "%s\n", rcsid);
   (void)fprintf(stderr, "Usage of %s :\n", progname);
   if (daemon_mode)
     (void)fprintf(stderr,
-		  "  %s [in_port] [dir] (logfile)\n",
+		  "  %s (-g [mcast_group]) (-i [interface]) [in_port] [dir] (logfile)\n",
 		  progname);
   else
     (void)fprintf(stderr,
-		  "  %s (-D) [in_port] [dir] (logfile)\n",
+		  "  %s (-D) (-g [mcast_group]) (-i [interface]) [in_port] [dir] (logfile)\n",
 		  progname);
 
   exit(1);

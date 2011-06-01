@@ -1,4 +1,4 @@
-/* $Id: ls8tel_STS.c,v 1.2 2005/06/14 10:41:02 uehira Exp $ */
+/* $Id: ls8tel_STS.c,v 1.3 2011/06/01 11:09:21 uehira Exp $ */
 
 /*
  * Copyright (c) 2005 -
@@ -19,11 +19,12 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "winlib.h"
 #include "ls8tel.h"
 
 static char  *progname;
-static char  rcsid[] =
-   "$Id: ls8tel_STS.c,v 1.2 2005/06/14 10:41:02 uehira Exp $";
+static const char  rcsid[] =
+   "$Id: ls8tel_STS.c,v 1.3 2011/06/01 11:09:21 uehira Exp $";
 
 int main(int, char *[]);
 
@@ -31,9 +32,8 @@ int
 main(int argc, char *argv[])
 {
   FILE  *fp;
-  static unsigned char  buf[LS8_A8_DLEN];
-  static unsigned char  *ptr;
-  short  err;
+  uint8_w  buf[LS8_A8_DLEN];
+  uint8_w  *ptr;
   int    i, gain;
 
   /* set program name */
@@ -84,4 +84,6 @@ main(int argc, char *argv[])
     }
     (void)printf("\n");
   }
+
+  exit(0);
 }

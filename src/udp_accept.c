@@ -1,7 +1,7 @@
-/* $Id: udp_accept.c,v 1.3 2004/11/26 13:55:38 uehira Exp $ */
+/* $Id: udp_accept.c,v 1.4 2011/06/01 11:09:22 uehira Exp $ */
 
 /*
- * Copyright (c) 2001-2004
+ * Copyright (c) 2001-2011
  *   Uehira Kenji / All Rights Reserved.
  *    uehira@sevo.kyushu-u.ac.jp
  *    Institute of Seismology and Volcanology, Kyushu University.
@@ -18,7 +18,12 @@
 #include <sys/time.h>
 #include <sys/param.h>
 
+#include <net/if.h>
+
 #include <netinet/in.h>
+#if HAVE_ARPA_INET_H
+#include <arpa/inet.h>
+#endif
 
 #include <netdb.h>   /* struct addrinfo */
 
@@ -30,15 +35,12 @@
 #include "udpu.h"
 #include "win_log.h"
 
-#define MIN_RECV_BUFSIZ  16   /* min. bufsize in KB */
-
-
-#ifdef INET6
 /*
  * Accept packets from "port".
  *  Return all available sockets or NULL pointer.
  *  listen IPv6 & IPv4 address.
  */
+#ifdef INET6
 struct conntable *
 udp_accept(const char *port, int *maxsoc, int sockbuf)
 {
@@ -70,7 +72,7 @@ udp_accept(const char *port, int *maxsoc, int sockbuf)
     if (sockfd < 0)
       continue;
 
-    /* set socket opttion: recv. bufsize */
+    /* set socket option: recv. bufsize */
     for (j = sockbuf; j >= MIN_RECV_BUFSIZ; j -= 4) {
       sock_bufsiz = (j << 10);
       if (setsockopt(sockfd, SOL_SOCKET, SO_RCVBUF,
@@ -126,3 +128,106 @@ udp_accept(const char *port, int *maxsoc, int sockbuf)
   return (ct_top);
 }
 #endif  /* INET6 */
+
+/*
+ * Accept packets from "port".
+ *  Return socket FD
+ *  IPv4 only.
+ */
+int
+udp_accept4(const uint16_t port, int sockbuf)
+{
+  int  sockfd;
+  int  sock_bufsiz;
+  struct sockaddr_in  to_addr;
+  char  tb[1024];
+  int  j;
+
+  if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
+    err_sys("socket");
+
+  /* set socket option: recv. bufsize */
+  for (j = sockbuf; j >= MIN_RECV_BUFSIZ; j -= 4) {
+    sock_bufsiz = (j << 10);
+    if (setsockopt(sockfd, SOL_SOCKET, SO_RCVBUF,
+		   &sock_bufsiz, sizeof(sock_bufsiz)) >= 0)
+      break;
+  }
+  if (j < MIN_RECV_BUFSIZ) {
+    (void)close(sockfd);
+    err_sys("SO_RCVBUF setsockopt error");
+  }
+  (void)snprintf(tb, sizeof(tb), "RCVBUF size=%d", sock_bufsiz);
+  write_log(tb);
+
+  /* bind */
+  memset(&to_addr, 0, sizeof(to_addr));
+  to_addr.sin_family = AF_INET;
+  to_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+  to_addr.sin_port = htons(port);
+  if (bind(sockfd, (struct sockaddr *)&to_addr, sizeof(to_addr)) < 0) {
+    (void)close(sockfd);
+    err_sys("bind");
+  }
+
+  return (sockfd);
+}
+
+/*
+ * Join multicast group
+ *   (IPv4 & IPv6 version)
+ */
+void
+mcast_join(const int sockfd, const char *mcastgroup, const char *interface)
+{
+  struct ip_mreq  stMreq;
+#ifdef INET6
+  struct ipv6_mreq  stMreq6;
+#endif
+  int  status;
+  char  tb[1024];
+
+  switch (sockfd_to_family(sockfd)) {
+  case AF_INET:
+    status = inet_pton(AF_INET, mcastgroup, &stMreq.imr_multiaddr);
+    (void)snprintf(tb, sizeof(tb), "mcast IPv4 inet_pton status = %d", status);
+    write_log(tb);
+    if (status == 0)  /* Invalid format */
+      break;
+    else if (status == -1)  /* error */
+      err_sys("inet_pton");
+    if(*interface)
+      stMreq.imr_interface.s_addr = inet_addr(interface);
+    else
+      stMreq.imr_interface.s_addr = INADDR_ANY;
+    if (setsockopt(sockfd, IPPROTO_IP, IP_ADD_MEMBERSHIP, &stMreq,
+		   sizeof(stMreq)) < 0)
+      err_sys("IP_ADD_MEMBERSHIP setsockopt error");
+    break;
+
+#ifdef INET6
+  case AF_INET6:
+    status = inet_pton(AF_INET6, mcastgroup, &stMreq6.ipv6mr_multiaddr);
+    (void)snprintf(tb, sizeof(tb), "mcast IPv6 inet_pton status = %d", status);
+    write_log(tb);
+    if (status == 0)  /* Invalid format */
+      break;
+    else if (status == -1)  /* error */
+      err_sys("inet_pton");
+    if(*interface) {
+      stMreq6.ipv6mr_interface = if_nametoindex(interface);
+      if (stMreq6.ipv6mr_interface == 0)
+	err_sys("stMreq6.ipv6imr_interface");
+    } else
+      stMreq6.ipv6mr_interface = 0;
+    if (setsockopt(sockfd, IPPROTO_IPV6, IPV6_JOIN_GROUP, &stMreq6,
+		   sizeof(stMreq6)) < 0)
+      err_sys("IPV6_JOIN_GROUP setsockopt error");
+    break;
+#endif  /* INET6 */
+
+  default:
+    /* errno = EPROTPNOSUPPORT; */
+    err_sys("mcast_join");
+  }
+}

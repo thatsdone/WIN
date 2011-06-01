@@ -1,4 +1,4 @@
-/* $Id: pick2final.c,v 1.4 2004/11/24 06:43:42 uehira Exp $ */
+/* $Id: pick2final.c,v 1.5 2011/06/01 11:09:21 uehira Exp $ */
 /* pick2final.c */
 /* 8/22/91, 5/22/92, 7/9/92, 97.10.3 urabe */
 /* input (stdin)   : a list of pick file names (ls -l) */
@@ -11,17 +11,26 @@
 #endif
 
 #include  <stdio.h>
+#include  <stdlib.h>
 #include  <string.h>
 
 #include "subst_func.h"
 
-main()
+static const char rcsid[] =
+   "$Id: pick2final.c,v 1.5 2011/06/01 11:09:21 uehira Exp $";
+
+/* prototypes */
+int main(void);
+
+int
+main(void)
   {
   FILE *fp;
   int flag;
   char tbuf[1024],fname[256],buf[1024],owner[20],item[10][256],diag[256];
   int i;
-  while(fgets(tbuf,sizeof(tbuf),stdin))
+
+  while(fgets(tbuf,sizeof(tbuf),stdin) != NULL)
     {
     i=sscanf(tbuf,"%255s%255s%255s%255s%255s%255s%255s%255s%255s%255s",
 	     item[0],item[1],item[2],item[3],item[4],
@@ -30,7 +39,7 @@ main()
     strcpy(fname,item[i-1]);
     if((fp=fopen(fname,"r"))==NULL) continue;
     flag=1;
-    while(fgets(buf,sizeof(buf),fp))
+    while(fgets(buf,sizeof(buf),fp) != NULL)
       {
       if(flag && strncmp(buf,"#p",2)==0)
         {
@@ -52,4 +61,5 @@ main()
       }
     fclose(fp);
     }
+  exit(0);
   }

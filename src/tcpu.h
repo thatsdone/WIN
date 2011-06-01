@@ -1,4 +1,4 @@
-/* $Id: tcpu.h,v 1.1 2006/05/08 04:02:30 uehira Exp $ */
+/* $Id: tcpu.h,v 1.2 2011/06/01 11:09:22 uehira Exp $ */
 
 /*
  * Copyright (c) 2006
@@ -9,10 +9,6 @@
 
 #ifndef _TCPU_H_
 #define _TCPU_H_
-
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
 
 #include <sys/types.h>
 #include <sys/socket.h>

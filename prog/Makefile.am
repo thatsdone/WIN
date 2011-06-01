@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.18 2011/05/31 02:30:47 uehira Exp $
+# $Id: Makefile.am,v 1.19 2011/06/01 11:09:20 uehira Exp $
 #
 #  Makefile.am in prog subdirectory.
 #
@@ -14,7 +14,7 @@ WIN_SH_PROG =  _bj _bj1 _bj2 _cont _find _joint _kill _mon _monit _stop \
 	ras2rpdl2a ras2rpdl2b recvstatus_filter renlog rt seis setRT stc \
 	stlist sumup tape tapelist trg trgstat w2h w2hh wex \
 	wt wtB ck_wdisk.sh insert_raw2 insert_raw2p update_ch clean_nmx wintosac.sh \
-	mkpicknoise
+	mkpicknoise chtbl2kml windiffq daily_windiff
 
 # other shell script
 WIN_SHELL_PROG = w2m.in
@@ -32,8 +32,12 @@ WIN_TCLSH_BIN = winsimu shmsimu
 WIN_PERL_PROG = ch2mf.in ee_manager.in final2mf.in wincd.in pick2pick.in datej.pl.in wincat.in
 WIN_PERL_BIN = ch2mf ee_manager final2mf wincd pick2pick datej.pl wincat
 
+# bash scripst
+WIN_BASH_PROG = cpraw.in
+WIN_BASH_BIN = cpraw
+
 # destination files
-EXTRA_DIST = $(WIN_SH_PROG) $(WIN_SHELL_PROG) $(WIN_WISH_PROG) $(WIN_TCLSH_PROG) $(WIN_PERL_PROG)
+EXTRA_DIST = $(WIN_SH_PROG) $(WIN_SHELL_PROG) $(WIN_WISH_PROG) $(WIN_TCLSH_PROG) $(WIN_PERL_PROG) $(WIN_BASH_PROG)
 
 # excutable files
-bin_SCRIPTS = $(WIN_SH_PROG) $(WIN_SHELL_BIN) $(WIN_WISH_BIN) $(WIN_TCLSH_BIN) $(WIN_PERL_BIN)
+bin_SCRIPTS = $(WIN_SH_PROG) $(WIN_SHELL_BIN) $(WIN_WISH_BIN) $(WIN_TCLSH_BIN) $(WIN_PERL_BIN) $(WIN_BASH_BIN)

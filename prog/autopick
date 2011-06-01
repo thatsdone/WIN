@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# $Id: autopick,v 1.2.4.1 2010/12/28 12:55:40 uehira Exp $
+# $Id: autopick,v 1.2.4.2 2011/06/01 12:14:51 uehira Exp $
 #   autopick   98.7.1  urabe
 #
 if [ -n "$1" ]
@@ -30,12 +30,12 @@ do
           kill -HUP $!
           wait
         fi
-        win -aw -p $PF $file &
+        win -a -p $PF $file &
       else
-        win -aqw -p $PF $file
+        win -aq -p $PF $file
       fi
     else
-      win -abw -p $PF $file
+      win -ab -p $PF $file
     fi
     rm $dir/$file
     echo DONE $DD/trg/$file

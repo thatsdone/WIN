@@ -1,7 +1,7 @@
-/* $Id: udpu.h,v 1.2.2.1 2010/12/28 12:55:43 uehira Exp $ */
+/* $Id: udpu.h,v 1.2.2.2 2011/06/01 12:14:54 uehira Exp $ */
 
 /*
- * Copyright (c) 2001-2004
+ * Copyright (c) 2001-2011
  *   Uehira Kenji / All Rights Reserved.
  *    uehira@sevo.kyushu-u.ac.jp
  *    Institute of Seismology and Volcanology, Kyushu University.
@@ -24,7 +24,8 @@ struct conntable {
 };
 
 #ifdef INET6
-int udp_dest(const char *, const char *, struct sockaddr *, socklen_t *);
+int udp_dest(const char *, const char *, struct sockaddr *, socklen_t *,
+	     const char *);
 struct conntable * udp_accept(const char *, int *, int );
 #endif  /* INET6 */
 
@@ -32,5 +33,9 @@ struct conntable * udp_accept(const char *, int *, int );
 int udp_dest4(const char *, const uint16_t, struct sockaddr_in *,
 	      int, const uint16_t);
 int udp_accept4(const uint16_t, int);
+
+/* Multicast functions (IPv4 & IPv6) */
+void mcast_join(const int, const char *, const char *);
+void mcast_set_outopt(const int, const char *, const int);
 
 #endif  /* !_UDPU_H_ */

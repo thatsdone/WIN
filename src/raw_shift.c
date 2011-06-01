@@ -1,4 +1,4 @@
-/* $Id: raw_shift.c,v 1.2.2.2 2010/12/28 12:55:42 uehira Exp $ */
+/* $Id: raw_shift.c,v 1.2.2.3 2011/06/01 12:14:52 uehira Exp $ */
 
 /* "raw_shift.c"    2002.4.1 - 4.1 urabe */
 /*                  modified from raw_100.c */
@@ -38,7 +38,7 @@
 #define MAX_SR   4095
 
 static const char rcsid[] =
-  "$Id: raw_shift.c,v 1.2.2.2 2010/12/28 12:55:42 uehira Exp $";
+  "$Id: raw_shift.c,v 1.2.2.3 2011/06/01 12:14:52 uehira Exp $";
 
 static uint8_w ch_table[WIN_CHMAX];
 static char *chfile;
@@ -52,7 +52,7 @@ static void read_chfile(void);
 int main(int, char *[]);
 
 static void
-read_chfile()
+read_chfile(void)
   {
   FILE *fp;
   int i,j,k;

@@ -1,4 +1,4 @@
-/* $Id: cormeisei.c,v 1.6.2.2 2010/12/28 12:55:41 uehira Exp $ */
+/* $Id: cormeisei.c,v 1.6.2.3 2011/06/01 12:14:51 uehira Exp $ */
 /* "cormeisei.c"    June'97 Ide changed from*/
 /* "raw_raw.c"      3/4/96 urabe */
 /*                  revised on 5/20/96 */
@@ -72,7 +72,7 @@
 #define TDLYL     1.35
 
 static const char rcsid[] =
-  "$Id: cormeisei.c,v 1.6.2.2 2010/12/28 12:55:41 uehira Exp $";
+  "$Id: cormeisei.c,v 1.6.2.3 2011/06/01 12:14:51 uehira Exp $";
 
 static short ch_tableh[WIN_CHMAX], ch_tablel[WIN_CHMAX];
 static char *chfile;
@@ -86,7 +86,7 @@ static void read_chfile(void);
 int main(int, char *[]);
 
 static void
-read_chfile()
+read_chfile(void)
 {
 FILE *fp;
 int i,jh,jl,k,sp;

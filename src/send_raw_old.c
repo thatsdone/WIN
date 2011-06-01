@@ -1,4 +1,4 @@
-/* $Id: send_raw_old.c,v 1.9.2.2 2010/12/28 12:55:43 uehira Exp $ */
+/* $Id: send_raw_old.c,v 1.9.2.3 2011/06/01 12:14:53 uehira Exp $ */
 /*
     program "send_raw_old/send_mon_old.c"   1/24/94 - 1/25/94,5/25/94 urabe
                                     6/15/94 - 6/16/94
@@ -58,7 +58,7 @@
 #define BUFNO     128
 
 static const char  rcsid[] =
-   "$Id: send_raw_old.c,v 1.9.2.2 2010/12/28 12:55:43 uehira Exp $";
+   "$Id: send_raw_old.c,v 1.9.2.3 2011/06/01 12:14:53 uehira Exp $";
 
 static int sock,raw,mon,tow,psize[BUFNO],n_ch;
 static uint8_w sbuf[BUFNO][MAXMESG],ch_table[WIN_CHMAX],rbuf[MAXMESG];
@@ -89,7 +89,7 @@ get_packet(int bufno, uint8_w no)
   }
 
 static void
-read_chfile()
+read_chfile(void)
   {
   FILE *fp;
   int i,j,k;

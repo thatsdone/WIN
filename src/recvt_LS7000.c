@@ -1,4 +1,4 @@
-/* $Id: recvt_LS7000.c,v 1.1.4.1 2010/12/28 12:55:43 uehira Exp $ */
+/* $Id: recvt_LS7000.c,v 1.1.4.2 2011/06/01 12:14:53 uehira Exp $ */
 
 /*- 
  * "recvt_LS7000.c"  uehira
@@ -60,7 +60,7 @@
 #define N_PNOS    62    /* length of packet nos. history >=2 */
 
 static const char rcsid[] =
-  "$Id: recvt_LS7000.c,v 1.1.4.1 2010/12/28 12:55:43 uehira Exp $";
+  "$Id: recvt_LS7000.c,v 1.1.4.2 2011/06/01 12:14:53 uehira Exp $";
 
 static uint8_w rbuff[MAXMESG],rbuf[MAXMESG],ch_table[WIN_CHMAX];
 static char *chfile[N_CHFILE];
@@ -99,12 +99,12 @@ int main(int, char *[]);
 
 
 static void
-read_chfile()
+read_chfile(void)
   {
   FILE *fp;
   int i,k,ii,i_chfile;
   time_t tdif, tdif2;
-  char tbuf[1024],host_name[80],tb[256],*ptr;
+  char tbuf[1024],host_name[1024],tb[256],*ptr;
   struct hostent *h;
   static time_t ltime,ltime_p;
 
@@ -122,8 +122,8 @@ read_chfile()
       while(fgets(tbuf,sizeof(tbuf),fp))
         {
         *host_name=0;
-        if(sscanf(tbuf,"%s",host_name)==0) continue;
-        if(*host_name==0 || *host_name=='#') continue;
+        if(sscanf(tbuf,"%s",host_name)==0) continue;  /* buffer overrun ok */
+	if(*host_name==0 || *host_name=='#') continue;
         if(*tbuf=='*') /* match any channel */
           {
           if(negate_channel) for(i=0;i<WIN_CHMAX;i++) ch_table[i]=0;
@@ -202,9 +202,10 @@ read_chfile()
       fprintf(stderr,"ch_file '%s' not open\n",chfile[0]);
 #endif
       snprintf(tb,sizeof(tb),"channel list file '%s' not open",chfile[0]);
-      write_log(tb);
-      write_log("end");
-      exit(1);
+      err_sys(tb);
+      /* write_log(tb); */
+      /* write_log("end"); */
+      /* exit(1); */
       }
     }
   else
@@ -549,7 +550,7 @@ wincpy2(uint8_w *ptw, time_t ts, uint8_w *ptr, ssize_t size, int mon,
   }
 
 static void
-usage()
+usage(void)
 {
 
   WIN_version();
@@ -588,7 +589,7 @@ main(int argc, char *argv[])
   uint16_t  to_port;  /*- 64bit ok -*/
   struct Shm  *sh;
   char tb[256];
-  struct ip_mreq stMreq;
+  /* struct ip_mreq stMreq; */
   char mcastgroup[256]; /* multicast address */
   char interface[256]; /* multicast interface */
   time_t ts,sec,sec_p;
@@ -639,9 +640,6 @@ main(int argc, char *argv[])
       case 'd':   /* length of packet history in sec */
         chhist.n=atoi(optarg);
         break;
-      case 'i':   /* interface (ordinary IP address) which receive mcast */
-        strcpy(interface,optarg);
-        break;
       case 'f':   /* channel list file */
 	if (n_chfile < N_CHFILE)
 	  chfile[n_chfile++]=optarg;
@@ -650,7 +648,20 @@ main(int argc, char *argv[])
 		  "Num exceeded. Ignore channel list file: %s\n", optarg);
         break;
       case 'g':   /* multicast group (multicast IP address) */
-        strcpy(mcastgroup,optarg);
+        /* strcpy(mcastgroup,optarg); */
+        if (snprintf(mcastgroup, sizeof(mcastgroup), "%s", optarg)
+	    >= sizeof(mcastgroup)) {
+	  fprintf(stderr,"'%s': -g option : Buffer overrun!\n",progname);
+	  exit(1);
+	}
+	break;
+      case 'i':   /* interface (ordinary IP address) which receive mcast */
+        /* strcpy(interface,optarg); */
+	if (snprintf(interface, sizeof(interface), "%s", optarg)
+	    >= sizeof(interface)) {
+	  fprintf(stderr,"'%s': -i option : Buffer overrun!\n",progname);
+	  exit(1);
+	}
         break;
       case 'm':   /* time limit before RT in minutes */
         pre=atol(optarg);
@@ -670,12 +681,27 @@ main(int argc, char *argv[])
         break;
       case 'S':   /* status packet */
 	if ((ptmp = strrchr(optarg, ':')) == NULL) {
-	  strcpy(dirname, optarg);
+	  /* strcpy(dirname, optarg); */
+	  if (snprintf(dirname, sizeof(dirname), "%s", optarg)
+	      >= sizeof(dirname)) {
+	    fprintf(stderr,"'%s': -S option : Buffer overrun!\n",progname);
+	    exit(1);
+	  }
 	} else {
 	  *ptmp = '\0';
 	  ptmp++;
-	  strcpy(host_status, optarg);
-	  strcpy(port_status, ptmp);
+	  /* strcpy(host_status, optarg); */
+	  if (snprintf(host_status, sizeof(host_status), "%s", optarg)
+	      >= sizeof(host_status)) {
+	    fprintf(stderr,"'%s': -S option : Buffer overrun!\n",progname);
+	    exit(1);
+	  }
+	  /* strcpy(port_status, ptmp); */
+	  if (snprintf(port_status, sizeof(port_status), "%s", optarg)
+	      >= sizeof(port_status)) {
+	    fprintf(stderr,"'%s': -S option : Buffer overrun!\n",progname);
+	    exit(1);
+	  }
 	}
         break;
       case 's':   /* preferred socket buffer size (KB) */
@@ -763,7 +789,7 @@ main(int argc, char *argv[])
   else {
     snprintf(tb, sizeof(tb), "Status packets relay to %s:%s",
 	     host_status, port_status);
-    if ((sock_status = udp_dest(host_status, port_status, sa, &salen)) < 0)
+    if ((sock_status = udp_dest(host_status, port_status, sa, &salen, NULL)) < 0)
       err_sys("udp_dest");
 
     /* printf("sock_status = %d\n", sock_status); */
@@ -810,11 +836,12 @@ main(int argc, char *argv[])
   /* if(bind(sock,(struct sockaddr *)&to_addr,sizeof(to_addr))<0) err_sys("bind"); */
 
   if(*mcastgroup){
-    stMreq.imr_multiaddr.s_addr=inet_addr(mcastgroup);
-    if(*interface) stMreq.imr_interface.s_addr=inet_addr(interface);
-    else stMreq.imr_interface.s_addr=INADDR_ANY;
-    if(setsockopt(sock,IPPROTO_IP,IP_ADD_MEMBERSHIP,(char *)&stMreq,
-      sizeof(stMreq))<0) err_sys("IP_ADD_MEMBERSHIP setsockopt error\n");
+/*     stMreq.imr_multiaddr.s_addr=inet_addr(mcastgroup); */
+/*     if(*interface) stMreq.imr_interface.s_addr=inet_addr(interface); */
+/*     else stMreq.imr_interface.s_addr=INADDR_ANY; */
+/*     if(setsockopt(sock,IPPROTO_IP,IP_ADD_MEMBERSHIP,(char *)&stMreq, */
+/*       sizeof(stMreq))<0) err_sys("IP_ADD_MEMBERSHIP setsockopt error\n"); */
+    mcast_join(sock, mcastgroup, interface);
   }
 
   if(noreq) write_log("resend request disabled");
@@ -995,9 +1022,10 @@ main(int argc, char *argv[])
 	/*  printf("A8 packet %02X%02X\n", */
 	/*  	       logger_address[0], logger_address[1]); */
 	if (host_status[0] == '\0') {
-	  snprintf(staf, sizeof(staf), "%s/%02x%02x%02x.%02x%02x%02x.A8",
-		   dirname,
-		   rbuf[3], rbuf[4], rbuf[5], rbuf[6], rbuf[7], rbuf[8]);
+	  if (snprintf(staf, sizeof(staf), "%s/%02x%02x%02x.%02x%02x%02x.A8",
+		       dirname, rbuf[3], rbuf[4],
+		       rbuf[5], rbuf[6], rbuf[7], rbuf[8]) >= sizeof(staf))
+	    err_sys("snprintf");
 	  if ((fp = fopen(staf, "w")) == NULL)
 	    err_sys("fopen");
 	  fwrite(rbuff + LS7_PHDER_LEN, 1, norg - LS7_PHDER_LEN, fp);
@@ -1022,9 +1050,10 @@ main(int argc, char *argv[])
 	/*  printf("A9 packet %02X%02X\n", */
 	/*  	       logger_address[0], logger_address[1]); */
 	if (host_status[0] == '\0') {
-	  snprintf(staf, sizeof(staf), "%s/%02x%02x%02x.%02x%02x%02x.A9",
-		   dirname,
-		   rbuf[3], rbuf[4], rbuf[5], rbuf[6], rbuf[7], rbuf[8]);
+	  if (snprintf(staf, sizeof(staf), "%s/%02x%02x%02x.%02x%02x%02x.A9",
+		       dirname, rbuf[3], rbuf[4],
+		       rbuf[5], rbuf[6], rbuf[7], rbuf[8]) >= sizeof(staf))
+	    err_sys("snprintf");
 	  if ((fp = fopen(staf, "w")) == NULL)
 	    err_sys("fopen");
 	  fwrite(rbuff + LS7_PHDER_LEN, 1, norg - LS7_PHDER_LEN, fp);

@@ -1,4 +1,4 @@
-/* $Id: shmcounter.c,v 1.1.4.1 2010/12/28 12:55:43 uehira Exp $ */
+/* $Id: shmcounter.c,v 1.1.4.2 2011/06/01 12:14:53 uehira Exp $ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -29,7 +29,7 @@
 #include "winlib.h"
 
 static const char rcsid[] =
-  "$Id: shmcounter.c,v 1.1.4.1 2010/12/28 12:55:43 uehira Exp $";
+  "$Id: shmcounter.c,v 1.1.4.2 2011/06/01 12:14:53 uehira Exp $";
 
 static char *progname;
 
@@ -125,7 +125,7 @@ main(int argc, char *argv[])
 }
 
 static void
-usage()
+usage(void)
 {
   
   WIN_version();

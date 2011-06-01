@@ -1,4 +1,4 @@
-/* $Id: pmon.c,v 1.13.2.5 2010/12/28 12:55:42 uehira Exp $ */
+/* $Id: pmon.c,v 1.13.2.6 2011/06/01 12:14:52 uehira Exp $ */
 /************************************************************************
 *************************************************************************
 **  program "pmon.c" for NEWS/SPARC                             *********
@@ -117,8 +117,9 @@
 /* #define SR_MON        5 */
 #define TOO_LOW       0.0
 #define TIME_TOO_LOW  10.0
-#define STNLEN        11   /* (length of station code)+1 */
-#define CMPLEN        7    /* (length of component code)+1 */
+#define STNLEN        WIN_STANAME_LEN   /* (length of station code)+1 */
+#define CMPLEN        WIN_STACOMP_LEN   /* (length of component code)+1 */
+
 #define LEN           1024
 
 #define X_BASE        136
@@ -140,7 +141,8 @@
 #define SIZE_FONT32   ((WIDTH_FONT32*N_CODE+15)/16*2*HEIGHT_FONT32)
 #define PLOTHEIGHT    (HEIGHT_LBP-Y_BASE-HEIGHT_FONT32)
 
-#define WIN_FILENAME_MAX 1024
+#define WIN_FILENAME_MAX 1025
+#define BUFSIZE  WIN_FILENAME_MAX
 
 #define FILE_R 0
 #define FILE_W 1
@@ -249,7 +251,7 @@
 0xf0,0x1e,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x40,0x00,0x06,0x10,0xc0,0x00,0x00};
 
 static const char  rcsid[] =
-   "$Id: pmon.c,v 1.13.2.5 2010/12/28 12:55:42 uehira Exp $";
+   "$Id: pmon.c,v 1.13.2.6 2011/06/01 12:14:52 uehira Exp $";
 
 char *progname,*logfile;
 int  syslog_mode = 0, exit_status;
@@ -261,9 +263,9 @@ static int fd,min_trig[M_CH],tim[6],n_zone,n_trig[M_CH],n_stn[M_CH],
 static int32_w long_max[M_CH][SR_MON],long_min[M_CH][SR_MON];
 static int16_w  idx[WIN_CHMAX];
 static char file_trig[WIN_FILENAME_MAX],line[LEN],time_text[20],last_line[LEN],
-  file_trig_lock[WIN_FILENAME_MAX],*param_file,
+  file_trig_lock[WIN_FILENAME_MAX+5],*param_file,
   temp_done[WIN_FILENAME_MAX],latest[WIN_FILENAME_MAX],
-  ch_file[WIN_FILENAME_MAX],file_zone[WIN_FILENAME_MAX],zone[M_CH][20];
+  ch_file[WIN_FILENAME_MAX],file_zone[WIN_FILENAME_MAX],zone[M_CH][BUFSIZE];
 static uint8_w  frame[HEIGHT_LBP][WIDTH_LBP], buf[LENGTH],
   font24[SIZE_FONT24],font32[SIZE_FONT32], idx2[WIN_CHMAX];
 static double dt=1.0/(double)SR_MON,time_on,time_off,time_lta,time_lta_off,
@@ -303,7 +305,7 @@ static void mkfont(int , int, uint8_w *, int, int, int, uint16_w *, int);
 static void make_fonts(uint8_w *, uint8_w *, uint8_w *);
 static void write_file(char *, char *);
 static void confirm_on(int);
-static void sprintm(char *, int *);
+static void sprintm(char *, int *, size_t);
 static void cptm(int *, int *);
 static void confirm_off(int, int, int);
 static int find_oldest_pmon(char *, char *, char *) ;
@@ -322,7 +324,7 @@ static void usage(void);
 int main(int, char *[]);
 
 static void
-bfov_err()
+bfov_err(void)
 {
 
   write_log("Buffer overflow");
@@ -439,8 +441,9 @@ confirm_on(int ch)
   static char prev_on[15];
 
   tbl[ch].status=2;
-  sprintm(time_text,tbl[ch].tm);
-  sprintf(time_text+strlen(time_text),".%d",tbl[ch].tm[6]*(10/SR_MON));
+  sprintm(time_text,tbl[ch].tm,sizeof(time_text));
+  snprintf(time_text+strlen(time_text),sizeof(time_text)-strlen(time_text),
+	   ".%d",tbl[ch].tm[6]*(10/SR_MON));
 
   for(j=0;j<tbl[ch].n_zone;j++)
     {
@@ -469,7 +472,7 @@ confirm_on(int ch)
           cptm(tm,tbl[ch].tm);
           tm[5]++;
           adj_time(tm);
-          sprintm(time_text,tm);
+          sprintm(time_text,tm,sizeof(time_text));
           }
         strncpy(prev_on,time_text,13);
         snprintf(line,sizeof(line),"%13.13s on, at %.7s\n",time_text,zone[z]);
@@ -495,10 +498,10 @@ confirm_on(int ch)
   }
 
 static void
-sprintm(char *tb, int *tm)
+sprintm(char *tb, int *tm, size_t siz)
   {
 
-  sprintf(tb,"%02d%02d%02d.%02d%02d%02d",
+  snprintf(tb,siz,"%02d%02d%02d.%02d%02d%02d",
     tm[0],tm[1],tm[2],tm[3],tm[4],tm[5]);
   }
 
@@ -529,7 +532,7 @@ confirm_off(int ch, int sec, int i)
       }
     if(--n_trig[z]==min_trig[z]-1)
       {
-      sprintm(time_text,tim);
+      sprintm(time_text,tim,sizeof(time_text));
       snprintf(time_text+strlen(time_text),
 	       sizeof(time_text)-strlen(time_text),
 	       ".%d",i*(10/SR_MON));
@@ -548,7 +551,7 @@ confirm_off(int ch, int sec, int i)
             cptm(tm,tim);
             tm[5]++;
             adj_time(tm);
-            sprintm(time_text,tm);
+            sprintm(time_text,tm,sizeof(time_text));
             }
           strncpy(prev_off,time_text,13);
           snprintf(line,sizeof(line),"%13.13s off,",time_text);
@@ -675,7 +678,7 @@ read_one_sec(int *sec)
   }
 
 static void
-get_offset()
+get_offset(void)
   {
   int i,ch;
 
@@ -912,7 +915,7 @@ tbl[ch].status,data,tbl[ch].cnt);
   }
 
 static void
-hangup()
+hangup(void)
   {
 
   req_print=1;
@@ -920,7 +923,7 @@ hangup()
   }
 
 static void
-owari()
+owari(void)
   {
 
   close(fd);
@@ -1181,7 +1184,7 @@ get_lastline(char *fname, char *lastline)
   }
 
 static void
-usage()
+usage(void)
 {
 
   WIN_version();
@@ -1199,9 +1202,9 @@ main(int argc, char *argv[])
   int i,j,k,ret,m_count,x_base,y_base,y,ch,tm1[6],minutep,hourp,c,
     count,count_max,offset,wait_min;
   size_t  maxlen;
-  char *ptr,textbuf[500],textbuf1[500],fn1[200],fn2[100],conv[256],tb[100],
+  char *ptr,textbuf[BUFSIZE],textbuf1[BUFSIZE],fn1[200],fn2[100],conv[256],tb[100],
     fn3[100],path_temp[WIN_FILENAME_MAX],
-    path_mon[WIN_FILENAME_MAX],area[20],timebuf1[80],timebuf2[80],printer[40],
+    path_mon[WIN_FILENAME_MAX],area[BUFSIZE],timebuf1[80],timebuf2[80],printer[BUFSIZE],
     name[STNLEN],comp[CMPLEN],path_mon1[WIN_FILENAME_MAX];
   /*   extern int optind; */
   /*   extern char *optarg; */
@@ -1312,14 +1315,15 @@ main(int argc, char *argv[])
  **********************************************/
   read_param_line(f_param,textbuf,sizeof(textbuf));  /* (8) trigger report file */
   sscanf(textbuf,"%s",file_trig);
-  strcpy(file_trig_lock,file_trig);
-  strcat(file_trig_lock,".lock");
+  strcpy(file_trig_lock,file_trig);  /* ok */
+  strcat(file_trig_lock,".lock");  /* ok */
   read_param_line(f_param,textbuf,sizeof(textbuf));  /* (9) zone table file */
   sscanf(textbuf,"%s",file_zone);
   check_path(file_zone,FILE_R);
   fclose(f_param);
-  if (sizeof(temp_done) <= snprintf(temp_done,sizeof(temp_done),
-				    "%s/%s",path_mon1,PMON_USED)) {
+  if (snprintf(temp_done, sizeof(temp_done), "%s/%s", path_mon1, PMON_USED)
+      >= sizeof(temp_done) - 1) {
+    /* temp_done will append a character at (1). */
     write_log("buffer overflow1");
     owari();
   }
@@ -1371,7 +1375,7 @@ retry:
     sscanf(argv[2+optind],"%2d%2d%2d",tim,tim+1,tim+2);
     sscanf(argv[3+optind],"%2d%2d",tim+3,tim+4);
     sscanf(argv[4+optind],"%d",&m_limit);
-    if(m_limit>0) strcat(temp_done,"_");
+    if(m_limit>0) strcat(temp_done,"_");   /* (1) */
     }
   made_lock_file=0;
   if(m_limit==0)
@@ -1431,7 +1435,7 @@ retry:
     {
     if(m_count%MIN_PER_LINE==0) /* print info */
       {
-      sprintf(textbuf,"%02d/%02d/%02d %02d:%02d",
+      snprintf(textbuf,sizeof(textbuf),"%02d/%02d/%02d %02d:%02d",
         tim[0],tim[1],tim[2],tim[3],tim[4]);
       put_font((uint8_w *)frame,WIDTH_LBP,0,y_base-Y_SCALE-HEIGHT_FONT32,
 	       (uint8_w *)textbuf,font32,HEIGHT_FONT32,WIDTH_FONT32,0);
@@ -1477,8 +1481,8 @@ retry:
             tbl[i].name[0]='*';
             continue;
             }
-          sscanf(textbuf,"%s%s%d%lf",tbl[i].name,
-            tbl[i].comp,&tbl[i].gain,&tbl[i].ratio);
+          sscanf(textbuf,"%"STRING(WIN_STANAME)"s%"STRING(WIN_STACOMP)"s%d%lf",
+		 tbl[i].name,tbl[i].comp,&tbl[i].gain,&tbl[i].ratio);
           tbl[i].n_zone=0;
           /* get sys_ch from channel table file */
           while((fp=fopen(ch_file,"r"))==NULL)
@@ -1489,7 +1493,9 @@ retry:
             }
           while((ret=read_param_line(fp,textbuf1,sizeof(textbuf)))==0)
             {
-            sscanf(textbuf1,"%x%d%*d%s%s",&j,&k,name,comp);
+            sscanf(textbuf1,
+		   "%x%d%*d%"STRING(WIN_STANAME)"s%"STRING(WIN_STACOMP)"s",
+		   &j,&k,name,comp);
             /*if(k==0) continue;*/  /* check 'record' flag */
             if(strcmp(tbl[i].name,name)) continue;
             if(strcmp(tbl[i].comp,comp)) continue;
@@ -1513,11 +1519,11 @@ retry:
             write_log(tb);
             sleep(60);
             }
-          while((ptr=fgets(textbuf,500,fp)) != NULL)
+          while((ptr=fgets(textbuf,sizeof(textbuf),fp)) != NULL)
             {
             if(*ptr=='#') ptr++;
             if((ptr=strtok(ptr," +/\t\n"))==NULL) continue;
-            strcpy(area,ptr);
+            strcpy(area,ptr);  /* ok */
             while((ptr=strtok(0," +/\t\n")) != NULL)
 	      if(strcmp(ptr,tbl[i].name)==0) break;
             if(ptr) /* a zone for station "tbl[i].name" found */
@@ -1528,7 +1534,7 @@ retry:
                 if(j==n_zone) /* register a new zone */
                   {
                   n_stn[n_zone]=n_trig[n_zone]=0;
-                  strcpy(zone[n_zone++],area);
+                  strcpy(zone[n_zone++],area);  /* ok */
                   }
                 if(tbl[i].n_zone<MAX_ZONES)
                   {
@@ -1610,8 +1616,10 @@ retry:
               }
             else sprintf(textbuf,"%s",tbl[i].name);
             }
-          strcat(textbuf,"-");
-          sprintf(textbuf+strlen(textbuf),"%s",tbl[i].comp);
+          /* strcat(textbuf,"-"); */
+          /* sprintf(textbuf+strlen(textbuf),"%s",tbl[i].comp); */
+	  snprintf(textbuf + strlen(textbuf),
+		   sizeof(textbuf) - strlen(textbuf), "-%s",tbl[i].comp);
           if((X_BASE-WIDTH_FONT16*(4+1))/(maxlen+1)>=WIDTH_FONT24 &&
               pixels_per_trace+4>=HEIGHT_FONT24)
             put_font((uint8_w *)frame,WIDTH_LBP,WIDTH_FONT16*4+
@@ -1636,9 +1644,9 @@ retry:
             if(strncmp(tbl[i].name,tbl[i-1].name,4)==0) sprintf(textbuf,"    ");
             else snprintf(textbuf,sizeof(textbuf),"%-4s",tbl[i].name);
             }
-          strcat(textbuf,"-");
+          /* strcat(textbuf,"-"); */
           snprintf(textbuf+strlen(textbuf),sizeof(textbuf)-strlen(textbuf),
-		  "%-2s",tbl[i].comp);
+		  "-%-2s",tbl[i].comp);
           if(max_ch_flag)
             put_font((uint8_w *)frame,WIDTH_LBP,WIDTH_FONT16*5,y,
 		     (uint8_w *)textbuf,font16,HEIGHT_FONT16,WIDTH_FONT16,0);

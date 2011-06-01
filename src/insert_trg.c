@@ -1,5 +1,5 @@
 /*
- * $Id: insert_trg.c,v 1.6.2.3 2010/12/28 12:55:42 uehira Exp $
+ * $Id: insert_trg.c,v 1.6.2.4 2011/06/01 12:14:52 uehira Exp $
  * Insert sorted timeout data to event data.
  *
  *------------ sample of parameter file ------------
@@ -69,7 +69,7 @@
 #define BUF_SIZE 1024
 
 static const char rcsid[]=
-  "$Id: insert_trg.c,v 1.6.2.3 2010/12/28 12:55:42 uehira Exp $";
+  "$Id: insert_trg.c,v 1.6.2.4 2011/06/01 12:14:52 uehira Exp $";
 
 char *progname;
 
@@ -105,7 +105,7 @@ end_prog(int status)
 }
 
 static void
-bfov_error()
+bfov_error(void)
 {
 
   fprintf(stderr,"'%s': Buffer overrun!\n",progname);
@@ -113,7 +113,7 @@ bfov_error()
 }
 
 static void
-memory_error()
+memory_error(void)
 {
 
   fprintf(stderr,"'%s': cannot allocate memory.\n",progname);
@@ -122,7 +122,7 @@ memory_error()
 
 /* print usage */
 static void
-print_usage()
+print_usage(void)
 {
 
   WIN_version();

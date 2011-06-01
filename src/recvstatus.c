@@ -1,4 +1,4 @@
-/* $Id: recvstatus.c,v 1.6.2.2 2010/12/28 12:55:42 uehira Exp $ */
+/* $Id: recvstatus.c,v 1.6.2.3 2011/06/01 12:14:52 uehira Exp $ */
 
 /* "recvstatus.c"      5/24/95    urabe */
 /* 97.7.17 two lines of "if() continue;" in the main loop */
@@ -44,7 +44,7 @@
 #define MAXMESG   2048
 
 static const char rcsid[] =
-  "$Id: recvstatus.c,v 1.6.2.2 2010/12/28 12:55:42 uehira Exp $";
+  "$Id: recvstatus.c,v 1.6.2.3 2011/06/01 12:14:52 uehira Exp $";
 
 static int sock;     /* socket */
 static uint8_w rbuf[MAXMESG],stt[WIN_CHMAX];
@@ -58,7 +58,7 @@ static void usage(void);
 int main(int, char *[]);
 
 static void
-usage()
+usage(void)
 {
   
   WIN_version();

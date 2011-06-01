@@ -1,4 +1,4 @@
-/* $Id: recvt.c,v 1.27.2.6 2011/01/08 01:22:03 uehira Exp $ */
+/* $Id: recvt.c,v 1.27.2.7 2011/06/01 12:14:52 uehira Exp $ */
 /*-
  "recvt.c"      4/10/93 - 6/2/93,7/2/93,1/25/94    urabe
                 2/3/93,5/25/94,6/16/94 
@@ -114,7 +114,7 @@
 #define N_PNOS    62    /* length of packet nos. history >=2 */
 
 static const char rcsid[] =
-  "$Id: recvt.c,v 1.27.2.6 2011/01/08 01:22:03 uehira Exp $";
+  "$Id: recvt.c,v 1.27.2.7 2011/06/01 12:14:52 uehira Exp $";
 
 static uint8_w rbuf[MAXMESG],ch_table[WIN_CHMAX];
 static char *chfile[N_CHFILE];
@@ -156,7 +156,7 @@ int main(int, char *[]);
 
 
 static void
-read_chfile()
+read_chfile(void)
   {
   FILE *fp;
   int i,k,ii,i_chfile;
@@ -308,24 +308,26 @@ read_chfile()
 
   time(&ltime);
   tdif=ltime-ltime_p;
-  tdif2=tdif/2;
-  if(ht[0].host)
-    {
-    snprintf(tb,sizeof(tb),"statistics in %ld s (pkts, B, pkts/s, B/s)",tdif);
-    write_log(tb);
-    }
-  for(i=0;i<N_HOST;i++) /* print statistics for hosts */
-    {
-    if(ht[i].host==0) break;
-    snprintf(tb,sizeof(tb),"  src %d.%d.%d.%d:%d   %lu %lu %lu %lu",
-	    ((uint8_w *)&ht[i].host)[0],((uint8_w *)&ht[i].host)[1],
-	    ((uint8_w *)&ht[i].host)[2],((uint8_w *)&ht[i].host)[3],
-	    ntohs(ht[i].port),ht[i].n_packets,ht[i].n_bytes,
-	    (ht[i].n_packets+tdif2)/tdif,(ht[i].n_bytes+tdif2)/tdif);
-    write_log(tb);
-    ht[i].n_packets=ht[i].n_bytes=0;
-    }
-  ltime_p=ltime;
+  if (tdif != 0) {
+    tdif2=tdif/2;
+    if(ht[0].host)
+      {
+      snprintf(tb,sizeof(tb),"statistics in %ld s (pkts, B, pkts/s, B/s)",tdif);
+      write_log(tb);
+      }
+    for(i=0;i<N_HOST;i++) /* print statistics for hosts */
+      {
+      if(ht[i].host==0) break;
+      snprintf(tb,sizeof(tb),"  src %d.%d.%d.%d:%d   %lu %lu %lu %lu",
+	       ((uint8_w *)&ht[i].host)[0],((uint8_w *)&ht[i].host)[1],
+	       ((uint8_w *)&ht[i].host)[2],((uint8_w *)&ht[i].host)[3],
+	       ntohs(ht[i].port),ht[i].n_packets,ht[i].n_bytes,
+	       (ht[i].n_packets+tdif2)/tdif,(ht[i].n_bytes+tdif2)/tdif);
+      write_log(tb);
+      ht[i].n_packets=ht[i].n_bytes=0;
+      }
+    ltime_p=ltime;
+  }
   signal(SIGHUP,(void *)read_chfile);
   }
 
@@ -671,7 +673,7 @@ send_req(int sock, struct sockaddr_in *host_addr)
   }
 
 static void
-usage()
+usage(void)
 {
 
   WIN_version();
@@ -711,7 +713,7 @@ main(int argc, char *argv[])
   uint16_t  to_port,host_port;  /*- 64bit ok -*/
   struct Shm  *sh;
   char tb[256],tb2[256];
-  struct ip_mreq stMreq;  /*- 64bit ok -*/
+  /* struct ip_mreq stMreq; */  /*- 64bit ok -*/
   char mcastgroup[256]; /* multicast address */
   char interface[256]; /* multicast interface */
   time_t ts,sec,sec_p;  /*- 64bit ok -*/
@@ -941,11 +943,12 @@ main(int argc, char *argv[])
   /* if(bind(sock,(struct sockaddr *)&to_addr,sizeof(to_addr))<0) err_sys("bind"); */
 
   if(*mcastgroup){
-    stMreq.imr_multiaddr.s_addr=inet_addr(mcastgroup);
-    if(*interface) stMreq.imr_interface.s_addr=inet_addr(interface);
-    else stMreq.imr_interface.s_addr=INADDR_ANY;
-    if(setsockopt(sock,IPPROTO_IP,IP_ADD_MEMBERSHIP,(char *)&stMreq,
-      sizeof(stMreq))<0) err_sys("IP_ADD_MEMBERSHIP setsockopt error\n");
+/*     stMreq.imr_multiaddr.s_addr=inet_addr(mcastgroup); */
+/*     if(*interface) stMreq.imr_interface.s_addr=inet_addr(interface); */
+/*     else stMreq.imr_interface.s_addr=INADDR_ANY; */
+/*     if(setsockopt(sock,IPPROTO_IP,IP_ADD_MEMBERSHIP,(char *)&stMreq, */
+/*       sizeof(stMreq))<0) err_sys("IP_ADD_MEMBERSHIP setsockopt error\n"); */
+    mcast_join(sock, mcastgroup, interface);
   }
 
   if(*host_name) /* host_name and host_port specified */

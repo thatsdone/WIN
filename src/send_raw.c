@@ -1,4 +1,4 @@
-/* $Id: send_raw.c,v 1.22.2.6 2011/01/08 01:22:03 uehira Exp $ */
+/* $Id: send_raw.c,v 1.22.2.7 2011/06/01 12:14:53 uehira Exp $ */
 /*
     program "send_raw/send_mon.c"   1/24/94 - 1/25/94,5/25/94 urabe
                                     6/15/94 - 6/16/94
@@ -102,7 +102,7 @@
 #define REQ_TIMO  10   /* timeout (sec) for request */
 
 static const char  rcsid[] =
-   "$Id: send_raw.c,v 1.22.2.6 2011/01/08 01:22:03 uehira Exp $";
+   "$Id: send_raw.c,v 1.22.2.7 2011/06/01 12:14:53 uehira Exp $";
 
 static int sock,raw,tow,all,n_ch,negate_channel,mtu,nbuf,slptime,
   no_resend;
@@ -142,7 +142,7 @@ get_packet(int bufno, uint8_w no)
   }
 
 static void
-read_chfile()
+read_chfile(void)
   {
   FILE *fp;
   int i,j,k;
@@ -355,7 +355,7 @@ recv_pkts(int sock, struct sockaddr_in *to_addr, uint8_w *no,
   }
 
 static void
-usage()
+usage(void)
 {
 
   WIN_version();
@@ -398,7 +398,7 @@ main(int argc, char *argv[])
   char  tbuf[1024];
   struct Shm  *shm,*shw;
   char interface[256]; /* multicast interface */
-  in_addr_t  mif; /* multicast interface address */
+  /* in_addr_t  mif; */ /* multicast interface address */
 
   if((progname=strrchr(argv[0],'/')) != NULL) progname++;
   else progname=argv[0];
@@ -637,18 +637,19 @@ main(int argc, char *argv[])
     write_log(tbuf);
     }
 
-  if(*interface)
-    {
-    mif=inet_addr(interface);
-    if(setsockopt(sock,IPPROTO_IP,IP_MULTICAST_IF,(char *)&mif,sizeof(mif))<0)
-      err_sys("IP_MULTICAST_IF setsockopt error");
-    }
-  if(ttl>1)
-    {
-    no=ttl;
-    if(setsockopt(sock,IPPROTO_IP,IP_MULTICAST_TTL,&no,sizeof(no))<0)
-      err_sys("IP_MULTICAST_TTL setsockopt error");
-    }
+  mcast_set_outopt(sock, interface, ttl);
+/*   if(*interface) */
+/*     { */
+/*     mif=inet_addr(interface); */
+/*     if(setsockopt(sock,IPPROTO_IP,IP_MULTICAST_IF,(char *)&mif,sizeof(mif))<0) */
+/*       err_sys("IP_MULTICAST_IF setsockopt error"); */
+/*     } */
+/*   if(ttl>1) */
+/*     { */
+/*     no=ttl; */
+/*     if(setsockopt(sock,IPPROTO_IP,IP_MULTICAST_TTL,&no,sizeof(no))<0) */
+/*       err_sys("IP_MULTICAST_TTL setsockopt error"); */
+/*     } */
 
   signal(SIGPIPE,(void *)end_program);
   signal(SIGINT,(void *)end_program);

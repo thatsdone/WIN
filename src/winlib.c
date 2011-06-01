@@ -1,4 +1,4 @@
-/* $Id: winlib.c,v 1.1.4.1 2010/12/28 12:55:44 uehira Exp $ */
+/* $Id: winlib.c,v 1.1.4.2 2011/06/01 12:14:55 uehira Exp $ */
 
 /*-
  * winlib.c  (Uehira Kenji)
@@ -722,24 +722,24 @@ strcmp2(char *s1, char *s2)
 }
 
 WIN_bs
-read_onesec_win(FILE *fp, uint8_w **rbuf)
+read_onesec_win(FILE *fp, uint8_w **rbuf, size_t *rbuf_size)
 {
   uint8_w        sz[WIN_BSLEN];
   WIN_bs         size;
-  static size_t  sizesave;
 
-  /* printf("%d\n", sizesave); */
   if (fread(sz, 1, WIN_BSLEN, fp) != WIN_BSLEN)
     return (0);
   size = mkuint4(sz);
 
   if (*rbuf == NULL)
-    sizesave = 0;
-  if (size > sizesave) {
-    sizesave = (size << 1);
-    *rbuf = REALLOC(uint8_w, *rbuf, sizesave);
+    *rbuf_size = 0;
+  /* (void)fprintf(stderr, "%u %zu\n", size, *rbuf_size); */
+  if (size > *rbuf_size) {
+    *rbuf_size = (size << 1);
+    *rbuf = REALLOC(uint8_w, *rbuf, *rbuf_size);
+    /* (void)fprintf(stderr, "ZZ %u %zu\n", size, *rbuf_size); */
     if (*rbuf == NULL) {
-      (void)fprintf(stderr, "%s\n", strerror(errno));
+      (void)fprintf(stderr, "read_onesec_win() : %s \n", strerror(errno));
       exit(1);
     }
   }
@@ -759,9 +759,8 @@ read_onesec_win(FILE *fp, uint8_w **rbuf)
 }
 
 WIN_bs
-read_onesec_win2(FILE *fp, uint8_w **in_buf, uint8_w **out_buf)
+read_onesec_win2(FILE *fp, uint8_w **in_buf, uint8_w **out_buf, size_t *size)
 {
-  static size_t  size;
   WIN_bs  re, reout;
   uint8_w  tmpa[4];
 
@@ -769,11 +768,11 @@ read_onesec_win2(FILE *fp, uint8_w **in_buf, uint8_w **out_buf)
     return (0);
   re = mkuint4(tmpa);
   if (*in_buf == NULL) {
-    *in_buf = MALLOC(uint8_w, (size = (size_t)(re << 1)));
-    *out_buf = MALLOC(uint8_w, (size = (size_t)(re << 1)));
-  } else if (re > size) {
-    *in_buf = REALLOC(uint8_w, *in_buf, (size = (size_t)(re << 1)));
-    *out_buf = REALLOC(uint8_w, *out_buf, (size = (size_t)(re << 1)));
+    *in_buf = MALLOC(uint8_w, (*size = (size_t)(re << 1)));
+    *out_buf = MALLOC(uint8_w, (*size = (size_t)(re << 1)));
+  } else if (re > *size) {
+    *in_buf = REALLOC(uint8_w, *in_buf, (*size = (size_t)(re << 1)));
+    *out_buf = REALLOC(uint8_w, *out_buf, (*size = (size_t)(re << 1)));
   }
   if ((*in_buf == NULL) || (*out_buf == NULL)) {
     perror("read_onesec_win2()");
@@ -1659,5 +1658,55 @@ check_ts(uint8_w *ptr, time_t pre, time_t post)
   printf("diff %ld s out of range (%lds - %lds)\n", diff, pre, post);
 #endif
   return (0);
+}
+
+size_t
+FinalB_read(struct FinalB *d, FILE *fp)
+{
+  size_t  b;
+  int  i;
+
+  b = 0;
+  b += fread(d->time, sizeof(int8_w), 8, fp) * sizeof(int8_w);
+  b += fread(&d->alat, sizeof(float), 1, fp) * sizeof(float);
+  b += fread(&d->along, sizeof(float), 1, fp) * sizeof(float);
+  b += fread(&d->dep, sizeof(float), 1, fp) * sizeof(float);
+  b += fread(d->diag, sizeof(char), 4, fp) * sizeof(char);
+  b += fread(d->owner, sizeof(char),4, fp) * sizeof(char);
+
+  /* endian check */
+  i = 1;
+  if (*(char *)&i) {
+    SWAPF(d->alat);
+    SWAPF(d->along);
+    SWAPF(d->dep);
+  }
+
+  return (b);
+}
+
+size_t
+FinalB_write(struct FinalB d, FILE *fp)
+{
+  size_t  b;
+  int  i;
+
+  /* endian check */
+  i = 1;
+  if (*(char *)&i) {
+    SWAPF(d.alat);
+    SWAPF(d.along);
+    SWAPF(d.dep);
+  }
+
+  b = 0;
+  b += fwrite(d.time, sizeof(int8_w), 8, fp) * sizeof(int8_w);
+  b += fwrite(&d.alat, sizeof(float), 1, fp) * sizeof(float);
+  b += fwrite(&d.along, sizeof(float), 1, fp) * sizeof(float);
+  b += fwrite(&d.dep, sizeof(float), 1, fp) * sizeof(float);
+  b += fwrite(d.diag, sizeof(char), 4, fp) * sizeof(char);
+  b += fwrite(d.owner, sizeof(char), 4, fp) * sizeof(char);
+
+  return (b);
 }
 

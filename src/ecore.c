@@ -1,4 +1,4 @@
-/* $Id: ecore.c,v 1.4.2.2 2010/12/28 12:55:41 uehira Exp $ */
+/* $Id: ecore.c,v 1.4.2.3 2011/06/01 12:14:51 uehira Exp $ */
 
 /* ddr news program "ecore.c"
   "ecore.c" works with "fromtape.c"
@@ -55,7 +55,7 @@
 #define   NAMLEN   255 
 
 static const char rcsid[] = 
-  "$Id: ecore.c,v 1.4.2.2 2010/12/28 12:55:41 uehira Exp $";
+  "$Id: ecore.c,v 1.4.2.3 2011/06/01 12:14:51 uehira Exp $";
 
 /* not use out_data 03/03/07 */
 /*short out_data[SR*NCH];*/
@@ -136,7 +136,7 @@ end_process(int value)
   }
 
 static void
-bfov_error()
+bfov_error(void)
 {
 
   fprintf(stderr, "Buffer overrun!\n");

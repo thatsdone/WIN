@@ -1,4 +1,4 @@
-/* $Id: split_win.c,v 1.1.4.1 2010/12/28 12:55:43 uehira Exp $ */
+/* $Id: split_win.c,v 1.1.4.2 2011/06/01 12:14:54 uehira Exp $ */
 
 /*-
  * Split win file in case of detection of time discontinuity.
@@ -18,7 +18,7 @@
 #include "winlib.h"
 
 static const char  rcsid[] =
-   "$Id: split_win.c,v 1.1.4.1 2010/12/28 12:55:43 uehira Exp $";
+   "$Id: split_win.c,v 1.1.4.2 2011/06/01 12:14:54 uehira Exp $";
 
 #define NAMELEN  1024
 
@@ -91,7 +91,6 @@ main(int argc, char *argv[])
 
   split_time();
 
-
   exit(0);
 }
 
@@ -103,10 +102,11 @@ static void
 split_time(void)
 {
   uint8_w  *dbuf = NULL;
+  size_t   dbuf_siz;
   WIN_bs   dsize;
   time_t   dat_t, dat_t_save = -1;
 
-  while ((dsize = read_onesec_win(fpin, &dbuf)) != 0) {
+  while ((dsize = read_onesec_win(fpin, &dbuf, &dbuf_siz)) != 0) {
     /* skip invalid time stamp */
     if ((dat_t = bcd_t(dbuf +  WIN_BLOCKSIZE_LEN)) <= 0)
       continue;
@@ -122,7 +122,7 @@ split_time(void)
 
     /* backup timestamp */
     dat_t_save = dat_t;
-  }  /* while ((dsize = read_onesec_win(fpin, &dbuf)) != 0) */
+  }  /* while ((dsize = read_onesec_win(fpin, &dbuf, &dbuf_siz)) != 0) */
 }
 
 

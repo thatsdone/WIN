@@ -1,4 +1,4 @@
-/* $Id: setexb.c,v 1.5.2.2 2010/12/28 12:55:43 uehira Exp $ */
+/* $Id: setexb.c,v 1.5.2.3 2011/06/01 12:14:53 uehira Exp $ */
 /*-
   program "setexb.c"
     2/27/90, 3/8/93,1/17/94,5/27/94  urabe
@@ -24,7 +24,7 @@
 #define         WIN_FILENAME_MAX 1024
 
 static const char rcsid[] = 
-  "$Id: setexb.c,v 1.5.2.2 2010/12/28 12:55:43 uehira Exp $";
+  "$Id: setexb.c,v 1.5.2.3 2011/06/01 12:14:53 uehira Exp $";
 
 static int  exb_status[N_EXABYTE], n_exb;
 static char exb_name[N_EXABYTE][20],
@@ -78,7 +78,7 @@ write_units(char *file)
 }
 
 static void
-init_param()
+init_param(void)
 {
   char tb[WIN_FILENAME_MAX], *ptr;
   FILE *fp;
@@ -111,7 +111,7 @@ init_param()
 }
 
 static void
-usage()
+usage(void)
 {
 
   WIN_version();

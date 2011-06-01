@@ -1,4 +1,4 @@
-/* $Id: wtime.c,v 1.2.2.3 2010/12/28 12:55:45 uehira Exp $ */
+/* $Id: wtime.c,v 1.2.2.4 2011/06/01 12:14:55 uehira Exp $ */
 
 /*
   program "wtime.c"
@@ -37,9 +37,8 @@
 #define   DEBUG1  0
 
 static const char  rcsid[] =
-   "$Id: wtime.c,v 1.2.2.3 2010/12/28 12:55:45 uehira Exp $";
+   "$Id: wtime.c,v 1.2.2.4 2011/06/01 12:14:55 uehira Exp $";
 
-static uint8_w *rbuf=NULL,*wbuf;
 static int32_w *sbuf[WIN_CHMAX];
 static int s_add,ms_add;
 
@@ -50,7 +49,7 @@ static void print_usage(void);
 int main(int, char *[]);
 
 static void
-wabort() {exit(0);}
+wabort(void) {exit(0);}
 
 static WIN_bs
 chloop(uint8_w *old_buf, uint8_w *new_buf)
@@ -90,7 +89,7 @@ chloop(uint8_w *old_buf, uint8_w *new_buf)
   }
 
 static void
-print_usage()
+print_usage(void)
   {
 
   WIN_version();
@@ -104,6 +103,8 @@ main(int argc, char *argv[])
   {
   int c,hours,re;
   double fsec;
+  uint8_w *rbuf=NULL,*wbuf;
+  size_t  cbufsiz;
 
   signal(SIGINT,(void *)wabort);
   signal(SIGTERM,(void *)wabort);
@@ -137,7 +138,7 @@ main(int argc, char *argv[])
   fprintf(stderr,"s=%d, ms=%d\n",s_add,ms_add);
 #endif
 
-  while(read_onesec_win2(stdin,&rbuf,&wbuf)>0)
+  while(read_onesec_win2(stdin,&rbuf,&wbuf,&cbufsiz)>0)
     {
     /* read one sec */
     re=chloop(rbuf,wbuf);

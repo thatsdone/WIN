@@ -1,5 +1,5 @@
 /*-
-  $Id: hypomhc.c,v 1.6.2.4 2010/12/28 12:55:41 uehira Exp $
+  $Id: hypomhc.c,v 1.6.2.5 2011/06/01 12:14:52 uehira Exp $
    hypomhc.c    : main program for hypocenter location
      original version was made on March 13, 1984 and
      modified by N.H. on Feb. 8, 1985, May 8, 1985.
@@ -470,7 +470,7 @@ line55:
 }
 
 static void
-usage()
+usage(void)
 {
 
   fputs("Usage : hypomhc <STATION, STRUCTURE> <ARRIVAL TIME DATA> <FINAL RESULTS> <REPORT> (<INITIAL GUESS>)\n", stderr);
@@ -488,7 +488,7 @@ end_hypomhc(int status)
 }
 
 static void
-memory_error()
+memory_error(void)
 {
 
   fputs("hypomhc : Allocation failure !!\n", stderr);

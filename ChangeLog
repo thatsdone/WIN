@@ -1,7 +1,45 @@
- $Id: ChangeLog,v 1.113.2.62 2011/01/08 01:22:03 uehira Exp $
+ $Id: ChangeLog,v 1.113.2.63 2011/06/01 12:14:50 uehira Exp $
+
+2011-06-01  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 2.1.24 (rel-64bit_SEVO tag) merged into SEVO branch.
+
+2011-05-31  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 2.1.24 released.
+	* imported 'wincat' and 'shmsimu'
+	  developed by TSURUOKA Hiroshi (tsuru@eri.u-tokyo.ac.jp).
+
+2011-05-05  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 2.1.23 released.
+	* win, win_m : removed two options : -w, -B
+	* finalb data : read & write each member of 'struct FinalB'.
+
+2011-03-22  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 2.1.22 released.
+	* remove autotool related files.
+	* src/recvt46.c, src/send_raw46.c : added.
+	* multicast option : recvstatus2, recvstatus3, recvstatus4, relaym
+
+2011-01-24  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* prog/cpraw : added bash script.
+
+2011-01-12  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 2.1.21 released.
+	* read_onesec_win(), read_onesec_win2() : fixed a bug. These bugs
+	damaged 'wadd' and 'wadd2' fatally.
+	* always specify void even if a function accepts no arguments.
+
+2011-01-11  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 2.1.20 released.
+	* src/recvt.c : print statistics if time diff. != 0.
+
+2011-01-08  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/events.c : buffer overflow check.
+	* src/pmon.c : buffer overflow check.
+	* src/recvt_LS7000.c : fixed buffer overflow.
+	* src/relaym.c : fixed buffer overflow.
+	* src/wdiskts.c : fixed buffer overflow.
 
 2011-01-07  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
-	* Version 2.1.20 released.
 	* src/recvt.c : added -e option. fixed buffer overflow.
 	* src/relay.c : added -e option. fixed buffer overflow.
 	* src/order.c : fixed buffer overflow.
@@ -36,7 +74,6 @@
 
 2010-12-10  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* src/winpickfile.c : fixed a potential bug.
-	* src/Makefile.am : libwinsystem.so (revision number: 1:1:1)
 
 2010-12-09  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* compatibility for DESTDIR option.
@@ -46,11 +83,9 @@
 	* Version 2.1.18 released.
 	* imported win pickfile related libraries.
 	* src/winpickfile.[ch] : added.
-	* src/Makefile.am : libwinsystem.so (bump current & age number: 1:0:1)
 
 2010-12-07  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* realloc() memory leak check.
-	* src/Makefile.am : libwinsystem.so (bump revision number: 0:1:0)
 
 2010-12-03  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* Version 2.1.17 released.

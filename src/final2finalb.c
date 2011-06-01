@@ -1,4 +1,4 @@
-/* $Id: final2finalb.c,v 1.3.2.1 2010/12/28 12:55:41 uehira Exp $ */
+/* $Id: final2finalb.c,v 1.3.2.2 2011/06/01 12:14:52 uehira Exp $ */
 /******************************************************************/
 /*    final2finalb.c              9/21/94 urabe                   */
 /*    97.10.3 FreeBSD  99.4.19 byte-order-free                    */
@@ -15,7 +15,7 @@
 #include "winlib.h"
 
 static const char rcsid[] =
-   "$Id: final2finalb.c,v 1.3.2.1 2010/12/28 12:55:41 uehira Exp $";
+   "$Id: final2finalb.c,v 1.3.2.2 2011/06/01 12:14:52 uehira Exp $";
 
 /* prototypes */
 int main(int, char *[]);
@@ -23,7 +23,7 @@ int main(int, char *[]);
 int
 main(int argc, char *argv[])
   {
-  int i,tm[6],tmc[7];
+  int tm[6],tmc[7];
   double se,sec,mag;
   char tbuf[256],owner[20],diag[20];
   /* struct { */
@@ -50,13 +50,14 @@ main(int argc, char *argv[])
     *d.diag=(*d.owner)=0;
     if(*diag) strncpy(d.diag,diag,4);
     if(*owner) strncpy(d.owner,owner,4);
-    i=1;if(*(char *)&i)
-      {
-      SWAPF(d.alat);
-      SWAPF(d.along);
-      SWAPF(d.dep);  
-      }
-    fwrite(&d,sizeof(d),1,stdout);
+    /* i=1;if(*(char *)&i) */
+/*       { */
+/*       SWAPF(d.alat); */
+/*       SWAPF(d.along); */
+/*       SWAPF(d.dep);   */
+/*       } */
+/*     fwrite(&d,sizeof(d),1,stdout); */
+    (void)FinalB_write(d, stdout);
     }
 
   exit(0);

@@ -1,4 +1,4 @@
-/* $Id: wch.c,v 1.8.2.1 2010/12/28 12:55:43 uehira Exp $ */
+/* $Id: wch.c,v 1.8.2.2 2011/06/01 12:14:54 uehira Exp $ */
 /*
 program "wch.c"
 "wch" edits a win format data file by channles
@@ -28,9 +28,10 @@ program "wch.c"
 /* #define   DEBUG   0 */
 
 static const char rcsid[] =
-  "$Id: wch.c,v 1.8.2.1 2010/12/28 12:55:43 uehira Exp $";
+  "$Id: wch.c,v 1.8.2.2 2011/06/01 12:14:54 uehira Exp $";
 
 static uint8_w *buf=NULL,*outbuf;
+static size_t  cbufsiz; /* buffer size of buf[] & outbuf[] */
 static uint8_w ch_table[WIN_CHMAX];
 static int negate_channel;
 
@@ -43,7 +44,7 @@ static void usage(void);
 int main(int, char *[]);
 
 static void
-wabort() {exit(0);}
+wabort(void) {exit(0);}
 
 static int
 read_chfile(char *chfile)
@@ -143,10 +144,10 @@ select_ch(uint8_w *table, uint8_w *old_buf, uint8_w *new_buf)
   }
 
 static void
-get_one_record()
+get_one_record(void)
   {
 
-  while(read_onesec_win2(stdin,&buf,&outbuf)>0)
+  while(read_onesec_win2(stdin,&buf,&outbuf,&cbufsiz)>0)
     {
     /* read one sec */
     if(select_ch(ch_table,buf,outbuf)>10)
@@ -162,7 +163,7 @@ get_one_record()
   }
 
 static void
-usage()
+usage(void)
 {
 
   WIN_version();

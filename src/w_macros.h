@@ -1,4 +1,4 @@
-/* $Id: w_macros.h,v 1.1.6.1 2010/12/28 12:55:43 uehira Exp $ */
+/* $Id: w_macros.h,v 1.1.6.2 2011/06/01 12:14:54 uehira Exp $ */
 
 #ifndef _WMACROS_H_
 #define _WMACROS_H_
@@ -16,6 +16,10 @@
 
 #define WIN_CHMAX    65536   /* Max. number of channel: 2^16 */
 #define WIN_CH_MAX_NUM  WIN_CHMAX   /* 2^16 */
+
+#define WIN_STANAME        10   /* (length of station code) */
+#define WIN_STACOMP         6   /* (length of component code) */
+#define WIN_LABEL          18   /* (length of label) */
 #define WIN_STANAME_LEN    11   /* (length of station code)+1 */
 #define WIN_STACOMP_LEN     7   /* (length of component code)+1 */
 #define WIN_LABEL_LEN      19   /* (length of label)+1 */
@@ -38,6 +42,9 @@
 
 /* default transmit buffer size of socket (in KB) */
 #define  DEFAULT_SNDBUF  256
+
+/* structure of binary hypo file 'FinalB' (28 bytes / event) */
+#define FinalB_SIZE  28
 
 /*** process control file ***/
 #define N_LATEST     "LATEST"

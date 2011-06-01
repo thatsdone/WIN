@@ -1,4 +1,4 @@
-/* $Id: rtape.c,v 1.8.2.3 2010/12/28 12:55:43 uehira Exp $ */
+/* $Id: rtape.c,v 1.8.2.4 2011/06/01 12:14:53 uehira Exp $ */
 /*
   program "rtape.c"
   9/16/89 - 11/06/90, 6/26/91, 10/30/91, 6/26/92  urabe
@@ -48,7 +48,7 @@
 /* #define   TIME3   "9008031718" */  /* 10 m / fm after this time */
 
 static const char  rcsid[] =
-   "$Id: rtape.c,v 1.8.2.3 2010/12/28 12:55:43 uehira Exp $";
+   "$Id: rtape.c,v 1.8.2.4 2011/06/01 12:14:53 uehira Exp $";
 
 static uint8_w buf[MAXSIZE],outbuf[MAXSIZE];
 static int fd_exb,f_get,leng,dec_start[6],dec_end[6],dec_begin[6],
@@ -108,7 +108,7 @@ end_process(int value)
   }
 
 static void
-print_usage()
+print_usage(void)
   {
 
   WIN_version();

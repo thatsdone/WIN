@@ -1,4 +1,4 @@
-/* $Id: w_proto.h,v 1.1.6.1 2010/12/28 12:55:43 uehira Exp $ */
+/* $Id: w_proto.h,v 1.1.6.2 2011/06/01 12:14:54 uehira Exp $ */
 
 #ifndef _WPROTO_H_
 #define _WPROTO_H_
@@ -17,8 +17,8 @@ WIN_bs winform(int32_w *, uint8_w *, WIN_sr, WIN_ch);
 uint32_w win2fix(uint8_w *, int32_w *, WIN_ch *, WIN_sr *);
 int strncmp2(char *, char *, int);
 int strcmp2(char *, char *);
-WIN_bs read_onesec_win(FILE *, uint8_w **);
-WIN_bs read_onesec_win2(FILE *, uint8_w **, uint8_w **);
+WIN_bs read_onesec_win(FILE *, uint8_w **, size_t *);
+WIN_bs read_onesec_win2(FILE *, uint8_w **, uint8_w **, size_t *);
 void Shm_init(struct Shm *, size_t);
 struct Shm * Shm_read_offline(key_t);
 struct Shm * Shm_create_offline(key_t, size_t);
@@ -51,6 +51,8 @@ time_t shift_sec(uint8_w *, int);
 int read_param_line(FILE *, char [], int);
 int dir_check(char *);
 time_t check_ts(uint8_w *, time_t, time_t);
+size_t FinalB_read(struct FinalB *, FILE *);
+size_t FinalB_write(struct FinalB, FILE *);
 
 /* win_xmalloc etc. */
 void * win_xmalloc(size_t);

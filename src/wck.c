@@ -1,4 +1,4 @@
-/* $Id: wck.c,v 1.5.2.2 2010/12/28 12:55:43 uehira Exp $ */
+/* $Id: wck.c,v 1.5.2.3 2011/06/01 12:14:54 uehira Exp $ */
 /*- 
    program "wck.c"
 	"wck" checks a win format data file
@@ -37,7 +37,7 @@
 #define DEBUG1  0
 
 static const char rcsid[] =
-  "$Id: wck.c,v 1.5.2.2 2010/12/28 12:55:43 uehira Exp $";
+  "$Id: wck.c,v 1.5.2.3 2011/06/01 12:14:54 uehira Exp $";
 
 char *progname;
 static unsigned long count[WIN_CHMAX];
@@ -47,14 +47,14 @@ static void usage(void);
 int main(int, char *[]);
 
 static void
-ctrlc()
+ctrlc(void)
 {
 
   exit(0);
 }
 
 static void
-usage()
+usage(void)
 {
 
   WIN_version();
@@ -76,6 +76,7 @@ main(int argc, char *argv[])
    FILE *f_main;
    char bytes[5];
    static uint8_w *mainbuf=NULL;
+   size_t  mainbuf_siz;
    uint8_w *ptr,*ptr_lim;
    
    signal(SIGINT,(void *)ctrlc);
@@ -121,7 +122,7 @@ main(int argc, char *argv[])
    else ss=0;
    
    sec=ts=0;
-   while((mainsize=read_onesec_win(f_main,&mainbuf))) {
+   while((mainsize=read_onesec_win(f_main,&mainbuf,&mainbuf_siz))) {
 #if DEBUG1
      printf("mainsize = %u\n", mainsize);
 #endif

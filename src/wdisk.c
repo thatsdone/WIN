@@ -1,4 +1,4 @@
-/* $Id: wdisk.c,v 1.16.2.7 2011/01/08 01:22:03 uehira Exp $ */
+/* $Id: wdisk.c,v 1.16.2.8 2011/06/01 12:14:54 uehira Exp $ */
 /*
   program "wdisk.c"   4/16/93-5/13/93,7/2/93,7/5/94  urabe
                       1/6/95 bug in adj_time fixed (tm[0]--)
@@ -107,7 +107,7 @@
 #define   NAMELEN  1025
 
 static const char rcsid[] =
-  "$Id: wdisk.c,v 1.16.2.7 2011/01/08 01:22:03 uehira Exp $";
+  "$Id: wdisk.c,v 1.16.2.8 2011/06/01 12:14:54 uehira Exp $";
 
 char *progname,*logfile;
 int  daemon_mode, syslog_mode, exit_status;
@@ -292,7 +292,7 @@ wmemo(char *f, char *c)
 }
 
 static void
-bfov_error()
+bfov_error(void)
 {
 
   write_log("Buffer overrun!");
@@ -301,7 +301,7 @@ bfov_error()
 }
 
 static void
-usage()
+usage(void)
 {
 
   WIN_version();

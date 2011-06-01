@@ -1,7 +1,7 @@
-/* $Id: udp_dest.c,v 1.2.2.2 2010/12/28 12:55:43 uehira Exp $ */
+/* $Id: udp_dest.c,v 1.2.2.3 2011/06/01 12:14:54 uehira Exp $ */
 
 /*
- * Copyright (c) 2001-2004
+ * Copyright (c) 2001-2011
  *   Uehira Kenji / All Rights Reserved.
  *    uehira@sevo.kyushu-u.ac.jp
  *    Institute of Seismology and Volcanology, Kyushu University.
@@ -41,10 +41,10 @@
  */
 int
 udp_dest(const char *hostname, const char *port,
-	 struct sockaddr *saptr, socklen_t *lenp)
+	  struct sockaddr *saptr, socklen_t *lenp, const char *src_port)
 {
   int  sockfd, gai_error;
-  struct addrinfo  hints, *res, *ai;
+  struct addrinfo  hints, *res, *ai, *ai_src;
   int  sock_bufsiz;
   char  hbuf[NI_MAXHOST], sbuf[NI_MAXSERV];
   char buf[1024];
@@ -77,30 +77,64 @@ udp_dest(const char *hostname, const char *port,
     break;   /* success */
   }  /* for (ai = res; ai != NULL; ai = ai->ai_next) */
 
-  if (res != NULL)
-    freeaddrinfo(res);
-
   if (ai == NULL) {
     (void)snprintf(buf, sizeof(buf), "%s: udp_dest error for %s:%s",
 		   strerror(errno), hostname, port);
     write_log(buf);
-    return (-1);
+    sockfd = -1;
+  } else {
+    memcpy(saptr, ai->ai_addr, ai->ai_addrlen);
+    *lenp = ai->ai_addrlen;
+  
+    gai_error = getnameinfo(ai->ai_addr, ai->ai_addrlen, hbuf, sizeof(hbuf),
+			    sbuf, sizeof(sbuf),
+			    NI_DGRAM | NI_NUMERICHOST | NI_NUMERICSERV);
+    if (gai_error)
+      (void)snprintf(buf, sizeof(buf), 
+		     "udp_dest: getnameinfo : %s", gai_strerror(gai_error));
+    else 
+      (void)snprintf(buf, sizeof(buf),
+		     "dest: host=%s, serv=%s", hbuf, sbuf);
+    write_log(buf);
   }
+  
+  if (res != NULL)
+    freeaddrinfo(res);
 
-  memcpy(saptr, ai->ai_addr, ai->ai_addrlen);
-  *lenp = ai->ai_addrlen;
-  
-  gai_error = getnameinfo(ai->ai_addr, ai->ai_addrlen, hbuf, sizeof(hbuf),
-		    sbuf, sizeof(sbuf),
-		    NI_DGRAM | NI_NUMERICHOST | NI_NUMERICSERV);
-  if (gai_error)
-    (void)snprintf(buf, sizeof(buf), 
-		   "udp_dest: getnameinfo : %s", gai_strerror(gai_error));
-  else 
-    (void)snprintf(buf, sizeof(buf),
-		   "dest: host=%s, serv=%s", hbuf, sbuf);
-  write_log(buf);
-  
+  /* src port part */
+  if (src_port != NULL && sockfd != -1) {
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family = AF_UNSPEC;
+    hints.ai_socktype = SOCK_DGRAM;
+    hints.ai_protocol = IPPROTO_UDP;
+    if ((gai_error = getaddrinfo(NULL, src_port, &hints, &res)) != 0) {
+      (void)snprintf(buf, sizeof(buf), 
+		     "udp_dest: getaddrinfo2 : %s", gai_strerror(gai_error));
+      write_log(buf);
+      return (-1);
+    }
+    
+    for (ai_src = res; ai_src != NULL; ai_src = ai_src->ai_next) {
+      /* printf("family %d\n", ai_src->ai_family); */
+      if (bind(sockfd, ai_src->ai_addr, ai_src->ai_addrlen) < 0) {
+	/* write_log("skip"); */
+	continue;
+      }
+      break;  /* success */
+    }
+    if (ai_src == NULL) {
+      close(sockfd);
+      write_log("error in bind");
+      sockfd = -1;
+    } else {
+      (void)snprintf(buf, sizeof(buf), "src_port=%s", src_port);
+      write_log(buf);
+    }
+
+    if (res != NULL)
+      freeaddrinfo(res);
+  }  /* if (src_port != NULL) */
+
   return (sockfd);
 }
 #endif  /* INET6 */
@@ -169,4 +203,65 @@ udp_dest4(const char *hostname, const uint16_t port,
   }
 
   return (sockfd);
+}
+
+/*
+ * set multicast options for output.
+ *  interface & TTL (or HOPS).
+ *  (IPv4 & IPv6)
+ */
+void
+mcast_set_outopt(const int sockfd, const char *interface, const int ttl)
+{
+  in_addr_t  mif; /* multicast interface address */
+  u_char     no;
+#ifdef INET6
+  unsigned int  mif6;
+  int   hops;
+#endif
+
+  switch (sockfd_to_family(sockfd)) {
+  case AF_INET:
+    /* set interface */
+    if(*interface) {
+      mif = inet_addr(interface);
+      if (setsockopt(sockfd, IPPROTO_IP,
+		     IP_MULTICAST_IF, &mif, sizeof(mif)) < 0)
+	err_sys("IP_MULTICAST_IF setsockopt error");
+    }
+
+    /* set TTL */
+    if (ttl > 1) {
+      no = (u_char)ttl;
+      if (setsockopt(sockfd, IPPROTO_IP, IP_MULTICAST_TTL, &no, sizeof(no)) < 0)
+	err_sys("IP_MULTICAST_TTL setsockopt error");
+    }
+    break;
+
+#ifdef INET6
+  case AF_INET6:
+    /* set interface */
+    if(*interface) {
+      mif6 = if_nametoindex(interface);
+      if (mif6 == 0)
+	err_sys("mif6");
+      if (setsockopt(sockfd, IPPROTO_IPV6,
+		     IPV6_MULTICAST_IF, &mif6, sizeof(mif6)) < 0)
+	err_sys("IPV6_MULTICAST_IF setsockopt error");
+    }
+
+    /* set HOPS */
+    if (ttl > 1) {
+      hops = ttl;
+      if (setsockopt(sockfd, IPPROTO_IPV6, IPV6_MULTICAST_HOPS,
+		     &hops, sizeof(hops)) < 0)
+	err_sys("IPV6_MULTICAST_HOPS setsockopt error");
+    }
+    break;
+#endif  /* INET6 */
+
+  default:
+    /* errno = EPROTPNOSUPPORT; */
+    err_sys("mcast_set_outopt");
+  }
 }

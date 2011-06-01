@@ -1,4 +1,4 @@
-/* $Id: recvnmx.c,v 1.16.2.2 2010/12/28 12:55:42 uehira Exp $ */
+/* $Id: recvnmx.c,v 1.16.2.3 2011/06/01 12:14:52 uehira Exp $ */
 /* "recvnmx.c"    2001.7.18-19 modified from recvt.c and nmx2raw.c  urabe */
 /*                2001.8.18 */
 /*                2001.10.5 workaround for hangup */
@@ -80,13 +80,13 @@
 #define MAXCH     1024
 
 static const char rcsid[] =
-  "$Id: recvnmx.c,v 1.16.2.2 2010/12/28 12:55:42 uehira Exp $";
+  "$Id: recvnmx.c,v 1.16.2.3 2011/06/01 12:14:52 uehira Exp $";
 
 char *progname,*logfile;
 int  syslog_mode = 0, exit_status;
 
 static char chmapfile[1024];
-static struct ip_mreq stMreq;
+/* static struct ip_mreq stMreq; */
 static uint16_w station,chmap[WIN_CHMAX];
 static int use_chmap;
 static char *model[32]=
@@ -510,7 +510,7 @@ ch2idx(int32_w *rbuf[], struct Nmx_Packet *pk, int winch)
 }
 
 static void
-read_ch_map()  
+read_ch_map(void)  
 {
   char tb[256],mdl[256];
   FILE *fp;
@@ -556,7 +556,7 @@ read_ch_map()
 }
 
 static void
-usage()
+usage(void)
 {
 
   WIN_version();
@@ -663,11 +663,12 @@ main(int argc, char *argv[])
 
   if(*mcastgroup)
     {
-    stMreq.imr_multiaddr.s_addr=inet_addr(mcastgroup);
-    if(*interface) stMreq.imr_interface.s_addr=inet_addr(interface);
-    else stMreq.imr_interface.s_addr=INADDR_ANY;
-    if(setsockopt(sock,IPPROTO_IP,IP_ADD_MEMBERSHIP,(char *)&stMreq,
-      sizeof(stMreq))<0) err_sys("IP_ADD_MEMBERSHIP setsockopt error\n");
+/*     stMreq.imr_multiaddr.s_addr=inet_addr(mcastgroup); */
+/*     if(*interface) stMreq.imr_interface.s_addr=inet_addr(interface); */
+/*     else stMreq.imr_interface.s_addr=INADDR_ANY; */
+/*     if(setsockopt(sock,IPPROTO_IP,IP_ADD_MEMBERSHIP,(char *)&stMreq, */
+/*       sizeof(stMreq))<0) err_sys("IP_ADD_MEMBERSHIP setsockopt error\n"); */
+      mcast_join(sock, mcastgroup, interface);
     }
   signal(SIGTERM,(void *)end_program);
   signal(SIGINT,(void *)end_program);

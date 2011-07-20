@@ -1,4 +1,4 @@
-/* $Id: raw_mon.c,v 1.6.2.2 2011/06/01 12:14:52 uehira Exp $ */
+/* $Id: raw_mon.c,v 1.6.2.3 2011/07/20 11:06:16 uehira Exp $ */
 /* "raw_mon.c"      7/2/93,6/17/94,6/28/94    urabe */
 /*                  3/17/95 write_log(), 4/17/95 MAX_SR safety */
 /*                  usleep -> sleep */
@@ -55,12 +55,12 @@
 /* #define SR_MON      5 */
 
 static const char rcsid[] =
-  "$Id: raw_mon.c,v 1.6.2.2 2011/06/01 12:14:52 uehira Exp $";
+  "$Id: raw_mon.c,v 1.6.2.3 2011/07/20 11:06:16 uehira Exp $";
 
 char *progname,*logfile;
-int  daemon_mode, syslog_mode;
-int  exit_status;
+int  syslog_mode, exit_status;
 
+static int  daemon_mode;
 static int32_w buf_raw[MAX_SR],buf_mon[SR_MON][2];
 static uint8_w  ch_table[WIN_CHMAX];
 static char *chfile;

@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.35.2.12 2011/06/01 12:14:51 uehira Exp $
+# $Id: Makefile.am,v 1.35.2.13 2011/07/20 11:06:16 uehira Exp $
 #
 
 # Version number of shared libraries.
@@ -153,7 +153,7 @@ install-exec-hook:
 	(rm -f $(DESTDIR)@bindir@/wdisk60d; cd $(DESTDIR)@bindir@ && @LN_S@ wdisk wdisk60d)
 	(rm -f $(DESTDIR)@bindir@/orderd; cd $(DESTDIR)@bindir@ && @LN_S@ order orderd)
 	(rm -f $(DESTDIR)@bindir@/recvtd; cd $(DESTDIR)@bindir@ && @LN_S@ recvt recvtd)
-	(rm -f $(DESTDIR)@bindir@/recvt46d; cd $(DESTDIR)@bindir@ && @LN_S@ recvt recvt46d)
+	(rm -f $(DESTDIR)@bindir@/recvt46d; cd $(DESTDIR)@bindir@ && @LN_S@ recvt46 recvt46d)
 	(rm -f $(DESTDIR)@bindir@/relayd; cd $(DESTDIR)@bindir@ && @LN_S@ relay relayd)
 	(rm -f $(DESTDIR)@bindir@/relaymd; cd $(DESTDIR)@bindir@ && @LN_S@ relaym relaymd)
 	(rm -f $(DESTDIR)@bindir@/raw_mond; cd $(DESTDIR)@bindir@ && @LN_S@ raw_mon raw_mond)

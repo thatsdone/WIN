@@ -1,4 +1,10 @@
- $Id: ChangeLog,v 1.113.2.63 2011/06/01 12:14:50 uehira Exp $
+ $Id: ChangeLog,v 1.113.2.64 2011/07/20 11:06:16 uehira Exp $
+
+2011-07-20  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 2.1.25 released.
+	* src/recvt46.c : fixed a bug.
+	* src/send_raw46.c : removed obsoleted codes.
+	* daemon_mode : fixed scope.
 
 2011-06-01  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* Version 2.1.24 (rel-64bit_SEVO tag) merged into SEVO branch.

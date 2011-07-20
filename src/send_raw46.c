@@ -1,4 +1,4 @@
-/* $Id: send_raw46.c,v 1.2.2.1 2011/06/01 12:14:53 uehira Exp $ */
+/* $Id: send_raw46.c,v 1.2.2.2 2011/07/20 11:06:16 uehira Exp $ */
 /*
     program "send_raw/send_mon.c"   1/24/94 - 1/25/94,5/25/94 urabe
                                     6/15/94 - 6/16/94
@@ -104,7 +104,7 @@
 #define REQ_TIMO  10		/* timeout (sec) for request */
 
 static const char rcsid[] =
-"$Id: send_raw46.c,v 1.2.2.1 2011/06/01 12:14:53 uehira Exp $";
+"$Id: send_raw46.c,v 1.2.2.2 2011/07/20 11:06:16 uehira Exp $";
 
 static int      sock, raw, tow, all, n_ch, negate_channel, mtu, nbuf, slptime, no_resend;
 static ssize_t  psize[NBUF];
@@ -113,9 +113,10 @@ static uint8_w *sbuf[NBUF], ch_table[WIN_CHMAX], rbuf[RSIZE], ch_req[WIN_CHMAX],
                 pbuf[RSIZE];
 /* sbuf[NBUF][mtu-28+8] ; +8 for overrun by "size" and "time" */
 static char    *chfile, *file_req;
+static int     daemon_mode;
 
 char           *progname, *logfile;
-int             daemon_mode, syslog_mode, exit_status;
+int            syslog_mode, exit_status;
 
 /* prototypes */
 static int      get_packet(int bufno, uint8_w no);
@@ -434,17 +435,6 @@ main(int argc, char *argv[])
     daemon_mode = 1;
   } else
     exit(1);
-
-  if (daemon_mode)
-    snprintf(tbuf, sizeof(tbuf),
-	     " usage : '%s (-1amRrt) (-b [mtu]) (-f [req_file]) (-h [h])\\\n\
-   (-i [interface]) (-s [s]) (-p [src_port]) (-w [key]) (-T [ttl])\\\n\
-   [shmkey] [dest] [port] ([chfile]/- ([logfile]))'", progname);
-  else
-    snprintf(tbuf, sizeof(tbuf),
-	     " usage : '%s (-1aDmRrt) (-b [mtu]) (-f [req_file]) (-h [h])\\\n\
-   (-i [interface]) (-s [s]) (-p [src_port]) (-w [key]) (-T [ttl])\\\n\
-   [shmkey] [dest] [port] ([chfile]/- ([logfile]))'", progname);
 
   *interface = 0;
   file_req = NULL;

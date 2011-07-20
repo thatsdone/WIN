@@ -1,4 +1,4 @@
-/* $Id: wdiskts.c,v 1.5.2.3 2011/06/01 12:14:54 uehira Exp $ */
+/* $Id: wdiskts.c,v 1.5.2.4 2011/07/20 11:06:16 uehira Exp $ */
 
 /*-
   2005.8.10 urabe bug in strcmp2() fixed : 0-6 > 7-9 
@@ -71,10 +71,10 @@
 #define   NAMELEN  1025
 
 static const char rcsid[] =
-  "$Id: wdiskts.c,v 1.5.2.3 2011/06/01 12:14:54 uehira Exp $";
+  "$Id: wdiskts.c,v 1.5.2.4 2011/07/20 11:06:16 uehira Exp $";
 
 char *progname,*logfile;
-int  daemon_mode, syslog_mode, exit_status;
+int  syslog_mode, exit_status;
 
 static char tbuf[NAMELEN],latest[NAMELEN],oldest[NAMELEN],busy[NAMELEN],
   *outdir;
@@ -83,6 +83,7 @@ static FILE *fd;
 static uint8_w  *datbuf,*sortbuf,*datbuf_tmp;
 static size_t  dat_num, sort_num, array_num_datbuf;
 static jmp_buf  mx;
+static int  daemon_mode;
 
 /* prototypes */
 static int sort_buf(void);

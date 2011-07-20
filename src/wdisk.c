@@ -1,4 +1,4 @@
-/* $Id: wdisk.c,v 1.23 2011/06/01 11:09:22 uehira Exp $ */
+/* $Id: wdisk.c,v 1.24 2011/07/20 10:38:39 uehira Exp $ */
 /*
   program "wdisk.c"   4/16/93-5/13/93,7/2/93,7/5/94  urabe
                       1/6/95 bug in adj_time fixed (tm[0]--)
@@ -107,10 +107,10 @@
 #define   NAMELEN  1025
 
 static const char rcsid[] =
-  "$Id: wdisk.c,v 1.23 2011/06/01 11:09:22 uehira Exp $";
+  "$Id: wdisk.c,v 1.24 2011/07/20 10:38:39 uehira Exp $";
 
 char *progname,*logfile;
-int  daemon_mode, syslog_mode, exit_status;
+int  syslog_mode, exit_status;
 
 static char tbuf[NAMELEN],latest[NAMELEN],oldest[NAMELEN],busy[NAMELEN],
   *outdir;
@@ -118,6 +118,7 @@ static char tbuf[NAMELEN],latest[NAMELEN],oldest[NAMELEN],busy[NAMELEN],
 static int count,count_max,mode;
 static FILE *fd;
 static int  nflag, smode;
+static int  daemon_mode;
 
 /* prototypes */
 #if defined(STRUCT_STATFS_F_BAVAIL_LONG)

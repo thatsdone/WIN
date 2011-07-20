@@ -1,4 +1,4 @@
-/* $Id: send_raw.c,v 1.28 2011/06/01 11:09:21 uehira Exp $ */
+/* $Id: send_raw.c,v 1.29 2011/07/20 10:38:39 uehira Exp $ */
 /*
     program "send_raw/send_mon.c"   1/24/94 - 1/25/94,5/25/94 urabe
                                     6/15/94 - 6/16/94
@@ -102,7 +102,7 @@
 #define REQ_TIMO  10   /* timeout (sec) for request */
 
 static const char  rcsid[] =
-   "$Id: send_raw.c,v 1.28 2011/06/01 11:09:21 uehira Exp $";
+   "$Id: send_raw.c,v 1.29 2011/07/20 10:38:39 uehira Exp $";
 
 static int sock,raw,tow,all,n_ch,negate_channel,mtu,nbuf,slptime,
   no_resend;
@@ -112,9 +112,10 @@ static uint8_w *sbuf[NBUF],ch_table[WIN_CHMAX],rbuf[RSIZE],ch_req[WIN_CHMAX],
   ch_req_tmp[WIN_CHMAX],pbuf[RSIZE];
 /* sbuf[NBUF][mtu-28+8] ; +8 for overrun by "size" and "time" */
 static char *chfile,file_req[1024];
+static int  daemon_mode;
 
 char *progname,*logfile;
-int  daemon_mode, syslog_mode, exit_status;
+int  syslog_mode, exit_status;
 
 /* prototypes */
 static int get_packet(int bufno, uint8_w no);

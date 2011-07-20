@@ -1,4 +1,4 @@
-/* $Id: recvt46.c,v 1.2 2011/06/01 11:09:21 uehira Exp $ */
+/* $Id: recvt46.c,v 1.3 2011/07/20 10:38:39 uehira Exp $ */
 /*-
  "recvt.c"      4/10/93 - 6/2/93,7/2/93,1/25/94    urabe
                 2/3/93,5/25/94,6/16/94 
@@ -115,7 +115,7 @@
 #define N_PNOS    62    /* length of packet nos. history >=2 */
 
 static const char rcsid[] =
-  "$Id: recvt46.c,v 1.2 2011/06/01 11:09:21 uehira Exp $";
+  "$Id: recvt46.c,v 1.3 2011/07/20 10:38:39 uehira Exp $";
 
 static uint8_w rbuf[MAXMESG], ch_table[WIN_CHMAX];
 static char *chfile[N_CHFILE];
@@ -768,7 +768,7 @@ main(int argc, char *argv[])
   daemon_mode = syslog_mode = 0;
   exit_status = EXIT_SUCCESS;
 
-  if (strcmp(progname,"recvtd") == 0)
+  if (strcmp(progname,"recvt46d") == 0)
     daemon_mode = 1;
 
   all = no_pinfo = mon = eobsize = noreq = no_ts = no_pno = 0;

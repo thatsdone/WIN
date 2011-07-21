@@ -1,4 +1,8 @@
- $Id: ChangeLog,v 1.113.2.64 2011/07/20 11:06:16 uehira Exp $
+ $Id: ChangeLog,v 1.113.2.65 2011/07/21 11:27:24 uehira Exp $
+
+2011-07-21  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 2.1.26 released.
+	* src/udp_dest.c : IPv6 MTU Option : always perform path MTU discovery.
 
 2011-07-20  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* Version 2.1.25 released.

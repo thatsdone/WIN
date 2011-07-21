@@ -1,4 +1,4 @@
-/* $Id: udp_dest.c,v 1.5 2011/07/21 11:17:47 uehira Exp $ */
+/* $Id: udp_dest.c,v 1.6 2011/07/21 11:50:03 uehira Exp $ */
 
 /*
  * Copyright (c) 2001-2011
@@ -236,7 +236,9 @@ mcast_set_outopt(const int sockfd, const char *interface, const int ttl)
 #ifdef INET6
   unsigned int  mif6;
   int   hops;
+#ifdef IPV6_USE_MIN_MTU
   int   path_mtu;
+#endif
 #endif
 
   switch (sockfd_to_family(sockfd)) {
@@ -259,11 +261,13 @@ mcast_set_outopt(const int sockfd, const char *interface, const int ttl)
 
 #ifdef INET6
   case AF_INET6:
+#ifdef IPV6_USE_MIN_MTU
     /* set MTU option */
     path_mtu = IPV6_MTU_OPT;
     if (setsockopt(sockfd, IPPROTO_IPV6, IPV6_USE_MIN_MTU,
 		   &path_mtu, sizeof(path_mtu)) < 0)
       err_sys("IPV6_USE_MIN_MTU setsockopt error");
+#endif  /* IPV6_USE_MIN_MTU */
 
     /* set interface */
     if(*interface) {

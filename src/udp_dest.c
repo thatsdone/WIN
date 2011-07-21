@@ -1,4 +1,4 @@
-/* $Id: udp_dest.c,v 1.4 2011/06/01 11:09:22 uehira Exp $ */
+/* $Id: udp_dest.c,v 1.5 2011/07/21 11:17:47 uehira Exp $ */
 
 /*
  * Copyright (c) 2001-2011
@@ -18,7 +18,12 @@
 #include <sys/time.h>
 #include <sys/param.h>
 
+#include <net/if.h>
+
 #include <netinet/in.h>
+#if HAVE_ARPA_INET_H
+#include <arpa/inet.h>
+#endif
 
 #include <netdb.h>   /* struct addrinfo */
 
@@ -33,6 +38,19 @@
 
 #define  SOCKET_SND_BUFSIZ   65535
 
+/* IPv6 MTU Option */
+/*-
+  -1: perform path MTU discovery for unicast destinations but do not
+      perform it for multicast destinations.  Packets to multicast
+      destinations are therefore sent with the minimum MTU.
+
+  0: always perform path MTU discovery.
+
+  1: always disable path MTU discovery and send packets at the minimum MTU.
+
+  minimum MTU = 1280 bytes.
+  -*/
+#define  IPV6_MTU_OPT  0
 
 #ifdef INET6
 /*
@@ -218,6 +236,7 @@ mcast_set_outopt(const int sockfd, const char *interface, const int ttl)
 #ifdef INET6
   unsigned int  mif6;
   int   hops;
+  int   path_mtu;
 #endif
 
   switch (sockfd_to_family(sockfd)) {
@@ -240,6 +259,12 @@ mcast_set_outopt(const int sockfd, const char *interface, const int ttl)
 
 #ifdef INET6
   case AF_INET6:
+    /* set MTU option */
+    path_mtu = IPV6_MTU_OPT;
+    if (setsockopt(sockfd, IPPROTO_IPV6, IPV6_USE_MIN_MTU,
+		   &path_mtu, sizeof(path_mtu)) < 0)
+      err_sys("IPV6_USE_MIN_MTU setsockopt error");
+
     /* set interface */
     if(*interface) {
       mif6 = if_nametoindex(interface);

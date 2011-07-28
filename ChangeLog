@@ -1,4 +1,9 @@
- $Id: ChangeLog,v 1.113.2.65 2011/07/21 11:27:24 uehira Exp $
+ $Id: ChangeLog,v 1.113.2.66 2011/07/28 07:25:02 uehira Exp $
+
+2011-07-28  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 2.1.27 released.
+	* man/win.1 : updated
+	* man/pmon.1 : fixed a typo
 
 2011-07-21  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* Version 2.1.26 released.

@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.38.2.20 2011/06/01 12:14:54 uehira Exp $
+   $Id: win.c,v 1.38.2.21 2011/08/02 13:21:12 uehira Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -23,10 +23,10 @@
 #else
 #define NAME_PRG      "win32"
 #endif
-#define WIN_VERSION   "2011.5.5(+Hi-net) (SEVO)"
+#define WIN_VERSION   "2011.8.2(+Hi-net) (SEVO)"
 
 static const char rcsid[] =
-  "$Id: win.c,v 1.38.2.20 2011/06/01 12:14:54 uehira Exp $";
+  "$Id: win.c,v 1.38.2.21 2011/08/02 13:21:12 uehira Exp $";
 
 #define DEBUG_AP      0   /* for debugging auto-pick */
 /* 5:sr, 4:ch, 3:sec, 2:find_pick, 1:all */
@@ -2169,6 +2169,20 @@ init_process(int argc, char *argv[], int args)
     uint32_w i;
     uint8_w  c[4];
     } *swp;
+  /* added by Uehira */
+  int  *sys_ch_list;
+  struct ch_check_list {
+    char  code[STNLEN];
+    float north;   /* latitude */
+    float east;    /* longitude */
+    int   height;  /* height */
+    float stcp;    /* station correction of P */
+    float stcs;    /* station correction of S */
+  } *chcheck;
+  int  itemnum;
+  int  stnum;
+  int  old_ch_flag;
+  int  mm, nn;
 
   /* open parameter file */
   if((fp=open_file(ft.param_file,"parameter"))) fclose(fp);
@@ -2631,8 +2645,119 @@ just_map:
         }
       }
 
+    /***** check channel table *****/
+    if ((sys_ch_list = MALLOC(int, kk)) == NULL)
+      emalloc("sys_ch_list");
+    if ((chcheck = MALLOC(struct ch_check_list, kk)) == NULL)
+      emalloc("sys_ch_list");
+    for (nn = 0; nn < kk; ++nn) {
+      /* chcheck[nn].north = chcheck[nn].east = 400.0; */
+      chcheck[nn].height = 10000000;
+      chcheck[nn].stcp = chcheck[nn].stcs = 1.1e+38;  /* big value */
+    }
+    nn = 0;
+    stnum = 0;
+    while (fgets(text_buf, LINELEN, fp) != NULL) {
+      if(text_buf[0] == '#') continue;
+      sscanf(text_buf, "%s", name);
+      if (strlen(name) < 3) { /* old channel table format */
+	itemnum = 
+	  sscanf(text_buf, "%x%x%d%d%s%s%d%s%f%s%f%f%f%f%f%f%d%f%f",
+		 &i, &j, &dum1, &dum2, name, comp, &k, sname, &sens, unit,
+		 &to, &h, &g, &adc, &north, &east, &height, &stcp, &stcs);
+	if (itemnum <= 0) {
+	  fprintf(stderr, "There is a blank line in channels table.\n");
+	  return (0);
+	}
+	/* if (!(itemnum == 14 || 17 <= itemnum)) { */
+	/*   fprintf(stderr,"invalid item number:\n%s\n", text_buf); */
+	/*   return (0); */
+	/* } */
+	sys_ch = (i << 8) + j;
+	old_ch_flag = 1;
+      } else {
+	itemnum =
+	  sscanf(text_buf, "%x%d%d%s%s%d%s%f%s%f%f%f%f%f%f%d%f%f",
+		 &sys_ch, &dum1, &dum2, name, comp, &k, sname, &sens, unit,
+		 &to, &h, &g, &adc, &north, &east, &height, &stcp, &stcs);
+	if (itemnum <= 0) {
+	  fprintf(stderr, "There is a blank line in channels table.\n");
+	  return (0);
+	}
+	/* if (!(itemnum == 13 || 16 <= itemnum)) { */
+	/*   fprintf(stderr,"invalid item number:\n%s\n", text_buf); */
+	/*   return (0); */
+	/* } */
+	old_ch_flag = 0;
+      }
+
+      /** check station proper parameters **/
+      for (mm = 0; mm < stnum; ++mm) {
+	if (strcmp(name, chcheck[mm].code) == 0)
+	  break;
+      }
+      if (mm == stnum) {
+	strcpy(chcheck[mm].code, name);
+	stnum++;
+      }
+      /* position check */
+      if ((old_ch_flag && itemnum >= 17) || (!old_ch_flag && itemnum >= 16)) {
+	if (chcheck[mm].height == 10000000) {
+	  chcheck[mm].north = north;
+	  chcheck[mm].east = east;
+	  chcheck[mm].height = height;
+	} else {
+	  if (chcheck[mm].north != north || chcheck[mm].east != east || chcheck[mm].height != height) {
+	    fprintf(stderr, "Inconsistent position information: %s[%s]\n",
+		    chcheck[mm].code, comp);
+	    return (0);
+	  }
+	}
+      }
+
+      /* station correction of P check */
+      if ((old_ch_flag && itemnum >= 18) || (!old_ch_flag && itemnum >= 17)) {
+	/* printf("%s\t%f\n", text_buf, stcp); */
+	if (chcheck[mm].stcp > 1.0e+38)
+	  chcheck[mm].stcp = stcp;
+	else
+	  if (chcheck[mm].stcp != stcp) {
+	    fprintf(stderr, "Inconsistent station correction of P : %s\n",
+		    chcheck[mm].code);
+	    return (0);
+	  }
+      }
+      
+      /* station correction of S check */
+      if ((old_ch_flag && itemnum >= 19) || (!old_ch_flag && itemnum >= 18)) {
+	/* printf("%s\t%f\n", text_buf, stcs); */
+	if (chcheck[mm].stcs > 1.0e+38)
+	  chcheck[mm].stcs = stcs;
+	else
+	  if (chcheck[mm].stcs != stcs) {
+	    fprintf(stderr, "Inconsistent station correction of S : %s\n",
+		    chcheck[mm].code);
+	    return (0);
+	  }
+      }
+
+      /** check duplicated channel number **/
+      sys_ch_list[nn] = sys_ch;
+      for (mm = 0; mm < nn; ++mm)
+	if (sys_ch_list[mm] == sys_ch_list[nn]) {
+	  fprintf(stderr, "Duplicate sys_ch list in channels table: %X\n",
+		  sys_ch_list[mm]);
+	  return (0);
+	}
+      nn++;
+    }
+    FREE(chcheck);
+    FREE(sys_ch_list);
+    rewind(fp);
+
     ft.n_ch_ex=ft.n_ch;
     kk=0;
+    /* read channels table */
     while(fgets(text_buf,LINELEN,fp)!=NULL)
       {
       if(*text_buf=='#') continue;
@@ -2738,7 +2863,7 @@ just_map:
           ft.n_ch_ex++;
           }
         }
-      }
+      }  /* end of read channnels table */
 
     for(i=0;i<ft.n_ch;i++)  /* fill north/east/z/stcp/stcs/x/y */
       {

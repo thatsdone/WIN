@@ -1,8 +1,9 @@
- $Id: ChangeLog,v 1.190 2011/08/02 11:47:53 uehira Exp $
+ $Id: ChangeLog,v 1.191 2011/08/02 11:53:00 uehira Exp $
 
 2011-08-02  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* Version 2.1.28 released.
 	* src/win.c : check channels table.
+	* src/chtbl_ck.c : added.
 
 2011-07-28  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* Version 2.1.27 released.

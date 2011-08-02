@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.60 2011/08/02 12:08:09 uehira Exp $
+   $Id: win.c,v 1.61 2011/08/02 13:20:23 uehira Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -26,7 +26,7 @@
 #define WIN_VERSION   "2011.8.2(+Hi-net)"
 
 static const char rcsid[] =
-  "$Id: win.c,v 1.60 2011/08/02 12:08:09 uehira Exp $";
+  "$Id: win.c,v 1.61 2011/08/02 13:20:23 uehira Exp $";
 
 #define DEBUG_AP      0   /* for debugging auto-pick */
 /* 5:sr, 4:ch, 3:sec, 2:find_pick, 1:all */
@@ -2164,7 +2164,7 @@ init_process(int argc, char *argv[], int args)
     uint32_w i;
     uint8_w  c[4];
     } *swp;
-
+  /* added by Uehira */
   int  *sys_ch_list;
   struct ch_check_list {
     char  code[STNLEN];
@@ -2178,7 +2178,6 @@ init_process(int argc, char *argv[], int args)
   int  stnum;
   int  old_ch_flag;
   int  mm, nn;
-
 
   /* open parameter file */
   if((fp=open_file(ft.param_file,"parameter"))) fclose(fp);
@@ -2750,7 +2749,6 @@ just_map:
     FREE(chcheck);
     FREE(sys_ch_list);
     rewind(fp);
-
 
     ft.n_ch_ex=ft.n_ch;
     kk=0;

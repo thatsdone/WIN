@@ -1,4 +1,4 @@
-/* $Id: chtbl_ck.c,v 1.1 2011/08/02 11:47:53 uehira Exp $ */
+/* $Id: chtbl_ck.c,v 1.2 2011/08/02 12:08:09 uehira Exp $ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -12,7 +12,7 @@
 #include "winlib.h"
 
 static const char  rcsid[] =
-   "$Id: chtbl_ck.c,v 1.1 2011/08/02 11:47:53 uehira Exp $";
+   "$Id: chtbl_ck.c,v 1.2 2011/08/02 12:08:09 uehira Exp $";
 
 
 static void print_usage(void);
@@ -95,7 +95,9 @@ main(int argc, char *argv[])
 	       "%x%x%d%d%"STRING(WIN_STANAME)"s%"STRING(WIN_STACOMP)"s%d%"STRING(WIN_STANAME)"s%f%6s%f%f%f%f%f%f%d%f%f",
 	       &i, &j, &dum1, &dum2, name, comp, &k, sname, &sens, unit,
 	       &to, &h, &g, &adc, &north, &east, &height, &stcp, &stcs);
-      if (!(itemnum == 14 || 17 <= itemnum))
+      if (itemnum <= 0)
+	printf("There is a blank line.\n");
+      else if (!(itemnum == 14 || 17 <= itemnum))
 	printf("invalid item number: %s", buf);
       sys_ch = (i << 8) + j;
       old_ch_flag = 1;
@@ -106,7 +108,9 @@ main(int argc, char *argv[])
 	       &sys_ch, &dum1, &dum2, name, comp, &k, sname, &sens, unit,
 	       &to, &h, &g, &adc, &north, &east, &height, &stcp, &stcs);
       old_ch_flag = 0;
-      if (!(itemnum == 13 || 16 <= itemnum))
+      if (itemnum <= 0)
+	printf("There is a blank line.\n");
+      else if (!(itemnum == 13 || 16 <= itemnum))
 	printf("invalid item number: %s", buf);
     }
 

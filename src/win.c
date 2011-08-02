@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.59 2011/08/02 11:47:53 uehira Exp $
+   $Id: win.c,v 1.60 2011/08/02 12:08:09 uehira Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -26,7 +26,7 @@
 #define WIN_VERSION   "2011.8.2(+Hi-net)"
 
 static const char rcsid[] =
-  "$Id: win.c,v 1.59 2011/08/02 11:47:53 uehira Exp $";
+  "$Id: win.c,v 1.60 2011/08/02 12:08:09 uehira Exp $";
 
 #define DEBUG_AP      0   /* for debugging auto-pick */
 /* 5:sr, 4:ch, 3:sec, 2:find_pick, 1:all */
@@ -2661,6 +2661,10 @@ just_map:
 	  sscanf(text_buf, "%x%x%d%d%s%s%d%s%f%s%f%f%f%f%f%f%d%f%f",
 		 &i, &j, &dum1, &dum2, name, comp, &k, sname, &sens, unit,
 		 &to, &h, &g, &adc, &north, &east, &height, &stcp, &stcs);
+	if (itemnum <= 0) {
+	  fprintf(stderr, "There is a blank line in channels table.\n");
+	  return (0);
+	}
 	/* if (!(itemnum == 14 || 17 <= itemnum)) { */
 	/*   fprintf(stderr,"invalid item number:\n%s\n", text_buf); */
 	/*   return (0); */
@@ -2672,11 +2676,15 @@ just_map:
 	  sscanf(text_buf, "%x%d%d%s%s%d%s%f%s%f%f%f%f%f%f%d%f%f",
 		 &sys_ch, &dum1, &dum2, name, comp, &k, sname, &sens, unit,
 		 &to, &h, &g, &adc, &north, &east, &height, &stcp, &stcs);
-	old_ch_flag = 0;
+	if (itemnum <= 0) {
+	  fprintf(stderr, "There is a blank line in channels table.\n");
+	  return (0);
+	}
 	/* if (!(itemnum == 13 || 16 <= itemnum)) { */
 	/*   fprintf(stderr,"invalid item number:\n%s\n", text_buf); */
 	/*   return (0); */
 	/* } */
+	old_ch_flag = 0;
       }
 
       /** check station proper parameters **/

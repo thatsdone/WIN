@@ -1,11 +1,11 @@
 dnl ------------------------------------------------------------------------- 
-dnl $Id: configure.in,v 1.82.2.56 2011/08/02 13:21:12 uehira Exp $
+dnl $Id: configure.in,v 1.82.2.57 2011/09/09 03:30:03 uehira Exp $
 dnl -------------------------------------------------------------------------
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT
 AC_CONFIG_SRCDIR([src/win.c])
 AC_CANONICAL_TARGET
-AM_INIT_AUTOMAKE(WIN_pkg, 2.1.28-SEVO)
+AM_INIT_AUTOMAKE(WIN_pkg, 2.1.29-SEVO)
 AC_CONFIG_HEADERS([config.h])
 AC_ARG_PROGRAM
 
@@ -592,6 +592,7 @@ AC_CONFIG_FILES([Makefile src/Makefile man/Makefile etc/Makefile pick/Makefile
 	prog/cpraw
 	prog/wincat
 	prog/shmsimu
+	prog/ck_ls8800cst
 	prog/winmap2pickfile
 	])
 AC_OUTPUT

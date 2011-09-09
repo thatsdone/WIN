@@ -1,0 +1,45 @@
+#! @PERL@
+
+#
+# $Id: ck_ls8800cst.in,v 1.1 2011/09/09 03:00:08 uehira Exp $
+#  Copyright (c) 2011 -
+#   Uehira Kenji / All Rights Reserved.
+#    uehira@sevo.kyushu-u.ac.jp
+#    Institute of Seismology and Volcanology, Kyushu University.
+#
+#  2011.09.09	Initial version. (Uehira Kenji)
+#
+#  usage: ck_ls8800cst < CLOCKCAL.LOG
+#
+
+use Time::Local;
+
+sub time2gm {
+    #print "$_[0]\n";
+    ($YYMMDD, $hhmmss) = split ' ', $_[0];
+    ($YY, $MM, $DD) = split '/', $YYMMDD;
+    ($hh, $mm, $ss) = split ':', $hhmmss;
+    #print "$YY $MM $DD to $hh $mm $ss\n";
+    $YY += 100;
+
+    $todaltm = timegm($ss, $mm, $hh, $DD, $MM - 1, $YY);
+    #print "$todaltm\n";
+    return $todaltm
+}
+
+while (<STDIN>) {
+    chop;
+
+    @fld = split ',';
+    #print "$fld[1]\n";
+    $diff = ((time2gm($fld[1])- time2gm($fld[3])) + $fld[2] * 1.0e-6) * 1.0e6;
+    printf "%s\t%s\t%10.0lf usec", $fld[3], $fld[0], $diff;
+
+    # 5 msec
+    if (abs($diff) < 5000) {
+	print "\n";
+    }
+    else {
+	print " *\n";
+    }
+}

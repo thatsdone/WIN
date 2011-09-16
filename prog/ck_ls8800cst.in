@@ -1,18 +1,20 @@
 #! @PERL@
 
 #
-# $Id: ck_ls8800cst.in,v 1.1.2.2 2011/09/09 03:30:04 uehira Exp $
+# $Id: ck_ls8800cst.in,v 1.1.2.3 2011/09/16 08:50:03 uehira Exp $
 #  Copyright (c) 2011 -
 #   Uehira Kenji / All Rights Reserved.
 #    uehira@sevo.kyushu-u.ac.jp
 #    Institute of Seismology and Volcanology, Kyushu University.
 #
 #  2011.09.09	Initial version. (Uehira Kenji)
+#  2011.09.16   added -t option.
 #
-#  usage: ck_ls8800cst < CLOCKCAL.LOG
+#  usage: ck_ls8800cst (-t msec) < CLOCKCAL.LOG
 #
 
 use Time::Local;
+use Getopt::Std;
 
 sub time2gm {
     #print "$_[0]\n";
@@ -27,6 +29,17 @@ sub time2gm {
     return $todaltm
 }
 
+######## MAIN ########
+$opt_t = 5000;  # default 5 msec
+getopts('t:');
+#print "opt_t = $opt_t\n";
+
+# -t option must be an integer.
+die "The -t option must be an integer!\n" unless $opt_t =~ /^[+-]?\d+$/;
+
+$thre = abs($opt_t);
+#print "thre = $thre\n";
+
 while (<STDIN>) {
     chop;
 
@@ -36,7 +49,7 @@ while (<STDIN>) {
     printf "%s\t%s\t%10.0lf usec", $fld[3], $fld[0], $diff;
 
     # 5 msec
-    if (abs($diff) < 5000) {
+    if (abs($diff) < $thre) {
 	print "\n";
     }
     else {

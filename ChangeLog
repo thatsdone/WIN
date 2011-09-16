@@ -1,6 +1,6 @@
- $Id: ChangeLog,v 1.194 2011/09/16 08:44:11 uehira Exp $
+ $Id: ChangeLog,v 1.195 2011/09/16 08:45:54 uehira Exp $
 
-2011-09-09  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+2011-09-16  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* Version 2.1.29 released.
 	* prog/ck_ls8800cst : added '-t' option.
 

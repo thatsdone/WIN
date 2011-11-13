@@ -1,14 +1,14 @@
 #! @WISH@
 
 #
-# $Id: win_m.in,v 1.7 2011/06/01 11:09:20 uehira Exp $
+# $Id: win_m.in,v 1.8 2011/11/13 08:48:33 uehira Exp $
 #  win_m : ＷＩＮのピックマネージャー
 #
 #    Uehira Kenji (Original 96.2.29)
 #      Special thank to Fujie Gou
 #
 
-set VERSION      "2005.6.17"
+set VERSION      "2011.11.13"
 
 set INIT_PRM        "./win_m.prm"
 set WM_GEO          "-10+0"
@@ -355,12 +355,13 @@ proc move {direction} {
     
     set current_line [$f2.list curselection] ;# 現在のセレクト行
     if {[string compare $current_line ""] != 0} {
-	$f2.list select clear            
+	$f2.list selection clear 0 end
 	set select_length [llength $current_line] ;# セレクトされ
 	set select_length [expr $select_length-1] ;# ていた行数
 	set current_line [lindex $current_line $select_length]
 	set current_line [expr $current_line+$direction]
-	$f2.list select adjust $current_line      ;# 新しくセレクト
+	#$f2.list select adjust $current_line      ;# 新しくセレクト
+	$f2.list selection set $current_line      ;# 新しくセレクト
 	open_win
     }
 }

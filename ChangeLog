@@ -1,4 +1,8 @@
- $Id: ChangeLog,v 1.113.2.70 2011/09/16 08:50:01 uehira Exp $
+ $Id: ChangeLog,v 1.113.2.71 2011/11/13 08:52:18 uehira Exp $
+
+2011-11-13  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 2.1.30 released.
+	* win_m : fixed 'Next' and 'Previous' bottons.
 
 2011-09-16  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* Version 2.1.29 released.

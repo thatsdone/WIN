@@ -1,4 +1,4 @@
-/* $Id: recvt46.c,v 1.4 2011/11/16 11:13:35 uehira Exp $ */
+/* $Id: recvt46.c,v 1.5 2011/11/16 11:41:20 uehira Exp $ */
 /*-
  "recvt.c"      4/10/93 - 6/2/93,7/2/93,1/25/94    urabe
                 2/3/93,5/25/94,6/16/94 
@@ -115,7 +115,7 @@
 #define N_PNOS    62    /* length of packet nos. history >=2 */
 
 static const char rcsid[] =
-  "$Id: recvt46.c,v 1.4 2011/11/16 11:13:35 uehira Exp $";
+  "$Id: recvt46.c,v 1.5 2011/11/16 11:41:20 uehira Exp $";
 
 static uint8_w rbuf[MAXMESG], ch_table[WIN_CHMAX];
 static char *chfile[N_CHFILE];
@@ -408,9 +408,9 @@ check_pno(struct sockaddr *from_addr, unsigned int pn, unsigned int pn_f,
     err_sys("getnameinfo");
 
   for (i = 0; i < n_host; i++) {
-    if (hostlist[i].f == 1 && (hostlist[i].host_[0] == '\0' || (strcmp(hostlist[i].host_, host_) == 0 && (hostlist[i].port_[0] == '\0' || strcmp(hostlist[i].port_, port_) == 0))))
+    if (hostlist[i].f == 1 && (hostlist[i].host_[0] == '\0' || (strcmp(hostlist[i].host_, host_) == 0 && (hostlist[i].port_[0] == '0' || strcmp(hostlist[i].port_, port_) == 0))))
       break;
-    if (hostlist[i].f == (-1) && (hostlist[i].host_[0] == '\0' || (strcmp(hostlist[i].host_, host_) == 0 && (hostlist[i].port_[0] == '\0' || strcmp(hostlist[i].port_, port_) == 0)))) {
+    if (hostlist[i].f == (-1) && (hostlist[i].host_[0] == '\0' || (strcmp(hostlist[i].host_, host_) == 0 && (hostlist[i].port_[0] == '0' || strcmp(hostlist[i].port_, port_) == 0)))) {
       if (!no_pinfo) {
 	if (strchr(host_, ':') != NULL)
 	  snprintf(tb, sizeof(tb),

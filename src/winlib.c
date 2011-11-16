@@ -1,4 +1,4 @@
-/* $Id: winlib.c,v 1.2 2011/06/01 11:09:22 uehira Exp $ */
+/* $Id: winlib.c,v 1.3 2011/11/16 11:13:35 uehira Exp $ */
 
 /*-
  * winlib.c  (Uehira Kenji)
@@ -1710,3 +1710,45 @@ FinalB_write(struct FinalB d, FILE *fp)
   return (b);
 }
 
+/*- splite host:port
+ *
+ * hostname(:port)
+ * IPv4(:port)
+ * [IPv6](:port)
+ * IPv6
+ *
+ * Input : buf[]
+ * Output : buf[], **host, **port
+ */
+int
+split_host_port(char buf[], char **host, char **port)
+{
+  char  *ptr;
+
+  if (buf[0] == '[') {   /* IPv6 address (and port) */
+    *host = buf + 1;
+    if ((ptr = strchr(buf, ']')) == NULL) {
+      *host = *port = NULL;
+      return (1);  /* Invalid entry */
+    }
+    ptr[0] = '\0';
+    *port = strrchr(ptr + 1, ':');
+    if (*port != NULL)
+      (*port)++;
+    return (0);
+  }
+
+  *host = buf;
+  *port = strrchr(buf, ':');
+  ptr = strchr(buf, ':');
+  if (*port != NULL) {
+    if (*port != ptr)  /* IPv6 address */
+      *port = NULL;
+    else {
+      *port[0] = '\0';
+      (*port)++;
+    }
+  }
+
+  return (0);
+}

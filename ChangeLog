@@ -1,4 +1,8 @@
- $Id: ChangeLog,v 1.197 2011/11/14 08:18:04 uehira Exp $
+ $Id: ChangeLog,v 1.198 2011/11/16 11:13:32 uehira Exp $
+
+2011-11-16  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 2.2.1 released.
+	* src/recvt46 : fixed a bug.
 
 2011-11-13  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* Version 2.2.0 released.

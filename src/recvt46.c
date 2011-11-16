@@ -1,4 +1,4 @@
-/* $Id: recvt46.c,v 1.3 2011/07/20 10:38:39 uehira Exp $ */
+/* $Id: recvt46.c,v 1.4 2011/11/16 11:13:35 uehira Exp $ */
 /*-
  "recvt.c"      4/10/93 - 6/2/93,7/2/93,1/25/94    urabe
                 2/3/93,5/25/94,6/16/94 
@@ -57,7 +57,7 @@
                           ht[].pnos[] : unsigned int --> int
 		2011.1.7 -e for automatically reload chfile
 		          if packet comes from deny host.
-		2011.2.13-15 IPv6 version of 'recvt.c'. (Uehira)
+		2011.2.13-15 IPv6/IPv4 version of 'recvt.c'. (Uehira)
 -*/
 
 #ifdef HAVE_CONFIG_H
@@ -115,7 +115,7 @@
 #define N_PNOS    62    /* length of packet nos. history >=2 */
 
 static const char rcsid[] =
-  "$Id: recvt46.c,v 1.3 2011/07/20 10:38:39 uehira Exp $";
+  "$Id: recvt46.c,v 1.4 2011/11/16 11:13:35 uehira Exp $";
 
 static uint8_w rbuf[MAXMESG], ch_table[WIN_CHMAX];
 static char *chfile[N_CHFILE];
@@ -171,9 +171,11 @@ read_chfile(void)
   int i, k, ii, i_chfile;
   time_t tdif, tdif2;
   char tbuf[1024], host_name[1024], tb[256], *ptr;
-  char  port_[NI_MAXSERV];  /* port No. */
+  char  *port_ptr;  /* port No. */
+  char  *host_ptr;
   static time_t ltime, ltime_p;
   struct addrinfo  hints, *res, *ai;
+  int    gai_error;
 
   n_host=0;
   if (chfile[0] != NULL) {
@@ -219,22 +221,16 @@ read_chfile(void)
 	    }
 	  } else {
             if (sscanf(tbuf + 1, "%s", host_name) > 0) { /* hostname */
-              if ((ptr = strchr(host_name, '/')) == 0) {
-                port_[0] = '\0';  /* any port */
-	      } else {  /* port */
-                *ptr = '\0';
-		if (snprintf(port_, sizeof(port_),
-			     "%s", ptr + 1) >= sizeof(port_))
-		  err_sys("snprintf buffer overrun");
-                /* hostlist[ii][2] = atoi(ptr + 1); */
-	      }
+	      if (split_host_port(host_name, &host_ptr, &port_ptr))
+		err_sys("Invalid host-port");
 	      memset(&hints, 0, sizeof(hints));
 	      hints.ai_family = AF_UNSPEC;
 	      hints.ai_socktype = SOCK_DGRAM;
 	      hints.ai_protocol = IPPROTO_UDP;
-	      if (getaddrinfo(host_name, port_, &hints, &res)) {
+	      if ((gai_error = getaddrinfo(host_ptr, port_ptr, &hints, &res)) != 0) {
 		(void)snprintf(tb, sizeof(tb),
-			       "host '%s' not resolved", host_name);
+			       "host '%s' port '%s' not resolved : %s",
+			       host_ptr, port_ptr, gai_strerror(gai_error));
 		write_log(tb);
 		continue;
 	      }
@@ -245,12 +241,21 @@ read_chfile(void)
 				  NI_DGRAM | NI_NUMERICHOST | NI_NUMERICSERV);
 		if (tbuf[0] == '+') {
 		  hostlist[ii].f = 1;  /* allow */
-		  (void)snprintf(tb, sizeof(tb), "allow from host %s:%s",
-				 hostlist[ii].host_, hostlist[ii].port_);
+		  if (strchr(hostlist[ii].host_, ':') != NULL)
+		    (void)snprintf(tb, sizeof(tb), "allow from host [%s]:%s",
+				   hostlist[ii].host_, hostlist[ii].port_);
+		  else
+		    (void)snprintf(tb, sizeof(tb), "allow from host %s:%s",
+				   hostlist[ii].host_, hostlist[ii].port_);
+		  
 		} else {
 		  hostlist[ii].f = -1; /* deny */
-		  (void)snprintf(tb, sizeof(tb), "deny from host %s:%s",
-				 hostlist[ii].host_, hostlist[ii].port_);
+		  if (strchr(hostlist[ii].host_, ':') != NULL)
+		    (void)snprintf(tb, sizeof(tb), "deny from host [%s]:%s",
+				   hostlist[ii].host_, hostlist[ii].port_);
+		  else
+		    (void)snprintf(tb, sizeof(tb), "deny from host %s:%s",
+				   hostlist[ii].host_, hostlist[ii].port_);
 		}
 		write_log(tb);
 
@@ -259,6 +264,8 @@ read_chfile(void)
 		  write_log("host control table full"); 
 		}
 	      } /* for (ai = res; ai != NULL; ai = ai->ai_next) */
+	      if (res != NULL)
+		freeaddrinfo(res);
 	    }
 	  }
 	} else {   /* channel control part */
@@ -342,10 +349,16 @@ read_chfile(void)
     for (i = 0; i < N_HOST; i++) { /* print statistics for hosts */
       if (ht[i].host[0] == '\0')
 	break;
-      snprintf(tb, sizeof(tb), "  src %s:%s   %lu %lu %lu %lu",
-	       ht[i].host, ht[i].port, ht[i].n_packets, ht[i].n_bytes,
-	       (ht[i].n_packets + tdif2) / tdif,
-	       (ht[i].n_bytes + tdif2) / tdif);
+      if (strchr(ht[i].host, ':') != NULL)
+	snprintf(tb, sizeof(tb), "  src [%s]:%s   %lu %lu %lu %lu",
+		 ht[i].host, ht[i].port, ht[i].n_packets, ht[i].n_bytes,
+		 (ht[i].n_packets + tdif2) / tdif,
+		 (ht[i].n_bytes + tdif2) / tdif);
+      else
+	snprintf(tb, sizeof(tb), "  src %s:%s   %lu %lu %lu %lu",
+		 ht[i].host, ht[i].port, ht[i].n_packets, ht[i].n_bytes,
+		 (ht[i].n_packets + tdif2) / tdif,
+		 (ht[i].n_bytes + tdif2) / tdif);
       write_log(tb);
       ht[i].n_packets = ht[i].n_bytes = 0;
     }
@@ -399,7 +412,12 @@ check_pno(struct sockaddr *from_addr, unsigned int pn, unsigned int pn_f,
       break;
     if (hostlist[i].f == (-1) && (hostlist[i].host_[0] == '\0' || (strcmp(hostlist[i].host_, host_) == 0 && (hostlist[i].port_[0] == '\0' || strcmp(hostlist[i].port_, port_) == 0)))) {
       if (!no_pinfo) {
-	snprintf(tb, sizeof(tb),"deny packet from host %s:%s", host_, port_);
+	if (strchr(host_, ':') != NULL)
+	  snprintf(tb, sizeof(tb),
+		   "deny packet from host [%s]:%s", host_, port_);
+	else
+	  snprintf(tb, sizeof(tb),
+		   "deny packet from host %s:%s", host_, port_);
         write_log(tb);
       }
       /* automatically reload chfile */
@@ -452,7 +470,10 @@ check_pno(struct sockaddr *from_addr, unsigned int pn, unsigned int pn_f,
       ht[i].nos[k] = 0; /* clear all bits for pnos */
     ht[i].nos[pn >> 3] |= mask[pn & 0x07]; /* set bit for the packet no */
     ht[i].nosf[pn >> 6] = 1;
-    snprintf(tb, sizeof(tb), "registered host %s:%s (%d)", host_, port_, i);
+    if (strchr(host_, ':') != NULL)
+      snprintf(tb, sizeof(tb), "registered host [%s]:%s (%d)", host_, port_, i);
+    else
+      snprintf(tb, sizeof(tb), "registered host %s:%s (%d)", host_, port_, i);
     write_log(tb);
     ht[i].n_bytes = n;
     ht[i].n_packets = 1;
@@ -475,8 +496,12 @@ check_pno(struct sockaddr *from_addr, unsigned int pn, unsigned int pn_f,
 	      pnc = (uint8_w)pn_1;
 	      if (sendto(sock, &pnc, 1, 0, from_addr, fromlen) < 0)
 		err_sys("check_pno: sendto");
-	      snprintf(tb, sizeof(tb), "request resend %s:%s #%d",
-		       host_, port_, pn_1);
+	      if (strchr(host_, ':') != NULL)
+		snprintf(tb, sizeof(tb), "request resend [%s]:%s #%d",
+			 host_, port_, pn_1);
+	      else
+		snprintf(tb, sizeof(tb), "request resend %s:%s #%d",
+			 host_, port_, pn_1);
 	      write_log(tb);
 #if DEBUG1
 	      printf("<%u ", pn_1);
@@ -498,8 +523,12 @@ check_pno(struct sockaddr *from_addr, unsigned int pn, unsigned int pn_f,
             write_log(tb);
 #endif
 	  } else {
-	    snprintf(tb,sizeof(tb),"no request resend %s:%s #%d-#%d",
-		     host_, port_, pn_1, (pn_now - 1) & 0xff);
+	    if (strchr(host_, ':') != NULL)
+	      snprintf(tb,sizeof(tb),"no request resend [%s]:%s #%d-#%d",
+		       host_, port_, pn_1, (pn_now - 1) & 0xff);
+	    else
+	      snprintf(tb,sizeof(tb),"no request resend %s:%s #%d-#%d",
+		       host_, port_, pn_1, (pn_now - 1) & 0xff);
             write_log(tb);
 	  }
 	}
@@ -559,10 +588,16 @@ wincpy2(uint8_w *ptw, time_t ts, uint8_w *ptr, ssize_t size, int mon,
       gs = win_chheader_info(ptr, &ch, &sr, &ss);
       if (sr > MAX_SR || ss > MAX_SS || ptr + gs > ptr_lim) {
         if(!no_pinfo) {
-	  snprintf(tb,sizeof(tb),
-		   "ill ch hdr %02X%02X%02X%02X %02X%02X%02X%02X psiz=%zd sr=%d ss=%d gs=%u rest=%ld from %s:%s",
-		   ptr[0], ptr[1], ptr[2], ptr[3], ptr[4], ptr[5], ptr[6],
-		   ptr[7], size, sr, ss, gs, ptr_lim - ptr, host_, port_);
+	  if (strchr(host_, ':') != NULL)
+	    snprintf(tb,sizeof(tb),
+		     "ill ch hdr %02X%02X%02X%02X %02X%02X%02X%02X psiz=%zd sr=%d ss=%d gs=%u rest=%ld from [%s]:%s",
+		     ptr[0], ptr[1], ptr[2], ptr[3], ptr[4], ptr[5], ptr[6],
+		     ptr[7], size, sr, ss, gs, ptr_lim - ptr, host_, port_);
+	  else
+	    snprintf(tb,sizeof(tb),
+		     "ill ch hdr %02X%02X%02X%02X %02X%02X%02X%02X psiz=%zd sr=%d ss=%d gs=%u rest=%ld from %s:%s",
+		     ptr[0], ptr[1], ptr[2], ptr[3], ptr[4], ptr[5], ptr[6],
+		     ptr[7], size, sr, ss, gs, ptr_lim - ptr, host_, port_);
 	  write_log(tb);
 	}
         return (n);
@@ -582,10 +617,16 @@ wincpy2(uint8_w *ptw, time_t ts, uint8_w *ptr, ssize_t size, int mon,
       gs = ptr1 - ptr;
       if (ptr + gs > ptr_lim) {
         if(!no_pinfo) {
-	  snprintf(tb, sizeof(tb),
-		   "ill ch blk %02X%02X%02X%02X %02X%02X%02X%02X psiz=%zd sr=%d gs=%u rest=%ld from %s:%s",
-		   ptr[0], ptr[1], ptr[2], ptr[3], ptr[4], ptr[5], ptr[6], 
-		   ptr[7], size, sr, gs, ptr_lim - ptr, host_, port_);
+	  if (strchr(host_, ':') != NULL)
+	    snprintf(tb, sizeof(tb),
+		     "ill ch blk %02X%02X%02X%02X %02X%02X%02X%02X psiz=%zd sr=%d gs=%u rest=%ld from [%s]:%s",
+		     ptr[0], ptr[1], ptr[2], ptr[3], ptr[4], ptr[5], ptr[6], 
+		     ptr[7], size, sr, gs, ptr_lim - ptr, host_, port_);
+	  else
+	    snprintf(tb, sizeof(tb),
+		     "ill ch blk %02X%02X%02X%02X %02X%02X%02X%02X psiz=%zd sr=%d gs=%u rest=%ld from %s:%s",
+		     ptr[0], ptr[1], ptr[2], ptr[3], ptr[4], ptr[5], ptr[6], 
+		     ptr[7], size, sr, gs, ptr_lim - ptr, host_, port_);
           write_log(tb);
 	}
         return (n);
@@ -708,14 +749,14 @@ usage(void)
     fprintf(stderr,
 	    " usage : '%s (-AaBenMNr) (-d [len(s)]) (-m [pre(m)]) (-p [post(m)]) \\\n\
               (-i [interface]) (-g [mcast_group]) (-s sbuf(KB)) \\\n\
-              (-o [src_host]/[src_port]) (-f [ch file]) \\\n\
+              (-o [src_host]:[src_port]) (-f [ch file]) \\\n\
               [port] [shm_key] [shm_size(KB)] ([ctl file]/- ([log file]))'\n",
 	    progname);
   else
     fprintf(stderr,
 	    " usage : '%s (-AaBDenMNr) (-d [len(s)]) (-m [pre(m)]) (-p [post(m)]) \\\n\
               (-i [interface]) (-g [mcast_group]) (-s sbuf(KB)) \\\n\
-              (-o [src_host]/[src_port]) (-f [ch file]) (-y [req_delay])\\\n\
+              (-o [src_host]:[src_port]) (-f [ch file]) (-y [req_delay])\\\n\
               [port] [shm_key] [shm_size(KB)] ([ctl file]/- ([log file]))'\n",
 	    progname);
 }
@@ -740,7 +781,7 @@ main(int argc, char *argv[])
   uint32_w uni;  /*- 64bit ok -*/
   WIN_bs  uni2;  /*- 64bit ok -*/
   uint8_w *ptr,tm[6],*ptr_size,*ptr_size2;  /*- 64bit ok -*/
-  char host_name[1024];  /*- 64bit ok -*/
+  char *host_name;  /*- 64bit ok -*/
   int i,j,all,c,mon,eobsize,      /*- 64bit ok -*/
     sbuf,noreq,no_ts,no_pno,req_delay;   /*- 64bit ok -*/
   socklen_t fromlen;  /*- 64bit ok -*/
@@ -774,7 +815,8 @@ main(int argc, char *argv[])
   all = no_pinfo = mon = eobsize = noreq = no_ts = no_pno = 0;
   pre = post = 0;
   auto_reload_chfile = 0;
-  *interface = (*mcastgroup) = (*host_name) = 0;
+  *interface = (*mcastgroup) = 0;
+  host_name = NULL;
   sbuf = DEFAULT_RCVBUF;
   chhist.n = N_HIST;
   n_chfile = 1;
@@ -839,19 +881,16 @@ main(int argc, char *argv[])
       break;
     case 'o':   /* host and port for request */
       /* strcpy(tb2,optarg); */
-      if (snprintf(tb2, sizeof(tb2), "%s", optarg) >= sizeof(tb2)) {
-	fprintf(stderr, "'%s': -o option : Buffer overrun!\n", progname);
-	exit(1);
-      }
-      if ((cptr = strchr(tb2,'/'))) {
-	*cptr = 0;
-	host_port = cptr + 1;
-      } else {
-	fprintf(stderr," option -o requires '[host]/[port]' pair !\n");
+      if (split_host_port(optarg, &host_name, &host_port)) {
+	fprintf(stderr," Invalid hostname !\n");
 	usage();
 	exit(1);
       }
-      strcpy(host_name,tb2);  /* ok */
+      if (host_port == NULL) {
+	fprintf(stderr," option -o requires '[host]:[port]' pair !\n");
+	usage();
+	exit(1);
+      }
       break;
     case 'p':   /* time limit after RT in minutes */
       post = atol(optarg);
@@ -958,7 +997,7 @@ main(int argc, char *argv[])
       mcast_join(ct->soc, mcastgroup, interface);
   }
 
-  if(*host_name) /* host_name and host_port specified */
+  if(host_name != NULL) /* host_name and host_port specified */
     {
     /* source host/port */
 /*     if(!(h=gethostbyname(host_name))) err_sys("can't find host"); */
@@ -985,14 +1024,18 @@ main(int argc, char *argv[])
       break;
     }
     if (ai == NULL) {
-      (void)snprintf(tb, sizeof(tb), "%s: %s:%s",
-		     strerror(errno), host_name, host_port);
+      if (strchr(host_name, ':') != NULL)
+	(void)snprintf(tb, sizeof(tb), "%s: [%s]:%s",
+		       strerror(errno), host_name, host_port);
+      else
+	(void)snprintf(tb, sizeof(tb), "%s: %s:%s",
+		       strerror(errno), host_name, host_port);
       err_sys(tb);
     }
     /* search same family */
     for (ct = ct_top; ct != NULL; ct = ct->next) {
-      printf("sock=%d: %d %d\n", 
-	     ct->soc, sockfd_to_family(ct->soc) ,ai->ai_addr->sa_family);
+      /* printf("sock=%d: %d %d\n",  */
+      /* 	     ct->soc, sockfd_to_family(ct->soc) ,ai->ai_addr->sa_family); */
       if (sockfd_to_family(ct->soc) == ai->ai_addr->sa_family)
 	break;
     }
@@ -1022,7 +1065,7 @@ main(int argc, char *argv[])
     write_log("time-stamps not interpreted");
   if (no_pno)
     write_log("packet numbers not interpreted");
-  if (*host_name) {
+  if (host_name != NULL) {
     gai_error = getnameinfo(host_addr, host_addrlen, host_, sizeof(host_),
 			    port_, sizeof(port_),
 			    NI_DGRAM | NI_NUMERICHOST | NI_NUMERICSERV);
@@ -1031,8 +1074,12 @@ main(int argc, char *argv[])
 		     "getnameinfo : %s", gai_strerror(gai_error));
       err_sys(tb);
     } else {
-      (void)snprintf(tb, sizeof(tb),
-		     "send channel list to %s:%s", host_, port_);
+      if (strchr(host_, ':') != NULL)
+	(void)snprintf(tb, sizeof(tb),
+		       "send channel list to [%s]:%s", host_, port_);
+      else
+	(void)snprintf(tb, sizeof(tb),
+		       "send channel list to %s:%s", host_, port_);
       write_log(tb);
     }
   }
@@ -1052,7 +1099,7 @@ main(int argc, char *argv[])
 
   /*** main loop ***/
   for (;;) {
-    if(*host_name) { /* send request */
+    if(host_name != NULL) { /* send request */
       time(&sec);
       if (sec != sec_p) {
 	send_req(sock, host_addr, host_addrlen);
@@ -1187,11 +1234,18 @@ main(int argc, char *argv[])
 	    ptr = ptr_size;
 	  if (!(ts = check_ts(rbuf + 2, pre, post))) {
 	    if (!no_pinfo) {
-	      snprintf(tb, sizeof(tb),
-		       "ill time %02X:%02X %02X%02X%02X.%02X%02X%02X:%02X%02X%02X%02X%02X%02X%02X%02X from %s:%s",
-		       rbuf[0], rbuf[1], rbuf[2], rbuf[3], rbuf[4], rbuf[5],
-		       rbuf[6], rbuf[7], rbuf[8], rbuf[9], rbuf[10], rbuf[11],
-		       rbuf[12], rbuf[13], rbuf[14], rbuf[15], host_, port_);
+	      if (strchr(host_, ':') != NULL)
+		snprintf(tb, sizeof(tb),
+			 "ill time %02X:%02X %02X%02X%02X.%02X%02X%02X:%02X%02X%02X%02X%02X%02X%02X%02X from [%s]:%s",
+			 rbuf[0], rbuf[1], rbuf[2], rbuf[3], rbuf[4], rbuf[5],
+			 rbuf[6], rbuf[7], rbuf[8], rbuf[9], rbuf[10], rbuf[11],
+			 rbuf[12], rbuf[13], rbuf[14], rbuf[15], host_, port_);
+	      else
+		snprintf(tb, sizeof(tb),
+			 "ill time %02X:%02X %02X%02X%02X.%02X%02X%02X:%02X%02X%02X%02X%02X%02X%02X%02X from %s:%s",
+			 rbuf[0], rbuf[1], rbuf[2], rbuf[3], rbuf[4], rbuf[5],
+			 rbuf[6], rbuf[7], rbuf[8], rbuf[9], rbuf[10], rbuf[11],
+			 rbuf[12], rbuf[13], rbuf[14], rbuf[15], host_, port_);
 	      write_log(tb);
 	    }
 	    for (i = 0; i < 6; i++)
@@ -1230,13 +1284,22 @@ main(int argc, char *argv[])
 	  n = (rbuf[j] << 8) + rbuf[j + 1];
 	  if (n < 8 || n > nlen) {
 	    if (!no_pinfo) {
-	      snprintf(tb, sizeof(tb),
-		       "ill blk n=%zd(%02X%02X) %02X%02X%02X.%02X%02X%02X:%02X%02X%02X%02X%02X%02X%02X%02X from %s:%s #%d(#%d) at %d",
-		       n, rbuf[j], rbuf[j+1], rbuf[j+2], rbuf[j+3], rbuf[j+4],
-		       rbuf[j+5], rbuf[j+6], rbuf[j+7], rbuf[j+8], rbuf[j+9],
-		       rbuf[j+10], rbuf[j+11], rbuf[j+12], rbuf[j+13],
-		       rbuf[j+14], rbuf[j+15],
-		       host_, port_, rbuf[0], rbuf[1], j);
+	      if (strchr(host_, ':') != NULL)
+		snprintf(tb, sizeof(tb),
+			 "ill blk n=%zd(%02X%02X) %02X%02X%02X.%02X%02X%02X:%02X%02X%02X%02X%02X%02X%02X%02X from [%s]:%s #%d(#%d) at %d",
+			 n, rbuf[j], rbuf[j+1], rbuf[j+2], rbuf[j+3], rbuf[j+4],
+			 rbuf[j+5], rbuf[j+6], rbuf[j+7], rbuf[j+8], rbuf[j+9],
+			 rbuf[j+10], rbuf[j+11], rbuf[j+12], rbuf[j+13],
+			 rbuf[j+14], rbuf[j+15],
+			 host_, port_, rbuf[0], rbuf[1], j);
+	      else
+		snprintf(tb, sizeof(tb),
+			 "ill blk n=%zd(%02X%02X) %02X%02X%02X.%02X%02X%02X:%02X%02X%02X%02X%02X%02X%02X%02X from %s:%s #%d(#%d) at %d",
+			 n, rbuf[j], rbuf[j+1], rbuf[j+2], rbuf[j+3], rbuf[j+4],
+			 rbuf[j+5], rbuf[j+6], rbuf[j+7], rbuf[j+8], rbuf[j+9],
+			 rbuf[j+10], rbuf[j+11], rbuf[j+12], rbuf[j+13],
+			 rbuf[j+14], rbuf[j+15],
+			 host_, port_, rbuf[0], rbuf[1], j);
 	      write_log(tb);
 	    }
 	    for (i = 0; i < 6; i++) 
@@ -1296,12 +1359,20 @@ main(int argc, char *argv[])
 	      ptr = ptr_size;
 	    if (!(ts = check_ts(rbuf + j, pre, post))) { /* illegal time */
 	      if (!no_pinfo) {
-		snprintf(tb, sizeof(tb),
-			 "ill time %02X%02X%02X.%02X%02X%02X:%02X%02X%02X%02X%02X%02X%02X%02X from %s:%s",
-			 rbuf[j], rbuf[j+1], rbuf[j+2], rbuf[j+3], rbuf[j+4],
-			 rbuf[j+5], rbuf[j+6], rbuf[j+7], rbuf[j+8], rbuf[j+9],
-			 rbuf[j+10], rbuf[j+11], rbuf[j+12], rbuf[j+13],
-			 host_, port_);
+		if (strchr(host_, ':') != NULL)
+		  snprintf(tb, sizeof(tb),
+			   "ill time %02X%02X%02X.%02X%02X%02X:%02X%02X%02X%02X%02X%02X%02X%02X from [%s]:%s",
+			   rbuf[j], rbuf[j+1], rbuf[j+2], rbuf[j+3], rbuf[j+4],
+			   rbuf[j+5], rbuf[j+6], rbuf[j+7], rbuf[j+8], rbuf[j+9],
+			   rbuf[j+10], rbuf[j+11], rbuf[j+12], rbuf[j+13],
+			   host_, port_);
+		else
+		  snprintf(tb, sizeof(tb),
+			   "ill time %02X%02X%02X.%02X%02X%02X:%02X%02X%02X%02X%02X%02X%02X%02X from %s:%s",
+			   rbuf[j], rbuf[j+1], rbuf[j+2], rbuf[j+3], rbuf[j+4],
+			   rbuf[j+5], rbuf[j+6], rbuf[j+7], rbuf[j+8], rbuf[j+9],
+			   rbuf[j+10], rbuf[j+11], rbuf[j+12], rbuf[j+13],
+			   host_, port_);
 		write_log(tb);
 	      }
 	      for (i = 0; i < 6; i++)
@@ -1328,12 +1399,20 @@ main(int argc, char *argv[])
       } else if (all) { /* rbuf[2]>=0xA1 with packet ID */
 	if (!(ts = check_ts(rbuf + 3, pre, post))) {
 	  if (!no_pinfo) {
-	    snprintf(tb, sizeof(tb),
-		     "ill time %02X:%02X %02X %02X%02X%02X.%02X%02X%02X:%02X%02X%02X%02X%02X%02X%02X%02X from %s:%s",
-		     rbuf[0], rbuf[1], rbuf[2], rbuf[3], rbuf[4], rbuf[5],
-		     rbuf[6], rbuf[7], rbuf[8], rbuf[9], rbuf[10], rbuf[11],
-		     rbuf[12], rbuf[13], rbuf[14], rbuf[15], rbuf[16],
-		     host_, port_);
+	    if (strchr(host_, ':') != NULL)
+	      snprintf(tb, sizeof(tb),
+		       "ill time %02X:%02X %02X %02X%02X%02X.%02X%02X%02X:%02X%02X%02X%02X%02X%02X%02X%02X from [%s]:%s",
+		       rbuf[0], rbuf[1], rbuf[2], rbuf[3], rbuf[4], rbuf[5],
+		       rbuf[6], rbuf[7], rbuf[8], rbuf[9], rbuf[10], rbuf[11],
+		       rbuf[12], rbuf[13], rbuf[14], rbuf[15], rbuf[16],
+		       host_, port_);
+	    else
+	      snprintf(tb, sizeof(tb),
+		       "ill time %02X:%02X %02X %02X%02X%02X.%02X%02X%02X:%02X%02X%02X%02X%02X%02X%02X%02X from %s:%s",
+		       rbuf[0], rbuf[1], rbuf[2], rbuf[3], rbuf[4], rbuf[5],
+		       rbuf[6], rbuf[7], rbuf[8], rbuf[9], rbuf[10], rbuf[11],
+		       rbuf[12], rbuf[13], rbuf[14], rbuf[15], rbuf[16],
+		       host_, port_);
 	    write_log(tb);
 	  }
 	  for (i = 0; i < 6; i++)

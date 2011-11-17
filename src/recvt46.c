@@ -1,4 +1,4 @@
-/* $Id: recvt46.c,v 1.2.2.3 2011/11/16 12:02:52 uehira Exp $ */
+/* $Id: recvt46.c,v 1.2.2.4 2011/11/17 07:12:20 uehira Exp $ */
 /*-
  "recvt.c"      4/10/93 - 6/2/93,7/2/93,1/25/94    urabe
                 2/3/93,5/25/94,6/16/94 
@@ -115,13 +115,14 @@
 #define N_PNOS    62    /* length of packet nos. history >=2 */
 
 static const char rcsid[] =
-  "$Id: recvt46.c,v 1.2.2.3 2011/11/16 12:02:52 uehira Exp $";
+  "$Id: recvt46.c,v 1.2.2.4 2011/11/17 07:12:20 uehira Exp $";
 
 static uint8_w rbuf[MAXMESG], ch_table[WIN_CHMAX];
 static char *chfile[N_CHFILE];
 static int n_ch, negate_channel, n_host, no_pinfo, n_chfile;
 static int auto_reload_chfile;
 static int daemon_mode;
+static int family;   /* family type: AF_UNSPEC, AF_INET, AF_INET6 */
 
 struct {
   char host_[NI_MAXHOST];  /* host address */
@@ -224,7 +225,7 @@ read_chfile(void)
 	      if (split_host_port(host_name, &host_ptr, &port_ptr))
 		err_sys("Invalid host-port");
 	      memset(&hints, 0, sizeof(hints));
-	      hints.ai_family = AF_UNSPEC;
+	      hints.ai_family = family;
 	      hints.ai_socktype = SOCK_DGRAM;
 	      hints.ai_protocol = IPPROTO_UDP;
 	      if ((gai_error = getaddrinfo(host_ptr, port_ptr, &hints, &res)) != 0) {
@@ -747,14 +748,14 @@ usage(void)
   fprintf(stderr, "%s\n", rcsid);
   if (daemon_mode)
     fprintf(stderr,
-	    " usage : '%s (-AaBenMNr) (-d [len(s)]) (-m [pre(m)]) (-p [post(m)]) \\\n\
+	    " usage : '%s (-46AaBenMNr) (-d [len(s)]) (-m [pre(m)]) (-p [post(m)]) \\\n\
               (-i [interface]) (-g [mcast_group]) (-s sbuf(KB)) \\\n\
               (-o [src_host]:[src_port]) (-f [ch file]) \\\n\
               [port] [shm_key] [shm_size(KB)] ([ctl file]/- ([log file]))'\n",
 	    progname);
   else
     fprintf(stderr,
-	    " usage : '%s (-AaBDenMNr) (-d [len(s)]) (-m [pre(m)]) (-p [post(m)]) \\\n\
+	    " usage : '%s (-46AaBDenMNr) (-d [len(s)]) (-m [pre(m)]) (-p [post(m)]) \\\n\
               (-i [interface]) (-g [mcast_group]) (-s sbuf(KB)) \\\n\
               (-o [src_host]:[src_port]) (-f [ch file]) (-y [req_delay])\\\n\
               [port] [shm_key] [shm_size(KB)] ([ctl file]/- ([log file]))'\n",
@@ -808,10 +809,23 @@ main(int argc, char *argv[])
 
   daemon_mode = syslog_mode = 0;
   exit_status = EXIT_SUCCESS;
+  family = AF_UNSPEC;
 
   if (strcmp(progname,"recvt46d") == 0)
     daemon_mode = 1;
-
+  else if (strcmp(progname,"recvt4") == 0)
+    family = AF_INET;
+  else if (strcmp(progname,"recvt4d") == 0) {
+    family = AF_INET;
+    daemon_mode = 1;
+  }
+  else if (strcmp(progname,"recvt6") == 0)
+    family = AF_INET6;
+  else if (strcmp(progname,"recvt6d") == 0) {
+    family = AF_INET;
+    daemon_mode = 1;
+  }
+    
   all = no_pinfo = mon = eobsize = noreq = no_ts = no_pno = 0;
   pre = post = 0;
   auto_reload_chfile = 0;
@@ -824,8 +838,14 @@ main(int argc, char *argv[])
   for (i = 0; i < N_HOST; i++)
     ht[i].host[0] = '\0';
 
-  while ((c = getopt(argc, argv, "AaBDd:ef:g:i:m:MNno:p:rs:y:")) != -1) {
+  while ((c = getopt(argc, argv, "46AaBDd:ef:g:i:m:MNno:p:rs:y:")) != -1) {
     switch(c) {
+    case '4':   /* IPv4 only */
+      family = AF_INET;
+      break;
+    case '6':   /* IPv6 only */
+      family = AF_INET6;
+      break;
     case 'A':   /* don't check time stamps */
       no_ts = 1;
       break;
@@ -988,7 +1008,7 @@ main(int argc, char *argv[])
   write_log(tb);
 
   /* 'in' port of localhost */
-  if ((ct_top = udp_accept(input_port, &maxsoc, sbuf)) == NULL)
+  if ((ct_top = udp_accept(input_port, &maxsoc, sbuf, family)) == NULL)
     err_sys("udp_accept");
   maxsoc++;
 
@@ -1006,7 +1026,7 @@ main(int argc, char *argv[])
 /*     memcpy((caddr_t)&host_addr.sin_addr,h->h_addr,h->h_length); */
 /*     host_addr.sin_port=htons(host_port); */
     memset(&hints, 0, sizeof(hints));
-    hints.ai_family = AF_UNSPEC;
+    hints.ai_family = family;
     hints.ai_socktype = SOCK_DGRAM;
     hints.ai_protocol = IPPROTO_UDP;
     if ((gai_error = getaddrinfo(host_name, host_port, &hints, &res)) != 0) {

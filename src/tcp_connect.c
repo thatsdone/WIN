@@ -1,12 +1,13 @@
-/* $Id: tcp_connect.c,v 1.1.2.3 2010/12/28 12:55:43 uehira Exp $ */
+/* $Id: tcp_connect.c,v 1.1.2.4 2011/11/17 07:12:22 uehira Exp $ */
 
 /*
- * Copyright (c) 2006
+ * Copyright (c) 2006 - 2011
  *   Uehira Kenji / All Rights Reserved.
  *    uehira@sevo.kyushu-u.ac.jp
  *    Institute of Seismology and Volcanology, Kyushu University.
  *
  *   2006-05-02   Initial version.
+ *   2011-11-17  family type.
  */
 
 #ifdef HAVE_CONFIG_H
@@ -39,7 +40,7 @@
  */
 int
 tcp_connect(const char *hostname, const char *port,
-	 struct sockaddr *saptr, socklen_t *lenp)
+	    struct sockaddr *saptr, socklen_t *lenp, int family)
 {
   int  sockfd, gai_error;
   struct addrinfo  hints, *res, *ai;
@@ -47,7 +48,7 @@ tcp_connect(const char *hostname, const char *port,
   char buf[1024];
 
   memset(&hints, 0, sizeof(hints));
-  hints.ai_family = AF_UNSPEC;
+  hints.ai_family = family;
   hints.ai_socktype = SOCK_STREAM;
   hints.ai_protocol = IPPROTO_TCP;
   if ((gai_error = getaddrinfo(hostname, port, &hints, &res)) != 0) {

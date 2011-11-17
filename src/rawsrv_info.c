@@ -1,4 +1,4 @@
-/* $Id: rawsrv_info.c,v 1.1.4.1 2010/12/28 12:55:42 uehira Exp $ */
+/* $Id: rawsrv_info.c,v 1.1.4.2 2011/11/17 07:12:20 uehira Exp $ */
 
 /* rawsrv_info.c -- print information about raw-data server */
 
@@ -36,7 +36,7 @@
 #define MAXMSG       1025
 
 static const char rcsid[] =
-  "$Id: rawsrv_info.c,v 1.1.4.1 2010/12/28 12:55:42 uehira Exp $";
+  "$Id: rawsrv_info.c,v 1.1.4.2 2011/11/17 07:12:20 uehira Exp $";
 
 char *progname, *logfile;
 int  syslog_mode, exit_status;
@@ -127,7 +127,7 @@ get_info(const char *host, const char *port)
 
   status = 0;
   memset(&ss, 0, sizeof(ss));   /* need not ? */
-  if ((socknum = tcp_connect(host, port, sa, &salen)) < 0)
+  if ((socknum = tcp_connect(host, port, sa, &salen, AF_UNSPEC)) < 0)
     return (-1);
   fpsockr = fdopen(socknum, "r");
   fpsockw = fdopen(socknum, "w");

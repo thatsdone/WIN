@@ -1,7 +1,11 @@
- $Id: ChangeLog,v 1.113.2.73 2011/11/16 12:02:48 uehira Exp $
+ $Id: ChangeLog,v 1.113.2.74 2011/11/17 07:12:16 uehira Exp $
+
+2011-11-17  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 2.2.1 released.
+	* recvt46 : added '-4' and '-6' options.
+	* libwinlog : bump version.
 
 2011-11-16  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
-	* Version 2.2.1 released.
 	* src/recvt46 : fixed a bug.
 
 2011-11-13  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>

@@ -1,7 +1,7 @@
-/* $Id: tcpu.h,v 1.1.2.3 2010/12/28 12:55:43 uehira Exp $ */
+/* $Id: tcpu.h,v 1.1.2.4 2011/11/17 07:12:22 uehira Exp $ */
 
 /*
- * Copyright (c) 2006
+ * Copyright (c) 2006-2011
  *   Uehira Kenji / All Rights Reserved.
  *    uehira@sevo.kyushu-u.ac.jp
  *    Institute of Seismology and Volcanology, Kyushu University.
@@ -14,7 +14,8 @@
 #include <sys/socket.h>
 
 #ifdef INET6
-int tcp_connect(const char *, const char *, struct sockaddr *, socklen_t *);
+int tcp_connect(const char *, const char *, struct sockaddr *, socklen_t *,
+		int);
 #endif  /* INET6 */
 
 #endif  /* !_TCPU_H_ */

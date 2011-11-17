@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.61 2011/08/02 13:20:23 uehira Exp $
+   $Id: win.c,v 1.62 2011/11/17 11:19:02 uehira Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -23,10 +23,10 @@
 #else
 #define NAME_PRG      "win32"
 #endif
-#define WIN_VERSION   "2011.8.2(+Hi-net)"
+#define WIN_VERSION   "2011.11.17(+Hi-net)"
 
 static const char rcsid[] =
-  "$Id: win.c,v 1.61 2011/08/02 13:20:23 uehira Exp $";
+  "$Id: win.c,v 1.62 2011/11/17 11:19:02 uehira Exp $";
 
 #define DEBUG_AP      0   /* for debugging auto-pick */
 /* 5:sr, 4:ch, 3:sec, 2:find_pick, 1:all */
@@ -1036,6 +1036,8 @@ static char mec_hemi[10],diagnos[50],apbuf[20],monbuf[20],mapbuf[20],
 static double pixels_per_km,lat_cent,lon_cent,mec_rc,alat0,along0,pdpi;
 static double  *dbuf,*dbuf2;
 static int32_w *buf,*buf2;
+
+static int  do_chck;   /* if 0, ignore channels table check */
 
 /*********************** prototypes **********************/
 static void xgetorigin(Display *, Window, int *, int *, unsigned int *,
@@ -2118,6 +2120,7 @@ print_usage(void)
   fprintf(stderr,"                  d [file] - hypo data file\n");
   fprintf(stderr,"                  e [file] - exclusively use ch file\n");
   fprintf(stderr,"                  f    - fit window to screen (X only)\n");
+  fprintf(stderr,"                  g    - Ignore results of channels table check\n");
   fprintf(stderr,"                  h    - print usage\n");
   fprintf(stderr,"                  i [ch# initial] - exclusively use ch\n");
   fprintf(stderr,"                  m ([period]h/d) ([interval]m) - 'just map' mode\n");
@@ -2662,7 +2665,8 @@ just_map:
 		 &to, &h, &g, &adc, &north, &east, &height, &stcp, &stcs);
 	if (itemnum <= 0) {
 	  fprintf(stderr, "There is a blank line in channels table.\n");
-	  return (0);
+	  if (do_chck)
+	    return (0);
 	}
 	/* if (!(itemnum == 14 || 17 <= itemnum)) { */
 	/*   fprintf(stderr,"invalid item number:\n%s\n", text_buf); */
@@ -2677,7 +2681,8 @@ just_map:
 		 &to, &h, &g, &adc, &north, &east, &height, &stcp, &stcs);
 	if (itemnum <= 0) {
 	  fprintf(stderr, "There is a blank line in channels table.\n");
-	  return (0);
+	  if (do_chck)
+	    return (0);
 	}
 	/* if (!(itemnum == 13 || 16 <= itemnum)) { */
 	/*   fprintf(stderr,"invalid item number:\n%s\n", text_buf); */
@@ -2705,7 +2710,8 @@ just_map:
 	  if (chcheck[mm].north != north || chcheck[mm].east != east || chcheck[mm].height != height) {
 	    fprintf(stderr, "Inconsistent position information: %s[%s]\n",
 		    chcheck[mm].code, comp);
-	    return (0);
+	    if (do_chck)
+	      return (0);
 	  }
 	}
       }
@@ -2719,7 +2725,8 @@ just_map:
 	  if (chcheck[mm].stcp != stcp) {
 	    fprintf(stderr, "Inconsistent station correction of P : %s\n",
 		    chcheck[mm].code);
-	    return (0);
+	    if (do_chck)
+	      return (0);
 	  }
       }
       
@@ -2732,7 +2739,8 @@ just_map:
 	  if (chcheck[mm].stcs != stcs) {
 	    fprintf(stderr, "Inconsistent station correction of S : %s\n",
 		    chcheck[mm].code);
-	    return (0);
+	    if (do_chck)
+	      return (0);
 	  }
       }
 
@@ -2742,7 +2750,8 @@ just_map:
 	if (sys_ch_list[mm] == sys_ch_list[nn]) {
 	  fprintf(stderr, "Duplicate sys_ch list in channels table: %X\n",
 		  sys_ch_list[mm]);
-	  return (0);
+	  if (do_chck)
+	    return (0);
 	}
       nn++;
     }
@@ -4770,13 +4779,14 @@ main(int argc, char *argv[])
   background=map_only=mc=bye=auto_flag=auto_flag_hint=not_save=autpk_but_off=calc_line_off=0;
   copy_file=got_hup=ft.ch_exclusive=0;
   mon_offset=just_hypo=just_hypo_offset=0;
+  do_chck = 1;
   /* flag_save=sec_block=1; */
   sec_block=1;
   flag_save=0;  /* .sv obsolete. */
   *ft.final_opt=0;
   dot='.';
   *chstr=0;
-  while((c=getopt(argc,argv,"abcd:e:fhi:mnop:qrs:twx:z:BC:S_"))!=-1)
+  while((c=getopt(argc,argv,"abcd:e:fghi:mnop:qrs:twx:z:BC:S_"))!=-1)
     {
     switch(c)
       {
@@ -4798,6 +4808,11 @@ main(int argc, char *argv[])
         break;
       case 'f':   /* fit height */
         fit_height=1;
+        break;
+      case 'g':   /* ignore results of channels table check */
+        do_chck = 0;
+	fprintf(stderr, "\n\n**** Ignore results of channels table check!!\n");
+	fprintf(stderr, "**** Use '-g' option AT YOUR OWN RISK!!\n\n\n");
         break;
       case 'i':   /* ch inclusive */
         strcpy(chstr,optarg);

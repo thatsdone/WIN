@@ -1,4 +1,4 @@
-/* $Id: winrawreq.c,v 1.2 2011/06/01 11:09:22 uehira Exp $ */
+/* $Id: winrawreq.c,v 1.3 2011/11/17 03:58:42 uehira Exp $ */
 
 /* winrawreq.c -- raw data request client */
 
@@ -48,7 +48,7 @@
 #define MAXMSG       1025
 
 static const char rcsid[] =
-  "$Id: winrawreq.c,v 1.2 2011/06/01 11:09:22 uehira Exp $";
+  "$Id: winrawreq.c,v 1.3 2011/11/17 03:58:42 uehira Exp $";
 
 
 char *progname, *logfile;
@@ -387,7 +387,7 @@ do_get_data(const char *host, const char *port, const char *fname,
 
   status = 0;
   memset(&ss, 0, sizeof(ss));   /* need not ? */
-  if ((socknum = tcp_connect(host, port, sa, &salen)) < 0)
+  if ((socknum = tcp_connect(host, port, sa, &salen, AF_UNSPEC)) < 0)
     return (-1);
   fpsockr = fdopen(socknum, "r");
   fpsockw = fdopen(socknum, "w");
@@ -533,7 +533,7 @@ network_output(uint8_t *rawbuf, uint32_t rsize)
 
   status = 0;
   memset(&oss, 0, sizeof(oss));  /* need not ? */
-  if ((osock = udp_dest(ohost, oport, osa, &osalen, NULL)) < 0) {
+  if ((osock = udp_dest(ohost, oport, osa, &osalen, NULL, AF_UNSPEC)) < 0) {
     write_log("udp_dest");
     return (-1);
   }

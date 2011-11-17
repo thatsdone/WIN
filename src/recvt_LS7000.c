@@ -1,4 +1,4 @@
-/* $Id: recvt_LS7000.c,v 1.2 2011/06/01 11:09:21 uehira Exp $ */
+/* $Id: recvt_LS7000.c,v 1.3 2011/11/17 03:58:41 uehira Exp $ */
 
 /*- 
  * "recvt_LS7000.c"  uehira
@@ -60,7 +60,7 @@
 #define N_PNOS    62    /* length of packet nos. history >=2 */
 
 static const char rcsid[] =
-  "$Id: recvt_LS7000.c,v 1.2 2011/06/01 11:09:21 uehira Exp $";
+  "$Id: recvt_LS7000.c,v 1.3 2011/11/17 03:58:41 uehira Exp $";
 
 static uint8_w rbuff[MAXMESG],rbuf[MAXMESG],ch_table[WIN_CHMAX];
 static char *chfile[N_CHFILE];
@@ -789,7 +789,7 @@ main(int argc, char *argv[])
   else {
     snprintf(tb, sizeof(tb), "Status packets relay to %s:%s",
 	     host_status, port_status);
-    if ((sock_status = udp_dest(host_status, port_status, sa, &salen, NULL)) < 0)
+    if ((sock_status = udp_dest(host_status, port_status, sa, &salen, NULL, AF_UNSPEC)) < 0)
       err_sys("udp_dest");
 
     /* printf("sock_status = %d\n", sock_status); */

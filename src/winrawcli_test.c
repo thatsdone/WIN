@@ -1,4 +1,4 @@
-/* $Id: winrawcli_test.c,v 1.3 2011/06/01 11:09:22 uehira Exp $ */
+/* $Id: winrawcli_test.c,v 1.4 2011/11/17 03:58:42 uehira Exp $ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -29,7 +29,7 @@
 #define MAXMSG       1025
 
 static const char rcsid[] =
-  "$Id: winrawcli_test.c,v 1.3 2011/06/01 11:09:22 uehira Exp $";
+  "$Id: winrawcli_test.c,v 1.4 2011/11/17 03:58:42 uehira Exp $";
 
 char *progname, *logfile;
 int  syslog_mode, exit_status;
@@ -86,7 +86,7 @@ main(int argc, char *argv[])
 
   /* connect to server */
   memset(&ss, 0, sizeof(ss));   /* need not ? */
-  socknum = tcp_connect(argv[0], argv[1], sa, &salen);
+  socknum = tcp_connect(argv[0], argv[1], sa, &salen, AF_UNSPEC);
   fpsockr = fdopen(socknum, "r");
   fpsockw = fdopen(socknum, "w");
   if ((fpsockr == NULL) || (fpsockw == NULL))

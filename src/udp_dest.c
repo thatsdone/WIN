@@ -1,4 +1,4 @@
-/* $Id: udp_dest.c,v 1.6 2011/07/21 11:50:03 uehira Exp $ */
+/* $Id: udp_dest.c,v 1.7 2011/11/17 03:58:42 uehira Exp $ */
 
 /*
  * Copyright (c) 2001-2011
@@ -7,6 +7,7 @@
  *    Institute of Seismology and Volcanology, Kyushu University.
  *
  *   2001-10-2   Initial version.
+ *   2011-11-17  family type.
  */
 
 #ifdef HAVE_CONFIG_H
@@ -33,8 +34,9 @@
 #include <unistd.h>
 #include <errno.h>
 
-#include "udpu.h"
-#include "win_log.h"
+#include "winlib.h"
+/* #include "udpu.h" */
+/* #include "win_log.h" */
 
 #define  SOCKET_SND_BUFSIZ   65535
 
@@ -58,8 +60,8 @@
  *  Return Socket FD or -1
  */
 int
-udp_dest(const char *hostname, const char *port,
-	  struct sockaddr *saptr, socklen_t *lenp, const char *src_port)
+udp_dest(const char *hostname, const char *port, struct sockaddr *saptr,
+	 socklen_t *lenp, const char *src_port, int family)
 {
   int  sockfd, gai_error;
   struct addrinfo  hints, *res, *ai, *ai_src;
@@ -68,7 +70,7 @@ udp_dest(const char *hostname, const char *port,
   char buf[1024];
 
   memset(&hints, 0, sizeof(hints));
-  hints.ai_family = AF_UNSPEC;
+  hints.ai_family = family;
   hints.ai_socktype = SOCK_DGRAM;
   hints.ai_protocol = IPPROTO_UDP;
   if ((gai_error = getaddrinfo(hostname, port, &hints, &res)) != 0) {

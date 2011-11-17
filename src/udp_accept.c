@@ -1,4 +1,4 @@
-/* $Id: udp_accept.c,v 1.4 2011/06/01 11:09:22 uehira Exp $ */
+/* $Id: udp_accept.c,v 1.5 2011/11/17 03:58:42 uehira Exp $ */
 
 /*
  * Copyright (c) 2001-2011
@@ -7,6 +7,7 @@
  *    Institute of Seismology and Volcanology, Kyushu University.
  *
  *   2001-10-2   Initial version.
+ *   2011-11-17  family type.
  */
 
 #ifdef HAVE_CONFIG_H
@@ -32,8 +33,9 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "udpu.h"
-#include "win_log.h"
+#include "winlib.h"
+/* #include "udpu.h" */
+/* #include "win_log.h" */
 
 /*
  * Accept packets from "port".
@@ -42,7 +44,7 @@
  */
 #ifdef INET6
 struct conntable *
-udp_accept(const char *port, int *maxsoc, int sockbuf)
+udp_accept(const char *port, int *maxsoc, int sockbuf, int family)
 {
   int  sockfd, gai_error;
   struct conntable  *ct_top = NULL, *ct, **ctp = &ct_top, *ct_next;
@@ -56,7 +58,7 @@ udp_accept(const char *port, int *maxsoc, int sockbuf)
 
   memset(&hints, 0, sizeof(hints));
   hints.ai_flags = AI_PASSIVE;
-  hints.ai_family = AF_UNSPEC;
+  hints.ai_family = family;
   hints.ai_socktype = SOCK_DGRAM;
   hints.ai_protocol = IPPROTO_UDP;
   if ((gai_error = getaddrinfo(NULL, port, &hints, &res)) != 0) {

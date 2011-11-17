@@ -1,10 +1,10 @@
 #
-# $Id: Makefile.am,v 1.44 2011/08/02 11:47:53 uehira Exp $
+# $Id: Makefile.am,v 1.45 2011/11/17 03:58:40 uehira Exp $
 #
 
 # Version number of shared libraries.
 LIB_WINSYSTEM_VERSION = -version-info 0:0:0
-LIB_WINLOG_VERSION = -version-info 0:0:0
+LIB_WINLOG_VERSION = -version-info 1:0:0
 
 if SUNOS4
 RECVNMX =
@@ -152,6 +152,10 @@ install-exec-hook:
 	(rm -f $(DESTDIR)@bindir@/orderd; cd $(DESTDIR)@bindir@ && @LN_S@ order orderd)
 	(rm -f $(DESTDIR)@bindir@/recvtd; cd $(DESTDIR)@bindir@ && @LN_S@ recvt recvtd)
 	(rm -f $(DESTDIR)@bindir@/recvt46d; cd $(DESTDIR)@bindir@ && @LN_S@ recvt46 recvt46d)
+	(rm -f $(DESTDIR)@bindir@/recvt4; cd $(DESTDIR)@bindir@ && @LN_S@ recvt46 recvt4)
+	(rm -f $(DESTDIR)@bindir@/recvt4d; cd $(DESTDIR)@bindir@ && @LN_S@ recvt46 recvt4d)
+	(rm -f $(DESTDIR)@bindir@/recvt6; cd $(DESTDIR)@bindir@ && @LN_S@ recvt46 recvt6)
+	(rm -f $(DESTDIR)@bindir@/recvt6d; cd $(DESTDIR)@bindir@ && @LN_S@ recvt46 recvt6d)
 	(rm -f $(DESTDIR)@bindir@/relayd; cd $(DESTDIR)@bindir@ && @LN_S@ relay relayd)
 	(rm -f $(DESTDIR)@bindir@/relaymd; cd $(DESTDIR)@bindir@ && @LN_S@ relaym relaymd)
 	(rm -f $(DESTDIR)@bindir@/raw_mond; cd $(DESTDIR)@bindir@ && @LN_S@ raw_mon raw_mond)
@@ -188,6 +192,10 @@ uninstall-local:
 	rm -f $(DESTDIR)@bindir@/orderd
 	rm -f $(DESTDIR)@bindir@/recvtd
 	rm -f $(DESTDIR)@bindir@/recvt46d
+	rm -f $(DESTDIR)@bindir@/recvt4
+	rm -f $(DESTDIR)@bindir@/recvt4d
+	rm -f $(DESTDIR)@bindir@/recvt6
+	rm -f $(DESTDIR)@bindir@/recvt6d
 	rm -f $(DESTDIR)@bindir@/relayd
 	rm -f $(DESTDIR)@bindir@/relaymd
 	rm -f $(DESTDIR)@bindir@/raw_mond

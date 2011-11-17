@@ -1,4 +1,4 @@
-/* $Id: send_raw46.c,v 1.3 2011/07/20 10:38:39 uehira Exp $ */
+/* $Id: send_raw46.c,v 1.4 2011/11/17 03:58:41 uehira Exp $ */
 /*
     program "send_raw/send_mon.c"   1/24/94 - 1/25/94,5/25/94 urabe
                                     6/15/94 - 6/16/94
@@ -104,7 +104,7 @@
 #define REQ_TIMO  10		/* timeout (sec) for request */
 
 static const char rcsid[] =
-"$Id: send_raw46.c,v 1.3 2011/07/20 10:38:39 uehira Exp $";
+"$Id: send_raw46.c,v 1.4 2011/11/17 03:58:41 uehira Exp $";
 
 static int      sock, raw, tow, all, n_ch, negate_channel, mtu, nbuf, slptime, no_resend;
 static ssize_t  psize[NBUF];
@@ -560,7 +560,8 @@ main(int argc, char *argv[])
   }
 
   /* destination host/port */
-  sock = udp_dest(host_name, host_port, to_addr, &to_addrlen, src_port);
+  sock = udp_dest(host_name, host_port,
+		  to_addr, &to_addrlen, src_port, AF_UNSPEC);
   if (sock < 0)
     err_sys("udp_dest");
   /* set MSS (Max Segment Size) */

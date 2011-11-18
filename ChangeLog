@@ -1,7 +1,10 @@
- $Id: ChangeLog,v 1.113.2.75 2011/11/17 11:25:51 uehira Exp $
+ $Id: ChangeLog,v 1.113.2.76 2011/11/18 02:35:31 uehira Exp $
+
+2011-11-18  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 2.2.1 released.
+	* win_m : added '-g' oprtion. pass invalid channels table.
 
 2011-11-17  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
-	* Version 2.2.1 released.
 	* src/win.c : added '-g' oprtion. pass invalid channels table.
 	* recvt46 : added '-4' and '-6' options.
 	* libwinlog : bump version.

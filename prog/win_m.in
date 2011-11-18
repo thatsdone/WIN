@@ -1,14 +1,14 @@
 #! @WISH@
 
 #
-# $Id: win_m.in,v 1.8 2011/11/13 08:48:33 uehira Exp $
+# $Id: win_m.in,v 1.9 2011/11/18 02:30:47 uehira Exp $
 #  win_m : ＷＩＮのピックマネージャー
 #
 #    Uehira Kenji (Original 96.2.29)
 #      Special thank to Fujie Gou
 #
 
-set VERSION      "2011.11.13"
+set VERSION      "2011.11.18"
 
 set INIT_PRM        "./win_m.prm"
 set WM_GEO          "-10+0"
@@ -34,6 +34,7 @@ set reverse         0     ; # 0--> ee と同じ 1--> 逆
 set O_f          ""
 set O_o          ""
 set O_t          ""
+set O_g          ""
 set O_w          ""
 set O_B          ""
 set O_S          ""
@@ -170,6 +171,7 @@ proc win_multi {} {
     global  O_f
     global  O_o
     global  O_t
+    global  O_g
     global  O_w
     global  O_B
     global  O_S
@@ -191,7 +193,7 @@ proc win_multi {} {
 		set O_p ""
 		set O_pf ""
 	    }
-	    set win_option "$O_f $O_o $O_t $O_w $O_B $O_S $O_p $O_pf"
+	    set win_option "$O_f $O_o $O_t $O_g $O_w $O_B $O_S $O_p $O_pf"
 	    
 	    set script [open $scrpt_file w]
 	    foreach datafiles [selection get] {
@@ -235,6 +237,7 @@ proc win_single {} {
     global  O_f
     global  O_o
     global  O_t
+    global  O_g
     global  O_w
     global  O_B
     global  O_S
@@ -252,7 +255,7 @@ proc win_single {} {
 	}
 	#puts $O_p
 	#puts $O_pf
-	set win_option "$O_f $O_o $O_t $O_w $O_B $O_S $O_p $O_pf"
+	set win_option "$O_f $O_o $O_t $O_g $O_w $O_B $O_S $O_p $O_pf"
 	#puts $win_option
 
 	set datafile [selection get]
@@ -288,6 +291,7 @@ proc latest {} {
     global  O_f
     global  O_o
     global  O_t
+    global  O_g
     global  O_w
     global  O_B
     global  O_S
@@ -301,7 +305,7 @@ proc latest {} {
 	    set O_p ""
 	    set O_pf ""
 	}
-	set win_option "$O_f $O_o $O_t $O_w $O_B $O_S $O_p $O_pf"
+	set win_option "$O_f $O_o $O_t $O_g $O_w $O_B $O_S $O_p $O_pf"
 
 	# set windir from WINDIR env
 	set windir [exec printenv WINDIR]
@@ -509,6 +513,7 @@ proc disp_win_option {} {
     global  O_f
     global  O_o
     global  O_t
+    global  O_g
     global  O_w
     global  O_B
     global  O_S
@@ -533,6 +538,8 @@ proc disp_win_option {} {
 	    -onvalue "-o" -offvalue "" -variable O_o -font $FONT
     checkbutton $w.select.t -text "t    - copy data-file to local"\
 	    -onvalue "-t" -offvalue "" -variable O_t -font $FONT
+    checkbutton $w.select.g -text "g    - pass INVALID channels table"\
+	    -onvalue "-g" -offvalue "" -variable O_g -font $FONT
 #    checkbutton $w.select.w -text "w    - write bitmap (.sv) file"\
 #	    -onvalue "-w" -offvalue "" -variable O_w -font $FONT
 #    checkbutton $w.select.b -text "B    - don't use bitmap (.sv) file"\
@@ -549,7 +556,7 @@ proc disp_win_option {} {
     
 #    pack $w.select.f $w.select.o $w.select.t $w.select.w\
 #	    $w.select.b $w.select.s -side top -anchor w
-    pack $w.select.f $w.select.o $w.select.t\
+    pack $w.select.f $w.select.o $w.select.t $w.select.g\
 	    $w.select.s -side top -anchor w
     pack $w.det.ok $w.det.default -side left -padx 5
     pack $w.entry $w.select $w.det -side top -pady 5
@@ -585,6 +592,7 @@ proc win_op_default {w} {
     $w.select.f deselect
     $w.select.o deselect
     $w.select.t deselect
+    $w.select.g deselect
     $w.select.w deselect
     $w.select.b deselect
     $w.select.s deselect

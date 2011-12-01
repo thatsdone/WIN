@@ -37,7 +37,7 @@
 #define SR 250
 
 static const char rcsid[] =
-  "$Id: wintowin.c,v 1.4.2.4 2010/12/28 12:55:44 uehira Exp $";
+  "$Id: wintowin.c,v 1.4.2.5 2011/12/01 06:17:59 uehira Exp $";
 
 /* prototypes */
 static int tokenize(char *, char *[], size_t);
@@ -182,7 +182,7 @@ main(int argc, char *argv[])
 	    fflush(stdout);
 	} else {
             if ( tmst ) {
-               size=size+4;
+               size=size+4+4;
             }
 	    cbuf = size >> 24; memcpy(ptw, &cbuf, 1); ptw++;
 	    cbuf = size >> 16; memcpy(ptw, &cbuf, 1); ptw++;
@@ -190,10 +190,10 @@ main(int argc, char *argv[])
 	    cbuf = size; memcpy(ptw, &cbuf, 1); ptw++;
             if ( tmst ) {
 	      ltime = (uint32_w)(time(NULL) - TIME_OFFSET);
-	      wtimbuf[3] = ltime >> 24;
-	      wtimbuf[2] = ltime >> 16;
-	      wtimbuf[1] = ltime >> 8;
-	      wtimbuf[0] = ltime;
+	      wtimbuf[0] = ltime >> 24;
+	      wtimbuf[1] = ltime >> 16;
+	      wtimbuf[2] = ltime >> 8;
+	      wtimbuf[3] = ltime;
 	      memcpy(ptw,wtimbuf,4); ptw +=4;
             }
 	    memcpy(ptw, tt, 6); ptw += 6;
@@ -201,6 +201,10 @@ main(int argc, char *argv[])
 		memcpy(ptw, outbuf[j], chsize[j]);
 		ptw += chsize[j];
 	    }
+	    cbuf = size >> 24; memcpy(ptw, &cbuf, 1); ptw++;
+	    cbuf = size >> 16; memcpy(ptw, &cbuf, 1); ptw++;
+	    cbuf = size >> 8; memcpy(ptw, &cbuf, 1); ptw++;
+	    cbuf = size; memcpy(ptw, &cbuf, 1); ptw++;
 	    if (ptw > (shm_out->d + shm_out->pl))
 		ptw = shm_out->d;
 	    shm_out->r = shm_out->p;

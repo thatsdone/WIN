@@ -1,4 +1,8 @@
- $Id: ChangeLog,v 1.201 2011/11/18 02:30:45 uehira Exp $
+ $Id: ChangeLog,v 1.202 2011/12/01 06:15:30 uehira Exp $
+
+2011-12-01  TSURUOKA Hiroshi (tsuru@eri.u-tokyo.ac.jp)
+	* Version 2.2.2 released.
+	* src/wintowin.c : bug fixed.
 
 2011-11-18  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* Version 2.2.1 released.
@@ -10,7 +14,7 @@
 	* libwinlog : bump version.
 
 2011-11-16  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
-	* src/recvt46 : fixed a bug.
+	* src/recvt46.c : fixed a bug.
 
 2011-11-13  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* Version 2.2.0 released.
@@ -720,7 +724,7 @@
 	* Version 1.1.79 released.
 
 2006-03-27  Tsuruoka Hiroshi <tsuru@eri.u-tokyo.ac.jp>
-	* wintowin: BUG FIX (appealed by T. UEMURA)
+	* wintowi:n BUG FIX (appealed by T. UEMURA)
 	* Version 1.1.78 released.
 
 2006-03-25  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>

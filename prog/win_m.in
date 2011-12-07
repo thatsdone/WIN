@@ -1,14 +1,14 @@
 #! @WISH@
 
 #
-# $Id: win_m.in,v 1.9 2011/11/18 02:30:47 uehira Exp $
+# $Id: win_m.in,v 1.10 2011/12/07 04:32:11 urabe Exp $
 #  win_m : ＷＩＮのピックマネージャー
 #
 #    Uehira Kenji (Original 96.2.29)
 #      Special thank to Fujie Gou
 #
 
-set VERSION      "2011.11.18"
+set VERSION      "2011.12.6"
 
 set INIT_PRM        "./win_m.prm"
 set WM_GEO          "-10+0"
@@ -538,7 +538,7 @@ proc disp_win_option {} {
 	    -onvalue "-o" -offvalue "" -variable O_o -font $FONT
     checkbutton $w.select.t -text "t    - copy data-file to local"\
 	    -onvalue "-t" -offvalue "" -variable O_t -font $FONT
-    checkbutton $w.select.g -text "g    - pass INVALID channels table"\
+    checkbutton $w.select.g -text "g    - check INVALID channels table"\
 	    -onvalue "-g" -offvalue "" -variable O_g -font $FONT
 #    checkbutton $w.select.w -text "w    - write bitmap (.sv) file"\
 #	    -onvalue "-w" -offvalue "" -variable O_w -font $FONT

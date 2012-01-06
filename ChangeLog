@@ -1,4 +1,9 @@
- $Id: ChangeLog,v 1.113.2.77 2011/12/01 06:17:56 uehira Exp $
+ $Id: ChangeLog,v 1.113.2.78 2012/01/06 10:31:42 uehira Exp $
+
+2011-12-06  Urabe Taku <urabe@eri.u-tokyo.ac.jp>
+	* Version 2.2.3 released.
+	* src/win.c : inverted function of '-g' oprtion. check invalid channels table.
+	* prog/win_m.in : inverted description of -g option
 
 2011-12-01  TSURUOKA Hiroshi (tsuru@eri.u-tokyo.ac.jp)
 	* Version 2.2.2 released.
@@ -14,7 +19,7 @@
 	* libwinlog : bump version.
 
 2011-11-16  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
-	* src/recvt46 : fixed a bug.
+	* src/recvt46.c : fixed a bug.
 
 2011-11-13  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* Version 2.2.0 released.
@@ -49,7 +54,8 @@
 	* daemon_mode : fixed scope.
 
 2011-06-01  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
-	* Version 2.1.24 (rel-64bit_SEVO tag) merged into SEVO branch.
+	* Version 2.1.24 (rel-64bit tag) merged into HEAD branch.
+	* Old HEAD branch (Version 1.2.12) move to RELENG_1 branch.
 
 2011-05-31  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* Version 2.1.24 released.
@@ -67,7 +73,7 @@
 	* src/recvt46.c, src/send_raw46.c : added.
 	* multicast option : recvstatus2, recvstatus3, recvstatus4, relaym
 
-2011-01-24  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+2011-01-23  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* prog/cpraw : added bash script.
 
 2011-01-12  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
@@ -135,7 +141,7 @@
 2010-12-07  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* realloc() memory leak check.
 
-2010-12-03  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+2010-12-01  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* Version 2.1.17 released.
 	* added substitution functions :
 	  src/fileblocks.c, src/memcmp.c, src/malloc.c, src/realloc.c
@@ -163,9 +169,6 @@
 
 2010-11-16  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* prog/windiffq : added.
-
-2010-11-09  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
-	* make new branch 'rel-64bit_SEVO'
 
 2010-11-08  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* Version 2.1.14 released.
@@ -726,7 +729,7 @@
 	* Version 1.1.79 released.
 
 2006-03-27  Tsuruoka Hiroshi <tsuru@eri.u-tokyo.ac.jp>
-	* wintowin: BUG FIX (appealed by T. UEMURA)
+	* wintowi:n BUG FIX (appealed by T. UEMURA)
 	* Version 1.1.78 released.
 
 2006-03-25  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>

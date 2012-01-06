@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.35.2.15 2011/11/17 07:12:19 uehira Exp $
+# $Id: Makefile.am,v 1.35.2.16 2012/01/06 10:31:43 uehira Exp $
 #
 
 # Version number of shared libraries.
@@ -66,7 +66,7 @@ TAPE_USER_MATH=pmon elist events evdetect
 ONLINE_MATH=ecore ecore2 raw_time winrandsimu6
 OFFLINE_USER_MATH=wtime
 #OFFLINE_MATH=dewin select_stations
-OFFLINE_MATH=dewin select_stations hypomhc hypomhc2 wintosac select_bylatlon
+OFFLINE_MATH=dewin select_stations hypomhc wintosac select_bylatlon
 
 OFFLINE_USER=$(OFFLINE_X) $(OFFLINE_F77) wed wck wadd $(OFFLINE_MATH) wchch pick2tseis \
              wch pick2finalb pick2final finalb2final final2finalb finalb2seis \
@@ -78,7 +78,6 @@ TAPE_USER=$(RTAPE) $(FROMTAPE) wdisk wdiskts ras2rpdl ras2lips file_older raw2mo
 ONLINE=order raw_mon $(WTAPE) setexb timeout raw_raw raw_100 cormeisei shmdump \
        raw_ch extraw insert_raw insert_trg find_picks raw_shift ls8tel16_raw\
 	shmcounter\
-       raw_clip \
        $(ONLINE_SO) $(ONLINE_MATH) $(ONL_FREEBSD)
 
 ONL_OPT_=robot
@@ -169,7 +168,6 @@ install-exec-hook:
 	(rm -f $(DESTDIR)@bindir@/recvstatus4d; cd $(DESTDIR)@bindir@ && @LN_S@ recvstatus4 recvstatus4d)
 	(rm -f $(DESTDIR)@bindir@/ls8tel16_rawd; cd $(DESTDIR)@bindir@ && @LN_S@ ls8tel16_raw ls8tel16_rawd)
 	(rm -f $(DESTDIR)@bindir@/recvt_LS7000d; cd $(DESTDIR)@bindir@ && @LN_S@ recvt_LS7000 recvt_LS7000d)
-	(rm -f $(DESTDIR)@bindir@/raw_clipd; cd $(DESTDIR)@bindir@ && @LN_S@ raw_clip raw_clipd)
 
 uninstall-local:
 	rm -f $(DESTDIR)@bindir@/send_mon
@@ -210,7 +208,6 @@ uninstall-local:
 	rm -f $(DESTDIR)@bindir@/recvstatus4d
 	rm -f $(DESTDIR)@bindir@/ls8tel16_rawd
 	rm -f $(DESTDIR)@bindir@/recvt_LS7000d
-	rm -f $(DESTDIR)@bindir@/raw_clipd
 
 ######----- Libraries -----
 ### static library
@@ -443,10 +440,6 @@ hypomhc_SOURCES = hypomhc.c pltxy.h $(SUBFUNC_H)
 hypomhc_LDADD = $(WIN_NORMAL_LIB) -lm
 #hypomhc_CFLAGS = $(AM_CFLAGS)
 
-hypomhc2_SOURCES = hypomhc2.c pltxy.h $(SUBFUNC_H)
-hypomhc2_LDADD = $(WIN_SYSTEM_LTLIB) -lm
-#hypomhc2_CFLAGS = $(AM_CFLAGS)
-
 sends_SOURCES = sends.c $(WIN_LIBH)
 sends_LDADD = $(WIN_NORMAL_LIB) $(WIN_LOG_LTLIB) @LIBNSL@ @LIBSOCKET@
 
@@ -461,9 +454,6 @@ recvstatus3_LDADD = $(WIN_LOG_LTLIB) $(WIN_NORMAL_LIB) @LIBNSL@ @LIBSOCKET@
 
 recvstatus4_SOURCES = recvstatus4.c $(WIN_LIBH) ls7000.h
 recvstatus4_LDADD = $(WIN_LOG_LTLIB) $(WIN_NORMAL_LIB) @LIBNSL@ @LIBSOCKET@
-
-raw_clip_SOURCES = raw_clip.c $(WIN_LIBH) $(GC_CHECK_INCLUDE)
-raw_clip_LDADD = $(WIN_LOG_LTLIB) $(WIN_SYSTEM_LTLIB) @LIBSHMGET@ $(GC_CHECK_LIB)
 
 ls8tel16_win_SOURCES = ls8tel16_win.c $(WIN_LIBH) $(GC_CHECK_INCLUDE) ls8tel.h ls8tel.c
 ls8tel16_win_LDADD = $(WIN_NORMAL_LIB) $(GC_CHECK_LIB)

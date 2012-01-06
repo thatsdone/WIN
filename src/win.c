@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.38.2.22 2011/11/17 11:25:52 uehira Exp $
+   $Id: win.c,v 1.38.2.23 2012/01/06 10:31:44 uehira Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -23,10 +23,10 @@
 #else
 #define NAME_PRG      "win32"
 #endif
-#define WIN_VERSION   "2011.11.17(+Hi-net) (UEHIRA)"
+#define WIN_VERSION   "2011.12.6(+Hi-net)"
 
 static const char rcsid[] =
-  "$Id: win.c,v 1.38.2.22 2011/11/17 11:25:52 uehira Exp $";
+  "$Id: win.c,v 1.38.2.23 2012/01/06 10:31:44 uehira Exp $";
 
 #define DEBUG_AP      0   /* for debugging auto-pick */
 /* 5:sr, 4:ch, 3:sec, 2:find_pick, 1:all */
@@ -126,7 +126,6 @@ LOCAL
 
 #include <stdio.h>
 #include <string.h>
-#include <errno.h>
 
 #if TIME_WITH_SYS_TIME
 #include <sys/time.h>
@@ -363,8 +362,6 @@ LOCAL
 #define PARAM_FINAL   14 /* directory for other hypos */
 #define PARAM_DPI     15 /* dot/inch of hardcopy printer */
 #define PARAM_TEMP    16 /* temporary working directory */
-#define PARAM_SSTRUCT 17 /* special structure */
-#define PARAM_SSTA    18 /* special staion */
 
 #define X_Z_CHN       0
 #define Y_Z_CHN       (PIXELS_PER_LINE*0)
@@ -451,7 +448,6 @@ LOCAL
 /* psup screen */
 /* mech screen */
 #define UPPER       6
-#define MECHA       7
 
 #define   LEVEL_1   0.010   /* error width */
 #define   LEVEL_2   0.030   /* good sharpness */
@@ -465,7 +461,7 @@ LOCAL
     *func_map2[]={"","OTHRS","$"},
     *func_map3[]={"","RATIO","$"},
     *func_psup[]={"","RFSH","RETN","COPY","MAP","$"},
-    *func_mech[]={"","RFSH","RETN","COPY","MAP","STNS","UP/LO","MECHA","$"};
+    *func_mech[]={"","RFSH","RETN","COPY","MAP","STNS","UP/LO","$"};
 
 #define put_reverse(bm,xzero,yzero,xsize,ysize) \
   put_bitblt(bm,xzero,yzero,xsize,ysize,bm,xzero,yzero,BF_DI)
@@ -1041,7 +1037,7 @@ static double pixels_per_km,lat_cent,lon_cent,mec_rc,alat0,along0,pdpi;
 static double  *dbuf,*dbuf2;
 static int32_w *buf,*buf2;
 
-static int  do_chck;   /* if 0, ignore channels table check */
+static int  do_chck;   /* channel table check  1:check, 0:warning only, -1:no check(default) */
 
 /*********************** prototypes **********************/
 static void xgetorigin(Display *, Window, int *, int *, unsigned int *,
@@ -1142,7 +1138,6 @@ static void make_visible(int);  /* check 2010.6.17 */
 static void list_line(void);  /* check 2010.6.17 */
 static void raise_ttysw(int);  /* check 2010.6.17 */
 static void adj_sec_win(int *, double *, int *, double *);  /* check 2010.6.17 */
-static void calc_mec(void);
 static void get_calc(void);  /* check 2010.6.17 */
 #if HINET_EXTENTION_3>=2
 static int load_data_prep(int);  /* check 2010.6.18 */
@@ -2125,7 +2120,7 @@ print_usage(void)
   fprintf(stderr,"                  d [file] - hypo data file\n");
   fprintf(stderr,"                  e [file] - exclusively use ch file\n");
   fprintf(stderr,"                  f    - fit window to screen (X only)\n");
-  fprintf(stderr,"                  g    - Ignore results of channels table check\n");
+  fprintf(stderr,"                  g    - check channel table\n");
   fprintf(stderr,"                  h    - print usage\n");
   fprintf(stderr,"                  i [ch# initial] - exclusively use ch\n");
   fprintf(stderr,"                  m ([period]h/d) ([interval]m) - 'just map' mode\n");
@@ -2648,6 +2643,7 @@ just_map:
         }
       }
 
+    if(do_chck>=0) {
     /***** check channel table *****/
     if ((sys_ch_list = MALLOC(int, kk)) == NULL)
       emalloc("sys_ch_list");
@@ -2763,6 +2759,7 @@ just_map:
     FREE(chcheck);
     FREE(sys_ch_list);
     rewind(fp);
+    }
 
     ft.n_ch_ex=ft.n_ch;
     kk=0;
@@ -4784,7 +4781,7 @@ main(int argc, char *argv[])
   background=map_only=mc=bye=auto_flag=auto_flag_hint=not_save=autpk_but_off=calc_line_off=0;
   copy_file=got_hup=ft.ch_exclusive=0;
   mon_offset=just_hypo=just_hypo_offset=0;
-  do_chck = 1;
+  do_chck =(-1);
   /* flag_save=sec_block=1; */
   sec_block=1;
   flag_save=0;  /* .sv obsolete. */
@@ -4814,10 +4811,12 @@ main(int argc, char *argv[])
       case 'f':   /* fit height */
         fit_height=1;
         break;
-      case 'g':   /* ignore results of channels table check */
-        do_chck = 0;
+      case 'g':   /* channels table check */
+        do_chck=1;
+/*        do_chck = 0;
 	fprintf(stderr, "\n\n**** Ignore results of channels table check!!\n");
 	fprintf(stderr, "**** Use '-g' option AT YOUR OWN RISK!!\n\n\n");
+*/
         break;
       case 'i':   /* ch inclusive */
         strcpy(chstr,optarg);
@@ -4952,7 +4951,11 @@ main(int argc, char *argv[])
         } 
       }
     }
-  if(init_process(argc,argv,optind)==0) exit(1);
+  if(init_process(argc,argv,optind)==0) {
+    if(copy_file)
+      unlink(ft.dat_file);
+    exit(1);
+  }
   if(NULL == (dbuf  =(double *)win_xmalloc((ft.sr_max+1)*sizeof(double)))){
      fprintf(stderr, "Cannot malloc dbuf\n");
      exit(1);
@@ -7313,49 +7316,6 @@ adj_sec_win(int *tm, double *se, int *tmc, double *sec)
   *sec=(double)tmc[5]+f;
   }
 
-static void
-calc_mec(void)
-{
-  char text_buf[LINELEN];
-  char final_name[NAMLEN], mecout_name[NAMLEN], ps_name[NAMLEN];
-  int  fd_final;
-  FILE  *fp_final, *fq;
-
-  fprintf(stderr, "MECHA\n");
-  if(read_parameter(PARAM_TEMP, text_buf) == 0)
-    strcpy(text_buf, ".");
-  snprintf(final_name, sizeof(final_name), "%s/final.XXXXXX", text_buf);
-  snprintf(mecout_name, sizeof(mecout_name), "%s/mecout.XXXXXX", text_buf);
-  snprintf(ps_name, sizeof(ps_name), "%s/psname.XXXXXX", text_buf);
-
-  /* final file */
-  if ((fd_final = mkstemp(final_name)) == -1)
-    (void)fprintf(stderr, "%s: %s\n", strerror(errno), final_name);
-  if ((fp_final = fdopen(fd_final, "w")) == NULL)
-    (void)fprintf(stderr, "%s\n", strerror(errno));
-  fq = fopen(ft.finl_file, "r");
-  while(fgets(text_buf, sizeof(text_buf), fq) != NULL)
-    fprintf(fp_final, "#f %s",text_buf);
-  fclose(fp_final);
-
-  /* GAMECHA output name */
-  if (mkstemp(mecout_name) == -1)
-    (void)fprintf(stderr, "%s: %s\n", strerror(errno), mecout_name);
-  /* ps name */
-  if (mkstemp(ps_name) == -1)
-    (void)fprintf(stderr, "%s: %s\n", strerror(errno), ps_name);
-
-  snprintf(text_buf, sizeof(text_buf),
-	   "calc_mec %s %s > %s", final_name, mecout_name, ps_name);
-  system(text_buf);
-  snprintf(text_buf, sizeof(text_buf), "gv %s", ps_name);
-  system(text_buf);
-
-  (void)unlink(final_name);
-  (void)unlink(mecout_name);
-  (void)unlink(ps_name);
-}
-
 /* get calculated arrival times for all stations */
 static void
 get_calc(void)
@@ -7365,18 +7325,9 @@ get_calc(void)
   double sec,sec_ot;
   FILE *fp;
   char prog[NAMLEN],stan[NAMLEN],text_buf[LINELEN];
-  char sstr[NAMLEN], ssta[NAMLEN];
-  int  smode;
 
   read_parameter(PARAM_HYPO,prog);
   read_parameter(PARAM_STRUCT,stan);
-  smode=0;
-  smode+=read_parameter(PARAM_SSTRUCT,sstr);
-  smode+=read_parameter(PARAM_SSTA,ssta);
-  if(smode==2)
-    smode=1;
-  else
-    smode=0;
   /* write seis file */
   fp=fopen(ft.seis_file2,"w+");
   output_all(fp);
@@ -7391,13 +7342,8 @@ get_calc(void)
     ft.hypo.se,ft.hypo.alat,ft.hypo.along,ft.hypo.dep,ft.hypo.mag);
   fclose(fp);
   /* run hypo program */
-  if(smode)
-    sprintf(text_buf,"%s -c %s -s %s %s %s %s %s %s > /dev/null",
-	    prog,ssta,sstr,stan,
-	    ft.seis_file2,ft.finl_file2,ft.rept_file2,ft.init_file2);
-  else
-    sprintf(text_buf,"%s %s %s %s %s %s > /dev/null",
-	    prog,stan,ft.seis_file2,ft.finl_file2,ft.rept_file2,ft.init_file2);
+  sprintf(text_buf,"%s %s %s %s %s %s > /dev/null",
+    prog,stan,ft.seis_file2,ft.finl_file2,ft.rept_file2,ft.init_file2);
   system(text_buf);
   read_final(ft.finl_file2,&ft.hypoall);
   bcd_dec(tm_base,ft.ptr[0].time);
@@ -7824,18 +7770,9 @@ get_delta(void)
   double sec_ot,a;
   FILE *fp;
   char prog[NAMLEN],stan[NAMLEN],text_buf[LINELEN];
-  char sstr[NAMLEN], ssta[NAMLEN];
-  int  smode;
 
   read_parameter(PARAM_HYPO,prog);
   read_parameter(PARAM_STRUCT,stan);
-  smode=0;
-  smode+=read_parameter(PARAM_SSTRUCT,sstr);
-  smode+=read_parameter(PARAM_SSTA,ssta);
-  if(smode==2)
-    smode=1;
-  else
-    smode=0;
   /* write seis file */
   fp=fopen(ft.seis_file2,"w+");
   output_all(fp);
@@ -7850,13 +7787,8 @@ get_delta(void)
 	  ft.hypo.se,ft.hypo.alat,ft.hypo.along,ft.hypo.dep,ft.hypo.mag);
   fclose(fp);
   /* run hypo program */
-  if(smode)
-    sprintf(text_buf,"%s -c %s -s %s %s %s %s %s %s > /dev/null",
-	    prog,ssta,sstr,stan,
-	    ft.seis_file2,ft.finl_file2,ft.rept_file2,ft.init_file2);
-  else
-    sprintf(text_buf,"%s %s %s %s %s %s > /dev/null",
-	    prog,stan,ft.seis_file2,ft.finl_file2,ft.rept_file2,ft.init_file2);
+  sprintf(text_buf,"%s %s %s %s %s %s > /dev/null",
+	  prog,stan,ft.seis_file2,ft.finl_file2,ft.rept_file2,ft.init_file2);
   system(text_buf);
   read_final(ft.finl_file2,&ft.hypoall);
   bcd_dec(tm_base,ft.ptr[0].time);
@@ -7927,18 +7859,9 @@ locate(int flag, int hint)
   FILE *fp;
   float init_lat,init_lon;
   char prog[NAMLEN],stan[NAMLEN],text_buf[LINELEN],*ptr;
-  char sstr[NAMLEN], ssta[NAMLEN];
-  int  smode;
 
   read_parameter(PARAM_HYPO,prog);
   read_parameter(PARAM_STRUCT,stan);
-  smode=0;
-  smode+=read_parameter(PARAM_SSTRUCT,sstr);
-  smode+=read_parameter(PARAM_SSTA,ssta);
-  if(smode==2)
-    smode=1;
-  else
-    smode=0;
   /* write and read seis file */
   fp=fopen(ft.seis_file,"w+");
   output_pick(fp);
@@ -7978,13 +7901,8 @@ locate(int flag, int hint)
     }
   fclose(fp);
   /* run hypo program */
-  if(smode)
-    sprintf(text_buf,"%s -c %s -s %s %s %s %s %s %s",
-	    prog,ssta,sstr,stan,ft.seis_file,ft.finl_file,
-	    ft.rept_file,ft.init_file);
-  else
-    sprintf(text_buf,"%s %s %s %s %s %s",prog,stan,ft.seis_file,ft.finl_file,
-	    ft.rept_file,ft.init_file);
+  sprintf(text_buf,"%s %s %s %s %s %s",prog,stan,ft.seis_file,ft.finl_file,
+    ft.rept_file,ft.init_file);
   if(flag==0) strcat(text_buf," > /dev/null");
   system(text_buf);
   bell();
@@ -10578,10 +10496,6 @@ proc_mecha(void)
             refresh(999);
             ring_bell=0;
             break;
-	  case MECHA:
-	    raise_ttysw(1);
-	    calc_mec();
-	    break;
           }
         }
       else if(mecha_mode==MODE_DOWN)

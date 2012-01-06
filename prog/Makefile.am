@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.15.2.6 2011/09/09 03:30:04 uehira Exp $
+# $Id: Makefile.am,v 1.15.2.7 2012/01/06 10:31:42 uehira Exp $
 #
 #  Makefile.am in prog subdirectory.
 #
@@ -29,8 +29,8 @@ WIN_TCLSH_PROG = winsimu.in shmsimu.in
 WIN_TCLSH_BIN = winsimu shmsimu
 
 # perl script
-WIN_PERL_PROG = ch2mf.in ee_manager.in final2mf.in wincd.in pick2pick.in datej.pl.in wincat.in ck_ls8800cst.in winmap2pickfile.in
-WIN_PERL_BIN = ch2mf ee_manager final2mf wincd pick2pick datej.pl wincat ck_ls8800cst winmap2pickfile
+WIN_PERL_PROG = ch2mf.in ee_manager.in final2mf.in wincd.in pick2pick.in datej.pl.in wincat.in ck_ls8800cst.in
+WIN_PERL_BIN = ch2mf ee_manager final2mf wincd pick2pick datej.pl wincat ck_ls8800cst
 
 # bash scripst
 WIN_BASH_PROG = cpraw.in

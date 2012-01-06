@@ -1,4 +1,9 @@
- $Id: ChangeLog,v 1.202 2011/12/01 06:15:30 uehira Exp $
+ $Id: ChangeLog,v 1.203 2012/01/06 09:37:52 uehira Exp $
+
+2011-12-06  Urabe Taku <urabe@eri.u-tokyo.ac.jp>
+	* Version 2.2.3 released.
+	* src/win.c : inverted function of '-g' oprtion. check invalid channels table.
+	* prog/win_m.in : inverted description of -g option
 
 2011-12-01  TSURUOKA Hiroshi (tsuru@eri.u-tokyo.ac.jp)
 	* Version 2.2.2 released.

@@ -1,4 +1,791 @@
- $Id: ChangeLog,v 1.113 2005/06/10 14:34:25 uehira Exp $
+ $Id: ChangeLog,v 1.203.2.1 2012/01/06 10:55:46 uehira Exp $
+
+2011-12-01  TSURUOKA Hiroshi (tsuru@eri.u-tokyo.ac.jp)
+	* Version 2.2.2 released.
+	* src/wintowin.c : bug fixed.
+
+2011-11-18  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 2.2.1 released.
+	* win_m : added '-g' oprtion. pass invalid channels table.
+
+2011-11-17  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/win.c : added '-g' oprtion. pass invalid channels table.
+	* recvt46 : added '-4' and '-6' options.
+	* libwinlog : bump version.
+
+2011-11-16  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/recvt46 : fixed a bug.
+
+2011-11-13  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 2.2.0 released.
+	* win_m : fixed 'Next' and 'Previous' bottons.
+
+2011-09-16  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 2.1.29 released.
+	* prog/ck_ls8800cst : added '-t' option.
+
+2011-09-09  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* prog/ck_ls8800cst : added.
+
+2011-08-02  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 2.1.28 released.
+	* src/win.c : check channels table.
+	* src/chtbl_ck.c : added.
+	* man/chtbl_ck.1 : added.
+
+2011-07-28  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 2.1.27 released.
+	* man/win.1 : updated
+	* man/pmon.1 : fixed a typo
+
+2011-07-21  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 2.1.26 released.
+	* src/udp_dest.c : IPv6 MTU Option : always perform path MTU discovery.
+
+2011-07-20  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 2.1.25 released.
+	* src/recvt46.c : fixed a bug.
+	* src/send_raw46.c : removed obsoleted codes.
+	* daemon_mode : fixed scope.
+
+2011-06-01  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 2.1.24 (rel-64bit_SEVO tag) merged into SEVO branch.
+
+2011-05-31  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 2.1.24 released.
+	* imported 'wincat' and 'shmsimu'
+	  developed by TSURUOKA Hiroshi (tsuru@eri.u-tokyo.ac.jp).
+
+2011-05-05  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 2.1.23 released.
+	* win, win_m : removed two options : -w, -B
+	* finalb data : read & write each member of 'struct FinalB'.
+
+2011-03-22  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 2.1.22 released.
+	* remove autotool related files.
+	* src/recvt46.c, src/send_raw46.c : added.
+	* multicast option : recvstatus2, recvstatus3, recvstatus4, relaym
+
+2011-01-24  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* prog/cpraw : added bash script.
+
+2011-01-12  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 2.1.21 released.
+	* read_onesec_win(), read_onesec_win2() : fixed a bug. These bugs
+	damaged 'wadd' and 'wadd2' fatally.
+	* always specify void even if a function accepts no arguments.
+
+2011-01-11  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 2.1.20 released.
+	* src/recvt.c : print statistics if time diff. != 0.
+
+2011-01-08  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/events.c : buffer overflow check.
+	* src/pmon.c : buffer overflow check.
+	* src/recvt_LS7000.c : fixed buffer overflow.
+	* src/relaym.c : fixed buffer overflow.
+	* src/wdiskts.c : fixed buffer overflow.
+
+2011-01-07  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/recvt.c : added -e option. fixed buffer overflow.
+	* src/relay.c : added -e option. fixed buffer overflow.
+	* src/order.c : fixed buffer overflow.
+	* src/send_raw.c : fixed buffer overflow.
+	* src/wdisk.c : fixed buffer overflow.
+
+2010-12-28  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 2.1.19 released.
+	* src/win.c : avoid 0 byte malloc request in just_hypo mode.
+
+2010-12-24  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/win.c : avoid 0 byte malloc request in map mode.
+
+2010-12-23  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Explicitly specify array bounds.
+
+2010-12-22  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/win_xmalloc.c : added.
+	malloc() --> win_xmalloc() or MALLOC()
+	realloc() --> win_xrealloc() or REALLOC()
+	calloc() --> win_xcalloc() or CALLOC().
+	free() --> win_xfree() or FREE().
+	* src/winlib.c : added get_sysch_mon().
+	* src/winadd.c : added -M option.
+
+2010-12-21  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Renamed 'wconst.h' to 'w_const.h'.
+	* Renamed 'wmacros.h' to 'w_macros.h'.
+	* Renamed 'wproto.h' to 'w_proto.h'.
+	* Renamed 'wstruct.h' to 'w_struct.h'.
+	* Renamed 'daily_rawdiff' to 'daily_windiff'.
+
+2010-12-10  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/winpickfile.c : fixed a potential bug.
+
+2010-12-09  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* compatibility for DESTDIR option.
+	* configure.in : portable sh script.
+
+2010-12-08  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 2.1.18 released.
+	* imported win pickfile related libraries.
+	* src/winpickfile.[ch] : added.
+
+2010-12-07  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* realloc() memory leak check.
+
+2010-12-03  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 2.1.17 released.
+	* added substitution functions :
+	  src/fileblocks.c, src/memcmp.c, src/malloc.c, src/realloc.c
+
+2010-11-26  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 2.1.16 released.
+	* src/winlib.c : check system type using AC_CHECK_SIZEOF.
+	* configure.in : for cross-compile (Linux)
+
+2010-11-25  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/evdetect.c : fixed a bug.
+	* src/wtape.c : conflict "SIZE_MAX" in Linux (/usr/include/stdint.h).
+
+2010-11-24  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* configure.in : check 'statfs()' if 'struct statfs' exists.
+	                 for NetBSD (appealed by K. OHTAKE)
+
+2010-11-23  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 2.1.15 released.
+	* create header files which can include from other sources.
+
+2010-11-20  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* prog/daily_rawdiff : added.
+	* prog/windiffq : check file size.
+
+2010-11-16  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* prog/windiffq : added.
+
+2010-11-09  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* make new branch 'rel-64bit_SEVO'
+
+2010-11-08  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 2.1.14 released.
+	* src/winlib.h : check SHM_R & SHM_W macros. (for Cygwin etc.)
+
+2010-11-03  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 2.1.13 released.
+	* src/order.c : system clock mode (-a) : fixed a bug.
+
+2010-10-25  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 2.1.12 released.
+	* configure.in : libwinlog.la : link '-lnsl' and '-lsocket'. (SunOS)
+	   : added '--enable-statfs64' option.
+	   : FFLAGS : added "-fno-automatic -finit-local-zero" if they work.
+
+2010-10-16  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/shmcounter.c : added.
+
+2010-10-17  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* configure.in : added AM_PROG_CC_C_O
+	* compile : again added.
+
+2010-10-16  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/pmon.c : buffer overflow check (partially).
+
+2010-10-13  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 2.1.11 released.
+	* src/win2fix.c, src/winform.c, src/adj_time_m.c :
+	            removed. (already moved to winlib.c)
+	* src/recvnmx.c : 64bit check?
+	* src/recvts.c : 64bit check?
+	* src/rawsrv_info.c : 64bit check.
+	* src/raw_time.c : 64bit check.
+
+2010-10-12  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/raw_shift.c : 64bit check. eobsize_in(auto).
+	* src/raw_raw.c : 64bit check.
+	* src/order.c, src/raw_raw.c, src/raw_time.c, src/send_raw.c,
+	  src/shmdump.c, src/wdisk.c : fixed eobsize_in counter bug.
+	* src/raw_ch.c : 64bit check. eobsize_in(auto). fixed a bug.
+	* src/raw_100.c : 64bit check. eobsize_in(auto).
+	* src/ls8tel_STS.c : 64bit check.
+	* src/ls8tel_STM.c : 64bit check.
+	* src/ls8tel16_win.c : 64bit check.
+	* src/ls8tel16_raw.c : 64bit check.
+	* src/elist.c : Fixed bug. 64bit check.
+	* src/file_older.c : ANSI C
+	* Version 2.1.10 released.
+
+2010-10-11  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/ecore2.c : 64bit clean?
+
+2010-10-09  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/ecore.c : 64bit clean? & fixed bugs.
+
+2010-10-08  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/cormeisei.c : 64bit check? & fixed bugs.
+	* src/insert_trg.c : 64bit check.
+	* src/insert_raw.c : fixed buffer overrun bugs.
+	                     safe for dangling pointer.
+
+2010-10-07  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/wform.c : 64bit clean.
+	* src/winrandsimu6.c : 64bit clean?
+	* src/wintowin.c : 64bit clean?
+	* src/wintosac.c : ANSI C
+	* src/timeout.c : ANSI C
+	* src/select_bylatlon.c : ANSI C
+	* src/select_stations.c : ANSI C
+
+2010-10-04  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/recvt.c : fixed bugs in check_pno().
+	                ht[].pnos[] : unsigned int --> int
+	* src/relay.c : partial backout check_pno().
+	* src/relaym.c : 64bit clean.
+	* src/winlib.c : check_ts()
+	* configure.in : use statvfs() in case of __SVR4 (SunOS)
+	* src/recvt_LS7000.c : 64bit clean?
+
+2010-10-02  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* configure.in : force #include <sys/param.h> at the time of
+  	                 <sys/mount.h> existance check.
+
+2010-09-30  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/recvstatus.c : 64bit check.
+	* src/recvstatus2.c : added daemon mode. 64bit check.
+	* src/recvstatus3.c : 64bit check.
+	* src/recvstatus4.c : 64bit check.
+	* src/relay.c : 64bit clean?
+	* src/winlib.c : dir_check()
+	* src/udp_accept.c : udp_accept4()
+	* src/udp_dest.c : udp_dest4()
+	* Version 2.1.9 released.
+
+2010-09-29  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/winlib_log.c : Shm_read(), Shm_create()
+	* src/winlib.c : Shm_read_offline(), Shm_create_offline()
+
+2010-09-27  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* configure.in : check struct statfs.f_bavail size.
+	    dirent.h : check include file, and defined DIRNAMLEN macro.
+	    update checking methods : socklen_t, struct tm.tm_gmtoff
+	* src/events.c : 64 bit clean?
+	* src/wdisk.c : check __SVR4 and __NetBSD__.
+	* update autotools
+	  autoconf-2.67
+	  automake-1.10
+	  libtool-2.2.10
+	* Version 2.1.8 released.
+
+2010-09-21  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/pmon.c : 64 bit clean?
+	* src/evdetect.c : 64 bit clean?
+	* src/ras2util.c : join 'ras2lips.c' and 'ras2rpdl.c'. 64bit check.
+
+2010-09-20  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/extraw.c : 64 bit clean.
+	* src/send_raw_old.c : 64 bit clean?
+	* src/final2finalb.c : 64bit check.
+	* src/finalb2final.c : 64bit check.
+	* src/finalb2seis.c : 64bit check.
+	* src/find_picks.c : 64bit check.
+	* src/pick2final.c : 64bit check.
+	* src/pick2finalb.c : 64bit check.
+	* src/pick2tseis.c : 64bit check.
+	* while(1) --> for(;;)
+	* adj_sec() moved to 'src/winlib.c'.
+	  src/final2finalb.c, src/pick2finalb.c
+	  win.c : adj_sec() --> adj_sec_win()
+	* read_param() ---> read_param_line() [src/winlib.c]
+	  src/evdetect.c, src/events.c, src/pmon.c, src/setexb.c, src/wtape.c
+
+2010-09-18  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/send_raw.c : 64 bit clean?
+
+2010-09-17  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/wadd2.c : 64 bit clean.
+	* src/rtape.c : 64 bit clean.
+	* src/wtime.c : 64 bit clean.
+	* src/wck_wdisk.c : 64 bit clean.
+	* rename MACROs
+	  SWAPL --> SWAP32
+	  SWAPS --> SWAP16
+	  MKSWAPS --> MKSWAP16
+	* replace read_data() with read_onesec_win2() [src/winlib.c]
+	  src/wch.c, src/wchch.c, src/wed.c, src/wtime.c
+	* shift_sec() moved to 'src/winlib.c'.
+	  src/raw_time.c, src/send_raw.c, src/wtime.c
+
+2010-09-16  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/wadd.c : 64 bit clean.
+	* src/wed.c : 64 bit clean.
+	* src/winadd.c : added a option (-m).
+	  -m : only try memory mode.
+
+2010-09-14  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/winadd.c : added options (-f, -s).
+	  -f : force file mode.
+ 	  -s : channel sort mode.
+
+2010-09-06  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* prog/ee_manager, prog/wincd : The $* variables has been removed
+	  in perl 5.10.
+	* [src][man*]/Makefile.am : uninstall symblic links.
+	  uninstall-hook --> uninstall-local
+	* Version 2.1.7 released.
+
+2010-08-13  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/split_win.c : added.
+	* Version 2.1.6 released.
+
+2010-06-30  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/dewin.c : fixed bug.
+
+2010-06-24  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/winlib.c : Shm_init() : set max. remain size of shared memory.
+	* Version 2.1.5 released.
+
+2010-06-23  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* use str2double() from library : win.c, elist.c
+	  hypomhc : rename str2double() --> str2double_h()
+	* src/win.c : 64bit clean?
+	* Version 2.1.4 released.
+
+2010-06-18  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/winlib.h : WIN_sr : uint32_w --> int32_w
+	* src/winlib.h : added structure for binary hypo file : 'struct FinalB'
+	  delete declaration in final2finalb.c, finalb2final.c,	finalb2seis.c,
+	  pick2finalb.c, win.c.
+	* src/win.c : use hypot().
+	* Version 2.1.3 released.
+
+2010-06-17  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/ulaw.[ch] : cvt.[ch] renamed.
+	* src/win.c : ulaw() moved to 'ulaw.c'. use win2fix().
+
+2010-06-16  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/win.c : fixed buffer overrun bug.
+
+2010-06-15  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/win.c : bug fixed [in get_trigch()]. (MFH)
+	  malloc return check : 0 --> NULL.
+
+2010-06-13  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/relay.c : bug fixed.
+	* Version 2.1.2 released.
+
+2010-04-15  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/relay.c : bug fixed.
+	* Version 2.1.1 released.
+
+2010-04-03  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* use pltxy() from library : hypomhc, select_bylatlon, select_stations
+	* src/dewin.c : 64 bit clean?
+	* src/hypomhc.c : K&R --> ANIS C
+	* src/win.c : supress warnings.
+	* Version 2.1.0 released.
+
+2010-04-02  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* configure.in : added option '--disable-fortran'.
+	* compatible with automake-1.10.
+	* mkinstalldirs : you can remove, if you use automake-1.10.
+	* Version 2.0.12 released.
+
+2010-04-01  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* use libtool (ver.2.2.6b) for shared library.
+	* Version 2.0.11 released.
+
+2010-03-06  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/cvt.[ch] : created. u-law audio format.
+	* src/dewin.c : cvt() moved to 'cvt.c'.
+
+2010-02-28  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/pltxy.[ch] : created.
+	* hypomhc.c, select_bylatlon.c, select_stations.c, win.c :
+	  pltxy() moved to 'pltxy.c'.
+	* Version 2.0.10 released.
+
+2010-02-18  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/fromtape.c, src/rtape.c :
+	  mt_pos(), read_exb() [renamed read_exb1()] : moved to 'winlib.c'.
+	  some macros (TRY_LIMIT, TIME[1-3]) also moved to 'winlib.c'.
+
+2010-02-17  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* e_ch[241] array moved to 'winlib.h'. (for old format)
+	* src/fromtape.c : 64 bit clean?
+
+2010-02-16  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/wtape.c : 64 bit clean?
+	* src/setexb.c : 64 bit clean?
+
+2010-02-03  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* configure.in : check sys/mtio.h (for fromtape, rtape, wtape).
+	If sys/mtio.h does not exist, these programs are not compiled
+	(ex. Mac OS X 10.6).
+	* src/raw2mon : check buffer overflow.
+
+2010-02-02  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/insert_raw : 64 bit clean?
+	* src/win_system.c : merged into src/winlib.c
+	* src/win_system.h : merged into src/winlib.h
+ 	* Version 2.0.9 released.
+
+2010-01-12  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/winlib.c, src/winadd.c, src/wdiskts : bcd2time()-->bcd_t(), time2bcd()-->t_bcd()
+
+2010-01-04  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/wdiskts : 64 bit clean?
+	* src/winlib.h : introduced macro: WIN_YEAR.
+
+2009-12-26  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/winlib.c : added get_sysch() [moved from win_system.c], t_bcd(), bcd_t(), bcd2time(), time2bcd(), time_cmpq()
+	* src/winlib_log.c : created. added find_oldest().
+
+2009-12-25  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* MF head.
+	* src/relaym.c : bug fixed.
+	* Version 2.0.8 released.
+
+2009-12-21  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/raw_mon : 64 bit clean?
+	* src/wdisk : 64 bit clean?
+	* 2nd arg of shmat() : (void *)0
+
+2009-12-18  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/order : 64 bit clean?
+	* time(0) --> time(NULL)
+	* 65536 --> WIN_CHMAX
+
+2009-12-16  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* MF head. Just imported the following sources.
+	* src/winrandsimu6.c : added WIN random simulater, real-time version.
+	* src/select_bylatlon.c : added.
+	* Version 2.0.7 released.
+
+2009-08-26  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/shmdump : avoid stack memory overflow. (exp. MacOSX, OBS266)
+
+2009-08-01  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/winadd : 64 bit clean?
+	* src/evdetect.c : added. Another version of event detect.
+	* Version 2.0.6 released.
+
+2009-07-31  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/wchch : 64 bit clean
+	* src/wch : 64 bit clean
+	* src/wchasn : 64 bit check
+	* src/win2raw : 64 bit check
+
+2009-07-30  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/raw2mon : 64 bit clean
+	* src/winlib.h : added get_mon(), compress_mon(), make_mon().
+
+2009-03-19  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/win.c (2009.3.19) :
+	  define_bm(lBitmap *, char, int, int, char *);	-->
+	       define_bm(lBitmap *, char, unsigned int, unsigned int, char *);
+	  width_dpy,height_dpy : int --> unsigned int
+
+2009-03-18  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/win.c (2009.3.18) : remove unused variables.
+
+2009-03-17  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/win.c (2009.3.17) : make prototypes.
+
+2009-03-11  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/recvstatus4.c src/ls7000_A9 : fixed bug.
+
+2009-03-09  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/win.c (2009.3.9) : MAP mode reactivate.
+	* Version 2.0.5 released.
+
+2009-03-06  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* recvstatus4, ls7000_A8, ls7000_A9 : added.
+	* src/ls8tel_STM.c, src/ls8tel_STS.c : 64 bit clean
+	* Version 2.0.4 released.
+
+2009-02-27  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* MF Version 1.1.92 released.
+	* configure.in : FFLAGS added "-fno-automatic -finit-local-zero"
+
+2009-02-19  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* MFH.
+	* prog/win_m : do not use "-kanjifont". comment out.
+
+2009-02-15  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* MF Version 1.1.91 released.
+	* src/shmdump.c : bug fixed.
+
+2009-01-08  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/winlib.h : added MKSWAPS.
+	* src/recvt.c : bug fixed in send_req(). SWAPS --> MKSWAPS.
+	* src/shmdump.c : fixed bugs?
+	* prog/ee_manager : tail +5 --> tail -n +5 (for Linux system)
+
+2008-12-31  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* MF Version 1.1.89 release.
+	* src/shmdump.c : fixed bugs.
+
+2008-12-29  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* getopt() : EOF --> -1
+
+2008-12-17  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* win2fix() : use win_chheader_info().
+	* src/recvt : 64 bit clean?
+	* Version 2.0.3 released.
+
+2008-12-17  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* MF Version 1.1.88 release.
+	* src/events.c : added NetBSD specific macro.
+	* src/recvnmx.c, src/recvs.c, src/recvstatus.c, src/recvstatus2.c,
+	  src/recvt.c, src/relay.c, src/send_raw.c, src/send_raw_old.c,
+ 	  src/sends.c :
+	   include arpa/inet.h if exists.
+	* configure.in : check arpa/inet.h.
+
+2008-11-23  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/winlib.h : introduced TIME_OFFSET.
+	* src/winlib.h : all SR_MON definition moved to this file.
+	* src/winlib.c : added win_chheader_info().
+
+2008-11-18  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/winlib.c : added Shm_init().
+	* src/winlib.c : added WIN_version().
+
+2008-11-14  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* wck : 64 bit clean.
+	* Version 2.0.2 released.
+
+2008-11-13  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* MF Version 1.1.98-LIB release.
+	* install include files.
+        * src/winlib.h : remove LongFromBigEndian(a) macro.
+	* src/winlib.c : read_onesec_win() is moved from src/win_system.c.
+	* dewin.c, wadd.c, wadd2.c, wck.c, wck_wdisk.c
+	               : replace read_data() with read_onesec_win().
+
+2008-11-13  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* suppress warnings.
+	* MF Version 1.1.97-LIB release.
+	* src/recvs.c, src/sends.c : use library (src/win_log.c).
+	* src/recvstatus.c, src/recvstatus2.c: use library (src/win_log.c).
+	* Version 2.0.1 released.
+
+2008-11-11  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* new branch 'rel-64bit' for 64 bit environment from 1.1.96-LIB release.
+	* src/winlib.h : check byte length.
+	* src/winlib.c : get_time(), mklong()-->mkuint4(), mkshort()-->mkuint2()
+	* Version 2.0.0 released.
+
+2008-11-11  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* if 'char' is unsigned, exit make command.
+	* Version 1.1.96-LIB released.
+
+2008-06-21  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* prog/chtbl2kml : added.
+
+2008-05-19  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 1.1.95-LIB released.
+	* src/winlib.c : dec_bcd() : bug fixed from 2008-05-16 commitment.
+
+2008-05-18  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* struct Shm : src/winlib.h
+
+2008-05-17  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* SWAPL(a), SWAPS(a), SWAPF(a) : common	declaration in src/winlib.h.
+	* LongFromBigEndian(a) : common	declaration in src/winlib.h.
+	* src/winlib.h : include src/subst_func.h.
+	* src/winlib.c : strncmp2(), strcmp2().
+
+2008-05-16  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 1.1.94-LIB released.
+	* b2d[], d2b[] : common declaration in src/winlib.h.
+
+2008-05-07  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 1.1.93-LIB released.
+	* src/relay.c : use library (src/win_log.c).
+
+2008-05-01  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 1.1.92-LIB released.
+	* MF Version 1.1.87. (2008-04-17 --- 2008-04-24)
+
+2008-04-24  Shigeki Nakagawa  <nakagawa@eri.u-tokyo.ac.jp>
+	* src/events.c, src/wdisk.c : add USE_LARGE_FS option.
+           In very large file system (maybe over 8TB) on linux server,
+           use statfs64(2) instead of statfs(2).
+
+2008-04-17  Tsuruoka Hiroshi <tsuru@eri.u-tokyo.ac.jp>
+	* bug fix : datej.pl.in
+	* MeSO-net : wintosac.c, wintowin.c
+
+2008-04-14  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/win.c, src/hypomhc.c : check FreeBSD OS version.
+	* MFH (2008-04-13 --- 2008-04-14)
+
+2008-04-13  Shigeki Nakagawa  <nakagawa@eri.u-tokyo.ac.jp>
+	* src/wdisk.c (main): bug fix: initialize eobsize=0
+	                           (reported by M. Sato)
+
+2008-04-07  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 1.1.91-LIB released.
+	* MF Version 1.1.86. (2008-02-20 --- 2008-04-07)
+	* configure.in : check Tcl/Tk8.0jp path.
+	* English manuals install to $mandir, and Japanese manuals install
+	  to $mandir/ja.
+	* man/intro_win.1 : added to dist & install list.
+
+2008-04-07  Urabe Taku <urabe@eri.u-tokyo.ac.jp>
+	* src/shmdump.c : fixed bug(?) in option -s (071220)
+
+2008-04-05  Urabe Taku <urabe@eri.u-tokyo.ac.jp>
+	* src/shmdump.c: bug fix : unsigned long wsize -> long wsize
+
+2008-02-20  Urabe Taku <urabe@eri.u-tokyo.ac.jp>
+	* src/win.c: avoid overflow in getting offset levels for
+	  near 32 bit data (in plot_mon() and plot_zoom()).
+
+2008-02-12  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 1.1.90-LIB released.
+	* winrawsrv.c : STAT : output file size of raw data described in LATEST.
+	                bump protocol version up to 1.0.
+
+2007-11-19  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 1.1.89-LIB released.
+	* recvt_LS7000 : imported from recvt.c.
+
+2007-09-29  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* check d_namlen exists as a member of struct DIR or not.
+
+2007-09-18  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 1.1.88-LIB released.
+	* src/rawsrv_info.c : added.
+
+2007-09-14  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/winrawreq.c : added -r and -u options.
+
+2007-09-12  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* Version 1.1.87-LIB released.
+	* MF Version 1.1.85.
+	* src/insert_trg.c : bug fixed.
+
+2007-09-10  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* added src/winrawreq.c
+	* Version 1.1.86-LIB
+
+2007-08-27  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/wck_wdisk.c : added -r option.
+	* MF Version 1.1.84.
+	* Version 1.1.85-LIB
+
+2007-08-26  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* bug fix in logfile name initialization.
+	  order.c pmon.c raw_mon.c recvts.c wdisk.c wdiskts.c
+	* Version 1.1.84-LIB
+
+2007-06-20  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* added src/filter.h
+	* src/wtape.c : remove err_sys() (not used).
+
+2007-06-19  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* MF Version 1.1.83
+	* Version 1.1.83-LIB
+	* following the Changelog commemts of the HEAD branch
+		* src/hypomhc.c : bug fixed in smode
+
+	        * src/wdisk.c: 2007.1.15 i<1000000 -> 5000000,
+		               BUFSZ 500000->1000000, BUFLIM 1000000->5000000
+		* src/cormeisei.c: MAX_SEC_SIZE 1000000 -> 5000000
+		* src/wadd2.c: MAXSIZE 1M->5M
+		* src/wadd.c: MAXSIZE 1M->5M
+		* src/raw2mon.c: MAXSIZE 1M->5M, SIZE_WBUF 300K->1M
+		* src/pmon.c: 'ch_file not found' message fixed
+
+		* src/win.c: fixed a bug in set_geometry() for resize or OPEN.
+
+2006-09-25  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* begin BRANCH_LIB branch
+	* make static library
+	* Version 1.1.80-LIB
+
+2006-09-02  Urabe Taku <urabe@eri.u-tokyo.ac.jp>
+	* src/send_raw.c: added 'no resend' mode (-R)
+
+2006-08-29  Shigeki Nakagawa  <nakagawa@eri.u-tokyo.ac.jp>
+	* src/win.c: fixed a bug in locate (by Uehira-san).
+	             fixed a bug reading pickfile.
+	             add Expert mode option.
+	              -za autpk/evdet has no effect w/o shift-key
+	              -zc not display calculated travel-times
+	              -zac both above
+	* Version 1.1.80 released.
+
+2006-05-08  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* udp_dest.c : bug fixed.
+	* imported experimental codes
+	  winrawsrvd : raw data server started by inetd.
+	  winrawcli_test : test code of raw data client.
+	* Version 1.1.79 released.
+
+2006-03-27  Tsuruoka Hiroshi <tsuru@eri.u-tokyo.ac.jp>
+	* wintowin: BUG FIX (appealed by T. UEMURA)
+	* Version 1.1.78 released.
+
+2006-03-25  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* win2raw: check data was processed or not. (appealed by T. UEMURA)
+
+2006-03-18  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* win2raw: added new mode in '-m' option.
+	* Version 1.1.77 released.
+
+2006-02-09  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* check mkdtemp(3)
+	* Version 1.1.76 released.
+
+2006-01-19  Shigeki Nakagawa  <nakagawa@eri.u-tokyo.ac.jp>
+	* src/win.c: fixed a bug in searching channel (line#6237)
+	* Version 1.1.75 released.
+
+2005-12-19 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
+        * win.c : fixed a bug in picking S (line#3803)
+	* Version 1.1.74 released.
+
+2005-09-26 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
+	* send_raw.c : don't resend packet more than once (for broadcast)
+	* recvt.c : introduced delayed resend-request (-y)
+		host:port pair is acceptable in  ctlfile
+	* Version 1.1.73 released.
+
+2005-08-10 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
+	* win.c/events.c/fromtape.c/pmon.c/rtape.c/wdisk.c/wdiskts.c/wtape.c/
+	  find_picks.c : bug in strcmp2()/strncmp2() fixed : 0-6 > 7-9
+	* Version 1.1.72 released.
+
+2005-07-27 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
+	* win.c : bug in plot_mon() fixed.
+	* Version 1.1.71 released.
+
+2005-06-25 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* ls8tel16_raw.c : bug fixed.
+	* ls8tel_STM.c : bug fixed.
+	* configure.in: added AC_C_CHAR_UNSIGNED
+	* Version 1.1.70 released.
+
+2005-06-24 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
+	* recvt.c, recvs.c, win.c:
+	  don't change optarg's content (bug fix)
+	* Version 1.1.69 released.
+
+2005-06-22 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* relaym : MF relay.c
+	  -N for passing through packet numbers
+
+2005-06-17 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* win_m : bug fixed.
+	* Version 1.1.68 released.
+
+2005-06-14 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* added Daramark LS-8000SH (LS8TEL14/16 firmware) data utility
+	  ls8tel_STM, ls8tel_STS
+	* Version 1.1.67 released.
 
 2005-06-10 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* added Daramark LS-8000SH (LS8TEL14/16 firmware) data utility
@@ -17,16 +804,16 @@
 	                : close security hall.
 	* added 'mkpicknoise'
 	* Version 1.1.64 released.
-	  
+
 2005-04-26 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* added 'recvstatus3'. receive A8/A9 packets from Daramark
 	  LS-8000SH of LS8TEL14/16 firmware
 	* Version 1.1.63 released.
-	  
+
 2005-04-20 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* win.1, pickfile.1, pick2pick.1 : updated.
 	* Version 1.1.62 released.
-	  
+
 2005-04-14 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
 	* recvnmx, recvnmx.1 : -n (NP packet) added.
 	* raw_shift.1 : bug fixed.
@@ -35,7 +822,7 @@
 2005-03-18 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* insert_raw.c, insert_trg.c, wdiskts.c, raw_time.c
 	  - memory leak check code
-	  
+
 2005-03-17 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* raw_time : time shift filter (raw format version of wtime)
 	* added configure option: --enable-memory-leak-check
@@ -140,9 +927,9 @@
 2004-11-24 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* pick2final, pick2finalb : get owner information from pickfile
 	* Version 1.1.47 released.
-	
+
 2004-11-17 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
-	* relay : check_pno() and read_chfile() brought from recvt.c 
+	* relay : check_pno() and read_chfile() brought from recvt.c
 		with host contol but without channel control (option -f)
 		write host statistics on HUP signal
 		no packet info option -n
@@ -152,54 +939,54 @@
 
 2004-11-13 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* relaym : MacOSX need #include <sys/time.h>
-	
+
 2004-11-11 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* relaym : multi destination verson of 'relay'. IPv4 & IPv6 support.
 	* Version 1.1.46 released.
-	
+
 2004-10-27 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* raw_mon : added daemon mode (raw_mond)
-	
+
 2004-10-26 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* recvt : added option -D : daemon mode (recvtd)
 	* relay : added option -D : daemon mode (relayd)
 	* send_raw : added option -D : daemon mode (send_rawd, ...)
 	* Version 1.1.45 released.
-	
+
 2004-10-21 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* order : added option -D : daemon mode (orderd)
 	* wdiskd   : Daemon mode of wdisk
 	* wdisk60d : Daemon mode of wdisk60
 	* Version 1.1.44 released.
-	
+
 2004-10-20 Tsuruoka Hiroshi <tsuru@eri.u-tokyo.ac.jp>
 	* add program of winsimu
 	* Version 1.1.43 released.
-	
+
 2004-10-14 Tsuruoka Hiroshi <tsuru@eri.u-tokyo.ac.jp>
 	* wintowin: writing to shared memory option
 	* shmdump: XINETD compile option
-	
+
 2004-10-04 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* wdisk : added option -D : Daemon mode
 	* Version 1.1.42 released.
-	
+
 2004-09-13 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* win2raw : bug fixed.
 	* Version 1.1.41 released.
-	
+
 2004-09-09 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
 	* relay : fixed a bug in -s option ("sinterface")
 	* Version 1.1.40 released.
-	
+
 2004-09-08 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
 	* win : allow initial depth  down to -3 km
 	* Version 1.1.39 released.
-	
+
 2004-09-07 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* wdisk : added option -s : Freespace mode
 	* Version 1.1.38 released.
-	
+
 2004-09-05 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
 	* stopped restriction of N of chs for selection
 	* Version 1.1.37 released.
@@ -207,7 +994,7 @@
 2004-08-30 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* order2 : remove
 	* Version 1.1.36 released.
-	
+
 2004-08-29 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
 	* man/winformat.1, man/win.1 : fixed gtbl error
 
@@ -222,29 +1009,29 @@
 2004-08-01 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* wdisk : added option -n
 	* Version 1.1.33 released.
-	
+
 2004-07-30 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* If there are no X libraries or X includes, or if you set
 	--without-x option in 'configure' command, don't compile program
 	with X library (i.e. win)
 	* Version 1.1.32 released.
-	
+
 2004-04-22 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* make md5 target in Makefile.am
 	* Version 1.1.31 released.
-	
+
 2004-03-07 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* add pick2pick filter (perl script)
 	* Version 1.1.30 released.
-	
+
 2004-03-03 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* win_m : options can be set in latest mode
 	* Version 1.1.29 released.
-	
+
 2004-02-29 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* win2raw : added option -m
 	* Version 1.1.28 released.
-	
+
 2004-01-29 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
 	* select_stations.c : fatal bug fixed !
 	* wtape.c : avoid odd byte block size for some SCSI cards
@@ -310,14 +1097,14 @@
 	* Version 1.1.19 released.
 
 2003-06-09 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
-	* hypomh.f, hypomhc.c : bug fixed by Honda/Nagai for initialization of IYEAR 
+	* hypomh.f, hypomhc.c : bug fixed by Honda/Nagai for initialization of IYEAR
 	* Version 1.1.18 released.
 
 2003-06-03 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
 	* ecore2.c : replaced err-related ext defs with '#include <errno.h>'
 
 2003-06-01 Tsuruoka Hiroshi  <tsuru@eri.u-tokyo.ac.jp>
-	* shmdump.c : add filtering option 
+	* shmdump.c : add filtering option
                     : bug fix -f option
 
 2003-05-25 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
@@ -342,7 +1129,7 @@
 2003-05-11 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
 	* ecore.c : Fixed version by N.Nakakawaji
 	* ecore2.c : Fixed version by N.Nakakawaji (and added to CVS)
-	
+
 2003-04-29 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* if cygwin environment, check libcygipc.a
 	* add one tip in win_hack.txt
@@ -352,7 +1139,7 @@
 2003-04-25 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* Version 1.1.14 released.
 	* WIN_pkg now supports Cygwin environment.
-	
+
 2003-04-16 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
         * shmdump.c : bug fix (last sec not outputted in stdin mode)
 
@@ -378,7 +1165,7 @@
 2002-12-17 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* recvstatus2.c : bug fix
 	* Version 1.1.12 released.
-	
+
 2002-12-10 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
 	* relay.c : added options -i, -p, -t(-T) and in_port=0 for stdin
 
@@ -407,16 +1194,16 @@
 
 2002-08-09 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* edit AUTHORS (add Dr. TSURUOKA)
-	
+
 2002-08-09 Urabe Taku <urabe@eri.u-tokyo.ac.jp>
 	* wed.c 1.4  Ignore illegal lines in ch list
 	* recvnmx.c 1.15  process re-tx packets properly using frag-dir (-d)
-	
+
 2002-08-08 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* Version 1.1.7 released.
 	* import 'shmx' and 'shmx2'
 	  written by TSURUOKA Hiroshi (tsuru@eri.u-tokyo.ac.jp).
-	
+
 2002-07-23 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
         * Version 1.1.4 released.
 	* add win2raw.c
@@ -442,10 +1229,10 @@
 2002-01-25 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* recvts はX86マシンの時だけコンパイルする．
 
-2002-01-23 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>	
+2002-01-23 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* Version 1.0.1 released.
 	  Don't use 'BUFSIZ' and 'FILENAME_MAX' system macros.
-	
+
 2002-01-18 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* Version 1.0.0 released.
 	* configure.in
@@ -460,7 +1247,7 @@
 	* join 'autoconf branch' to 'main branch'
 	* suppress compile warnning
 	  recvstatus.c relay.c send_raw_old.c recvnmx.c
-	
+
 2002-01-08 Urabe Taku  <urabe@eri.u-tokyo.ac.jp>
 	* send_raw.c : added option '-b' for set max IP packet size or mtu
 	* recvt.c : max packet size increased to 32KB
@@ -476,7 +1263,7 @@
 	  加しておかないとチャンネル番号以外にもマッチングすることがあり
 	  (例えば緯度の値など)，必要なチャンネルがマージしたチャンネルファ
 	  イルから抜けることがある．
-	
+
 2001-11-19 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* use strerror(3)
 	  order2.c wdiskts.c
@@ -485,16 +1272,16 @@
 	* MFC: output to current dir if not specified
 	  rtape.c
 	* MFC: fixed bug in port no. with ntohs()
-	  recvnmx.c recvs.c recvstatus.c recvt.c relay.c send_raw.c 
-	  send_raw_old.c sends.c 
+	  recvnmx.c recvs.c recvstatus.c recvt.c relay.c send_raw.c
+	  send_raw_old.c sends.c
 	* MFC: fixed write_log(strerror()) bug
-	  cormeisei.c extraw.c order.c raw_100.c raw_ch.c raw_mon.c 
-	  raw_raw.c recvnmx.c recvs.c recvstatus.c recvt.c relay.c 
+	  cormeisei.c extraw.c order.c raw_100.c raw_ch.c raw_mon.c
+	  raw_raw.c recvnmx.c recvs.c recvstatus.c recvt.c relay.c
 	  send_raw.c send_raw_old.c sends.c
-	
+
 2001-11-2 Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* autmake-1.5 と autoconf-2.13 にとりあえず対応．
-	* 代替関数は subst_func.h で与える予定．現在，strerror(3) と 
+	* 代替関数は subst_func.h で与える予定．現在，strerror(3) と
 	mktime(3) がある．
 	* FreeBSD-2,3,4，Soralis2.5.1 for sparc (gccのみ)，SunOS-4.1.4
 	(gcc のみ)，Vine Linux 2.0CR ではコンパイル出来た．

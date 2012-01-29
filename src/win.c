@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.63.2.1 2012/01/06 10:55:48 uehira Exp $
+   $Id: win.c,v 1.63.2.2 2012/01/29 03:33:07 uehira Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -23,10 +23,10 @@
 #else
 #define NAME_PRG      "win32"
 #endif
-#define WIN_VERSION   "2011.11.17(+Hi-net) (UEHIRA)"
+#define WIN_VERSION   "2012.1.29(+Hi-net) (UEHIRA)"
 
 static const char rcsid[] =
-  "$Id: win.c,v 1.63.2.1 2012/01/06 10:55:48 uehira Exp $";
+  "$Id: win.c,v 1.63.2.2 2012/01/29 03:33:07 uehira Exp $";
 
 #define DEBUG_AP      0   /* for debugging auto-pick */
 /* 5:sr, 4:ch, 3:sec, 2:find_pick, 1:all */
@@ -183,6 +183,7 @@ LOCAL
 #include <X11/cursorfont.h>
 
 #include "winlib.h"
+#include "timsac.h"
 
   typedef XPoint lPoint;    /* short ! */
   static  XSizeHints sizehints;
@@ -1199,11 +1200,6 @@ static int read_label_file(void);  /* check 2010.6.17 */
 static void get_filter(int, struct Filt *, WIN_sr, int);  /* check 2010.6.17 */
 static int form2(double, char *);  /* check 2010.6.17 */
 /* static void pltxy(double, double, double *, double *, double *, double *, int); */
-static void autcor(double *, int, int, double *, double *);  /* check 2010.6.17 */
-static void smeadl(double *,int, double *);  /* check 2010.6.17 */
-static void crosco(double *, double *, int, double *, int);  /* check 2010.6.17 */
-static void fpeaut(int, int, int, double *, double *, double *,
-		   int *, double *);  /* check?? 2010.6.16 */
 static int getar(double *, int, double *, int *, double *, double *, int);  /* check?? 2010.6.16 */
 static void digfil(double *, double *, int, double *, int, double *, double *);  /* check?? 2010.6.16 */
 static void mat_sym(double (*)[3]);  /* check?? 2010.6.16 */
@@ -11806,138 +11802,6 @@ form2(double s, char *d)
   return (1);
   }
 
-/* C version of TIMSAC, by Akaike & Nakagawa (1972) */
-static void
-autcor(double *x, int n, int lagh, double *cxx, double *z)
-  /* double *x;     original data */
-  /* int n;         N of original data */
-  /* int lagh;      largest lag */
-  /* double *cxx;   (output) autocovariances (cxx[0] - cxx[lagh]) */
-  /* double *z;      mean level */
-  {
-
-  /* mean deletion */
-  smeadl(x,n,z);
-  /* auto covariance computation */
-  crosco(x,x,n,cxx,lagh+1);
-  }
-
-static void
-smeadl(double *x,int n, double *xmean)
-  {
-  int i;
-  double xm;
-
-  xm=0.0;
-  for(i=0;i<n;i++) xm+=x[i];
-  xm/=(double)n;
-  for(i=0;i<n;i++) x[i]-=xm;
-  *xmean=xm;
-  }
-
-static void
-crosco(double *x, double *y, int n, double *c, int lagh1)
-  {
-  int i,j,il;
-  double t,bn;
-
-  bn=1.0/(double)n;
-  for(i=0;i<lagh1;i++)
-    {
-    t=0.0;
-    il=n-i;
-    for(j=0;j<il;j++)
-      {
-      t+=x[j+i]*y[j];
-      }
-    c[i]=t*bn;
-    }
-  }
-
-static void
-fpeaut(int l, int n, int lagh, double *cxx, double *ofpe, double *osd,
-       int *mo, double *ao)
-  /* int l;          upper limit of model order */
-  /* int n;          n of original data */
-  /* int lagh;       highest lag */
-  /* double *cxx;    autocovariances, cxx[0]-cxx[lagh] */
-  /* double *ofpe;   minimum FPE */
-  /* double *osd;    SIGMA^2, variance of residual for minimum FPE */
-  /* int *mo;        model order for minimum FPE */
-  /* double *ao;     coefficients of AR process, ao[0]-ao[mo-1] */
-  {
-  double sd,an,anp1,anm1,oofpe,se,d,orfpe,d2,fpe,rfpe,chi2;
-  double  *a, *b;  /* OLD : a[500], b[500] */
-  int  abnum;
-  int np1,nm1,m,mp1,i,im,lm;
-
-
-  sd=cxx[0];
-  an=n;
-  np1=n+1;
-  nm1=n-1;
-  anp1=np1;
-  anm1=nm1;
-  *mo=0;
-  *osd=sd;
-  if(sd==0.0) return; 
-  *ofpe=(anp1/anm1)*sd;
-  oofpe=1.0/(*ofpe);
-  orfpe=1.0;
-  se=cxx[1];
-
-  if (l > 0)
-    abnum = l;
-  else
-    abnum = 8;
-  /* fprintf(stderr,"l=%d abnum=%d\n", l,abnum); */
-  if ((a = (double *)win_xmalloc(sizeof(double) * abnum)) == NULL)
-      emalloc("fpeaut : a");
-  if ((b = (double *)win_xmalloc(sizeof(double) * abnum)) == NULL)
-      emalloc("fpeaut : b");
-
-  for(m=1;m<=l;m++)
-    {
-    mp1=m+1;
-    d=se/sd;
-    a[m-1]=d;
-    d2=d*d;
-    sd=(1.0-d2)*sd;
-    anp1=np1+m;
-    anm1=nm1-m;
-    fpe=(anp1/anm1)*sd;
-    rfpe=fpe*oofpe;
-    chi2=d2*anm1;
-    if(m>1)
-      {
-      lm=m-1;
-      for(i=0;i<lm;i++) a[i]=a[i]-d*b[i];
-      }
-    for(i=1;i<=m;i++)
-      {
-      im=mp1-i;
-      b[i-1]=a[im-1];
-      }
-/*fprintf(stderr,"(%f %f %d) ",fpe,sd,m);*/
-    if(*ofpe>=fpe)
-      {
-      *ofpe=fpe;
-      orfpe=rfpe;
-      *osd=sd;
-      *mo=m;
-      for(i=0;i<m;i++) ao[i]=a[i];
-      }
-    if(m<l)
-      {
-      se=cxx[mp1];
-      for(i=0;i<m;i++) se=se-b[i]*cxx[i+1];
-      }
-    }
-/*fprintf(stderr,"\n");*/
-  FREE(a);
-  FREE(b);
-  }
-
 static int
 getar(double *x, int n, double *sd, int *m, double *c, double *z, int lh)
   /* double *x;    input data */
@@ -11956,7 +11820,10 @@ getar(double *x, int n, double *sd, int *m, double *c, double *z, int lh)
   if ((cxx=(double *)win_xmalloc(sizeof(double)*(lagh+1))) == NULL)
     emalloc("getar:cxx");
   autcor(x,n,lagh,cxx,z);
-  fpeaut(lagh,n,lagh,cxx,&fpe,sd,m,c);
+  if (fpeaut(lagh,n,lagh,cxx,&fpe,sd,m,c) == 1)
+    emalloc("fpeaut : a");
+  else if (fpeaut(lagh,n,lagh,cxx,&fpe,sd,m,c) == 2)
+    emalloc("fpeaut : b");
   if(*sd<0.0) *sd=0.0;
   FREE(cxx);
   if(*m==lagh) return (-1);

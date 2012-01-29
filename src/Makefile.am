@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.45 2011/11/17 03:58:40 uehira Exp $
+# $Id: Makefile.am,v 1.46 2012/01/29 03:09:16 uehira Exp $
 #
 
 # Version number of shared libraries.
@@ -100,8 +100,8 @@ WIN_LIBC=winlib.c filter.c pltxy.c ulaw.c winpickfile.c win_xmalloc.c
 #WIN_SYSTEM_LIB = libwinsystem.a
 WIN_SYSTEM_LTLIB = libwinsystem.la
 
-#WIN_MALLOC_LTLIB = libxmalloc.la
-WIN_MALLOC_LTLIB = 
+TIMSAC_LTLIB = libtimsac.la
+#TIMSAC_LTLIB = 
 
 #WIN_LOG_LIB = libwinlog.a
 WIN_LOG_LTLIB = libwinlog.la
@@ -109,7 +109,7 @@ WIN_LOG_LTLIB = libwinlog.la
 #WIN_SYSTEM_LIB2 = libwinsystem2.a
 WIN_SYSTEM_LIB2 = 
 
-WIN_NORMAL_LIB = $(WIN_SYSTEM_LTLIB) $(WIN_MALLOC_LTLIB)
+WIN_NORMAL_LIB = $(WIN_SYSTEM_LTLIB)
 
 bin_PROGRAMS = $(OFFLINE_USER) $(TAPE_USER) $(ONLINE)
 if IPV6
@@ -120,7 +120,7 @@ endif
 # shared library
 lib_LTLIBRARIES = $(WIN_LOG_LTLIB) $(WIN_SYSTEM_LTLIB)
 # convenience library
-noinst_LTLIBRARIES = $(WIN_MALLOC_LTLIB)
+noinst_LTLIBRARIES = $(TIMSAC_LTLIB)
 include_HEADERS = $(WINSYSTEM_H) $(WIN_INCLUDABLE) winraw_bp.h
 
 DISTCLEANFILES = $(WINSYSTEM_H)
@@ -229,20 +229,20 @@ libwinlog_la_LDFLAGS = $(LIB_WINLOG_VERSION)
 libwinlog_la_LIBADD = @LIBNSL@ @LIBSOCKET@
 
 # convenience library
-#libxmalloc_la_SOURCES = xmalloc.c
+libtimsac_la_SOURCES = timsac.c timsac.h
 
 #####----- Sources -----
 win_SOURCES = win.c $(WIN_LIBH)
 #win_CFLAGS = @X_CFLAGS@ $(AM_CFLAGS)
 win_CFLAGS = @X_CFLAGS@
 win_LDFLAGS = @X_LIBS@
-win_LDADD = $(WIN_NORMAL_LIB) @LIBNSL@ @LIBSOCKET@ -lm -lX11
+win_LDADD = $(WIN_NORMAL_LIB) $(TIMSAC_LTLIB) @LIBNSL@ @LIBSOCKET@ -lm -lX11
 
 win32_SOURCES = win.c $(WIN_LIBH)
 #win32_CFLAGS = @X_CFLAGS@ $(AM_CFLAGS) -DHINET_WIN32=1
 win32_CFLAGS = @X_CFLAGS@ -DHINET_WIN32=1
 win32_LDFLAGS = @X_LIBS@
-win32_LDADD = $(WIN_NORMAL_LIB) @LIBNSL@ @LIBSOCKET@ -lm -lX11
+win32_LDADD = $(WIN_NORMAL_LIB) $(TIMSAC_LTLIB) @LIBNSL@ @LIBSOCKET@ -lm -lX11
 
 wed_SOURCES = wed.c $(WIN_LIBH)
 wed_LDADD = $(WIN_NORMAL_LIB)

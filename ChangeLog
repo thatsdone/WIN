@@ -1,4 +1,7 @@
- $Id: ChangeLog,v 1.203 2012/01/06 09:37:52 uehira Exp $
+ $Id: ChangeLog,v 1.204 2012/01/29 03:09:14 uehira Exp $
+
+2012-01-29  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
+	* src/timsac.[ch] : split TIMSAC codes from 'win.c'.
 
 2011-12-06  Urabe Taku <urabe@eri.u-tokyo.ac.jp>
 	* Version 2.2.3 released.

@@ -1,4 +1,7 @@
- $Id: ChangeLog,v 1.204 2012/01/29 03:09:14 uehira Exp $
+ $Id: ChangeLog,v 1.205 2012/02/06 07:42:26 uehira Exp $
+
+2012-02-06  TSURUOKA Hiroshi (tsuru@eri.u-tokyo.ac.jp)
+	* src/wintosac.c : replace function julday.
 
 2012-01-29  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>
 	* src/timsac.[ch] : split TIMSAC codes from 'win.c'.

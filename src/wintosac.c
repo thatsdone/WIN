@@ -5,6 +5,7 @@
  ------------------------------------------------
  
    HISTORY
+   2012/02/06 replace function julday
    2005/01/17 -d DIR option
               time stamp in SAC HEADER
               by NAKAGAWA Shigeki
@@ -31,31 +32,35 @@ static long julday(int, int, int);
 static int tokenize(char *, char *[], size_t);
 int main(int, char *[]);
 
-#define IGREG (15+31L*(10+12L*1582))
 static long
-julday(int mm, int id, int iyyy)
+julday(int mon, int day, int year)
 {
-    long jul;
-    int ja, jy = iyyy, jm;
-
-    if (jy == 0)
-	printf("julday: there is no year zero.");
-    if (jy < 0)
-	++jy;
-    if (mm > 2) {
-	jm = mm + 1;
-    } else {
-	--jy;
-	jm = mm + 13;
-    }
-    jul = (long) (floor(365.25 * jy) + floor(30.6001 * jm) + id + 1720995);
-    if (id + 31L * (mm + 12L * iyyy) >= IGREG) {
-	ja = (int) (0.01 * jy);
-	jul += 2 - ja + (int) (0.25 * ja);
-    }
-    return (jul);
+  int             y, m;
+  int             a, b, c;
+  double          d;
+  if (mon >= 3) {
+    y = year;
+    m = mon;
+  } else {
+    y = year - 1;
+    m = mon + 12;
+  }
+  if ((year > 1582) || (year == 1582 && mon > 10) || (year == 1582 && mon == 10 && day >= 15)) {
+    a = (int) (y / 100);
+    b = 2 - a + (int) (a / 4);
+  }
+  if ((year < 1582) || (year == 1582 && mon < 10) || (year == 1582 && mon == 10 && day <= 4)) {
+    b = 0;
+  }
+  if (year > 0) {
+    c = (int) (365.25 * y);
+  }
+  if (year <= 0) {
+    c = (int) (365.25 * y - 0.75);
+  }
+  d = 1720994.5 + (int) (30.6001 * (m + 1)) + b + c + day + 0.5;
+  return ((long)d);
 }
-#undef IGREG
 
 static int
 tokenize(char *command_string, char *tokenlist[], size_t maxtoken)

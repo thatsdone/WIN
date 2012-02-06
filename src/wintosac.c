@@ -5,65 +5,79 @@
  ------------------------------------------------
  
    HISTORY
+   2012/02/06 replace function julday
    2005/01/17 -d DIR option
               time stamp in SAC HEADER
               by NAKAGAWA Shigeki
  
  */
-#define VERSION "1.0.1"
+/* #define VERSION "1.0.1" */
 #define YMD "2005.01.17"
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <stdlib.h>
 #include <string.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <math.h>
+#include <unistd.h>
 
-#define SWAPL(a) a=(((a)<<24)|((a)<<8)&0xff0000|((a)>>8)&0xff00|((a)>>24)&0xff)
-#define SWAPF(a) *(long *)&(a)=(((*(long *)&(a))<<24)|\
-  ((*(long *)&(a))<<8)&0xff0000|((*(long *)&(a))>>8)&0xff00|\
-  ((*(long *)&(a))>>24)&0xff)
+#include "winlib.h"
 
-#define IGREG (15+31L*(10+12L*1582))
-long julday(int mm, int id, int iyyy)
+/* prototypes */
+static long julday(int, int, int);
+static int tokenize(char *, char *[], size_t);
+int main(int, char *[]);
+
+static long
+julday(int mon, int day, int year)
 {
-    long jul;
-    int ja, jy = iyyy, jm;
-
-    if (jy == 0)
-	printf("julday: there is no year zero.");
-    if (jy < 0)
-	++jy;
-    if (mm > 2) {
-	jm = mm + 1;
-    } else {
-	--jy;
-	jm = mm + 13;
-    }
-    jul = (long) (floor(365.25 * jy) + floor(30.6001 * jm) + id + 1720995);
-    if (id + 31L * (mm + 12L * iyyy) >= IGREG) {
-	ja = (int) (0.01 * jy);
-	jul += 2 - ja + (int) (0.25 * ja);
-    }
-    return jul;
+  int             y, m;
+  int             a, b, c;
+  double          d;
+  if (mon >= 3) {
+    y = year;
+    m = mon;
+  } else {
+    y = year - 1;
+    m = mon + 12;
+  }
+  if ((year > 1582) || (year == 1582 && mon > 10) || (year == 1582 && mon == 10 && day >= 15)) {
+    a = (int) (y / 100);
+    b = 2 - a + (int) (a / 4);
+  }
+  if ((year < 1582) || (year == 1582 && mon < 10) || (year == 1582 && mon == 10 && day <= 4)) {
+    b = 0;
+  }
+  if (year > 0) {
+    c = (int) (365.25 * y);
+  }
+  if (year <= 0) {
+    c = (int) (365.25 * y - 0.75);
+  }
+  d = 1720994.5 + (int) (30.6001 * (m + 1)) + b + c + day + 0.5;
+  return ((long)d);
 }
 
-#undef IGREG
-/* (C) Copr. 1986-92 Numerical Recipes Software 1+5-5i. */
-
-int tokenize(char *command_string, char *tokenlist[], size_t maxtoken)
+static int
+tokenize(char *command_string, char *tokenlist[], size_t maxtoken)
 {
     static char tokensep[] = " \t";
     int tokencount;
     char *thistoken;
+
     if (command_string == NULL || !maxtoken)
-	return 0;
+      return (0);
     thistoken = strtok(command_string, tokensep);
     for (tokencount = 0; tokencount < maxtoken && thistoken != NULL;) {
 	tokenlist[tokencount++] = thistoken;
 	thistoken = strtok(NULL, tokensep);
     }
     tokenlist[tokencount] = NULL;
-    return tokencount;
+    return (tokencount);
 }
 
 #define MAXTOKEN 4096
@@ -77,18 +91,17 @@ typedef struct {
     double mul;
 } c_info;
 
-main(argc, argv)
-int argc;
-char *argv[];
+int
+main(int argc, char *argv[])
 {
-    extern int optind;
-    extern char *optarg;
+/*     extern int optind; */
+/*     extern char *optarg; */
     FILE *fp;
     int ntoken;
-    int chindex[65536], id[65536];
+    int chindex[WIN_CHMAX], id[WIN_CHMAX];
     int c, chsel, check, swap, i, j, n, yr, mo, dy, hr, mi, sc, nch;
     int jul, jul0, idt, nsec, nsec0, ndata, nfreq;
-    unsigned char chlist[65536 / 8];
+    unsigned char chlist[WIN_CHMAX / 8];
     static unsigned int mask[8] = { 0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01 };
 #define setch(a) (chlist[a>>3]|=mask[a&0x07])
     int table = 0;
@@ -101,7 +114,8 @@ char *argv[];
     char cbuf[4096];
     char kstnm[8], kevnm[16], kdum[24][8];
     int buf[MAXTOKEN];
-    float data[1440000];
+#define DATAMAX 1440000
+    float data[DATAMAX];
     float begin = 0.0;
     int out = 0;
     int outd = 0;
@@ -113,7 +127,7 @@ char *argv[];
 	exit(1);
     }
 
-    while ((c = getopt(argc, argv, "lt:b:o:d:")) != EOF) {
+    while ((c = getopt(argc, argv, "lt:b:o:d:")) != -1) {
 	switch (c) {
 	case 'b':
 	    begin = atof(optarg);
@@ -141,9 +155,9 @@ char *argv[];
     optind--;
     if (argc > 1 + optind) {
 	nch = 0;
-	for (i = 0; i < 65536 / 8; i++)
+	for (i = 0; i < WIN_CHMAX / 8; i++)
 	    chlist[i] = 0;
-	for (i = 0; i < 65536; i++)
+	for (i = 0; i < WIN_CHMAX; i++)
 	    chindex[i] = -1;
 	for (i = 1 + optind; i < argc; i++) {
 	    chsel = strtol(argv[i], 0, 16);
@@ -195,10 +209,10 @@ char *argv[];
 
     n = 0;
     ndata = 0;
-    while (fgets(cbuf, 2048, stdin) != NULL) {
+    while (fgets(cbuf, sizeof(cbuf), stdin) != NULL) {
 	sscanf(cbuf, "%d %d %d %d %d %d %d", &yr, &mo, &dy, &hr, &mi, &sc, &nch);
 	for (j = 0; j < nch; j++) {
-	    fgets(cbuf, 2048, stdin);
+	    fgets(cbuf, sizeof(cbuf), stdin);
 	    ntoken = tokenize(cbuf, tokens, MAXTOKEN);
 	    chsel = strtol(tokens[0], 0, 16);
 	    setch(chsel);
@@ -211,7 +225,7 @@ char *argv[];
 	}
 	if (yr < 100)
 	    yr = 2000 + yr;
-	jul = julday(mo, dy, yr);
+	jul = julday(mo, dy, yr) - julday(1, 1, yr) +1;
 	nsec = 3600 * hr + 60 * mi + sc;
 	if (n == 0) {
 	    idt = 0;
@@ -224,7 +238,6 @@ char *argv[];
 		    sprintf(sacfile, "%02d%02d%02d%02d%02d_%04X.s", yr % 100, mo, dy, hr, mi, id[0]);
 		}
 	    }
-
 	    idum[0]=yr;
 	    idum[1]=jul;
 	    idum[2]=hr;
@@ -318,7 +331,7 @@ char *argv[];
     for (i = 0; i < 40; i++) {
 	itmp = idum[i];
 	if (swap)
-	    SWAPL(itmp);
+	    SWAP32(itmp);
 	fwrite(&itmp, sizeof(float), 1, fp);
     }
     fwrite(kstnm, 1, 8, fp);
@@ -333,6 +346,6 @@ char *argv[];
 	fwrite(&ftmp, sizeof(float), 1, fp);
     }
     fclose(fp);
-    return (0);
 
+    exit(0);
 }

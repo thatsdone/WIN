@@ -1,4 +1,4 @@
-/* $Id: dewin.c,v 1.6 2011/06/01 11:09:20 uehira Exp $ */
+/* $Id: dewin.c,v 1.7 2012/04/30 03:38:46 nakagawa Exp $ */
 
 /* program dewin  1994.4.11-4.20  urabe */
 /*                1996.2.23 added -n option */
@@ -22,7 +22,7 @@
 #include  <signal.h>
 #include  <unistd.h>
 #include  <limits.h>
-
+#include  <time.h>
 #include  <math.h>
 
 #include "winlib.h"
@@ -36,7 +36,7 @@
 #define MAX_SR      HEADER_5B
 
 static const char  rcsid[] =
-   "$Id: dewin.c,v 1.6 2011/06/01 11:09:20 uehira Exp $";
+   "$Id: dewin.c,v 1.7 2012/04/30 03:38:46 nakagawa Exp $";
 
 static int32_w buf[MAX_SR];
 static double dbuf[MAX_SR];
@@ -84,6 +84,8 @@ print_usage(void)
   fprintf(stderr,"        -m  minute block instead of second block\n");
   fprintf(stderr,"        -n  not fill absent part\n");
   fprintf(stderr,"        -f  [filter file] filter paramter file\n");
+  fprintf(stderr,"        -j  display time-stamp (set -c option automatically)\n");
+  fprintf(stderr,"        -e  display elapsed time (set -c option automatically)\n");
   }
 
 static WIN_sr
@@ -134,8 +136,8 @@ get_filter(WIN_sr sr, struct Filter *f)
 int
 main(int argc, char *argv[])
   {
-  int j,k,c,form,nofill,zero=0,minblock,
-    time1[6],time2[6],time3[6];
+  int j,k,c,form,nofill,zero=0,minblock,jikoku,elapsed,
+    time1[6],time2[6],time3[6],time4[6];
   unsigned long  i, sec;   /* 64bit ok */
   WIN_bs  mainsize;
   WIN_sr  sr, sr_save;
@@ -148,14 +150,16 @@ main(int argc, char *argv[])
   int   filter_flag;
   struct Filter flt;
   double uv[MAX_FILT*4];
+  struct tm tm;
+  time_t tt1,tt2;
 
   signal(SIGINT,(void *)wabort);
   signal(SIGTERM,(void *)wabort);
-  form=nofill=filter_flag=minblock=0;
+  form=nofill=filter_flag=minblock=jikoku=elapsed=0;
   for(i=0;i<MAX_FILT*4;++i)
     uv[i]=0.0;
 
-  while((c=getopt(argc,argv,"chmnaf:"))!=-1){
+  while((c=getopt(argc,argv,"chmnaf:je"))!=-1){
      switch(c){
       case 'a':
         form=8;   /* 8bit format output*/
@@ -220,12 +224,20 @@ main(int argc, char *argv[])
 	/*fprintf(stderr,"filter=%s\n",optarg);*/
 	filter_flag=1;
 	break;
+      case 'j':
+        jikoku=1; /* jikoku */
+	form=1;
+        break;
+      case 'e':
+        elapsed=1; /* elapsed time */
+	form=1;
+        break;
       case 'h':
       default:
         print_usage();
         exit(0);
       }
-    }  /*  End of "while((c=getopt(argc,argv,"chmnaf:"))!=-1){" */
+    }  /*  End of "while((c=getopt(argc,argv,"chmnaf:je"))!=-1){" */
 
 #if DEBUG
   fprintf(stderr,"filter_flag = %d\n",filter_flag);
@@ -252,7 +264,15 @@ main(int argc, char *argv[])
 
   sr_save=0;
   sec=i=0;
+  tt1=tt2=-1;
   while((mainsize=read_onesec_win(f_main,&mainbuf,&mainbuf_siz))){
+     if(elapsed!=0 && tt1<0){
+        bcd_dec(time4,mainbuf+4);
+        tm.tm_sec=time4[5]; tm.tm_min=time4[4]; tm.tm_hour=time4[3];
+        tm.tm_mday=time4[2]; tm.tm_mon=time4[1]-1;
+        tm.tm_year=time4[0]>50?time4[0]:time4[0]+100;
+        tt1=mktime(&tm);
+     }
      if((sr=read_one_sec(mainbuf,sysch,buf))==0) continue;
      bcd_dec(time3,mainbuf+4);
      if(sr_save==0){
@@ -279,8 +299,21 @@ main(int argc, char *argv[])
 	      k=0;
 	      cc=128;
 	      if(form==1)
-		for(j=0;j<sr_save;j++)
+		for(j=0;j<sr_save;j++){
+		  if(elapsed){
+                    tm.tm_sec=time2[5]; tm.tm_min=time2[4]; 
+                    tm.tm_hour=time2[3]; tm.tm_mday=time2[2]; 
+                    tm.tm_mon=time2[1]-1;
+                    tm.tm_year=time2[0]>50?time2[0]:time2[0]+100;
+                    tt2=mktime(&tm);
+                    if(minblock) printf("%7.3f ",(float)(tt2-tt1)+60.*(float)j/(float)sr_save);
+		    else printf("%7.3f ",(float)(tt2-tt1)+(float)j/(float)sr_save);
+                  }
+		  if(jikoku)
+                     if(minblock) printf("%02d%02d%02d.%02d%02d%02d ",time2[0],time2[1],time2[2],time2[3],time2[4],time2[5]+60*j/sr);
+                     else printf("%02d%02d%02d.%02d%02d%02d %03d ",time2[0],time2[1],time2[2],time2[3],time2[4],time2[5],1000*j/sr);
 		  printf("0\n");
+		}
 	      else if(form==8)
 		for(j=0;j<sr_save;j++)
 		  fwrite(&cc,1,1,stdout);
@@ -312,8 +345,20 @@ main(int argc, char *argv[])
      }
 
      if(form==1)
-       for(j=0;j<sr;j++)
+       for(j=0;j<sr;j++){
+         if(elapsed){
+            tm.tm_sec=time3[5]; tm.tm_min=time3[4]; tm.tm_hour=time3[3]; 
+            tm.tm_mday=time3[2]; tm.tm_mon=time3[1]-1;
+            tm.tm_year=time3[0]>50?time3[0]:time3[0]+100;
+            tt2=mktime(&tm);
+            if(minblock) printf("%7.3f ",(float)(tt2-tt1)+60.*(float)j/(float)sr);
+            else printf("%7.3f ",(float)(tt2-tt1)+(float)j/(float)sr);
+         }
+	 if(jikoku)
+	     if(minblock) printf("%02d%02d%02d.%02d%02d%02d ",time3[0],time3[1],time3[2],time3[3],time3[4],time3[5]+60*j/sr);
+	     else printf("%02d%02d%02d.%02d%02d%02d %03d ",time3[0],time3[1],time3[2],time3[3],time3[4],time3[5],1000*j/sr);
 	 printf("%d\n",buf[j]);
+       }
      else if(form==8){
 	if(sr_save==0){
 	   zero=0;

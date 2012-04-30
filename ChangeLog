@@ -1,4 +1,7 @@
- $Id: ChangeLog,v 1.205 2012/02/06 07:42:26 uehira Exp $
+ $Id: ChangeLog,v 1.206 2012/04/30 03:38:47 nakagawa Exp $
+
+2012-04-30  Shigeki Nakagawa  <nakagawa@eri.u-tokyo.ac.jp>
+	* src/dewin.c : added '-j' and '-e' options. display timestamp and elapsed-time.
 
 2012-02-06  TSURUOKA Hiroshi (tsuru@eri.u-tokyo.ac.jp)
 	* src/wintosac.c : replace function julday.

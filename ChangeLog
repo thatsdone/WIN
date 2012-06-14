@@ -1,4 +1,8 @@
- $Id: ChangeLog,v 1.206 2012/04/30 03:38:47 nakagawa Exp $
+ $Id: ChangeLog,v 1.207 2012/06/14 09:47:51 nakagawa Exp $
+
+2012-06-14  Shigeki Nakagawa  <nakagawa@eri.u-tokyo.ac.jp>
+	* Version 2.2.4 released.
+	* src/win.c : fix buffer overflow at get_filter().
 
 2012-04-30  Shigeki Nakagawa  <nakagawa@eri.u-tokyo.ac.jp>
 	* src/dewin.c : added '-j' and '-e' options. display timestamp and elapsed-time.

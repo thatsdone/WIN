@@ -5,6 +5,7 @@
  ------------------------------------------------
  
    HISTORY
+   2012/12/13 bug fix
    2012/02/06 replace function julday
    2005/01/17 -d DIR option
               time stamp in SAC HEADER
@@ -248,7 +249,7 @@ main(int argc, char *argv[])
 	    idt = 86400 * (jul - jul0) + (nsec - nsec0);
 	}
 	if (idt > 1) {
-	    for (j = 0; j < idt; j++) {
+	    for (j = 1; j < idt; j++) {
 		for (i = 0; i < nfreq; i++)
 		    data[n * nfreq + i] = 0.0;
 		n = n + 1;

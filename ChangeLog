@@ -1,4 +1,8 @@
- $Id: ChangeLog,v 1.207 2012/06/14 09:47:51 nakagawa Exp $
+ $Id: ChangeLog,v 1.208 2013/01/30 10:15:51 nakagawa Exp $
+
+2012-12-13  TSURUOKA Hiroshi (tsuru@eri.u-tokyo.ac.jp)
+	* Version 2.2.5 released.
+	* src/wintosac.c : bug fix. (reported by Dr. H. Aoyama)
 
 2012-06-14  Shigeki Nakagawa  <nakagawa@eri.u-tokyo.ac.jp>
 	* Version 2.2.4 released.

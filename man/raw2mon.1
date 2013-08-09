@@ -1,13 +1,19 @@
-.TH raw2mon 1W "1998.6.18" "WIN SYSTEM" "WIN SYSTEM"
+.TH raw2mon 1W "2013.8.9" "WIN SYSTEM" "WIN SYSTEM"
 .SH 名称
 raw2mon - RAW 形式データから MON 形式データを作るフィルタ
 .SH 形式
-raw2mon
+raw2mon [bits_shift]
 .LP
 .SH 解説
 raw2mon は、標準入力から RAW 形式データを読み込み、MON 形式に
 変換して結果を標準出力に書き出します。入力データの全チャネルが
 出力されます。
+.I \ bits_shift
+(1〜16の整数)を指定すると、全チャネルのデータは
+I \ bits_shift
+ビット右シフトされてからMON 形式に変換されます。これは
+MON 形式が最大27ビット長の数値までしか表現できない
+ことの対策です。
 .SH オプション
 .TP 
 なし

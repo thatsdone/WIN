@@ -1,4 +1,4 @@
-/* $Id: fromtape.c,v 1.9 2011/06/01 11:09:21 uehira Exp $ */
+/* $Id: fromtape.c,v 1.10 2013/08/09 08:50:15 urabe Exp $ */
 /*
   program "fromtape.c"
   12/10/90 - 12/13/90, 9/19/91, 10/30/91, 6/19/92  urabe
@@ -49,7 +49,7 @@
 /* #define   TIME3   "9008031718" */  /* 10 m / fm after this time */
 
 static const char rcsid[] =
-  "$Id: fromtape.c,v 1.9 2011/06/01 11:09:21 uehira Exp $";
+  "$Id: fromtape.c,v 1.10 2013/08/09 08:50:15 urabe Exp $";
 
 static uint8_w wbuf[SIZE_WBUF],buf[MAXSIZE];
 static int fd_exb,dec_start[6],dec_end[6],min_reserve,
@@ -216,7 +216,7 @@ main(int argc, char *argv[])
     fwrite(buf,1,mkuint4(buf),f_raw);
     if(argc>4+optbase)
       {
-      make_mon(buf,wbuf);
+      make_mon(buf,wbuf,0);
       fwrite(wbuf,1,mkuint4(wbuf),f_mon);
 /*      printf(" %d>MON\n",mkuint4(wbuf));*/
       }

@@ -1,4 +1,4 @@
-/* $Id: elist.c,v 1.12 2011/06/01 11:09:20 uehira Exp $ */
+/* $Id: elist.c,v 1.13 2013/08/09 08:50:15 urabe Exp $ */
 
 /* program elist.c    2/5/91 - 2/25/91 ,  4/16/92, 4/22/92  urabe */
 /*                      6/10/92, 8/18/92, 10/25/92, 6/8/93, 1/5/94  */
@@ -10,6 +10,7 @@
 /*      2001.2.20 increase size of line-buffer to avoid overflow */
 /*      2001.8.22 use pickers name read from #p line if exists */
 /*      2010.10.12 fixed buf. 64bit check. */
+/*      2013.7.3 added pomc_max and somc_max in pplist */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -56,7 +57,7 @@
 #endif
 
 static const char rcsid[] =
-  "$Id: elist.c,v 1.12 2011/06/01 11:09:20 uehira Exp $";
+  "$Id: elist.c,v 1.13 2013/08/09 08:50:15 urabe Exp $";
 
 /* prototypes */
 static char *getname(char *, int);
@@ -132,7 +133,7 @@ main(int argc,char *argv[])
     uid_t user;
     mode_t mode;  /* OLD : u_short */
     int hypo,mech,pick,np,ns,nm;
-    float lat,lon,dep,mag;
+    float lat,lon,dep,mag,pomc_max,somc_max;
     } *pk;
   char pick_dir[NAMLEN],out_file[NAMLEN],dat_dir[NAMLEN],req_dir[3][NAMLEN],
     filename[NAMLEN],textbuf[OUTLEN],group[20],mes1[20],mes2[20],mes3[20],
@@ -241,6 +242,7 @@ main(int argc,char *argv[])
     sscanf(textbuf,"%*s%s%s%s",pk[i].dfname,pk[i].diagnos,pk[i].name);
     pk[i].diagnos[5]=pk[i].name[5]=0;
     pk[i].pick=pk[i].hypo=pk[i].mech=pk[i].np=pk[i].ns=pk[i].nm=0;
+    pk[i].pomc_max=pk[i].somc_max=0.0;
     pk[i].mag=9.9;
     pn=sn=fn=mn=0;
     while(fgets(textbuf,sizeof(textbuf),fp)!=NULL)
@@ -275,6 +277,8 @@ main(int argc,char *argv[])
           str2double(textbuf,89+3,5,&mag);
           if(pt!=0.0 || pe!=0.0 || pomc!=0.0) pk[i].np++;
           if(st!=0.0 || se!=0.0 || somc!=0.0) pk[i].ns++;
+          if(pomc!=0.0 && fabsf(pomc)>pk[i].pomc_max) pk[i].pomc_max=fabsf(pomc);
+          if(somc!=0.0 && fabsf(somc)>pk[i].somc_max) pk[i].somc_max=fabsf(somc);
           if(mag!=9.9) pk[i].nm++;
           } 
         continue;
@@ -314,9 +318,9 @@ main(int argc,char *argv[])
       fprintf(stderr,"file '%s' not open.\n",ppfile);
     else
       {
-fprintf(fpp,"-----------------------------------------------------------------------------\n");
-fprintf(fpp,"pickfile          trgfile       picker P   S   M Lat.  Lon.   Dep. M  nearest\n");
-fprintf(fpp,"-----------------------------------------------------------------------------\n");
+fprintf(fpp,"-------------------------------------------------------------------------------------------\n");
+fprintf(fpp,"pickfile          trgfile       picker P   S   M Lat.  Lon.   Dep. M   nearest   Pomc Somc\n");
+fprintf(fpp,"-------------------------------------------------------------------------------------------\n");
       fclose(fpp);
       }
     if (snprintf(tbuf,sizeof(tbuf),"sort >> %s",ppfile) >= sizeof(tbuf))
@@ -329,8 +333,9 @@ fprintf(fpp,"-------------------------------------------------------------------
         {
         fprintf(fpp,"%s %s %4.4s%4d%4d%4d",pk[i].fname,pk[i].dfname,
           getname(pk[i].name,pk[i].user),pk[i].np,pk[i].ns,pk[i].nm);
-        if(pk[i].hypo) fprintf(fpp,"%6.2f%7.2f%4.0f M%3.1f %4.4s\n",
-            pk[i].lat,pk[i].lon,pk[i].dep,pk[i].mag,pk[i].near);
+        if(pk[i].hypo) fprintf(fpp,"%6.2f%7.2f%4.0f M%3.1f %8.8s %4.1f %4.1f\n",
+            pk[i].lat,pk[i].lon,pk[i].dep,pk[i].mag,pk[i].near,
+            pk[i].pomc_max,pk[i].somc_max);
         else fprintf(fpp," -     -       -    -    -\n");
         }
       pclose(fpp);

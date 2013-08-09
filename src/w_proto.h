@@ -1,4 +1,4 @@
-/* $Id: w_proto.h,v 1.3 2011/11/16 11:13:35 uehira Exp $ */
+/* $Id: w_proto.h,v 1.4 2013/08/09 08:50:15 urabe Exp $ */
 
 #ifndef _WPROTO_H_
 #define _WPROTO_H_
@@ -29,7 +29,7 @@ uint32_w get_sysch(const uint8_w *, WIN_ch *);
 uint32_w get_sysch_mon(const uint8_w *, WIN_ch *);
 void get_mon(WIN_sr, int32_w *, int32_w (*)[]);
 uint8_w * compress_mon(int32_w *, uint8_w *);
-void make_mon(uint8_w *, uint8_w *);
+void make_mon(uint8_w *, uint8_w *, int);
 void t_bcd(time_t, uint8_w *);
 time_t bcd_t(uint8_w *);
 void time2bcd(time_t, uint8_w *);

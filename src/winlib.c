@@ -1,4 +1,4 @@
-/* $Id: winlib.c,v 1.3 2011/11/16 11:13:35 uehira Exp $ */
+/* $Id: winlib.c,v 1.4 2013/08/09 08:50:15 urabe Exp $ */
 
 /*-
  * winlib.c  (Uehira Kenji)
@@ -1100,7 +1100,7 @@ uint8_w
 }
 
 void
-make_mon(uint8_w *ptr, uint8_w *ptw) /* for one minute(second?) */
+make_mon(uint8_w *ptr, uint8_w *ptw, int bits_shift) /* for one minute(second?) */
 {
   uint8_w        *ptr_lim, *ptw_start;
   int		  i;
@@ -1125,6 +1125,7 @@ make_mon(uint8_w *ptr, uint8_w *ptw) /* for one minute(second?) */
     if (sr >= HEADER_4B)
       break;
     ptr += re;
+    if(bits_shift) for(i=0;i<sr;i++) buf_raw[i]=buf_raw[i]>>bits_shift;
     get_mon(sr, buf_raw, buf_mon);	/* get mon data from raw */
     *ptw++ = ch >> 8;
     *ptw++ = ch;

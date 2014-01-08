@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.63.2.2 2012/01/29 03:33:07 uehira Exp $
+   $Id: win.c,v 1.63.2.3 2014/01/08 00:14:37 uehira Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -23,10 +23,10 @@
 #else
 #define NAME_PRG      "win32"
 #endif
-#define WIN_VERSION   "2012.1.29(+Hi-net) (UEHIRA)"
+#define WIN_VERSION   "2012.6.14(+Hi-net) (UEHIRA)"
 
 static const char rcsid[] =
-  "$Id: win.c,v 1.63.2.2 2012/01/29 03:33:07 uehira Exp $";
+  "$Id: win.c,v 1.63.2.3 2014/01/08 00:14:37 uehira Exp $";
 
 #define DEBUG_AP      0   /* for debugging auto-pick */
 /* 5:sr, 4:ch, 3:sec, 2:find_pick, 1:all */
@@ -11737,7 +11737,7 @@ get_filter(int filt, struct Filt *f, WIN_sr sr, int iz)
   char tbuf1[3],tbuf2[3];
 
   dt=1.0/(double)sr;
-  if(filt==0) strcpy(f->tfilt,"   NO FILTER     ");
+  if(filt==0) strcpy(f->tfilt,"  NO FILTER  ");
   else if(filt<0)
     {
     idx=ft.ch2idx[zoom_win[iz].sys_ch];

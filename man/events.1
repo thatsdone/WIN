@@ -1,5 +1,5 @@
 '\" t
-.TH events 1W "2001.1.22" "WIN SYSTEM" "WIN SYSTEM"
+.TH events 1W "2013.8.29" "WIN SYSTEM" "WIN SYSTEM"
 .SH 名称
 events, eventsrtape - リストに従ったイベント波形の切り出し
 .SH 形式
@@ -73,7 +73,11 @@ events/eventsrtape の動作のしかたは設定ファイル
 .IP
 .ti -5n
 ２行目：events がデータを切り出し元として使う、win形式１分毎ファイル
-のディレクトリ名。eventsrtape の場合は使われませんが、この行は必要です。
+のディレクトリ名。eventsrtape の場合は使われませんが、ダミーとして
+この行は必要です。このディレクトリには、どの１分ファイルまでが利用
+できるか(書き込み完了しているか)を示す標識ファイル LATEST が必要
+です。LATEST の内容は、「最も新しく書き込みの完了したファイル」の
+名前("YYHHDDhh.mm" の形式)です。
 .IP
 .ti -5n
 ３行目：切り出したイベントファイルを書き込むディレクトリ名。

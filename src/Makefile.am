@@ -1,9 +1,9 @@
 #
-# $Id: Makefile.am,v 1.46 2012/01/29 03:09:16 uehira Exp $
+# $Id: Makefile.am,v 1.47 2014/01/08 09:00:54 uehira Exp $
 #
 
 # Version number of shared libraries.
-LIB_WINSYSTEM_VERSION = -version-info 0:0:0
+LIB_WINSYSTEM_VERSION = -version-info 1:0:0
 LIB_WINLOG_VERSION = -version-info 1:0:0
 
 if SUNOS4
@@ -71,7 +71,7 @@ OFFLINE_MATH=dewin select_stations hypomhc wintosac select_bylatlon
 OFFLINE_USER=$(OFFLINE_X) $(OFFLINE_F77) wed wck wadd $(OFFLINE_MATH) wchch pick2tseis \
              wch pick2finalb pick2final finalb2final final2finalb finalb2seis \
              wform wintowin $(OFFLINE_USER_MATH) winadd wck_wdisk wadd2 \
-             win2raw wchasn ls8tel16_win ls8tel_STM ls8tel_STS ls7000_A8 ls7000_A9 split_win chtbl_ck
+             win2raw wchasn ls8tel16_win ls8tel_STM ls8tel_STS ls7000_A8 ls7000_A9 split_win chtbl_ck wshift
 TAPE_USER=$(RTAPE) $(FROMTAPE) wdisk wdiskts ras2rpdl ras2lips file_older raw2mon \
           $(TAPE_USER_MATH)
 ONLINE=order raw_mon $(WTAPE) setexb timeout raw_raw raw_100 cormeisei shmdump \
@@ -500,3 +500,5 @@ split_win_LDADD = $(WIN_NORMAL_LIB) $(GC_CHECK_LIB)
 chtbl_ck_SOURCES = chtbl_ck.c $(WIN_LIBH) $(GC_CHECK_INCLUDE)
 chtbl_ck_LDADD = $(WIN_NORMAL_LIB) $(GC_CHECK_LIB)
 
+wshift_SOURCES = wshift.c $(WIN_LIBH) $(GC_CHECK_INCLUDE)
+wshift_LDADD = $(WIN_NORMAL_LIB) $(GC_CHECK_LIB)

@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.33 2011/09/12 01:58:16 uehira Exp $
+# $Id: Makefile.am,v 1.34 2014/01/08 09:00:54 uehira Exp $
 #
 #  Makefile.am in man subdirectory.
 #
@@ -19,7 +19,7 @@ WIN_MAN = _bj.1 _update.1 automan.1 autopick.1 cormeisei.1 dat.1 dewin.1 \
 	pick2pick.1 raw_time.1 mkpicknoise.1 \
 	ls8tel16_win.1 ls8tel16_raw.1 ls8tel_STM.1 ls8tel_STS.1 \
 	ls7000_A8.1 ls7000_A9.1 split_win.1 chtbl_ck.1 ck_ls8800cst.1\
-	intro_win.1
+	intro_win.1 wshift.1
 
 if IPV6
 IPV6_MAN = relaym.1 recvstatus3.1 recvt_LS7000.1 recvstatus4.1

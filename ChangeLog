@@ -1,4 +1,9 @@
- $Id: ChangeLog,v 1.203.2.4 2014/01/08 00:14:29 uehira Exp $
+ $Id: ChangeLog,v 1.203.2.5 2014/01/09 00:42:48 uehira Exp $
+
+2014-01-08 Uehira Kenji <uehira@bosai.go.jp>
+	* Version 2.2.6 released.
+	* src/wshift.c : added.
+	* man/wshift.1 : added.
 
 2013-08-29 Urabe Taku <urabe@eri.u-tokyo.ac.jp>
 	* man/events.1: fixed ambiguity.

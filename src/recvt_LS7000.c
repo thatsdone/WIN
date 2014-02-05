@@ -1,4 +1,4 @@
-/* $Id: recvt_LS7000.c,v 1.3 2011/11/17 03:58:41 uehira Exp $ */
+/* $Id: recvt_LS7000.c,v 1.4 2014/02/05 08:49:41 urabe Exp $ */
 
 /*- 
  * "recvt_LS7000.c"  uehira
@@ -60,7 +60,7 @@
 #define N_PNOS    62    /* length of packet nos. history >=2 */
 
 static const char rcsid[] =
-  "$Id: recvt_LS7000.c,v 1.3 2011/11/17 03:58:41 uehira Exp $";
+  "$Id: recvt_LS7000.c,v 1.4 2014/02/05 08:49:41 urabe Exp $";
 
 static uint8_w rbuff[MAXMESG],rbuf[MAXMESG],ch_table[WIN_CHMAX];
 static char *chfile[N_CHFILE];
@@ -817,7 +817,7 @@ main(int argc, char *argv[])
   snprintf(tb,sizeof(tb),"TS window %lds - +%lds",pre,post);
   write_log(tb);
 
-  sock = udp_accept4(to_port, sbuf);
+  sock = udp_accept4(to_port, sbuf, interface);
   /* if((sock=socket(AF_INET,SOCK_DGRAM,0))<0) err_sys("socket"); */
   /* for(j=sbuf;j>=16;j-=4) */
   /*   { */

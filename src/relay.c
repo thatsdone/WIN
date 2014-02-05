@@ -1,4 +1,4 @@
-/* $Id: relay.c,v 1.19 2011/06/01 11:09:21 uehira Exp $ */
+/* $Id: relay.c,v 1.20 2014/02/05 08:49:41 urabe Exp $ */
 /*-
  "relay.c"      5/23/94-5/25/94,6/15/94-6/16/94,6/23/94,3/16/95 urabe
                 3/26/95 check_packet_no; port#
@@ -81,7 +81,7 @@
 #define N_HOST    100   /* max N of hosts */  
 
 static const char rcsid[] =
-  "$Id: relay.c,v 1.19 2011/06/01 11:09:21 uehira Exp $";
+  "$Id: relay.c,v 1.20 2014/02/05 08:49:41 urabe Exp $";
 
 static int sock_in,sock_out;   /* socket */
 static uint8_w sbuf[BUFNO][MAXMESG],ch_table[WIN_CHMAX];
@@ -238,24 +238,27 @@ read_chfile(void)
 
   time(&ltime);
   tdif=ltime-ltime_p;
-  tdif2=tdif/2;
-  if(ht[0].host)
-    {
-    snprintf(tb,sizeof(tb),"statistics in %ld s (pkts, B, pkts/s, B/s)",tdif);
-    write_log(tb);
-    }
-  for(i=0;i<N_HOST;i++) /* print statistics for hosts */
-    {
-    if(ht[i].host==0) break;
-    snprintf(tb,sizeof(tb), "  src %d.%d.%d.%d:%d   %lu %lu %lu %lu",
+  if (tdif != 0) {
+    tdif2=tdif/2;
+    if(ht[0].host)
+      {
+      snprintf(tb,sizeof(tb),"statistics in %ld s (pkts, B, pkts/s, B/s)",tdif);
+      write_log(tb);
+      }
+    for(i=0;i<N_HOST;i++) /* print statistics for hosts */
+      {
+      if(ht[i].host==0) break;
+      if(ht[i].n_packets==0 && ht[i].n_bytes==0) continue;
+      snprintf(tb,sizeof(tb), "  src %d.%d.%d.%d:%d   %lu %lu %lu %lu",
 	     ((uint8_w *)&ht[i].host)[0],((uint8_w *)&ht[i].host)[1],
 	     ((uint8_w *)&ht[i].host)[2],((uint8_w *)&ht[i].host)[3],
 	     ntohs(ht[i].port),ht[i].n_packets,ht[i].n_bytes,
 	     (ht[i].n_packets+tdif2)/tdif,(ht[i].n_bytes+tdif2)/tdif);
-    write_log(tb);
-    ht[i].n_packets=ht[i].n_bytes=0;
-    }
-  ltime_p=ltime;
+      write_log(tb);
+      ht[i].n_packets=ht[i].n_bytes=0;
+      }
+    ltime_p=ltime;
+  }
   signal(SIGHUP,(void *)read_chfile);
   }
 
@@ -396,11 +399,11 @@ usage(void)
   fprintf(stderr, "%s\n", rcsid);
   if (daemon_mode)
     fprintf(stderr,
-	    " usage : '%s (-eNnr) (-b [sbuf(KB)]) (-d [delay_ms]) (-f [host_file]) (-g [mcast_group]) (-i [interface]) (-h [len(s)]) (-s [sinterface]) (-p [src port]) (-t [ttl]) [in_port] [host] [host_port] ([log file])'\n",
+	    " usage : '%s (-eNnr) (-b [sbuf(KB)]) (-d [delay_ms]) (-f [host_file]) (-g [mcast_group]) (-i [interface]) (-s [sinterface]) (-p [src port]) (-t [ttl]) [in_port] [host] [host_port] ([log file])'\n",
 	    progname);
   else
     fprintf(stderr,
-	    " usage : '%s (-eNnrD) (-b [sbuf(KB)]) (-d [delay_ms]) (-f [host_file]) (-g [mcast_group]) (-i [interface]) (-h [len(s)]) (-s [sinterface]) (-p [src port]) (-t [ttl]) [in_port] [host] [host_port] ([log file])'\n",
+	    " usage : '%s (-eNnrD) (-b [sbuf(KB)]) (-d [delay_ms]) (-f [host_file]) (-g [mcast_group]) (-i [interface]) (-s [sinterface]) (-p [src port]) (-t [ttl]) [in_port] [host] [host_port] ([log file])'\n",
 	    progname);
 }
 
@@ -420,8 +423,8 @@ main(int argc, char *argv[])
   char tb[256];
   /* struct ip_mreq stMreq; */
   char mcastgroup[256]; /* multicast address */
-  char interface[256]; /* multicast interface for receive */
-  char sinterface[256]; /* multicast interface for send */
+  char interface[256]; /* interface for receive */
+  char sinterface[256]; /* interface for send */
   /* in_addr_t  mif;  *//* multicast interface address */
 
   if((progname=strrchr(argv[0],'/')) != NULL) progname++;
@@ -465,7 +468,7 @@ main(int argc, char *argv[])
 	  exit(1);
 	}
         break;
-      case 'i':   /* interface (ordinary IP address) which receive mcast */
+      case 'i':   /* interface (ordinary IP address) for receive */
         /* strcpy(interface,optarg); */
 	if (snprintf(interface, sizeof(interface), "%s", optarg)
 	    >= sizeof(interface)) {
@@ -485,7 +488,7 @@ main(int argc, char *argv[])
       case 'r':   /* disable resend request */
         noreq=1;
         break;
-      case 's':   /* interface (ordinary IP address) which sends mcast */
+      case 's':   /* interface (ordinary IP address) for send */
         /* strcpy(sinterface,optarg); */
 	if (snprintf(sinterface, sizeof(sinterface), "%s", optarg)
 	    >= sizeof(sinterface)) {
@@ -542,7 +545,7 @@ main(int argc, char *argv[])
   if(to_port>0)
     {
     /* 'in' port */
-    sock_in = udp_accept4(to_port, sockbuf);
+    sock_in = udp_accept4(to_port, sockbuf, interface);
 
     /* if((sock_in=socket(AF_INET,SOCK_DGRAM,0))<0) err_sys("sock_in"); */
     /* for(j=sockbuf;j>=16;j-=4) */
@@ -575,7 +578,7 @@ main(int argc, char *argv[])
     }
 
   /* destination host/port */
-  sock_out = udp_dest4(host_name, host_port, &to_addr, 64, src_port);
+  sock_out = udp_dest4(host_name, host_port, &to_addr, 64, src_port, sinterface);
   /* if(!(h=gethostbyname(host_name))) err_sys("can't find host"); */
   /* memset((char *)&to_addr,0,sizeof(to_addr)); */
   /* to_addr.sin_family=AF_INET; */

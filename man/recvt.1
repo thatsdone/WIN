@@ -1,11 +1,11 @@
-.TH recvt 1W "2005.9.26" "WIN SYSTEM" "WIN SYSTEM"
+.TH recvt 1W "2013.9.18" "WIN SYSTEM" "WIN SYSTEM"
 .UC 4
 .SH 名称
 recvt, recvtd - IPによる win 形式データの受信
 .SH 形式
 .IP
 .ti -7
-recvt [\-\fBAaDBnMNr\fR] [\-\fBd\fI pkts\fR] [\-\fBf\fI chfile\fR]
+recvt [\-\fBAaBDenMNr\fR] [\-\fBd\fI pkts\fR] [\-\fBf\fI chfile\fR]
 [\-\fBg\fI group\fR]
 [\-\fBi\fI interface\fR] [\-\fBm\fI before\fR] [\-\fBo\fI src_host:src_port\fR]
 [\-\fBp\fI after\fR] [\-\fBs\fI bufsiz\fR] [\-\fBy\fI req_delay\fR]
@@ -17,8 +17,9 @@ recvt [\-\fBAaDBnMNr\fR] [\-\fBd\fI pkts\fR] [\-\fBf\fI chfile\fR]
 [
 .I logfile
 ]]
-.LP
-recvtd [\-\fBAaBnMNr\fR] [\-\fBd\fI pkts\fR] [\-\fBf\fI chfile\fR]
+.IP
+.ti -7
+recvtd [\-\fBAaBenMNr\fR] [\-\fBd\fI pkts\fR] [\-\fBf\fI chfile\fR]
 [\-\fBg\fI group\fR]
 [\-\fBi\fI interface\fR] [\-\fBm\fI before\fR] [\-\fBo\fI src_host:src_port\fR]
 [\-\fBp\fI after\fR] [\-\fBs\fI bufsiz\fR] [\-\fBy\fI req_delay\fR]
@@ -107,6 +108,8 @@ recvtd は daemon モードで起動します。recvt でオプション
 .LP
 recvt は、HUPシグナルを受けると制御ファイル
 .I \ ctlfile
+と後述の
+.I \ chfile
 を読み直し、ログファイル
 .I \ logfile
 に送り元ホストごとの流量情報を書き出します。これには起動時、または
@@ -115,7 +118,8 @@ recvt は、HUPシグナルを受けると制御ファイル
 .nf
   パケット数、バイト数、毎秒パケット数、毎秒バイト数
 .fi
-が含まれます。
+が含まれます。ただしこの期間に１パケットも受信してない送り元
+ホストについての情報は書き出しません。
 .LP
 recvt は受信するデータのチャネル番号ごとに過去10パケットまでの
 タイムスタンプの履歴を保存しており、同じチャネル番号で10パケット
@@ -293,12 +297,12 @@ recvt はチャネル番号とタイムスタンプの履歴を持っていて、受信した
 検査し、すでに受信されていると読み捨てます。この履歴の長さを
 .I pkts
 パケット分にします。デフォルトは10パケット分です。
-.IP "\fB\-i \fIinterface" 5
-IPマルチキャストアドレスに対して送信されるパケットを受信する場合に、
-パケットを受信するネットワークインターフェースを、そのインターフェースの
-IPアドレス
-.I interface
-で指定します。
+.IP \fB\-e 5
+受信パケットを捨てるべき送り元ホストからのパケットを受信したら
+.I ctlfile
+と
+.I chfile
+を読み直します。
 .IP "\fB\-f \fIchfile" 5
 ファイル
 .I chfile
@@ -331,6 +335,11 @@ recvt プロセスが HUPシグナルを受けたとき、
 IPマルチキャストアドレス
 .I group
 に対して送信されるパケットを受信します。
+.IP "\fB\-i \fIinterface" 5
+データパケットを受信するネットワークインターフェースを、そのインターフェースの
+IPアドレス
+.I interface
+で指定します。再送要求パケットの送信元もこのIPアドレスになります。
 .IP "\fB\-m \fIbefore" 5
 マシンの内部時計の時刻よりも before分以上前の(遅れた)タイムスタンプを
 もつパケットを、不正なパケットとして廃棄します。
@@ -390,7 +399,12 @@ DVB衛星配信ボードによる受信のような一方通行の伝送路の場合には、
 受信ソケットバッファサイズを
 .I bufsiz
 KBにします。ただしこれはシステムで許される値の範囲でなければ
-なりません。デフォルトは256KBです。
+なりません。デフォルトは256KBです。再送要求が発生するとき、
+netstat -s で表示される
+「UDP:  XXXX dropped due to full socket buffers」
+などの値が増加していくなら、
+.I bufsiz
+を増やすと効果があるかもしれません。
 .IP "\fB\-y \fIreq_delay" 5
 再送要求するタイミングを
 .I req_delay

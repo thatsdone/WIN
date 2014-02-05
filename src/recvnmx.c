@@ -1,4 +1,4 @@
-/* $Id: recvnmx.c,v 1.19 2011/06/01 11:09:21 uehira Exp $ */
+/* $Id: recvnmx.c,v 1.20 2014/02/05 08:49:40 urabe Exp $ */
 /* "recvnmx.c"    2001.7.18-19 modified from recvt.c and nmx2raw.c  urabe */
 /*                2001.8.18 */
 /*                2001.10.5 workaround for hangup */
@@ -11,6 +11,8 @@
 /*                2002.8.9  process re-tx packets properly */
 /*                2005.4.14 NP format */
 /*                2010.10.13 64bit check? */
+/*                2013.9.17 NIC for receive can be specified by -i IP_address (IPv4) */
+
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -80,7 +82,7 @@
 #define MAXCH     1024
 
 static const char rcsid[] =
-  "$Id: recvnmx.c,v 1.19 2011/06/01 11:09:21 uehira Exp $";
+  "$Id: recvnmx.c,v 1.20 2014/02/05 08:49:40 urabe Exp $";
 
 char *progname,*logfile;
 int  syslog_mode = 0, exit_status;
@@ -646,7 +648,7 @@ main(int argc, char *argv[])
   if(argc>4+optind) logfile=argv[4+optind];
   else logfile=NULL;
 
-  sock = udp_accept4(to_port, 64);
+  sock = udp_accept4(to_port, 64, interface);
   /* if((sock=socket(AF_INET,SOCK_DGRAM,0))<0) err_sys("socket"); */
   /* i=65535; */
   /* if(setsockopt(sock,SOL_SOCKET,SO_RCVBUF,(char *)&i,sizeof(i))<0) */

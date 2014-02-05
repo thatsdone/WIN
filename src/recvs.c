@@ -1,4 +1,4 @@
-/* $Id: recvs.c,v 1.9 2011/06/01 11:09:21 uehira Exp $ */
+/* $Id: recvs.c,v 1.10 2014/02/05 08:49:40 urabe Exp $ */
 /* "recvs.c"    receive sync frames      2000.3.14       urabe */
 /* 2000.3.21 */
 /* 2000.4.17 */
@@ -394,7 +394,7 @@ main(argc,argv)
   if(host_port)
     {
     /* destination host/port */
-    sock = udp_dest4(host_name, host_port, &to_addr, 32, 0);
+    sock = udp_dest4(host_name, host_port, &to_addr, 32, 0, (char *)0);
     /* if(!(h=gethostbyname(host_name))) err_sys("can't find host"); */
 /*     memset((char *)&to_addr,0,sizeof(to_addr)); */
 /*     to_addr.sin_family=AF_INET; */

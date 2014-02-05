@@ -1,8 +1,8 @@
-.TH relay 1W "2005.5.18" "WIN SYSTEM" "WIN SYSTEM"
+.TH relay 1W "2013.9.18" "WIN SYSTEM" "WIN SYSTEM"
 .SH 名称
 relay, relayd - win 形式データのIP上の中継
 .SH 形式
-relay [\-\fBNnrD\fR] [\-\fBb\fI bufsiz\fR] [\-\fBd\fI\ delay\fR] 
+relay [\-\fBeNnrD\fR] [\-\fBb\fI bufsiz\fR] [\-\fBd\fI\ delay\fR] 
 [\-\fBf\fI ctlfile\fR] [\-\fBg\fI\ group\fR]
 [\-\fBi\fI\ interface\fR] [\-\fBp\fI\ src_port\fR] [\-\fBs\fI\ sinterface\fR] 
 [\-\fBt\fI\ ttl\fR]
@@ -13,7 +13,7 @@ relay [\-\fBNnrD\fR] [\-\fBb\fI bufsiz\fR] [\-\fBd\fI\ delay\fR]
 .I logfile
 ]
 .LP
-relayd [\-\fBNnr\fR] [\-\fBb\fI bufsiz\fR] [\-\fBd\fI\ delay\fR] 
+relayd [\-\fBeNnr\fR] [\-\fBb\fI bufsiz\fR] [\-\fBd\fI\ delay\fR] 
 [\-\fBf\fI ctlfile\fR] [\-\fBg\fI\ group\fR] 
 [\-\fBi\fI\ interface\fR] [\-\fBp\fI\ src_port\fR] [\-\fBs\fI\ sinterface\fR] 
 [\-\fBt\fI\ ttl\fR]
@@ -89,6 +89,9 @@ daemon モードで起動します。
 パケットが届いたとき、そのパケットを送信する前に
 .I delay
 ミリ秒の遅延を挿入します。
+.IP \fB\-e 5
+受信パケットを捨てるべき送り元ホストからのパケットを受信したら
+ctlfileを読み直します。
 .IP "\fB\-f \fIctlfile" 5
 制御ファイル
 .I \ ctlfile
@@ -118,7 +121,7 @@ IPマルチキャストアドレス
 .I group
 に対して送信されるパケットを受信します。
 .IP "\fB\-i \fIinterface" 5
-IPマルチキャストアドレス宛のパケットを受信する
+データパケットを受信する
 ネットワークインターフェースを、そのインターフェースのIPアドレス
 .I interface
 で指定します。
@@ -135,9 +138,7 @@ IPマルチキャストアドレス宛のパケットを受信する
 DVB衛星配信ボードによる受信のような一方通行の伝送路の場合には、
 これにより不要なパケット送信を抑制することができます。
 .IP "\fB\-s \fIsinterface" 5
-宛先
-.I dest
-がIPマルチキャストアドレスであるとき、パケットを送信する
+データパケットを送信する
 ネットワークインターフェースを、そのインターフェースのIPアドレス
 .I sinterface
 で指定します。

@@ -1,4 +1,4 @@
-/* $Id: recvt.c,v 1.33 2011/06/01 11:09:21 uehira Exp $ */
+/* $Id: recvt.c,v 1.34 2014/02/05 08:49:40 urabe Exp $ */
 /*-
  "recvt.c"      4/10/93 - 6/2/93,7/2/93,1/25/94    urabe
                 2/3/93,5/25/94,6/16/94 
@@ -57,6 +57,8 @@
                           ht[].pnos[] : unsigned int --> int
 		2011.1.7 -e for automatically reload chfile
 		          if packet comes from deny host.
+                2013.9.17 suppress rate statistics for inactive hosts
+                2013.9.17 NIC for receive can be specified by -i IP_address (IPv4)
 -*/
 
 #ifdef HAVE_CONFIG_H
@@ -114,7 +116,7 @@
 #define N_PNOS    62    /* length of packet nos. history >=2 */
 
 static const char rcsid[] =
-  "$Id: recvt.c,v 1.33 2011/06/01 11:09:21 uehira Exp $";
+  "$Id: recvt.c,v 1.34 2014/02/05 08:49:40 urabe Exp $";
 
 static uint8_w rbuf[MAXMESG],ch_table[WIN_CHMAX];
 static char *chfile[N_CHFILE];
@@ -318,6 +320,7 @@ read_chfile(void)
     for(i=0;i<N_HOST;i++) /* print statistics for hosts */
       {
       if(ht[i].host==0) break;
+      if(ht[i].n_packets==0 && ht[i].n_bytes==0) continue;
       snprintf(tb,sizeof(tb),"  src %d.%d.%d.%d:%d   %lu %lu %lu %lu",
 	       ((uint8_w *)&ht[i].host)[0],((uint8_w *)&ht[i].host)[1],
 	       ((uint8_w *)&ht[i].host)[2],((uint8_w *)&ht[i].host)[3],
@@ -715,7 +718,7 @@ main(int argc, char *argv[])
   char tb[256],tb2[256];
   /* struct ip_mreq stMreq; */  /*- 64bit ok -*/
   char mcastgroup[256]; /* multicast address */
-  char interface[256]; /* multicast interface */
+  char interface[256]; /* network interface */
   time_t ts,sec,sec_p;  /*- 64bit ok -*/
   struct ch_hist  chhist;
   struct hostent *h;
@@ -774,7 +777,7 @@ main(int argc, char *argv[])
 	  exit(1);
 	}
         break;
-      case 'i':   /* interface (ordinary IP address) which receive mcast */
+      case 'i':   /* interface (ordinary IP address) for receive */
         /* strcpy(interface,optarg); */
 	if (snprintf(interface, sizeof(interface), "%s", optarg)
 	    >= sizeof(interface)) {
@@ -924,7 +927,7 @@ main(int argc, char *argv[])
   snprintf(tb,sizeof(tb),"TS window %lds - +%lds",pre,post);
   write_log(tb);
 
-  sock = udp_accept4(to_port, sbuf);
+  sock = udp_accept4(to_port, sbuf, interface);
   /* if((sock=socket(AF_INET,SOCK_DGRAM,0))<0) err_sys("socket"); */
   /* for(j=sbuf;j>=16;j-=4) */
   /*   { */

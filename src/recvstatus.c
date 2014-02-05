@@ -1,4 +1,4 @@
-/* $Id: recvstatus.c,v 1.8 2011/06/01 11:09:21 uehira Exp $ */
+/* $Id: recvstatus.c,v 1.9 2014/02/05 08:49:40 urabe Exp $ */
 
 /* "recvstatus.c"      5/24/95    urabe */
 /* 97.7.17 two lines of "if() continue;" in the main loop */
@@ -44,7 +44,7 @@
 #define MAXMESG   2048
 
 static const char rcsid[] =
-  "$Id: recvstatus.c,v 1.8 2011/06/01 11:09:21 uehira Exp $";
+  "$Id: recvstatus.c,v 1.9 2014/02/05 08:49:40 urabe Exp $";
 
 static int sock;     /* socket */
 static uint8_w rbuf[MAXMESG],stt[WIN_CHMAX];
@@ -90,7 +90,7 @@ main(int argc, char *argv[])
   snprintf(tb,sizeof(tb),"started. port=%d file=%s",to_port,logfile);
   write_log(tb);
 
-  sock = udp_accept4(to_port, 32);
+  sock = udp_accept4(to_port, 32, (char *)0);
   /* if((sock=socket(AF_INET,SOCK_DGRAM,0))<0) err_sys("socket"); */
   /* i=32768; */
   /* if(setsockopt(sock,SOL_SOCKET,SO_RCVBUF,(char *)&i,sizeof(i))<0) */

@@ -1,4 +1,4 @@
-/* $Id: udp_dest.c,v 1.7 2011/11/17 03:58:42 uehira Exp $ */
+/* $Id: udp_dest.c,v 1.8 2014/02/05 08:49:41 urabe Exp $ */
 
 /*
  * Copyright (c) 2001-2011
@@ -165,7 +165,8 @@ udp_dest(const char *hostname, const char *port, struct sockaddr *saptr,
  */
 int
 udp_dest4(const char *hostname, const uint16_t port,
-	  struct sockaddr_in *saptr, int sockbuf, const uint16_t src_port)
+	  struct sockaddr_in *saptr, int sockbuf, const uint16_t src_port,
+	  const char *interface)
 {
   int  sockfd;
   struct hostent  *h;
@@ -211,7 +212,8 @@ udp_dest4(const char *hostname, const uint16_t port,
   /* bind my socket to a local port */
   memset(&src_addr, 0, sizeof(src_addr));
   src_addr.sin_family = AF_INET;
-  src_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+  if(*interface) src_addr.sin_addr.s_addr=inet_addr(interface);
+  else src_addr.sin_addr.s_addr=htonl(INADDR_ANY);
   src_addr.sin_port = htons(src_port);
   if (src_port) {
     (void)snprintf(tbuf, sizeof(tbuf), "src_port=%d", src_port);

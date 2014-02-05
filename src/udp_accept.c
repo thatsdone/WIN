@@ -1,4 +1,4 @@
-/* $Id: udp_accept.c,v 1.5 2011/11/17 03:58:42 uehira Exp $ */
+/* $Id: udp_accept.c,v 1.6 2014/02/05 08:49:41 urabe Exp $ */
 
 /*
  * Copyright (c) 2001-2011
@@ -137,7 +137,7 @@ udp_accept(const char *port, int *maxsoc, int sockbuf, int family)
  *  IPv4 only.
  */
 int
-udp_accept4(const uint16_t port, int sockbuf)
+udp_accept4(const uint16_t port, int sockbuf, const char *interface)
 {
   int  sockfd;
   int  sock_bufsiz;
@@ -165,7 +165,8 @@ udp_accept4(const uint16_t port, int sockbuf)
   /* bind */
   memset(&to_addr, 0, sizeof(to_addr));
   to_addr.sin_family = AF_INET;
-  to_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+  if(*interface) to_addr.sin_addr.s_addr=inet_addr(interface);
+  else to_addr.sin_addr.s_addr=htonl(INADDR_ANY);
   to_addr.sin_port = htons(port);
   if (bind(sockfd, (struct sockaddr *)&to_addr, sizeof(to_addr)) < 0) {
     (void)close(sockfd);

@@ -1,4 +1,4 @@
-/* $Id: udpu.h,v 1.4 2011/11/17 03:58:42 uehira Exp $ */
+/* $Id: udpu.h,v 1.5 2014/02/05 08:49:41 urabe Exp $ */
 
 /*
  * Copyright (c) 2001-2011
@@ -31,8 +31,8 @@ struct conntable * udp_accept(const char *, int *, int, int);
 
 /* IPv4 only version */
 int udp_dest4(const char *, const uint16_t, struct sockaddr_in *,
-	      int, const uint16_t);
-int udp_accept4(const uint16_t, int);
+	      int, const uint16_t, const char *);
+int udp_accept4(const uint16_t, int, const char *);
 
 /* Multicast functions (IPv4 & IPv6) */
 void mcast_join(const int, const char *, const char *);

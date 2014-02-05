@@ -1,4 +1,4 @@
-/* $Id: recvstatus2.c,v 1.10 2011/06/01 11:09:21 uehira Exp $ */
+/* $Id: recvstatus2.c,v 1.11 2014/02/05 08:49:40 urabe Exp $ */
 
 /* modified from "recvstatus.c" */
 /* 2002.6.19 recvstatus2 receive A8/A9 packets from Datamark LS-7000XT */
@@ -66,7 +66,7 @@
 /* #define DEBUG   0 */
 
 static const char rcsid[] =
-  "$Id: recvstatus2.c,v 1.10 2011/06/01 11:09:21 uehira Exp $";
+  "$Id: recvstatus2.c,v 1.11 2014/02/05 08:49:40 urabe Exp $";
 
 char *progname, *logfile = NULL;
 int syslog_mode = 0, exit_status = EXIT_SUCCESS;
@@ -182,7 +182,7 @@ main(int argc, char *argv[])
   snprintf(tb,sizeof(tb),"started. port=%d logdir=%s",to_port,logdir);
   write_log(tb);
 
-  sock = udp_accept4(to_port, DEFAULT_RCVBUF);
+  sock = udp_accept4(to_port, DEFAULT_RCVBUF, interface);
   /* if((sock=socket(AF_INET,SOCK_DGRAM,0))<0) err_sys("socket"); */
 
   /* memset((char *)&to_addr,0,sizeof(to_addr)); */

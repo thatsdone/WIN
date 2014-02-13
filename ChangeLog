@@ -1,4 +1,10 @@
- $Id: ChangeLog,v 1.210 2014/02/05 08:49:37 urabe Exp $
+ $Id: ChangeLog,v 1.211 2014/02/13 06:40:13 urabe Exp $
+
+2014-02-13 Urabe Taku <urabe@eri.u-tokyo.ac.jp>
+	* src/recvt.c : bug in -i for multicast fixed (IPv4)
+	* src/send_raw.c : bug in -i fixed (IPv4)
+	* src/relay.c : NIC for receive can be specified by -i IP_address (IPv4)
+			source IP address can be specified by -s (IPv4)
 
 2014-02-05 Urabe Taku <urabe@eri.u-tokyo.ac.jp>
 	* src/recvt.c : suppress rate statistics for inactive hosts

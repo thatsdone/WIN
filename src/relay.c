@@ -1,4 +1,4 @@
-/* $Id: relay.c,v 1.20 2014/02/05 08:49:41 urabe Exp $ */
+/* $Id: relay.c,v 1.21 2014/02/13 06:40:16 urabe Exp $ */
 /*-
  "relay.c"      5/23/94-5/25/94,6/15/94-6/16/94,6/23/94,3/16/95 urabe
                 3/26/95 check_packet_no; port#
@@ -30,6 +30,9 @@
                 2010.9.30 64bit clean?
 		2011.1.7 -e for automatically reload chfile
 		            if packet comes from deny host.
+		2014.2.13 NIC for receive can be specified by -i IP_address (IPv4)
+		2014.2.13 source IP address can be specified by -s (IPv4)
+
 -*/
 
 #ifdef HAVE_CONFIG_H
@@ -81,7 +84,7 @@
 #define N_HOST    100   /* max N of hosts */  
 
 static const char rcsid[] =
-  "$Id: relay.c,v 1.20 2014/02/05 08:49:41 urabe Exp $";
+  "$Id: relay.c,v 1.21 2014/02/13 06:40:16 urabe Exp $";
 
 static int sock_in,sock_out;   /* socket */
 static uint8_w sbuf[BUFNO][MAXMESG],ch_table[WIN_CHMAX];
@@ -545,7 +548,9 @@ main(int argc, char *argv[])
   if(to_port>0)
     {
     /* 'in' port */
-    sock_in = udp_accept4(to_port, sockbuf, interface);
+    if(*mcastgroup) *tb=0;
+    else strcpy(tb,interface);
+    sock_in = udp_accept4(to_port, sockbuf, tb);
 
     /* if((sock_in=socket(AF_INET,SOCK_DGRAM,0))<0) err_sys("sock_in"); */
     /* for(j=sockbuf;j>=16;j-=4) */
@@ -611,7 +616,8 @@ main(int argc, char *argv[])
   /*   err_sys("bind_out"); */
 
   /* out multicast */
-  mcast_set_outopt(sock_out, sinterface, ttl);
+  if((to_addr.sin_addr.s_addr&0xF0)==0xE0) /* multicast */
+    mcast_set_outopt(sock_out, sinterface, ttl);
 /*   if(*sinterface) */
 /*     { */
 /*     mif=inet_addr(sinterface); */

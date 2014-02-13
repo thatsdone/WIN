@@ -1,4 +1,4 @@
-/* $Id: send_raw.c,v 1.30 2014/02/05 08:49:41 urabe Exp $ */
+/* $Id: send_raw.c,v 1.31 2014/02/13 06:40:16 urabe Exp $ */
 /*
     program "send_raw/send_mon.c"   1/24/94 - 1/25/94,5/25/94 urabe
                                     6/15/94 - 6/16/94
@@ -51,6 +51,7 @@
                2013.9.17 source IP address can be specified by -i
                2013.9.18 send keep-alive packet when '-k sec_keepal'
                2013.9.18 added -W option : send when data flow in SHM (cf.-w)
+	       2014.2.13 bug in -i fixed
 */
 
 #ifdef HAVE_CONFIG_H
@@ -105,7 +106,7 @@
 #define REQ_TIMO  10   /* timeout (sec) for request */
 
 static const char  rcsid[] =
-   "$Id: send_raw.c,v 1.30 2014/02/05 08:49:41 urabe Exp $";
+   "$Id: send_raw.c,v 1.31 2014/02/13 06:40:16 urabe Exp $";
 
 static int sock,raw,tow,all,n_ch,negate_channel,mtu,nbuf,slptime,
   no_resend;
@@ -652,7 +653,8 @@ main(int argc, char *argv[])
     write_log(tbuf);
     }
 
-  mcast_set_outopt(sock, interface, ttl);
+  if((to_addr.sin_addr.s_addr&0xF0)==0xE0) /* multicast */
+    mcast_set_outopt(sock, interface, ttl);
 /*   if(*interface) */
 /*     { */
 /*     mif=inet_addr(interface); */

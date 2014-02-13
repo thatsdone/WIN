@@ -1,4 +1,4 @@
-/* $Id: recvt.c,v 1.34 2014/02/05 08:49:40 urabe Exp $ */
+/* $Id: recvt.c,v 1.35 2014/02/13 06:40:15 urabe Exp $ */
 /*-
  "recvt.c"      4/10/93 - 6/2/93,7/2/93,1/25/94    urabe
                 2/3/93,5/25/94,6/16/94 
@@ -59,6 +59,7 @@
 		          if packet comes from deny host.
                 2013.9.17 suppress rate statistics for inactive hosts
                 2013.9.17 NIC for receive can be specified by -i IP_address (IPv4)
+                2014.2.13 bug in -i for multicast fixed (IPv4)
 -*/
 
 #ifdef HAVE_CONFIG_H
@@ -116,7 +117,7 @@
 #define N_PNOS    62    /* length of packet nos. history >=2 */
 
 static const char rcsid[] =
-  "$Id: recvt.c,v 1.34 2014/02/05 08:49:40 urabe Exp $";
+  "$Id: recvt.c,v 1.35 2014/02/13 06:40:15 urabe Exp $";
 
 static uint8_w rbuf[MAXMESG],ch_table[WIN_CHMAX];
 static char *chfile[N_CHFILE];
@@ -927,7 +928,9 @@ main(int argc, char *argv[])
   snprintf(tb,sizeof(tb),"TS window %lds - +%lds",pre,post);
   write_log(tb);
 
-  sock = udp_accept4(to_port, sbuf, interface);
+  if(*mcastgroup) *tb=0;
+  else strcpy(tb,interface);
+  sock = udp_accept4(to_port, sbuf, tb);
   /* if((sock=socket(AF_INET,SOCK_DGRAM,0))<0) err_sys("socket"); */
   /* for(j=sbuf;j>=16;j-=4) */
   /*   { */

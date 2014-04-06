@@ -1,4 +1,4 @@
- $Id: ChangeLog,v 1.212 2014/04/06 07:15:29 uehira Exp $
+ $Id: ChangeLog,v 1.213 2014/04/06 07:24:16 uehira Exp $
 
 2014-04-06 Uehira Kenji <uehira@bosai.go.jp>
 	* src/recvt46.c : fixed a bug.
@@ -800,7 +800,7 @@
 	* Version 1.1.79 released.
 
 2006-03-27  Tsuruoka Hiroshi <tsuru@eri.u-tokyo.ac.jp>
-	* wintowi:n BUG FIX (appealed by T. UEMURA)
+	* wintowin: BUG FIX (appealed by T. UEMURA)
 	* Version 1.1.78 released.
 
 2006-03-25  Uehira Kenji  <uehira@sevo.kyushu-u.ac.jp>

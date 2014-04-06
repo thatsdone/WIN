@@ -1,4 +1,4 @@
-/* $Id: udp_accept.c,v 1.5.2.1 2014/04/06 07:31:15 uehira Exp $ */
+/* $Id: udp_accept.c,v 1.5.2.2 2014/04/06 23:37:47 uehira Exp $ */
 
 /*
  * Copyright (c) 2001-2011
@@ -44,7 +44,8 @@
  */
 #ifdef INET6
 struct conntable *
-udp_accept(const char *port, int *maxsoc, int sockbuf, int family)
+udp_accept(const char *port, int *maxsoc, int sockbuf, int family,
+	   const char *interface)
 {
   int  sockfd, gai_error;
   struct conntable  *ct_top = NULL, *ct, **ctp = &ct_top, *ct_next;
@@ -53,6 +54,7 @@ udp_accept(const char *port, int *maxsoc, int sockbuf, int family)
   char  hbuf[NI_MAXHOST], sbuf[NI_MAXSERV];
   char  buf[1024];
   int   j;
+  char  *hnbuf;
 
   *maxsoc = -1;
 
@@ -61,7 +63,11 @@ udp_accept(const char *port, int *maxsoc, int sockbuf, int family)
   hints.ai_family = family;
   hints.ai_socktype = SOCK_DGRAM;
   hints.ai_protocol = IPPROTO_UDP;
-  if ((gai_error = getaddrinfo(NULL, port, &hints, &res)) != 0) {
+  if (*interface)
+    hnbuf = interface;
+  else
+    hnbuf = NULL;
+  if ((gai_error = getaddrinfo(hnbuf, port, &hints, &res)) != 0) {
     (void)snprintf(buf, sizeof(buf), "udp_accept: getaddrinfo : %s",
 		   gai_strerror(gai_error));
     write_log(buf);

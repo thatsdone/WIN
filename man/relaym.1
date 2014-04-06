@@ -1,9 +1,10 @@
-.TH relaym 1W "2004.11.11" "WIN SYSTEM" "WIN SYSTEM"
+.TH relaym 1W "2014.4.6" "WIN SYSTEM" "WIN SYSTEM"
 .SH 名称
 relaym, relaymd - win 形式データのIP上の複数の宛先への中継
 .SH 形式
 .\" relaym [\-\fBDnr\fR] [\-\fBb\fI bufsiz\fR] [\-\fBd\fI\ delay\fR] [\-\fBf\fI ctlfile\fR]
-relaym [\-\fBDnr\fR] [\-\fBb\fI bufsiz\fR] [\-\fBf\fI ctlfile\fR]
+relaym [\-\fBDNnr\fR] [\-\fBb\fI bufsiz\fR] [\-\fBf\fI ctlfile\fR]
+[\-\fBg\fI\ group\fR] [\-\fBi\fI\ interface\fR]
 .I inport
 .I paramfile
 [
@@ -11,7 +12,8 @@ relaym [\-\fBDnr\fR] [\-\fBb\fI bufsiz\fR] [\-\fBf\fI ctlfile\fR]
 ]
 .LP
 .\" relaymd [\-\fBnr\fR] [\-\fBb\fI bufsiz\fR] [\-\fBd\fI\ delay\fR] [\-\fBf\fI ctlfile\fR]
-relaymd [\-\fBnr\fR] [\-\fBb\fI bufsiz\fR] [\-\fBf\fI ctlfile\fR]
+relaymd [\-\fBNnr\fR] [\-\fBb\fI bufsiz\fR] [\-\fBf\fI ctlfile\fR]
+[\-\fBg\fI\ group\fR] [\-\fBi\fI\ interface\fR]
 .I inport
 .I paramfile
 [
@@ -103,6 +105,18 @@ daemon モードで起動します。
 当てはまるルールがあったらそれが適用されます。最後まで当てはまるルールが
 なかったらそのパケットを受け入れます(つまり最後にはかならず "+" の行が
 あるのと同じ)。
+.IP "\fB\-g \fIgroup" 5
+IPマルチキャストアドレス
+.I group
+に対して送信されるパケットを受信します。
+.IP "\fB\-i \fIinterface" 5
+データパケットを受信する
+ネットワークインターフェースを、そのインターフェースのIPアドレス
+.I interface
+で指定します。
+.IP "\fB\-N" 5
+受信パケットのパケット番号を検査しません。パケット番号フィールド
+(先頭の２バイト)は書き換えられず、つまり受信パケットがそのまま中継されます。
 .IP "\fB\-n" 5
 拒否すべき送り元アドレスからのパケットや重複して受信した再送パケット
 についての情報をログに報告しません。
@@ -112,6 +126,6 @@ DVB衛星配信ボードによる受信のような一方通行の伝送路の場合には、
 これにより不要なパケット送信を抑制することができます。
 .SH ソース 
 .TP
-`relaym.c daemon_mode.c win_log.c udp_accept.c udp_dest.c'
+`relaym.c'
 .SH 関連事項
 winformat(1W), recvt(1W), send_raw(1W), order(1W), relay(1W)

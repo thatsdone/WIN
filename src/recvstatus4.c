@@ -1,13 +1,12 @@
-/* $Id: recvstatus3.c,v 1.10.2.1 2014/04/06 23:37:46 uehira Exp $ */
+/* $Id: recvstatus4.c,v 1.3.2.1 2014/04/06 23:37:46 uehira Exp $ */
 
 /* 
- * recvstatus3 :
- *   receive A8/A9 packets from Datamark LS-8000SH of LS8TEL14/16 firmware
+ * recvstatus4 :
+ *   receive A8/A9 packets from Datamark LS-7000 (not LS-70000XT)
  */
 
 /*
- * 2005-04-26  Initial version.
- * 2005-05-18  close security hall.
+ * 2009-03-06  Import from recvstatus3.c
  * 2010-09-30  64bit check.
  */
 
@@ -26,6 +25,7 @@
 #include <signal.h>
 #include <unistd.h>
 #include <errno.h>
+#include <syslog.h>
 
 #if TIME_WITH_SYS_TIME
 #include <sys/time.h>
@@ -38,25 +38,22 @@
 #endif  /* !HAVE_SYS_TIME_H */
 #endif  /* !TIME_WITH_SYS_TIME */
 
-#include <syslog.h>
-
 #include "daemon_mode.h"
 #include "udpu.h"
 #include "winlib.h"
-#include "ls8tel.h"
+#include "ls7000.h"
 
 #define MAXMSG       1025
 #define PATHMAX      1024
 
 static const char rcsid[] =
-  "$Id: recvstatus3.c,v 1.10.2.1 2014/04/06 23:37:46 uehira Exp $";
+  "$Id: recvstatus4.c,v 1.3.2.1 2014/04/06 23:37:46 uehira Exp $";
 
 char *progname, *logfile;
 int  exit_status, syslog_mode;
 
 static int  daemon_mode;
 
-/* prototypes */
 static void usage(void);
 int main(int, char *[]);
 
@@ -93,7 +90,7 @@ main(int argc, char *argv[])
 
   exit_status = EXIT_SUCCESS;
   daemon_mode = syslog_mode = 0;
-  if (strcmp(progname, "recvstatus3d") == 0)
+  if (strcmp(progname, "recvstatus4d") == 0)
     daemon_mode = 1;
   
   sockbuf = DEFAULT_RCVBUF;  /* default socket buffer size in KB */
@@ -129,7 +126,7 @@ main(int argc, char *argv[])
   /* check make directory */
   dirtop = argv[1];
 #if HAVE_MKDTEMP
-  (void)snprintf(dirname, sizeof(dirname), "%s/LS8000SH_XXXXXX", dirtop);
+  (void)snprintf(dirname, sizeof(dirname), "%s/LS7000_XXXXXX", dirtop);
   if ((ptname = mkdtemp(dirname)) == NULL) {
     (void)fprintf(stderr, "%s: %s\n", strerror(errno), dirname);
     usage();
@@ -139,7 +136,7 @@ main(int argc, char *argv[])
 #else
   (void)fprintf(stderr, "Warning: This program is not safe. Be careful.\n");
   (void)snprintf(dirname, sizeof(dirname),
-		 "%s/LS8000SH_%u", dirtop, (unsigned int)getpid());
+		 "%s/LS7000_%u", dirtop, (unsigned int)getpid());
   if (mkdir(dirname, 0755)) {
     (void)fprintf(stderr, "%s: %s\n", strerror(errno), dirname);
     usage();
@@ -216,45 +213,45 @@ main(int argc, char *argv[])
 #endif
 
 #if DEBUG
-      (void)snprintf(filename, sizeof(filename), "LS8000_PACKET.%04d", i);
+      (void)snprintf(filename, sizeof(filename), "LS7000_PACKET.%04d", i);
       if ((fp = fopen(filename, "w")) == NULL)
 	err_sys("fopen");
       (void)fwrite(rbuf, 1, psize, fp);
       (void)fclose(fp);
       i++;
 #endif
-      if (rbuf[LS8_PID] != 0xA8 && rbuf[LS8_PID] != 0xA9)
+      if (rbuf[LS7_PID] != 0xA8 && rbuf[LS7_PID] != 0xA9)
 	continue;
 
       /* Logger address */
-      ptr = rbuf + LS8_PHDER_LEN + LS8_A89_ADDR;
+      ptr = rbuf + LS7_PHDER_LEN + LS7_A89_ADDR;
       chnum = (ptr[0] << 8) + ptr[1];
 #if DEBUG
       printf("address: %04X\n", chnum);
 #endif
 
       /* check directory */
-      if (snprintf(dirname, sizeof(dirname), "%s/LS8_%04X",
+      if (snprintf(dirname, sizeof(dirname), "%s/LS7_%04X",
 		   dirtop, chnum) >= sizeof(dirname))
 	err_sys("snprintf");
       if (dir_check(dirname) < 0)
 	err_sys("check_dir");
 
       /* check sub-directory */
-      if (rbuf[LS8_PID] == 0xA8) {
-	if (snprintf(dirname, sizeof(dirname), "%s/LS8_%04X/%s",
-		     dirtop, chnum, A8_DIR) >= sizeof(dirname))
+      if (rbuf[LS7_PID] == 0xA8) {
+	if (snprintf(dirname, sizeof(dirname), "%s/LS7_%04X/%s",
+		     dirtop, chnum, LS7_A8_DIR) >= sizeof(dirname))
 	  err_sys("snprintf");
-      } else if (rbuf[LS8_PID] == 0xA9) {
-	if (snprintf(dirname, sizeof(dirname), "%s/LS8_%04X/%s",
-		     dirtop, chnum, A9_DIR) >= sizeof(dirname))
+      } else if (rbuf[LS7_PID] == 0xA9) {
+	if (snprintf(dirname, sizeof(dirname), "%s/LS7_%04X/%s",
+		     dirtop, chnum, LS7_A9_DIR) >= sizeof(dirname))
 	  err_sys("snprintf");
       }
       if (dir_check(dirname) < 0)
 	err_sys("check_dir");
 
       /* set file name */
-      ptr = rbuf + LS8_PHDER_LEN + LS8_A89_TIME;
+      ptr = rbuf + LS7_PHDER_LEN + LS7_A89_TIME;
       if (snprintf(filename, sizeof(filename), "%s/%02x%02x%02x.%02x%02x%02x",
 		   dirname, ptr[0],  ptr[1],
 		   ptr[2],  ptr[3],  ptr[4],  ptr[5])
@@ -264,17 +261,17 @@ main(int argc, char *argv[])
       /* save data body */
       if ((fp = fopen(filename, "w")) == NULL)
 	err_sys("fopen");
-      ptr = rbuf + LS8_PHDER_LEN;
-      if (rbuf[LS8_PID] == 0xA8) {
-	dsize = fwrite(ptr, 1, LS8_A8_DLEN, fp);
-	if (dsize != LS8_A8_DLEN) {
+      ptr = rbuf + LS7_PHDER_LEN;
+      if (rbuf[LS7_PID] == 0xA8) {
+	dsize = fwrite(ptr, 1, psize - LS7_PHDER_LEN, fp);
+	if (dsize != psize - LS7_PHDER_LEN) {
 	  (void)snprintf(msg, sizeof(msg),
 			 "strange A8 packet: %zu bytes\n", dsize);
 	  write_log(msg);
 	}
-      } else if (rbuf[LS8_PID] == 0xA9) {
-	dsize = fwrite(ptr, 1, LS8_A9_DLEN, fp);
-	if (dsize != LS8_A9_DLEN) {
+      } else if (rbuf[LS7_PID] == 0xA9) {
+	dsize = fwrite(ptr, 1, psize - LS7_PHDER_LEN, fp);
+	if (dsize != psize - LS7_PHDER_LEN) {
 	  (void)snprintf(msg, sizeof(msg),
 			 "strange A9 packet: %zu bytes\n", dsize);
 	  write_log(msg);

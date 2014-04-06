@@ -1,4 +1,4 @@
-/* $Id: recvt46.c,v 1.6.2.1 2014/04/06 07:36:52 uehira Exp $ */
+/* $Id: recvt46.c,v 1.6.2.2 2014/04/06 23:37:46 uehira Exp $ */
 /*-
  "recvt.c"      4/10/93 - 6/2/93,7/2/93,1/25/94    urabe
                 2/3/93,5/25/94,6/16/94 
@@ -58,6 +58,7 @@
 		2011.1.7 -e for automatically reload chfile
 		          if packet comes from deny host.
 		2011.2.13-15 IPv6/IPv4 version of 'recvt.c'. (Uehira)
+		2014.4.6 NIC for receive can be specified by -i [IP_address or hostname] (IPv4 & IPv6)
 -*/
 
 #ifdef HAVE_CONFIG_H
@@ -115,7 +116,7 @@
 #define N_PNOS    62    /* length of packet nos. history >=2 */
 
 static const char rcsid[] =
-  "$Id: recvt46.c,v 1.6.2.1 2014/04/06 07:36:52 uehira Exp $";
+  "$Id: recvt46.c,v 1.6.2.2 2014/04/06 23:37:46 uehira Exp $";
 
 static uint8_w rbuf[MAXMESG], ch_table[WIN_CHMAX];
 static char *chfile[N_CHFILE];
@@ -350,6 +351,8 @@ read_chfile(void)
     for (i = 0; i < N_HOST; i++) { /* print statistics for hosts */
       if (ht[i].host[0] == '\0')
 	break;
+      if(ht[i].n_packets == 0 && ht[i].n_bytes == 0)
+	continue;
       if (strchr(ht[i].host, ':') != NULL)
 	snprintf(tb, sizeof(tb), "  src [%s]:%s   %lu %lu %lu %lu",
 		 ht[i].host, ht[i].port, ht[i].n_packets, ht[i].n_bytes,
@@ -795,7 +798,7 @@ main(int argc, char *argv[])
   char tb[256],tb2[256];
   /* struct ip_mreq stMreq; */  /*- 64bit ok -*/
   char mcastgroup[256]; /* multicast address */
-  char interface[256]; /* multicast interface */
+  char interface[256]; /* network interface */
   time_t ts,sec,sec_p;  /*- 64bit ok -*/
   struct ch_hist  chhist;
   /* struct hostent *h; */
@@ -878,7 +881,7 @@ main(int argc, char *argv[])
 	exit(1);
       }
       break;
-    case 'i':   /* interface (ordinary IP address) which receive mcast */
+    case 'i':   /* interface (ordinary IP address) for receive */
       if (snprintf(interface, sizeof(interface), "%s", optarg)
 	  >= sizeof(interface)) {
 	fprintf(stderr,"'%s': -i option : Buffer overrun!\n",progname);
@@ -1008,7 +1011,11 @@ main(int argc, char *argv[])
   write_log(tb);
 
   /* 'in' port of localhost */
-  if ((ct_top = udp_accept(input_port, &maxsoc, sbuf, family)) == NULL)
+  if (*mcastgroup)
+    *tb = 0;
+  else
+    (void)strcpy(tb, interface);
+  if ((ct_top = udp_accept(input_port, &maxsoc, sbuf, family, tb)) == NULL)
     err_sys("udp_accept");
   maxsoc++;
 

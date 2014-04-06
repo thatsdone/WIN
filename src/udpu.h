@@ -1,4 +1,4 @@
-/* $Id: udpu.h,v 1.4.2.1 2014/04/06 07:31:15 uehira Exp $ */
+/* $Id: udpu.h,v 1.4.2.2 2014/04/06 23:37:47 uehira Exp $ */
 
 /*
  * Copyright (c) 2001-2011
@@ -26,7 +26,7 @@ struct conntable {
 #ifdef INET6
 int udp_dest(const char *, const char *, struct sockaddr *, socklen_t *,
 	     const char *, int);
-struct conntable * udp_accept(const char *, int *, int, int);
+struct conntable * udp_accept(const char *, int *, int, int, const char *);
 #endif  /* INET6 */
 
 /* IPv4 only version */

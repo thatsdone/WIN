@@ -1,4 +1,34 @@
- $Id: ChangeLog,v 1.203.2.5 2014/01/09 00:42:48 uehira Exp $
+ $Id: ChangeLog,v 1.203.2.6 2014/04/06 07:31:12 uehira Exp $
+
+2014-02-13 Urabe Taku <urabe@eri.u-tokyo.ac.jp>
+	* src/recvt.c : bug in -i for multicast fixed (IPv4)
+	* src/send_raw.c : bug in -i fixed (IPv4)
+	* src/relay.c : NIC for receive can be specified by -i IP_address (IPv4)
+			source IP address can be specified by -s (IPv4)
+
+2014-02-05 Urabe Taku <urabe@eri.u-tokyo.ac.jp>
+	* src/recvt.c : suppress rate statistics for inactive hosts
+			NIC for receive can be specified by -i IP_address (IPv4)
+			<- udp_accept4(), udp_accept4()
+	* man/recvt.1 : see above
+	* src/relay.c : NIC for receive can be specified by -i IP_address (IPv4)
+			NIC for send can be specified by -s IP_address (IPv4)
+			<- udp_accept4(), udp_accept4()
+	* man/relay.1 : see above
+	* src/send_raw.c : source IP address can be specified by -i
+			   send keep-alive packet when '-k sec_keepal'
+			   added -W option : send when data flow in SHM (cf.-w)
+			   <- udp_dest4()
+	* man/send_raw.1 : see above
+	* src/send_raw_old.c : <- udp_dest4()
+	* src/recvt_LS7000.c : <- udp_accept4()
+	* src/udp_accept.c : added argument 'const char *interface' to udp_accept4()
+	* src/udp_dest.c : added argument 'const char *interface'to udp_dest4()
+	* src/udpu.h : <- udp_accept4()
+	* src/recvnmx.c : <- udp_accept4()
+	* src/recvs.c :	<- udp_dest4()
+	* src/recvstatus.c : <- udp_accept4()
+	* src/recvstatus2.c : <- udp_accept4()
 
 2014-01-08 Uehira Kenji <uehira@bosai.go.jp>
 	* Version 2.2.6 released.

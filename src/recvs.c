@@ -1,9 +1,10 @@
-/* $Id: recvs.c,v 1.5 2002/02/20 02:13:01 urabe Exp $ */
+/* $Id: recvs.c,v 1.9.2.1 2014/04/06 07:31:13 uehira Exp $ */
 /* "recvs.c"    receive sync frames      2000.3.14       urabe */
 /* 2000.3.21 */
 /* 2000.4.17 */
 /* 2000.4.24/2001.11.14 strerror() */
 /* 2001.11.14 ntohs() */
+/*                2005.6.24 don't change optarg's content (-o) */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -29,19 +30,26 @@
 #endif  /* !TIME_WITH_SYS_TIME */
 
 #include <unistd.h>
+#if HAVE_STROPTS_H
 #include <stropts.h>
+#endif
 #include <fcntl.h>
 #include <sys/stat.h>
+#if HAVE_SYS_SER_SYNC_H
 #include <sys/ser_sync.h>
+#endif
 #include <sys/socket.h>
 #include <netinet/in.h>
+#if HAVE_ARPA_INET_H
+#include <arpa/inet.h>
+#endif
 #include <netdb.h>
 #include <errno.h>
 #if AURORA
 #include "/opt/AURAacs/syncuser.h"
 #endif
 
-#include "subst_func.h"
+#include "winlib.h"
 
 #define DEBUG     0
 #define DEBUG1    0
@@ -52,53 +60,12 @@
 #define MAXMESG   2048
 
 unsigned char rbuf[MAXMESG];
-char tb[256],*progname,logfile[256];
+char tb[256];
 int pn_req;
 unsigned short station;
 
-get_time(rt)
-  int *rt;
-  {
-  struct tm *nt;
-  unsigned long ltime;
-  time(&ltime);
-  nt=localtime(&ltime);
-  rt[0]=nt->tm_year%100;
-  rt[1]=nt->tm_mon+1;
-  rt[2]=nt->tm_mday;
-  rt[3]=nt->tm_hour;
-  rt[4]=nt->tm_min;
-  rt[5]=nt->tm_sec;
-  }
-
-write_log(logfil,ptr)
-  char *logfil;
-  char *ptr;
-  {
-  FILE *fp;
-  int tm[6];
-  if(*logfil) fp=fopen(logfil,"a");
-  else fp=stdout;
-  get_time(tm);
-  fprintf(fp,"%02d%02d%02d.%02d%02d%02d %s %s\n",
-    tm[0],tm[1],tm[2],tm[3],tm[4],tm[5],progname,ptr);
-  if(*logfil) fclose(fp);
-  }
-
-ctrlc()
-  {
-  write_log(logfile,"end");
-  exit(0);
-  }
-
-err_sys(ptr)
-  char *ptr;
-  {
-  perror(ptr);
-  write_log(logfile,ptr);
-  if(strerror(errno)) write_log(logfile,strerror(errno));
-  ctrlc();
-  }
+char *progname, *logfile;
+int  syslog_mode = 0, exit_status = EXIT_SUCCESS;
 
 #if AURORA
 config_aurora(fd,baud)
@@ -238,7 +205,7 @@ read_aurora(fd)
        }
     }
   }
-  return rdataptr.len;
+  return (rdataptr.len);
 }
 #endif
 
@@ -317,7 +284,7 @@ check_pno_s(to_addr,pn,pn_f,sock,fd_req) /* returns -1 if duplicated */
       sendto(sock,pnc,8,0,(struct sockaddr *)to_addr,sizeof(*to_addr));
       sprintf(tb,"request resend %s:%d #%02X",
         inet_ntoa(to_addr->sin_addr),ntohs(to_addr->sin_port),pn_1);
-      write_log(logfile,tb);
+      write_log(tb);
 #if DEBUG1
       printf("<%d ",pn_1);
 #endif
@@ -326,7 +293,7 @@ check_pno_s(to_addr,pn,pn_f,sock,fd_req) /* returns -1 if duplicated */
       {
       write(fd_req,pnc,8);
       sprintf(tb,"request resend #%02X",pn_1);
-      write_log(logfile,tb);
+      write_log(tb);
 #if DEBUG1
       printf("<%d ",pn_1);
 #endif
@@ -334,9 +301,9 @@ check_pno_s(to_addr,pn,pn_f,sock,fd_req) /* returns -1 if duplicated */
     nos[pn_1]=0;  /* reset bit for the packet no */
     } while((pn_1=(++pn_1&0xff))!=pn);
   init=1;
-  if(pn!=pn_f && nos[pn_f]) return -1;
+  if(pn!=pn_f && nos[pn_f]) return (-1);
      /* if the resent packet is duplicated, return with -1 */
-  return 0;
+  return (0);
   }
 
 main(argc,argv)
@@ -348,18 +315,13 @@ main(argc,argv)
   unsigned long uni;
   unsigned char *ptr,tm[6],*ptr_size,device[80];
   int i,j,k,size,n,re,fd,baud,aurora,c,fd_req,req_line;
-  struct Shm {
-    unsigned long p;    /* write point */
-    unsigned long pl;   /* write limit */
-    unsigned long r;    /* latest */
-    unsigned long c;    /* counter */
-    unsigned char d[1]; /* data buffer */
-    } *sh;
+  struct Shm  *sh;
   int sock;
   struct sockaddr_in to_addr;
   struct hostent *h;
   unsigned short host_port;
   unsigned char host_name[100];
+  char tb2[256];
 
   if(progname=strrchr(argv[0],'/')) progname++;
   else progname=argv[0];
@@ -369,7 +331,7 @@ main(argc,argv)
   sprintf(tb,
     " usage : '%s (-as) (-i my_ID) (-p host:port) (-b rate) [device] [shm_key] [shm_size(KB)] ([log file])'",
     progname);
-  while((c=getopt(argc,argv,"ap:b:si:"))!=EOF)
+  while((c=getopt(argc,argv,"ap:b:si:"))!=-1)
     {
     switch(c)
       {
@@ -383,13 +345,14 @@ main(argc,argv)
         aurora=1;
         break;
       case 'p':   /* host:port */
-        if((ptr=(unsigned char *)index(optarg,':'))==NULL)
+        strcpy(tb2,optarg);
+        if((ptr=(unsigned char *)index(tb2,':'))==NULL)
           {
           fprintf(stderr,"Illegal host:port\n");
           exit(-1);
           }
         *ptr=0;
-        strcpy(host_name,optarg);
+        strcpy(host_name,tb2);
         host_port=atoi(ptr+1);
         break;
       case 's':   /* send request resend packets to line */
@@ -410,36 +373,39 @@ main(argc,argv)
   strcpy(device,argv[1+optind]);
   shm_key=atoi(argv[2+optind]);
   size=atoi(argv[3+optind])*1000;
-  *logfile=0;
-  if(argc>4+optind) strcpy(logfile,argv[4+optind]);
+  logfile=NULL;
+  if(argc>4+optind) logfile=argv[4+optind];
 
   /* shared memory */
-  if((shmid=shmget(shm_key,size,IPC_CREAT|0666))<0) err_sys("shmget");
-  if((sh=(struct Shm *)shmat(shmid,(char *)0,0))==(struct Shm *)-1)
-    err_sys("shmat");
+  sh = Shm_create(shm_key, size, "start");
+  /* if((shmid=shmget(shm_key,size,IPC_CREAT|0666))<0) err_sys("shmget"); */
+  /* if((sh=(struct Shm *)shmat(shmid,(void *)0,0))==(struct Shm *)-1) */
+  /*   err_sys("shmat"); */
 
   /* initialize buffer */
-  sh->c=0;
-  sh->pl=(size-sizeof(*sh))/10*9;
-  sh->p=sh->r=(-1);
+  Shm_init(sh, size);    /* previous code had bug?? sh->p=0 ??? */
+  /*   sh->c=0; */
+  /*   sh->pl=(size-sizeof(*sh))/10*9; */
+  /*   sh->p=sh->r=(-1); */
 
-  sprintf(tb,"start shm_key=%d id=%d size=%d",shm_key,shmid,size);
-  write_log(logfile,tb);
+  /* sprintf(tb,"start shm_key=%d id=%d size=%d",shm_key,shmid,size); */
+  /* write_log(tb); */
 
   if(host_port)
     {
     /* destination host/port */
-    if(!(h=gethostbyname(host_name))) err_sys("can't find host");
-    memset((char *)&to_addr,0,sizeof(to_addr));
-    to_addr.sin_family=AF_INET;
-    memcpy((caddr_t)&to_addr.sin_addr,h->h_addr,h->h_length);
-/*  to_addr.sin_addr.s_addr=mklong(h->h_addr);*/
-    to_addr.sin_port=htons(host_port);
+    sock = udp_dest4(host_name, host_port, &to_addr, 32, 0, (char *)0);
+    /* if(!(h=gethostbyname(host_name))) err_sys("can't find host"); */
+/*     memset((char *)&to_addr,0,sizeof(to_addr)); */
+/*     to_addr.sin_family=AF_INET; */
+/*     memcpy((caddr_t)&to_addr.sin_addr,h->h_addr,h->h_length); */
+/* /\*  to_addr.sin_addr.s_addr=mkuint4(h->h_addr);*\/ */
+/*     to_addr.sin_port=htons(host_port); */
 
-    /* my socket */
-    if((sock=socket(AF_INET,SOCK_DGRAM,0))<0) err_sys("socket");
-    if(setsockopt(sock,SOL_SOCKET,SO_BROADCAST,(char *)&i,sizeof(i))<0)
-      err_sys("SO_BROADCAST setsockopt error\n");
+/*     /\* my socket *\/ */
+/*     if((sock=socket(AF_INET,SOCK_DGRAM,0))<0) err_sys("socket"); */
+/*     if(setsockopt(sock,SOL_SOCKET,SO_BROADCAST,(char *)&i,sizeof(i))<0) */
+/*       err_sys("SO_BROADCAST setsockopt error\n"); */
     }
 
   if((fd=open(device,O_RDWR))<0) err_sys("open HDLC device");
@@ -453,21 +419,21 @@ main(argc,argv)
 
   if(baud) sprintf(tb,"use internal TX clock %d bps",baud);
   else sprintf(tb,"use external TX clock");
-  write_log(logfile,tb);
+  write_log(tb);
   if(host_port)
     {
     sprintf(tb,"resend_req_port=%s:%d\n",host_name,host_port);
-    write_log(logfile,tb);
+    write_log(tb);
     }
-  if(req_line) write_log(logfile,"resend_req to line");
+  if(req_line) write_log("resend_req to line");
 
-  signal(SIGTERM,(void *)ctrlc);
-  signal(SIGINT,(void *)ctrlc);
+  signal(SIGTERM,(void *)end_program);
+  signal(SIGINT,(void *)end_program);
 
   for(i=0;i<6;i++) tm[i]=(-1);
   ptr=ptr_size=sh->d;
 
-  while(1)
+  for(;;)
     {
     n=read(fd,rbuf,MAXMESG);
 #if TEST_RESEND
@@ -487,7 +453,7 @@ main(argc,argv)
 #if DEBUG2
       sprintf(tb,"discard duplicated resent packet #%d for #%d",
         rbuf[2],rbuf[3]);
-      write_log(logfile,tb);
+      write_log(tb);
 #endif
       continue;
       }
@@ -501,7 +467,7 @@ main(argc,argv)
     ptr_size[1]=uni>>16;
     ptr_size[2]=uni>>8;
     ptr_size[3]=uni;      /* size (L) */
-    uni=time(0);
+    uni=time(NULL);
     ptr_size[4]=uni>>24;  /* tow (H) */
     ptr_size[5]=uni>>16;
     ptr_size[6]=uni>>8;

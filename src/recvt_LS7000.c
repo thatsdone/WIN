@@ -1,65 +1,10 @@
-/* $Id: recvt.c,v 1.33.2.1 2014/04/06 07:31:14 uehira Exp $ */
-/*-
- "recvt.c"      4/10/93 - 6/2/93,7/2/93,1/25/94    urabe
-                2/3/93,5/25/94,6/16/94 
-                1/6/95 bug in adj_time fixed (tm[0]--) 
-                2/17/95 "illegal time" message stopped 
-                3/15-16/95 write_log changed 
-                3/26/95 check_packet_no; port# 
-                10/16/95 added processing of "host table full" 
-                5/22/96 support merged packet with ID="0x0A" 
-                5/22/96 widen time window to +/-30 min 
-                5/28/96 bcopy -> memcpy 
-                6/6/96,7/9/96 discard duplicated resent packets & fix bug  
-                12/29/96 "next" 
-                97.6.23 RCVBUF->65535 
-                97.9.4        & 50000 
-                97.12.18 channel selection by file 
-                97.12.23 ch no. in "illegal time" & LITTLE_ENDIAN 
-                98.4.23 b2d[] etc. 
-                98.6.26 yo2000 
-                99.2.4  moved signal(HUP) to read_chfile() by urabe 
-                99.4.19 byte-order-free 
-                2000.3.13 >=A1 format 
-                2000.4.24 added SS & SR check, check_time +/-60m 
-                2000.4.24 strerror() 
-                2000.4.25 added check_time() in >=A1 format 
-                2000.4.26 host control, statistics, -a, -m, -p options 
-                2001.2.20 wincpy() improved 
-                2001.3.9 debugged for sh->r 
-                2001.11.14 strerror(),ntohs() 
-                2002.1.7 implemented multicasting (options -g, -i) 
-                2002.1.7 option -n to suppress info on abnormal packets 
-                2002.1.8 MAXMESG increased to 32768 bytes 
-                2002.1.12 trivial fixes on 'usage' 
-                2002.1.15 option '-M' necessary for receiving mon data 
-                2002.3.2 wincpy2() discard duplicated data (TS+CH) 
-                2002.3.2 option -B ; write blksize at EOB 
-                2002.3.18 host control debugged 
-                2002.5.3 N_PACKET 64->128, 'no request resend' log 
-                2002.5.3 maximize RCVBUF size 
-                2002.5.3,7 maximize RCVBUF size ( option '-s' )
-                2002.5.14 -n debugged / -d to set ddd length 
-                2002.5.23 stronger to destructed packet 
-                2002.11.29 corrected byte-order of port no. in log 
-                2002.12.21 disable resend request if -r 
-                2003.3.24-25 -N (no pno) and -A (no TS) options 
-                2004.8.9 fixed bug introduced in 2002.5.23 
-                2004.10.26 daemon mode (Uehira) 
-                2004.11.15 corrected byte-order of port no. in log 
-                2005.2.17 option -o [source host]:[port] for send request 
-                2005.2.20 option -f [ch_file] for additional ch files 
-                2005.6.24 don't change optarg's content (-o) 
-                2005.9.25 allow disorder of arriving packets 
-                2005.9.25 host(:port) in control file
-		2009.1.8  64bit?
-                2010.10.4 fixed bug in check_pno().
-                          ht[].pnos[] : unsigned int --> int
-		2011.1.7 -e for automatically reload chfile
-		          if packet comes from deny host.
-                2013.9.17 suppress rate statistics for inactive hosts
-                2013.9.17 NIC for receive can be specified by -i IP_address (IPv4)
-                2014.2.13 bug in -i for multicast fixed (IPv4)
+/* $Id: recvt_LS7000.c,v 1.3.2.1 2014/04/06 07:31:15 uehira Exp $ */
+
+/*- 
+ * "recvt_LS7000.c"  uehira
+ *   2007-11-02  imported from recvt.c 1.29.2.1
+ *   2010-10-04  fixed bug in check_pno(). ht[].pnos[] : unsigned int --> int
+ *               64bit clean?
 -*/
 
 #ifdef HAVE_CONFIG_H
@@ -67,11 +12,10 @@
 #endif
 
 #include <sys/types.h>
-#include <sys/socket.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
-#include <sys/param.h>
 #include <sys/stat.h>
+#include <sys/socket.h>
 
 #include <netinet/in.h>
 #if HAVE_ARPA_INET_H
@@ -83,7 +27,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-
 #include <netdb.h>
 #include <errno.h>
 #include <syslog.h>
@@ -100,13 +43,13 @@
 #endif  /* !TIME_WITH_SYS_TIME */
 
 #include "daemon_mode.h"
-#include "udpu.h"
 #include "winlib.h"
+#include "udpu.h"
+#include "ls7000.h"
 
 #define DEBUG0    0
 #define DEBUG1    0
 #define DEBUG2    0
-#define DEBUG3    0     /* -o */
 #define DEBUG4    0     /* -y */
 #define BELL      0
 #define MAXMESG   32768
@@ -117,43 +60,40 @@
 #define N_PNOS    62    /* length of packet nos. history >=2 */
 
 static const char rcsid[] =
-  "$Id: recvt.c,v 1.33.2.1 2014/04/06 07:31:14 uehira Exp $";
+  "$Id: recvt_LS7000.c,v 1.3.2.1 2014/04/06 07:31:15 uehira Exp $";
 
-static uint8_w rbuf[MAXMESG],ch_table[WIN_CHMAX];
+static uint8_w rbuff[MAXMESG],rbuf[MAXMESG],ch_table[WIN_CHMAX];
 static char *chfile[N_CHFILE];
 static int n_ch,negate_channel,hostlist[N_HOST][3],n_host,no_pinfo,n_chfile;
-static int auto_reload_chfile;
-static int daemon_mode;
+static int  daemon_mode;
+static uint8_w  logger_address[2];
 
-char *progname, *logfile;
+char *progname,*logfile;
 int  syslog_mode, exit_status;
 
-static struct {
+struct {
     in_addr_t host;  /* unsigned int32_t */
     in_port_t port;  /* unsigned int16_t */
-    int ppnos;	/* pointer for pnos */  /* 0 <--> N_PNOS */
+    int ppnos;	/* pointer for pnos */
     int32_w pnos[N_PNOS];
-    int nosf[4]; /* 4 segments x 64 */  /* 64bit ok */
-    uint8_w  nos[256/8];     /*- 64bit ok?? -*/
-    unsigned long n_bytes;       /*- 64bit ok -*/
-    unsigned long n_packets;     /*- 64bit ok -*/
-  /*     unsigned int n_bytes; */
-  /*     unsigned int n_packets; */
+    int nosf[4]; /* 4 segments x 64 */
+    uint8_w nos[256/8];
+    unsigned long n_bytes;
+    unsigned long n_packets;
     } ht[N_HOST];
 
-struct ch_hist {
+struct channel_hist {
   int n;
   time_t (*ts)[WIN_CHMAX];
   int p[WIN_CHMAX];
 };
 
-/* prototyes */
+/* prototypes */
 static void read_chfile(void);
 static int check_pno(struct sockaddr_in *, unsigned int, unsigned int,
 		     int, socklen_t, ssize_t, int, int);
 static size_t wincpy2(uint8_w *, time_t, uint8_w *, ssize_t, int,
-		   struct ch_hist *, struct sockaddr_in *);
-static void send_req(int, struct sockaddr_in *);
+		   struct channel_hist *, struct sockaddr_in *);
 static void usage(void);
 int main(int, char *[]);
 
@@ -179,11 +119,11 @@ read_chfile(void)
       if(negate_channel) for(i=0;i<WIN_CHMAX;i++) ch_table[i]=1;
       else for(i=0;i<WIN_CHMAX;i++) ch_table[i]=0;
       ii=0;
-      while(fgets(tbuf,sizeof(tbuf),fp) != NULL)
+      while(fgets(tbuf,sizeof(tbuf),fp))
         {
         *host_name=0;
         if(sscanf(tbuf,"%s",host_name)==0) continue;  /* buffer overrun ok */
-        if(*host_name==0 || *host_name=='#') continue;
+	if(*host_name==0 || *host_name=='#') continue;
         if(*tbuf=='*') /* match any channel */
           {
           if(negate_channel) for(i=0;i<WIN_CHMAX;i++) ch_table[i]=0;
@@ -311,27 +251,24 @@ read_chfile(void)
 
   time(&ltime);
   tdif=ltime-ltime_p;
-  if (tdif != 0) {
-    tdif2=tdif/2;
-    if(ht[0].host)
-      {
-      snprintf(tb,sizeof(tb),"statistics in %ld s (pkts, B, pkts/s, B/s)",tdif);
-      write_log(tb);
-      }
-    for(i=0;i<N_HOST;i++) /* print statistics for hosts */
-      {
-      if(ht[i].host==0) break;
-      if(ht[i].n_packets==0 && ht[i].n_bytes==0) continue;
-      snprintf(tb,sizeof(tb),"  src %d.%d.%d.%d:%d   %lu %lu %lu %lu",
-	       ((uint8_w *)&ht[i].host)[0],((uint8_w *)&ht[i].host)[1],
-	       ((uint8_w *)&ht[i].host)[2],((uint8_w *)&ht[i].host)[3],
-	       ntohs(ht[i].port),ht[i].n_packets,ht[i].n_bytes,
-	       (ht[i].n_packets+tdif2)/tdif,(ht[i].n_bytes+tdif2)/tdif);
-      write_log(tb);
-      ht[i].n_packets=ht[i].n_bytes=0;
-      }
-    ltime_p=ltime;
-  }
+  tdif2=tdif/2;
+  if(ht[0].host)
+    {
+    snprintf(tb,sizeof(tb),"statistics in %ld s (pkts, B, pkts/s, B/s)",tdif);
+    write_log(tb);
+    }
+  for(i=0;i<N_HOST;i++) /* print statistics for hosts */
+    {
+    if(ht[i].host==0) break;
+    snprintf(tb,sizeof(tb),"  src %d.%d.%d.%d:%d   %lu %lu %lu %lu",
+	    ((uint8_w *)&ht[i].host)[0],((uint8_w *)&ht[i].host)[1],
+	    ((uint8_w *)&ht[i].host)[2],((uint8_w *)&ht[i].host)[3],
+	    ntohs(ht[i].port),ht[i].n_packets,ht[i].n_bytes,
+	    (ht[i].n_packets+tdif2)/tdif,(ht[i].n_bytes+tdif2)/tdif);
+    write_log(tb);
+    ht[i].n_packets=ht[i].n_bytes=0;
+    }
+  ltime_p=ltime;
   signal(SIGHUP,(void *)read_chfile);
   }
 
@@ -347,7 +284,7 @@ check_pno(struct sockaddr_in *from_addr, unsigned int pn, unsigned int pn_f,
 /*  int nr;                         no resend request if 1 */
 /*  int req_delay;                  packet count for delayed resend-request */
 
-/*  global : hostlist, n_host, no_pinfo, auto_reload_chfile */
+/*  global : hostlist, n_host, no_pinfo, logger_address[]  */
 /*  uinsiged int OK  */
   {
   int i,j,k,seg,dup;
@@ -356,7 +293,7 @@ check_pno(struct sockaddr_in *from_addr, unsigned int pn, unsigned int pn_f,
   in_port_t port_;  /* 16-bit-long port No. in network byte-order */
   unsigned int pn_1;  /* 64bit ok */
   static unsigned int mask[8]={0x80,0x40,0x20,0x10,0x08,0x04,0x02,0x01};
-  uint8_w pnc;   /* 64bit ok */
+  uint8_w pnc[8];  /* request resend packet */
   char tb[256];
 
 #if DEBUG4
@@ -380,10 +317,7 @@ check_pno(struct sockaddr_in *from_addr, unsigned int pn, unsigned int pn_f,
           ((uint8_w *)&host_)[2],((uint8_w *)&host_)[3],ntohs(port_));
         write_log(tb);
         }
-      /* automatically reload chfile */
-      if (auto_reload_chfile)
-	read_chfile();
-      return (-2);
+      return (-1);
       }
     }
   for(i=0;i<N_HOST;i++)
@@ -452,8 +386,12 @@ check_pno(struct sockaddr_in *from_addr, unsigned int pn, unsigned int pn_f,
           { /* send request-resend packet(s) */
           if(!(ht[i].nos[pn_1>>3]&mask[pn_1&0x07]))
             {
-	    pnc=(uint8_w)pn_1;
-            sendto(sock,&pnc,1,0,(struct sockaddr *)from_addr,fromlen);
+            pnc[4]=0xDE;
+	    pnc[5]=logger_address[0];
+	    pnc[6]=logger_address[1];
+            pnc[7]=(uint8_w)pn_1;
+            sendto(sock,&pnc,sizeof(pnc),0,
+		   (struct sockaddr *)from_addr,fromlen);
             snprintf(tb,sizeof(tb),"request resend %s:%d #%d",
               inet_ntoa(from_addr->sin_addr),ntohs(from_addr->sin_port),pn_1);
             write_log(tb);
@@ -515,7 +453,7 @@ check_pno(struct sockaddr_in *from_addr, unsigned int pn, unsigned int pn_f,
 
 static size_t
 wincpy2(uint8_w *ptw, time_t ts, uint8_w *ptr, ssize_t size, int mon,
-	struct ch_hist *chhist, struct sockaddr_in *from_addr)   /* 64bit ok */
+	struct channel_hist *chhist, struct sockaddr_in *from_addr)
   {
 #define MAX_SR 500
 #define MAX_SS 4
@@ -612,144 +550,86 @@ wincpy2(uint8_w *ptw, time_t ts, uint8_w *ptr, ssize_t size, int mon,
   }
 
 static void
-send_req(int sock, struct sockaddr_in *host_addr)
-/* struct sockaddr_in *host_addr;    sender address */
-/* int sock;                          socket */
-  {
-  int i,j;
-  /*-
-    send list of chs : 2B/ch,1024B/packet->512ch/packet max 128packets
-    header: magic number,seq,n,list...
-    if all channels, seq=n=0 and no list.
-    -*/
-  unsigned seq,n_seq;
-  struct { char mn[4]; uint16_w seq[2]; uint16_w chlist[512];}
-    sendbuf;
-  strcpy(sendbuf.mn,"REQ");
-  if(n_ch<WIN_CHMAX)
-    {
-    seq=1;
-    if(n_ch==0) n_seq=1;
-    else n_seq=(n_ch-1)/512+1;
-    sendbuf.seq[1]=MKSWAP16(n_seq);
-    j=0;
-    for(i=0;i<WIN_CHMAX;i++)
-      {
-      sendbuf.seq[0]=MKSWAP16(seq);
-      if(ch_table[i]) sendbuf.chlist[j++]=MKSWAP16(i);
-      if(j==512)
-        {
-        sendto(sock,&sendbuf,8+2*j,0,(struct sockaddr *)host_addr,
-          sizeof(*host_addr));
-#if DEBUG3
-        printf("send channel list to %s:%d (%d): %s %d/%d %04X %04X %04X ...\n",
-          inet_ntoa(host_addr->sin_addr),ntohs(host_addr->sin_port),
-          n_ch,sendbuf.mn,MKSWAP16(sendbuf.seq[0]),MKSWAP16(sendbuf.seq[1]),
-          MKSWAP16(sendbuf.chlist[0]),MKSWAP16(sendbuf.chlist[1]),MKSWAP16(sendbuf.chlist[2]));
-#endif
-        j=0;
-        seq++;
-        }
-      }
-    if(j>0)
-      {
-      sendto(sock,&sendbuf,8+2*j,0,(struct sockaddr *)host_addr,
-        sizeof(*host_addr));
-#if DEBUG3
-        printf("send channel list to %s:%d (%d): %s %d/%d %04X %04X %04X ...\n",
-          inet_ntoa(host_addr->sin_addr),ntohs(host_addr->sin_port),
-          n_ch,sendbuf.mn,MKSWAP16(sendbuf.seq[0]),MKSWAP16(sendbuf.seq[1]),
-          MKSWAP16(sendbuf.chlist[0]),MKSWAP16(sendbuf.chlist[1]),MKSWAP16(sendbuf.chlist[2]));
-#endif
-      seq++;
-      }
-    }
-  else /* all channels */
-    {
-    sendbuf.seq[0]=sendbuf.seq[1]=0;
-    sendto(sock,&sendbuf,8,0,(struct sockaddr *)host_addr,sizeof(*host_addr));
-#if DEBUG3
-    printf("send channel list to %s:%d (%d): %s %d/%d\n",
-      inet_ntoa(host_addr->sin_addr),ntohs(host_addr->sin_port),
-      n_ch,sendbuf.mn,MKSWAP16(sendbuf.seq[0]),MKSWAP16(sendbuf.seq[1]));
-#endif
-    }
-  }
-
-static void
 usage(void)
 {
 
   WIN_version();
   fprintf(stderr, "%s\n", rcsid);
-  if (daemon_mode)
+  if(strcmp(progname,"recvt_LS7000d")==0)
     fprintf(stderr,
-	    " usage : '%s (-AaBenMNr) (-d [len(s)]) (-m [pre(m)]) (-p [post(m)]) \\\n\
-              (-i [interface]) (-g [mcast_group]) (-s sbuf(KB)) \\\n\
-              (-o [src_host]:[src_port]) (-f [ch file]) \\\n\
-              [port] [shm_key] [shm_size(KB)] ([ctl file]/- ([log file]))'\n",
+	    " usage : '%s (-ABnNr) (-d [len(s)]) (-m [pre(m)]) (-p [post(m)]) \\\n\
+              (-i [interface]) (-g [mcast_group]) (-s sbuf(KB)) \\\n	\
+              (-S [dir]/[host]:[port]) (-f [ch file]) (-y [req_delay])\\\n \
+              [port] [shm_key] [shm_size(KB)] ([ctl file]/- ([log file]))'",
 	    progname);
   else
     fprintf(stderr,
-	    " usage : '%s (-AaBDenMNr) (-d [len(s)]) (-m [pre(m)]) (-p [post(m)]) \\\n\
-              (-i [interface]) (-g [mcast_group]) (-s sbuf(KB)) \\\n\
-              (-o [src_host]:[src_port]) (-f [ch file]) (-y [req_delay])\\\n\
-              [port] [shm_key] [shm_size(KB)] ([ctl file]/- ([log file]))'\n",
+	    " usage : '%s (-ABDnNr) (-d [len(s)]) (-m [pre(m)]) (-p [post(m)]) \\\n\
+              (-i [interface]) (-g [mcast_group]) (-s sbuf(KB)) \\\n	\
+              (-S [dir]/[host]:[port]) (-f [ch file]) (-y [req_delay])\\\n \
+              [port] [shm_key] [shm_size(KB)] ([ctl file]/- ([log file]))'",
 	    progname);
 }
 
 int
 main(int argc, char *argv[])
   {
-  key_t shm_key;  /*- 64bit ok -*/
-  /* int shmid; */      /*- 64bit ok -*/
-  uint32_w uni;  /*- 64bit ok -*/
+  key_t shm_key;
+  /* int shmid; */
+  uint32_w  uni;  /*- 64bit ok -*/
   WIN_bs  uni2;  /*- 64bit ok -*/
-  uint8_w *ptr,tm[6],*ptr_size,*ptr_size2;  /*- 64bit ok -*/
-  char host_name[1024];  /*- 64bit ok -*/
-  int i,j,k,sock,all,c,mon,eobsize,      /*- 64bit ok -*/
-    sbuf,noreq,no_ts,no_pno,req_delay;   /*- 64bit ok -*/
-  socklen_t fromlen;  /*- 64bit ok -*/
+  uint8_w *ptr,tm[6],*ptr_size,*ptr_size2;
+  int i,k,sock,c,mon,eobsize,
+    sbuf,noreq,no_ts,no_pno,req_delay;
+  struct sockaddr_in from_addr;
   size_t size,pl,nn;     /*- 64bit ok -*/
-  ssize_t n,nlen;  /*- 64bit ok -*/
-  time_t pre,post;    /*- 64bit ok -*/
-  struct sockaddr_in from_addr,host_addr;  /*- 64bit ok -*/
-  uint16_t  to_port,host_port;  /*- 64bit ok -*/
+  ssize_t norg,n;  /*- 64bit ok -*/
+  time_t  pre, post;  /*- 64bit ok -*/
+  socklen_t fromlen;  /*- 64bit ok -*/
+  uint16_t  to_port;  /*- 64bit ok -*/
   struct Shm  *sh;
-  char tb[256],tb2[256];
-  /* struct ip_mreq stMreq; */  /*- 64bit ok -*/
+  char tb[256];
+  /* struct ip_mreq stMreq; */
   char mcastgroup[256]; /* multicast address */
-  char interface[256]; /* network interface */
-  time_t ts,sec,sec_p;  /*- 64bit ok -*/
-  struct ch_hist  chhist;
-  struct hostent *h;
+  char interface[256]; /* multicast interface */
+  time_t ts,sec,sec_p;
+  struct channel_hist  chhist;
+  /* struct hostent *h; */
   struct timeval timeout;
+  /* status */
+  char  *ptmp;
+  FILE  *fp;
+  char  staf[1024], dirname[1024] = ".";
+  char  host_status[NI_MAXHOST];  /* host address */
+  char  port_status[NI_MAXSERV];  /* port No. */
+  int   sock_status;
+  struct sockaddr_storage  ss;
+  struct sockaddr *sa = (struct sockaddr *)&ss;
+  socklen_t   salen;
+  ssize_t  sendnum;
 
-  if((progname=strrchr(argv[0],'/'))) progname++;
+  if((progname=strrchr(argv[0],'/')) != NULL) progname++;
   else progname=argv[0];
 
   daemon_mode = syslog_mode = 0;
   exit_status = EXIT_SUCCESS;
 
-  if(strcmp(progname,"recvtd")==0) daemon_mode=1;
+  if(strcmp(progname,"recvt_LS7000d")==0) daemon_mode=1;
 
-  all=no_pinfo=mon=eobsize=noreq=no_ts=no_pno=0;
+  no_pinfo=mon=eobsize=noreq=no_ts=no_pno=0;
   pre=post=0;
-  auto_reload_chfile = 0;
-  *interface=(*mcastgroup)=(*host_name)=0;
+  *interface=(*mcastgroup)=0;
   sbuf=DEFAULT_RCVBUF;
   chhist.n=N_HIST;
   n_chfile=1;
   req_delay=0;
-  while((c=getopt(argc,argv,"AaBDd:ef:g:i:m:MNno:p:rs:y:"))!=-1)
+  host_status[0] = '\0';
+  while((c=getopt(argc,argv,"ABDd:f:g:i:m:Nno:p:rS:s:y:"))!=-1)
     {
     switch(c)
       {
       case 'A':   /* don't check time stamps */
         no_ts=1;
-        break;
-      case 'a':   /* accept >=A1 packets */
-        all=1;
         break;
       case 'B':   /* write blksize at EOB for backward search */
         eobsize=1;
@@ -760,9 +640,6 @@ main(int argc, char *argv[])
       case 'd':   /* length of packet history in sec */
         chhist.n=atoi(optarg);
         break;
-      case 'e':  /* automatically reload chfile if packet comes from denyhost */
-	auto_reload_chfile = 1;
-	break;
       case 'f':   /* channel list file */
 	if (n_chfile < N_CHFILE)
 	  chfile[n_chfile++]=optarg;
@@ -772,13 +649,13 @@ main(int argc, char *argv[])
         break;
       case 'g':   /* multicast group (multicast IP address) */
         /* strcpy(mcastgroup,optarg); */
-	if (snprintf(mcastgroup, sizeof(mcastgroup), "%s", optarg)
+        if (snprintf(mcastgroup, sizeof(mcastgroup), "%s", optarg)
 	    >= sizeof(mcastgroup)) {
 	  fprintf(stderr,"'%s': -g option : Buffer overrun!\n",progname);
 	  exit(1);
 	}
-        break;
-      case 'i':   /* interface (ordinary IP address) for receive */
+	break;
+      case 'i':   /* interface (ordinary IP address) which receive mcast */
         /* strcpy(interface,optarg); */
 	if (snprintf(interface, sizeof(interface), "%s", optarg)
 	    >= sizeof(interface)) {
@@ -790,39 +667,42 @@ main(int argc, char *argv[])
         pre=atol(optarg);
         if(pre<0) pre=(-pre);
         break;
-      case 'M':   /* 'mon' format data */
-        mon=1;
-        break;
       case 'N':   /* no packet nos */
         no_pno=no_ts=1;
         break;
       case 'n':   /* supress info on abnormal packets */
         no_pinfo=1;
         break;
-      case 'o':   /* host and port for request */
-        /* strcpy(tb2,optarg); */
-	if (snprintf(tb2, sizeof(tb2), "%s", optarg) >= sizeof(tb2)) {
-	  fprintf(stderr,"'%s': -o option : Buffer overrun!\n",progname);
-	  exit(1);
-	}
-        if((ptr=(uint8_w *)strchr(tb2,':')))
-          {
-          *ptr=0;
-          host_port=(uint16_t)atoi((char *)(ptr+1));
-          }
-        else
-          {
-          fprintf(stderr," option -o requires '[host]:[port]' pair !\n");
-          usage();
-          exit(1);
-          }
-        strcpy(host_name,tb2);  /* ok */
-        break;
       case 'p':   /* time limit after RT in minutes */
         post=atol(optarg);
         break;
       case 'r':   /* disable resend request */
         noreq=1;
+        break;
+      case 'S':   /* status packet */
+	if ((ptmp = strrchr(optarg, ':')) == NULL) {
+	  /* strcpy(dirname, optarg); */
+	  if (snprintf(dirname, sizeof(dirname), "%s", optarg)
+	      >= sizeof(dirname)) {
+	    fprintf(stderr,"'%s': -S option : Buffer overrun!\n",progname);
+	    exit(1);
+	  }
+	} else {
+	  *ptmp = '\0';
+	  ptmp++;
+	  /* strcpy(host_status, optarg); */
+	  if (snprintf(host_status, sizeof(host_status), "%s", optarg)
+	      >= sizeof(host_status)) {
+	    fprintf(stderr,"'%s': -S option : Buffer overrun!\n",progname);
+	    exit(1);
+	  }
+	  /* strcpy(port_status, ptmp); */
+	  if (snprintf(port_status, sizeof(port_status), "%s", optarg)
+	      >= sizeof(port_status)) {
+	    fprintf(stderr,"'%s': -S option : Buffer overrun!\n",progname);
+	    exit(1);
+	  }
+	}
         break;
       case 's':   /* preferred socket buffer size (KB) */
         sbuf=atoi(optarg);
@@ -832,13 +712,13 @@ main(int argc, char *argv[])
         if(req_delay>N_PNOS-2 || req_delay<0)
           {
           fprintf(stderr," resend-request delay < %d !\n",N_PNOS-1);
-          usage();
+	  usage();
           exit(1);
           }
         break;
       default:
         fprintf(stderr," option -%c unknown\n",c);
-        usage();
+	usage();
         exit(1);
       }
     }
@@ -880,7 +760,7 @@ main(int argc, char *argv[])
       if (daemon_mode)
 	syslog_mode = 1;
     }
-  
+
   if((chhist.ts=
       (time_t (*)[WIN_CHMAX])win_xmalloc(WIN_CHMAX*chhist.n*sizeof(time_t)))==NULL)
     {
@@ -891,19 +771,29 @@ main(int argc, char *argv[])
       fprintf(stderr,"malloc failed (chhist.ts)\n");
       exit(1);
       }
-    /* Later, insert some warning messages into here. */
     }
 
-  /* daemon mode */
-  if (daemon_mode) {
-    daemon_init(progname, LOG_USER, syslog_mode);
-    umask(022);
-  }
+   /* daemon mode */
+   if (daemon_mode) {
+     daemon_init(progname, LOG_USER, syslog_mode);
+     umask(022);
+   }
+
+  snprintf(tb,sizeof(tb),"n_hist=%d size=%zd req_delay=%d",chhist.n,
+    WIN_CHMAX*chhist.n*sizeof(time_t),req_delay);
+  write_log(tb);
   
-  snprintf(tb,sizeof(tb),
-	   "n_hist=%d size=%zd req_delay=%d auto_reload_chfile=%d",
-	   chhist.n,WIN_CHMAX*chhist.n*sizeof(time_t),req_delay,
-	   auto_reload_chfile);
+  /* status packets */
+  if (host_status[0] == '\0') 
+    snprintf(tb, sizeof(tb), "Status packets save into dir : %s", dirname);
+  else {
+    snprintf(tb, sizeof(tb), "Status packets relay to %s:%s",
+	     host_status, port_status);
+    if ((sock_status = udp_dest(host_status, port_status, sa, &salen, NULL, AF_UNSPEC)) < 0)
+      err_sys("udp_dest");
+
+    /* printf("sock_status = %d\n", sock_status); */
+  }
   write_log(tb);
 
   /* shared memory */
@@ -916,21 +806,18 @@ main(int argc, char *argv[])
   /* initialize buffer */
   Shm_init(sh, size);
   pl = sh->pl;
-  /* sh->c=0; */
+  /*   sh->c=0; */
   /*   sh->pl=pl=(size-sizeof(*sh))/10*9; */
   /*   sh->p=0; */
   /*   sh->r=(-1); */
 
-  /* snprintf(tb,sizeof(tb),"start shm_key=%ld id=%d size=%ld",shm_key,shmid,size); */
+  /* sprintf(tb,"start shm_key=%d id=%d size=%d",shm_key,shmid,size); */
   /* write_log(tb); */
 
-  if(all) write_log("accept >=A1 packets");
   snprintf(tb,sizeof(tb),"TS window %lds - +%lds",pre,post);
   write_log(tb);
 
-  if(*mcastgroup) *tb=0;
-  else strcpy(tb,interface);
-  sock = udp_accept4(to_port, sbuf, tb);
+  sock = udp_accept4(to_port, sbuf, interface);
   /* if((sock=socket(AF_INET,SOCK_DGRAM,0))<0) err_sys("socket"); */
   /* for(j=sbuf;j>=16;j-=4) */
   /*   { */
@@ -939,7 +826,7 @@ main(int argc, char *argv[])
   /*     break; */
   /*   } */
   /* if(j<16) err_sys("SO_RCVBUF setsockopt error\n"); */
-  /* snprintf(tb,sizeof(tb),"RCVBUF size=%d",j*1024); */
+  /* sprintf(tb,"RCVBUF size=%d",j*1024); */
   /* write_log(tb); */
 
   /* memset((char *)&to_addr,0,sizeof(to_addr)); */
@@ -957,34 +844,9 @@ main(int argc, char *argv[])
     mcast_join(sock, mcastgroup, interface);
   }
 
-  if(*host_name) /* host_name and host_port specified */
-    {
-    /* source host/port */
-    if(!(h=gethostbyname(host_name))) err_sys("can't find host");
-    memset((char *)&host_addr,0,sizeof(host_addr));
-    host_addr.sin_family=AF_INET;
-    memcpy((caddr_t)&host_addr.sin_addr,h->h_addr,h->h_length);
-    host_addr.sin_port=htons(host_port);
-    for(j=sbuf;j>=16;j-=4)
-      {
-      i=j*1024;
-      if(setsockopt(sock,SOL_SOCKET,SO_SNDBUF,(char *)&i,sizeof(i))>=0)
-        break;
-      }
-    if(j<16) err_sys("SO_SNDBUF setsockopt error\n");
-    snprintf(tb,sizeof(tb),"SNDBUF size=%d",j*1024);
-    write_log(tb);
-    }
-
   if(noreq) write_log("resend request disabled");
   if(no_ts) write_log("time-stamps not interpreted");
   if(no_pno) write_log("packet numbers not interpreted");
-  if(*host_name)
-    {
-    snprintf(tb,sizeof(tb),"send channel list to %s:%d",
-      inet_ntoa(host_addr.sin_addr),ntohs(host_addr.sin_port));
-    write_log(tb);
-    }
 
   signal(SIGTERM,(void *)end_program);
   signal(SIGINT,(void *)end_program);
@@ -998,23 +860,30 @@ main(int argc, char *argv[])
 
   for(;;)
     {
-    if(*host_name) /* send request */
-      {
-      time(&sec);
-      if(sec!=sec_p)
-        {
-        send_req(sock,&host_addr);
-        sec_p=sec;
-        }
-      }
-
     k=1<<sock;
     timeout.tv_sec=0;
     timeout.tv_usec=500000;
     if(select(sock+1,(fd_set *)&k,NULL,NULL,&timeout)<=0) continue;
 
     fromlen=sizeof(from_addr);
-    n=recvfrom(sock,rbuf,MAXMESG,0,(struct sockaddr *)&from_addr,&fromlen);
+    norg=recvfrom(sock,rbuff,MAXMESG,0,(struct sockaddr *)&from_addr,&fromlen);
+
+    /* packet ID check */
+    memcpy(&logger_address, rbuff, 2);
+    memcpy(rbuf, rbuff + 2, 2);  /* delete logger address */
+    if (rbuff[LS7_PID] == 0xA1) {  /* waveform data */
+      memcpy(rbuf + 2, rbuff + 5, norg - 6);
+      n = norg - 4;
+    } else {  /* status data */
+      memcpy(rbuf + 2, rbuff + 4, norg - 4);
+      n = norg - 2;
+    }
+
+    /* request resend check */
+    /*j++;
+    if (j % 30 == 0)
+    continue;*/
+    
 #if DEBUG0
     if(rbuf[0]==rbuf[1]) printf("%d ",rbuf[0]);
     else printf("%d(%d) ",rbuf[0],rbuf[1]);
@@ -1065,7 +934,7 @@ main(int argc, char *argv[])
       printf("%s\n",rbuf);
 #endif
       continue;
-      }
+      } /* if(no_ts) */
 
     if(check_pno(&from_addr,rbuf[0],rbuf[1],sock,fromlen,n,noreq,req_delay)<0) continue;
 
@@ -1102,7 +971,7 @@ main(int argc, char *argv[])
             ptr_size2[3]=ptr_size[3];  /* size (L) */
             }
 #if DEBUG2
-          printf("%d - %d (%d) %lu / %lu\n",ptr_size-sh->d,uni2,ptr_size2-sh->d,
+          printf("%d - %d (%d) %d / %d\n",ptr_size-sh->d,uni2,ptr_size2-sh->d,
             sh->pl,pl);
 #endif
 #if DEBUG1
@@ -1116,8 +985,7 @@ main(int argc, char *argv[])
           {
           if(!no_pinfo)
             {
-            snprintf(tb,sizeof(tb),
-		     "ill time %02X:%02X %02X%02X%02X.%02X%02X%02X:%02X%02X%02X%02X%02X%02X%02X%02X from %s:%d",
+	    snprintf(tb,sizeof(tb),"ill time %02X:%02X %02X%02X%02X.%02X%02X%02X:%02X%02X%02X%02X%02X%02X%02X%02X from %s:%d",
               rbuf[0],rbuf[1],rbuf[2],rbuf[3],rbuf[4],rbuf[5],rbuf[6],rbuf[7],
               rbuf[8],rbuf[9],rbuf[10],rbuf[11],rbuf[12],rbuf[13],rbuf[14],
               rbuf[15],inet_ntoa(from_addr.sin_addr),ntohs(from_addr.sin_port));
@@ -1149,162 +1017,67 @@ main(int argc, char *argv[])
           }
         }
       }
-    else if(rbuf[2]==0xA0) /* merged packet */
+    else if(rbuf[2] == 0xA8) /* A8 packet */
       {
-      nlen=n-3;
-      j=3;
-      while(nlen>0)
-        {
-        n=(rbuf[j]<<8)+rbuf[j+1];
-        if(n<8 || n>nlen)
-          {
-          if(!no_pinfo)
-            {
-	      snprintf(tb,sizeof(tb),
-		       "ill blk n=%zd(%02X%02X) %02X%02X%02X.%02X%02X%02X:%02X%02X%02X%02X%02X%02X%02X%02X from %s:%d #%d(#%d) at %d",
-              n,rbuf[j],rbuf[j+1],rbuf[j+2],rbuf[j+3],rbuf[j+4],rbuf[j+5],
-              rbuf[j+6],rbuf[j+7],rbuf[j+8],rbuf[j+9],rbuf[j+10],rbuf[j+11],
-              rbuf[j+12],rbuf[j+13],rbuf[j+14],rbuf[j+15],
-              inet_ntoa(from_addr.sin_addr),ntohs(from_addr.sin_port),
-              rbuf[0],rbuf[1],j);
-            write_log(tb);
-            }
-          for(i=0;i<6;i++) tm[i]=(-1);
-          break;
-          }
-        j+=2;
-        for(i=0;i<6;i++) if(rbuf[j+i]!=tm[i]) break;
-        if(i==6)  /* same time */
-          {
-          nn=wincpy2(ptr,ts,rbuf+j+6,n-8,mon,&chhist,&from_addr);
-          ptr+=nn;
-          uni=(uint32_w)(time(NULL)-TIME_OFFSET);
-          ptr_size[4]=uni>>24;  /* tow (H) */
-          ptr_size[5]=uni>>16;
-          ptr_size[6]=uni>>8;
-          ptr_size[7]=uni;      /* tow (L) */
-          }
-        else
-          {
-          if((ptr-ptr_size)>14) /* data copied - close the sec block */
-            {
-            ptr_size2=ptr;
-            if(eobsize) ptr+=4; /* size(2) */
-            uni2=(WIN_bs)(ptr-ptr_size);
-            ptr_size[0]=uni2>>24;  /* size (H) */
-            ptr_size[1]=uni2>>16;
-            ptr_size[2]=uni2>>8;
-            ptr_size[3]=uni2;      /* size (L) */
-            if(eobsize)
-              {
-              ptr_size2[0]=ptr_size[0];  /* size (H) */
-              ptr_size2[1]=ptr_size[1];
-              ptr_size2[2]=ptr_size[2];
-              ptr_size2[3]=ptr_size[3];  /* size (L) */
-              }
-#if DEBUG2
-          printf("%d - %d (%d) %lu / %lu\n",ptr_size-sh->d,uni2,ptr_size2-sh->d,
-            sh->pl,pl);
+	/*  printf("A8 packet %02X%02X\n", */
+	/*  	       logger_address[0], logger_address[1]); */
+	if (host_status[0] == '\0') {
+	  if (snprintf(staf, sizeof(staf), "%s/%02x%02x%02x.%02x%02x%02x.A8",
+		       dirname, rbuf[3], rbuf[4],
+		       rbuf[5], rbuf[6], rbuf[7], rbuf[8]) >= sizeof(staf))
+	    err_sys("snprintf");
+	  if ((fp = fopen(staf, "w")) == NULL)
+	    err_sys("fopen");
+	  fwrite(rbuff + LS7_PHDER_LEN, 1, norg - LS7_PHDER_LEN, fp);
+	  fclose(fp);
+	} else {
+	  if ((sendnum = sendto(sock_status, rbuff, norg, 0, sa, salen))
+	      != norg) {
+	    snprintf(tb, sizeof(tb),
+		     "A8 status packet %d bytes but send %zd : %s",
+		     norg, sendnum, strerror(errno));
+	    write_log(tb);
+	  }
+#if DEBUG
+	  snprintf(tb, sizeof(tb), "A8 send status packet : %zd bytes",
+		   sendnum);
+	  write_log(tb);
 #endif
-#if DEBUG1
-            printf("(%d)",time(NULL));
-            for(i=8;i<14;i++) printf("%02X",ptr_size[i]);
-            printf(" : %d > %d\n",uni2,ptr_size-sh->d);
-#endif
-            sh->r=sh->p;      /* latest */
-            if(eobsize && ptr>sh->d+pl) {sh->pl=ptr-sh->d-4;ptr=sh->d;}
-            if(!eobsize && ptr>sh->d+sh->pl) ptr=sh->d;
-            sh->p=ptr-sh->d;
-            sh->c++;
-            ptr_size=ptr;
-            }
-          else /* sec block empty - reuse the space */
-            ptr=ptr_size;
-          if(!(ts=check_ts(rbuf+j,pre,post))) /* illegal time */
-            {
-            if(!no_pinfo)
-              {
-              snprintf(tb,sizeof(tb),"ill time %02X%02X%02X.%02X%02X%02X:%02X%02X%02X%02X%02X%02X%02X%02X from %s:%d",
-                rbuf[j],rbuf[j+1],rbuf[j+2],rbuf[j+3],rbuf[j+4],rbuf[j+5],
-                rbuf[j+6],rbuf[j+7],rbuf[j+8],rbuf[j+9],rbuf[j+10],rbuf[j+11],
-                rbuf[j+12],rbuf[j+13],
-                inet_ntoa(from_addr.sin_addr),ntohs(from_addr.sin_port));
-              write_log(tb);
-              }
-            for(i=0;i<6;i++) tm[i]=(-1);
-            }
-          else /* valid time stamp */
-            {
-            ptr+=4;   /* size */
-            ptr+=4;   /* time of write */
-            memcpy(ptr,rbuf+j,6);
-            ptr+=6;
-            nn=wincpy2(ptr,ts,rbuf+j+6,n-8,mon,&chhist,&from_addr);
-            ptr+=nn;
-            memcpy(tm,rbuf+j,6);
-            uni=(uint32_w)(time(NULL)-TIME_OFFSET);
-            ptr_size[4]=uni>>24;  /* tow (H) */
-            ptr_size[5]=uni>>16;
-            ptr_size[6]=uni>>8;
-            ptr_size[7]=uni;      /* tow (L) */
-            }
-          }
-        nlen-=n;
-        j+=n-2;
-        }
+	}
       }
-    else if(all) /* rbuf[2]>=0xA1 with packet ID */
+    else if(rbuf[2] == 0xA9) /* A9 packet */
       {
-      if(!(ts=check_ts(rbuf+3,pre,post)))
-        {
-        if(!no_pinfo)
-          {
-         snprintf(tb,sizeof(tb),
-		  "ill time %02X:%02X %02X %02X%02X%02X.%02X%02X%02X:%02X%02X%02X%02X%02X%02X%02X%02X from %s:%d",
-            rbuf[0],rbuf[1],rbuf[2],rbuf[3],rbuf[4],rbuf[5],rbuf[6],rbuf[7],
-            rbuf[8],rbuf[9],rbuf[10],rbuf[11],rbuf[12],rbuf[13],rbuf[14],
-            rbuf[15],rbuf[16],inet_ntoa(from_addr.sin_addr),
-            ntohs(from_addr.sin_port));
-          write_log(tb);
-          }
-        for(i=0;i<6;i++) tm[i]=(-1);
-        continue;
-        }
-      else
-        {
-        ptr_size=ptr;
-        ptr+=4;   /* size */
-        ptr+=4;   /* time of write */
-        memcpy(ptr,rbuf+2,n-2);
-        ptr+=n-2;
-        ptr_size2=ptr;
-        if(eobsize) ptr+=4; /* size(2) */
-        uni2=(WIN_bs)(ptr-ptr_size);
-        ptr_size[0]=uni2>>24;  /* size (H) */
-        ptr_size[1]=uni2>>16;
-        ptr_size[2]=uni2>>8;
-        ptr_size[3]=uni2;      /* size (L) */
-        if(eobsize)
-          {
-          ptr_size2[0]=ptr_size[0];  /* size (H) */
-          ptr_size2[1]=ptr_size[1];
-          ptr_size2[2]=ptr_size[2];
-          ptr_size2[3]=ptr_size[3];  /* size (L) */
-          }
-        memcpy(tm,rbuf+3,6);
-        uni=(uint32_w)(time(NULL)-TIME_OFFSET);
-        ptr_size[4]=uni>>24;  /* tow (H) */
-        ptr_size[5]=uni>>16;
-        ptr_size[6]=uni>>8;
-        ptr_size[7]=uni;      /* tow (L) */
+	/*  printf("A9 packet %02X%02X\n", */
+	/*  	       logger_address[0], logger_address[1]); */
+	if (host_status[0] == '\0') {
+	  if (snprintf(staf, sizeof(staf), "%s/%02x%02x%02x.%02x%02x%02x.A9",
+		       dirname, rbuf[3], rbuf[4],
+		       rbuf[5], rbuf[6], rbuf[7], rbuf[8]) >= sizeof(staf))
+	    err_sys("snprintf");
+	  if ((fp = fopen(staf, "w")) == NULL)
+	    err_sys("fopen");
+	  fwrite(rbuff + LS7_PHDER_LEN, 1, norg - LS7_PHDER_LEN, fp);
+	  fclose(fp);
+	} else {
+	  if ((sendnum = sendto(sock_status, rbuff, norg, 0, sa, salen))
+	      != norg) {
+	    snprintf(tb, sizeof(tb),
+		     "A9 status packet %d bytes but send %zd : %s",
+		     norg, sendnum, strerror(errno));
+	    write_log(tb);
+	  }
+#if DEBUG
+	  snprintf(tb, sizeof(tb), "A9 send status packet %zd bytes",
+		   sendnum);
+	  write_log(tb);
+#endif
+	}
+      }
+    else
+      {
+	printf("Unkouwn packet\n");
+      }
 
-        sh->r=sh->p;      /* latest */
-        if(eobsize && ptr>sh->d+pl) {sh->pl=ptr-sh->d-4;ptr=sh->d;}
-        if(!eobsize && ptr>sh->d+sh->pl) ptr=sh->d;
-        sh->p=ptr-sh->d;
-        sh->c++;
-        }
-      }
 #if BELL
     fprintf(stderr,"\007");
     fflush(stderr);

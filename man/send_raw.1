@@ -1,12 +1,14 @@
-.TH send_raw 1W "2005.2.14" "WIN SYSTEM" "WIN SYSTEM"
+.TH send_raw 1W "2013.9.18" "WIN SYSTEM" "WIN SYSTEM"
 .SH 名称
 send_raw, send_mon, sendt_raw, sendt_mon, send_rawd, send_mond, sendt_rawd, sendt_mond - IPによる win 形式データの送信
 .SH 形式
 .IP
 .ti -7
-send_raw [\-\fB1aDrmt\fR] [\-\fBb\fI\ mtu\fR] [\-\fBi\fI\ interface\fR]
-[\-\fBf\fI\ req_file\fR] [\-\fBh\fI\ hours\fR] [\-\fBp\fI\ src_port\fR]
-[\-\fBs\fI\ sec\fR] [\-\fBT\fI\ ttl\fR] [\-\fBw\fI\ key\fR]
+send_raw [\-\fB1aDrmt\fR] [\-\fBb\fI\ mtu\fR]
+[\-\fBf\fI\ req_file\fR] [\-\fBh\fI\ hours\fR]
+[\-\fBi\fI\ interface\fR] [\-\fBk\fI\ sec_keepal\fR]
+[\-\fBp\fI\ src_port\fR] [\-\fBs\fI\ sec\fR]
+[\-\fBT\fI\ ttl\fR] [\-\fBW/w\fI\ key\fR]
 .I shmkey
 .I dest
 .I port
@@ -24,9 +26,11 @@ sendt_raw \%...
 sendt_mon \%...
 .IP
 .ti -7
-send_rawd [\-\fB1armt\fR] [\-\fBb\fI\ mtu\fR] [\-\fBi\fI\ interface\fR]
-[\-\fBf\fI\ req_file\fR] [\-\fBh\fI\ hours\fR] [\-\fBp\fI\ src_port\fR]
-[\-\fBs\fI\ sec\fR] [\-\fBT\fI\ ttl\fR] [\-\fBw\fI\ key\fR]
+send_rawd [\-\fB1armt\fR] [\-\fBb\fI\ mtu\fR]
+[\-\fBf\fI\ req_file\fR] [\-\fBh\fI\ hours\fR]
+[\-\fBi\fI\ interface\fR] [\-\fBk\fI\ sec_keepal\fR]
+[\-\fBp\fI\ src_port\fR] [\-\fBs\fI\ sec\fR]
+[\-\fBT\fI\ ttl\fR] [\-\fBW/w\fI\ key\fR]
 .I shmkey
 .I dest
 .I port
@@ -102,7 +106,10 @@ send_raw, send_mon, sendt_raw, sendt_mon プロセスは
 空白またはタブで区切られた以降の項目は無視されます。また先頭
 が '#' である行も無視されます。
 .SH ネットワーク上の形式と再送プロトコル
-recvt(1W)を参照してください。
+recvt(1W)を参照してください。なお、send_raw, send_mon, sendt_raw, sendt_mon は
+１つのパケットに対する再送要求に対してはただ一度だけ再送します。
+これはブロードキャストアドレス等宛の送信の場合に、１つの消失パケットに
+対して複数の再送要求が来ることがあるためです。
 .SH オプション
 .IP \fB\-1 5
 １パケットに複数秒分のデータを詰め込むことをしません。データ量が
@@ -144,12 +151,28 @@ send_raw, send_mon, sendt_raw, sendt_mon は、送り元が送信先IPアドレス/
 .IP "\fB\-h \fIhours" 5
 送信の際にデータのタイムスタンプを \fIhours\fR 時間だけ進めます。
 .IP "\fB\-i \fIinterface" 5
-宛先
-.I dest
-がIPマルチキャストアドレスであるとき、パケットを送信する
+データパケットを送信する
 ネットワークインターフェースを、そのインターフェースのIPアドレス
 .I interface
 で指定します。
+.IP "\fB\-k \fIsec_keepal" 5
+送信データがなくても
+.I sec_keepal
+秒間隔でダミーのパケットを送信します。これは特に送信要求モード
+(オプション \fB\-f\fP)でファイアウォール越しに(外向きに)
+データを送信している場合に、たまたま送信データがない間に
+内向き経路が閉じてしまわないようにするためのものです。
+多くのファイアウォールでは、外向きにUDPパケットを通した後、
+しばらくの間(たとえば30秒間)はその逆向きのUDPパケットの通過を
+許します。ダミーパケットの内容(ペイロード部分)は、
+.nf
+
+    (1)１バイトのパケット番号(0〜255)
+    (2)１バイトの「元の」パケット番号(0〜255)
+    (3)１バイトの識別コード(16進数で) "FF"
+
+.fi
+の3バイトです。
 .IP \fB\-m 5
 send_mon (オプション \fB\-t\fP と共に指定したときはsendt_mon)の動作をします。
 .IP "\fB\-p \fIsrc_port" 5
@@ -163,8 +186,23 @@ send_raw (オプション \fB\-t\fP と共に指定したときはsendt_raw)の動作をします。
 それぞれ sendt_raw または sendt_mon の動作をします。
 .IP "\fB\-T \fIttl" 5
 送信先がマルチキャストアドレスであるとき、送信パケットのTTLの
-値をデフォルトの 1 ではなくて \fIsec\fR にします。
+値をデフォルトの 1 ではなくて \fIttl\fR にします。
+.IP "\fB\-W \fIkey" 5
+(
+.I shmkey
+とは別の)
+キー
+.I key
+の共有メモリにデータが書き込まれていることを
+検出した場合にのみ、データを送信します。共有メモリにデータが
+書き込まれていない状態が約２秒継続したことを
+検出したら、送信を停止して待機状態になります。これは
+carp等で冗長化されている場合に、マスター側だけが送信
+する動作を実現するためのものです。
 .IP "\fB\-w \fIkey" 5
+(
+.I shmkey
+とは別の)
 キー
 .I key
 の共有メモリにデータが書き込まれていない状態が約２秒継続したことを

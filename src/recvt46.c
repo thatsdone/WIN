@@ -1,4 +1,4 @@
-/* $Id: recvt46.c,v 1.6 2011/11/17 03:58:41 uehira Exp $ */
+/* $Id: recvt46.c,v 1.7 2014/04/06 07:15:30 uehira Exp $ */
 /*-
  "recvt.c"      4/10/93 - 6/2/93,7/2/93,1/25/94    urabe
                 2/3/93,5/25/94,6/16/94 
@@ -115,7 +115,7 @@
 #define N_PNOS    62    /* length of packet nos. history >=2 */
 
 static const char rcsid[] =
-  "$Id: recvt46.c,v 1.6 2011/11/17 03:58:41 uehira Exp $";
+  "$Id: recvt46.c,v 1.7 2014/04/06 07:15:30 uehira Exp $";
 
 static uint8_w rbuf[MAXMESG], ch_table[WIN_CHMAX];
 static char *chfile[N_CHFILE];
@@ -822,7 +822,7 @@ main(int argc, char *argv[])
   else if (strcmp(progname,"recvt6") == 0)
     family = AF_INET6;
   else if (strcmp(progname,"recvt6d") == 0) {
-    family = AF_INET;
+    family = AF_INET6;
     daemon_mode = 1;
   }
     

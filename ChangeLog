@@ -1,4 +1,7 @@
- $Id: ChangeLog,v 1.203.2.6 2014/04/06 07:31:12 uehira Exp $
+ $Id: ChangeLog,v 1.203.2.7 2014/04/06 07:36:52 uehira Exp $
+
+2014-04-06 Uehira Kenji <uehira@bosai.go.jp>
+	* src/recvt46.c : fixed a bug.
 
 2014-02-13 Urabe Taku <urabe@eri.u-tokyo.ac.jp>
 	* src/recvt.c : bug in -i for multicast fixed (IPv4)

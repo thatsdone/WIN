@@ -1,4 +1,4 @@
-/* $Id: relaym.c,v 1.12.2.1 2014/04/06 23:37:46 uehira Exp $ */
+/* $Id: relaym.c,v 1.12.2.2 2014/04/06 23:43:58 uehira Exp $ */
 
 /*
  * 2004-11-26 MF relay.c:
@@ -12,6 +12,7 @@
  *   - -N for don't change (and ignore) packet numbers
  *
  * 2010-10-04 64bit check.
+ * 2014-04-07 NIC for receive can be specified by -i (IPv4 & IPv6)
  */
 
 #ifdef HAVE_CONFIG_H
@@ -63,7 +64,7 @@
 #define MAXMSG       1025
 
 static const char rcsid[] =
-  "$Id: relaym.c,v 1.12.2.1 2014/04/06 23:37:46 uehira Exp $";
+  "$Id: relaym.c,v 1.12.2.2 2014/04/06 23:43:58 uehira Exp $";
 
 /* destination host info. */
 struct hostinfo {

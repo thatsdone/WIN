@@ -1,4 +1,18 @@
- $Id: ChangeLog,v 1.213 2014/04/06 07:24:16 uehira Exp $
+ $Id: ChangeLog,v 1.214 2014/04/07 01:48:53 uehira Exp $
+
+2014-04-07 Uehira Kenji <uehira@bosai.go.jp>
+	* Version 2.2.7 released.
+	* src/Makefile.am : libwinlog : bump version (1.0.0 --> 2.0.0)
+	* src/udp_accept.c : added argument 'const char *interface' to udp_accept()
+	* src/udpu.h : <- udp_accept()
+	* src/recvt46.c : suppress rate statistics for inactive hosts
+                          NIC for receive can be specified by -i (IPv4 & IPv6)
+	                  <- udp_accept()
+	* src/relaym.c : NIC for receive can be specified by -i (IPv4 & IPv6)
+	                 <- udp_accept()
+	* man/relaym.1 : see above
+	* src/recvstatus3.c <- udp_accept()
+	* src/recvstatus4.c <- udp_accept()
 
 2014-04-06 Uehira Kenji <uehira@bosai.go.jp>
 	* src/recvt46.c : fixed a bug.

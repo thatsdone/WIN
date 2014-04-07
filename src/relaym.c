@@ -1,4 +1,4 @@
-/* $Id: relaym.c,v 1.12 2011/11/17 03:58:41 uehira Exp $ */
+/* $Id: relaym.c,v 1.13 2014/04/07 01:48:54 uehira Exp $ */
 
 /*
  * 2004-11-26 MF relay.c:
@@ -12,6 +12,7 @@
  *   - -N for don't change (and ignore) packet numbers
  *
  * 2010-10-04 64bit check.
+ * 2014-04-07 NIC for receive can be specified by -i (IPv4 & IPv6)
  */
 
 #ifdef HAVE_CONFIG_H
@@ -63,7 +64,7 @@
 #define MAXMSG       1025
 
 static const char rcsid[] =
-  "$Id: relaym.c,v 1.12 2011/11/17 03:58:41 uehira Exp $";
+  "$Id: relaym.c,v 1.13 2014/04/07 01:48:54 uehira Exp $";
 
 /* destination host info. */
 struct hostinfo {
@@ -138,7 +139,7 @@ main(int argc, char *argv[])
   FILE  *fp;
   int   i, j;
   char mcastgroup[256]; /* multicast address */
-  char interface[256]; /* multicast interface for receive */
+  char interface[256], tb[256]; /* interface for receive */
 
   if ((progname = strrchr(argv[0], '/')) != NULL)
     progname++;
@@ -177,7 +178,7 @@ main(int argc, char *argv[])
 	exit(1);
       }
       break;
-    case 'i':   /* interface (ordinary IP address) which receive mcast */
+    case 'i':   /* interface (ordinary IP address) for receive */
       if (snprintf(interface, sizeof(interface), "%s", optarg)
 	  >= sizeof(interface)) {
 	fprintf(stderr,"'%s': -i option : Buffer overrun!\n",progname);
@@ -239,7 +240,11 @@ main(int argc, char *argv[])
   write_log(msg);
 
   /* 'in' port of localhost */
-  if ((ct_top = udp_accept(input_port, &maxsoc, sockbuf, AF_UNSPEC)) == NULL)
+  if (*mcastgroup)
+    *tb = 0;
+  else
+    (void)strcpy(tb, interface);
+  if ((ct_top = udp_accept(input_port, &maxsoc, sockbuf, AF_UNSPEC, tb)) == NULL)
     err_sys("udp_accept");
   /*  printf("maxsoc=%d\n", maxsoc); */
   if(*mcastgroup) {

@@ -1,13 +1,15 @@
-/* $Id: udp_accept.c,v 1.7 2014/04/07 01:48:54 uehira Exp $ */
+/* $Id: udp_accept.c,v 1.8 2014/04/07 10:48:49 uehira Exp $ */
 
 /*
- * Copyright (c) 2001-2011
+ * Copyright (c) 2001-2014
  *   Uehira Kenji / All Rights Reserved.
- *    uehira@sevo.kyushu-u.ac.jp
- *    Institute of Seismology and Volcanology, Kyushu University.
+ *    uehira@bosai.go/jp
+ *    National Research Institute for Earth Science and Disaster Prevention
  *
- *   2001-10-2   Initial version.
+ *   2001-10-02   Initial version.
  *   2011-11-17  family type.
+ *   2014-02-05  udp_accept4(): NIC for receive can be specified by 'interface'.
+ *   2014-04-07  udp_accept(): NIC for receive can be specified by 'interface'.
  */
 
 #ifdef HAVE_CONFIG_H
@@ -64,7 +66,7 @@ udp_accept(const char *port, int *maxsoc, int sockbuf, int family,
   hints.ai_socktype = SOCK_DGRAM;
   hints.ai_protocol = IPPROTO_UDP;
   if (*interface)
-    hnbuf = interface;
+    hnbuf = (char *)interface;
   else
     hnbuf = NULL;
   if ((gai_error = getaddrinfo(hnbuf, port, &hints, &res)) != 0) {
@@ -171,8 +173,10 @@ udp_accept4(const uint16_t port, int sockbuf, const char *interface)
   /* bind */
   memset(&to_addr, 0, sizeof(to_addr));
   to_addr.sin_family = AF_INET;
-  if(*interface) to_addr.sin_addr.s_addr=inet_addr(interface);
-  else to_addr.sin_addr.s_addr=htonl(INADDR_ANY);
+  if (*interface)
+    to_addr.sin_addr.s_addr = inet_addr(interface);
+  else
+    to_addr.sin_addr.s_addr = htonl(INADDR_ANY);
   to_addr.sin_port = htons(port);
   if (bind(sockfd, (struct sockaddr *)&to_addr, sizeof(to_addr)) < 0) {
     (void)close(sockfd);

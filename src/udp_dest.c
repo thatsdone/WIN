@@ -1,13 +1,15 @@
-/* $Id: udp_dest.c,v 1.8 2014/02/05 08:49:41 urabe Exp $ */
+/* $Id: udp_dest.c,v 1.9 2014/04/07 10:48:49 uehira Exp $ */
 
 /*
- * Copyright (c) 2001-2011
+ * Copyright (c) 2001-2014
  *   Uehira Kenji / All Rights Reserved.
- *    uehira@sevo.kyushu-u.ac.jp
- *    Institute of Seismology and Volcanology, Kyushu University.
+ *    uehira@bosai.go/jp
+ *    National Research Institute for Earth Science and Disaster Prevention
  *
- *   2001-10-2   Initial version.
+ *   2001-10-02   Initial version.
  *   2011-11-17  family type.
+ *   2014-02-05  udp_dest4(): source IP address can be specified by 'interface'.
+ *   2014-04-07  udp_dest(): source IP address can be specified by 'interface'.
  */
 
 #ifdef HAVE_CONFIG_H
@@ -61,13 +63,15 @@
  */
 int
 udp_dest(const char *hostname, const char *port, struct sockaddr *saptr,
-	 socklen_t *lenp, const char *src_port, int family)
+	 socklen_t *lenp, const char *src_port, int family,
+	 const char *interface)
 {
   int  sockfd, gai_error;
   struct addrinfo  hints, *res, *ai, *ai_src;
   int  sock_bufsiz;
   char  hbuf[NI_MAXHOST], sbuf[NI_MAXSERV];
   char buf[1024];
+  char *hnbuf;
 
   memset(&hints, 0, sizeof(hints));
   hints.ai_family = family;
@@ -122,12 +126,16 @@ udp_dest(const char *hostname, const char *port, struct sockaddr *saptr,
     freeaddrinfo(res);
 
   /* src port part */
-  if (src_port != NULL && sockfd != -1) {
+  if (*interface)
+    hnbuf = (char *)interface;
+  else
+    hnbuf = NULL;
+  if (((hnbuf != NULL) || (src_port != NULL)) && sockfd != -1) {
     memset(&hints, 0, sizeof(hints));
     hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_DGRAM;
     hints.ai_protocol = IPPROTO_UDP;
-    if ((gai_error = getaddrinfo(NULL, src_port, &hints, &res)) != 0) {
+    if ((gai_error = getaddrinfo(hnbuf, src_port, &hints, &res)) != 0) {
       (void)snprintf(buf, sizeof(buf), 
 		     "udp_dest: getaddrinfo2 : %s", gai_strerror(gai_error));
       write_log(buf);
@@ -212,8 +220,10 @@ udp_dest4(const char *hostname, const uint16_t port,
   /* bind my socket to a local port */
   memset(&src_addr, 0, sizeof(src_addr));
   src_addr.sin_family = AF_INET;
-  if(*interface) src_addr.sin_addr.s_addr=inet_addr(interface);
-  else src_addr.sin_addr.s_addr=htonl(INADDR_ANY);
+  if (*interface)
+    src_addr.sin_addr.s_addr = inet_addr(interface);
+  else
+    src_addr.sin_addr.s_addr = htonl(INADDR_ANY);
   src_addr.sin_port = htons(src_port);
   if (src_port) {
     (void)snprintf(tbuf, sizeof(tbuf), "src_port=%d", src_port);

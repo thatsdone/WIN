@@ -1,10 +1,10 @@
-/* $Id: udpu.h,v 1.4.2.2 2014/04/06 23:37:47 uehira Exp $ */
+/* $Id: udpu.h,v 1.4.2.3 2014/04/07 11:00:32 uehira Exp $ */
 
 /*
- * Copyright (c) 2001-2011
+ * Copyright (c) 2001-2014
  *   Uehira Kenji / All Rights Reserved.
- *    uehira@sevo.kyushu-u.ac.jp
- *    Institute of Seismology and Volcanology, Kyushu University.
+ *    uehira@bosai.go/jp
+ *    National Research Institute for Earth Science and Disaster Prevention
  */
 
 #ifndef _UDPU_H_
@@ -25,7 +25,7 @@ struct conntable {
 
 #ifdef INET6
 int udp_dest(const char *, const char *, struct sockaddr *, socklen_t *,
-	     const char *, int);
+	     const char *, int, const char *);
 struct conntable * udp_accept(const char *, int *, int, int, const char *);
 #endif  /* INET6 */
 

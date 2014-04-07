@@ -1,4 +1,4 @@
-/* $Id: relaym.c,v 1.12.2.2 2014/04/06 23:43:58 uehira Exp $ */
+/* $Id: relaym.c,v 1.12.2.3 2014/04/07 11:00:32 uehira Exp $ */
 
 /*
  * 2004-11-26 MF relay.c:
@@ -64,7 +64,7 @@
 #define MAXMSG       1025
 
 static const char rcsid[] =
-  "$Id: relaym.c,v 1.12.2.2 2014/04/06 23:43:58 uehira Exp $";
+  "$Id: relaym.c,v 1.12.2.3 2014/04/07 11:00:32 uehira Exp $";
 
 /* destination host info. */
 struct hostinfo {
@@ -256,7 +256,7 @@ main(int argc, char *argv[])
   maxsoc1 = -1;
   for (hinf = hinf_top; hinf != NULL; hinf = hinf->next) {
     hinf->sock = udp_dest(hinf->hostname, hinf->port, 
-			  hinf->sa, &hinf->salen, NULL, AF_UNSPEC);
+			  hinf->sa, &hinf->salen, NULL, AF_UNSPEC, (char *)0);
     /*      printf("hinf->sock=%d\n", hinf->sock); */
     if (hinf->sock < 0)
       err_sys("udp_dest");

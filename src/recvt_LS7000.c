@@ -1,4 +1,4 @@
-/* $Id: recvt_LS7000.c,v 1.3.2.1 2014/04/06 07:31:15 uehira Exp $ */
+/* $Id: recvt_LS7000.c,v 1.3.2.2 2014/04/07 11:00:31 uehira Exp $ */
 
 /*- 
  * "recvt_LS7000.c"  uehira
@@ -60,7 +60,7 @@
 #define N_PNOS    62    /* length of packet nos. history >=2 */
 
 static const char rcsid[] =
-  "$Id: recvt_LS7000.c,v 1.3.2.1 2014/04/06 07:31:15 uehira Exp $";
+  "$Id: recvt_LS7000.c,v 1.3.2.2 2014/04/07 11:00:31 uehira Exp $";
 
 static uint8_w rbuff[MAXMESG],rbuf[MAXMESG],ch_table[WIN_CHMAX];
 static char *chfile[N_CHFILE];
@@ -789,7 +789,7 @@ main(int argc, char *argv[])
   else {
     snprintf(tb, sizeof(tb), "Status packets relay to %s:%s",
 	     host_status, port_status);
-    if ((sock_status = udp_dest(host_status, port_status, sa, &salen, NULL, AF_UNSPEC)) < 0)
+    if ((sock_status = udp_dest(host_status, port_status, sa, &salen, NULL, AF_UNSPEC, (char *)0)) < 0)
       err_sys("udp_dest");
 
     /* printf("sock_status = %d\n", sock_status); */
@@ -1035,7 +1035,7 @@ main(int argc, char *argv[])
 	      != norg) {
 	    snprintf(tb, sizeof(tb),
 		     "A8 status packet %d bytes but send %zd : %s",
-		     norg, sendnum, strerror(errno));
+ 		     norg, sendnum, strerror(errno));
 	    write_log(tb);
 	  }
 #if DEBUG

@@ -1,10 +1,11 @@
-/* $Id: recvt_LS7000.c,v 1.5 2014/04/07 10:48:49 uehira Exp $ */
+/* $Id: recvt_LS7000.c,v 1.6 2014/04/11 06:35:16 urabe Exp $ */
 
 /*- 
  * "recvt_LS7000.c"  uehira
  *   2007-11-02  imported from recvt.c 1.29.2.1
  *   2010-10-04  fixed bug in check_pno(). ht[].pnos[] : unsigned int --> int
  *               64bit clean?
+ *   2014-04-11  update for udp_accept4()
 -*/
 
 #ifdef HAVE_CONFIG_H
@@ -60,7 +61,7 @@
 #define N_PNOS    62    /* length of packet nos. history >=2 */
 
 static const char rcsid[] =
-  "$Id: recvt_LS7000.c,v 1.5 2014/04/07 10:48:49 uehira Exp $";
+  "$Id: recvt_LS7000.c,v 1.6 2014/04/11 06:35:16 urabe Exp $";
 
 static uint8_w rbuff[MAXMESG],rbuf[MAXMESG],ch_table[WIN_CHMAX];
 static char *chfile[N_CHFILE];
@@ -817,7 +818,8 @@ main(int argc, char *argv[])
   snprintf(tb,sizeof(tb),"TS window %lds - +%lds",pre,post);
   write_log(tb);
 
-  sock = udp_accept4(to_port, sbuf, interface);
+  if(*mcastgroup) sock = udp_accept4(to_port, sbuf, (char *)0);
+  else sock = udp_accept4(to_port, sbuf, interface);
   /* if((sock=socket(AF_INET,SOCK_DGRAM,0))<0) err_sys("socket"); */
   /* for(j=sbuf;j>=16;j-=4) */
   /*   { */

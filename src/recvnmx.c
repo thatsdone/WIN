@@ -1,4 +1,4 @@
-/* $Id: recvnmx.c,v 1.20 2014/02/05 08:49:40 urabe Exp $ */
+/* $Id: recvnmx.c,v 1.21 2014/04/11 06:35:16 urabe Exp $ */
 /* "recvnmx.c"    2001.7.18-19 modified from recvt.c and nmx2raw.c  urabe */
 /*                2001.8.18 */
 /*                2001.10.5 workaround for hangup */
@@ -12,6 +12,7 @@
 /*                2005.4.14 NP format */
 /*                2010.10.13 64bit check? */
 /*                2013.9.17 NIC for receive can be specified by -i IP_address (IPv4) */
+/*                2014.4.10 update for udp_accept4() */
 
 
 #ifdef HAVE_CONFIG_H
@@ -82,7 +83,7 @@
 #define MAXCH     1024
 
 static const char rcsid[] =
-  "$Id: recvnmx.c,v 1.20 2014/02/05 08:49:40 urabe Exp $";
+  "$Id: recvnmx.c,v 1.21 2014/04/11 06:35:16 urabe Exp $";
 
 char *progname,*logfile;
 int  syslog_mode = 0, exit_status;
@@ -591,7 +592,7 @@ main(int argc, char *argv[])
   char name[100];
   char fragdir[1024]; /* directory for fragment data */
   char mcastgroup[256]; /* multicast address */
-  char interface[256];  /* multicast interface */
+  char interface[256];  /* interface for receive */
 #define MCASTGROUP  "224.0.1.1"
 #define TO_PORT   32000
   struct sockaddr_in from_addr;
@@ -615,7 +616,7 @@ main(int argc, char *argv[])
       case 'd':   /* fragment data directory */
         strcpy(fragdir,optarg);
         break;
-      case 'i':   /* interface (ordinary IP address) which receive mcast */
+      case 'i':   /* interface (ordinary IP address) for receive */
         strcpy(interface,optarg);
         break;
       case 'm':   /* multicast group (multicast IP address) */
@@ -648,7 +649,8 @@ main(int argc, char *argv[])
   if(argc>4+optind) logfile=argv[4+optind];
   else logfile=NULL;
 
-  sock = udp_accept4(to_port, 64, interface);
+  if(*mcastgroup) sock = udp_accept4(to_port, 64, (char *)0);
+  else sock = udp_accept4(to_port, 64, interface);
   /* if((sock=socket(AF_INET,SOCK_DGRAM,0))<0) err_sys("socket"); */
   /* i=65535; */
   /* if(setsockopt(sock,SOL_SOCKET,SO_RCVBUF,(char *)&i,sizeof(i))<0) */

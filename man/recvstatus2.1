@@ -1,14 +1,22 @@
-.TH recvstatus2 1W "2013.8.9" "WIN SYSTEM" "WIN SYSTEM"
+.TH recvstatus2 1W "2014.4.11" "WIN SYSTEM" "WIN SYSTEM"
 .SH 名称
 recvstatus2 - 白山WIN_UDP動作/設定ステータスパケットの受信
 .SH 形式
-recvstatus2 [\-\fBDr\fR]
+recvstatus2 [\-\fBDr\fR] [
+.I \-i interface
+] [
+.I \-m group
+]
 .I port
 [
 .I logdir
 ]
 .LP
-recvstatus2d [\-\fBr\fR]
+recvstatus2d [\-\fBr\fR] [
+.I \-i interface
+] [
+.I \-m group
+]
 .I port
 [
 .I logdir
@@ -44,6 +52,15 @@ recvstatus2 は引数なしで起動すると簡単な使用法を表示します。
 .SH オプション
 .IP \fB\-D 5
 daemon mode で起動します。
+.IP "\fB\-i \fIinterface" 5
+パケットを受信するネットワークインターフェースを、そのインターフェースの
+IPアドレス
+.I interface
+で指定します。
+.IP "\fB\-m \fIgroup" 5
+IPマルチキャストアドレス
+.I group
+に対して送信されるパケットを受信します。
 .IP \fB\-r 5
 ステータスファイルを書き出すたびに、それらを同じディレクトリの
 RCSファイルにチェックイン("ci -l -q")します。RCSファイルが

@@ -1,4 +1,11 @@
- $Id: ChangeLog,v 1.203.2.9 2014/04/07 11:00:31 uehira Exp $
+ $Id: ChangeLog,v 1.203.2.10 2014/04/14 07:32:27 uehira Exp $
+
+2014-04-11 Urabe Taku <urabe@eri.u-tokyo.ac.jp>
+	* Version 2.2.8 released.
+	* src/recvt_LS7000.c : <- udp_accept4()
+	* src/recvstatus2.c : <- udp_accept4()
+	* src/recvnmx.c : <- udp_accept4()
+	* man/recvstatus2.1, man/recvt_LS7000.1, recvnmx.1 : see above
 
 2014-04-07 Uehira Kenji <uehira@bosai.go.jp>
 	* Version 2.2.7 released.

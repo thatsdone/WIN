@@ -1,10 +1,11 @@
-/* $Id: recvstatus2.c,v 1.10.2.1 2014/04/06 07:31:14 uehira Exp $ */
+/* $Id: recvstatus2.c,v 1.10.2.2 2014/04/14 07:32:32 uehira Exp $ */
 
 /* modified from "recvstatus.c" */
 /* 2002.6.19 recvstatus2 receive A8/A9 packets from Datamark LS-7000XT */
 /* 2002.7.3 fixed a bug - 'ok' deleted */
 /* 2002.7.11 DEBUG(2) */
 /* 2010.9.30 daemon mode. 64bit check. */
+/* 2014.4.10 update for udp_accept4() */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -66,7 +67,7 @@
 /* #define DEBUG   0 */
 
 static const char rcsid[] =
-  "$Id: recvstatus2.c,v 1.10.2.1 2014/04/06 07:31:14 uehira Exp $";
+  "$Id: recvstatus2.c,v 1.10.2.2 2014/04/14 07:32:32 uehira Exp $";
 
 char *progname, *logfile = NULL;
 int syslog_mode = 0, exit_status = EXIT_SUCCESS;
@@ -182,7 +183,8 @@ main(int argc, char *argv[])
   snprintf(tb,sizeof(tb),"started. port=%d logdir=%s",to_port,logdir);
   write_log(tb);
 
-  sock = udp_accept4(to_port, DEFAULT_RCVBUF, interface);
+  if(*mcastgroup) sock = udp_accept4(to_port, DEFAULT_RCVBUF,(char *)0);
+  else sock = udp_accept4(to_port, DEFAULT_RCVBUF, interface);
   /* if((sock=socket(AF_INET,SOCK_DGRAM,0))<0) err_sys("socket"); */
 
   /* memset((char *)&to_addr,0,sizeof(to_addr)); */

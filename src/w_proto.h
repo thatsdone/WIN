@@ -1,4 +1,4 @@
-/* $Id: w_proto.h,v 1.3.2.1 2014/01/08 00:14:37 uehira Exp $ */
+/* $Id: w_proto.h,v 1.3.2.2 2014/05/13 13:24:11 uehira Exp $ */
 
 #ifndef _WPROTO_H_
 #define _WPROTO_H_
@@ -66,5 +66,6 @@ int find_oldest(char *, char *);
 struct Shm * Shm_read(key_t, char *);
 struct Shm * Shm_create(key_t, size_t, char *);
 sa_family_t sockfd_to_family(int);
+int judge_mcast(struct sockaddr *);
 
 #endif  /* !_WPROTO_H_*/

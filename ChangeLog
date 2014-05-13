@@ -1,4 +1,17 @@
- $Id: ChangeLog,v 1.203.2.10 2014/04/14 07:32:27 uehira Exp $
+ $Id: ChangeLog,v 1.203.2.11 2014/05/13 13:24:05 uehira Exp $
+
+2014-05-13 Uehira Kenji <uehira@bosai.go.jp>
+	* Version 2.2.9 released.
+	* src/Makefile.am : libwinlog : bump version (2.0.0 --> 2.0.1)
+	* src/winlib_log.c : added judge_mcast()
+	* src/w_proto.h : see above
+	* src/udp_dest.c : fixed a bug
+	* src/send_raw46.c : source IP address can be specified by -i
+			     send keep-alive packet when '-k sec_keepal'
+			   added -W option : send when data flow in SHM	(cf.-w)
+	* man/send_raw46.1 : added
+	* man/recvt46.1 : added
+	* src/send_raw.c : removed duplicate usage descriptions.
 
 2014-04-11 Urabe Taku <urabe@eri.u-tokyo.ac.jp>
 	* Version 2.2.8 released.

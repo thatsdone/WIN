@@ -1,0 +1,18 @@
+.\" $Id: send_raw46.1,v 1.1.2.2 2014/05/13 13:24:09 uehira Exp $
+.TH send_raw46 1W "2014.5.13" "WIN SYSTEM" "WIN SYSTEM"
+.SH 名称
+send_raw46, send_mon46, sendt_raw46, sendt_mon46, send_raw46d, send_mon46d, sendt_raw46d, sendt_mon46d - IP(IPv4, IPv6) による win 形式データの送信
+.SH 解説
+IPv6 アドレスも扱える send_raw です。オプションや使いかたは send_raw(1W) を参照して下さい。send_raw46 独自に扱うオプションのみ下記に記述します。
+.SH オプション
+ここでは send_raw(1W) には無いオプションのみについて記述します。
+.IP \fB\-4 5
+IPv4 のアドレスのみを扱います。
+.IP \fB\-6 5
+IPv6 のアドレスのみを扱います。
+.SH ソース 
+.TP
+`send_raw46.c'
+.SH 関連事項
+send_raw(1W), winformat(1W), recvt(1W), relay(1W), order(1W), raw_raw(1W),
+raw_mon(1W), recvs(1W)

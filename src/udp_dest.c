@@ -1,12 +1,12 @@
-/* $Id: udp_dest.c,v 1.7.2.2 2014/04/07 11:00:32 uehira Exp $ */
+/* $Id: udp_dest.c,v 1.7.2.3 2014/05/13 13:24:11 uehira Exp $ */
 
 /*
  * Copyright (c) 2001-2014
  *   Uehira Kenji / All Rights Reserved.
- *    uehira@bosai.go/jp
+ *    uehira@bosai.go.jp
  *    National Research Institute for Earth Science and Disaster Prevention
  *
- *   2001-10-02  Initial version.
+ *   2001-10-02   Initial version.
  *   2011-11-17  family type.
  *   2014-02-05  udp_dest4(): source IP address can be specified by 'interface'.
  *   2014-04-07  udp_dest(): source IP address can be specified by 'interface'.
@@ -130,6 +130,10 @@ udp_dest(const char *hostname, const char *port, struct sockaddr *saptr,
     hnbuf = (char *)interface;
   else
     hnbuf = NULL;
+  if ((saptr->sa_family == AF_INET6) && judge_mcast(saptr))
+    hnbuf = NULL;   /* IPv6 and multicasst address */
+  /* fprintf(stderr, "hbuf = %s\n", hnbuf); */
+
   if (((hnbuf != NULL) || (src_port != NULL)) && sockfd != -1) {
     memset(&hints, 0, sizeof(hints));
     hints.ai_family = AF_UNSPEC;

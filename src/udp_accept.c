@@ -1,12 +1,12 @@
-/* $Id: udp_accept.c,v 1.5.2.3 2014/04/07 11:00:32 uehira Exp $ */
+/* $Id: udp_accept.c,v 1.5.2.4 2014/05/13 13:24:11 uehira Exp $ */
 
 /*
  * Copyright (c) 2001-2014
  *   Uehira Kenji / All Rights Reserved.
- *    uehira@bosai.go/jp
+ *    uehira@bosai.go.jp
  *    National Research Institute for Earth Science and Disaster Prevention
  *
- *   2001-10-02  Initial version.
+ *   2001-10-02   Initial version.
  *   2011-11-17  family type.
  *   2014-02-05  udp_accept4(): NIC for receive can be specified by 'interface'.
  *   2014-04-07  udp_accept(): NIC for receive can be specified by 'interface'.

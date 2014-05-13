@@ -1,9 +1,9 @@
-/* $Id: udpu.h,v 1.7 2014/04/07 10:48:49 uehira Exp $ */
+/* $Id: udpu.h,v 1.8 2014/05/13 13:00:55 uehira Exp $ */
 
 /*
  * Copyright (c) 2001-2014
  *   Uehira Kenji / All Rights Reserved.
- *    uehira@bosai.go/jp
+ *    uehira@bosai.go.jp
  *    National Research Institute for Earth Science and Disaster Prevention
  */
 

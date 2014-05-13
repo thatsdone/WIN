@@ -1,9 +1,9 @@
-/* $Id: udp_dest.c,v 1.10 2014/05/13 12:52:31 uehira Exp $ */
+/* $Id: udp_dest.c,v 1.11 2014/05/13 13:00:55 uehira Exp $ */
 
 /*
  * Copyright (c) 2001-2014
  *   Uehira Kenji / All Rights Reserved.
- *    uehira@bosai.go/jp
+ *    uehira@bosai.go.jp
  *    National Research Institute for Earth Science and Disaster Prevention
  *
  *   2001-10-02   Initial version.

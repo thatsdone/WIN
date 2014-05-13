@@ -1,4 +1,4 @@
-/* $Id: send_raw.c,v 1.31 2014/02/13 06:40:16 urabe Exp $ */
+/* $Id: send_raw.c,v 1.32 2014/05/13 12:52:31 uehira Exp $ */
 /*
     program "send_raw/send_mon.c"   1/24/94 - 1/25/94,5/25/94 urabe
                                     6/15/94 - 6/16/94
@@ -106,7 +106,7 @@
 #define REQ_TIMO  10   /* timeout (sec) for request */
 
 static const char  rcsid[] =
-   "$Id: send_raw.c,v 1.31 2014/02/13 06:40:16 urabe Exp $";
+   "$Id: send_raw.c,v 1.32 2014/05/13 12:52:31 uehira Exp $";
 
 static int sock,raw,tow,all,n_ch,negate_channel,mtu,nbuf,slptime,
   no_resend;
@@ -368,14 +368,14 @@ usage(void)
   fprintf(stderr, "%s\n", rcsid);
   if (daemon_mode)
     fprintf(stderr,
-	     " usage : '%s (-1amRrt) (-b [mtu]) (-f [req_file]) (-h [h])\\\n\
-   (-i [interface]) (-s [s]) (-p [src_port]) (-w [key]) (-T [ttl])\\\n\
+	    " usage : '%s (-1amRrt) (-b [mtu]) (-f [req_file]) (-h [h])\\\n\
+   (-i [interface]) (-k [s]) (-s [s]) (-p [src_port]) (-W/w [key]) (-T [ttl])\\\n \
    [shmkey] [dest] [port] ([chfile]/- ([logfile]))'\n"
 	    ,progname);
   else
     fprintf(stderr,
-	     " usage : '%s (-1aDmRrt) (-b [mtu]) (-f [req_file]) (-h [h])\\\n\
-   (-i [interface]) (-s [s]) (-p [src_port]) (-w [key]) (-T [ttl])\\\n\
+	    " usage : '%s (-1aDmRrt) (-b [mtu]) (-f [req_file]) (-h [h])\\\n\
+   (-i [interface]) (-k [s]) (-s [s]) (-p [src_port]) (-W/w [key]) (-T [ttl])\\\n\
    [shmkey] [dest] [port] ([chfile]/- ([logfile]))'\n"
 	    ,progname);
 }
@@ -422,17 +422,6 @@ main(int argc, char *argv[])
   else if(strcmp(progname,"sendt_mon")==0) {raw=0;tow=1;}
   else if(strcmp(progname,"sendt_mond")==0) {raw=0;tow=1;daemon_mode=1;}
   else exit(1);
-
-  if (daemon_mode)
-    snprintf(tbuf,sizeof(tbuf),
-	    " usage : '%s (-1amRrt) (-b [mtu]) (-f [req_file]) (-h [h])\\\n\
-   (-i [interface]) (-k [s]) (-s [s]) (-p [src_port]) (-W/w [key]) (-T [ttl])\\\n\
-   [shmkey] [dest] [port] ([chfile]/- ([logfile]))'",progname);
-  else
-    snprintf(tbuf,sizeof(tbuf),
-	    " usage : '%s (-1aDmRrt) (-b [mtu]) (-f [req_file]) (-h [h])\\\n\
-   (-i [interface]) (-k [s]) (-s [s]) (-p [src_port]) (-W/w [key]) (-T [ttl])\\\n\
-   [shmkey] [dest] [port] ([chfile]/- ([logfile]))'",progname);
 
   *interface=0;
   *file_req=0;

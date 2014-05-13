@@ -1,0 +1,19 @@
+.\" $Id: recvt46.1,v 1.1 2014/05/13 12:52:30 uehira Exp $
+.TH recvt46 1W "2014.5.13" "WIN SYSTEM" "WIN SYSTEM"
+.UC 4
+.SH 名称
+recvt46, recvt46d - IP(IPv4, IPv6)による win 形式データの受信
+.SH 解説
+IPv6 アドレスも扱える recvt です。オプションや使いかたは recvt(1W) を参照して下さい。recvt46 独自に扱うオプションのみ下記に記述します。
+.SH オプション
+ここでは recvt(1W) には無いオプションのみについて記述します。
+.IP \fB\-4 5
+IPv4 のアドレスのみを扱います。
+.IP \fB\-6 5
+IPv6 のアドレスのみを扱います。
+.SH ソース
+.TP 
+`recvt46.c'
+.SH 関連事項
+recvt(1W), winformat(1W), send_raw(1W), sendt_raw(1W), send_mon(1W),
+sendt_mon(1W), relay(1W), raw_mon(1W)

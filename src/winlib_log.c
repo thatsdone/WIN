@@ -1,4 +1,4 @@
-/* $Id: winlib_log.c,v 1.2 2011/06/01 11:09:22 uehira Exp $ */
+/* $Id: winlib_log.c,v 1.3 2014/05/13 12:52:32 uehira Exp $ */
 
 /*-
  * winlib.c  (Uehira Kenji)
@@ -13,6 +13,11 @@
 #include <sys/socket.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
+
+#include <netinet/in.h>
+#if HAVE_ARPA_INET_H
+#include <arpa/inet.h>
+#endif
 
 #if HAVE_DIRENT_H
 # include <dirent.h>
@@ -141,3 +146,46 @@ sockfd_to_family(int sockfd)
 
   return (sa->sa_family);
 }
+
+int
+judge_mcast(struct sockaddr *sa)
+{
+  int  judge;
+  struct sockaddr_in   *addr4;
+#ifdef INET6
+  struct sockaddr_in6  *addr6;
+#endif  /* INET6 */
+#if DEBUG 
+  char  str[INET6_ADDRSTRLEN];
+#endif  /* DEBUG */
+
+  judge = 0;
+
+  switch (sa->sa_family) {
+  case AF_INET:
+    addr4 = (struct sockaddr_in *)sa;
+#if DEBUG 
+    inet_ntop(AF_INET, &addr4->sin_addr, str, sizeof(str));
+    fprintf(stderr, "AA=%s\n", str);
+#endif  /* DEBUG */
+    if ((addr4->sin_addr.s_addr & 0xf0) == 0xe0)
+      judge = 1;
+    break;
+#ifdef INET6
+  case AF_INET6:
+    addr6 = (struct sockaddr_in6 *)sa;
+#if DEBUG 
+    inet_ntop(AF_INET6, &addr6->sin6_addr, str, sizeof(str));
+    fprintf(stderr, "BB=%s\n", str);
+#endif  /* DEBUG */
+    if (addr6->sin6_addr.s6_addr[0] == 0xff)
+      judge = 1;
+    break;
+#endif  /* INET6 */
+  default:
+    err_sys("judge_mcast");
+  }
+
+  return (judge);
+}
+

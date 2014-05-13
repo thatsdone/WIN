@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.34 2014/01/08 09:00:54 uehira Exp $
+# $Id: Makefile.am,v 1.35 2014/05/13 12:52:30 uehira Exp $
 #
 #  Makefile.am in man subdirectory.
 #
@@ -19,7 +19,7 @@ WIN_MAN = _bj.1 _update.1 automan.1 autopick.1 cormeisei.1 dat.1 dewin.1 \
 	pick2pick.1 raw_time.1 mkpicknoise.1 \
 	ls8tel16_win.1 ls8tel16_raw.1 ls8tel_STM.1 ls8tel_STS.1 \
 	ls7000_A8.1 ls7000_A9.1 split_win.1 chtbl_ck.1 ck_ls8800cst.1\
-	intro_win.1 wshift.1
+	intro_win.1 wshift.1 send_raw46.1 recvt46.1
 
 if IPV6
 IPV6_MAN = relaym.1 recvstatus3.1 recvt_LS7000.1 recvstatus4.1
@@ -58,6 +58,14 @@ install-data-hook:
 	(rm -f $(DESTDIR)$(man1dir)/recvstatus4d.1; cd $(DESTDIR)$(man1dir) && @LN_S@ recvstatus4.1 recvstatus4d.1)
 	(rm -f $(DESTDIR)$(man1dir)/ls8tel16_rawd.1; cd $(DESTDIR)$(man1dir) && @LN_S@ ls8tel16_raw.1 ls8tel16_rawd.1)
 	(rm -f $(DESTDIR)$(man1dir)/recvt_LS7000d.1; cd $(DESTDIR)$(man1dir) && @LN_S@ recvt_LS7000.1 recvt_LS7000d.1)
+	(rm -f $(DESTDIR)$(man1dir)/send_mon46.1; cd $(DESTDIR)$(man1dir) && @LN_S@ send_raw46.1 send_mon46.1)
+	(rm -f $(DESTDIR)$(man1dir)/sendt_mon46.1; cd $(DESTDIR)$(man1dir) && @LN_S@ send_raw46.1 sendt_mon46.1)
+	(rm -f $(DESTDIR)$(man1dir)/sendt_raw46.1; cd $(DESTDIR)$(man1dir) && @LN_S@ send_raw46.1 sendt_raw46.1)
+	(rm -f $(DESTDIR)$(man1dir)/send_raw46d.1; cd $(DESTDIR)$(man1dir) && @LN_S@ send_raw46.1 send_raw46d.1)
+	(rm -f $(DESTDIR)$(man1dir)/send_mon46d.1; cd $(DESTDIR)$(man1dir) && @LN_S@ send_raw46.1 send_mon46d.1)
+	(rm -f $(DESTDIR)$(man1dir)/sendt_mon46d.1; cd $(DESTDIR)$(man1dir) && @LN_S@ send_raw46.1 sendt_mon46d.1)
+	(rm -f $(DESTDIR)$(man1dir)/sendt_raw46d.1; cd $(DESTDIR)$(man1dir) && @LN_S@ send_raw46.1 sendt_raw46d.1)
+	(rm -f $(DESTDIR)$(man1dir)/recvt46d.1; cd $(DESTDIR)$(man1dir) && @LN_S@ recvt46.1 recvt46d.1)
 
 uninstall-local:
 	rm -f $(DESTDIR)$(man1dir)/eventsrtape.1
@@ -85,3 +93,11 @@ uninstall-local:
 	rm -f $(DESTDIR)$(man1dir)/recvstatus4d.1
 	rm -f $(DESTDIR)$(man1dir)/ls8tel16_rawd.1
 	rm -f $(DESTDIR)$(man1dir)/recvt_LS7000d.1
+	rm -f $(DESTDIR)$(man1dir)/send_mon46.1
+	rm -f $(DESTDIR)$(man1dir)/sendt_mon46.1
+	rm -f $(DESTDIR)$(man1dir)/sendt_raw46.1
+	rm -f $(DESTDIR)$(man1dir)/send_raw46d.1
+	rm -f $(DESTDIR)$(man1dir)/send_mon46d.1
+	rm -f $(DESTDIR)$(man1dir)/sendt_mon46d.1
+	rm -f $(DESTDIR)$(man1dir)/sendt_raw46d.1
+	rm -f $(DESTDIR)$(man1dir)/recvt46d.1

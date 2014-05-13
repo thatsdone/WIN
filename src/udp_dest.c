@@ -1,4 +1,4 @@
-/* $Id: udp_dest.c,v 1.9 2014/04/07 10:48:49 uehira Exp $ */
+/* $Id: udp_dest.c,v 1.10 2014/05/13 12:52:31 uehira Exp $ */
 
 /*
  * Copyright (c) 2001-2014
@@ -130,6 +130,10 @@ udp_dest(const char *hostname, const char *port, struct sockaddr *saptr,
     hnbuf = (char *)interface;
   else
     hnbuf = NULL;
+  if ((saptr->sa_family == AF_INET6) && judge_mcast(saptr))
+    hnbuf = NULL;   /* IPv6 and multicasst address */
+  /* fprintf(stderr, "hbuf = %s\n", hnbuf); */
+
   if (((hnbuf != NULL) || (src_port != NULL)) && sockfd != -1) {
     memset(&hints, 0, sizeof(hints));
     hints.ai_family = AF_UNSPEC;

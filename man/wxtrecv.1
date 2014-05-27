@@ -1,0 +1,45 @@
+.TH wxtrecv 1W "2014.5.20" "WIN SYSTEM" "WIN SYSTEM"
+.UC 4
+.SH 名称
+wxtrecv - UDP/IPパケットのテキストデータを受信して表示する
+.SH 形式
+.IP
+.ti -7
+wxtrecv
+.I host
+[
+.I port
+[
+.I outfile
+]]
+.LP
+.SH 解説
+wxtrecvは、ポート番号
+.I port
+宛に送られてくるUDPパケットのデータ(通常はテキストを想定
+していますがバイナリでも動作します)を受信して
+標準出力に書き出します。
+.I port
+が指定されてない場合はUDPポート20001番が使われます。
+.I host
+はダミーの引数ですので任意の文字列、例えば「.」を
+指定してください。
+.I outfile
+もダミーの引数で、使われませんので指定する必要はありません。
+.br
+wxtrecvは、当初Vaisala製の気象計をUDP/IP経由で制御する際の
+受信用として作られました。送信用には wxtsend(1W) が使えます。
+wxtrecvは wxt(1W) へのシンボリックリンクです。
+.SH 使用例
+UDPポート50000番へ送られるパケットを受信して標準出力に
+書き出します。
+.nf
+
+wxtrecv . 50000
+
+.fi
+.SH ソース
+.TP
+`wxt.c'
+.SH 関連事項
+wxt(1W), wxtsend(1W)

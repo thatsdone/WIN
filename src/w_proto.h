@@ -1,10 +1,10 @@
-/* $Id: w_proto.h,v 1.5 2014/05/13 12:52:31 uehira Exp $ */
+/* $Id: w_proto.h,v 1.6 2014/05/27 03:01:06 urabe Exp $ */
 
 #ifndef _WPROTO_H_
 #define _WPROTO_H_
 
 /** prototypes **/
-void get_time(int []);
+time_t get_time(int []);
 uint32_w mkuint4(const uint8_w *);
 uint16_w mkuint2(const uint8_w *);
 int bcd_dec(int [], uint8_w *);

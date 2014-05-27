@@ -1,0 +1,137 @@
+.TH cmg 1W "2014.5.23" "WIN SYSTEM" "WIN SYSTEM"
+.UC 4
+.SH 名称
+cmg - Karacrixを利用したCMG-3Tの遠隔制御プログラム
+.SH 形式
+.IP
+.ti -7
+cmg
+[
+.I \-ulcfnq
+] [
+.I \-p myport
+]
+.I host
+[
+.I port
+]
+.LP
+.SH 解説
+cmg はIP経由で、Karacrix(IOB30RTAまたはTK0040A)に接続された
+広帯域地震計CMG-3Tを遠隔制御するプログラムです。可能な操作は、CMG-3Tの
+ブレークアウトボックスで可能な操作、すなわち lock, unlock, centre です。
+そのほかに、Karacrix(のDOUT4)に接続されたリレーを介してCMG-3T等の電源を
+OFF/ONすることもできます。
+.br
+.I host
+と
+.I port
+はKaracrixのIPアドレスとUDPポート番号です。
+.I port
+が指定されない場合は、デフォルト値である 20000番が
+使われます。
+.br
+cmg は起動すると UD, NS, EW の各成分のマスポジション電圧と、
+BUSY状態(ブレークアウトボックスの場合のLED)を
+表示しながら、コマンド待ちの状態になります。以下は実行例です。
+.nf
+
+$cmg 192.168.210.19
+140523.171405 cmg kara_port=20000 kara=IOB30RTA
+17:14:16  UD[ -3.46V] NS[ -5.46V] EW[  7.30V] <LED OFF>  C/L/U/F/N/Q ? 
+
+.fi
+マスポジション電圧とBUSY LEDの状態は、リアルタイムに
+(１秒間に数回)変わります。入力できるコマンドは以下のもので、いずれも
+１文字(ENTERは不要)です。大文字と小文字は区別されません。
+.IP "\fBC\fI" 5
+center
+.IP "\fBL\fI" 5
+lock
+.IP "\fBU\fI" 5
+unlock
+.IP "\fBF\fI" 5
+リレーOFF(断)
+.IP "\fBN\fI" 5
+リレーON(接続)
+.IP "\fBQ\fI" 5
+終了
+.LP
+centre/lock/unlock の実行には約８秒かかり、実行後また状態表示に戻ります。
+LEDは、連続点灯ならわかりますが、点滅のときは、ついている
+時間が短いと、(それをADCでサンプリングしているので)ちょっと
+わかりづらいです。１台のKaracrixに対して複数のcmgを同時に
+走らせると、変な動作をする可能性があります。
+lock状態ではマスポジション電圧は8〜9Vになるようです。
+CMG-3Tのマニュアルによると、CMG-3Tはマスポジション電圧が1.2V以上
+ないとcentre動作をしません。
+.LP
+cmg は引数なしで起動すると簡単な使用法を表示します。
+.SH オプション
+.IP "\fB\-u \fI" 5
+起動後直ちにunlockを行って終了します。
+.IP "\fB\-l \fI" 5
+起動後直ちにlockを行って終了します。
+.IP "\fB\-c \fI" 5
+起動後直ちにcenterを行って終了します。
+.IP "\fB\-f \fI" 5
+起動後直ちにリレーOFF(断)を行って終了します。
+.IP "\fB\-n \fI" 5
+起動後直ちにリレーON(接続)を行って終了します。
+.IP "\fB\-q \fI" 5
+起動後直ちに何もせずに終了します。
+.IP "\fB\-p \fImyport" 5
+ホストがKaracrixとの通信のために送信する
+UDPパケットの送り元ポートを
+.I myport
+にします。
+.SH CMG-3T - Karacrix(IOB30RTA)間ケーブルの接続例
+.nf
+CMG-3T側                       Karacrix(IOB30RTA)側
+(Breakout box 26pin MIL)       (25pin D-sub)
+
+Centre  (U)             --------- (4)DOUT1
+Signal Ground (N)       --------- (25)AGND
+Logic Signal Ground (Y) --------- (17)DOUT1, (16)DOUT2, (15)DOUT3, (20)DIN-COM
+LED(busy indicator) (K) --------- (9)AIN4  ---47K--- (25)AGND
+V-Mass Position (G)     ---91K--- (12)AIN1 ---10K--- (25)AGND  :1/10に分圧
+N/S-Mass Position (J)   ---91K--- (11)AIN2 ---10K--- (25)AGND  :1/10に分圧
+E/W-Mass Position (L)   ---91K--- (10)AIN3 ---10K--- (25)AGND  :1/10に分圧
+Unlock (W)              --------- (3)DOUT2
+Lock   (X)              --------- (2)DOUT3
+                      (relay)---- (1)DOUT4
+                      (relay)---- (14)DOUT4
+.fi
+.SH CMG-3T - Karacrix(TK0040A)間ケーブルの接続例
+.nf
+CMG-3T側                       Karacrix(TK0040A)側
+(Breakout box 26pin MIL)       (37pin D-sub)
+
+Lock   (X)              --------- (32)TR-1
+Unlock (W)              --------- (30)TR-2
+Centre  (U)             --------- (28)TR-3
+Logic Signal Ground (Y) --------- (31)G
+LED(busy indicator) (K) ---+----- (2)AI-4
+                           |---47k---(20)G
+
+                                          |---1.8k---(1)5V
+V-Mass Position (G)     ---1.2k--+--1.3k--+--(5)AI-1
+                                 |---750-----(20)G
+ 
+                                          |---1.8k---(1)5V
+N/S-Mass Position (J)   ---1.2k--+--1.3k--+--(4)AI-2
+                                 |---750-----(20)G
+
+                                          |---1.8k---(1)5V
+E/W-Mass Position (L)   ---1.2k--+--1.3k--+--(3)AI-3
+                                 |---750-----(20)G
+
+Signal Ground (N)       --------- (20)G
+                      (relay)---- (25)DO-4b
+                      (relay)---- (7)DO-4c
+.fi
+.SH ソース
+.TP
+`cmg.c'
+.SH 関連事項
+.br

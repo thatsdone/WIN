@@ -1,4 +1,4 @@
-/* $Id: winlib.c,v 1.4 2013/08/09 08:50:15 urabe Exp $ */
+/* $Id: winlib.c,v 1.5 2014/05/27 03:01:06 urabe Exp $ */
 
 /*-
  * winlib.c  (Uehira Kenji)
@@ -192,7 +192,7 @@ read_exb1(char dev_name[], int fd, uint8_w *dbuf, size_t maxsize)
 }
 #endif  /* #if HAVE_SYS_MTIO_H */
 
-void
+time_t
 get_time(int rt[])
 {
   struct tm      *nt;
@@ -206,6 +206,7 @@ get_time(int rt[])
   rt[3] = nt->tm_hour;
   rt[4] = nt->tm_min;
   rt[5] = nt->tm_sec;
+  return ltime;
 }
 
 /*-

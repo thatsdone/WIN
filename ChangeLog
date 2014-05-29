@@ -1,4 +1,10 @@
- $Id: ChangeLog,v 1.218 2014/05/27 03:14:47 urabe Exp $
+ $Id: ChangeLog,v 1.219 2014/05/29 07:25:29 urabe Exp $
+
+2014-05-29 Urabe Taku <urabe@eri.u-tokyo.ac.jp>
+	* Version 2.2.11 released.
+	* src/cmg.c src/sts.c : stopped to use O_DIRECT.
+	* src/cmg.c src/lily.c src/sts.c src/vanpro2.c src/wxt.c : some fixes.
+	* src/wshift.c : eliminated extra `;'.
 
 2014-05-27 Urabe Taku <urabe@eri.u-tokyo.ac.jp>
 	* Version 2.2.10 released.

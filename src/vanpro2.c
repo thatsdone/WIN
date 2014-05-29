@@ -1,6 +1,6 @@
 /* $Id $ */
 /* "vanpro2.c"   2012.2.10-4.18     urabe */
-/* 2014.5.20-22 */
+/* 2014.5.20-29 */
 /* 64bit? */
 
 #ifdef HAVE_CONFIG_H
@@ -75,7 +75,7 @@ main(int argc, char *argv[])
   struct hostent *h;
   struct timeval timeout;
 
-  if(progname=strrchr(argv[0],'/')) progname++;
+  if((progname=strrchr(argv[0],'/'))) progname++;
   else progname=argv[0];
 
   snprintf(tb,sizeof(tb),

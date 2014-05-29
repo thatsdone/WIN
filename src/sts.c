@@ -1,5 +1,5 @@
 /*  sts.c              modified from cmg.c 2012.6.18,7.3 urabe */
-/*  2014.5.23-26 urabe */
+/*  2014.5.23-29 urabe */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -42,7 +42,7 @@
 #define PERIOD    0.05 /* in seconds */
 
 static const char rcsid[] =
-  "$Id: sts.c,v 1.1 2014/05/27 03:01:06 urabe Exp $";
+  "$Id: sts.c,v 1.2 2014/05/29 07:21:21 urabe Exp $";
 
 char *progname,*logfile;
 int  syslog_mode, exit_status;
@@ -82,6 +82,7 @@ ctrlc()
   exit(0);
   }
 
+int
 main(argc,argv)
   int argc;
   char *argv[];
@@ -102,7 +103,7 @@ main(argc,argv)
   mode=0; /* 0:command mode, +1:PLUS mode, -1:MINUS mode */
   period=PERIOD;
 
-  if(progname=strrchr(argv[0],'/')) progname++;
+  if((progname=strrchr(argv[0],'/'))) progname++;
   else progname=argv[0];
   sprintf(tb," usage : '%s (-mp) (-v [volts(V)]) (-t [period(s)]) [host] ([port])'\n",progname);
 
@@ -158,7 +159,7 @@ main(argc,argv)
     sock,&to_addr,&from_addr)+5);
   strcpy(tbuf,kara("1234 bout 0000\n",sock,&to_addr,&from_addr)+5);
   system("/bin/stty cbreak"); 
-  fcntl(0,F_SETFL,O_NONBLOCK|O_DIRECT);
+  fcntl(0,F_SETFL,O_NONBLOCK);
   signal(SIGINT,(void *)ctrlc);
   signal(SIGTERM,(void *)ctrlc);
   signal(SIGPIPE,(void *)ctrlc);

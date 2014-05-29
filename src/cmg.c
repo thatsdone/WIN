@@ -1,6 +1,6 @@
 /*  cmg.c              2005.12.14-17,2007.12.26,2010.7.21 urabe */
 /*  modify for TK0040A 2013.07.25 miyazaki */
-/*  2014.5.22 urabe */
+/*  2014.5.22-29 urabe */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -44,7 +44,7 @@
 #define TK0040A   1
 
 static const char rcsid[] =
-  "$Id: cmg.c,v 1.1 2014/05/27 03:01:05 urabe Exp $";
+  "$Id: cmg.c,v 1.2 2014/05/29 07:21:21 urabe Exp $";
 
 char *progname,*logfile;
 int  syslog_mode, exit_status;
@@ -75,6 +75,7 @@ double get_vol(chval)
   return v1;
   }
 
+int
 main(argc,argv)
   int argc;
   char *argv[];
@@ -90,7 +91,7 @@ main(argc,argv)
   extern char *optarg;
   int model_name;
 
-  if(progname=strrchr(argv[0],'/')) progname++;
+  if((progname=strrchr(argv[0],'/'))) progname++;
   else progname=argv[0];
   sprintf(tb," usage : '%s (-ulcfnq) (-p myport) [host] ([port])'\n",progname);
   a=0;
@@ -165,7 +166,7 @@ main(argc,argv)
   write_log(tb);
    
   system("/bin/stty cbreak"); 
-  fcntl(0,F_SETFL,O_NONBLOCK|O_DIRECT);
+  fcntl(0,F_SETFL,O_NONBLOCK);
 
   while(1)
     {

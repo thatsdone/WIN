@@ -2,7 +2,7 @@
 /* "lily.c"      2010.10.19-20     urabe */
 /*               modified from recvt.c */
 /*               2011.4.15 urabe */
-/*               2014.5.13-19 urabe */
+/*               2014.5.13-29 urabe */
 /* 64bit? */
 
 #ifdef HAVE_CONFIG_H
@@ -49,7 +49,7 @@
 #define MAXMESG   2048
 
 static const char rcsid[] =
-  "$Id: lily.c,v 1.1 2014/05/27 03:01:05 urabe Exp $";
+  "$Id: lily.c,v 1.2 2014/05/29 07:21:21 urabe Exp $";
 
 char *progname,*logfile;
 int  syslog_mode, exit_status;
@@ -95,7 +95,7 @@ main(int argc, char *argv[])
   struct hostent *h;
   struct timeval timeout;
 
-  if(progname=strrchr(argv[0],'/')) progname++;
+  if((progname=strrchr(argv[0],'/'))) progname++;
   else progname=argv[0];
 
   snprintf(tb,sizeof(tb),

@@ -1,5 +1,5 @@
 /*  wxt.c              2009.8.5-6 urabe */
-/*                     2014.5.13 urabe */
+/*                     2014.5.13-29 urabe */
 /* 64bit? */
 
 #include <stdio.h>
@@ -36,7 +36,7 @@
 #define SEND      2
 
 static const char rcsid[] =
-  "$Id: wxt.c,v 1.1 2014/05/27 03:01:07 urabe Exp $";
+  "$Id: wxt.c,v 1.2 2014/05/29 07:21:21 urabe Exp $";
 
 char *progname, *logfile;
 int  syslog_mode, exit_status;
@@ -69,7 +69,7 @@ main(int argc, char *argv[])
   struct hostent *h;
   char host_name[256],inbuf[1024],outbuf[1024],file[256];
   uint16_t host_port;
-  if(progname=strrchr(argv[0],'/')) progname++;
+  if((progname=strrchr(argv[0],'/'))) progname++;
   else progname=argv[0];
 
   if(strcmp(progname,"wxtrecv")==0) mode=RECV;

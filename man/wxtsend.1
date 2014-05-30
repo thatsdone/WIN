@@ -1,0 +1,42 @@
+.TH wxtsend 1W "2014.5.20" "WIN SYSTEM" "WIN SYSTEM"
+.UC 4
+.SH 名称
+wxtsend - テキストデータをUDP/IPパケットで送信する
+.SH 形式
+.IP
+.ti -7
+wxtsend
+.I host
+[
+.I port
+[
+.I outfile
+]]
+.LP
+.SH 解説
+wxtsendは、標準入力から読み込んだテキスト行を、ホスト
+.I host
+のUDPポート番号
+.I port
+宛に、UDPパケットで送信します。１行が１パケットになります。
+.I port
+が指定されてない場合はUDPポート20001番が使われます。
+.I outfile
+はダミーの引数で、使われませんので指定する必要はありません。
+.br
+wxtsendは、当初Vaisala製の気象計をUDP/IP経由で制御する際の
+送信用として作られました。受信用には wxtrecv(1W) が使えます。
+wxtsendは wxt(1W) へのシンボリックリンクです。
+.SH 使用例
+標準入力からテキスト行を読み込んで、リモートホスト daisy の
+UDPポート50000番へ送信します。
+.nf
+
+wxtsend daisy 50000
+
+.fi
+.SH ソース
+.TP
+`wxt.c'
+.SH 関連事項
+wxt(1W), wxtrecv(1W)

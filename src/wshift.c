@@ -1,8 +1,9 @@
-/* $Id: wshift.c,v 1.1.2.2 2014/01/09 00:42:55 uehira Exp $ */
+/* $Id: wshift.c,v 1.1.2.3 2014/05/30 02:42:27 uehira Exp $ */
 
 /*-
  * Bit shift waveform data.
  *  offline version of "raw_shift.c".
+ *  2014.5.29 duplicated semicolon at line 43 deleted.
  */
 
 #ifdef HAVE_CONFIG_H
@@ -20,7 +21,7 @@
 #define  MAX_SR  HEADER_5B
 
 static const char  rcsid[] =
-   "$Id: wshift.c,v 1.1.2.2 2014/01/09 00:42:55 uehira Exp $";
+   "$Id: wshift.c,v 1.1.2.3 2014/05/30 02:42:27 uehira Exp $";
 
 static char  *progname;
 static char  *chfile;
@@ -39,7 +40,7 @@ main(int argc, char *argv[])
   int   bits_shift;
   FILE  *fp_in, *fp_out;
   int   rest;
-  uint8_w  *dbuf = NULL, *ptr, *ptr_limit;;
+  uint8_w  *dbuf = NULL, *ptr, *ptr_limit;
   size_t   dbuf_siz;  /* dbuf buffer size */
   WIN_bs   dsize;     /* WIN data size of dbuf[] */
   uint8_w  *outbuf, *ptw;

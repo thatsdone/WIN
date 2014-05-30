@@ -1,9 +1,9 @@
 #
-# $Id: Makefile.am,v 1.45.2.6 2014/05/13 13:24:09 uehira Exp $
+# $Id: Makefile.am,v 1.45.2.7 2014/05/30 02:42:24 uehira Exp $
 #
 
 # Version number of shared libraries.
-LIB_WINSYSTEM_VERSION = -version-info 1:0:0
+LIB_WINSYSTEM_VERSION = -version-info 2:0:0
 LIB_WINLOG_VERSION = -version-info 2:0:1
 
 if SUNOS4
@@ -61,7 +61,7 @@ GC_CHECK_LIB =
 endif
 
 ONLINE_SO=recvt send_raw recvstatus recvstatus2 send_raw_old relay \
-	recvnmx recvt_LS7000 $(ONL_SOL2) $(IPV6_PGM)
+	recvnmx recvt_LS7000 lily wxt vanpro2 cmg sts $(ONL_SOL2) $(IPV6_PGM)
 TAPE_USER_MATH=pmon elist events evdetect
 ONLINE_MATH=ecore ecore2 raw_time winrandsimu6
 OFFLINE_USER_MATH=wtime
@@ -169,6 +169,8 @@ install-exec-hook:
 	(rm -f $(DESTDIR)@bindir@/recvstatus4d; cd $(DESTDIR)@bindir@ && @LN_S@ recvstatus4 recvstatus4d)
 	(rm -f $(DESTDIR)@bindir@/ls8tel16_rawd; cd $(DESTDIR)@bindir@ && @LN_S@ ls8tel16_raw ls8tel16_rawd)
 	(rm -f $(DESTDIR)@bindir@/recvt_LS7000d; cd $(DESTDIR)@bindir@ && @LN_S@ recvt_LS7000 recvt_LS7000d)
+	(rm -f $(DESTDIR)@bindir@/wxtrecv; cd $(DESTDIR)@bindir@ && @LN_S@ wxt wxtrecv)
+	(rm -f $(DESTDIR)@bindir@/wxtsend; cd $(DESTDIR)@bindir@ && @LN_S@ wxt wxtsend)
 	(rm -f $(DESTDIR)@bindir@/raw_clipd; cd $(DESTDIR)@bindir@ && @LN_S@ raw_clip raw_clipd)
 
 uninstall-local:
@@ -210,6 +212,8 @@ uninstall-local:
 	rm -f $(DESTDIR)@bindir@/recvstatus4d
 	rm -f $(DESTDIR)@bindir@/ls8tel16_rawd
 	rm -f $(DESTDIR)@bindir@/recvt_LS7000d
+	rm -f $(DESTDIR)@bindir@/wxtrecv
+	rm -f $(DESTDIR)@bindir@/wxtsend
 	rm -f $(DESTDIR)@bindir@/raw_clipd
 
 ######----- Libraries -----
@@ -516,3 +520,33 @@ chtbl_ck_LDADD = $(WIN_NORMAL_LIB) $(GC_CHECK_LIB)
 
 wshift_SOURCES = wshift.c $(WIN_LIBH) $(GC_CHECK_INCLUDE)
 wshift_LDADD = $(WIN_NORMAL_LIB) $(GC_CHECK_LIB)
+
+lily_SOURCES = lily.c $(WIN_LIBH)
+lily_LDADD = $(WIN_LOG_LTLIB) $(WIN_NORMAL_LIB) @LIBNSL@ @LIBSOCKET@ @LIBSHMGET@
+
+wxt_SOURCES = wxt.c $(WIN_LIBH)
+wxt_LDADD = $(WIN_NORMAL_LIB) @LIBNSL@ @LIBSOCKET@
+
+vanpro2_SOURCES = vanpro2.c $(WIN_LIBH)
+vanpro2_LDADD = $(WIN_LOG_LTLIB) $(WIN_NORMAL_LIB) @LIBNSL@ @LIBSOCKET@ @LIBSHMGET@
+
+cmg_SOURCES = cmg.c $(WIN_LIBH)
+cmg_LDADD = $(WIN_LOG_LTLIB) $(WIN_NORMAL_LIB) @LIBNSL@ @LIBSOCKET@
+
+sts_SOURCES = sts.c $(WIN_LIBH)
+sts_LDADD = $(WIN_LOG_LTLIB) $(WIN_NORMAL_LIB) @LIBNSL@ @LIBSOCKET@
+
+#lily_SOURCES = lily.c $(WIN_LIBH)
+#lily_LDADD = $(WIN_LOG_LTLIB) $(WIN_NORMAL_LIB) @LIBNSL@ @LIBSOCKET@ @LIBSHMGET@
+
+#wxt_SOURCES = wxt.c $(WIN_LIBH)
+#wxt_LDADD = $(WIN_NORMAL_LIB) @LIBNSL@ @LIBSOCKET@
+
+#vanpro2_SOURCES = vanpro2.c $(WIN_LIBH)
+#vanpro2_LDADD = $(WIN_LOG_LTLIB) $(WIN_NORMAL_LIB) @LIBNSL@ @LIBSOCKET@ @LIBSHMGET@
+
+#cmg_SOURCES = cmg.c $(WIN_LIBH)
+#cmg_LDADD = $(WIN_NORMAL_LIB) @LIBNSL@ @LIBSOCKET@
+
+#sts_SOURCES = sts.c $(WIN_LIBH)
+#sts_LDADD = $(WIN_NORMAL_LIB) @LIBNSL@ @LIBSOCKET@

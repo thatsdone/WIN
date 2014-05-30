@@ -1,0 +1,63 @@
+.TH wxt 1W "2014.5.20" "WIN SYSTEM" "WIN SYSTEM"
+.UC 4
+.SH 名称
+wxt - 気象計 WXT520 からのUDP/IP経由のデータ受信
+.SH 形式
+.IP
+.ti -7
+wxt
+.I host
+[
+.I port
+[
+.I outfile
+]]
+.LP
+.SH 解説
+wxt はVaisala製の気象計WXT520からシリアル／IP変換器を
+介し、ポート
+.I port
+宛に送られてくるUDPパケットのデータを受信して、
+ファイル
+.I outfile
+に書き込みます。
+.I port
+が指定されてない場合はUDPポート20001番が使われます。
+.I outfile
+が指定されてない場合は標準出力に書き出されます。
+.I host
+はダミーの引数ですので任意の文字列、例えば「.」を
+指定してください。
+.SH 出力例
+出力の形式は
+.nf
+
+09/08/06,15:50:16,0R0,Dm=236D,Sm=2.6M,Ta=15.0C,Ua=92.0P,Pa=752.4H,Rc=8.37M,Th=16.3C,Vh=15.1N
+09/08/06,15:51:16,0R0,Dm=298D,Sm=0.5M,Ta=15.0C,Ua=92.7P,Pa=752.3H,Rc=8.37M,Th=16.4C,Vh=15.1N
+09/08/06,15:52:16,0R0,Dm=232D,Sm=1.2M,Ta=15.0C,Ua=91.9P,Pa=752.3H,Rc=8.37M,Th=16.4C,Vh=15.1N
+
+.fi
+のようなもので、基本的に１分に１回(１行)です。
+略号の意味は、
+.nf
+
+0R0 - automatic mode によるデータ出力であることを示す。
+Dm  - Wind direction average (deg)
+Sm  - Wind speed average (m/s)
+Ta  - Air temperature (℃)
+Ua  - Relative humidity (%)
+Pa  - Air pressure (hPa)
+Rc  - Rain accumulation (mm)
+Th  - Heating temperature (℃)
+Vh  - Heating voltage (V)
+
+.fi
+です。WXT520には雪を融かして降水量を計測するための
+ヒーターが内蔵されており、最後の２項目はそのヒーターに
+関連するものです。wxt は、automatic mode を示す
+「0R0」が含まれていないデータは読み飛ばします。
+.SH ソース
+.TP
+`wxt.c'
+.SH 関連事項
+wxtrecv(1W), wxtsend(1W)

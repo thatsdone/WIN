@@ -1,4 +1,25 @@
- $Id: ChangeLog,v 1.203.2.11 2014/05/13 13:24:05 uehira Exp $
+ $Id: ChangeLog,v 1.203.2.12 2014/05/30 02:42:18 uehira Exp $
+
+2014-05-29 Urabe Taku <urabe@eri.u-tokyo.ac.jp>
+	* Version 2.2.11 released.
+	* src/cmg.c src/sts.c : stopped to use O_DIRECT.
+	* src/cmg.c src/lily.c src/sts.c src/vanpro2.c src/wxt.c : some fixes.
+	* src/wshift.c : eliminated extra `;'.
+
+2014-05-27 Urabe Taku <urabe@eri.u-tokyo.ac.jp>
+	* Version 2.2.10 released.
+	* man/Makefile.am : libwinsystem : bump version (1.0.0 --> 2.0.0)
+	* man/Makefile.am : added cmg.1 lily.1 sts.1 vanpro2.1 wxt.1 wxtrecv.1 wxtsend.1
+	* src/Makefile.am : added cmg.c lily.c sts.c vanpro2.c wxt.c
+	* src/w_proto.h : changed type of get_time() from void to time_t.
+	* src/winlib.c : changed get_time(); returns ltime.
+	* src/cmg.c : added; controls CMG-3T via Karacrix.
+	* src/lily.c : added; receives data in UDP packets from LILY.
+	* src/sts.c : added; controls STS-1 via Karacrix.
+	* src/vanpro2.c : added; receives data in UDP packets from Vantage Pro2.
+	* src/wxt.c : added; receives data in UDP packets from WXT520.
+	* man/cmg.1,man/lily.1,man/sts.1,man/vanpro2.1,man/wxt.1,man/wxtrecv.1,man/wxtsend.1 :
+       		see above.
 
 2014-05-13 Uehira Kenji <uehira@bosai.go.jp>
 	* Version 2.2.9 released.

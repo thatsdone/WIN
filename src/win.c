@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.65 2012/06/14 09:47:43 nakagawa Exp $
+   $Id: win.c,v 1.66 2014/06/17 07:43:28 urabe Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -23,10 +23,10 @@
 #else
 #define NAME_PRG      "win32"
 #endif
-#define WIN_VERSION   "2012.6.14(+Hi-net)"
+#define WIN_VERSION   "2014.6.14(+Hi-net)"
 
 static const char rcsid[] =
-  "$Id: win.c,v 1.65 2012/06/14 09:47:43 nakagawa Exp $";
+  "$Id: win.c,v 1.66 2014/06/17 07:43:28 urabe Exp $";
 
 #define DEBUG_AP      0   /* for debugging auto-pick */
 /* 5:sr, 4:ch, 3:sec, 2:find_pick, 1:all */
@@ -877,7 +877,8 @@ static struct File_Table     /* Data File Information */
     int32_w len;              /* data length in sec (old: int) */
     int32_w n_ch;             /* number of channels (old: int) */
     int len_mon;              /* normal width of mon in sec */
-    int w_mon;                /* normal width of mon pixels */
+    int w_mon;                /* normal width of mon in pixels */
+    int w_mon_last;           /* w_mon of last bitmap */
     int n_mon;                /* n of mon bitmaps */
     uint8_w *secbuf;          /* one sec buffer */
     int32_w ptr_secbuf;       /* one sec buffer pointer */
@@ -4737,6 +4738,8 @@ set_geometry(void)
   while(n_zoom>n_zoom_max) close_zoom(n_zoom-1);
   height_win_mon=height_dpy-1-MARGIN-HEIGHT_FUNC-n_zoom*HEIGHT_ZOOM;
   width_win_mon =width_dpy-WIDTH_INFO;
+  if((x_zero_max=ft.len*PIXELS_PER_SEC_MON-width_win_mon)<0) x_zero_max=0;
+  if((y_zero_max=height_mon-height_win_mon)<0) y_zero_max=0;
   x_win_info=0;
   y_win_info=MARGIN+HEIGHT_FUNC;
   width_win_info =WIDTH_INFO;
@@ -5168,6 +5171,7 @@ bg: if(map_only) goto skip_mon;
     fprintf(stderr,"map #%d/%d : %d sec x %d chs (%d x %d)",
       i_mon+1,ft.n_mon,mon_len,ft.n_ch,width_mon,height_mon);
     fprintf(stderr,"   %d bytes\n",p2w(width_mon)*height_mon*2);
+    ft.w_mon_last=width_mon;
     /* plot mon */
     if(flag_save==1 && mon_offset==0)
       {
@@ -7087,9 +7091,8 @@ put_mark_zoom(int idx, int izoom, struct Pick_Time *pt, int mode)
 static void
 put_mon(int xzero, int yzero)
   {
-  int i,j,xwm,xz,xlim;
+  int i,j,xwm,xz,w_mon;
 
-  xlim=xzero+width_win_mon;
   i=xzero/ft.w_mon;
   xz=xzero-i*ft.w_mon;
   xwm=x_win_mon;
@@ -7097,14 +7100,20 @@ put_mon(int xzero, int yzero)
   put_bitblt(&info,0,yzero,width_win_info,height_win_mon,&dpy,
     x_win_info,y_win_info,BF_S);
   /* put mon */
-  for(;i<ft.n_mon && xzero<xlim;i++)
+  for(;i<ft.n_mon && xwm<width_dpy;i++)
     {
-    put_bitblt(&mon[i],xz,yzero,width_win_mon,height_win_mon,&dpy,
-      xwm,y_win_mon,BF_S);
-    if(i==ft.n_mon-1 && width_win_mon>(j=ft.w_mon*ft.n_mon-xzero))
-      put_white(&dpy,j,y_win_mon,width_win_mon-j,height_win_mon);
-    xzero=ft.w_mon*i;
-    xwm+=ft.w_mon-xz;
+    if(i==ft.n_mon-1) w_mon=ft.w_mon_last;
+    else w_mon=ft.w_mon;
+    if(width_dpy-xwm>w_mon-xz) j=w_mon-xz;
+    else j=width_dpy-xwm;
+    put_bitblt(&mon[i],xz,yzero,j,height_win_mon,&dpy,xwm,y_win_mon,BF_S);
+/*
+printf("%d:%d,%d(%d,%d)->%d,%d xwm=%d width_dpy=%d w_mon=%d\n",i,xz,yzero,j,height_win_mon,xwm,y_win_mon,
+xwm,width_dpy,w_mon);
+*/
+    xwm+=j;
+    if(i==ft.n_mon-1 && xwm<width_dpy)
+      put_white(&dpy,xwm,y_win_mon,width_dpy-xwm,height_win_mon);
     xz=0;
     }
   if(height_win_mon>height_mon) put_white(&dpy,0,y_win_mon+height_mon,

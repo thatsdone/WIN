@@ -1,4 +1,7 @@
- $Id: ChangeLog,v 1.203.2.12 2014/05/30 02:42:18 uehira Exp $
+ $Id: ChangeLog,v 1.203.2.13 2014/06/24 02:08:34 uehira Exp $
+
+2014-06-17 Urabe Taku <urabe@eri.u-tokyo.ac.jp>
+	* src/win.c : bug in put_mon() fixed.
 
 2014-05-29 Urabe Taku <urabe@eri.u-tokyo.ac.jp>
 	* Version 2.2.11 released.

@@ -1,4 +1,4 @@
-/* $Id: recvt46.c,v 1.8 2014/04/07 01:48:54 uehira Exp $ */
+/* $Id: recvt46.c,v 1.9 2014/06/27 05:20:25 urabe Exp $ */
 /*-
  "recvt.c"      4/10/93 - 6/2/93,7/2/93,1/25/94    urabe
                 2/3/93,5/25/94,6/16/94 
@@ -59,6 +59,7 @@
 		          if packet comes from deny host.
 		2011.2.13-15 IPv6/IPv4 version of 'recvt.c'. (Uehira)
 		2014.4.6 NIC for receive can be specified by -i [IP_address or hostname] (IPv4 & IPv6)
+                2014.6.27 bug in main() : 'static' struct ch_hist  chhist; fixed.
 -*/
 
 #ifdef HAVE_CONFIG_H
@@ -116,7 +117,7 @@
 #define N_PNOS    62    /* length of packet nos. history >=2 */
 
 static const char rcsid[] =
-  "$Id: recvt46.c,v 1.8 2014/04/07 01:48:54 uehira Exp $";
+  "$Id: recvt46.c,v 1.9 2014/06/27 05:20:25 urabe Exp $";
 
 static uint8_w rbuf[MAXMESG], ch_table[WIN_CHMAX];
 static char *chfile[N_CHFILE];
@@ -800,7 +801,7 @@ main(int argc, char *argv[])
   char mcastgroup[256]; /* multicast address */
   char interface[256]; /* network interface */
   time_t ts,sec,sec_p;  /*- 64bit ok -*/
-  struct ch_hist  chhist;
+  static struct ch_hist  chhist;
   /* struct hostent *h; */
   struct timeval timeout;
   fd_set  rset;

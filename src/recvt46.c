@@ -1,4 +1,4 @@
-/* $Id: recvt46.c,v 1.9 2014/06/27 05:20:25 urabe Exp $ */
+/* $Id: recvt46.c,v 1.10 2014/06/30 00:54:08 uehira Exp $ */
 /*-
  "recvt.c"      4/10/93 - 6/2/93,7/2/93,1/25/94    urabe
                 2/3/93,5/25/94,6/16/94 
@@ -117,7 +117,7 @@
 #define N_PNOS    62    /* length of packet nos. history >=2 */
 
 static const char rcsid[] =
-  "$Id: recvt46.c,v 1.9 2014/06/27 05:20:25 urabe Exp $";
+  "$Id: recvt46.c,v 1.10 2014/06/30 00:54:08 uehira Exp $";
 
 static uint8_w rbuf[MAXMESG], ch_table[WIN_CHMAX];
 static char *chfile[N_CHFILE];
@@ -173,7 +173,7 @@ read_chfile(void)
   FILE *fp;
   int i, k, ii, i_chfile;
   time_t tdif, tdif2;
-  char tbuf[1024], host_name[1024], tb[256], *ptr;
+  char tbuf[1024], host_name[1024], tb[256];
   char  *port_ptr;  /* port No. */
   char  *host_ptr;
   static time_t ltime, ltime_p;
@@ -771,7 +771,7 @@ main(int argc, char *argv[])
 {
   key_t shm_key;  /*- 64bit ok -*/
   struct conntable  *ct, *ct_top = NULL;
-  char  *input_port, *host_port, *cptr;
+  char  *input_port, *host_port;
   int  maxsoc;
   struct sockaddr_storage  ss, ss1;
   struct sockaddr *from_addr = (struct sockaddr *)&ss;
@@ -796,7 +796,7 @@ main(int argc, char *argv[])
   /* struct sockaddr_in from_addr,host_addr; */  /*- 64bit ok -*/
   /* uint16_t  host_port;  */ /*- 64bit ok -*/
   struct Shm  *sh;
-  char tb[256],tb2[256];
+  char tb[256];
   /* struct ip_mreq stMreq; */  /*- 64bit ok -*/
   char mcastgroup[256]; /* multicast address */
   char interface[256]; /* network interface */
@@ -904,7 +904,6 @@ main(int argc, char *argv[])
       no_pinfo = 1;
       break;
     case 'o':   /* host and port for request */
-      /* strcpy(tb2,optarg); */
       if (split_host_port(optarg, &host_name, &host_port)) {
 	fprintf(stderr," Invalid hostname !\n");
 	usage();

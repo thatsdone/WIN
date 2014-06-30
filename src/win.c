@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.67 2014/06/27 05:20:26 urabe Exp $
+   $Id: win.c,v 1.68 2014/06/30 01:39:39 urabe Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -23,10 +23,10 @@
 #else
 #define NAME_PRG      "win32"
 #endif
-#define WIN_VERSION   "2014.6.18(+Hi-net)"
+#define WIN_VERSION   "2014.6.30(+Hi-net)"
 
 static const char rcsid[] =
-  "$Id: win.c,v 1.67 2014/06/27 05:20:26 urabe Exp $";
+  "$Id: win.c,v 1.68 2014/06/30 01:39:39 urabe Exp $";
 
 #define DEBUG_AP      0   /* for debugging auto-pick */
 /* 5:sr, 4:ch, 3:sec, 2:find_pick, 1:all */
@@ -3878,8 +3878,8 @@ auto_pick_hypo(char *tbuf, int hint)
         {
         raise_ttysw(1);
         fprintf(stderr,"AIR FOCUS - DEPTH FIXED ...\n");
-        init_dep =0.0;
-        init_depe=0.5;
+        init_dep =0;
+        init_depe=0;
         locate(1,hint);
         init_dep =init_dep_init;
         init_depe=init_depe_init;
@@ -3950,10 +3950,9 @@ auto_pick_hint(int save)
     fgets(tbuf,LINELEN,fp);sscanf(tbuf,"%lf",&aph.wp);
     fgets(tbuf,LINELEN,fp);sscanf(tbuf,"%lf",&aph.ws);
     fclose(fp);
-    fprintf(ft.fp_log,"winaph.prm read\n",aph.ttp);
+    fprintf(ft.fp_log,"winaph.prm read\n");
     }
-  else
-
+  else fprintf(ft.fp_log,"winaph.prm not found\n");
 
   fprintf(ft.fp_log,"ttp = %lf\n",aph.ttp);
   fprintf(ft.fp_log,"wp  = %lf\n",aph.wp);

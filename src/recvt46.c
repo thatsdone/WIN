@@ -1,4 +1,4 @@
-/* $Id: recvt46.c,v 1.6.2.2 2014/04/06 23:37:46 uehira Exp $ */
+/* $Id: recvt46.c,v 1.6.2.3 2014/06/30 05:58:32 uehira Exp $ */
 /*-
  "recvt.c"      4/10/93 - 6/2/93,7/2/93,1/25/94    urabe
                 2/3/93,5/25/94,6/16/94 
@@ -59,6 +59,7 @@
 		          if packet comes from deny host.
 		2011.2.13-15 IPv6/IPv4 version of 'recvt.c'. (Uehira)
 		2014.4.6 NIC for receive can be specified by -i [IP_address or hostname] (IPv4 & IPv6)
+                2014.6.27 bug in main() : 'static' struct ch_hist  chhist; fixed.
 -*/
 
 #ifdef HAVE_CONFIG_H
@@ -116,7 +117,7 @@
 #define N_PNOS    62    /* length of packet nos. history >=2 */
 
 static const char rcsid[] =
-  "$Id: recvt46.c,v 1.6.2.2 2014/04/06 23:37:46 uehira Exp $";
+  "$Id: recvt46.c,v 1.6.2.3 2014/06/30 05:58:32 uehira Exp $";
 
 static uint8_w rbuf[MAXMESG], ch_table[WIN_CHMAX];
 static char *chfile[N_CHFILE];
@@ -172,7 +173,7 @@ read_chfile(void)
   FILE *fp;
   int i, k, ii, i_chfile;
   time_t tdif, tdif2;
-  char tbuf[1024], host_name[1024], tb[256], *ptr;
+  char tbuf[1024], host_name[1024], tb[256];
   char  *port_ptr;  /* port No. */
   char  *host_ptr;
   static time_t ltime, ltime_p;
@@ -770,7 +771,7 @@ main(int argc, char *argv[])
 {
   key_t shm_key;  /*- 64bit ok -*/
   struct conntable  *ct, *ct_top = NULL;
-  char  *input_port, *host_port, *cptr;
+  char  *input_port, *host_port;
   int  maxsoc;
   struct sockaddr_storage  ss, ss1;
   struct sockaddr *from_addr = (struct sockaddr *)&ss;
@@ -795,12 +796,12 @@ main(int argc, char *argv[])
   /* struct sockaddr_in from_addr,host_addr; */  /*- 64bit ok -*/
   /* uint16_t  host_port;  */ /*- 64bit ok -*/
   struct Shm  *sh;
-  char tb[256],tb2[256];
+  char tb[256];
   /* struct ip_mreq stMreq; */  /*- 64bit ok -*/
   char mcastgroup[256]; /* multicast address */
   char interface[256]; /* network interface */
   time_t ts,sec,sec_p;  /*- 64bit ok -*/
-  struct ch_hist  chhist;
+  static struct ch_hist  chhist;
   /* struct hostent *h; */
   struct timeval timeout;
   fd_set  rset;
@@ -903,7 +904,6 @@ main(int argc, char *argv[])
       no_pinfo = 1;
       break;
     case 'o':   /* host and port for request */
-      /* strcpy(tb2,optarg); */
       if (split_host_port(optarg, &host_name, &host_port)) {
 	fprintf(stderr," Invalid hostname !\n");
 	usage();

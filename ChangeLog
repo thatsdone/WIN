@@ -1,4 +1,9 @@
- $Id: ChangeLog,v 1.203.2.13 2014/06/24 02:08:34 uehira Exp $
+ $Id: ChangeLog,v 1.203.2.14 2014/06/30 05:58:31 uehira Exp $
+
+2014-06-27 Urabe Taku <urabe@eri.u-tokyo.ac.jp>
+	* Version 2.2.12 released.
+	* src/recvt.c src/recvt46.c : bug fixed: 'static' struct ch_hist  chhist;
+	* src/win.c : introduced 'winaph.prm' for auto_pick_hint() (AUTPK)
 
 2014-06-17 Urabe Taku <urabe@eri.u-tokyo.ac.jp>
 	* src/win.c : bug in put_mon() fixed.

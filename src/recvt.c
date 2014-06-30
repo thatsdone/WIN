@@ -1,4 +1,4 @@
-/* $Id: recvt.c,v 1.33.2.1 2014/04/06 07:31:14 uehira Exp $ */
+/* $Id: recvt.c,v 1.33.2.2 2014/06/30 05:58:32 uehira Exp $ */
 /*-
  "recvt.c"      4/10/93 - 6/2/93,7/2/93,1/25/94    urabe
                 2/3/93,5/25/94,6/16/94 
@@ -60,6 +60,7 @@
                 2013.9.17 suppress rate statistics for inactive hosts
                 2013.9.17 NIC for receive can be specified by -i IP_address (IPv4)
                 2014.2.13 bug in -i for multicast fixed (IPv4)
+                2014.6.27 bug in main() : 'static' struct ch_hist  chhist; fixed.
 -*/
 
 #ifdef HAVE_CONFIG_H
@@ -117,7 +118,7 @@
 #define N_PNOS    62    /* length of packet nos. history >=2 */
 
 static const char rcsid[] =
-  "$Id: recvt.c,v 1.33.2.1 2014/04/06 07:31:14 uehira Exp $";
+  "$Id: recvt.c,v 1.33.2.2 2014/06/30 05:58:32 uehira Exp $";
 
 static uint8_w rbuf[MAXMESG],ch_table[WIN_CHMAX];
 static char *chfile[N_CHFILE];
@@ -721,7 +722,7 @@ main(int argc, char *argv[])
   char mcastgroup[256]; /* multicast address */
   char interface[256]; /* network interface */
   time_t ts,sec,sec_p;  /*- 64bit ok -*/
-  struct ch_hist  chhist;
+  static struct ch_hist  chhist; /* 2014.6.27 static */
   struct hostent *h;
   struct timeval timeout;
 

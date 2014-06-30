@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.63.2.4 2014/06/24 02:08:37 uehira Exp $
+   $Id: win.c,v 1.63.2.5 2014/06/30 05:58:32 uehira Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -23,10 +23,10 @@
 #else
 #define NAME_PRG      "win32"
 #endif
-#define WIN_VERSION   "2014.6.14(+Hi-net) (UEHIRA)"
+#define WIN_VERSION   "2014.6.30(+Hi-net) (UEHIRA)"
 
 static const char rcsid[] =
-  "$Id: win.c,v 1.63.2.4 2014/06/24 02:08:37 uehira Exp $";
+  "$Id: win.c,v 1.63.2.5 2014/06/30 05:58:32 uehira Exp $";
 
 #define DEBUG_AP      0   /* for debugging auto-pick */
 /* 5:sr, 4:ch, 3:sec, 2:find_pick, 1:all */
@@ -981,6 +981,12 @@ typedef struct
     double lt,st,ratio;
     double ap,as,fl,fh,fs;
     } Evdet;
+
+typedef struct
+    {
+    double ttp;
+    double wp,ws;
+    } Aph;
 
 typedef struct
     {
@@ -3474,6 +3480,26 @@ auto_pick(int singl)
     10.0,1.0,1.25,      /* double lt,st,ratio, */
     0.5,5.0,1.0,20.0,30.0 /* double ap,as,fl,fh,fs */
     };
+
+#if 0
+/* Example of winap.prm.  Just 15 lines with no comment line. */
+3      /* n_min_trig */
+0      /* n_trig_off */
+1.0    /* dist1 */
+100.0  /* dist2 */
+1000   /* ms_on */
+5000   /* ms_off */
+5      /* sub_rate, */
+10.0   /* lt */
+1.0    /* st */
+1.25   /* ratio */
+0.5    /* ap */
+5.0    /* as */
+1.0    /* fl */
+20.0   /* fh */
+30.0   /* fs */
+#endif
+
   int done;
   char tbuf[LINELEN];
   FILE *fp;
@@ -3855,8 +3881,8 @@ auto_pick_hypo(char *tbuf, int hint)
         {
         raise_ttysw(1);
         fprintf(stderr,"AIR FOCUS - DEPTH FIXED ...\n");
-        init_dep =0.0;
-        init_depe=0.5;
+        init_dep =0;
+        init_depe=0;
         locate(1,hint);
         init_dep =init_dep_init;
         init_depe=init_depe_init;
@@ -3891,10 +3917,23 @@ auto_pick_hypo(char *tbuf, int hint)
 static int
 auto_pick_hint(int save)
   {
+  static Aph aph={
+  0.05,    /* ratio to travel time for allowance */
+  0.5,     /* width for search P (sec) */
+  0.5      /* width for search S (sec) */
+  };
+#if 0
+/* Example of winaph.prm.  Just 3 lines with no comment line. */
+0.05   /* ratio to travel time for allowance */
+0.5    /* width for search P (sec) */
+0.5    /* width for search S (sec) */
+#endif
+
   int i,width;
   char tbuf[20];
   struct Pick_Time pt;
   double tt;
+  FILE *fp;
 
   if(ft.pick_calc_ot.valid==0)
     {
@@ -3906,6 +3945,24 @@ auto_pick_hint(int save)
   fprintf(stderr,"canceled all picks\n");
   fprintf(stderr,"auto-pick and locate with a preliminary hypocenter\n");
   put_mon(x_zero,y_zero);
+
+  ft.fp_log=fopen(ft.log_file,"a+");
+  if((fp=fopen("winaph.prm","r")))
+    {
+    fgets(tbuf,LINELEN,fp);sscanf(tbuf,"%lf",&aph.ttp);
+    fgets(tbuf,LINELEN,fp);sscanf(tbuf,"%lf",&aph.wp);
+    fgets(tbuf,LINELEN,fp);sscanf(tbuf,"%lf",&aph.ws);
+    fclose(fp);
+    fprintf(ft.fp_log,"winaph.prm read\n");
+    }
+  else fprintf(ft.fp_log,"winaph.prm not found\n");
+
+  fprintf(ft.fp_log,"ttp = %lf\n",aph.ttp);
+  fprintf(ft.fp_log,"wp  = %lf\n",aph.wp);
+  fprintf(ft.fp_log,"ws  = %lf\n",aph.ws);
+  fclose(ft.fp_log);
+  ft.fp_log=0;
+
   get_trigch();
   /* set P & S range */
   for(i=0;i<ft.n_trigch;i++)
@@ -3915,7 +3972,7 @@ auto_pick_hint(int save)
       tt=(double)(ft.pick_calc[ft.trigch[i]][P].sec1-ft.pick_calc_ot.sec1)+
       (double)(ft.pick_calc[ft.trigch[i]][P].msec1-ft.pick_calc_ot.msec1)*0.001;
       pt=ft.pick_calc[ft.trigch[i]][P];
-      width=(int)((tt*0.05+0.5)*1000); /* 5% of TT plus 0.5 sec */
+      width=(int)((tt*aph.ttp+aph.wp)*1000); /* default: 5% of TT plus 0.5 sec */
       set_width(&pt,width,width);
       show_pick(ft.trigch[i],&pt,P);
       }
@@ -3924,7 +3981,7 @@ auto_pick_hint(int save)
       tt=(double)(ft.pick_calc[ft.trigch[i]][S].sec1-ft.pick_calc_ot.sec1)+
       (double)(ft.pick_calc[ft.trigch[i]][S].msec1-ft.pick_calc_ot.msec1)*0.001;
       pt=ft.pick_calc[ft.trigch[i]][S];
-      width=(int)((tt*0.05+0.5)*1000); /* 5% of TT plus 0.5 sec */
+      width=(int)((tt*aph.ttp+aph.ws)*1000); /* default: 5% of TT plus 0.5 sec */
       set_width(&pt,width,width);
       show_pick(ft.trigch[i],&pt,S);
       }

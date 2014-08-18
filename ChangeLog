@@ -1,4 +1,8 @@
- $Id: ChangeLog,v 1.221 2014/06/27 05:20:22 urabe Exp $
+ $Id: ChangeLog,v 1.222 2014/08/18 06:39:49 urabe Exp $
+
+2014-08-18 Urabe Taku <urabe@eri.u-tokyo.ac.jp>
+	* Version 2.2.13 released.
+	* src/recvstatus2.c : bug fixed: increased size of c[] in infoarray.
 
 2014-06-27 Urabe Taku <urabe@eri.u-tokyo.ac.jp>
 	* Version 2.2.12 released.

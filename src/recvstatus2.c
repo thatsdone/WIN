@@ -1,4 +1,4 @@
-/* $Id: recvstatus2.c,v 1.12 2014/04/11 06:35:16 urabe Exp $ */
+/* $Id: recvstatus2.c,v 1.13 2014/08/18 06:39:51 urabe Exp $ */
 
 /* modified from "recvstatus.c" */
 /* 2002.6.19 recvstatus2 receive A8/A9 packets from Datamark LS-7000XT */
@@ -6,6 +6,7 @@
 /* 2002.7.11 DEBUG(2) */
 /* 2010.9.30 daemon mode. 64bit check. */
 /* 2014.4.10 update for udp_accept4() */
+/* 2014.8.18 increased size of c[] in infoarray from 4000 to 5000 */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -67,7 +68,7 @@
 /* #define DEBUG   0 */
 
 static const char rcsid[] =
-  "$Id: recvstatus2.c,v 1.12 2014/04/11 06:35:16 urabe Exp $";
+  "$Id: recvstatus2.c,v 1.13 2014/08/18 06:39:51 urabe Exp $";
 
 char *progname, *logfile = NULL;
 int syslog_mode = 0, exit_status = EXIT_SUCCESS;
@@ -108,7 +109,7 @@ main(int argc, char *argv[])
     char t[6];
     int ch;
     int seq;
-    char c[4000];
+    char c[5000];
     int len;
     } *s[NSMAX];
   DIR *dir_ptr;

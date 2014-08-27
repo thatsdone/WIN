@@ -1,4 +1,4 @@
-/* $Id: recvstatus2.c,v 1.14 2014/08/27 08:55:21 urabe Exp $ */
+/* $Id: recvstatus2.c,v 1.15 2014/08/27 09:16:06 urabe Exp $ */
 
 /* modified from "recvstatus.c" */
 /* 2002.6.19 recvstatus2 receive A8/A9 packets from Datamark LS-7000XT */
@@ -70,7 +70,7 @@
 /*#define DEBUG   1*/
 
 static const char rcsid[] =
-  "$Id: recvstatus2.c,v 1.14 2014/08/27 08:55:21 urabe Exp $";
+  "$Id: recvstatus2.c,v 1.15 2014/08/27 09:16:06 urabe Exp $";
 
 char *progname, *logfile = NULL;
 int syslog_mode = 0, exit_status = EXIT_SUCCESS;
@@ -105,10 +105,7 @@ main(int argc, char *argv[])
   struct sockaddr_in  from_addr;
   uint16_t to_port;
   struct infoarray {
-    in_addr_t adrs;
-    in_port_t port;
     int id;
-    char t[6];
     int ch;
     int seq;
     char c[MAXPACKETS][MAXMESG];
@@ -233,11 +230,7 @@ printf("ns=%d i=%d\n",ns,i);
           } 
         /* s[i]=(struct infoarray *)malloc(sizeof(struct infoarray)); */
 	s[i]=MALLOC(struct infoarray, 1);
-	if (s[i] == NULL)
-	  err_sys("malloc");
-        s[i]->adrs=from_addr.sin_addr.s_addr; 
-        s[i]->port=from_addr.sin_port; 
-        memcpy(s[i]->t,rbuf+5,6);
+	if (s[i] == NULL) err_sys("malloc");
         s[i]->id=rbuf[2];
         s[i]->ch=chtmp;
         for(j=0;j<MAXPACKETS;j++) s[i]->len[j]=0;
@@ -293,6 +286,7 @@ for(j=0;j<MAXPACKETS;j++) printf("seq=%d/%d len=%d\n",j+1,nseq,s[i]->len[j]);
           for(j=0;j<nseq;j++) fwrite(s[i]->c[j],1,s[i]->len[j],stdout);
           fwrite("\n",1,1,stdout);
           }
+        for(j=0;j<MAXPACKETS;j++) s[i]->len[j]=0;
         }
       }
     }

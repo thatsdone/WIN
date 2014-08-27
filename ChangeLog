@@ -1,4 +1,9 @@
- $Id: ChangeLog,v 1.222 2014/08/18 06:39:49 urabe Exp $
+ $Id: ChangeLog,v 1.223 2014/08/27 08:55:18 urabe Exp $
+
+2014-08-27 Urabe Taku <urabe@eri.u-tokyo.ac.jp>
+	* Version 2.2.14 released.
+	* src/recvstatus2.c : packet order-tolerant.
+	* src/win.c : case-tolerant in -i option.
 
 2014-08-18 Urabe Taku <urabe@eri.u-tokyo.ac.jp>
 	* Version 2.2.13 released.

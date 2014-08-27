@@ -1,4 +1,4 @@
-/* $Id: recvstatus2.c,v 1.13 2014/08/18 06:39:51 urabe Exp $ */
+/* $Id: recvstatus2.c,v 1.14 2014/08/27 08:55:21 urabe Exp $ */
 
 /* modified from "recvstatus.c" */
 /* 2002.6.19 recvstatus2 receive A8/A9 packets from Datamark LS-7000XT */
@@ -7,6 +7,7 @@
 /* 2010.9.30 daemon mode. 64bit check. */
 /* 2014.4.10 update for udp_accept4() */
 /* 2014.8.18 increased size of c[] in infoarray from 4000 to 5000 */
+/* 2014.8.27 packet order tolerant */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -65,10 +66,11 @@
 
 #define NSMAX 100
 #define MAXMESG   2048
-/* #define DEBUG   0 */
+#define MAXPACKETS 6
+/*#define DEBUG   1*/
 
 static const char rcsid[] =
-  "$Id: recvstatus2.c,v 1.13 2014/08/18 06:39:51 urabe Exp $";
+  "$Id: recvstatus2.c,v 1.14 2014/08/27 08:55:21 urabe Exp $";
 
 char *progname, *logfile = NULL;
 int syslog_mode = 0, exit_status = EXIT_SUCCESS;
@@ -97,7 +99,7 @@ main(int argc, char *argv[])
   {
   uint8_w rbuf[MAXMESG];
   char tb[100],*logdir,logxml[256];
-  int i,ns,c,rcs;
+  int i,j,ns,c,rcs,seq,nseq,len;
   ssize_t  n;
   socklen_t  fromlen;
   struct sockaddr_in  from_addr;
@@ -109,8 +111,8 @@ main(int argc, char *argv[])
     char t[6];
     int ch;
     int seq;
-    char c[5000];
-    int len;
+    char c[MAXPACKETS][MAXMESG];
+    int len[MAXPACKETS];
     } *s[NSMAX];
   DIR *dir_ptr;
   FILE *fp;
@@ -235,61 +237,63 @@ printf("ns=%d i=%d\n",ns,i);
 	  err_sys("malloc");
         s[i]->adrs=from_addr.sin_addr.s_addr; 
         s[i]->port=from_addr.sin_port; 
-        s[i]->seq=1;
-        s[i]->len=0;
-        ns++;
-        }
-#if DEBUG
-printf("ns=%d i=%d s[i]->seq=%d s[i]->len=%d\n",ns,i,s[i]->seq,s[i]->len);
-#endif
-      if(rbuf[14]==1)
-        {
         memcpy(s[i]->t,rbuf+5,6);
         s[i]->id=rbuf[2];
-        s[i]->ch=(rbuf[11]<<8)+rbuf[12];
-        s[i]->len=0;
+        s[i]->ch=chtmp;
+        for(j=0;j<MAXPACKETS;j++) s[i]->len[j]=0;
+        ns++;
         }
-      else if(!(s[i]->id==rbuf[2] && s[i]->seq==rbuf[14])) continue;
 
-      memcpy(s[i]->c+s[i]->len,rbuf+15,(rbuf[3]<<8)+rbuf[4]-12);
-      s[i]->len+=(rbuf[3]<<8)+rbuf[4]-12;
+      seq=rbuf[14]-1; /* from 0 to nseq-1 */
+      nseq=rbuf[13];
+      len=(rbuf[3]<<8)+rbuf[4]-12;
+      if(nseq>MAXPACKETS || seq>nseq-1 || len>MAXMESG) break;
+
 #if DEBUG
-printf("s[i]->seq=%d s[i]->len=%d\n",s[i]->seq,s[i]->len);
+printf("ns=%d i=%d seq=%d/%d len=%d\n",ns,i,seq+1,nseq,len);
 #endif
-      if(rbuf[13]==rbuf[14])
+
+      memcpy(s[i]->c[seq],rbuf+15,s[i]->len[seq]=len);
+
+#if DEBUG
+for(j=0;j<MAXPACKETS;j++) printf("seq=%d/%d len=%d\n",j+1,nseq,s[i]->len[j]);
+#endif
+
+      for(j=0;j<nseq;j++) if(s[i]->len[j]==0) break;
+      if(j==nseq) /* filled up */
         {
-        s[i]->seq=1;
-        s[i]->c[s[i]->len]='\n';
-#if DEBUG
-printf("%s",s[i]->c);
-#endif
         if(logdir != NULL)
           {
-	  if(rbuf[2]==0xA8) {
-	    if (snprintf(logxml,sizeof(logxml),
-			 "%s/S%04X.xml",logdir,s[i]->ch) >= sizeof(logxml))
-	      err_sys("snprintf");
-	  }
-	  else {
-	    if (snprintf(logxml,sizeof(logxml),
-			 "%s/M%04X.xml",logdir,s[i]->ch) >= sizeof(logxml))
-	      err_sys("snprintf");
-	  }
+          if(s[i]->id==0xA8) {
+            if (snprintf(logxml,sizeof(logxml),
+                         "%s/S%04X.xml",logdir,s[i]->ch) >= sizeof(logxml))
+              err_sys("snprintf");
+          }
+          else {
+            if (snprintf(logxml,sizeof(logxml),
+                         "%s/M%04X.xml",logdir,s[i]->ch) >= sizeof(logxml))
+              err_sys("snprintf");
+          }
           if((fp=fopen(logxml,"w+"))==NULL)
-	    err_sys(logxml);
-          fwrite(s[i]->c,1,s[i]->len+1,fp);
+            err_sys(logxml);
+
+          for(j=0;j<nseq;j++) fwrite(s[i]->c[j],1,s[i]->len[j],fp);
+          fwrite("\n",1,1,fp);
           fclose(fp);
           if(rcs)
             {
-	    if (snprintf(tb,sizeof(tb),
-			 "ci -l -q %s</dev/null",logxml) >= sizeof(tb))
-	      err_sys("snprintf");
+            if (snprintf(tb,sizeof(tb),
+                       "ci -l -q %s</dev/null",logxml) >= sizeof(tb))
+              err_sys("snprintf");
             system(tb);
             }
           }
-        else fwrite(s[i]->c,1,s[i]->len+1,stdout);
+        else
+          {
+          for(j=0;j<nseq;j++) fwrite(s[i]->c[j],1,s[i]->len[j],stdout);
+          fwrite("\n",1,1,stdout);
+          }
         }
-      else s[i]->seq=rbuf[14]+1;
       }
     }
   }

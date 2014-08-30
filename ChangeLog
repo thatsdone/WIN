@@ -1,4 +1,7 @@
- $Id: ChangeLog,v 1.223 2014/08/27 08:55:18 urabe Exp $
+ $Id: ChangeLog,v 1.224 2014/08/30 01:56:14 uehira Exp $
+
+2014-08-30 Uehira Kenji <uehira@bosai.go.jp>
+	* configure.in : FFLAGS : added "-static-libgcc" if they work.
 
 2014-08-27 Urabe Taku <urabe@eri.u-tokyo.ac.jp>
 	* Version 2.2.14 released.

@@ -1,4 +1,8 @@
- $Id: ChangeLog,v 1.224 2014/08/30 01:56:14 uehira Exp $
+ $Id: ChangeLog,v 1.225 2014/09/05 01:03:33 urabe Exp $
+
+2014-09-05 Urabe Taku <urabe@eri.u-tokyo.ac.jp>
+	* Version 2.2.15 released.
+	* man/hypomh.1 : explained 'TRAVEL-TIME CALCULATION MODE'
 
 2014-08-30 Uehira Kenji <uehira@bosai.go.jp>
 	* configure.in : FFLAGS : added "-static-libgcc" if they work.

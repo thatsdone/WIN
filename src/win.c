@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.63.2.5 2014/06/30 05:58:32 uehira Exp $
+   $Id: win.c,v 1.63.2.6 2014/09/22 01:39:33 uehira Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -23,10 +23,10 @@
 #else
 #define NAME_PRG      "win32"
 #endif
-#define WIN_VERSION   "2014.6.30(+Hi-net) (UEHIRA)"
+#define WIN_VERSION   "2014.8.26(+Hi-net) (UEHIRA)"
 
 static const char rcsid[] =
-  "$Id: win.c,v 1.63.2.5 2014/06/30 05:58:32 uehira Exp $";
+  "$Id: win.c,v 1.63.2.6 2014/09/22 01:39:33 uehira Exp $";
 
 #define DEBUG_AP      0   /* for debugging auto-pick */
 /* 5:sr, 4:ch, 3:sec, 2:find_pick, 1:all */
@@ -5003,7 +5003,7 @@ main(int argc, char *argv[])
       for(i=0;i<N_CH_NAME;i++)
         {
         sprintf(tbuf,"%04X",i);
-        if(strncmp(tbuf,chstr,j)==0) ft.ch_use[i]&=1;
+        if(strncasecmp(tbuf,chstr,j)==0) ft.ch_use[i]&=1;
         else ft.ch_use[i]=0;
         } 
       }

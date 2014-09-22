@@ -1,11 +1,11 @@
 dnl ------------------------------------------------------------------------- 
-dnl $Id: configure.in,v 1.151.2.9 2014/06/30 05:58:32 uehira Exp $
+dnl $Id: configure.in,v 1.151.2.10 2014/09/22 01:39:32 uehira Exp $
 dnl -------------------------------------------------------------------------
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT
 AC_CONFIG_SRCDIR([src/win.c])
 AC_CANONICAL_TARGET
-AM_INIT_AUTOMAKE(WIN_pkg, 2.2.12-uehira)
+AM_INIT_AUTOMAKE(WIN_pkg, 2.2.15-uehira)
 AC_CONFIG_HEADERS([config.h])
 AC_ARG_PROGRAM
 
@@ -49,6 +49,20 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM([])],
 AC_LANG_POP(Fortran 77)
 AC_SUBST([AM_ADD_FFLAGS])
 FFLAGS="$my_save_fflags $AM_ADD_FFLAGS"
+
+# FFLAGS : added "-static-libgcc" if they work.
+AC_LANG_PUSH(Fortran 77)
+my_save_fflags="$FFLAGS"
+FFLAGS="-static-libgcc"
+AC_MSG_CHECKING([whether F77 supports -static-libgcc])
+AC_LINK_IFELSE([AC_LANG_PROGRAM([])],
+	[AC_MSG_RESULT([yes])]
+	[AM_ADD_FFLAGS1="-static-libgcc"],
+	[AC_MSG_RESULT([no])]
+)
+AC_LANG_POP(Fortran 77)
+AC_SUBST([AM_ADD_FFLAGS1])
+FFLAGS="$my_save_fflags $AM_ADD_FFLAGS1"
 
 dnl Checks for libraries.
 AC_CHECK_LIB(nsl, gethostbyname,
@@ -287,7 +301,7 @@ AC_ARG_ENABLE(debug,
 if test x"$ts_cv_debug" = xyes; then
 	AC_DEFINE([DEBUG],1,[Define 'DEBUG'])
 	CFLAGS=" -Wall -pipe -g"
-	FFLAGS=" -g $AM_ADD_FFLAGS"
+	FFLAGS=" -g $AM_ADD_FFLAGS $AM_ADD_FFLAGS1"
 fi
 AC_MSG_RESULT($ts_cv_debug)
 

@@ -1,4 +1,20 @@
- $Id: ChangeLog,v 1.203.2.14 2014/06/30 05:58:31 uehira Exp $
+ $Id: ChangeLog,v 1.203.2.15 2014/09/22 01:39:31 uehira Exp $
+
+2014-09-05 Urabe Taku <urabe@eri.u-tokyo.ac.jp>
+	* Version 2.2.15 released.
+	* man/hypomh.1 : explained 'TRAVEL-TIME CALCULATION MODE'
+
+2014-08-30 Uehira Kenji <uehira@bosai.go.jp>
+	* configure.in : FFLAGS : added "-static-libgcc" if they work.
+
+2014-08-27 Urabe Taku <urabe@eri.u-tokyo.ac.jp>
+	* Version 2.2.14 released.
+	* src/recvstatus2.c : packet order-tolerant.
+	* src/win.c : case-tolerant in -i option.
+
+2014-08-18 Urabe Taku <urabe@eri.u-tokyo.ac.jp>
+	* Version 2.2.13 released.
+	* src/recvstatus2.c : bug fixed: increased size of c[] in infoarray.
 
 2014-06-27 Urabe Taku <urabe@eri.u-tokyo.ac.jp>
 	* Version 2.2.12 released.

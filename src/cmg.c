@@ -1,3 +1,4 @@
+/* $Id: cmg.c,v 1.3 2014/09/25 10:37:09 uehira Exp $ */
 /*  cmg.c              2005.12.14-17,2007.12.26,2010.7.21 urabe */
 /*  modify for TK0040A 2013.07.25 miyazaki */
 /*  2014.5.22-29 urabe */
@@ -6,11 +7,19 @@
 #include "config.h"
 #endif
 
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netdb.h>
+#if HAVE_ARPA_INET_H
+#include <arpa/inet.h>
+#endif
+
 #include <stdio.h>
 #include <signal.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/types.h>
+#include <unistd.h>
 
 #if TIME_WITH_SYS_TIME
 #include <sys/time.h>
@@ -23,13 +32,6 @@
 #endif  /* !HAVE_SYS_TIME_H */
 #endif  /* !TIME_WITH_SYS_TIME */
 
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <netdb.h>
-#if HAVE_ARPA_INET_H
-#include <arpa/inet.h>
-#endif
-
 #include <errno.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -37,58 +39,57 @@
 #include "udpu.h"
 #include "winlib.h"
 
-#define DEBUG     0
 #define IOB      "192.168.209.200"
 #define IOBPORT   20000
 #define IOB30RTA  0
 #define TK0040A   1
 
 static const char rcsid[] =
-  "$Id: cmg.c,v 1.2 2014/05/29 07:21:21 urabe Exp $";
+  "$Id: cmg.c,v 1.3 2014/09/25 10:37:09 uehira Exp $";
 
 char *progname,*logfile;
 int  syslog_mode, exit_status;
 
-char *kara(tbuf,sock,to_addr,from_addr)
-  char *tbuf;
-  int sock;
-  struct sockaddr_in *to_addr;
-  struct sockaddr_in *from_addr;
-  {
+/* prototypes */
+static char *kara(char *, int, struct sockaddr_in *, struct sockaddr_in *);
+static double get_vol(int);
+int main(int, char *[]);
+
+static char *
+kara(char *tbuf, int sock, 
+      struct sockaddr_in *to_addr, struct sockaddr_in *from_addr)
+{
   int len,re,fromlen;
   static char outbuf[1024];
+
   re=sendto(sock,tbuf,strlen(tbuf)-1,0,(struct sockaddr *)to_addr,
       sizeof(*to_addr));
   fromlen=sizeof(*from_addr);
   if((len=recvfrom(sock,outbuf,1024,0,(struct sockaddr *)from_addr,&fromlen))
     <0) perror("recvfrom");
   outbuf[len]=0;
-  return outbuf;
-  }
+  return (outbuf);
+}
 
-double get_vol(chval)
-  int chval;
-  {
+static double
+get_vol(int chval)
+{
   double v1,v3;
+
   v3 = (double)chval*(5/(double)1024);
   v1 = (-750*(-3100*v3+1200*(5-v3)+6500)-1200*(6500-3100*v3))/1350000.0;
-  return v1;
-  }
+
+  return (v1);
+}
 
 int
-main(argc,argv)
-  int argc;
-  char *argv[];
+main(int argc, char *argv[])
   {
-  fd_set readfds;
-  struct timeval timeout;
-  int a,c,n,len,fromlen,sock,re,ch1,ch2,ch3,ch4,tm[6];
+  int a,c,sock,re,ch1,ch2,ch3,ch4,tm[6];
   struct sockaddr_in to_addr,from_addr;
   struct hostent *h;
   char host_name[256],tbuf[1024],tb[256];
   unsigned short host_port,my_port;
-  extern int optind;
-  extern char *optarg;
   int model_name;
 
   if((progname=strrchr(argv[0],'/'))) progname++;
@@ -141,8 +142,7 @@ main(argc,argv)
   to_addr.sin_port=htons(host_port);
 
   /* my socket */
-  *tb=0;
-  sock = udp_accept4(my_port, DEFAULT_RCVBUF, tb);
+  sock = udp_accept4(my_port, DEFAULT_RCVBUF, NULL);
   if(my_port){
     snprintf(tb,sizeof(tb),"kara_port=%d my_src_port=%d",
       host_port,my_port);

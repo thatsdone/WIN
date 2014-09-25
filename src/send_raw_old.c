@@ -1,4 +1,4 @@
-/* $Id: send_raw_old.c,v 1.12 2014/02/05 08:49:41 urabe Exp $ */
+/* $Id: send_raw_old.c,v 1.13 2014/09/25 10:37:11 uehira Exp $ */
 /*
     program "send_raw_old/send_mon_old.c"   1/24/94 - 1/25/94,5/25/94 urabe
                                     6/15/94 - 6/16/94
@@ -58,7 +58,7 @@
 #define BUFNO     128
 
 static const char  rcsid[] =
-   "$Id: send_raw_old.c,v 1.12 2014/02/05 08:49:41 urabe Exp $";
+   "$Id: send_raw_old.c,v 1.13 2014/09/25 10:37:11 uehira Exp $";
 
 static int sock,raw,mon,tow,psize[BUFNO],n_ch;
 static uint8_w sbuf[BUFNO][MAXMESG],ch_table[WIN_CHMAX],rbuf[MAXMESG];
@@ -216,7 +216,7 @@ main(int argc, char *argv[])
   /* write_log(tbuf); */
 
   /* destination host/port */
-  sock = udp_dest4(host_name, host_port, &to_addr, 32, 0, (char *)0);
+  sock = udp_dest4(host_name, host_port, &to_addr, 32, 0, NULL);
   /* if(!(h=gethostbyname(host_name))) err_sys("can't find host"); */
   /* memset(&to_addr,0,sizeof(to_addr)); */
   /* to_addr.sin_family=AF_INET; */

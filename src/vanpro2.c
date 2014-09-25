@@ -1,4 +1,4 @@
-/* $Id $ */
+/* $Id: vanpro2.c,v 1.3 2014/09/25 10:37:11 uehira Exp $ */
 /* "vanpro2.c"   2012.2.10-4.18     urabe */
 /* 2014.5.20-29 */
 /* 64bit? */
@@ -7,13 +7,15 @@
 #include "config.h"
 #endif
 
+#include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
+
 #include <stdio.h>
 #include <signal.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/types.h>
-#include <sys/ipc.h>
-#include <sys/shm.h>
+#include <unistd.h>
 
 #if TIME_WITH_SYS_TIME
 #include <sys/time.h>
@@ -28,6 +30,9 @@
 
 #include <sys/socket.h>
 #include <netinet/in.h>
+#if HAVE_ARPA_INET_H
+#include <arpa/inet.h>
+#endif
 #include <netdb.h>
 #include <errno.h>
 #include <syslog.h>
@@ -35,45 +40,45 @@
 #include "udpu.h"
 #include "winlib.h"
 
-#define DEBUG     0
 #define DEBUG2    0
 #define MAXMESG   2048
 
 char *progname,*logfile;
 int  syslog_mode, exit_status;
 
-int16_w
-mkshort(ptr)
-  unsigned char *ptr;
-  {
+static int16_w mkshort(unsigned char *);
+int main(int, char *[]);
+
+static int16_w
+mkshort(unsigned char *ptr)
+{
   int16_w a;
-  a=((ptr[1]<<8)&0xff00)+(ptr[0]&0xff);
-  return a;
-  }
+
+  a = ((ptr[1] << 8) & 0xff00) + (ptr[0] & 0xff);
+  return (a);
+}
 
 int
 main(int argc, char *argv[])
   {
   time_t rt,rt_prev,nxt;
   key_t shm_key;
-  int shmid;
   uint32_w uni;
   WIN_ch sysch;
   uint8_w *ptr,*ptr_size,*p,host_name[256],tbuf[1024];
-  int i,j,c,size,fromlen,sock_in,sock_out,t[6],itvl,len,tm[6],sbuf;
+  int i,c,size,fromlen,sock_in,sock_out,itvl,len,tm[6],sbuf;
   struct sockaddr_in to_addr,from_addr;
   uint16_t my_port,host_port;
   int baro,t_in,t_out,w_dir,r_rate,r_day,batt,h_in,w_sp,w_av,h_out;
 
-  extern int optind;
-  extern char *optarg;
   struct Shm *sh;
   char tb[256];
-  struct ip_mreq stMreq;
   char mcastgroup[256]; /* multicast address */
   char interface[256],sinterface[256]; /* interface */
-  struct hostent *h;
   struct timeval timeout;
+#if DEBUG
+  int   j;
+#endif
 
   if((progname=strrchr(argv[0],'/'))) progname++;
   else progname=argv[0];
@@ -134,14 +139,25 @@ main(int argc, char *argv[])
   Shm_init(sh, size);
 
   /* send socket */
-  sock_out = udp_dest4(host_name, host_port, &to_addr, 64, 0, sinterface);
+  if (*sinterface)
+    sock_out = udp_dest4(host_name, host_port, &to_addr, 64, 0, sinterface);
+  else
+    sock_out = udp_dest4(host_name, host_port, &to_addr, 64, 0, NULL);
 
   /* receive socket */
-  if(*mcastgroup) *tb=0;
-  else strcpy(tb,interface);
-  sock_in = udp_accept4(my_port, sbuf, tb);
+  if(*mcastgroup)
+    sock_in = udp_accept4(my_port, sbuf, NULL);
+  else {
+    if (*interface)
+      sock_in = udp_accept4(my_port, sbuf, interface);
+    else
+      sock_in = udp_accept4(my_port, sbuf, NULL);
+  }
   if(*mcastgroup){
-    mcast_join(sock_in, mcastgroup, interface);
+    if (*interface)
+      mcast_join(sock_in, mcastgroup, interface);
+    else
+      mcast_join(sock_in, mcastgroup, NULL);
   }
 
   snprintf(tb,sizeof(tb),"peer=%s:%d, listen port=%d",host_name,host_port,my_port);
@@ -258,11 +274,11 @@ main(int argc, char *argv[])
       ptr_size[6]=uni>>8;
       ptr_size[7]=uni;      /* tow (L) */
 #if DEBUG
-      printf("size=%d : ",ptr-ptr_size);
+      printf("size=%td : ",ptr-ptr_size);
       p=ptr_size;
       if((j=ptr-ptr_size)>30) j=30;
       for(i=0;i<j;i++) printf("%02X",*p++);
-      printf("... > %d\n",shm_key);
+      printf("... > %ld\n",shm_key);
 #endif
       sh->r=sh->p;      /* latest */
       if(ptr>sh->d+sh->pl) ptr=sh->d;

@@ -1,4 +1,4 @@
-/* $Id: udp_dest.c,v 1.11 2014/05/13 13:00:55 uehira Exp $ */
+/* $Id: udp_dest.c,v 1.12 2014/09/25 10:37:11 uehira Exp $ */
 
 /*
  * Copyright (c) 2001-2014
@@ -71,7 +71,6 @@ udp_dest(const char *hostname, const char *port, struct sockaddr *saptr,
   int  sock_bufsiz;
   char  hbuf[NI_MAXHOST], sbuf[NI_MAXSERV];
   char buf[1024];
-  char *hnbuf;
 
   memset(&hints, 0, sizeof(hints));
   hints.ai_family = family;
@@ -126,20 +125,15 @@ udp_dest(const char *hostname, const char *port, struct sockaddr *saptr,
     freeaddrinfo(res);
 
   /* src port part */
-  if (*interface)
-    hnbuf = (char *)interface;
-  else
-    hnbuf = NULL;
   if ((saptr->sa_family == AF_INET6) && judge_mcast(saptr))
-    hnbuf = NULL;   /* IPv6 and multicasst address */
-  /* fprintf(stderr, "hbuf = %s\n", hnbuf); */
+    interface = NULL;  /* If IPv6 and multicasst address, unset 'interface'. */
 
-  if (((hnbuf != NULL) || (src_port != NULL)) && sockfd != -1) {
+  if (((interface != NULL) || (src_port != NULL)) && sockfd != -1) {
     memset(&hints, 0, sizeof(hints));
     hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_DGRAM;
     hints.ai_protocol = IPPROTO_UDP;
-    if ((gai_error = getaddrinfo(hnbuf, src_port, &hints, &res)) != 0) {
+    if ((gai_error = getaddrinfo(interface, src_port, &hints, &res)) != 0) {
       (void)snprintf(buf, sizeof(buf), 
 		     "udp_dest: getaddrinfo2 : %s", gai_strerror(gai_error));
       write_log(buf);
@@ -224,7 +218,7 @@ udp_dest4(const char *hostname, const uint16_t port,
   /* bind my socket to a local port */
   memset(&src_addr, 0, sizeof(src_addr));
   src_addr.sin_family = AF_INET;
-  if (*interface)
+  if (interface != NULL)
     src_addr.sin_addr.s_addr = inet_addr(interface);
   else
     src_addr.sin_addr.s_addr = htonl(INADDR_ANY);
@@ -262,7 +256,7 @@ mcast_set_outopt(const int sockfd, const char *interface, const int ttl)
   switch (sockfd_to_family(sockfd)) {
   case AF_INET:
     /* set interface */
-    if(*interface) {
+    if(interface != NULL) {
       mif = inet_addr(interface);
       if (setsockopt(sockfd, IPPROTO_IP,
 		     IP_MULTICAST_IF, &mif, sizeof(mif)) < 0)
@@ -288,7 +282,7 @@ mcast_set_outopt(const int sockfd, const char *interface, const int ttl)
 #endif  /* IPV6_USE_MIN_MTU */
 
     /* set interface */
-    if(*interface) {
+    if(interface != NULL) {
       mif6 = if_nametoindex(interface);
       if (mif6 == 0)
 	err_sys("mif6");

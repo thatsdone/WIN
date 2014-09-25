@@ -1,4 +1,4 @@
-/* $Id: recvstatus4.c,v 1.4 2014/04/07 01:48:54 uehira Exp $ */
+/* $Id: recvstatus4.c,v 1.5 2014/09/25 10:37:09 uehira Exp $ */
 
 /* 
  * recvstatus4 :
@@ -47,7 +47,7 @@
 #define PATHMAX      1024
 
 static const char rcsid[] =
-  "$Id: recvstatus4.c,v 1.4 2014/04/07 01:48:54 uehira Exp $";
+  "$Id: recvstatus4.c,v 1.5 2014/09/25 10:37:09 uehira Exp $";
 
 char *progname, *logfile;
 int  exit_status, syslog_mode;
@@ -173,13 +173,17 @@ main(int argc, char *argv[])
   write_log(msg);
 
   /* 'in' port of localhost */
-  if ((ct_top = udp_accept(input_port, &maxsoc, sockbuf, AF_UNSPEC, (char *)0)) == NULL)
+  if ((ct_top = udp_accept(input_port, &maxsoc, sockbuf, AF_UNSPEC, NULL)) == NULL)
     err_sys("udp_accept");
   maxsoc++;
 
   if(*mcastgroup) {
-    for (ct = ct_top; ct != NULL; ct = ct->next)
-      mcast_join(ct->soc, mcastgroup, interface);
+    for (ct = ct_top; ct != NULL; ct = ct->next) {
+      if (*interface)
+	mcast_join(ct->soc, mcastgroup, interface);
+      else
+	mcast_join(ct->soc, mcastgroup, NULL);
+    }
   }
 
   FD_ZERO(&rset);

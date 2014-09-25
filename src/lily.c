@@ -45,11 +45,10 @@
 #include "udpu.h"
 #include "winlib.h"
 
-#define DEBUG     0
 #define MAXMESG   2048
 
 static const char rcsid[] =
-  "$Id: lily.c,v 1.2 2014/05/29 07:21:21 urabe Exp $";
+  "$Id: lily.c,v 1.3 2014/09/25 10:37:09 uehira Exp $";
 
 char *progname,*logfile;
 int  syslog_mode, exit_status;
@@ -74,15 +73,14 @@ main(int argc, char *argv[])
   {
   uint8_w rb[MAXMESG],rbuf[MAXMESG];
   key_t shm_key;
-  int shmid;
   WIN_ch sysch,sysch2;
   uint32_w uni;  /*- 64bit ok -*/
   WIN_bs  uni2;  /*- 64bit ok -*/
-  uint8_w *ptr,tm[6],*ptr_size,mdy[10],hms[10],serno[10],*p,*pn,*pw;
-  int i,j,k,size,fromlen,n,nn,re,sock,c,pl,use_ts,t[6],itvl,diff,d,d_valid,
+  uint8_w *ptr,tm[6],*ptr_size,serno[10],*p,*pn,*pw;
+  int i,k,size,fromlen,n,nn,sock,c,pl,use_ts,t[6],itvl,diff,d,d_valid,
       sbuf,adiff,extout;
   struct sockaddr_in from_addr;
-  uint16_t to_port,host_port;
+  uint16_t to_port;
   double tiltx,tilty,magnet,temp,volt;
   struct tm mt;
   int32_w x,y,mg,tp;
@@ -92,7 +90,6 @@ main(int argc, char *argv[])
   char mcastgroup[256]; /* multicast address */
   char interface[256]; /* multicast interface */
   time_t rt,ts,sec,nxt;
-  struct hostent *h;
   struct timeval timeout;
 
   if((progname=strrchr(argv[0],'/'))) progname++;
@@ -151,11 +148,19 @@ main(int argc, char *argv[])
   Shm_init(sh, size);
   pl = sh->pl;
 
-  if(*mcastgroup) *tb=0;
-  else strcpy(tb,interface);
-  sock = udp_accept4(to_port, sbuf, tb);
+  if(*mcastgroup)
+    sock = udp_accept4(to_port, sbuf, NULL);
+  else {
+    if (*interface)
+      sock = udp_accept4(to_port, sbuf, interface);
+    else
+      sock = udp_accept4(to_port, sbuf, NULL);
+  }
   if(*mcastgroup){
-    mcast_join(sock, mcastgroup, interface);
+    if (*interface)
+      mcast_join(sock, mcastgroup, interface);
+    else
+      mcast_join(sock, mcastgroup, NULL);
   }
 
   snprintf(tb,sizeof(tb),"listen port=%d",to_port);

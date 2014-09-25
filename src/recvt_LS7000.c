@@ -1,4 +1,4 @@
-/* $Id: recvt_LS7000.c,v 1.6 2014/04/11 06:35:16 urabe Exp $ */
+/* $Id: recvt_LS7000.c,v 1.7 2014/09/25 10:37:10 uehira Exp $ */
 
 /*- 
  * "recvt_LS7000.c"  uehira
@@ -61,7 +61,7 @@
 #define N_PNOS    62    /* length of packet nos. history >=2 */
 
 static const char rcsid[] =
-  "$Id: recvt_LS7000.c,v 1.6 2014/04/11 06:35:16 urabe Exp $";
+  "$Id: recvt_LS7000.c,v 1.7 2014/09/25 10:37:10 uehira Exp $";
 
 static uint8_w rbuff[MAXMESG],rbuf[MAXMESG],ch_table[WIN_CHMAX];
 static char *chfile[N_CHFILE];
@@ -790,7 +790,7 @@ main(int argc, char *argv[])
   else {
     snprintf(tb, sizeof(tb), "Status packets relay to %s:%s",
 	     host_status, port_status);
-    if ((sock_status = udp_dest(host_status, port_status, sa, &salen, NULL, AF_UNSPEC, (char *)0)) < 0)
+    if ((sock_status = udp_dest(host_status, port_status, sa, &salen, NULL, AF_UNSPEC, NULL)) < 0)
       err_sys("udp_dest");
 
     /* printf("sock_status = %d\n", sock_status); */
@@ -818,8 +818,14 @@ main(int argc, char *argv[])
   snprintf(tb,sizeof(tb),"TS window %lds - +%lds",pre,post);
   write_log(tb);
 
-  if(*mcastgroup) sock = udp_accept4(to_port, sbuf, (char *)0);
-  else sock = udp_accept4(to_port, sbuf, interface);
+  if(*mcastgroup)
+    sock = udp_accept4(to_port, sbuf, NULL);
+  else {
+    if (*interface)
+      sock = udp_accept4(to_port, sbuf, interface);
+    else
+      sock = udp_accept4(to_port, sbuf, NULL);
+  }
   /* if((sock=socket(AF_INET,SOCK_DGRAM,0))<0) err_sys("socket"); */
   /* for(j=sbuf;j>=16;j-=4) */
   /*   { */
@@ -843,7 +849,10 @@ main(int argc, char *argv[])
 /*     else stMreq.imr_interface.s_addr=INADDR_ANY; */
 /*     if(setsockopt(sock,IPPROTO_IP,IP_ADD_MEMBERSHIP,(char *)&stMreq, */
 /*       sizeof(stMreq))<0) err_sys("IP_ADD_MEMBERSHIP setsockopt error\n"); */
-    mcast_join(sock, mcastgroup, interface);
+    if (*interface)
+      mcast_join(sock, mcastgroup, interface);
+    else
+      mcast_join(sock, mcastgroup, NULL);
   }
 
   if(noreq) write_log("resend request disabled");
@@ -1036,7 +1045,7 @@ main(int argc, char *argv[])
 	  if ((sendnum = sendto(sock_status, rbuff, norg, 0, sa, salen))
 	      != norg) {
 	    snprintf(tb, sizeof(tb),
-		     "A8 status packet %d bytes but send %zd : %s",
+		     "A8 status packet %zd bytes but send %zd : %s",
  		     norg, sendnum, strerror(errno));
 	    write_log(tb);
 	  }
@@ -1064,7 +1073,7 @@ main(int argc, char *argv[])
 	  if ((sendnum = sendto(sock_status, rbuff, norg, 0, sa, salen))
 	      != norg) {
 	    snprintf(tb, sizeof(tb),
-		     "A9 status packet %d bytes but send %zd : %s",
+		     "A9 status packet %zd bytes but send %zd : %s",
 		     norg, sendnum, strerror(errno));
 	    write_log(tb);
 	  }

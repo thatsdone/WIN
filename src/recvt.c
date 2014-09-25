@@ -1,4 +1,4 @@
-/* $Id: recvt.c,v 1.36 2014/06/27 05:20:24 urabe Exp $ */
+/* $Id: recvt.c,v 1.37 2014/09/25 10:37:09 uehira Exp $ */
 /*-
  "recvt.c"      4/10/93 - 6/2/93,7/2/93,1/25/94    urabe
                 2/3/93,5/25/94,6/16/94 
@@ -118,7 +118,7 @@
 #define N_PNOS    62    /* length of packet nos. history >=2 */
 
 static const char rcsid[] =
-  "$Id: recvt.c,v 1.36 2014/06/27 05:20:24 urabe Exp $";
+  "$Id: recvt.c,v 1.37 2014/09/25 10:37:09 uehira Exp $";
 
 static uint8_w rbuf[MAXMESG],ch_table[WIN_CHMAX];
 static char *chfile[N_CHFILE];
@@ -929,9 +929,14 @@ main(int argc, char *argv[])
   snprintf(tb,sizeof(tb),"TS window %lds - +%lds",pre,post);
   write_log(tb);
 
-  if(*mcastgroup) *tb=0;
-  else strcpy(tb,interface);
-  sock = udp_accept4(to_port, sbuf, tb);
+  if(*mcastgroup)
+    sock = udp_accept4(to_port, sbuf, NULL);
+  else {
+    if (*interface)
+      sock = udp_accept4(to_port, sbuf, interface);
+    else
+      sock = udp_accept4(to_port, sbuf, NULL);
+  }
   /* if((sock=socket(AF_INET,SOCK_DGRAM,0))<0) err_sys("socket"); */
   /* for(j=sbuf;j>=16;j-=4) */
   /*   { */
@@ -955,7 +960,10 @@ main(int argc, char *argv[])
 /*     else stMreq.imr_interface.s_addr=INADDR_ANY; */
 /*     if(setsockopt(sock,IPPROTO_IP,IP_ADD_MEMBERSHIP,(char *)&stMreq, */
 /*       sizeof(stMreq))<0) err_sys("IP_ADD_MEMBERSHIP setsockopt error\n"); */
-    mcast_join(sock, mcastgroup, interface);
+    if (*interface)
+      mcast_join(sock, mcastgroup, interface);
+    else
+      mcast_join(sock, mcastgroup, NULL);
   }
 
   if(*host_name) /* host_name and host_port specified */

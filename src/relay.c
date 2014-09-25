@@ -1,4 +1,4 @@
-/* $Id: relay.c,v 1.19.2.1 2014/04/06 07:31:15 uehira Exp $ */
+/* $Id: relay.c,v 1.19.2.2 2014/09/25 14:29:05 uehira Exp $ */
 /*-
  "relay.c"      5/23/94-5/25/94,6/15/94-6/16/94,6/23/94,3/16/95 urabe
                 3/26/95 check_packet_no; port#
@@ -84,7 +84,7 @@
 #define N_HOST    100   /* max N of hosts */  
 
 static const char rcsid[] =
-  "$Id: relay.c,v 1.19.2.1 2014/04/06 07:31:15 uehira Exp $";
+  "$Id: relay.c,v 1.19.2.2 2014/09/25 14:29:05 uehira Exp $";
 
 static int sock_in,sock_out;   /* socket */
 static uint8_w sbuf[BUFNO][MAXMESG],ch_table[WIN_CHMAX];
@@ -548,10 +548,14 @@ main(int argc, char *argv[])
   if(to_port>0)
     {
     /* 'in' port */
-    if(*mcastgroup) *tb=0;
-    else strcpy(tb,interface);
-    sock_in = udp_accept4(to_port, sockbuf, tb);
-
+    if (*mcastgroup)
+      sock_in = udp_accept4(to_port, sockbuf, NULL);
+    else {
+      if (*interface)
+	sock_in = udp_accept4(to_port, sockbuf, interface);
+      else
+	sock_in = udp_accept4(to_port, sockbuf, NULL);
+    }
     /* if((sock_in=socket(AF_INET,SOCK_DGRAM,0))<0) err_sys("sock_in"); */
     /* for(j=sockbuf;j>=16;j-=4) */
     /*   { */
@@ -578,12 +582,18 @@ main(int argc, char *argv[])
 /*       else stMreq.imr_interface.s_addr=INADDR_ANY; */
 /*       if(setsockopt(sock_in,IPPROTO_IP,IP_ADD_MEMBERSHIP,(char *)&stMreq, */
 /*         sizeof(stMreq))<0) err_sys("IP_ADD_MEMBERSHIP setsockopt error\n"); */
-	mcast_join(sock_in, mcastgroup, interface);
+	if (*interface)
+	  mcast_join(sock_in, mcastgroup, interface);
+	else
+	  mcast_join(sock_in, mcastgroup, NULL);
       }
     }
 
   /* destination host/port */
-  sock_out = udp_dest4(host_name, host_port, &to_addr, 64, src_port, sinterface);
+  if (*sinterface)
+    sock_out = udp_dest4(host_name, host_port, &to_addr, 64, src_port, sinterface);
+  else
+    sock_out = udp_dest4(host_name, host_port, &to_addr, 64, src_port, NULL);
   /* if(!(h=gethostbyname(host_name))) err_sys("can't find host"); */
   /* memset((char *)&to_addr,0,sizeof(to_addr)); */
   /* to_addr.sin_family=AF_INET; */
@@ -616,8 +626,12 @@ main(int argc, char *argv[])
   /*   err_sys("bind_out"); */
 
   /* out multicast */
-  if((to_addr.sin_addr.s_addr&0xF0)==0xE0) /* multicast */
-    mcast_set_outopt(sock_out, sinterface, ttl);
+  if((to_addr.sin_addr.s_addr&0xF0)==0xE0) { /* multicast */
+    if (*sinterface)
+      mcast_set_outopt(sock_out, sinterface, ttl);
+    else
+      mcast_set_outopt(sock_out, NULL, ttl);
+  }
 /*   if(*sinterface) */
 /*     { */
 /*     mif=inet_addr(sinterface); */

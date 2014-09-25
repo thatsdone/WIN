@@ -1,4 +1,4 @@
-/* $Id: relaym.c,v 1.12.2.3 2014/04/07 11:00:32 uehira Exp $ */
+/* $Id: relaym.c,v 1.12.2.4 2014/09/25 14:29:05 uehira Exp $ */
 
 /*
  * 2004-11-26 MF relay.c:
@@ -64,7 +64,7 @@
 #define MAXMSG       1025
 
 static const char rcsid[] =
-  "$Id: relaym.c,v 1.12.2.3 2014/04/07 11:00:32 uehira Exp $";
+  "$Id: relaym.c,v 1.12.2.4 2014/09/25 14:29:05 uehira Exp $";
 
 /* destination host info. */
 struct hostinfo {
@@ -139,7 +139,7 @@ main(int argc, char *argv[])
   FILE  *fp;
   int   i, j;
   char mcastgroup[256]; /* multicast address */
-  char interface[256], tb[256]; /* interface for receive */
+  char interface[256];  /* interface for receive */
 
   if ((progname = strrchr(argv[0], '/')) != NULL)
     progname++;
@@ -153,6 +153,7 @@ main(int argc, char *argv[])
 
   chfile = NULL;
   delay = noreq = no_pinfo = negate_channel = nopno = 0;
+  *mcastgroup = (*interface) = 0;
   sockbuf = DEFAULT_RCVBUF;  /* default socket buffer size in KB */
   for (i = 0; i < N_HOST; i++)
     ht[i].host[0] = '\0';
@@ -241,22 +242,30 @@ main(int argc, char *argv[])
 
   /* 'in' port of localhost */
   if (*mcastgroup)
-    *tb = 0;
-  else
-    (void)strcpy(tb, interface);
-  if ((ct_top = udp_accept(input_port, &maxsoc, sockbuf, AF_UNSPEC, tb)) == NULL)
+    ct_top = udp_accept(input_port, &maxsoc, sockbuf, AF_UNSPEC, NULL);
+  else {
+    if (*interface)
+      ct_top = udp_accept(input_port, &maxsoc, sockbuf, AF_UNSPEC, interface);
+    else
+      ct_top = udp_accept(input_port, &maxsoc, sockbuf, AF_UNSPEC, NULL);
+  }
+  if (ct_top  == NULL)
     err_sys("udp_accept");
   /*  printf("maxsoc=%d\n", maxsoc); */
   if(*mcastgroup) {
-    for (ct = ct_top; ct != NULL; ct = ct->next)
-      mcast_join(ct->soc, mcastgroup, interface);
+    for (ct = ct_top; ct != NULL; ct = ct->next) {
+      if (*interface)
+	mcast_join(ct->soc, mcastgroup, interface);
+      else
+	mcast_join(ct->soc, mcastgroup, NULL);
+    }
   }
   
   /* 'out' port */
   maxsoc1 = -1;
   for (hinf = hinf_top; hinf != NULL; hinf = hinf->next) {
     hinf->sock = udp_dest(hinf->hostname, hinf->port, 
-			  hinf->sa, &hinf->salen, NULL, AF_UNSPEC, (char *)0);
+			  hinf->sa, &hinf->salen, NULL, AF_UNSPEC, NULL);
     /*      printf("hinf->sock=%d\n", hinf->sock); */
     if (hinf->sock < 0)
       err_sys("udp_dest");

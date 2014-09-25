@@ -1,4 +1,4 @@
-/* $Id: recvnmx.c,v 1.19.2.2 2014/04/14 07:32:32 uehira Exp $ */
+/* $Id: recvnmx.c,v 1.19.2.3 2014/09/25 14:29:02 uehira Exp $ */
 /* "recvnmx.c"    2001.7.18-19 modified from recvt.c and nmx2raw.c  urabe */
 /*                2001.8.18 */
 /*                2001.10.5 workaround for hangup */
@@ -83,7 +83,7 @@
 #define MAXCH     1024
 
 static const char rcsid[] =
-  "$Id: recvnmx.c,v 1.19.2.2 2014/04/14 07:32:32 uehira Exp $";
+  "$Id: recvnmx.c,v 1.19.2.3 2014/09/25 14:29:02 uehira Exp $";
 
 char *progname,*logfile;
 int  syslog_mode = 0, exit_status;
@@ -649,8 +649,15 @@ main(int argc, char *argv[])
   if(argc>4+optind) logfile=argv[4+optind];
   else logfile=NULL;
 
-  if(*mcastgroup) sock = udp_accept4(to_port, 64, (char *)0);
-  else sock = udp_accept4(to_port, 64, interface);
+  if (*mcastgroup)
+    sock = udp_accept4(to_port, 64, NULL);
+  else {
+    if (*interface)
+      sock = udp_accept4(to_port, 64, interface);
+    else
+      sock = udp_accept4(to_port, 64, NULL);
+  }
+
   /* if((sock=socket(AF_INET,SOCK_DGRAM,0))<0) err_sys("socket"); */
   /* i=65535; */
   /* if(setsockopt(sock,SOL_SOCKET,SO_RCVBUF,(char *)&i,sizeof(i))<0) */
@@ -672,7 +679,10 @@ main(int argc, char *argv[])
 /*     else stMreq.imr_interface.s_addr=INADDR_ANY; */
 /*     if(setsockopt(sock,IPPROTO_IP,IP_ADD_MEMBERSHIP,(char *)&stMreq, */
 /*       sizeof(stMreq))<0) err_sys("IP_ADD_MEMBERSHIP setsockopt error\n"); */
-      mcast_join(sock, mcastgroup, interface);
+      if (*interface)
+	mcast_join(sock, mcastgroup, interface);
+      else
+	mcast_join(sock, mcastgroup, NULL);
     }
   signal(SIGTERM,(void *)end_program);
   signal(SIGINT,(void *)end_program);

@@ -1,4 +1,4 @@
-/* $Id: send_raw.c,v 1.29.2.2 2014/05/13 13:24:11 uehira Exp $ */
+/* $Id: send_raw.c,v 1.29.2.3 2014/09/25 14:29:05 uehira Exp $ */
 /*
     program "send_raw/send_mon.c"   1/24/94 - 1/25/94,5/25/94 urabe
                                     6/15/94 - 6/16/94
@@ -106,7 +106,7 @@
 #define REQ_TIMO  10   /* timeout (sec) for request */
 
 static const char  rcsid[] =
-   "$Id: send_raw.c,v 1.29.2.2 2014/05/13 13:24:11 uehira Exp $";
+   "$Id: send_raw.c,v 1.29.2.3 2014/09/25 14:29:05 uehira Exp $";
 
 static int sock,raw,tow,all,n_ch,negate_channel,mtu,nbuf,slptime,
   no_resend;
@@ -595,7 +595,10 @@ main(int argc, char *argv[])
     }
 
   /* destination host/port */
-  sock = udp_dest4(host_name, host_port, &to_addr, DEFAULT_SNDBUF, src_port, interface);
+  if (*interface)
+    sock = udp_dest4(host_name, host_port, &to_addr, DEFAULT_SNDBUF, src_port, interface);
+  else
+    sock = udp_dest4(host_name, host_port, &to_addr, DEFAULT_SNDBUF, src_port, NULL);
   /* if(!(h=gethostbyname(host_name))) err_sys("can't find host"); */
   /* memset(&to_addr,0,sizeof(to_addr)); */
   /* to_addr.sin_family=AF_INET; */
@@ -642,8 +645,12 @@ main(int argc, char *argv[])
     write_log(tbuf);
     }
 
-  if((to_addr.sin_addr.s_addr&0xF0)==0xE0) /* multicast */
-    mcast_set_outopt(sock, interface, ttl);
+  if((to_addr.sin_addr.s_addr&0xF0)==0xE0) {  /* multicast */
+    if (*interface)
+      mcast_set_outopt(sock, interface, ttl);
+    else
+      mcast_set_outopt(sock, NULL, ttl);
+  }
 /*   if(*interface) */
 /*     { */
 /*     mif=inet_addr(interface); */

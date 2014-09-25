@@ -1,4 +1,4 @@
-/* $Id: recvt46.c,v 1.6.2.3 2014/06/30 05:58:32 uehira Exp $ */
+/* $Id: recvt46.c,v 1.6.2.4 2014/09/25 14:29:04 uehira Exp $ */
 /*-
  "recvt.c"      4/10/93 - 6/2/93,7/2/93,1/25/94    urabe
                 2/3/93,5/25/94,6/16/94 
@@ -117,7 +117,7 @@
 #define N_PNOS    62    /* length of packet nos. history >=2 */
 
 static const char rcsid[] =
-  "$Id: recvt46.c,v 1.6.2.3 2014/06/30 05:58:32 uehira Exp $";
+  "$Id: recvt46.c,v 1.6.2.4 2014/09/25 14:29:04 uehira Exp $";
 
 static uint8_w rbuf[MAXMESG], ch_table[WIN_CHMAX];
 static char *chfile[N_CHFILE];
@@ -1012,16 +1012,24 @@ main(int argc, char *argv[])
 
   /* 'in' port of localhost */
   if (*mcastgroup)
-    *tb = 0;
-  else
-    (void)strcpy(tb, interface);
-  if ((ct_top = udp_accept(input_port, &maxsoc, sbuf, family, tb)) == NULL)
+      ct_top = udp_accept(input_port, &maxsoc, sbuf, family, NULL);
+  else {
+    if (*interface)
+      ct_top = udp_accept(input_port, &maxsoc, sbuf, family, interface);
+    else
+      ct_top = udp_accept(input_port, &maxsoc, sbuf, family, NULL);
+  }
+  if (ct_top == NULL)
     err_sys("udp_accept");
   maxsoc++;
 
   if (*mcastgroup) {
-    for (ct = ct_top; ct != NULL; ct = ct->next)
-      mcast_join(ct->soc, mcastgroup, interface);
+    for (ct = ct_top; ct != NULL; ct = ct->next) {
+      if (*interface)
+	mcast_join(ct->soc, mcastgroup, interface);
+      else
+	mcast_join(ct->soc, mcastgroup, NULL);
+    }
   }
 
   if(host_name != NULL) /* host_name and host_port specified */

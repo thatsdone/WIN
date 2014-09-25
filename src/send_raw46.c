@@ -1,4 +1,4 @@
-/* $Id: send_raw46.c,v 1.4.2.2 2014/05/13 13:24:11 uehira Exp $ */
+/* $Id: send_raw46.c,v 1.4.2.3 2014/09/25 14:29:05 uehira Exp $ */
 /*
     program "send_raw/send_mon.c"   1/24/94 - 1/25/94,5/25/94 urabe
                                     6/15/94 - 6/16/94
@@ -108,7 +108,7 @@
 #define REQ_TIMO  10		/* timeout (sec) for request */
 
 static const char rcsid[] =
-"$Id: send_raw46.c,v 1.4.2.2 2014/05/13 13:24:11 uehira Exp $";
+"$Id: send_raw46.c,v 1.4.2.3 2014/09/25 14:29:05 uehira Exp $";
 
 static int      sock, raw, tow, all, n_ch, negate_channel, mtu, nbuf, slptime, no_resend;
 static ssize_t  psize[NBUF];
@@ -586,8 +586,12 @@ main(int argc, char *argv[])
   }
 
   /* destination host/port */
-  sock = udp_dest(host_name, host_port,
-		  to_addr, &to_addrlen, src_port, family, interface);
+  if (*interface)
+    sock = udp_dest(host_name, host_port,
+		    to_addr, &to_addrlen, src_port, family, interface);
+  else
+    sock = udp_dest(host_name, host_port,
+		    to_addr, &to_addrlen, src_port, family, NULL);
   if (sock < 0)
     err_sys("udp_dest");
   /* set MSS (Max Segment Size) */
@@ -611,8 +615,12 @@ main(int argc, char *argv[])
   }
 
   /* set multicast options */
-  if (judge_mcast(to_addr))
-    mcast_set_outopt(sock, interface, ttl);
+  if (judge_mcast(to_addr)) {
+    if (*interface)
+      mcast_set_outopt(sock, interface, ttl);
+    else
+      mcast_set_outopt(sock, NULL, ttl);
+  }
 
   signal(SIGPIPE, (void *) end_program);
   signal(SIGINT, (void *) end_program);

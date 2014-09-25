@@ -1,11 +1,33 @@
- $Id: ChangeLog,v 1.203.2.15 2014/09/22 01:39:31 uehira Exp $
+ $Id: ChangeLog,v 1.203.2.16 2014/09/25 14:29:01 uehira Exp $
+
+2014-09-25 Uehira Kenji <uehira@bosai.go.jp>
+	* Version 2.2.16 released.
+	* src/udp_dest.c src/udp_accept.c : fixed pointer related bugs.
+	* src/cmg.c  <== udp_accept4()
+	* src/lily.c  <== udp_accept4(), mcast_join()
+	* src/recvnmx.c  <== udp_accept4(), mcast_join()
+	* src/recvs.c  <== udp_accept4()
+	* src/recvstatus.c  <== udp_accept4()
+	* src/recvstatus2.c  <== udp_accept4(), mcast_join()
+	* src/recvstatus3.c  <== udp_accept4(), mcast_join()
+	* src/recvstatus4.c  <== udp_accept(), mcast_join()
+	* src/recvt.c  <== udp_accept4(), mcast_join()
+	* src/recvt46.c  <== udp_accept(), mcast_join()
+	* src/recvt_LS7000.c  <== udp_accept(), mcast_join(), udp_dest()
+	* src/relay.c  <== udp_accept4(), mcast_join(), udp_dest4(), mcast_set_outopt()
+	* src/relaym.c  <== udp_accept(), mcast_join(), udp_dest()
+	* src/send_raw.c  <== udp_dest4(), mcast_set_outopt()
+	* src/send_raw46.c  <== udp_dest(), mcast_set_outopt()
+	* src/send_raw_old.c  <== udp_dest4()
+	* src/vanpro2.c  <== udp_accept4(), mcast_join(), udp_dest4()
+	* src/winrawreq.c  <== udp_dest()
 
 2014-09-05 Urabe Taku <urabe@eri.u-tokyo.ac.jp>
 	* Version 2.2.15 released.
 	* man/hypomh.1 : explained 'TRAVEL-TIME CALCULATION MODE'
 
 2014-08-30 Uehira Kenji <uehira@bosai.go.jp>
-	* configure.in : FFLAGS : added "-static-libgcc" if they work.
+	* configure.in : FFLAGS : added "-static-libgcc" if it works.
 
 2014-08-27 Urabe Taku <urabe@eri.u-tokyo.ac.jp>
 	* Version 2.2.14 released.

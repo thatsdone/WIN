@@ -1,4 +1,4 @@
-/* $Id: udp_accept.c,v 1.5.2.4 2014/05/13 13:24:11 uehira Exp $ */
+/* $Id: udp_accept.c,v 1.5.2.5 2014/09/25 14:29:05 uehira Exp $ */
 
 /*
  * Copyright (c) 2001-2014
@@ -65,11 +65,7 @@ udp_accept(const char *port, int *maxsoc, int sockbuf, int family,
   hints.ai_family = family;
   hints.ai_socktype = SOCK_DGRAM;
   hints.ai_protocol = IPPROTO_UDP;
-  if (*interface)
-    hnbuf = (char *)interface;
-  else
-    hnbuf = NULL;
-  if ((gai_error = getaddrinfo(hnbuf, port, &hints, &res)) != 0) {
+  if ((gai_error = getaddrinfo(interface, port, &hints, &res)) != 0) {
     (void)snprintf(buf, sizeof(buf), "udp_accept: getaddrinfo : %s",
 		   gai_strerror(gai_error));
     write_log(buf);
@@ -173,7 +169,7 @@ udp_accept4(const uint16_t port, int sockbuf, const char *interface)
   /* bind */
   memset(&to_addr, 0, sizeof(to_addr));
   to_addr.sin_family = AF_INET;
-  if (*interface)
+  if (interface != NULL)
     to_addr.sin_addr.s_addr = inet_addr(interface);
   else
     to_addr.sin_addr.s_addr = htonl(INADDR_ANY);
@@ -209,7 +205,7 @@ mcast_join(const int sockfd, const char *mcastgroup, const char *interface)
       break;
     else if (status == -1)  /* error */
       err_sys("inet_pton");
-    if(*interface)
+    if (interface != NULL)
       stMreq.imr_interface.s_addr = inet_addr(interface);
     else
       stMreq.imr_interface.s_addr = INADDR_ANY;
@@ -227,7 +223,7 @@ mcast_join(const int sockfd, const char *mcastgroup, const char *interface)
       break;
     else if (status == -1)  /* error */
       err_sys("inet_pton");
-    if(*interface) {
+    if (interface != NULL) {
       stMreq6.ipv6mr_interface = if_nametoindex(interface);
       if (stMreq6.ipv6mr_interface == 0)
 	err_sys("stMreq6.ipv6imr_interface");

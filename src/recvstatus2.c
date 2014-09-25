@@ -1,4 +1,4 @@
-/* $Id: recvstatus2.c,v 1.10.2.3 2014/09/22 01:39:33 uehira Exp $ */
+/* $Id: recvstatus2.c,v 1.10.2.4 2014/09/25 14:29:02 uehira Exp $ */
 
 /* modified from "recvstatus.c" */
 /* 2002.6.19 recvstatus2 receive A8/A9 packets from Datamark LS-7000XT */
@@ -70,7 +70,7 @@
 /*#define DEBUG   1*/
 
 static const char rcsid[] =
-  "$Id: recvstatus2.c,v 1.10.2.3 2014/09/22 01:39:33 uehira Exp $";
+  "$Id: recvstatus2.c,v 1.10.2.4 2014/09/25 14:29:02 uehira Exp $";
 
 char *progname, *logfile = NULL;
 int syslog_mode = 0, exit_status = EXIT_SUCCESS;
@@ -183,8 +183,14 @@ main(int argc, char *argv[])
   snprintf(tb,sizeof(tb),"started. port=%d logdir=%s",to_port,logdir);
   write_log(tb);
 
-  if(*mcastgroup) sock = udp_accept4(to_port, DEFAULT_RCVBUF,(char *)0);
-  else sock = udp_accept4(to_port, DEFAULT_RCVBUF, interface);
+  if (*mcastgroup)
+    sock = udp_accept4(to_port, DEFAULT_RCVBUF, NULL);
+  else {
+    if (*interface)
+      sock = udp_accept4(to_port, DEFAULT_RCVBUF, interface);
+    else
+      sock = udp_accept4(to_port, DEFAULT_RCVBUF, NULL);
+  }
   /* if((sock=socket(AF_INET,SOCK_DGRAM,0))<0) err_sys("socket"); */
 
   /* memset((char *)&to_addr,0,sizeof(to_addr)); */
@@ -195,8 +201,12 @@ main(int argc, char *argv[])
   /* if(bind(sock,(struct sockaddr *)&to_addr,sizeof(to_addr))<0) err_sys("bind"); */
 
   /* multicast */
-  if(*mcastgroup)
-    mcast_join(sock, mcastgroup, interface);
+  if(*mcastgroup) {
+    if (*interface)
+      mcast_join(sock, mcastgroup, interface);
+    else
+      mcast_join(sock, mcastgroup, NULL);
+  }
 
   signal(SIGTERM,(void *)end_program);
   signal(SIGINT,(void *)end_program);

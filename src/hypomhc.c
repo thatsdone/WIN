@@ -1,5 +1,5 @@
 /*-
-  $Id: hypomhc.c,v 1.10 2011/06/01 11:09:21 uehira Exp $
+  $Id: hypomhc.c,v 1.11 2015/02/27 10:31:33 uehira Exp $
    hypomhc.c    : main program for hypocenter location
      original version was made on March 13, 1984 and
      modified by N.H. on Feb. 8, 1985, May 8, 1985.
@@ -17,6 +17,7 @@
        fixed format of 'year' in format#2200 in sub final()  11/19/2001
        TRAVEL-TIME CALCULATION MODE               5/24/2003
        bug fixed by Honda/Nagai for initialization of IYEAR 6/9/2003
+       BUG FIXED: The divide by zero error occurs in case of RR=0. 2/27/2015
 
      HYPOCENTER LOCATION USING A BAYESIAN APPROACH DEVELOPED BY
         MATSU'URA (1984): PROGRAMED BY MATSU'URA AND HIRATA ON
@@ -1092,6 +1093,8 @@ line200:
       xx = xm1[0] - calc[i].sc[0];
       yy = xm1[1] - calc[i].sc[1];
       rr = hypot(xx, yy);	/* rr = sqrt(MULT2(xx)+MULT2(yy)); */
+      if (rr < EPS1)
+	rr = EPS1;
 #if DEBUG
       printf("rr=%lf\n", rr);
       printf("xm1[0]=%lf  xm1[1]=%lf  xm1[2]= %lf\n", xm1[0], xm1[1], xm1[2]);

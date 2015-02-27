@@ -1,4 +1,9 @@
- $Id: ChangeLog,v 1.203.2.16 2014/09/25 14:29:01 uehira Exp $
+ $Id: ChangeLog,v 1.203.2.17 2015/02/27 10:45:06 uehira Exp $
+
+2015-02-27 Uehira Kenji <uehira@bosai.go.jp>
+	* Version 2.2.17 released.
+	* src/hypomhc.c, src/hypomh.f, src/hypomhc2.c : The divide by zero
+	  error occurs in case of RR=0. (reported by Huang Wen Hui <huanghwh@gmail.com>)
 
 2014-09-25 Uehira Kenji <uehira@bosai.go.jp>
 	* Version 2.2.16 released.

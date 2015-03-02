@@ -1,5 +1,5 @@
 /*-
-  $Id: hypomhc.c,v 1.11 2015/02/27 10:31:33 uehira Exp $
+  $Id: hypomhc.c,v 1.12 2015/03/02 07:07:35 uehira Exp $
    hypomhc.c    : main program for hypocenter location
      original version was made on March 13, 1984 and
      modified by N.H. on Feb. 8, 1985, May 8, 1985.
@@ -66,6 +66,7 @@
 #define    PD      ((180.0)/(PI))
 #define    EPS1    1.0e-8
 #define    EPS2    1.0e-14
+#define    EPS3    1.0e-6
 #define    LIT1    30
 #define    LIT2    10
 #if CHK_RSLT
@@ -1093,10 +1094,13 @@ line200:
       xx = xm1[0] - calc[i].sc[0];
       yy = xm1[1] - calc[i].sc[1];
       rr = hypot(xx, yy);	/* rr = sqrt(MULT2(xx)+MULT2(yy)); */
-      if (rr < EPS1)
-	rr = EPS1;
 #if DEBUG
-      printf("rr=%lf\n", rr);
+      printf("rr0=%e\n", rr);
+#endif
+      if (rr < EPS3)
+	rr = EPS3;
+#if DEBUG
+      printf("rr=%e\n", rr);
       printf("xm1[0]=%lf  xm1[1]=%lf  xm1[2]= %lf\n", xm1[0], xm1[1], xm1[2]);
 #endif
       /*

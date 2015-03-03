@@ -1,4 +1,4 @@
-C $Id: hypomh.f,v 1.7.16.1 2015/02/27 10:45:10 uehira Exp $
+C $Id: hypomh.f,v 1.7.16.2 2015/03/03 04:20:14 uehira Exp $
 C HYPOMH   : main program for hypocenter location
 C           original version was made on March 13, 1984  and
 C            modified by N.H. on Feb. 8, 1985, May 8, 1985.
@@ -113,9 +113,10 @@ C If third line exists, enter 'travel-time calculation only' mode.
 C
       SUBROUTINE HYPINI
       IMPLICIT REAL*8 (A-H,O-Z)
-      COMMON /CNTP/ EPS1,EPS2,LIT1,LIT2
+      COMMON /CNTP/ EPS1,EPS2,EPS3,LIT1,LIT2
       EPS1=1.0D-8
       EPS2=1.0D-14
+      EPS3=1.0D-6
       LIT1=30
       LIT2=10
       WRITE(21,2100)
@@ -338,7 +339,7 @@ C     INVERSION OF ARRIVAL TIME DATA FOR HYPOCENTER COORDINATES
      1              RPT(1000),RST(1000),TAG(1000),TBG(1000)
       COMMON /INITLX/IYEAR,IMONT,IDAY,IHOUR,IMINU
       COMMON /INITLY/SECC,AMAG00
-      COMMON /CNTP/ EPS1,EPS2,LIT1,LIT2
+      COMMON /CNTP/ EPS1,EPS2,EPS3,LIT1,LIT2
       DIMENSION A(1000,3),B(3,3),XMC(3),RVX(3),VXM(3),VPS(1000),XW(3)
       DIMENSION CP(1000,3),CS(1000,3),DP(3,3),DS(3,3),FP(1000,1000),
      1              FS(1000,1000)
@@ -380,7 +381,7 @@ C     INVERSION OF ARRIVAL TIME DATA FOR HYPOCENTER COORDINATES
       XX=XM1(1)-SC(1,I)
       YY=XM1(2)-SC(2,I)
       RR=DSQRT(XX*XX+YY*YY)
-      IF(RR.LT.EPS1) RR=EPS1
+      IF(RR.LT.EPS3) RR=EPS3
       CALL TRAVEL ( RR, XM1(3), SC(3,I), NP, ANG, TRV, BNG)
       IF (NP.EQ.0) THEN
                    WRITE(21,2110) I
@@ -719,7 +720,7 @@ C     BNG : INCIDENT ANGLES FROM DOWNWARD
 C
       IMPLICIT REAL*8(A-H,O-Z)
       CHARACTER*3 VST
-      COMMON /CNTP/ EPS1,EPS2,LIT1,LIT2
+      COMMON /CNTP/ EPS1,EPS2,EPS3,LIT1,LIT2
       COMMON /STRC/ Y(22),VR(22),VLG(21),V(21),N1
       COMMON /STRC1/ VST
       DIMENSION XC(22),TAC(22),ANG(22),TRV(22),BNG(22)

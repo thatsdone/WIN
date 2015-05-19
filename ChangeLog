@@ -1,9 +1,10 @@
- $Id: ChangeLog,v 1.228 2015/05/18 05:22:43 urabe Exp $
+ $Id: ChangeLog,v 1.229 2015/05/19 04:52:27 uehira Exp $
 
 2015-05-18 Urabe Taku <urabe@eri.u-tokyo.ac.jp>
 	* Version 2.2.18 released.
 	* man/shmdump.1, man/order.1 : errors corrected.
 	* src/pmon.c : LENGTH(buffer size): 200000 -> 1000000 B
+	* src/evdetect.c : LENGTH(buffer size): 200000 -> 1000000 B
 
 2015-02-27 Uehira Kenji <uehira@bosai.go.jp>
 	* Version 2.2.17 released.

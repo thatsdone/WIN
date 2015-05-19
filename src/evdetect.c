@@ -1,4 +1,4 @@
-/* $Id: evdetect.c,v 1.2 2011/06/01 11:09:20 uehira Exp $ */
+/* $Id: evdetect.c,v 1.3 2015/05/19 04:52:28 uehira Exp $ */
 
 /*
  * evedetect.c
@@ -54,6 +54,7 @@
 **  2005.8.10 bug in strcmp2()/strncmp2() fixed : 0-6 > 7-9     *********
 **  2007.1.15 'ch_file not found' message fixed                 *********
 **  2010.9.21 64bit check (Uehira)                              *********
+**  2015.5.18 LENGTH(buffer size): 200000 -> 1000000            *********
 **                                                              *********
 **  font files ("font16", "font24" and "font32") are            *********
 **  not necessary                                               *********
@@ -119,7 +120,7 @@
 #define MIN_PER_LINE  10     /* min/line */
 #define WIDTH_LBP     392    /* in bytes (must be even) */
 #define HEIGHT_LBP    4516   /* in pixels */
-#define LENGTH        200000 /* buffer size */
+#define LENGTH        1000000 /* buffer size */
 /* #define SR_MON        5 */
 #define TOO_LOW       0.0
 #define TIME_TOO_LOW  10.0
@@ -136,7 +137,7 @@
 #define WIN_FILENAME_MAX 1024
 
 static const char  rcsid[] =
-   "$Id: evdetect.c,v 1.2 2011/06/01 11:09:20 uehira Exp $";
+   "$Id: evdetect.c,v 1.3 2015/05/19 04:52:28 uehira Exp $";
 
 char *progname, *logfile;
 int  syslog_mode = 0, exit_status;

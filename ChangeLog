@@ -1,4 +1,8 @@
- $Id: ChangeLog,v 1.229 2015/05/19 04:52:27 uehira Exp $
+ $Id: ChangeLog,v 1.230 2015/06/02 03:18:25 urabe Exp $
+
+2015-06-08 Urabe Taku <urabe@eri.u-tokyo.ac.jp>
+        * Version 2.2.19 released.
+        * src/recvstatus2.c : NSMAX(n of stations) : 100 -> 1000
 
 2015-05-18 Urabe Taku <urabe@eri.u-tokyo.ac.jp>
 	* Version 2.2.18 released.

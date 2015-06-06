@@ -1,4 +1,11 @@
- $Id: ChangeLog,v 1.203.2.18 2015/05/19 04:53:58 uehira Exp $
+ $Id: ChangeLog,v 1.203.2.19 2015/06/06 09:09:30 uehira Exp $
+
+2015-06-04 Urabe Taku <urabe@eri.u-tokyo.ac.jp>
+        * man.en/pickfile.1 : hypocentral -> epicentral
+
+2015-06-02 Urabe Taku <urabe@eri.u-tokyo.ac.jp>
+        * Version 2.2.19 released.
+        * src/recvstatus2.c : NSMAX(n of stations) : 100 -> 1000
 
 2015-05-18 Urabe Taku <urabe@eri.u-tokyo.ac.jp>
 	* Version 2.2.18 released.

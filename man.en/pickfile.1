@@ -1,0 +1,101 @@
+'\" t
+.TH dat 1W "2001.6.7" "WIN SYSTEM" "WIN SYSTEM"
+.SH NAME
+pickfile - Win inspection information files
+.SH DESCRIPTION
+Explained here is the content of win inspection information files (pickfiles).
+.LP
+Win inspection information is stored on the one-file-for-one-earthquake basis in monthly directories such as /dat/picks/man/9802. Such files are called pickfiles.
+Usually, these files are named in the YYMMDD.hhmmss.sss format based on the earliest P time (win(1W)).
+.LP
+A pickfile consists of the following three parts:
+.IP
+.ti -3n
+(1) lines starting with "#p," which are raw inspection information written and read by win,
+.br
+.ti -3n
+(2) lines starting with "#s," which are formatted as input to the hypocenter locating program hypomh and contain travel time data and observation point information, and
+.br
+.ti -3n
+(3) lines starting with "#f," which are in the hypomh output compliant format and contain the results of hypocenter determining calculations.
+.LP
+It is win that directly writes out parts (1) through (3); part (2) is a copy of the output that win generates from (1) and gives to hypomh every time win determines a hypocenter, while part (3) is the copy of the output from hypomh.
+.LP
+An example is given as follows:
+.LP
+.nf
+#p 980217.140302 Nikko hagiwara
+#p 98 02 17 14 02 42
+#p 0200 0 20 752 20 758 +1
+#p 0200 3 20 800 20 800 -1 2.79e-06
+#p 0201 1 21 911 21 923 +0
+#p 0206 0 21 126 21 138 +0
+#p 0206 3 22 520 22 520 -1 1.41e-06
+#p 0208 1 22 494 22 512 +0
+#p 020C 0 20 899 20 905 +1
+#p 020C 3 20 990 20 990 -1 2.39e-06
+#p 020E 1 22 126 22 138 +0
+#p 0218 0 20 831 20 843 +0
+#p 0218 3 20 890 20 890 -1 2.35e-06
+#p 021A 1 22 126 22 138 +0
+#p 0234 0 20 862 20 868 +1
+#p 0234 3 20 910 20 910 -1 5.28e-06
+#s 98/02/17 14:03                   98/02/17 14:18:04
+#s ASO  U   2.755 0.003   3.917 0.006   0.0 2.79e-06   36.64934  139.45970    720
+#s KBH  .   2.837 0.006   4.132 0.006   0.0 2.35e-06   36.65450  139.52824    750
+#s NIK  U   2.865 0.003   0.000 0.000   0.0 5.28e-06   36.62144  139.49072   1310
+#s KRO  U   2.902 0.003   4.132 0.006   0.0 2.39e-06   36.68685  139.49794    865
+#s GNZ  .   3.132 0.006   4.503 0.009   0.0 1.41e-06   36.65316  139.41226    880
+#s 
+#f  98  2 17    14  3   1.174   36.64721  139.48737   8.048   0.7
+#f    CONV              0.000    0.181      0.130     0.275
+#f      0.017    -0.003     0.004     0.033     0.002     0.076
+#f              36.600 100.0 139.500 100.0  30.000  30.0
+#f    5  ERI  5 ( 18.0% )  4 ( 82.0% )  3 (  0.0% )
+#f ASO  U    2.5 275.8 163.3  15.0  2.75 0.02  0.00  3.92 0.06  0.00 0.279E-05  0.6
+#f KBH  .    3.7  77.3 155.6  21.9  2.84 0.02  0.00  4.13 0.06  0.09 0.235E-05  0.6
+#f NIK  U    2.9 174.0 162.0  16.2  2.87 0.02 -0.01  0.00 0.00  0.00 0.528E-05  1.0
+#f KRO  U    4.5  12.1 151.5  25.4  2.90 0.02 -0.01  4.13 0.06 -0.04 0.239E-05  0.6
+#f GNZ  .    6.7 275.7 140.5  34.9  3.13 0.02  0.02  4.50 0.07 -0.03 0.141E-05  0.5
+#f                                             0.01             0.05
+.fi
+.LP
+.B (1) lines starting with #p
+.br
+The first line contains blank-delimited three items, which are 
+.IP
+.nf
+(a) waveform file name
+(b) label (memo) given by the inspector, and
+(c) name of inspector
+.fi
+.LP.
+When item (b) is absent, a period "." is used instead. A pickfile always belongs to a waveform file. To identify a pickfile belonging to a waveform file it opens, win first locates a pickfile that is named after a time recorded in the waveform file, and then reads the first line of the pickfile to check if the abovementioned item (a) matches the waveform file name.
+The second line contains the year, month, day, hours, minutes, and seconds of the start time of the waveform file. This time provides the reference point for the relative times written in the third and subsequent lines.
+The third and subsequent lines each indicate a single reading (P, S, F, or maximum amplitude). The four-digit number following "#p" is a channel number, and the next one-digit number is 0, 1, 2, or 3, which respectively stands for the reading of P, S, F, or the maximum amplitude. Then, there are two pairs of two- and three-digit numbers, which respectively indicate the start and end times of the range of the reading as the numbers of seconds and milliseconds counted from the start time of the waveform file. For example, in a line that goes like:
+.IP
+#p 0200 0 20 752 20 758 +1
+.LP,
+the P-time value read by channel 0200 falls in the range between 20.752 and 20.758 seconds from the start time. As for the following number -2, -1, 0, or +1, when the reading is that of P, it indicates the initial motion polarity with -1, +1, or 0 (unread). When the reading is the maximum amplitude, -2, -1, 0, or +1 stands for the unit, namely m/s/s, m/s, m, or "n/a." The line has an additional number at its right end only when the reading is the maximum amplitude.
+.LP
+Note that, when a waveform file is one created using any of the pre-2001.7 versions of win, the "number of seconds counted from the start time of the waveform file" is counted based on the number of second-scale blocks actually contained in the waveform file. When the whole of any specific second (all channels) is missing from a waveform file, the missing second will be excluded from the "number of seconds counted from the start time." Consequently, the "number of seconds counted from the start time" will not match with the "time difference from the start time (in seconds)."
+Therefore, if the original waveform file is unavailable, it is impossible to determine the exact time of the reading entirely on basis of the values of the "#p" lines in the corresponding pickfile.
+In any original waveform file created using any of the 2001.7 or later versions of win, the "number of seconds from the start time" indicates a correct time difference from the start time and hence allows determination of the time of the reading entirely on basis of the values of the "#p" lines in the corresponding pickfile (and can be used as is on win -x, etc.).
+.LP
+.B (2) lines starting with #s
+.br
+The first line contains the year, month, day, hours, and minutes and provides the reference point for the second-scaled arrival time data in the second and subsequent lines. The creation time of this file (input file to hypomh) is inserted at the right line end.
+The second and subsequent lines each indicate the inspection data of one observation point. Each line contains, from left to right, an observation point code, P initial motion polarity ("." if no data available), P time (secs), P accuracy (secs), S time (secs), S accuracy (secs), F-P time (secs), the maximum amplitude (written out only when the time unit is m/s), the latitude (degs), longitude (degs), and altitude (m) of the observation point, the observation point correction value of P (secs), and the observation point correction value of S (secs).
+The observation point correction values of P and S are added to the arrival time and omitted if zero. The final line is a null line (including only "#s").
+.LP
+.B (3) lines starting with #f
+.br
+The first line contains a hypocenter time, latitude (degs), longitude (degs), depth (km), and magnitude.
+The second line contains the difference between the diagnosis ("CONV," "NOCN," "DEEP," "AIRF," etc.) and the result (in seconds and km). Note, however, that the difference at the hypocenter time is always zero and insignificant.
+The third line contains the six elements of an error covariance matrix, which is a kilometer-scale coordinate system with the x axis for the east direction, the y axis for the south direction, and the z axis for the underground direction. The six elements are arranged in order of Cxx, Cxy, Cxz, Cyy, Cyz, and Czz.
+Accordingly, the square values of the differences of the latitude, longitude, and depth in the second line provide Cyy, Cxx, and Czz, respectively. The fourth line indicates the position and uncertainty of a given initial hypocenter, using the latitude (degs), uncertainty of the latitude (km), longitude (degs), uncertainty of the longitude (km), depth (km), and uncertainty of the depth (km). The fifth line contains, from left to right, the number of observation points, name of the velocity structural model, number of P time data entries, number of S time data entries, and number of initial value data entries (coordinates of the initial hypocenter and always three (3)). The values in the parentheses indicate the rates of contribution from their respective data (according to the author of hypomh, however, there is a bug with the percentage indication of P and S, and their sum is reliable.).
+.br
+The sixth and subsequent lines contain as many results as that of observation points. Each line contains, from left to right, the observation point code, P polarity, epicentral distance (km), direction of each observation point (north to east turn (degs)), emergent angle (from down (degs)), incident angle (from down (degs)), P time (secs), P accuracy (secs) and P time O-C (secs) after observation point correction, S time (secs), S accuracy (secs) and S time O-C (secs) after observation point correction, maximum magnitude (m/s), and magnitude. However, if no maximum amplitude data is available but F-P time data is available, the F-P time (secs) will be displayed instead of the unavailable maximum amplitude. Generally, the value of an F-P time is 1 or greater and can be easily distinguished from that of the maximum amplitude. The magnitude is determined using the formula of Watanabe (1971) when the maximum amplitude data is available, or using the formula of Tsumura (1967) if only the F-P time data is available. A value of "9.9" means "no magnitude determined." The final line contains the standard deviation of P time O-C and that of S time O-C (secs). When the hypocenter is successfully located, the O-C time of each observation point must have a value approximately equal to or smaller than that of the corresponding accuracy.
+.SH CAUTION
+The parts starting with "#s" or "#f" are read and written by a FORTRAN program (hypomh). Therefore, it must be note that the digit position of each item is fixed.
+Because outputs are in such a format as "5F7.3," for example, some items may have no space in between depending on their values, or some values may look like "*******."

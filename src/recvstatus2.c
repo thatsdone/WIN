@@ -1,4 +1,4 @@
-/* $Id: recvstatus2.c,v 1.10.2.4 2014/09/25 14:29:02 uehira Exp $ */
+/* $Id: recvstatus2.c,v 1.10.2.5 2015/06/06 09:09:35 uehira Exp $ */
 
 /* modified from "recvstatus.c" */
 /* 2002.6.19 recvstatus2 receive A8/A9 packets from Datamark LS-7000XT */
@@ -8,6 +8,7 @@
 /* 2014.4.10 update for udp_accept4() */
 /* 2014.8.18 increased size of c[] in infoarray from 4000 to 5000 */
 /* 2014.8.27 packet order tolerant */
+/* 2015.6.2  NSMAX 100 -> 1000 */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -64,13 +65,13 @@
 #include "winlib.h"
 #include "udpu.h"
 
-#define NSMAX 100
+#define NSMAX 1000
 #define MAXMESG   2048
 #define MAXPACKETS 6
 /*#define DEBUG   1*/
 
 static const char rcsid[] =
-  "$Id: recvstatus2.c,v 1.10.2.4 2014/09/25 14:29:02 uehira Exp $";
+  "$Id: recvstatus2.c,v 1.10.2.5 2015/06/06 09:09:35 uehira Exp $";
 
 char *progname, *logfile = NULL;
 int syslog_mode = 0, exit_status = EXIT_SUCCESS;

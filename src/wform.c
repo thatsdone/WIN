@@ -1,4 +1,4 @@
-/* $Id: wform.c,v 1.5 2011/06/01 11:09:22 uehira Exp $ */
+/* $Id: wform.c,v 1.6 2015/12/08 09:04:58 uehira Exp $ */
 /* wform.c - a program to make a win format file */
 /* wform [ch] [sr] */
 
@@ -15,7 +15,7 @@
 #define SR (HEADER_5B)
 
 static const char  rcsid[] =
-   "$Id: wform.c,v 1.5 2011/06/01 11:09:22 uehira Exp $";
+   "$Id: wform.c,v 1.6 2015/12/08 09:04:58 uehira Exp $";
 
 int main(int, char *[]);
 
@@ -52,6 +52,6 @@ main(int argc, char *argv[])
   cbuf=size>>8; fwrite(&cbuf,1,1,stdout);
   cbuf=size; fwrite(&cbuf,1,1,stdout);
   fwrite(tt,6,1,stdout);
-  fwrite(outbuf,size,1,stdout);
+  fwrite(outbuf,size-10,1,stdout);
   exit(0);
   }

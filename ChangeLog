@@ -1,4 +1,8 @@
- $Id: ChangeLog,v 1.231 2015/06/04 07:27:19 urabe Exp $
+ $Id: ChangeLog,v 1.232 2015/12/08 09:04:56 uehira Exp $
+
+2015-12-08 Uehira Kenji <uehira@bosai.go.jp>
+	* Version 2.2.20 released.
+	* src/wform.c : fixed a bug.
 
 2015-06-04 Urabe Taku <urabe@eri.u-tokyo.ac.jp>
         * man.en/pickfile.1 : hypocentral -> epicentral

@@ -1,7 +1,11 @@
- $Id: ChangeLog,v 1.232 2015/12/08 09:04:56 uehira Exp $
+ $Id: ChangeLog,v 1.233 2015/12/10 06:21:48 uehira Exp $
+
+2015-12-10 Uehira Kenji <uehira@bosai.go.jp>
+	* Version 2.2.20 released.
+	* src/win.c : SCALE_MAX : 20 --> 26
+	     fixed a bug related to the monitor window (sample size = 4).
 
 2015-12-08 Uehira Kenji <uehira@bosai.go.jp>
-	* Version 2.2.20 released.
 	* src/wform.c : fixed a bug.
 
 2015-06-04 Urabe Taku <urabe@eri.u-tokyo.ac.jp>

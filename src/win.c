@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.69 2014/08/27 08:55:21 urabe Exp $
+   $Id: win.c,v 1.70 2015/12/10 06:21:49 uehira Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -23,10 +23,10 @@
 #else
 #define NAME_PRG      "win32"
 #endif
-#define WIN_VERSION   "2014.8.26(+Hi-net)"
+#define WIN_VERSION   "2015.12.10(+Hi-net)"
 
 static const char rcsid[] =
-  "$Id: win.c,v 1.69 2014/08/27 08:55:21 urabe Exp $";
+  "$Id: win.c,v 1.70 2015/12/10 06:21:49 uehira Exp $";
 
 #define DEBUG_AP      0   /* for debugging auto-pick */
 /* 5:sr, 4:ch, 3:sec, 2:find_pick, 1:all */
@@ -324,7 +324,7 @@ LOCAL
 #define ZOOM_LENGTH        4     /* initial value */
 #define ZOOM_LENGTH_MAX  240     /* max */
 #define ZOOM_LENGTH_MIN    1     /* min */
-#define SCALE_MAX    20     /* max */
+#define SCALE_MAX    26     /* max */
 #define SHIFT         4     /* 1/N */
 #define P             0     /* mark index : P */
 #define S             1     /* mark index : S */
@@ -2085,12 +2085,12 @@ read_one_sec_mon(int32_w ptr, WIN_ch sys_ch, register int32_w *abuf, int32_w pps
         inreg=(dp[0]<<24)+(dp[1]<<16)+(dp[2]<<8)+dp[3];
         dp+=4;
         now+=inreg;
-        if(k==0) y_max=y_min=now;
+        if(k++==0) y_max=y_min=now;
         else
           {
           if(now>y_max) y_max=now;
           else if(now<y_min) y_min=now;
-          if(++k==sub_rate)
+          if(k==sub_rate)
             {
             *abuf++=y_min;
             *abuf++=y_max;

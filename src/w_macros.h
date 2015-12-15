@@ -1,4 +1,4 @@
-/* $Id: w_macros.h,v 1.2 2011/06/01 11:09:22 uehira Exp $ */
+/* $Id: w_macros.h,v 1.3 2015/12/15 01:34:56 uehira Exp $ */
 
 #ifndef _WMACROS_H_
 #define _WMACROS_H_
@@ -9,6 +9,10 @@
 #define WIN_BLOCKSIZE_LEN  WIN_BSLEN
 #define WIN_TM_LEN       6  /* byte */
 #define WIN_TIME_LEN     WIN_TM_LEN
+
+/* MIN & MAX of 4 bytes length amplitude value. */
+#define WIN_AMP_MAX  0x7fffffff
+#define WIN_AMP_MIN  (-0x7fffffff - 1)
 
 /* High sampling rate format */
 #define HEADER_4B    4096     /* SR<2^12  (   1 Hz --    4095 Hz) */

@@ -1,4 +1,4 @@
-/* $Id: w_proto.h,v 1.6 2014/05/27 03:01:06 urabe Exp $ */
+/* $Id: w_proto.h,v 1.7 2015/12/15 01:34:56 uehira Exp $ */
 
 #ifndef _WPROTO_H_
 #define _WPROTO_H_
@@ -54,6 +54,7 @@ time_t check_ts(uint8_w *, time_t, time_t);
 size_t FinalB_read(struct FinalB *, FILE *);
 size_t FinalB_write(struct FinalB, FILE *);
 int split_host_port(char [], char **, char **);
+int check_4byte_diff(int32_w, int32_w);
 
 /* win_xmalloc etc. */
 void * win_xmalloc(size_t);

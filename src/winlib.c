@@ -1,4 +1,4 @@
-/* $Id: winlib.c,v 1.5 2014/05/27 03:01:06 urabe Exp $ */
+/* $Id: winlib.c,v 1.6 2015/12/15 01:35:03 uehira Exp $ */
 
 /*-
  * winlib.c  (Uehira Kenji)
@@ -1753,4 +1753,31 @@ split_host_port(char buf[], char **host, char **port)
   }
 
   return (0);
+}
+
+/*-
+ * check (a - b) is out of range or not.
+ *  return  0 : OK
+ *          1 : out of range
+ -*/
+int
+check_4byte_diff(int32_w a, int32_w b)
+{
+  int32_w  diff;
+  
+  if (a < -1) {
+    diff = a - WIN_AMP_MIN;
+    if (b > diff)
+      return (1);
+    else
+      return (0);
+  } else if (a == -1)     /* always OK */
+    return (0);
+  else {
+    diff = a - WIN_AMP_MAX;
+    if (b < diff)
+      return (1);
+    else
+      return (0);
+  }
 }

@@ -3,7 +3,7 @@
 * 90.6.9 -      (C) Urabe Taku / All Rights Reserved.           *
 ****************************************************************/
 /* 
-   $Id: win.c,v 1.70 2015/12/10 06:21:49 uehira Exp $
+   $Id: win.c,v 1.71 2015/12/15 01:34:56 uehira Exp $
 
    High Samping rate
      9/12/96 read_one_sec 
@@ -23,10 +23,10 @@
 #else
 #define NAME_PRG      "win32"
 #endif
-#define WIN_VERSION   "2015.12.10(+Hi-net)"
+#define WIN_VERSION   "2015.12.15(+Hi-net)"
 
 static const char rcsid[] =
-  "$Id: win.c,v 1.70 2015/12/10 06:21:49 uehira Exp $";
+  "$Id: win.c,v 1.71 2015/12/15 01:34:56 uehira Exp $";
 
 #define DEBUG_AP      0   /* for debugging auto-pick */
 /* 5:sr, 4:ch, 3:sec, 2:find_pick, 1:all */
@@ -5479,6 +5479,7 @@ plot_zoom(int izoom, int leng, struct Pick_Time *pt, int put)
   char tbuf[100],tbuf1[STNLEN+CMPLEN];
   double uv[MAX_FILT*4],rec[MAX_FILT*4],sd,dk;
   lPoint pts[5];
+  int  over_flow;
 
   if(put)
     {
@@ -5674,7 +5675,13 @@ plot_zoom(int izoom, int leng, struct Pick_Time *pt, int put)
       if(join) points[0]=points[np_last-1];
       np=join;
       /* remove offset */
-      for(j=0;j<sr;j++) buf[j]-=zoom_win[izoom].zero;
+      over_flow = 0;
+      for (j =0; j < sr; j++)
+	if (check_4byte_diff(buf[j], zoom_win[izoom].zero)) {
+	  over_flow = 1;
+	  break;
+	}
+      if (!over_flow) for(j=0;j<sr;j++) buf[j]-=zoom_win[izoom].zero;
       /* integration */
       if(zoom_win[izoom].integ) for(j=0;j<sr;j++)
         {
@@ -5725,7 +5732,10 @@ plot_zoom(int izoom, int leng, struct Pick_Time *pt, int put)
       if(zoom_win[izoom].pixels*4<sr) for(j=0;j<sr;j++)
         {
         x=xzero+(zoom_win[izoom].pixels*j+(sr>>1))/sr;
-        y=CENTER_ZOOM-(buf[j]>>zoom_win[izoom].scale);
+	if (check_4byte_diff(CENTER_ZOOM, buf[j]>>zoom_win[izoom].scale))
+	  y = WIN_AMP_MAX;
+	else
+	  y=CENTER_ZOOM-(buf[j]>>zoom_win[izoom].scale);
         if(y<MIN_ZOOM) y=MIN_ZOOM+yzero;
         else if(y>MAX_ZOOM) y=MAX_ZOOM+yzero;
         else y+=yzero;
@@ -5752,7 +5762,10 @@ plot_zoom(int izoom, int leng, struct Pick_Time *pt, int put)
       else for(j=0;j<sr;j++)
         {
         points[np].x=xzero+(zoom_win[izoom].pixels*j+(sr>>1))/sr;
-        y=CENTER_ZOOM-(buf[j]>>zoom_win[izoom].scale);
+	if (check_4byte_diff(CENTER_ZOOM, buf[j]>>zoom_win[izoom].scale))
+	  y = WIN_AMP_MAX;
+	else
+	  y=CENTER_ZOOM-(buf[j]>>zoom_win[izoom].scale);
         if(y<MIN_ZOOM)    points[np++].y=MIN_ZOOM+yzero;
         else if(y>MAX_ZOOM) points[np++].y=MAX_ZOOM+yzero;
         else points[np++].y=y+yzero;

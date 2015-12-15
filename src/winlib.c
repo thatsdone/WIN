@@ -1,4 +1,4 @@
-/* $Id: winlib.c,v 1.6 2015/12/15 01:35:03 uehira Exp $ */
+/* $Id: winlib.c,v 1.7 2015/12/15 04:11:13 uehira Exp $ */
 
 /*-
  * winlib.c  (Uehira Kenji)
@@ -540,6 +540,11 @@ winform(int32_w *inbuf, uint8_w *outbuf, WIN_sr sr, WIN_ch sys_ch)
   dmax = dmin = 0;
   for (i = 1; i < sr; i++) {
     aa = (*ptr);
+    /* check amp diff is out of range or not. */
+    if (check_4byte_diff(aa, bb)) {
+      (void)fprintf(stderr, "winform(): Out of range of diff. data!\n");
+      exit(1);
+    }
     *ptr++ = br = aa - bb;
     bb = aa;
     if (br > dmax)

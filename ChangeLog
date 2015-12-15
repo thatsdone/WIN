@@ -1,9 +1,9 @@
- $Id: ChangeLog,v 1.203.2.22 2015/12/15 01:58:24 uehira Exp $
+e $Id: ChangeLog,v 1.203.2.23 2015/12/15 04:21:17 uehira Exp $
 
 2015-12-15 Uehira Kenji <uehira@bosai.go.jp>
 	* Version 2.2.21 released.
-	* src/Makefile.am : libwinsystem : bump version (2.0.0 --> 3.0.1)
-	* src/winlib.c : added check_4byte_diff()
+	* src/Makefile.am : libwinsystem : bump version (2.0.0 --> 3.1.1)
+	* src/winlib.c : added check_4byte_diff(), check overflow in winform().
 	* src/w_proto.h : added check_4byte_diff()
 	* src/w_macros.h : added WIN_AMP_MAX and WIN_AMP_MIN
 	* src/win.c : plot_zoom() : check overflow when offset calculation

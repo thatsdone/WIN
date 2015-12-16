@@ -1,4 +1,7 @@
- $Id: ChangeLog,v 1.235 2015/12/15 04:11:12 uehira Exp $
+ $Id: ChangeLog,v 1.236 2015/12/16 09:28:52 uehira Exp $
+
+2015-12-16 Uehira Kenji <uehira@bosai.go.jp>
+	* configure.in : correction of result message in '--disable-fortran'.
 
 2015-12-15 Uehira Kenji <uehira@bosai.go.jp>
 	* Version 2.2.21 released.

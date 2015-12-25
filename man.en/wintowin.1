@@ -1,0 +1,24 @@
+.TH wintowin 1W "2015.12.25" "WIN SYSTEM" "WIN SYSTEM" 
+.SH NAME
+wintowin - Conversion tool WIN text format -> WIN format
+.SH SYNOPSIS
+wintowin
+.I (-h) <[in_file] >[out_file] or [shm_key] [shm_size]
+.LP
+.SH DESCRIPTION
+Wintowin makes data transmitted by shmdump -tq to be input to transmit waveform data of WIN format or to write in the shared memory specified by shm_key. 
+.SH OPTIONS
+.IP -h
+Displays brief usage of wintowin.
+.SH EXAMPLE OF USAGE 
+.nf
+shmdump -B0.02:0.05:0.07:0.5:5.0 -tq 12 0252 | wintowin | win2raw /dat/bpf
+Subjects channel 0252 to bandpass filter and saves in /dat/bpf as minute file. 
+
+shmdump -tq 12 0252 | wintowin 13 64
+Writes channel 0252 from shared memory 12 in shared memory 13. 
+.SH SOURCE 
+.TP
+`wintowin.c'
+.SH SEE ALSO
+shmdump(1W)

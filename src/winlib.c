@@ -1,4 +1,4 @@
-/* $Id: winlib.c,v 1.7 2015/12/15 04:11:13 uehira Exp $ */
+/* $Id: winlib.c,v 1.8 2015/12/25 08:45:54 uehira Exp $ */
 
 /*-
  * winlib.c  (Uehira Kenji)
@@ -206,7 +206,7 @@ get_time(int rt[])
   rt[3] = nt->tm_hour;
   rt[4] = nt->tm_min;
   rt[5] = nt->tm_sec;
-  return ltime;
+  return (ltime);
 }
 
 /*-

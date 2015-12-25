@@ -1,0 +1,34 @@
+.TH winform 1W "2015.12.25" "WIN SYSTEM" "WIN SYSTEM"
+.SH NAME
+winform - Conversion to win format data 
+.SH SYNOPSIS
+.nf
+WIN_bs winform(inbuf,outbuf,sr,ch)
+int32_w *inbuf;
+uint8_w *outbuf;
+WIN_sr  sr;
+WIN_ch  ch;
+.fi
+.SH DESCRIPTION
+.I winform
+converts data for 1 second entered in the four-byte interger sequence
+.I \ inbuf
+to a channel block in win format and is entered in
+.I \ outbuf.
+.I \ sr
+Is the number of data given, namely sampling rate.
+In
+.I \ ch,
+channel numbers of 16 bits are specified.
+.LP
+.I winform
+Returns channel block size (byte) including channel header part. 
+.LP
+Note that, since
+.I \ inbuf
+is used as work zone, content is rewritten. 
+.SH SOURCE 
+.TP
+`winlib.c'
+.SH SEE ALSO
+winformat(1W), win2fix(1W)

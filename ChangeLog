@@ -1,4 +1,8 @@
-e $Id: ChangeLog,v 1.203.2.25 2015/12/17 07:54:27 uehira Exp $
+ $Id: ChangeLog,v 1.203.2.26 2015/12/25 04:17:22 uehira Exp $
+
+2015-12-25 Uehira Kenji <uehira@bosai.go.jp>
+	* man/win2fix.1, man/winform.1 : updated.
+	* man.en/win2fix.1, man.en/winform.1 : updated.
 
 2015-12-17 Uehira Kenji <uehira@bosai.go.jp>
 	* configure.in : fixed bugs.

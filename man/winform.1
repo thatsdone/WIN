@@ -1,13 +1,13 @@
-.TH winform 1W "2001.6.7" "WIN SYSTEM" "WIN SYSTEM"
+.TH winform 1W "2015.12.25" "WIN SYSTEM" "WIN SYSTEM"
 .SH 名称
 winform - win 形式データへの変換
 .SH 形式
 .nf
-int winform(inbuf,outbuf,sr,ch)
-long *inbuf;
-unsigned char *outbuf;
-int sr;
-unsigned short ch
+WIN_bs winform(inbuf,outbuf,sr,ch)
+int32_w *inbuf;
+uint8_w *outbuf;
+WIN_sr  sr;
+WIN_ch  ch;
 .fi
 .SH 解説
 .I winform
@@ -30,6 +30,6 @@ unsigned short ch
 は作業領域として使われるため、内容が書き換えらることに注意してください。
 .SH ソース 
 .TP
-`winform.c'
+`winlib.c'
 .SH 関連事項
 winformat(1W), win2fix(1W)

@@ -1,4 +1,7 @@
- $Id: ChangeLog,v 1.240 2015/12/25 09:36:17 uehira Exp $
+ $Id: ChangeLog,v 1.241 2015/12/28 02:54:45 uehira Exp $
+
+2015-12-28 Uehira Kenji <uehira@bosai.go.jp>
+	* man/winform.1 : fixed a typo.
 
 2015-12-25 Uehira Kenji <uehira@bosai.go.jp>
 	* man/win2fix.1, man.en/win2fix.1 : updated.

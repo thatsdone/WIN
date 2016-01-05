@@ -1,7 +1,8 @@
-/* $Id: vanpro2.c,v 1.3 2014/09/25 10:37:11 uehira Exp $ */
+/* $Id: vanpro2.c,v 1.4 2016/01/05 06:38:49 uehira Exp $ */
 /* "vanpro2.c"   2012.2.10-4.18     urabe */
 /* 2014.5.20-29 */
 /* 64bit? */
+/* 2015.12.25  Sample size 5 mode supported. */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -70,6 +71,7 @@ main(int argc, char *argv[])
   struct sockaddr_in to_addr,from_addr;
   uint16_t my_port,host_port;
   int baro,t_in,t_out,w_dir,r_rate,r_day,batt,h_in,w_sp,w_av,h_out;
+  int   ss_mode = SSIZE5_MODE, ssf_flag = 0;
 
   struct Shm *sh;
   char tb[256];
@@ -84,16 +86,31 @@ main(int argc, char *argv[])
   else progname=argv[0];
 
   snprintf(tb,sizeof(tb),
-    " usage : '%s (-i [interface]) (-g [mcast_group]) (-s itvl(m)) \\\n\
+    " usage : '%s (-b [4|5|5f]) (-i [interface]) (-g [mcast_group]) (-s itvl(m)) \\\n\
       [remIP:remport] [myport] [ch_base] [shm_key] [shm_size(KB)] ([log file]))'",progname);
   
   itvl=0;
   sbuf=DEFAULT_RCVBUF;
   *interface=(*mcastgroup)=(*sinterface)=0;
-  while((c=getopt(argc,argv,"i:g:s:"))!=EOF)
+  while((c=getopt(argc,argv,"b:i:g:s:"))!=EOF)
     {
     switch(c)
       {
+      case 'b':
+	if (strcmp(optarg, "4") == 0)
+	  ss_mode = 0;
+	else if (strcmp(optarg, "5") == 0) {
+	  ss_mode = 1;
+	  ssf_flag = 0;
+	} else if (strcmp(optarg, "5f") == 0) {
+	  ss_mode = 1;
+	  ssf_flag = 1;
+	} else {
+	  fprintf(stderr, "Invalid option: -%c\n", c);
+	  fprintf(stderr,"%s\n",tb);
+	  exit(1);
+	}
+	break;
       case 'i':   /* interface (ordinary IP address) for receive */
         strcpy(interface,optarg);
         break;
@@ -252,17 +269,28 @@ main(int argc, char *argv[])
       ptr+=4;   /* time of write */
       for(i=0;i<6;i++) *ptr++=d2b[tm[i]]; /* make TS */
       i=sysch;
-      ptr+=winform(&baro,ptr,1,i++);
-      ptr+=winform(&t_in,ptr,1,i++);
-      ptr+=winform(&h_in,ptr,1,i++);
-      ptr+=winform(&t_out,ptr,1,i++);
-      ptr+=winform(&w_sp,ptr,1,i++);
-      ptr+=winform(&w_av,ptr,1,i++);
-      ptr+=winform(&w_dir,ptr,1,i++);
-      ptr+=winform(&h_out,ptr,1,i++);
-      ptr+=winform(&r_rate,ptr,1,i++);
-      ptr+=winform(&r_day,ptr,1,i++);
-      ptr+=winform(&batt,ptr,1,i++);
+      /* ptr+=winform(&baro,ptr,1,i++); */
+      /* ptr+=winform(&t_in,ptr,1,i++); */
+      /* ptr+=winform(&h_in,ptr,1,i++); */
+      /* ptr+=winform(&t_out,ptr,1,i++); */
+      /* ptr+=winform(&w_sp,ptr,1,i++); */
+      /* ptr+=winform(&w_av,ptr,1,i++); */
+      /* ptr+=winform(&w_dir,ptr,1,i++); */
+      /* ptr+=winform(&h_out,ptr,1,i++); */
+      /* ptr+=winform(&r_rate,ptr,1,i++); */
+      /* ptr+=winform(&r_day,ptr,1,i++); */
+      /* ptr+=winform(&batt,ptr,1,i++); */
+      ptr += mk_windata(&baro, ptr, 1, i++, ss_mode, ssf_flag);
+      ptr += mk_windata(&t_in, ptr, 1, i++, ss_mode, ssf_flag);
+      ptr += mk_windata(&h_in, ptr, 1, i++, ss_mode, ssf_flag);
+      ptr += mk_windata(&t_out, ptr, 1, i++, ss_mode, ssf_flag);
+      ptr += mk_windata(&w_sp, ptr, 1, i++, ss_mode, ssf_flag);
+      ptr += mk_windata(&w_av, ptr, 1, i++, ss_mode, ssf_flag);
+      ptr += mk_windata(&w_dir, ptr, 1, i++, ss_mode, ssf_flag);
+      ptr += mk_windata(&h_out, ptr, 1, i++, ss_mode, ssf_flag);
+      ptr += mk_windata(&r_rate, ptr, 1, i++, ss_mode, ssf_flag);
+      ptr += mk_windata(&r_day, ptr, 1, i++, ss_mode, ssf_flag);
+      ptr += mk_windata(&batt, ptr, 1, i++, ss_mode, ssf_flag);
       uni=ptr-ptr_size;
       ptr_size[0]=uni>>24;  /* size (H) */
       ptr_size[1]=uni>>16;

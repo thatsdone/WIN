@@ -1,4 +1,4 @@
-/* $Id: ecore.c,v 1.6 2011/06/01 11:09:20 uehira Exp $ */
+/* $Id: ecore.c,v 1.7 2016/01/05 06:38:47 uehira Exp $ */
 
 /* ddr news program "ecore.c"
   "ecore.c" works with "fromtape.c"
@@ -55,7 +55,7 @@
 #define   NAMLEN   255 
 
 static const char rcsid[] = 
-  "$Id: ecore.c,v 1.6 2011/06/01 11:09:20 uehira Exp $";
+  "$Id: ecore.c,v 1.7 2016/01/05 06:38:47 uehira Exp $";
 
 /* not use out_data 03/03/07 */
 /*short out_data[SR*NCH];*/
@@ -163,6 +163,7 @@ main(int argc, char *argv[])
   uint32_w  bsize;
   uint8_w min_head[6];  		  /* added 03/03/07 */
   uint8_w c_bsize[4];			/* added 03/04/22 */
+  int ss_mode = SSIZE5_MODE, ssf_flag = 0;
 
   f_in=f_out=(-1);
   printf("***** ecore start *****\n");
@@ -408,7 +409,9 @@ main(int argc, char *argv[])
                 }
 	      /* data => channel block by win format 03/03/07 */
 		/* //idx = winform((long *)fildata,wptr,SR,(short)sys_ch); int=>long 03/04/23  */
-		wptr += winform(fildata,wptr,SR,(WIN_ch)sys_ch);
+	        /* wptr += winform(fildata,wptr,SR,(WIN_ch)sys_ch); */
+	        wptr += mk_windata(fildata, wptr, SR, (WIN_ch)sys_ch,
+				   ss_mode, ssf_flag);
 		/* wptr=wptr+idx; */
 		/* //printf("winform:idx=%d,sys_ch=%x\n",idx,sys_ch);  /\* 03/04/23 *\/ */
 		/* //fflush(stdout); */

@@ -1,4 +1,4 @@
-/* $Id: wtime.c,v 1.5 2011/06/01 11:09:22 uehira Exp $ */
+/* $Id: wtime.c,v 1.6 2016/01/05 06:38:50 uehira Exp $ */
 
 /*
   program "wtime.c"
@@ -6,6 +6,7 @@
   2000.7.30   urabe
   2010.9.17   replace read_data() with read_onesec_win2().
               64bit clean. (Uehira)
+  2015.12.25  Sample size 5 mode supported.
 */
 
 #ifdef HAVE_CONFIG_H
@@ -37,10 +38,11 @@
 #define   DEBUG1  0
 
 static const char  rcsid[] =
-   "$Id: wtime.c,v 1.5 2011/06/01 11:09:22 uehira Exp $";
+   "$Id: wtime.c,v 1.6 2016/01/05 06:38:50 uehira Exp $";
 
 static int32_w *sbuf[WIN_CHMAX];
 static int s_add,ms_add;
+static int ss_mode, ssf_flag;
 
 /* prototypes */
 static void wabort(void);
@@ -78,7 +80,8 @@ chloop(uint8_w *old_buf, uint8_w *new_buf)
     for(i=sr_shift;i<sr;i++) fixbuf2[i]=fixbuf1[i-sr_shift];
     for(i=0;i<sr;i++) sbuf[ch][i]=fixbuf1[i];
     ltime_ch[ch]=ltime;
-    ptr2+=winform(fixbuf2,ptr2,sr,ch);
+    /* ptr2+=winform(fixbuf2,ptr2,sr,ch); */
+    ptr2 += mk_windata(fixbuf2, ptr2, sr, ch, ss_mode, ssf_flag);
     } while(ptr1<ptr_lim);
   new_size=ptr2-new_buf;
   new_buf[0]=new_size>>24;
@@ -95,7 +98,7 @@ print_usage(void)
   WIN_version();
   fprintf(stderr,"%s\n", rcsid);
   fprintf(stderr," usage of 'wtime' :\n");
-  fprintf(stderr,"   'wtime (-h [hrs]) (-s [sec in float]) <[in_file] >[out_file]'\n");
+  fprintf(stderr,"   'wtime (-b [4|5|5f]) (-h [hrs]) (-s [sec in float]) <[in_file] >[out_file]'\n");
   }
 
 int
@@ -110,10 +113,27 @@ main(int argc, char *argv[])
   signal(SIGTERM,(void *)wabort);
   hours=0;
   fsec=0.0;
-  while((c=getopt(argc,argv,"ch:s:tu"))!=-1)
+  ss_mode = SSIZE5_MODE;
+  ssf_flag = 0;
+  while((c=getopt(argc,argv,"b:ch:s:tu"))!=-1)
     {
     switch(c)
       {
+      case 'b' :
+	if (strcmp(optarg, "4") == 0)
+	  ss_mode = 0;
+	else if (strcmp(optarg, "5") == 0) {
+	  ss_mode = 1;
+	  ssf_flag = 0;
+	} else if (strcmp(optarg, "5f") == 0) {
+	  ss_mode = 1;
+	  ssf_flag = 1;
+	} else {
+	  fprintf(stderr, "Invalid option: -s\n");
+	  print_usage();
+	  exit(1);
+	}
+	break;
       case 'h':   /* hours */
         hours=atoi(optarg);
         break;

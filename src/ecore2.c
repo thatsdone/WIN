@@ -1,4 +1,4 @@
-/* $Id: ecore2.c,v 1.5 2011/06/01 11:09:20 uehira Exp $ */
+/* $Id: ecore2.c,v 1.6 2016/01/05 06:38:47 uehira Exp $ */
 
 /*
   program "ecore2.c"   4/16/93-5/13/93,7/2/93,7/5/94  urabe
@@ -84,7 +84,7 @@
 #define	NUMLEN		256
 
 static const char rcsid[] = 
-  "$Id: ecore2.c,v 1.5 2011/06/01 11:09:20 uehira Exp $";
+  "$Id: ecore2.c,v 1.6 2016/01/05 06:38:47 uehira Exp $";
 
 char	*progname, *logfile;
 int     syslog_mode = 0, exit_status;
@@ -167,6 +167,7 @@ main(int argc, char *argv[])
   struct Shm  *shm_in, *shm_out;
   WIN_ch  ch_no;
   uint32_w  gsize;
+  int ss_mode = SSIZE5_MODE, ssf_flag = 0;
   /* struct Ch_header { */
   /*   unsigned short	ch_no; */
   /*   unsigned short	s_size_rate; */
@@ -381,7 +382,8 @@ main(int argc, char *argv[])
 			 Ch[pos].gn_filt);
 	  work[j] = dl;
 	}
-	ch_size = winform(work, out_buf, SR, ch_no);
+	/* ch_size = winform(work, out_buf, SR, ch_no); */
+	ch_size = mk_windata(work, out_buf, SR, ch_no, ss_mode, ssf_flag);
 	/* store data in Out_data buffer */
 	memcpy(&out_data[write_point], out_buf, ch_size);
 	write_point += ch_size;

@@ -1,4 +1,4 @@
-/* $Id: cormeisei.c,v 1.8 2011/06/01 11:09:20 uehira Exp $ */
+/* $Id: cormeisei.c,v 1.9 2016/01/05 06:38:47 uehira Exp $ */
 /* "cormeisei.c"    June'97 Ide changed from*/
 /* "raw_raw.c"      3/4/96 urabe */
 /*                  revised on 5/20/96 */
@@ -72,7 +72,7 @@
 #define TDLYL     1.35
 
 static const char rcsid[] =
-  "$Id: cormeisei.c,v 1.8 2011/06/01 11:09:20 uehira Exp $";
+  "$Id: cormeisei.c,v 1.9 2016/01/05 06:38:47 uehira Exp $";
 
 static short ch_tableh[WIN_CHMAX], ch_tablel[WIN_CHMAX];
 static char *chfile;
@@ -174,6 +174,7 @@ main(int argc, char *argv[])
   static int32_w dath[14][CH_TOTAL][101],datl[14][CH_TOTAL][21];
   int32_w dt[500],*pd1,*pd2;
   double dout[500],*pdd;
+  int ss_mode = SSIZE5_MODE, ssf_flag = 0;
 
   static double ach[30]=
      {2.4880006e-001, 1.7382422e-001, -3.5318485e-001, 3.6853228e-001,
@@ -326,7 +327,8 @@ reset:
           pd1=dt;
           pdd=dout+399+itdh;
           for(i=0;i<100;i++) *pd1++=(long)(*pdd--);
-          ptw+=winform(dt,ptw,100,ch_orderh[ich]);
+          /* ptw+=winform(dt,ptw,100,ch_orderh[ich]); */
+          ptw += mk_windata(dt, ptw, 100, ch_orderh[ich], ss_mode, ssf_flag);
 #if DEBUG
           fprintf(stderr,"HIGH %04X ",ch_orderh[ich]);
 #endif
@@ -338,7 +340,8 @@ reset:
           pd1=dt;
           pd2=dath[idx01][ich];
           for(i=0;i<100;i++) *pd1++=(*pd2++);
-          ptw+=winform(dt,ptw,100,ch_orderh[ich]);
+          /* ptw+=winform(dt,ptw,100,ch_orderh[ich]); */
+          ptw += mk_windata(dt, ptw, 100, ch_orderh[ich], ss_mode, ssf_flag);
         }
       }
     }
@@ -385,7 +388,8 @@ reset:
           pd1=dt;
           pdd=dout+239+itdl;
           for(i=0;i<20;i++) *pd1++=(long)(*pdd--);
-          ptw+=winform(dt,ptw,20,ch_orderl[ich]);
+          /* ptw+=winform(dt,ptw,20,ch_orderl[ich]); */
+          ptw += mk_windata(dt, ptw, 20, ch_orderl[ich], ss_mode, ssf_flag);
 #if DEBUG
           fprintf(stderr,"LOW  %04X ",ch_orderl[ich]);
 #endif
@@ -397,7 +401,8 @@ reset:
           pd1=dt;
           pd2=datl[idx01][ich];
           for(i=0;i<100;i++) *pd1++=(*pd2++);
-          ptw+=winform(dt,ptw,20,ch_orderl[ich]);
+          /* ptw+=winform(dt,ptw,20,ch_orderl[ich]); */
+          ptw += mk_windata(dt, ptw, 20, ch_orderl[ich], ss_mode, ssf_flag);
         }
       }
     }

@@ -1,9 +1,12 @@
-.\" $Id: raw_time.1,v 1.1 2005/03/17 06:59:08 uehira Exp $
-.TH raw_time 1W "2005.3.17" "WIN SYSTEM" "WIN SYSTEM"
+.\" $Id: raw_time.1,v 1.2 2016/01/05 06:38:46 uehira Exp $
+.TH raw_time 1W "2015.12.28" "WIN SYSTEM" "WIN SYSTEM"
 .SH 名称
 raw_time - RAW 形式データの時間ずらしフィルター
 .SH 形式
 raw_time [\-\fBBD\fR]
+[
+.I \-s 4|5|5f
+]
 .I inkey
 .I outkey
 .I shmsize
@@ -13,6 +16,9 @@ raw_time [\-\fBBD\fR]
 ]
 .LP
 raw_timed [\-\fBB\fR]
+[
+.I \-s 4|5|5f
+]
 .I inkey
 .I outkey
 .I shmsize
@@ -78,6 +84,15 @@ raw_time は、引数なしで起動すると簡単な使用法を表示します。
 参照してください。
 .IP "\fB\-D" 5
 daemon モードで起動します。
+.IP "\fB\-s \fImode" 5
+書き込みデータのサンプルサイズが
+.I 4 バイト
+の場合のサンプルサイズ情報のモードを指定します。
+.nf
+4 : サンプルサイズ情報を 4 にします。
+5 : サンプルサイズ情報を 5 にします。
+5f : サンプルサイズが 4 バイト長以外についてもサンプルサイズ情報を 5
+     にします。つまり、常に圧縮の無い固定長データとなります。
 .LP
 .SH ソース
 .TP

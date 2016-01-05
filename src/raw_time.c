@@ -1,15 +1,16 @@
-/* $Id: raw_time.c,v 1.6 2011/06/01 11:09:21 uehira Exp $ */
+/* $Id: raw_time.c,v 1.7 2016/01/05 06:38:47 uehira Exp $ */
 
 /* raw_time.c -- online version of wtime(1W) */
 
 /*
  * Copyright (c) 2005-
  *   Uehira Kenji / All Rights Reserved.
- *    uehira@sevo.kyushu-u.ac.jp
- *    Institute of Seismology and Volcanology, Kyushu University.
+ *    uehira@bosai.go.jp
+ *    National Research Institute for Earth Science and Disaster Prevention
  *
  *   2005-03-17  Initial version.  imported from wtime.c raw_raw.c ... etc.
  *   2010-10-13  64bit clean.
+ *   2015-12-25  Sample size 5 mode supported.
  */
 
 #ifdef HAVE_CONFIG_H
@@ -54,7 +55,7 @@
 
 
 static const char rcsid[] =
-  "$Id: raw_time.c,v 1.6 2011/06/01 11:09:21 uehira Exp $";
+  "$Id: raw_time.c,v 1.7 2016/01/05 06:38:47 uehira Exp $";
 
 char *progname, *logfile;
 int  syslog_mode, exit_status;
@@ -96,6 +97,7 @@ main(int argc, char *argv[])
   WIN_sr  srdum;
   int   c, sr_shift;
   int   i;
+  int   ss_mode = SSIZE5_MODE, ssf_flag = 0;
 
   if ((progname = strrchr(argv[0], '/')) != NULL)
     progname++;
@@ -112,13 +114,27 @@ main(int argc, char *argv[])
   if (strcmp(progname, "raw_timed") == 0)
     daemon_mode = 1;
 
-  while ((c = getopt(argc, argv, "BD")) != -1)
+  while ((c = getopt(argc, argv, "BDs:")) != -1)
     switch (c) {
     case 'B':
       eobsize_out = 1;  /* write blksiz at EOB in shm_out */
       break;
     case 'D':
       daemon_mode = 1;  /* daemon mode */
+      break;
+    case 's':
+      if (strcmp(optarg, "4") == 0)
+	ss_mode = 0;
+      else if (strcmp(optarg, "5") == 0) {
+	ss_mode = 1;
+	ssf_flag = 0;
+      } else if (strcmp(optarg, "5f") == 0) {
+	ss_mode = 1;
+	ssf_flag = 1;
+      } else {
+	fprintf(stderr, "Invalid option: -s\n");
+	usage();
+      }
       break;
     default:
       usage();
@@ -302,7 +318,8 @@ main(int argc, char *argv[])
 	for (i = 0; i < sr; ++i)
 	  sbuf[chn][i] = fixbuf1[i];
 	ltime_prev[chn] = ltime[chn];
-	ptw += winform(fixbuf2, ptw, sr, chn);
+	/* ptw += winform(fixbuf2, ptw, sr, chn); */
+	ptw += mk_windata(fixbuf2, ptw, sr, chn, ss_mode, ssf_flag);
 
 	/* blocksize */
 	new_size = ptw - (shm_out->d + shm_out->p);
@@ -420,11 +437,11 @@ usage(void)
   (void)fprintf(stderr, "Usage of %s :\n", progname);
   if (daemon_mode)
     (void)fprintf(stderr,
-		  "  %s (-B) [inkey] [outkey] [shmsize] [chfile] (logfile)\n",
+		  "  %s (-B) (-s [4|5|5f]) [inkey] [outkey] [shmsize] [chfile] (logfile)\n",
 		  progname);
   else
     (void)fprintf(stderr,
-		  "  %s (-BD) [inkey] [outkey] [shmsize] [chfile] (logfile)\n",
+		  "  %s (-BD) (-s [4|5|5f]) [inkey] [outkey] [shmsize] [chfile] (logfile)\n",
 		  progname);
   exit(1);
 }

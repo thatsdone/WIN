@@ -4,7 +4,8 @@
         06.30  bug fix & add fflush
    2004.10.10  writing to share memory option
    2010.10.07  64bit clean? (Uehira)
- */
+   2015.12.25  Sample size 5 mode supported.
+*/
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -37,7 +38,7 @@
 #define SR 250
 
 static const char rcsid[] =
-  "$Id: wintowin.c,v 1.10 2011/12/01 06:15:33 uehira Exp $";
+  "$Id: wintowin.c,v 1.11 2016/01/05 06:38:49 uehira Exp $";
 
 /* prototypes */
 static int tokenize(char *, char *[], size_t);
@@ -73,6 +74,7 @@ main(int argc, char *argv[])
     char buf[8192];
     int sr, ch, size, *chsize, t[6], i, j, k, ntoken, nch;
     int c;
+    int   ss_mode = SSIZE5_MODE, ssf_flag = 0;
 
     key_t shmkey_out;
     struct Shm  *shm_out;
@@ -83,8 +85,22 @@ main(int argc, char *argv[])
     int tmst = 0;
     int mdim = MAXCH;
 
-    while ((c = getopt(argc, argv, "hk:s:tm:")) != -1) {
+    while ((c = getopt(argc, argv, "b:hk:s:tm:")) != -1) {
 	switch (c) {
+	case 'b':
+	  if (strcmp(optarg, "4") == 0)
+	    ss_mode = 0;
+	  else if (strcmp(optarg, "5") == 0) {
+	    ss_mode = 1;
+	    ssf_flag = 0;
+	  } else if (strcmp(optarg, "5f") == 0) {
+	    ss_mode = 1;
+	    ssf_flag = 1;
+	  } else {
+	    fprintf(stderr, "Invalid option: -s\n");
+	    exit(1);
+	  }
+	  break;
 	case 'h':
 	    WIN_version();
 	    fprintf(stderr, "%s\n", rcsid);
@@ -163,7 +179,8 @@ main(int argc, char *argv[])
 	    for (i = 0; i < sr; i++) {
 	      inbuf[i] = atoi(tokens[i + 2]);
 	    }
-	    chsize[j] = winform(inbuf, outbuf[j], sr, ch);
+	    /* chsize[j] = winform(inbuf, outbuf[j], sr, ch); */
+	    chsize[j] = mk_windata(inbuf, outbuf[j], sr, ch, ss_mode, ssf_flag);
 	    size = size + chsize[j];
 	}
 	size = size + 10;

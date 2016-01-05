@@ -1,8 +1,11 @@
-.TH raw_shift 1W "2002.5.31" "WIN SYSTEM" "WIN SYSTEM"
+.TH raw_shift 1W "2015.12.28" "WIN SYSTEM" "WIN SYSTEM"
 .SH 名称
 raw_shift - RAW 形式データを任意ビット数右シフト
 .SH 形式
 raw_shift
+[
+.I \-s 4|5|5f
+]
 .I inkey
 .I outkey
 .I shmsize
@@ -71,7 +74,15 @@ raw_shift は、引数なしで起動すると簡単な使用法を表示します。
 .LP
 .SH オプション
 .TP
-なし
+.IP "\fB\-s \fImode" 5
+書き込みデータのサンプルサイズが
+.I 4 バイト
+の場合のサンプルサイズ情報のモードを指定します。
+.nf
+4 : サンプルサイズ情報を 4 にします。
+5 : サンプルサイズ情報を 5 にします。
+5f : サンプルサイズが 4 バイト長以外についてもサンプルサイズ情報を 5
+     にします。つまり、常に圧縮の無い固定長データとなります。
 .SH ソース
 .TP
 `raw_shift.c'

@@ -1,4 +1,4 @@
-/* $Id: ls8tel16_raw.c,v 1.4 2011/06/01 11:09:21 uehira Exp $ */
+/* $Id: ls8tel16_raw.c,v 1.5 2016/01/05 06:38:47 uehira Exp $ */
 
 /*
  * Copyright (c) 2005
@@ -60,7 +60,7 @@
 /*  #define DEBUG       0 */
 
 static const char rcsid[] =
-  "$Id: ls8tel16_raw.c,v 1.4 2011/06/01 11:09:21 uehira Exp $";
+  "$Id: ls8tel16_raw.c,v 1.5 2016/01/05 06:38:47 uehira Exp $";
 
 char *progname, *logfile;
 int  syslog_mode, exit_status;
@@ -256,7 +256,8 @@ reset:
 	    write_log("reset: input data is not LS8TEL format?");
 	    goto reset;
 	  }
-	  ptw += (gs1 = winform(fixbuf, ptw, sr1, ch1));
+	  /* ptw += (gs1 = winform(fixbuf, ptw, sr1, ch1)); */
+	  ptw += (gs1 = mk_windata(fixbuf, ptw, sr1, ch1, 1, 0));
 #if DEBUG
 	  fprintf(stderr, "->%d ", gs1);
 #endif

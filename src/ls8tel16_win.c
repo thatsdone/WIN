@@ -1,4 +1,4 @@
-/* $Id: ls8tel16_win.c,v 1.3 2011/06/01 11:09:21 uehira Exp $ */
+/* $Id: ls8tel16_win.c,v 1.4 2016/01/05 06:38:47 uehira Exp $ */
 
 /*
  * Copyright (c) 2005
@@ -34,7 +34,7 @@
 /* #include "win_system.h" */
 
 static const char  rcsid[] =
-   "$Id: ls8tel16_win.c,v 1.3 2011/06/01 11:09:21 uehira Exp $";
+   "$Id: ls8tel16_win.c,v 1.4 2016/01/05 06:38:47 uehira Exp $";
 
 static char  *progname;
 
@@ -104,7 +104,8 @@ main(int argc, char *argv[])
 	(void)fprintf(stderr, "This data is not LS8TEL format.\n");
 	exit(1);
       }
-      ptw += winform(fixbuf, ptw, sr, ch);
+      /* ptw += winform(fixbuf, ptw, sr, ch); */
+      ptw += mk_windata(fixbuf, ptw, sr, ch, 1, 0);
       if (ptw > ptw_limit) {
 	(void)fprintf(stderr, "Buffer overrun!\n");
 	exit(1);

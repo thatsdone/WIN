@@ -1,4 +1,4 @@
-/* $Id: wck.c,v 1.7 2011/06/01 11:09:22 uehira Exp $ */
+/* $Id: wck.c,v 1.8 2016/01/05 06:38:49 uehira Exp $ */
 /*- 
    program "wck.c"
 	"wck" checks a win format data file
@@ -37,7 +37,7 @@
 #define DEBUG1  0
 
 static const char rcsid[] =
-  "$Id: wck.c,v 1.7 2011/06/01 11:09:22 uehira Exp $";
+  "$Id: wck.c,v 1.8 2016/01/05 06:38:49 uehira Exp $";
 
 char *progname;
 static unsigned long count[WIN_CHMAX];
@@ -177,6 +177,9 @@ printf("gs=%u gh=%02x%02x%02x%02x%02x sr=%u gs=%u ptr=%p ptr_lim=%p\n",
                case 4:
                  strcpy(bytes,"4  ");
                  break;
+               case 5:
+                 strcpy(bytes,"4(5)");
+                 break;
                default:
                  strcpy(bytes,"  ?");
                  break;
@@ -213,6 +216,9 @@ printf("gs=%u gh=%02x%02x%02x%02x%02x sr=%u gs=%u ptr=%p ptr_lim=%p\n",
                  case 4:
                    strcpy(bytes,"4  ");
                    break;
+		 case 5:
+		   strcpy(bytes,"4(5)");
+		   break;
                  default:
                    strcpy(bytes,"  ?");
                    break;

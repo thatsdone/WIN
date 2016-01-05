@@ -1,4 +1,4 @@
-/* $Id: raw_100.c,v 1.6 2011/06/01 11:09:21 uehira Exp $ */
+/* $Id: raw_100.c,v 1.7 2016/01/05 06:38:47 uehira Exp $ */
 /* "raw_100.c"    97.6.23 - 6.30 urabe */
 /*                  modified from raw_raw.c */
 /*                  97.8.4 bug fixed (output empty block) */
@@ -9,6 +9,7 @@
 /*                  2000.4.24/2001.11.14 strerror() */
 /*                  2005.2.20 added fclose() in read_chfile() */
 /*                  2010.10.12 64bit clean. eobsize_in(auto) (uehira) */
+/*                  2015.12.24  sample size 5 mode supported. (Uehira) */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -45,7 +46,7 @@
 #define SR        100
 
 static const char rcsid[] =
-  "$Id: raw_100.c,v 1.6 2011/06/01 11:09:21 uehira Exp $";
+  "$Id: raw_100.c,v 1.7 2016/01/05 06:38:47 uehira Exp $";
 
 static uint8_w ch_table[WIN_CHMAX];
 static char *chfile;
@@ -56,6 +57,7 @@ int syslog_mode=0, exit_status;
 
 /* prototypes */
 static void read_chfile(void);
+static void usage(void);
 int main(int, char *[]);
 
 static void
@@ -129,6 +131,20 @@ read_chfile(void)
   signal(SIGHUP,(void *)read_chfile);
   }
 
+static void
+usage(void)
+{
+
+  WIN_version();
+  fprintf(stderr, "%s\n", rcsid);
+  fprintf(stderr,
+	  " usage : '%s (-s [4|5|5f]) [in_key] [out_key] [shm_size(KB)] \\\n",
+	  progname);
+  fprintf(stderr,
+	  "                       (-/[ch_file]/-[ch_file]/+[ch_file] ([log file]))'\n");
+  exit(1);
+}
+
 int
 main(int argc, char *argv[])
   {
@@ -150,20 +166,38 @@ main(int argc, char *argv[])
   uint32_w gs;
   static int32_w buf1[MAX_SR],buf2[SR];
   float t,ds,dt;
+  int  c, ss_mode = SSIZE5_MODE, ssf_flag = 0;
 
   if((progname=strrchr(argv[0],'/')) != NULL) progname++;
   else progname=argv[0];
-  if(argc<4)
-    {
-    WIN_version();
-    fprintf(stderr, "%s\n", rcsid);
-    fprintf(stderr,
-      " usage : '%s [in_key] [out_key] [shm_size(KB)] \\\n",
-      progname);
-    fprintf(stderr,
-      "                       (-/[ch_file]/-[ch_file]/+[ch_file] ([log file]))'\n");
-    exit(1);
+
+  while ((c = getopt(argc, argv, "s:h")) != -1) {
+    switch (c) {
+    case 's':
+      if (strcmp(optarg, "4") == 0)
+	ss_mode = 0;
+      else if (strcmp(optarg, "5") == 0) {
+	ss_mode = 1;
+	ssf_flag = 0;
+      } else if (strcmp(optarg, "5f") == 0) {
+	ss_mode = 1;
+	ssf_flag = 1;
+      } else {
+	fprintf(stderr, "Invalid option: -s\n");
+	usage();
+      }
+      break;
+    case 'h':
+    default:
+      usage();
+      /* NOTREACHED */
     }
+  }
+  argc -= optind -1;
+  argv += optind -1;
+
+  if(argc<4)
+    usage();
   rawkey=atol(argv[1]);
   monkey=atol(argv[2]);
   size_shm=(size_t)atol(argv[3])*1000;
@@ -325,7 +359,8 @@ reset:
             buf2[i]=buf1[j]+(int32_w)(dt*(float)(buf1[j+1]-buf1[j]));
             t+=ds;
             }
-          ptw+=winform(buf2,ptw,SR,ch);
+          /* ptw+=winform(buf2,ptw,SR,ch); */
+          ptw += mk_windata(buf2, ptw, SR, ch, ss_mode, ssf_flag);
           }
         else
           {

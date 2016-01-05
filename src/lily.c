@@ -48,7 +48,7 @@
 #define MAXMESG   2048
 
 static const char rcsid[] =
-  "$Id: lily.c,v 1.3 2014/09/25 10:37:09 uehira Exp $";
+  "$Id: lily.c,v 1.4 2016/01/05 06:38:47 uehira Exp $";
 
 char *progname,*logfile;
 int  syslog_mode, exit_status;
@@ -84,6 +84,7 @@ main(int argc, char *argv[])
   double tiltx,tilty,magnet,temp,volt;
   struct tm mt;
   int32_w x,y,mg,tp;
+  int ss_mode = SSIZE5_MODE, ssf_flag = 0;
 
   struct Shm *sh;
   char tb[256];
@@ -96,16 +97,31 @@ main(int argc, char *argv[])
   else progname=argv[0];
 
   snprintf(tb,sizeof(tb),
-    " usage : '%s (-t) (-e [ch_base2]) (-g [mcast_group]) (-i [interface]) (-s itvl(m)) \\\n\
+    " usage : '%s (-b [4|5|5f]) (-t) (-e [ch_base2]) (-g [mcast_group]) (-i [interface]) (-s itvl(m)) \\\n\
       [port] [ch_base] [shm_key] [shm_size(KB)] ([log file]))'",progname);
   
   use_ts=itvl=extout=0;
   *interface=(*mcastgroup)=0;
   sbuf=DEFAULT_RCVBUF;
-  while((c=getopt(argc,argv,"e:i:g:s:t"))!=EOF)
+  while((c=getopt(argc,argv,"b:e:i:g:s:t"))!=EOF)
     {
     switch(c)
       {
+      case 'b':   /* sample size mode */
+	if (strcmp(optarg, "4") == 0)
+	  ss_mode = 0;
+	else if (strcmp(optarg, "5") == 0) {
+	  ss_mode = 1;
+	  ssf_flag = 0;
+	} else if (strcmp(optarg, "5f") == 0) {
+	  ss_mode = 1;
+	  ssf_flag = 1;
+	} else {
+	  fprintf(stderr, "Invalid option: -b\n");
+	  fprintf(stderr,"%s\n",tb);
+	  exit(1);
+	}
+	break;
       case 'i':   /* interface (ordinary IP address) which receive data */
         strcpy(interface,optarg);
         break;
@@ -278,12 +294,16 @@ main(int argc, char *argv[])
       ptr+=4;   /* time of write */
       memcpy(ptr,tm,6);
       ptr+=6;
-      ptr+=winform(&x,ptr,1,sysch);
-      ptr+=winform(&y,ptr,1,sysch+1);
+      /* ptr+=winform(&x,ptr,1,sysch); */
+      /* ptr+=winform(&y,ptr,1,sysch+1); */
+      ptr += mk_windata(&x, ptr, 1, sysch, ss_mode, ssf_flag);
+      ptr += mk_windata(&y, ptr, 1, sysch+1, ss_mode, ssf_flag);
       if(extout)
         {
-        ptr+=winform(&mg,ptr,1,sysch2);
-        ptr+=winform(&tp,ptr,1,sysch2+1);
+	/* ptr+=winform(&mg,ptr,1,sysch2); */
+        /* ptr+=winform(&tp,ptr,1,sysch2+1); */
+	ptr += mk_windata(&mg, ptr, 1, sysch2, ss_mode, ssf_flag);
+        ptr += mk_windata(&tp, ptr, 1, sysch2+1, ss_mode, ssf_flag);
         }
       uni2=(WIN_bs)(ptr-ptr_size);
       ptr_size[0]=uni2>>24;  /* size (H) */

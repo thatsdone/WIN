@@ -1,10 +1,11 @@
-/* $Id: winrandsimu6.c,v 1.2 2011/06/01 11:09:22 uehira Exp $ */
+/* $Id: winrandsimu6.c,v 1.3 2016/01/05 06:38:49 uehira Exp $ */
 
 /*  WIN random simulater, real-time version
      write 100Hz 3000ch data to stdout as WIN-text or shared memory
 
      2010/10/07  64bit? (Uehira)
-     
+     2015/12/24  sample size 5 mode supported. (Uehira)
+
 */
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -52,17 +53,20 @@
 #define USE_RND_DELAY
 
 static const char rcsid[] =
-  "$Id: winrandsimu6.c,v 1.2 2011/06/01 11:09:22 uehira Exp $";
+  "$Id: winrandsimu6.c,v 1.3 2016/01/05 06:38:49 uehira Exp $";
 
 static key_t shmkey_out;
 static struct Shm *shm_out;
 static size_t shm_size=0;
 static uint8_w *ptw;
+static int ss_mode = SSIZE5_MODE, ssf_flag = 0;
+static char *progname;
 
 /* prototypes */
 static double sinc(double);
 static int prt_now(int);
 static int out_data(time_t, int, int, int, int, int, int *, int *, int, int *);
+static void usage(void);
 int main(int, char *[]);
 
 static double
@@ -91,19 +95,45 @@ main(int argc, char *argv[])
   int j, k, l, dpoint[3];
   int *ev, *de;
   time_t tnew, told;
+  int ch;
 #ifdef DEBUG
   int count;
 #endif
 
+  progname = *argv;
+  
+  /* get option */
+  ss_mode = SSIZE5_MODE;
+  ssf_flag = 0;
+  while ((ch = getopt(argc, argv, "s:")) != -1) {
+    switch (ch) {
+    case 's' :
+      if (strcmp(optarg, "4") == 0)
+	ss_mode = 0;
+      else if (strcmp(optarg, "5") == 0) {
+	ss_mode = 1;
+	ssf_flag = 0;
+      } else if (strcmp(optarg, "5f") == 0) {
+	ss_mode = 1;
+	ssf_flag = 1;
+      } else {
+	fprintf(stderr, "Invalid option: -s\n");
+	usage();
+      }
+      break;
+    default:
+      usage();
+      /* NOTREACHED */
+    }
+  }
+  argc -= optind -1;
+  argv += optind -1;
+
 #ifdef DEBUG
   prt_now(1);
 #endif
-  if(argc<3){
-    WIN_version();
-    fprintf(stderr, "%s\n", rcsid);
-    fprintf(stderr,"Usage: %s shm_key shm_size\n",*argv);
-    exit(0);
-  }
+  if(argc<3)
+    usage();
 
   samp=SAMP;
   shmkey_out=atoi(*++argv);
@@ -241,7 +271,8 @@ out_data(time_t tnow, int del, int sch, int sta, int nch, int samp,
       }
     }
     if(shm_size>0){
-      chsize[j]=winform(inbuf,outbuf[j],samp,sch+j);
+      /* chsize[j]=winform(inbuf,outbuf[j],samp,sch+j); */
+      chsize[j]=mk_windata(inbuf,outbuf[j],samp,sch+j,ss_mode,ssf_flag);
       size+=chsize[j];
     }else{
       fprintf(stdout,"\n");
@@ -269,4 +300,14 @@ out_data(time_t tnow, int del, int sch, int sta, int nch, int samp,
   }
 
   return(0);
+}
+
+static void
+usage(void)
+{
+  
+  WIN_version();
+  fprintf(stderr, "%s\n", rcsid);
+  fprintf(stderr,"Usage: %s (-s [4|5|5f]) shm_key shm_size\n",progname);
+  exit(0);
 }

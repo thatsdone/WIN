@@ -1,4 +1,4 @@
-/* $Id: udp_accept.c,v 1.5.2.5 2014/09/25 14:29:05 uehira Exp $ */
+/* $Id: udp_accept.c,v 1.5.2.6 2016/01/05 07:35:37 uehira Exp $ */
 
 /*
  * Copyright (c) 2001-2014
@@ -56,7 +56,6 @@ udp_accept(const char *port, int *maxsoc, int sockbuf, int family,
   char  hbuf[NI_MAXHOST], sbuf[NI_MAXSERV];
   char  buf[1024];
   int   j;
-  char  *hnbuf;
 
   *maxsoc = -1;
 

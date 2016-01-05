@@ -1,4 +1,4 @@
-/* $Id: udp_dest.c,v 1.7.2.4 2014/09/25 14:29:05 uehira Exp $ */
+/* $Id: udp_dest.c,v 1.7.2.5 2016/01/05 07:35:37 uehira Exp $ */
 
 /*
  * Copyright (c) 2001-2014
@@ -71,7 +71,6 @@ udp_dest(const char *hostname, const char *port, struct sockaddr *saptr,
   int  sock_bufsiz;
   char  hbuf[NI_MAXHOST], sbuf[NI_MAXSERV];
   char buf[1024];
-  char *hnbuf;
 
   memset(&hints, 0, sizeof(hints));
   hints.ai_family = family;

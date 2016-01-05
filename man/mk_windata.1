@@ -1,0 +1,62 @@
+.TH mk_windata 1W "2015.12.28" "WIN SYSTEM" "WIN SYSTEM"
+.SH 名称
+mk_windata - win 形式データへの変換
+.SH 形式
+.nf
+WIN_bs mk_windata(inbuf, outbuf, sr, ch, ss_mode, fix_len)
+int32_w *inbuf;
+uint8_w *outbuf;
+WIN_sr  sr;
+WIN_ch  ch;
+int     ss_mode;
+int     fix_len;
+.fi
+.SH 解説
+winform(1W)は古い仕様の関数です。今後はこの関数を使用して下さい。
+.PP
+.I mk_windata
+は、４バイト整数配列
+.I \ inbuf
+に入れられた１秒分のデータを、win フォーマットの
+チャネルブロックに変換して
+.I \ outbuf
+に入れられます。
+.I \ sr
+は渡されるデータの個数、すなわちサンプリングレートです。
+.I \ ch
+には16ビットのチャネル番号を指定します。
+.LP
+サンプルサイズ 4 バイトの場合、
+.I ss_mode
+が 0 の時、内部では winform(1W) を呼び出しており、サンプルサイズ情報の
+値として 4 を使います。
+.I \ ss_mode
+が 1 の時はサンプルサイズ情報の値として 5 を使います。特別な事情が無い
+場合、今後
+.I \ ss_mode
+は 1 を使うべきです。
+.PP
+.I fix_len
+は
+.I \ ss_mode
+が 1 の時のみ意味を持ちます(0 の時は無視されます)。
+.I fix_len
+が 1 の時、差分値がサンプルサイズ 0.5 〜 3 バイト長で表現出来る場合で
+も 4 バイト長(差分値ではない)で表現します。この場合、振幅の値そのもの
+が 4 バイトビッグエンディアンの固定長で書き込まれる事になります。
+.I \ fix_len
+が 0 の時は、差分値がサンプルサイズ 0.5 〜 3 バイト長で表現出来る場合
+にはそのように書き込みます。サンプルサイズ情報については winformat(1W)
+を参照下さい。
+.LP
+.I mk_windata
+は、チャネルヘッダー部分を含む、チャネルブロックの大きさ
+（バイト）を返します。
+.LP
+.I inbuf
+は作業領域として使われるため、内容が書き換えられることに注意してください。
+.SH ソース 
+.TP
+`winlib.c'
+.SH 関連事項
+winformat(1W), win2fix(1W), winform(1W)

@@ -1,5 +1,5 @@
-/* $Id: wck.c,v 1.5 2002/01/13 06:57:52 uehira Exp $ */
-/* 
+/* $Id: wck.c,v 1.7.2.1 2016/01/05 07:26:59 uehira Exp $ */
+/*- 
    program "wck.c"
 	"wck" checks a win format data file
 	7/31/91 - 7/31/91, 3/11/93, 3/28/94, 4/20/94   urabe
@@ -12,7 +12,8 @@
         2000.2.1 added "Count" mode
         2000.8.10 added "Table" mode
         2000.8.14 Count and Table modes made independent
-*/
+        2008.11.14 64 bit env. clean. (uehira)
+-*/
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -22,70 +23,75 @@
 #include <stdlib.h>
 #include <signal.h>
 #include <string.h>
+#include <unistd.h>
 
-#include "subst_func.h"
+#include "winlib.h"
 
-#define	DEBUG   0
-#define DEBUG1  0
-#define LongFromBigEndian(a) \
-  ((((unsigned char *)&(a))[0]<<24)+(((unsigned char *)&(a))[1]<<16)+ \
-  (((unsigned char *)&(a))[2]<<8)+((unsigned char *)&(a))[3])
-int count[65536];
-
-ctrlc() {exit(0);}
-
-read_data(ptr,fp)
-   FILE *fp;
-   unsigned char **ptr;
-{
-   static unsigned int size;
-   int re;
-   
-   if(fread(&re,1,4,fp)==0) return 0;
-   re=LongFromBigEndian(re);
-   if(*ptr==0) *ptr=(unsigned char *)malloc(size=re*2);
-   else if(re>size) *ptr=(unsigned char *)realloc(*ptr,size=re*2);
-   *(int *)*ptr=re;
-   if(fread(*ptr+4,1,re-4,fp)==0) return 0;
-#if DEBUG
-/*   fprintf(stderr,"%02x%02x%02x%02x%02x%02x %d\n",*ptr[4],*ptr[5],*ptr[6],
-     *ptr[7],*ptr[8],*ptr[9],re);*/
-/* Segmentation Fault! Why? (uehira) */
-#endif
-   return re;
-}
-
-main(argc,argv)
-   int argc;
-   char *argv[];
-{
-   int i,j,k,ii,chs,chs16,mode,c,nch,sec,size,sysch,mainsize,sr,gs,ts,ss;
-   FILE *f_main;
-   char bytes[5],*progname;
-   static unsigned char *mainbuf;
-   unsigned char *ptr,*ptr_lim;
-   extern int optind;
-   extern char *optarg;
 #define RAW 0x00
 #define MON 0x01
 #define RAW_HSR 0x02
 #define COUNT 0x10
 #define TABLE 0x20
-#define SR_MON 5
+/* #define SR_MON 5 */
+
+#define DEBUG1  0
+
+static const char rcsid[] =
+  "$Id: wck.c,v 1.7.2.1 2016/01/05 07:26:59 uehira Exp $";
+
+char *progname;
+static unsigned long count[WIN_CHMAX];
+
+static void ctrlc(void);
+static void usage(void);
+int main(int, char *[]);
+
+static void
+ctrlc(void)
+{
+
+  exit(0);
+}
+
+static void
+usage(void)
+{
+
+  WIN_version();
+  fprintf(stderr, "%s\n", rcsid);
+  fprintf(stderr,
+	  " usage : '%s (-r/-m/-h/-c/-t) ([data file]/- ([sec position]))'\n",
+	  progname);
+}
+
+int
+main(int argc, char *argv[])
+{
+   int i,j,k,ii,chs,chs16,mode,c,nch;
+   uint32_w mainsize,gs;
+   int size;
+   unsigned long ts,sec,ss;
+   WIN_ch   sysch;
+   WIN_sr   sr;
+   FILE *f_main;
+   char bytes[5];
+   static uint8_w *mainbuf=NULL;
+   size_t  mainbuf_siz;
+   uint8_w *ptr,*ptr_lim;
    
    signal(SIGINT,(void *)ctrlc);
    signal(SIGTERM,(void *)ctrlc);
    signal(SIGPIPE,(void *)ctrlc);
-   if(progname=strrchr(argv[0],'/')) progname++;
+   if((progname=strrchr(argv[0],'/')) != NULL) progname++;
    else progname=argv[0]; 
    mode=RAW;
-   while((c=getopt(argc,argv,"mrhctu"))!=EOF)
+   while((c=getopt(argc,argv,"mrhctu"))!=-1)
      {
      switch(c)
        {
        case 'c':   /* "Count" mode */
          mode|=COUNT;
-         for(i=0;i<65536;i++) count[i]=0;
+         for(i=0;i<WIN_CHMAX;i++) count[i]=0;
          break;
        case 'm':   /* MON data */
          mode=(0xf0 & mode)|MON;
@@ -98,64 +104,58 @@ main(argc,argv)
          break;
        case 't':   /* "Table" mode (in Count mode) */
          mode|=TABLE;
-         for(i=0;i<65536;i++) count[i]=0;
+         for(i=0;i<WIN_CHMAX;i++) count[i]=0;
          break;
        case 'u':   /* show usage */
        default:
-         fprintf(stderr,
-           " usage : '%s [-r/-m/-h/-c/-t] [(data file)/- [(sec position)]]'\n",
-           progname);
+	 usage();
          exit(1);
        }
      }
 
    if(argc<optind+1 || strcmp("-",argv[optind])==0) f_main=stdin;
    else if((f_main=fopen(argv[optind],"r"))==NULL){
-     fprintf(stderr,
-       " usage : '%s (-r/-m/-h/-c/-t) ([data file]/- ([sec position]))'\n",
-       progname);
+     usage();
      exit(1);
    }
-   if(argc>optind+1) ss=atoi(argv[optind+1]);
+   if(argc>optind+1) sscanf(argv[optind+1], "%lu", &ss);
    else ss=0;
    
    sec=ts=0;
-   while(mainsize=read_data(&mainbuf,f_main)) {
+   while((mainsize=read_onesec_win(f_main,&mainbuf,&mainbuf_siz))) {
 #if DEBUG1
-     printf("mainsize = %d\n", mainsize);
+     printf("mainsize = %u\n", mainsize);
 #endif
      ptr_lim=mainbuf+mainsize;
 #if DEBUG
-     printf("ptr_lim=%08x buf=%08x size=%08x\n",ptr_lim,mainbuf,mainsize);
+     printf("ptr_lim=%p buf=%p size=%08x\n",ptr_lim,mainbuf,mainsize);
 #endif
      ptr=mainbuf+10;
      nch=0;
      do
        {
-       sysch=ptr[1]+(((long)ptr[0])<<8);
+/*        sysch=(WIN_ch)ptr[1]+(((WIN_ch)ptr[0]<<8)); */
+       if(mode&MON)
+	 gs=get_sysch_mon(ptr,&sysch);
+       else
+	 gs=win_chheader_info(ptr,&sysch,&sr,&size);
        if(mode&(COUNT|TABLE)) count[sysch]++;
        if(mode&MON)
          {
-         gs=2;
-         for(i=0;i<SR_MON;i++) {
-           j=(ptr[gs]&0x03)*2;
-           gs+=j+1;
-           if(j==0) gs++;
-           }
          if(!(mode&(COUNT|TABLE)) && sec==ss) {
-           printf("%4d : ch %04X    %3d Hz  %4d B\n",nch+1,sysch,SR_MON,gs);
+           printf("%4d : ch %04hX    %3d Hz  %4u B\n",nch+1,sysch,SR_MON,gs);
            }
          }
        else
          {
          if((ptr[2]&0x80)==0) /* channel header = 4 byte */
            {
-           sr=ptr[3]+(((long)(ptr[2]&0x0f))<<8);
-           size=(ptr[2]>>4)&0x7;
-           if(size) gs=size*(sr-1)+8;
-           else gs=(sr>>1)+8;
+/*            sr=ptr[3]+(((WIN_sr)(ptr[2]&0x0f))<<8); */
+/*            size=(ptr[2]>>4)&0x7; */
+/*            if(size) gs=size*(sr-1)+8; */
+/*            else gs=(sr>>1)+8; */
 #if DEBUG
-printf("gs=%d gh=%02x%02x%02x%02x%02x sr=%d gs=%d ptr=%08x ptr_lim=%08x\n",
+printf("gs=%u gh=%02x%02x%02x%02x%02x sr=%u gs=%u ptr=%p ptr_lim=%p\n",
   gs,ptr[0],ptr[1],ptr[2],ptr[3],ptr[4],sr,gs,ptr,ptr_lim); 
 #endif
            if(!(mode&(COUNT|TABLE)) && sec==ss)
@@ -177,23 +177,26 @@ printf("gs=%d gh=%02x%02x%02x%02x%02x sr=%d gs=%d ptr=%08x ptr_lim=%08x\n",
                case 4:
                  strcpy(bytes,"4  ");
                  break;
+               case 5:
+                 strcpy(bytes,"4(5)");
+                 break;
                default:
                  strcpy(bytes,"  ?");
                  break;
                }
-             printf("%4d : ch %04X    %3d Hz  x  %s B  = %4d B\n",
+             printf("%4d : ch %04hX    %3u Hz  x  %s B  = %4u B\n",
                nch+1,sysch,sr,bytes,gs);
              }
            }
-         else
+         else              /* channel header = 5 byte */
            {
-           if(mode&RAW_HSR) /* channel header = 5 byte */
+           if(mode&RAW_HSR)
              {
-             sr=ptr[4]+(((long)ptr[3])<<8)+(((long)(ptr[2]&0x0f))<<16);
-             size=(ptr[2]>>4)&0x7;
-             if(size) gs=size*(sr-1)+8;
-             else gs=(sr>>1)+8;
-             gs++;
+/*              sr=ptr[4]+(((WIN_sr)ptr[3])<<8)+(((WIN_sr)(ptr[2]&0x0f))<<16); */
+/*              size=(ptr[2]>>4)&0x7; */
+/*              if(size) gs=size*(sr-1)+8; */
+/*              else gs=(sr>>1)+8; */
+/*              gs++; */
              if(!(mode&(COUNT|TABLE)) && sec==ss)
                {
                switch(size)
@@ -213,21 +216,24 @@ printf("gs=%d gh=%02x%02x%02x%02x%02x sr=%d gs=%d ptr=%08x ptr_lim=%08x\n",
                  case 4:
                    strcpy(bytes,"4  ");
                    break;
+		 case 5:
+		   strcpy(bytes,"4(5)");
+		   break;
                  default:
                    strcpy(bytes,"  ?");
                    break;
                  }
-               printf("%4d : ch %04X    %3d Hz  x  %s B  = %4d B\n",
+               printf("%4d : ch %04hX    %3u Hz  x  %s B  = %4u B\n",
                  nch+1,sysch,sr,bytes,gs);
                }
              }
            else /* WIN2 format */
              {
-             sr=ptr[3]+(((long)(ptr[2]&0x03))<<8);
+             sr=ptr[3]+(((WIN_sr)(ptr[2]&0x03))<<8);
              size=((ptr[2]>>2)&0x1F)+1; /* in bits */
              gs=((sr-1)*size-1)/8+1+8;
              if(!(mode&(COUNT|TABLE)) && sec==ss)
-               printf("%4d : ch %04X    %3d Hz  x  %2d b  = %4d B\n",
+               printf("%4d : ch %04hX    %3u Hz  x  %2u b  = %4d B\n",
                nch+1,sysch,sr,size,gs);
              }
            }
@@ -238,14 +244,14 @@ printf("gs=%d gh=%02x%02x%02x%02x%02x sr=%d gs=%d ptr=%08x ptr_lim=%08x\n",
      if(!(mode&(COUNT|TABLE)))
        {
        if(sec==ss) printf("\n");
-       printf("%4d : %02x%02x%02x %02x%02x%02x",sec+1,mainbuf[4],
-         mainbuf[5],mainbuf[6],mainbuf[7],mainbuf[8],mainbuf[9]);
-       printf("   %d ch  (%d bytes)\n",nch,mainsize);
+       printf("%4ld : %02x%02x%02x %02x%02x%02x",sec+1,mainbuf[4],
+	      mainbuf[5],mainbuf[6],mainbuf[7],mainbuf[8],mainbuf[9]);
+       printf("   %d ch  (%u bytes)\n",nch,mainsize);
        }
      ts+=mainsize;
      sec++;
    }
-   if(!(mode&(COUNT|TABLE))) printf("\nlength = %d s  (%d bytes)\n\n",sec,ts);
+   if(!(mode&(COUNT|TABLE))) printf("\nlength = %lu s  (%lu bytes)\n\n",sec,ts);
    if(mode&TABLE)
      {
      chs=chs16=0;
@@ -272,6 +278,6 @@ printf("gs=%d gh=%02x%02x%02x%02x%02x sr=%d gs=%d ptr=%08x ptr_lim=%08x\n",
      printf("%d chs used (max %d)\n",chs,0x10000);
      }
    if(mode&COUNT)
-     {for(i=0;i<65536;i++) if(count[i]>0) printf("%04X %d\n",i,count[i]);}
+     {for(i=0;i<WIN_CHMAX;i++) if(count[i]>0) printf("%04X %lu\n",i,count[i]);}
    exit(0);
 }

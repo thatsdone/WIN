@@ -1,4 +1,4 @@
-/* $Id: w_proto.h,v 1.3.2.4 2015/12/15 01:58:26 uehira Exp $ */
+/* $Id: w_proto.h,v 1.3.2.5 2016/01/05 07:26:58 uehira Exp $ */
 
 #ifndef _WPROTO_H_
 #define _WPROTO_H_
@@ -13,6 +13,7 @@ void adj_time_m(int []);
 void adj_time(int []);
 void adj_sec(int *, double *, int *, double *);
 int time_cmp(int *, int *, int);
+WIN_bs mk_windata(int32_w *, uint8_w *, WIN_sr, WIN_ch, int, int);
 WIN_bs winform(int32_w *, uint8_w *, WIN_sr, WIN_ch);
 uint32_w win2fix(uint8_w *, int32_w *, WIN_ch *, WIN_sr *);
 int strncmp2(char *, char *, int);

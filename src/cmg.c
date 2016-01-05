@@ -1,4 +1,4 @@
-/* $Id: cmg.c,v 1.2.2.3 2014/09/25 14:29:02 uehira Exp $ */
+/* $Id: cmg.c,v 1.2.2.4 2016/01/05 07:26:56 uehira Exp $ */
 /*  cmg.c              2005.12.14-17,2007.12.26,2010.7.21 urabe */
 /*  modify for TK0040A 2013.07.25 miyazaki */
 /*  2014.5.22-29 urabe */
@@ -45,7 +45,7 @@
 #define TK0040A   1
 
 static const char rcsid[] =
-  "$Id: cmg.c,v 1.2.2.3 2014/09/25 14:29:02 uehira Exp $";
+  "$Id: cmg.c,v 1.2.2.4 2016/01/05 07:26:56 uehira Exp $";
 
 char *progname,*logfile;
 int  syslog_mode, exit_status;

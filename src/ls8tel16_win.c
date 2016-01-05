@@ -1,4 +1,4 @@
-/* $Id: ls8tel16_win.c,v 1.2 2005/06/10 14:34:25 uehira Exp $ */
+/* $Id: ls8tel16_win.c,v 1.3.2.1 2016/01/05 07:26:58 uehira Exp $ */
 
 /*
  * Copyright (c) 2005
@@ -11,6 +11,8 @@
  * Datamark LS-8000SH of LS8TEL16 utility
  *  Convert LS8TEL16 winformat to normal winformat.
  *  Don't input normal winformat data.
+ *
+ *  2010-10-12  64bit clean.
  */
 
 #ifdef HAVE_CONFIG_H
@@ -26,12 +28,13 @@
 #ifdef GC_MEMORY_LEAK_TEST
 #include "gc_leak_detector.h"
 #endif
+
+#include "winlib.h"
 #include "ls8tel.h"
-#include "win_system.h"
-#include "subst_func.h"
+/* #include "win_system.h" */
 
 static const char  rcsid[] =
-   "$Id: ls8tel16_win.c,v 1.2 2005/06/10 14:34:25 uehira Exp $";
+   "$Id: ls8tel16_win.c,v 1.3.2.1 2016/01/05 07:26:58 uehira Exp $";
 
 static char  *progname;
 
@@ -42,13 +45,15 @@ int main(int, char *[]);
 int
 main(int argc, char *argv[])
 {
-  WIN_blocksize  dsize, gsize, wsize;
-  unsigned char  *dbuf = NULL, *ptr, *ptr_limit;
-  unsigned char  *obuf = NULL, *ptw, *ptw_limit;
-  size_t         obuf_size = 0;
+  WIN_bs         wsize;
+  uint32_w       dsize, gsize;
+  uint8_w  *dbuf = NULL, *ptr, *ptr_limit;
+  uint8_w  *obuf = NULL, *ptw, *ptw_limit;
+  size_t         obuf_size = 0, dbuf_siz;
   int            dtime[WIN_TIME_LEN];
-  long           ch, sr;
-  static long    fixbuf[HEADER_4B];
+  WIN_ch         ch;
+  WIN_sr         sr;
+  static int32_w fixbuf[HEADER_4B];
   int            i, c;
 
   /* get program name */
@@ -69,7 +74,7 @@ main(int argc, char *argv[])
   argv += optind;
 
   /*** 1sec data loop ***/
-  while ((dsize = read_onesec_win(stdin, &dbuf)) != 0) {
+  while ((dsize = read_onesec_win(stdin, &dbuf, &dbuf_siz)) != 0) {
     /* skip invalid time stamp */
     if (bcd_dec(dtime, dbuf + WIN_BLOCKSIZE_LEN) == 0)
       continue;
@@ -77,7 +82,7 @@ main(int argc, char *argv[])
     /* malloc obuf */
     if (obuf_size < (dsize << 3)) {
       obuf_size = (dsize << 3);
-      obuf = (unsigned char *)realloc(obuf, obuf_size);
+      obuf = (uint8_w *)win_xrealloc(obuf, obuf_size);
       if (obuf == NULL) {
 	(void)fprintf(stderr, "%s\n", strerror(errno));
 	exit(1);
@@ -99,7 +104,8 @@ main(int argc, char *argv[])
 	(void)fprintf(stderr, "This data is not LS8TEL format.\n");
 	exit(1);
       }
-      ptw += winform(fixbuf, ptw, sr, (unsigned short)ch);
+      /* ptw += winform(fixbuf, ptw, sr, ch); */
+      ptw += mk_windata(fixbuf, ptw, sr, ch, 1, 0);
       if (ptw > ptw_limit) {
 	(void)fprintf(stderr, "Buffer overrun!\n");
 	exit(1);
@@ -116,7 +122,7 @@ main(int argc, char *argv[])
 
     /* output to stdout */
     (void)fwrite(obuf, wsize, 1, stdout);
-  } /* while ((dsize = read_onesec_win(stdin, &dbuf)) != 0) */
+  } /* while ((dsize = read_onesec_win(stdin, &dbuf, &dbuf_siz)) != 0) */
 
 #ifdef GC_MEMORY_LEAK_TEST
   CHECK_LEAKS();
@@ -128,6 +134,7 @@ static void
 usage(void)
 {
 
+  WIN_version();
   (void)fprintf(stderr, "%s\n", rcsid);
   (void)fprintf(stderr, "Usage : %s < [LS8TEL16 file] > [out_file]\n",
 		progname);

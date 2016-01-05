@@ -1,4 +1,4 @@
-/* $Id: winlib.c,v 1.3.2.5 2015/12/25 08:46:55 uehira Exp $ */
+/* $Id: winlib.c,v 1.3.2.6 2016/01/05 07:27:00 uehira Exp $ */
 
 /*-
  * winlib.c  (Uehira Kenji)
@@ -52,6 +52,7 @@
  ********************************************************** */
 
 static time_t mktime2(struct tm *);
+static WIN_bs winform5(int32_w *, uint8_w *, WIN_sr, WIN_ch, int);
 
 static time_t
 mktime2(struct tm *mt) /* high-speed version of mktime() */
@@ -94,6 +95,140 @@ mktime2(struct tm *mt) /* high-speed version of mktime() */
   tzset();
   return (j * 86400 + mt->tm_hour * 3600 + mt->tm_min * 60 + mt->tm_sec + _timezone);
 #endif
+}
+
+/* winform.c  4/30/91, 99.4.19   urabe */
+/* 2005.3.9 high sampling rate uehira */
+/* 2015.11.24 fixed-sample-size-data in case of 4 bytes uehira */
+/* winform converts fixed-sample-size-data into win's format */
+/* winform returns the length in bytes of output data */
+static WIN_bs
+winform5(int32_w *inbuf, uint8_w *outbuf, WIN_sr sr, WIN_ch sys_ch, int fixf)
+/* int32_w  *inbuf;   : input data array for one sec */
+/* uint8_w  *outbuf;  : output data array for one sec */
+/* uint32_w sr;       : n of data (i.e. sampling rate) */
+/* uint16_w sys_ch;   : 16 bit long channel ID number */
+/* int      fixf      : Always 4byte length data */
+{
+  int		  byte_leng;
+  int32_w	  dmin , dmax, aa, bb, br;
+  int32_w        *ptr;
+  uint8_w        *buf;
+  uint32_w	  i;
+  int             orflag;
+
+  if (sr >= HEADER_5B)
+    exit(1);		/* sampling rate is out of range */
+
+  if (fixf)  /* fix length mode */
+    byte_leng = 5;
+  else {
+    /* obtain min and max */
+    orflag = 0;
+    dmax = dmin = 0;
+    for (i = 1; i < sr; i++) {
+      if (check_4byte_diff(inbuf[i], inbuf[i - 1])) {
+	orflag = 1;  /* out of range */
+	break;
+      }
+      br = inbuf[i] - inbuf[i - 1];
+      if (br > dmax)
+	dmax = br;
+      else if (br < dmin)
+	dmin = br;
+    }
+
+    /* determine sample size */
+    if (orflag)
+      byte_leng = 5;
+    else {
+      if (((dmin & 0xfffffff8) == 0xfffffff8 || (dmin & 0xfffffff8) == 0) &&
+	  ((dmax & 0xfffffff8) == 0xfffffff8 || (dmax & 0xfffffff8) == 0))
+	byte_leng = 0;
+      else if (((dmin & 0xffffff80) == 0xffffff80 || (dmin & 0xffffff80) == 0) &&
+	       ((dmax & 0xffffff80) == 0xffffff80 || (dmax & 0xffffff80) == 0))
+	byte_leng = 1;
+      else if (((dmin & 0xffff8000) == 0xffff8000 || (dmin & 0xffff8000) == 0) &&
+	       ((dmax & 0xffff8000) == 0xffff8000 || (dmax & 0xffff8000) == 0))
+	byte_leng = 2;
+      else if (((dmin & 0xff800000) == 0xff800000 || (dmin & 0xff800000) == 0) &&
+	       ((dmax & 0xff800000) == 0xff800000 || (dmax & 0xff800000) == 0))
+	byte_leng = 3;
+      else
+	byte_leng = 5;
+    }  /* if (orflag) */
+  }  /* if (fixf) */
+  
+  /* differentiate */
+  if (byte_leng != 5) {
+    ptr = inbuf;
+    bb = (*ptr++);
+    for (i = 1; i < sr; i++) {
+      aa = (*ptr);
+      *ptr++ = aa - bb;
+      bb = aa;
+    }
+  }
+
+  /* High sampling rate */
+  if (HEADER_4B <= sr)
+    byte_leng += 8;
+
+  /* make a 4 or 5 byte long header */
+  buf = outbuf;
+  *buf++ = (sys_ch >> 8) & 0xff;
+  *buf++ = sys_ch & 0xff;
+  if (sr < HEADER_4B) {		/* 4 byte header */
+    *buf++ = (byte_leng << 4) | (sr >> 8);
+    *buf++ = sr & 0xff;
+  } else {			/* 5 byte header */
+    *buf++ = (byte_leng << 4) | (sr >> 16);
+    *buf++ = (sr >> 8) & 0xff;
+    *buf++ = sr & 0xff;
+  }
+
+  /* first sample is always 4 byte long */
+  *buf++ = inbuf[0] >> 24;
+  *buf++ = inbuf[0] >> 16;
+  *buf++ = inbuf[0] >> 8;
+  *buf++ = inbuf[0];
+  /* second and after */
+  byte_leng %= 8;
+  switch (byte_leng) {
+  case 0:
+    for (i = 1; i < sr - 1; i += 2)
+      *buf++ = (inbuf[i] << 4) | (inbuf[i + 1] & 0xf);
+    if (i == sr - 1)
+      *buf++ = (inbuf[i] << 4);
+    break;
+  case 1:
+    for (i = 1; i < sr; i++)
+      *buf++ = inbuf[i];
+    break;
+  case 2:
+    for (i = 1; i < sr; i++) {
+      *buf++ = inbuf[i] >> 8;
+      *buf++ = inbuf[i];
+    }
+    break;
+  case 3:
+    for (i = 1; i < sr; i++) {
+      *buf++ = inbuf[i] >> 16;
+      *buf++ = inbuf[i] >> 8;
+      *buf++ = inbuf[i];
+    }
+    break;
+  case 5:
+    for (i = 1; i < sr; i++) {
+      *buf++ = inbuf[i] >> 24;
+      *buf++ = inbuf[i] >> 16;
+      *buf++ = inbuf[i] >> 8;
+      *buf++ = inbuf[i];
+    }
+    break;
+  }
+
+  return ((WIN_bs) (buf - outbuf));
 }
 /******- End of Local function -******/
 
@@ -514,6 +649,24 @@ time_cmp(int *t1, int *t2, int i)
   return (0);
 }
 
+/* wrapper function for winform() and winform5() */
+WIN_bs
+mk_windata(int32_w *inbuf, uint8_w *outbuf, WIN_sr sr, WIN_ch sys_ch, int mode, int fix_flag)
+/* int32_w  *inbuf;   : input data array for one sec */
+/* uint8_w  *outbuf;  : output data array for one sec */
+/* WIN_sr   sr;       : n of data (i.e. sampling rate) */
+/* WIN_ch   sys_ch;   : 16 bit long channel ID number */
+/* int      mode      : 0 : use winform(). 1 : use winform5() */
+/* int      fix_flag  : 1 : always fixed length data (Only affect mode=1.). */
+{
+
+  if (mode == 0)
+    return (winform(inbuf, outbuf, sr, sys_ch));
+  else
+    return (winform5(inbuf, outbuf, sr, sys_ch, fix_flag));
+}
+
+
 /* winform.c  4/30/91, 99.4.19   urabe */
 /* 2005.3.9 high sampling rate uehira */
 /* winform converts fixed-sample-size-data into win's format */
@@ -694,6 +847,13 @@ win2fix(uint8_w *ptr, int32_w *abuf, WIN_ch *sys_ch, WIN_sr *sr)
 	+ ((dp[2] << 8) & 0xff00) + (dp[3] & 0xff);
       dp += 4;
       abuf[i] = abuf[i - 1] + inreg;
+    }
+    break;
+  case 5:
+    for (i = 1; i < s_rate; i++) {
+      abuf[i] = ((dp[0] << 24) & 0xff000000) + ((dp[1] << 16) & 0xff0000)
+	+ ((dp[2] << 8) & 0xff00) + (dp[3] & 0xff);
+      dp += 4;
     }
     break;
   default:
@@ -896,11 +1056,17 @@ WIN_version(void)
  * output : ch  : channel number
  *          sr  : sampling rate
  *          ss  : sample size (0-->0.5byte)
+ *                            (1-->  1byte)
+ *                            (2-->  2byte)
+ *                            (3-->  3byte)
+ *                            (4-->  4byte)
+ *                            (5-->  4byte) 4 bytes NO-diff. values.
  -*/
 uint32_w
 win_chheader_info(const uint8_w *ptr, WIN_ch *ch, WIN_sr *sr, int *ss)
 {
   WIN_bs    gsize;
+  int       sample_size;
 
   /* channel number */
   *ch = (((WIN_ch)ptr[0]) << 8) + (WIN_ch)ptr[1];
@@ -914,10 +1080,11 @@ win_chheader_info(const uint8_w *ptr, WIN_ch *ch, WIN_sr *sr, int *ss)
 
   /* sample size */
   *ss = (ptr[2] >> 4) & 0x7;
-
+  
   /* goupe size */
-  if (*ss)
-    gsize = *ss * (*sr - 1) + 8;
+  sample_size = (*ss == 5) ? 4 : *ss;
+  if (sample_size)
+    gsize = sample_size * (*sr - 1) + 8;
   else
     gsize = ((*sr) >> 1) + 8;
   if (ptr[2] & 0x80)

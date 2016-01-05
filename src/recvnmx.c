@@ -1,4 +1,4 @@
-/* $Id: recvnmx.c,v 1.19.2.3 2014/09/25 14:29:02 uehira Exp $ */
+/* $Id: recvnmx.c,v 1.19.2.4 2016/01/05 07:26:58 uehira Exp $ */
 /* "recvnmx.c"    2001.7.18-19 modified from recvt.c and nmx2raw.c  urabe */
 /*                2001.8.18 */
 /*                2001.10.5 workaround for hangup */
@@ -83,7 +83,7 @@
 #define MAXCH     1024
 
 static const char rcsid[] =
-  "$Id: recvnmx.c,v 1.19.2.3 2014/09/25 14:29:02 uehira Exp $";
+  "$Id: recvnmx.c,v 1.19.2.4 2016/01/05 07:26:58 uehira Exp $";
 
 char *progname,*logfile;
 int  syslog_mode = 0, exit_status;
@@ -92,6 +92,7 @@ static char chmapfile[1024];
 /* static struct ip_mreq stMreq; */
 static uint16_w station,chmap[WIN_CHMAX];
 static int use_chmap;
+static int ss_mode, ssf_flag;
 static char *model[32]=
   {"HRD","ORION","RM3","RM4","LYNX","CYGNUS","EUROPA","CARINA",
    "TimeServer","TRIDENT","JANUS","TAURUS",
@@ -167,7 +168,8 @@ write_shm(int ch, int sr, time_t tim, int32_w *buf, struct Shm *shm,
   *ptw++=d2b[t->tm_hour];
   *ptw++=d2b[t->tm_min];
   *ptw++=d2b[t->tm_sec];
-  ptw+=winform(buf,ptw,(WIN_sr)sr,(WIN_ch)ch);
+  /* ptw+=winform(buf,ptw,(WIN_sr)sr,(WIN_ch)ch); */
+  ptw += mk_windata(buf, ptw, (WIN_sr)sr, (WIN_ch)ch, ss_mode, ssf_flag);
   ptw_save2=ptw;
   if(eobsize) ptw+=4;
   uni=ptw-ptw_save;
@@ -566,7 +568,7 @@ usage(void)
   (void)fprintf(stderr, "%s\n", rcsid);
   fprintf(stderr,
 	  " usage : '%s (-c [ch_map]) (-i [interface]) (-m [mcast_group]) (-vBn) \\\n\
-         (-d [fragdir]) [port] [shm_key] [shm_size(KB)] ([log file])'\n",progname);
+         (-d [fragdir]) (-s [4|5|5f]) [port] [shm_key] [shm_size(KB)] ([log file])'\n",progname);
 }
 
 int
@@ -606,6 +608,8 @@ main(int argc, char *argv[])
 
   station=verbose=use_chmap=eobsize=pk.npformat=0;
   *interface=(*mcastgroup)=(*chmapfile)=(*fragdir)=0;
+  ss_mode = SSIZE5_MODE;
+  ssf_flag = 0;
   while((c=getopt(argc,argv,"c:d:i:m:nvB"))!=-1)
     {
     switch(c)
@@ -631,6 +635,20 @@ main(int argc, char *argv[])
       case 'B':   /* eobsize */
         eobsize=1;
         break;
+      case 's' :
+	if (strcmp(optarg, "4") == 0)
+	  ss_mode = 0;
+	else if (strcmp(optarg, "5") == 0) {
+	  ss_mode = 1;
+	  ssf_flag = 0;
+	} else if (strcmp(optarg, "5f") == 0) {
+	  ss_mode = 1;
+	  ssf_flag = 1;
+	} else {
+	  fprintf(stderr, "Invalid option: -s\n");
+	  usage();
+	}
+	break;
       default:
         fprintf(stderr," option -%c unknown\n",c);
         usage();
@@ -657,7 +675,6 @@ main(int argc, char *argv[])
     else
       sock = udp_accept4(to_port, 64, NULL);
   }
-
   /* if((sock=socket(AF_INET,SOCK_DGRAM,0))<0) err_sys("socket"); */
   /* i=65535; */
   /* if(setsockopt(sock,SOL_SOCKET,SO_RCVBUF,(char *)&i,sizeof(i))<0) */

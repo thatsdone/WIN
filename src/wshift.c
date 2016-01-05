@@ -1,9 +1,10 @@
-/* $Id: wshift.c,v 1.1.2.3 2014/05/30 02:42:27 uehira Exp $ */
+/* $Id: wshift.c,v 1.1.2.4 2016/01/05 07:27:00 uehira Exp $ */
 
 /*-
  * Bit shift waveform data.
  *  offline version of "raw_shift.c".
  *  2014.5.29 duplicated semicolon at line 43 deleted.
+ *  2015.12.25  Sample size 5 mode supported.
  */
 
 #ifdef HAVE_CONFIG_H
@@ -21,7 +22,7 @@
 #define  MAX_SR  HEADER_5B
 
 static const char  rcsid[] =
-   "$Id: wshift.c,v 1.1.2.3 2014/05/30 02:42:27 uehira Exp $";
+   "$Id: wshift.c,v 1.1.2.4 2016/01/05 07:27:00 uehira Exp $";
 
 static char  *progname;
 static char  *chfile;
@@ -50,12 +51,38 @@ main(int argc, char *argv[])
   WIN_ch   ch1;
   WIN_bs   new_size;
   static int32_w  buf1[MAX_SR], buf2[MAX_SR];
+  int   c, ss_mode = SSIZE5_MODE, ssf_flag = 0;
 
   /* get program name */
   if ((progname = strrchr(argv[0], '/')) == NULL)
     progname = argv[0];
   else
     progname++;
+
+  while ((c = getopt(argc, argv, "s:h")) != -1) {
+    switch (c) {
+    case 's':
+      if (strcmp(optarg, "4") == 0)
+	ss_mode = 0;
+      else if (strcmp(optarg, "5") == 0) {
+	ss_mode = 1;
+	ssf_flag = 0;
+      } else if (strcmp(optarg, "5f") == 0) {
+	ss_mode = 1;
+	ssf_flag = 1;
+      } else {
+	fprintf(stderr, "Invalid option: -s\n");
+	usage();
+      }
+      break;
+    case 'h':
+    default:
+      usage();
+      /* NOTREACHED */
+    }
+  }
+  argc -= optind -1;
+  argv += optind -1;
 
   if (argc < 2)
     usage();
@@ -113,7 +140,8 @@ main(int argc, char *argv[])
 	(void)win2fix(ptr, buf1, &ch1, &sr1);
 	for (i = 0; i < sr1; i++)
 	  buf2[i] = buf1[i] >> bits_shift;
-	gs1 = winform(buf2, ptw, sr1, ch1);
+	/* gs1 = winform(buf2, ptw, sr1, ch1); */
+	gs1 = mk_windata(buf2, ptw, sr1, ch1, ss_mode, ssf_flag);
 	ptw += gs1;
 #if DEBUG
 	(void)fprintf(stderr,"->%u ",gs1);
@@ -207,6 +235,6 @@ usage(void)
 
   WIN_version();
   (void)fprintf(stderr, "%s\n", rcsid);
-  (void)fprintf(stderr, "Usage : %s bits (-/[ch_file]/-[ch_file]/+[ch_file]) < raw_in > raw_out\n", progname);
+  (void)fprintf(stderr, "Usage : %s (-s [4|5|5f]) bits (-/[ch_file]/-[ch_file]/+[ch_file]) < raw_in > raw_out\n", progname);
   exit(1);
 }

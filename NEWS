@@ -1,6 +1,11 @@
 WIN package NEWS
   History of user-visible changes.
-  17 Jan. 2002
+  5 Jan. 2016
+
+Version 3.0.0 (5 January, 2016)
+* New sample size information value '5' was introduced. This value
+represents that stored data are the 4 bytes length and contain no
+differential values.
 
 Version 1.1.45 (27 October, 2004)
 * daemon mode now supports :
@@ -44,4 +49,4 @@ Version 1.0.0   (17 January, 2002)
 
 (Changes before Versions 1.0.0 were never recorded.  Sorry.)
 
-$Id: NEWS,v 1.15 2004/10/27 03:49:47 uehira Exp $
+$Id: NEWS,v 1.15.16.1 2016/01/05 07:26:54 uehira Exp $

@@ -1,6 +1,6 @@
-.TH winform 1W "2015.12.25" "WIN SYSTEM" "WIN SYSTEM"
+.TH winform 1W "2015.12.28" "WIN SYSTEM" "WIN SYSTEM"
 .SH 名称
-winform - win 形式データへの変換
+winform - win 形式データへの変換 (obsoleted)
 .SH 形式
 .nf
 WIN_bs winform(inbuf,outbuf,sr,ch)
@@ -10,6 +10,8 @@ WIN_sr  sr;
 WIN_ch  ch;
 .fi
 .SH 解説
+この関数は古い仕様の関数です。今後は mk_windate(1W) を使用して下さい。
+.PP
 .I winform
 は、４バイト整数配列
 .I \ inbuf
@@ -32,4 +34,4 @@ WIN_ch  ch;
 .TP
 `winlib.c'
 .SH 関連事項
-winformat(1W), win2fix(1W)
+winformat(1W), mk_windata(1W), win2fix(1W)

@@ -1,11 +1,11 @@
 dnl ------------------------------------------------------------------------- 
-dnl $Id: configure.in,v 1.174 2016/01/05 06:38:44 uehira Exp $
+dnl $Id: configure.in,v 1.175 2016/04/01 03:00:16 uehira Exp $
 dnl -------------------------------------------------------------------------
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT
 AC_CONFIG_SRCDIR([src/win.c])
 AC_CANONICAL_TARGET
-AM_INIT_AUTOMAKE(WIN_pkg, 3.0.0)
+AM_INIT_AUTOMAKE(WIN_pkg, 3.0.1)
 AC_CONFIG_HEADERS([config.h])
 AC_ARG_PROGRAM
 
@@ -310,8 +310,8 @@ dnl setting default sample size of 4 bytes
 dnl -------------------------------------------------------------------------
 AC_MSG_CHECKING(if default 4 byte sample size = 5)
 AC_ARG_ENABLE([ssize5],
-	[AS_HELP_STRING([--disable-ssize5],[Build default sample size = 4 version (Legacy mode).])],
-	[], [enable_ssize5="yes"])
+	[AS_HELP_STRING([--enable-ssize5],[Build default sample size = 5 version (New mode).])],
+	[], [enable_ssize5="no"])
 if test x"$enable_ssize5" = xyes; then
 	AC_DEFINE([SSIZE5_MODE],1,[Default 4 byte sample size mode])
 else

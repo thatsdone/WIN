@@ -1,10 +1,14 @@
 #
-# $Id: Makefile.am,v 1.54 2016/01/05 06:38:46 uehira Exp $
+# $Id: Makefile.am,v 1.55 2016/04/01 03:00:17 uehira Exp $
 #
 
-# Version number of shared libraries.
-LIB_WINSYSTEM_VERSION = -version-info 4:0:2
+##### Version number of shared libraries.
+# if you modify 'winlib.c', you must also modify LIB_WINSYSTEM_VERSION.
+LIB_WINSYSTEM_VERSION = -version-info 4:1:2
+
+# if you modify  'winlib_log.c', you must also modify LIB_WINLOG_VERSION.
 LIB_WINLOG_VERSION = -version-info 2:0:1
+#####
 
 if SUNOS4
 RECVNMX =

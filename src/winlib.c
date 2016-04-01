@@ -1,4 +1,4 @@
-/* $Id: winlib.c,v 1.3.2.6 2016/01/05 07:27:00 uehira Exp $ */
+/* $Id: winlib.c,v 1.3.2.7 2016/04/01 04:05:22 uehira Exp $ */
 
 /*-
  * winlib.c  (Uehira Kenji)
@@ -73,8 +73,11 @@ mktime2(struct tm *mt) /* high-speed version of mktime() */
   extern time_t timezone;
 #endif
 
-  if (m == NULL)
+  if (m == NULL) {
+    if (time(&t) == (time_t)-1)
+      return (-1);
     m = localtime(&t);
+  }
   ye = mt->tm_year - 70;
   j = 0;
   for (i = 0; i < ye; i++)
@@ -1047,6 +1050,12 @@ WIN_version(void)
 #else
   (void)fprintf(stderr, "%s package Version %s [32-bit]\n", PACKAGE, VERSION);
 #endif
+
+#if SSIZE5_MODE == 1
+  (void)fprintf(stderr, "Default output 4 byte sample size : 5\n");
+#else
+  (void)fprintf(stderr, "Default output 4 byte sample size : 4\n");
+#endif
 }
 
 /*-
@@ -1352,13 +1361,14 @@ bcd_t(uint8_w *ptr)
 #if defined(__SVR4) || defined(HAVE_STRUCT_TM_TM_GMTOFF) || defined(__CYGWIN__)
   ts = mktime2(&mt);
 #else
-  if ((ts = mktime(&mt)) == (time_t)-1) {
-    (void)fputs("mktime error.\n", stderr);
-    exit(1);
-  }
+  ts = mktime(&mt);
 #endif
 
-  return (ts);
+  if (ts == (time_t)-1) {
+    (void)fputs("mktime or mktime2 error.\n", stderr);
+    exit(1);
+  } else
+    return (ts);
 }
 
 /*** This function was replaced by bcd_t() [2010/1/12] ***/

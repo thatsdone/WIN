@@ -1,4 +1,10 @@
- $Id: ChangeLog,v 1.203.2.30 2016/01/05 07:26:54 uehira Exp $
+ $Id: ChangeLog,v 1.203.2.31 2016/04/01 04:05:17 uehira Exp $
+
+2016-04-01 Uehira Kenji <uehira@bosai.go.jp>
+	* Version 3.0.1 released.
+	* DEFAULT sample size information value is '4'.
+	* src/Makefile.am : libwinsystem : bump version (4.0.2 --> 4.1.2)
+	* src/winlib.c : fixed a bug in mktime2(). print SSIZE5 info.
 
 2016-01-05 Uehira Kenji <uehira@bosai.go.jp>
 	* Version 3.0.0 released.

@@ -1,4 +1,4 @@
-/* $Id: winlib.c,v 1.10 2016/04/01 03:00:18 uehira Exp $ */
+/* $Id: winlib.c,v 1.11 2016/04/01 03:09:51 uehira Exp $ */
 
 /*-
  * winlib.c  (Uehira Kenji)
@@ -1049,6 +1049,12 @@ WIN_version(void)
   (void)fprintf(stderr, "%s package Version %s [64-bit]\n", PACKAGE, VERSION);
 #else
   (void)fprintf(stderr, "%s package Version %s [32-bit]\n", PACKAGE, VERSION);
+#endif
+
+#if SSIZE5_MODE == 1
+  (void)fprintf(stderr, "Default output 4 byte sample size : 5\n");
+#else
+  (void)fprintf(stderr, "Default output 4 byte sample size : 4\n");
 #endif
 }
 

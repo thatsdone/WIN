@@ -1,46 +1,9 @@
- $Id: ChangeLog,v 1.246 2017/03/09 06:04:47 uehira Exp $
+ $Id: ChangeLog,v 1.242.2.1 2017/03/09 06:16:23 uehira Exp $
 
 2017-03-09 Uehira Kenji <uehira@bosai.go.jp>
-	* Version 3.0.2 released.
+	* Version 2.2.23 released.
 	* src/events.c : fixed a bug in making zone lists.
 	  (reported by Dr. H. Aoyama)
-
-2016-04-01 Uehira Kenji <uehira@bosai.go.jp>
-	* Version 3.0.1 released.
-	* DEFAULT sample size information value is '4'.
-	* src/Makefile.am : libwinsystem : bump version (4.0.2 --> 4.1.2)
-	* src/winlib.c : fixed a bug in mktime2(). print SSIZE5 info.
-
-2016-01-05 Uehira Kenji <uehira@bosai.go.jp>
-	* Version 3.0.0 released.
-	* New sample size information value '5' was introduced. This value
-	  represents that stored data are the 4 bytes length and contain
-	  no differential values.
-	* src/Makefile.am : libwinsystem : bump version (3.1.1 --> 4.0.2)
-	* src/winlib.c : mk_windata() : new interface for make winformat
-	  data. wrapper function of 'winform()' and new 'winform5()' LOCAL
-	  function.
-	* src/cormeisei.c : winform() --> mk_windata()
-	* src/ecore.c : winform() --> mk_windata()
-	* src/ecore2.c : winform() --> mk_windata()
-	* src/lily.c, man/lily.1 : added '-b' option. winform() --> mk_windata()
-	* src/ls8tel16_raw.c : winform() --> mk_windata()
-	* src/ls8tel16_win.c : winform() --> mk_windata()
-	* src/raw_100.c, man/raw_100.1 : added '-s' option. winform() --> mk_windata()
-	* src/raw_shift.c, man/raw_shift.1 : added '-s' option. winform() --> mk_windata()
-	* src/raw_time.c, man/raw_time.1 : added '-s' option. winform() --> mk_windata()
-	* src/recvnmx.c, man/recvnmx.1 : added '-s' option. winform() --> mk_windata()
-	* src/vanpro2.c, man/vanpro2.1 : added '-s' option. winform() --> mk_windata()
-	* src/w_proto.h : added mk_windata()
-	* src/wck.c : Sample size 5 mode supported. winform() --> mk_windata()
-	* src/wform.c : added '-s' option. winform() --> mk_windata().
-	* src/win.c : Sample size 5 mode supported.
-	* src/winrandsimu6.c : added '-s' option. winform() --> mk_windata().
-	* src/wintowin.c : added '-b' option. winform() --> mk_windata().
-	* src/wshift.c, man/wshift.1 : added '-s' option. winform() --> mk_windata()
-	* src/wtime.c, man/wtime.1 : added '-b' option. winform() --> mk_windata()
-	* man/mk_windata.1 : added
-	* man/win2fix.1, man/winform.1, man/winformat.1 : updated
 
 2015-12-28 Uehira Kenji <uehira@bosai.go.jp>
 	* Version 2.2.22 released.

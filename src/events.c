@@ -1,4 +1,4 @@
-/* $Id: events.c,v 1.14 2017/03/09 06:04:50 uehira Exp $ */
+/* $Id: events.c,v 1.13.4.1 2017/03/09 06:16:27 uehira Exp $ */
 
 /****************************************************************************
 *****************************************************************************
@@ -142,7 +142,7 @@ sso     /dat/etc/sso.station    cut-jc3
 #define DIR_W  3
 
 static const char rcsid[] =
-  "$Id: events.c,v 1.14 2017/03/09 06:04:50 uehira Exp $";
+  "$Id: events.c,v 1.13.4.1 2017/03/09 06:16:27 uehira Exp $";
 
 #if defined(STRUCT_STATFS_F_BAVAIL_LONG)
 static long space_raw,used_raw;

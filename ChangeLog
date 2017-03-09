@@ -1,4 +1,9 @@
- $Id: ChangeLog,v 1.203.2.31 2016/04/01 04:05:17 uehira Exp $
+ $Id: ChangeLog,v 1.203.2.32 2017/03/09 06:47:58 uehira Exp $
+
+2017-03-09 Uehira Kenji <uehira@bosai.go.jp>
+	* Version 3.0.2 released.
+	* src/events.c : fixed a bug in making zone lists.
+	  (reported by Dr. H. Aoyama)
 
 2016-04-01 Uehira Kenji <uehira@bosai.go.jp>
 	* Version 3.0.1 released.

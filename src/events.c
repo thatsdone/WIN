@@ -1,4 +1,4 @@
-/* $Id: events.c,v 1.13 2011/06/01 11:09:20 uehira Exp $ */
+/* $Id: events.c,v 1.14 2017/03/09 06:04:50 uehira Exp $ */
 
 /****************************************************************************
 *****************************************************************************
@@ -34,6 +34,7 @@
 **     2002.9.5       -u [dir] for USED_EVENTS file                 *********
 **     2005.8.10      bug in strcmp2()/strncmp2() fixed : 0-6 > 7-9 *********
 **     2010.9.27      64bit clean? (Uehira)                         *********
+**     2017.3.9       fixed a bug in making zone lists (Uehira)     *********
 **                                                                  *********
 **   Example of parameter file (events.prm)                         *********
 =============================================================================
@@ -141,7 +142,7 @@ sso     /dat/etc/sso.station    cut-jc3
 #define DIR_W  3
 
 static const char rcsid[] =
-  "$Id: events.c,v 1.13 2011/06/01 11:09:20 uehira Exp $";
+  "$Id: events.c,v 1.14 2017/03/09 06:04:50 uehira Exp $";
 
 #if defined(STRUCT_STATFS_F_BAVAIL_LONG)
 static long space_raw,used_raw;
@@ -553,7 +554,7 @@ main(int argc, char *argv[])
     sys[NSYS][20],stan_list[NSYS][LEN],lpr_name[NSYS][LEN],
     mess[40],mess1[40],mess2[40],raw_path[LEN],lastline[LEN],
     file_name[LEN],*param_file,temp_name[LEN],
-    auto_path[LEN],zone_list[LEN],*time_start,*time_end,
+    auto_path[LEN],zone_list[LEN],zone_list_tmp[LEN],*time_start,*time_end,
     tapeunit[LEN],raw_file[20],lpr_body[LEN],
     zone_file[LEN],ch_file[LEN],nxt_file[LEN],log_file[LEN],
     file_chs[LEN],rtape_file[LEN],tmpfile1[LEN],tmpfile2[LEN],
@@ -809,10 +810,14 @@ printf("lastline=%s\n",lastline);
       {
       /* strcat(zone_list," "); */
       /* strcat(zone_list,strchr(textbuf,*mess1)); */
-      if (snprintf(zone_list, sizeof(zone_list), "%s %s",
-		   zone_list, strchr(textbuf,*mess1)) >= sizeof(zone_list))
+      if (snprintf(zone_list_tmp, sizeof(zone_list_tmp), "%s %s",
+		   zone_list, strchr(textbuf,*mess1)) >= sizeof(zone_list_tmp))
 	owari_bfov();
-      zone_list[strlen(zone_list)-1]=0; /* CR -> NULL */
+      zone_list_tmp[strlen(zone_list_tmp)-1]=0; /* CR -> NULL */
+
+      /* clear zone_list[] and copy zone lists from zone_list_tmp[] */
+      memset(zone_list, 0, sizeof(zone_list));
+      strncpy(zone_list, zone_list_tmp, sizeof(zone_list) - 1);
       }   /* other triggered areas */
 
     ptr=zone_list;

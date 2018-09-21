@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.45.2.11 2016/04/01 04:05:20 uehira Exp $
+# $Id: Makefile.am,v 1.45.2.12 2018/09/21 06:41:08 uehira Exp $
 #
 
 ##### Version number of shared libraries.
@@ -76,7 +76,7 @@ OFFLINE_USER=$(OFFLINE_X) $(OFFLINE_F77) wed wck wadd $(OFFLINE_MATH) wchch pick
              wch pick2finalb pick2final finalb2final final2finalb finalb2seis \
              pick2finalb_SEVO \
              wform wintowin $(OFFLINE_USER_MATH) winadd wck_wdisk wadd2 \
-             win2raw wchasn ls8tel16_win ls8tel_STM ls8tel_STS ls7000_A8 ls7000_A9 split_win chtbl_ck wshift
+             win2raw wchasn ls8tel16_win ls8tel_STM ls8tel_STS ls7000_A8 ls7000_A9 split_win chtbl_ck wshift wsr
 TAPE_USER=$(RTAPE) $(FROMTAPE) wdisk wdiskts ras2rpdl ras2lips file_older raw2mon \
           $(TAPE_USER_MATH)
 ONLINE=order raw_mon $(WTAPE) setexb timeout raw_raw raw_100 cormeisei shmdump \
@@ -524,6 +524,9 @@ chtbl_ck_LDADD = $(WIN_NORMAL_LIB) $(GC_CHECK_LIB)
 
 wshift_SOURCES = wshift.c $(WIN_LIBH) $(GC_CHECK_INCLUDE)
 wshift_LDADD = $(WIN_NORMAL_LIB) $(GC_CHECK_LIB)
+
+wsr_SOURCES = wsr.c $(WIN_LIBH)
+wsr_LDADD = $(WIN_NORMAL_LIB)
 
 lily_SOURCES = lily.c $(WIN_LIBH)
 lily_LDADD = $(WIN_LOG_LTLIB) $(WIN_NORMAL_LIB) @LIBNSL@ @LIBSOCKET@ @LIBSHMGET@

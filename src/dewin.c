@@ -1,4 +1,4 @@
-/* $Id: dewin.c,v 1.6.2.1 2014/01/08 00:14:37 uehira Exp $ */
+/* $Id: dewin.c,v 1.6.2.2 2018/09/21 06:41:10 uehira Exp $ */
 
 /* program dewin  1994.4.11-4.20  urabe */
 /*                1996.2.23 added -n option */
@@ -11,6 +11,7 @@
 /*                2000.3.10 added -m option */
 /*                2003.10.29 exit()->exit(0) */
 /*                2010.04.03 64bit? */
+/*                2018.09.18 added -o option */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -36,7 +37,7 @@
 #define MAX_SR      HEADER_5B
 
 static const char  rcsid[] =
-   "$Id: dewin.c,v 1.6.2.1 2014/01/08 00:14:37 uehira Exp $";
+   "$Id: dewin.c,v 1.6.2.2 2018/09/21 06:41:10 uehira Exp $";
 
 static int32_w buf[MAX_SR];
 static double dbuf[MAX_SR];
@@ -78,7 +79,7 @@ print_usage(void)
 
   WIN_version();
   (void)fprintf(stderr, "%s\n", rcsid);
-  fprintf(stderr,"usage: dewin (-camn) (-f [filter file]) [ch no.(in hex)] ([input file])\n");
+  fprintf(stderr,"usage: dewin (-camnjeo) (-f [filter file]) [ch no.(in hex)] ([input file])\n");
   fprintf(stderr,"        -c  character output\n");
   fprintf(stderr,"        -a  audio format (u-law) output\n");
   fprintf(stderr,"        -m  minute block instead of second block\n");
@@ -86,6 +87,7 @@ print_usage(void)
   fprintf(stderr,"        -f  [filter file] filter paramter file\n");
   fprintf(stderr,"        -j  display time-stamp (set -c option automatically)\n");
   fprintf(stderr,"        -e  display elapsed time (set -c option automatically)\n");
+  fprintf(stderr,"        -o  remove data offset (only affected in case of -f option specified)\n");
   }
 
 static WIN_sr
@@ -152,20 +154,26 @@ main(int argc, char *argv[])
   double uv[MAX_FILT*4];
   struct tm tm;
   time_t tt1,tt2;
+  double  offset;
+  int     offset_flag, tmpfile_flag;
+  unsigned long  data_count;
+  FILE  *tmpfp;
 
   signal(SIGINT,(void *)wabort);
   signal(SIGTERM,(void *)wabort);
   form=nofill=filter_flag=minblock=jikoku=elapsed=0;
+  offset_flag = tmpfile_flag = 0;
+
   for(i=0;i<MAX_FILT*4;++i)
     uv[i]=0.0;
 
-  while((c=getopt(argc,argv,"chmnaf:je"))!=-1){
+  while((c=getopt(argc,argv,"chmnaf:jeo"))!=-1){
      switch(c){
       case 'a':
-        form=8;   /* 8bit format output*/
+        form=8;   /* 8bit format output */
         break;
       case 'c':
-        form=1;   /* numerical character output*/
+        form=1;   /* numerical character output */
         break;
       case 'm':
         minblock=1; /* minute block */
@@ -232,12 +240,15 @@ main(int argc, char *argv[])
         elapsed=1; /* elapsed time */
 	form=1;
         break;
+      case 'o':
+       offset_flag = 1;
+       break;
       case 'h':
       default:
         print_usage();
         exit(0);
       }
-    }  /*  End of "while((c=getopt(argc,argv,"chmnaf:je"))!=-1){" */
+    }  /*  End of "while((c=getopt(argc,argv,"chmnaf:jeo"))!=-1){" */
 
 #if DEBUG
   fprintf(stderr,"filter_flag = %d\n",filter_flag);
@@ -262,6 +273,40 @@ main(int argc, char *argv[])
      exit(1);
   }
 
+  /* calculate offset */
+  if (filter_flag && offset_flag) {
+    offset = 0.0;
+    data_count = 0;
+    if (f_main == stdin) {
+      tmpfile_flag = 1;
+      if ((tmpfp = tmpfile()) == NULL) {
+	perror("dewin");
+	exit(1);
+      }
+    }
+    
+    while ((mainsize = read_onesec_win(f_main, &mainbuf, &mainbuf_siz))){
+      if (tmpfile_flag) {  /* If input data come from STDIN, make temporary file. */
+	if (fwrite(mainbuf, 1, mainsize, tmpfp) != mainsize) {
+	  (void)fprintf(stderr, "dewin: make tmpfile error!\n");
+	  exit(1);
+	}
+      }
+      if ((sr = read_one_sec(mainbuf, sysch, buf)) == 0)
+	continue;
+      data_count += sr;
+      for (j = 0; j < sr; j++)
+	offset += (double)buf[j];
+    }
+    offset /= (double)data_count;
+    fprintf(stderr, "data_count=%lu offset = %.10e\n", data_count, offset);
+
+    if (tmpfile_flag)
+      f_main = tmpfp;
+    rewind(f_main);
+  } /* if (filter_flag && offset_flag) */
+
+  /* main routine */
   sr_save=0;
   sec=i=0;
   tt1=tt2=-1;
@@ -306,8 +351,8 @@ main(int argc, char *argv[])
                     tm.tm_mon=time2[1]-1;
                     tm.tm_year=time2[0]>50?time2[0]:time2[0]+100;
                     tt2=mktime(&tm);
-                    if(minblock) printf("%7.3f ",(float)(tt2-tt1)+60.*(float)j/(float)sr_save);
-		    else printf("%7.3f ",(float)(tt2-tt1)+(float)j/(float)sr_save);
+                    if(minblock) printf("%7.3f ",(double)(tt2-tt1)+60.*(double)j/(double)sr_save);
+		    else printf("%7.3f ",(double)(tt2-tt1)+(double)j/(double)sr_save);
                   }
 		  if(jikoku)
                      if(minblock) printf("%02d%02d%02d.%02d%02d%02d ",time2[0],time2[1],time2[2],time2[3],time2[4],time2[5]+60*j/sr);
@@ -337,11 +382,17 @@ main(int argc, char *argv[])
      if(filter_flag){
 	get_filter(sr,&flt);
 	/* fprintf(stderr,"m_filt=%d\n",flt.m_filt);*/
-	for(j=0;j<sr;++j)
-	  dbuf[j]=(double)buf[j];
+	for(j=0;j<sr;++j) {
+	  if (offset_flag)
+	    dbuf[j]=(double)buf[j]-offset;
+	  else
+	    dbuf[j]=(double)buf[j];
+	}
 	tandem(dbuf,dbuf,sr,flt.coef,flt.m_filt,1,uv);
-	for(j=0;j<sr;++j)
-	  buf[j]=(int)(dbuf[j]*flt.gn_filt);
+	for(j=0;j<sr;++j) {
+	  dbuf[j] *= flt.gn_filt;
+	  buf[j]=(int)dbuf[j];
+	}
      }
 
      if(form==1)
@@ -351,12 +402,13 @@ main(int argc, char *argv[])
             tm.tm_mday=time3[2]; tm.tm_mon=time3[1]-1;
             tm.tm_year=time3[0]>50?time3[0]:time3[0]+100;
             tt2=mktime(&tm);
-            if(minblock) printf("%7.3f ",(float)(tt2-tt1)+60.*(float)j/(float)sr);
-            else printf("%7.3f ",(float)(tt2-tt1)+(float)j/(float)sr);
+            if(minblock) printf("%7.3f ",(double)(tt2-tt1)+60.*(double)j/(double)sr);
+            else printf("%7.3f ",(double)(tt2-tt1)+(double)j/(double)sr);
          }
 	 if(jikoku)
 	     if(minblock) printf("%02d%02d%02d.%02d%02d%02d ",time3[0],time3[1],time3[2],time3[3],time3[4],time3[5]+60*j/sr);
-	     else printf("%02d%02d%02d.%02d%02d%02d %03d ",time3[0],time3[1],time3[2],time3[3],time3[4],time3[5],1000*j/sr);
+	     /* else printf("%02d%02d%02d.%02d%02d%02d %03d ",time3[0],time3[1],time3[2],time3[3],time3[4],time3[5],1000*j/sr); */
+	     else printf("%04d-%02d-%02dT%02d:%02d:%02d %03d ",time3[0]+2000,time3[1],time3[2],time3[3],time3[4],time3[5],1000*j/sr);
 	 printf("%d\n",buf[j]);
        }
      else if(form==8){

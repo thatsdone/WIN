@@ -1,4 +1,10 @@
- $Id: ChangeLog,v 1.246 2017/03/09 06:04:47 uehira Exp $
+ $Id: ChangeLog,v 1.247 2018/09/21 05:49:19 uehira Exp $
+
+2018-09-18 Uehira Kenji <uehira@bosai.go.jp>
+	* Version 3.0.3 released.
+	* src/dewin.c : added '-o' option.
+	* src/wsr.c : added.
+	* src/wck.c : added '-v' option.
 
 2017-03-09 Uehira Kenji <uehira@bosai.go.jp>
 	* Version 3.0.2 released.

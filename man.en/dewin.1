@@ -2,7 +2,7 @@
 .SH NAME
 dewin - Extraction of single channel data from win form file
 .SH SYNOPSIS
-dewin [\-\fBacnh\fR] [\-\fBf\fI filter\fR]
+dewin [\-\fBacnjeoh\fR] [\-\fBf\fI filter\fR]
 .I channel
 [
 .I file
@@ -53,6 +53,8 @@ When input data has temporal discontinuity (namely one or more seconds are omitt
 Display time-stamp with data. Set -c option automatically.
 .IP "\fB\-e" 5
 Display elapsed time (unit: second) with data. Set -c option automatically.
+.IP "\fB\-o" 5
+Remove data offset (only affected in case of -f option specified).
 .IP "\fB\-h" 5
 Displays brief usage. 
 .SH SOURCE

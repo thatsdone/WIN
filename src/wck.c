@@ -1,4 +1,4 @@
-/* $Id: wck.c,v 1.8 2016/01/05 06:38:49 uehira Exp $ */
+/* $Id: wck.c,v 1.9 2018/09/21 05:49:23 uehira Exp $ */
 /*- 
    program "wck.c"
 	"wck" checks a win format data file
@@ -13,6 +13,7 @@
         2000.8.10 added "Table" mode
         2000.8.14 Count and Table modes made independent
         2008.11.14 64 bit env. clean. (uehira)
+	2018.09.21 added "Verbose" mode (uehira)
 -*/
 
 #ifdef HAVE_CONFIG_H
@@ -37,7 +38,7 @@
 #define DEBUG1  0
 
 static const char rcsid[] =
-  "$Id: wck.c,v 1.8 2016/01/05 06:38:49 uehira Exp $";
+  "$Id: wck.c,v 1.9 2018/09/21 05:49:23 uehira Exp $";
 
 char *progname;
 static unsigned long count[WIN_CHMAX];
@@ -60,7 +61,7 @@ usage(void)
   WIN_version();
   fprintf(stderr, "%s\n", rcsid);
   fprintf(stderr,
-	  " usage : '%s (-r/-m/-h/-c/-t) ([data file]/- ([sec position]))'\n",
+	  " usage : '%s (-r/-m/-h/-c/-t/-v) ([data file]/- ([sec position]))'\n",
 	  progname);
 }
 
@@ -78,6 +79,7 @@ main(int argc, char *argv[])
    static uint8_w *mainbuf=NULL;
    size_t  mainbuf_siz;
    uint8_w *ptr,*ptr_lim;
+   int     vflag;
    
    signal(SIGINT,(void *)ctrlc);
    signal(SIGTERM,(void *)ctrlc);
@@ -85,7 +87,8 @@ main(int argc, char *argv[])
    if((progname=strrchr(argv[0],'/')) != NULL) progname++;
    else progname=argv[0]; 
    mode=RAW;
-   while((c=getopt(argc,argv,"mrhctu"))!=-1)
+   vflag=0;
+   while((c=getopt(argc,argv,"mrhctvu"))!=-1)
      {
      switch(c)
        {
@@ -105,6 +108,9 @@ main(int argc, char *argv[])
        case 't':   /* "Table" mode (in Count mode) */
          mode|=TABLE;
          for(i=0;i<WIN_CHMAX;i++) count[i]=0;
+         break;
+       case 'v':   /* "Verbose" mode */
+	 vflag=1;
          break;
        case 'u':   /* show usage */
        default:
@@ -158,7 +164,7 @@ main(int argc, char *argv[])
 printf("gs=%u gh=%02x%02x%02x%02x%02x sr=%u gs=%u ptr=%p ptr_lim=%p\n",
   gs,ptr[0],ptr[1],ptr[2],ptr[3],ptr[4],sr,gs,ptr,ptr_lim); 
 #endif
-           if(!(mode&(COUNT|TABLE)) && sec==ss)
+           if(!(mode&(COUNT|TABLE)) && ((sec==ss) || vflag))
              {
              switch(size)
                {
@@ -197,7 +203,7 @@ printf("gs=%u gh=%02x%02x%02x%02x%02x sr=%u gs=%u ptr=%p ptr_lim=%p\n",
 /*              if(size) gs=size*(sr-1)+8; */
 /*              else gs=(sr>>1)+8; */
 /*              gs++; */
-             if(!(mode&(COUNT|TABLE)) && sec==ss)
+	     if(!(mode&(COUNT|TABLE)) && ((sec==ss) || vflag))
                {
                switch(size)
                  {
@@ -243,7 +249,7 @@ printf("gs=%u gh=%02x%02x%02x%02x%02x sr=%u gs=%u ptr=%p ptr_lim=%p\n",
        } while(ptr<ptr_lim);
      if(!(mode&(COUNT|TABLE)))
        {
-       if(sec==ss) printf("\n");
+      if((sec==ss) || vflag) printf("\n");
        printf("%4ld : %02x%02x%02x %02x%02x%02x",sec+1,mainbuf[4],
 	      mainbuf[5],mainbuf[6],mainbuf[7],mainbuf[8],mainbuf[9]);
        printf("   %d ch  (%u bytes)\n",nch,mainsize);

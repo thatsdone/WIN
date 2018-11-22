@@ -1,4 +1,8 @@
- $Id: ChangeLog,v 1.247 2018/09/21 05:49:19 uehira Exp $
+ $Id: ChangeLog,v 1.248 2018/11/22 09:50:36 uehira Exp $
+
+2018-11-22 Uehira Kenji <uehira@bosai.go.jp>
+	* Version 3.0.4 released.
+	* src/wchch.c : fixed a bug.
 
 2018-09-18 Uehira Kenji <uehira@bosai.go.jp>
 	* Version 3.0.3 released.

@@ -1,4 +1,4 @@
-/* $Id: wchch.c,v 1.6 2011/06/01 11:09:22 uehira Exp $ */
+/* $Id: wchch.c,v 1.7 2018/11/22 09:50:39 uehira Exp $ */
 
 /*
 program "wchch.c"
@@ -26,7 +26,7 @@ program "wchch.c"
 #define   DEBUG1  0
 
 static const char rcsid[] =
-  "$Id: wchch.c,v 1.6 2011/06/01 11:09:22 uehira Exp $";
+  "$Id: wchch.c,v 1.7 2018/11/22 09:50:39 uehira Exp $";
 
 static uint8_w *buf=NULL,*outbuf;
 static size_t  cbufsiz;   /* buffer size of buf[] & outbuf[] */
@@ -129,23 +129,9 @@ select_ch(WIN_ch *table, uint8_w *old_buf, uint8_w *new_buf)
 /*     else gsize=(sr>>1)+8; */
     *new_ptr++=table[ch]>>8;
     *new_ptr++=table[ch];
-    if (sr < HEADER_4B)
-      ptr+=2;
-    else if (sr < HEADER_5B)
-      ptr+=3;
-    else {
-      fprintf(stderr, "Invalid sampling rate.\n");
-      exit(1);
-    }
+    ptr+=2;
     new_size+=gsize;
-    if (sr < HEADER_4B)
-      gsize-=2;
-    else if (sr < HEADER_5B)
-      gsize-=3;
-    else {
-      fprintf(stderr, "Invalid sampling rate.\n");
-      exit(1);
-    }
+    gsize-=2;
     while(gsize-->0) *new_ptr++=(*ptr++);
     } while(ptr<ptr_lim);
   new_buf[0]=new_size>>24;

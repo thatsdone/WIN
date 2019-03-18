@@ -1,4 +1,11 @@
- $Id: ChangeLog,v 1.248 2018/11/22 09:50:36 uehira Exp $
+ $Id: ChangeLog,v 1.249 2019/03/18 06:08:23 urabe Exp $
+
+2019-03-18 Urabe Taku <urabe@telemetra.jp>
+	* Version 3.0.5 released.
+	* src/raw_ddp.c man/raw_ddp.1 : created.
+	* src/relaym.c man/relaym.1 : added deduplication options (-P/-p/-t).
+	* src/Makefile.am : libwinsystem : bump version (4.1.2 --> 4.1.3)
+	* src/winlib.c src/w_proto.h : added crc16().
 
 2018-11-22 Uehira Kenji <uehira@bosai.go.jp>
 	* Version 3.0.4 released.

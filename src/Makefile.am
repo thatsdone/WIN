@@ -1,10 +1,10 @@
 #
-# $Id: Makefile.am,v 1.56 2018/09/21 05:49:22 uehira Exp $
+# $Id: Makefile.am,v 1.57 2019/03/18 06:08:27 urabe Exp $
 #
 
 ##### Version number of shared libraries.
 # if you modify 'winlib.c', you must also modify LIB_WINSYSTEM_VERSION.
-LIB_WINSYSTEM_VERSION = -version-info 4:1:2
+LIB_WINSYSTEM_VERSION = -version-info 4:1:3
 
 # if you modify  'winlib_log.c', you must also modify LIB_WINLOG_VERSION.
 LIB_WINLOG_VERSION = -version-info 2:0:1
@@ -80,7 +80,7 @@ TAPE_USER=$(RTAPE) $(FROMTAPE) wdisk wdiskts ras2rpdl ras2lips file_older raw2mo
           $(TAPE_USER_MATH)
 ONLINE=order raw_mon $(WTAPE) setexb timeout raw_raw raw_100 cormeisei shmdump \
        raw_ch extraw insert_raw insert_trg find_picks raw_shift ls8tel16_raw\
-	shmcounter\
+	shmcounter raw_ddp\
        $(ONLINE_SO) $(ONLINE_MATH) $(ONL_FREEBSD)
 
 ONL_OPT_=robot
@@ -165,6 +165,7 @@ install-exec-hook:
 	(rm -f $(DESTDIR)@bindir@/raw_mond; cd $(DESTDIR)@bindir@ && @LN_S@ raw_mon raw_mond)
 	(rm -f $(DESTDIR)@bindir@/raw_timed; cd $(DESTDIR)@bindir@ && @LN_S@ raw_time raw_timed)
 	(rm -f $(DESTDIR)@bindir@/raw_rawd; cd $(DESTDIR)@bindir@ && @LN_S@ raw_raw raw_rawd)
+	(rm -f $(DESTDIR)@bindir@/raw_ddpd; cd $(DESTDIR)@bindir@ && @LN_S@ raw_ddp raw_ddpd)
 	(rm -f $(DESTDIR)@bindir@/wdisktsd; cd $(DESTDIR)@bindir@ && @LN_S@ wdiskts wdisktsd)
 	(rm -f $(DESTDIR)@bindir@/recvstatus2d; cd $(DESTDIR)@bindir@ && @LN_S@ recvstatus2 recvstatus2d)
 	(rm -f $(DESTDIR)@bindir@/recvstatus3d; cd $(DESTDIR)@bindir@ && @LN_S@ recvstatus3 recvstatus3d)
@@ -207,6 +208,7 @@ uninstall-local:
 	rm -f $(DESTDIR)@bindir@/raw_mond
 	rm -f $(DESTDIR)@bindir@/raw_timed
 	rm -f $(DESTDIR)@bindir@/raw_rawd
+	rm -f $(DESTDIR)@bindir@/raw_ddpd
 	rm -f $(DESTDIR)@bindir@/wdisktsd
 	rm -f $(DESTDIR)@bindir@/recvstatus2d
 	rm -f $(DESTDIR)@bindir@/recvstatus3d
@@ -368,6 +370,9 @@ timeout_SOURCES = timeout.c $(SUBFUNC_H)
 
 raw_raw_SOURCES = raw_raw.c $(WIN_LIBH)
 raw_raw_LDADD = $(WIN_LOG_LTLIB) $(WIN_NORMAL_LIB) @LIBSHMGET@
+
+raw_ddp_SOURCES = raw_ddp.c $(WIN_LIBH)
+raw_ddp_LDADD = $(WIN_LOG_LTLIB) $(WIN_NORMAL_LIB) @LIBSHMGET@
 
 raw_shift_SOURCES = raw_shift.c $(WIN_LIBH)
 raw_shift_LDADD = $(WIN_LOG_LTLIB) $(WIN_NORMAL_LIB) @LIBSHMGET@

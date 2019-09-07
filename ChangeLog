@@ -1,4 +1,9 @@
- $Id: ChangeLog,v 1.249 2019/03/18 06:08:23 urabe Exp $
+ $Id: ChangeLog,v 1.250 2019/09/07 12:48:45 urabe Exp $
+
+2019-09-07 Urabe Taku <urabe@telemetra.jp>
+	* Version 3.0.6 released.
+	* src/raw_snd.c man/raw_snd.1 : created (SHINDO calculation).
+	* src/wintowin.c : applied a patch from Ohtake (for 4095Hz data)
 
 2019-03-18 Urabe Taku <urabe@telemetra.jp>
 	* Version 3.0.5 released.

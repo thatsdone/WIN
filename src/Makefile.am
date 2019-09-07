@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.57 2019/03/18 06:08:27 urabe Exp $
+# $Id: Makefile.am,v 1.58 2019/09/07 12:48:47 urabe Exp $
 #
 
 ##### Version number of shared libraries.
@@ -79,8 +79,8 @@ OFFLINE_USER=$(OFFLINE_X) $(OFFLINE_F77) wed wck wadd $(OFFLINE_MATH) wchch pick
 TAPE_USER=$(RTAPE) $(FROMTAPE) wdisk wdiskts ras2rpdl ras2lips file_older raw2mon \
           $(TAPE_USER_MATH)
 ONLINE=order raw_mon $(WTAPE) setexb timeout raw_raw raw_100 cormeisei shmdump \
-       raw_ch extraw insert_raw insert_trg find_picks raw_shift ls8tel16_raw\
-	shmcounter raw_ddp\
+       raw_ch extraw insert_raw insert_trg find_picks raw_shift ls8tel16_raw \
+	shmcounter raw_ddp raw_snd \
        $(ONLINE_SO) $(ONLINE_MATH) $(ONL_FREEBSD)
 
 ONL_OPT_=robot
@@ -376,6 +376,9 @@ raw_ddp_LDADD = $(WIN_LOG_LTLIB) $(WIN_NORMAL_LIB) @LIBSHMGET@
 
 raw_shift_SOURCES = raw_shift.c $(WIN_LIBH)
 raw_shift_LDADD = $(WIN_LOG_LTLIB) $(WIN_NORMAL_LIB) @LIBSHMGET@
+
+raw_snd_SOURCES = raw_snd.c $(WIN_LIBH)
+raw_snd_LDADD = $(WIN_LOG_LTLIB) $(WIN_NORMAL_LIB) @LIBSHMGET@
 
 raw_100_SOURCES = raw_100.c $(WIN_LIBH)
 raw_100_LDADD = $(WIN_LOG_LTLIB) $(WIN_NORMAL_LIB) @LIBSHMGET@

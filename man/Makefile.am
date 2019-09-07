@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.38 2019/03/18 06:08:27 urabe Exp $
+# $Id: Makefile.am,v 1.39 2019/09/07 12:48:47 urabe Exp $
 #
 #  Makefile.am in man subdirectory.
 #
@@ -12,7 +12,7 @@ WIN_MAN = _bj.1 _update.1 automan.1 autopick.1 cormeisei.1 dat.1 dewin.1 \
 	ras2rpdl.1 raw2mon.1 raw_100.1 raw_ch.1 raw_mon.1 raw_raw.1 raw_ddp.1 \
 	recvnmx.1 recvs.1 recvt.1 recvts.1 relay.1 rtape.1 send_raw.1 \
 	send_raw_old.1 sends.1 shmdump.1 wadd.1 wch.1 wchch.1 wck.1 \
-	wck_wdisk.1 wdisk.1 raw_shift.1 insert_trg.1 wdiskts.1 \
+	wck_wdisk.1 wdisk.1 raw_shift.1 insert_trg.1 wdiskts.1 raw_snd.1 \
         insert_raw2.1 wadd2.1 recvstatus.1 recvstatus2.1 select_stations.1 \
 	wed.1 wex.1 win.1 win2fix.1 winform.1 winformat.1 wtape.1 wtime.1 \
 	win2raw.1 shmx.1 shmz.1 shmck.1 wintowin.1 wintosac.1 wchasn.1 clean_nmx.1 winadd.1 \

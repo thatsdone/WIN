@@ -5,6 +5,7 @@
    2004.10.10  writing to share memory option
    2010.10.07  64bit clean? (Uehira)
    2015.12.25  Sample size 5 mode supported.
+   2019.9.7    applied a patch from Ohtake for 4095Hz sampling rate data
 */
 
 #ifdef HAVE_CONFIG_H
@@ -34,11 +35,11 @@
 
 #include "winlib.h"
 
-/* #define SR 4096 */
-#define SR 250
+#define SR 4097
+/* #define SR 250 */
 
 static const char rcsid[] =
-  "$Id: wintowin.c,v 1.11 2016/01/05 06:38:49 uehira Exp $";
+  "$Id: wintowin.c,v 1.12 2019/09/07 12:48:48 urabe Exp $";
 
 /* prototypes */
 static int tokenize(char *, char *[], size_t);
@@ -69,9 +70,10 @@ int
 main(int argc, char *argv[])
 {
 #define MAXCH 1000
+#define MAXLINE 50000
     static uint8_w **outbuf, tt[6], cbuf;
     static int32_w inbuf[SR];
-    char buf[8192];
+    char buf[MAXLINE];
     int sr, ch, size, *chsize, t[6], i, j, k, ntoken, nch;
     int c;
     int   ss_mode = SSIZE5_MODE, ssf_flag = 0;

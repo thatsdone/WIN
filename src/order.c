@@ -1,4 +1,4 @@
-/* $Id: order.c,v 1.17 2011/07/20 10:38:39 uehira Exp $ */
+/* $Id: order.c,v 1.18 2019/11/06 05:20:17 urabe Exp $ */
 /*  program "order.c" 1/26/94 - 2/7/94, 6/14/94 urabe */
 /*                              1/6/95 bug in adj_time(tm[0]--) fixed */
 /*                              3/17/95 write_log() */
@@ -19,6 +19,7 @@
 /*                              2004.10.21 daemon mode (uehira) */
 /*                              2009.12.18 64bit? (uehira) */
 /*                              2010.11.3 system clock mode (-a) : fixed a bug (uehira) */
+/*                              2019.11.2 use thread for late+sysclk (urabe) */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -34,6 +35,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <pthread.h>
 
 #if TIME_WITH_SYS_TIME
 #include <sys/time.h>
@@ -52,19 +54,25 @@
 #include "daemon_mode.h"
 #include "winlib.h"
 
-/* #define DEBUG     0 */
+/*#define DEBUG     0*/
 #define DEBUG1    0
-#define DEBUG2    1
+#define DEBUG2    0
 
 #define NAMELEN  1025
 
 static const char rcsid[] =
-  "$Id: order.c,v 1.17 2011/07/20 10:38:39 uehira Exp $";
+  "$Id: order.c,v 1.18 2019/11/06 05:20:17 urabe Exp $";
 
 static int  daemon_mode;
+int tow_top;
 
 char *progname,*logfile;
 int  syslog_mode, exit_status;
+struct St_late {
+    struct Shm *sin;
+    struct Shm *slt;
+    int ns;
+  };
 
 /* prototypes */
 static int check_time(uint8_w *);
@@ -88,8 +96,8 @@ static time_t
 advance(struct Shm *shm, size_t *shp, unsigned long *c_save,
 	uint32_w *size, time_t *t, size_t *shp_busy_save)
 /*  input ONLY:  shm */
-/*  input & output:  shp, c_save */
-/*  output ONLY: size, t, shp_busy_save */
+/*  input & output:  size, shp, c_save */
+/*  output ONLY:  t, shp_busy_save */
 {
   long i;
   size_t  shpp;
@@ -111,23 +119,91 @@ advance(struct Shm *shm, size_t *shp, unsigned long *c_save,
   return ((time_t)((int32_w)mkuint4(shm->d+shpp+4)+TIME_OFFSET));
 }
 
-
 static void
 usage(void)
 {
-
   WIN_version();
   fprintf(stderr, "%s\n", rcsid);
   if(daemon_mode)
     fprintf(stderr,
-	    " usage : '%s (-aB) (-l [shm_key_late]:[shm_size_late(KB)]) [shm_key_in] \\\n\
-           [shm_key_out] [shm_size(KB)] [limit_sec] ([log file])'", progname);
+      " usage : '%s (-aB) (-l [shm_key_late]:[shm_size_late(KB)]) [shm_key_in] \\\n\
+        [shm_key_out] [shm_size(KB)] [limit_sec] ([log file])'", progname);
   else
     fprintf(stderr,
-	    " usage : '%s (-aBD) (-l [shm_key_late]:[shm_size_late(KB)]) [shm_key_in] \\\n\
-           [shm_key_out] [shm_size(KB)] [limit_sec] ([log file])'", progname);
-
+      " usage : '%s (-aBD) (-l [shm_key_late]:[shm_size_late(KB)]) [shm_key_in] \\\n\
+        [shm_key_out] [shm_size(KB)] [limit_sec] ([log file])'", progname);
   fprintf(stderr,"\n");
+}
+
+void
+*th_late(void *stlt)
+{
+  uint32_w uni;
+  time_t tow,ts; 
+  size_t shp;
+  uint32_w size,size2;
+  uint8_w *ptr,*ptw;
+  unsigned long c_save;
+  char tbuf[NAMELEN];
+  struct St_late *st_late;
+
+  st_late=(struct St_late *)stlt;
+reset:
+  c_save=st_late->sin->c;
+  size=mkuint4(ptr=st_late->sin->d+(shp=st_late->sin->r));
+  if(check_time(ptr+8)){
+    sleep(1);
+    goto reset;
+  }
+  tow=tow_top=(int32_w)mkuint4(ptr+4)+TIME_OFFSET; /* TOW */ 
+  ts=bcd_t(ptr+8); /* TS */
+  if(st_late->slt==NULL) ptw=NULL;
+  else ptw=st_late->slt->d+st_late->slt->p;
+
+  for(;;) {
+#if DEBUG1
+    printf("th:tow=%ld ts=%ld shp=%ld\n",tow,ts,shp);
+#endif
+    if(st_late->slt!=NULL && tow>ts+st_late->ns) /* output as a late packet */
+      {
+      /* output late data */
+      ptr=st_late->sin->d+shp;
+      size2=size-4;
+#if DEBUG
+      printf("th:late %ld(%d) to %ld\n",ts,size2,st_late->slt->p);
+#endif
+      memcpy(ptw,ptr,(size_t)size2);
+      ptw[0]=size2>>24;
+      ptw[1]=size2>>16;
+      ptw[2]=size2>>8;
+      ptw[3]=size2;
+      uni=(uint32_w)(time(NULL)-TIME_OFFSET);
+      ptw[4]=uni>>24;
+      ptw[5]=uni>>16;
+      ptw[6]=uni>>8;
+      ptw[7]=uni;
+      ptw+=size2;
+      st_late->slt->r=st_late->slt->p;
+      if(ptw>st_late->slt->d+st_late->slt->pl) ptw=st_late->slt->d;
+      st_late->slt->p=ptw-st_late->slt->d;
+      st_late->slt->c++;
+    }
+    while((tow=advance(st_late->sin,&shp,&c_save,&size,&ts,NULL))<=0) {
+#if DEBUG1
+      if(tow) printf("th:tow=%ld\n",tow);
+#endif
+      if(tow==(-2)) { /* shm corrupted */
+        ptr=st_late->sin->d+shp+8;
+        snprintf(tbuf,sizeof(tbuf),"reset %02X%02X%02X.%02X%02X%02X:%02X%02X",
+           ptr[0],ptr[1],ptr[2],ptr[3],ptr[4],ptr[5],ptr[6],ptr[7]);
+        write_log(tbuf);
+        sleep(1);
+        goto reset;
+      }
+      usleep(10000);
+    } 
+    tow_top=tow;
+  }
 }
 
 int
@@ -142,12 +218,14 @@ main(int argc, char *argv[])
   uint32_w  size, size_in, size2;
   /* int32_w  sec_1; */
   time_t  sec_1;
-  int sec,late,c,pl_out,n_sec,no_data,sysclk,sysclk_org,
+  int sec,late,c,pl_out,n_sec,no_data,sysclk,
     timeout_flag=0,size_next,eobsize_in,eobsize_out,i,eobsize_in_count;
   uint8_w *ptr,*ptr_save,*ptw,*ptw_save,*ptw_late=NULL,*ptr_prev,tm_out[6];
   char tbuf[NAMELEN], *ptrc;
   struct Shm *shm_in,*shm_out,*shm_late=NULL;
   size_t shp_busy_save;
+  pthread_t thid;
+  struct St_late st_late;
   /* extern int optind; */
   /* extern char *optarg; */
 
@@ -158,13 +236,13 @@ main(int argc, char *argv[])
   exit_status = EXIT_SUCCESS;
   if(strcmp(progname,"orderd")==0) daemon_mode=1;
 
-  sysclk_org=late=eobsize_in=eobsize_out=0;
+  sysclk=late=eobsize_in=eobsize_out=0;
   while((c=getopt(argc,argv,"aBDl:"))!=-1)
     {
     switch(c)
       {
       case 'a':   /* reference to absolute time (i.e. the system clock) */
-        sysclk_org=1;
+        sysclk=1;
         break;
       case 'B':   /* write blksiz at EOB in shm_out */
         eobsize_out=1;
@@ -278,167 +356,110 @@ reset:
     shp_busy_save=(-1);
     timeout_flag=0;
   }
-  sysclk=sysclk_org;
+
   if(mkuint4(ptr_save+size_in-4)==size_in) eobsize_in=1;
-  else eobsize_in=sysclk=0;
+  else {
+    eobsize_in=0;
+    if(sysclk) {
+    write_log("wrong input SHM format (no eobsize).");
+    exit(1);
+    }
+  }
+
   eobsize_in_count=eobsize_in;
-  snprintf(tbuf,sizeof(tbuf),
-	   "eobsize_in=%d, eobsize_out=%d, sysclk=%d sysclk_org=%d",
-	   eobsize_in,eobsize_out,sysclk,sysclk_org);
+  snprintf(tbuf,sizeof(tbuf),"eobsize_in=%d, eobsize_out=%d, sysclk=%d, n_sec=%d",
+    eobsize_in,eobsize_out,sysclk,n_sec);
   write_log(tbuf);
 
-  if(sysclk) /* system clock mode */
-    {
-    rt_next=time(NULL)-1;
-    ts=t_out;
-    if(late) ptw_late=shm_late->d+shm_late->p;
-
+  if(sysclk) { /* system clock mode */
+    /* create late thread */
+    st_late.sin=shm_in;
+    if(late) st_late.slt=shm_late;
+    else st_late.slt=NULL;
+    st_late.ns=n_sec;
+    if(pthread_create(&thid,NULL,th_late,(void *)&st_late) != 0) {
+      perror("pthread_create() error");
+      exit(1);
+    } 
+    rt=time(NULL);
     /* begin main loop */
-    for(;;)
-      {
-	tow=sec_1;
-#if DEBUG1
-      printf("tow=%ld ts=%ld shp=%ld\n",sec_1,ts,shp_in);
-#endif
-      /* new TS */
-      if(tow>ts+n_sec) /* output as a late packet */
-        {
-#if DEBUG
-        printf("  late !\n");
-#endif
-        if(late)
-          {
-          /* output late data */
-          ptr=shm_in->d+shp_in;
-          size2=size_in-4;
-          memcpy(ptw_late,ptr,(size_t)size2);
-          ptw_late[0]=size2>>24;
-          ptw_late[1]=size2>>16;
-          ptw_late[2]=size2>>8;
-          ptw_late[3]=size2;
-	  uni=(uint32_w)(time(NULL)-TIME_OFFSET);
-          ptw_late[4]=uni>>24;
-          ptw_late[5]=uni>>16;
-          ptw_late[6]=uni>>8;
-          ptw_late[7]=uni;
-          ptw_late+=size2;
-          shm_late->r=shm_late->p;
-          if(ptw_late>shm_late->d+shm_late->pl) ptw_late=shm_late->d;
-          shm_late->p=ptw_late-shm_late->d;
-          shm_late->c++;
-          }
-        }
-      while((sec_1=advance(shm_in,&shp_in,&c_save_in,&size_in,&ts,&shp_busy_save))<=0)
-        {
-#if DEBUG1
-        printf("sec_1=%ld\n",sec_1);
-#endif
-        if(sec_1==(-2)) /* shm corrupted */
-          {
-          ptr=shm_in->d+shp+8;
-          snprintf(tbuf,sizeof(tbuf),
-		   "reset %02X%02X%02X.%02X%02X%02X:%02X%02X",
-		   ptr[0],ptr[1],ptr[2],ptr[3],ptr[4],ptr[5],ptr[6],ptr[7]);
-          write_log(tbuf);
-          sleep(1);
-          goto reset;
-          }
-        else if(sec_1==0) /* waiting */
-          { /* sweep output data if RT advanced */
-          if((rt=time(NULL))<rt_next) {usleep(10000);continue;}
-          ptr_save=shm_in->d+shp_in;
-          for(t_out=rt_next-n_sec;t_out<=rt-n_sec;t_out++)
-            {
-            ptr=ptr_save;
-            ptw_save=ptw=shm_out->d+shm_out->p;
-            ptw+=4; /* block size */
-            t_bcd(t_out,ptw); /* write TS */
-            ptw+=6; /* TS */
-            i=0;
-#if DEBUG2
-	    if (t_out != rt-n_sec) {
-	      snprintf(tbuf,sizeof(tbuf),
-		       "t_out=%ld  rt - n_sec = %ld",
-		       t_out, rt - n_sec);
-	      write_log(tbuf);
-	    }
-#endif
-            for(;;) /* sweep to output data at ts==rt-n_sec */
-              {
-              size=mkuint4(ptr);
-              tow=(int32_w)mkuint4(ptr+4)+TIME_OFFSET;
-              ts=bcd_t(ptr+8);
-              if(tow<rt-n_sec-1) /* quit loop - TOW too old */
-                {
-#if DEBUG
-                printf("\nend>ptr=%zd size=%u tow=%ld ts=%ld rt=%ld\n",
-		       ptr-shm_in->d,size,tow,ts,rt);
-#endif
-                break;
-                }
-              if(ts==t_out)
-                {
-#if DEBUG
-                printf("out %zd(%u)>%zd ",
-		       ptr-shm_in->d,size-(4+4+6+4),ptw-shm_out->d);
-#endif
-                memcpy(ptw,ptr+(4+4+6),size-(4+4+6+4));
-                ptw+=size-(4+4+6+4);
-                }
-              ptr_prev=ptr;
-              if(ptr-shm_in->d>0) /* go back one packet */
-                {
-                size_next=mkuint4(ptr-4);
-                ptr-=size_next;
-                }
-	      else if(ptr==shm_in->d) /* return to the tail of SHM */
-                {
-                size_next=mkuint4(shm_in->d+shm_in->pl);
-                ptr=shm_in->d+shm_in->pl+4-size_next;
-                }
-              else break;
-              if(ptr<shm_in->d) break;
-              if(size_next!=mkuint4(ptr))
-                {
-                if(i) break;
-                else goto reset;
-                }
-              i++;
-              }  /* for(;;) */
+    for(;;) {
+      while(rt>=time(NULL)) usleep(10000);
+      rt++;
+      while(tow_top<rt) usleep(10000);
+      t_out=rt-1-n_sec; /* focus on sec blocks with last tow */
 
-	    if((uni2=(WIN_bs)(ptw-ptw_save))>10)
-             {
-             if(eobsize_out) uni2+=4;
-             ptw_save[0]=uni2>>24;
-             ptw_save[1]=uni2>>16;
-             ptw_save[2]=uni2>>8;
-             ptw_save[3]=uni2;
-             if(eobsize_out)
-               {
-               ptw[0]=uni2>>24;
-               ptw[1]=uni2>>16;
-               ptw[2]=uni2>>8;
-               ptw[3]=uni2;
-               ptw+=4;
-               }
-             shm_out->r=shm_out->p;
-             if(eobsize_out && ptw>shm_out->d+pl_out)
-               {shm_out->pl=ptw-shm_out->d-4;ptw=shm_out->d;}
-             if(!eobsize_out && ptw>shm_out->d+shm_out->pl) ptw=shm_out->d;
-             shm_out->p=ptw-shm_out->d;
-             shm_out->c++;
-#if DEBUG
-             printf("eob %d B > %zu next=%zu\n",uni2,shm_out->r,shm_out->p);
+      ptr=shm_in->d+shm_in->r; /* latest pointer */
+      ptw_save=ptw=shm_out->d+shm_out->p;
+      ptw+=4; /* block size */
+      t_bcd(t_out,ptw); /* write TS */
+      ptw+=6; /* TS */
+      i=0;
+#if DEBUG2
+      printf("ma:rt=%ld time=%ld tow=%ld t_out=%ld\nma:",
+        rt,time(NULL),tow_top,t_out);
 #endif
-             }
-            }  /* for(t_out=rt_next-n_sec;t_out<=rt-n_sec;t_out++) */
-          rt_next=t_out+n_sec;   /* rt_next=rt+1 */
-          }
-        else if(sec_1==(-1)) usleep(100000);
-        }  /* while((sec_1=advance())<=0) */
-      }  /* for(;;) */
-    }
-  else /* conventional mode */
+      for(;;) { /* sweep to output data at ts==rt-n_sec */
+        size=mkuint4(ptr);
+        tow=(int32_w)mkuint4(ptr+4)+TIME_OFFSET;
+        ts=bcd_t(ptr+8);
+        if(tow<t_out-1) { /* quit loop - TOW too old */
+#if DEBUG
+          printf("\nma:quit>ptr=%zd size=%u tow=%ld t_out=%ld ts=%ld rt=%ld\n",
+            ptr-shm_in->d,size,tow,t_out,ts,rt);
+#endif
+          break;
+        }
+        if(ts==t_out && tow<=ts+n_sec) {
+#if DEBUG
+          printf("out %zd(%u)>%zd ",ptr-shm_in->d,size-(4+4+6+4),ptw-shm_out->d);
+#endif
+          memcpy(ptw,ptr+(4+4+6),size-(4+4+6+4));
+          ptw+=size-(4+4+6+4);
+        }
+        ptr_prev=ptr;
+        if(ptr-shm_in->d>0) { /* go back one packet */
+          size_next=mkuint4(ptr-4);
+          ptr-=size_next;
+        } else if(ptr==shm_in->d) { /* return to the tail of SHM */
+          size_next=mkuint4(shm_in->d+shm_in->pl);
+          ptr=shm_in->d+shm_in->pl+4-size_next;
+        } else /* illegal SHM data */
+          break; /* abort this t_out */
+        if(ptr<shm_in->d) break; /* abort this t_out */
+        if(size_next!=mkuint4(ptr)) {
+          if(i) break; /* abort this t_out */
+          else goto reset;
+        }
+        i++; /* count blocks */
+      }  /* for(;;) sweep */
+
+      if((uni2=(WIN_bs)(ptw-ptw_save))>10) { 
+        if(eobsize_out) uni2+=4;
+        ptw_save[0]=uni2>>24;
+        ptw_save[1]=uni2>>16;
+        ptw_save[2]=uni2>>8;
+        ptw_save[3]=uni2;
+        if(eobsize_out) {
+          ptw[0]=uni2>>24;
+          ptw[1]=uni2>>16;
+          ptw[2]=uni2>>8;
+          ptw[3]=uni2;
+          ptw+=4;
+        }
+        shm_out->r=shm_out->p;
+        if(eobsize_out && ptw>shm_out->d+pl_out)
+          {shm_out->pl=ptw-shm_out->d-4;ptw=shm_out->d;}
+        if(!eobsize_out && ptw>shm_out->d+shm_out->pl) ptw=shm_out->d;
+        shm_out->p=ptw-shm_out->d;
+        shm_out->c++;
+#if DEBUG
+        printf("ma:eob %d B > %zu next=%zu\n",uni2,shm_out->r,shm_out->p);
+#endif
+      } /* output */
+    }  /* main loop */
+  } /* if(sysclk) */
+  else { /* conventional mode */
     for(;;){
       no_data=1;
       while(sec_1+n_sec>time(NULL)) sleep(1);
@@ -539,9 +560,9 @@ reset:
 	  ptr=shm_in->d+shp_in+8;
 	  t_bcd(t_out,tm_out);
 	  snprintf(tbuf,sizeof(tbuf),
-		   "passing %02X%02X%02X.%02X%02X%02X:%02X%02X(out=%02X%02X%02X.%02X%02X%02X)",
-		   ptr[0],ptr[1],ptr[2],ptr[3],ptr[4],ptr[5],ptr[6],ptr[7],
-		   tm_out[0],tm_out[1],tm_out[2],tm_out[3],tm_out[4],tm_out[5]);
+	   "passing %02X%02X%02X.%02X%02X%02X:%02X%02X(out=%02X%02X%02X.%02X%02X%02X)",
+              ptr[0],ptr[1],ptr[2],ptr[3],ptr[4],ptr[5],ptr[6],ptr[7],
+              tm_out[0],tm_out[1],tm_out[2],tm_out[3],tm_out[4],tm_out[5]);
 	  write_log(tbuf);
 	}
 	while((sec_1=advance(shm_in,&shp_in,&c_save_in,&size_in,&t_bottom,NULL))<=0){
@@ -554,12 +575,13 @@ reset:
 	  else if(sec_1==(-2)){
 	    ptr=shm_in->d+shp_in+8;
 	    snprintf(tbuf,sizeof(tbuf),
-		     "reset %02X%02X%02X.%02X%02X%02X:%02X%02X",
-		     ptr[0],ptr[1],ptr[2],ptr[3],ptr[4],ptr[5],ptr[6],ptr[7]);
+              "reset %02X%02X%02X.%02X%02X%02X:%02X%02X",
+              ptr[0],ptr[1],ptr[2],ptr[3],ptr[4],ptr[5],ptr[6],ptr[7]);
 	    write_log(tbuf);
 	    goto reset;
 	  }
-	}
-      }
-    }
+	} /* while((sec_1=advance() */
+      } /* while(t_bottom!=t_out) */
+    }  /* for(;;) */
+  } /* conventional mode */
 }

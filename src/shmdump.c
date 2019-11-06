@@ -1,5 +1,4 @@
-/* $Id: shmdump.c,v 1.28 2011/06/01 11:09:22 uehira Exp $ */
-
+/* $Id: shmdump.c,v 1.29 2019/11/06 05:20:17 urabe Exp $ */
 /*  program "shmdump.c" 6/14/94 urabe */
 /*  revised 5/29/96 */
 /*  Little Endian (uehira) 8/27/96 */
@@ -24,6 +23,7 @@
 /*  2003.11.3 splitted sprintf(tb,...) / use time_t */
 /*  2004.10.14 XINETD compile option */
 /*  2008.4.5 bug fix : unsigned long wsize -> long wsize */
+/*  2019.11.6 -d (DEC ReGIS output mode) urabe */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -33,9 +33,11 @@
 #include <signal.h>
 #include <stdlib.h>
 #include <string.h>
+#include <termios.h>
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
+#include <sys/select.h>
 
 #if TIME_WITH_SYS_TIME
 #include <sys/time.h>
@@ -72,7 +74,7 @@ struct Filter
 };
 
 static const char rcsid[] =
-  "$Id: shmdump.c,v 1.28 2011/06/01 11:09:22 uehira Exp $";
+  "$Id: shmdump.c,v 1.29 2019/11/06 05:20:17 urabe Exp $";
 
 static char *progname,outfile[256];
 static int win;
@@ -213,13 +215,26 @@ get_filter(WIN_sr sr, struct Filter *f)  /* 64 bit ok */
    }
 }
 
+char getch2(void)
+{
+  struct timeval timeout;
+  fd_set fdst;
+  char buf=-1;
+  FD_ZERO(&fdst);
+  FD_SET(0,&fdst);
+  timeout.tv_sec=0;
+  timeout.tv_usec=1000;
+  if(select(1,(fd_set *)&fdst,NULL,NULL,&timeout)>0)
+    if(read(0,&buf,1)<0) perror("read()");
+  return buf;
+}
+
 static void
 usage(void)
 {
-
   WIN_version();
   fprintf(stderr, "%s\n", rcsid);
-  fprintf(stderr, " usage : '%s (-amoqrtwxz) (-s [s]) (-f [chfile]/-) (-R [freq])\n", 
+  fprintf(stderr, " usage : '%s (-admoqrtwxz) (-s [s]) (-f [chfile]/-) (-R [freq])\n", 
 	  progname);
   fprintf(stderr, "   (-L [fp]:[fs]:[ap]:[as] -H [fp]:[fs]:[ap]:[as] -B [fl]:[fh]:[fs]:[ap]:[as])\n");
   fprintf(stderr, "   [shm_key]/- ([ch] ...)'\n");
@@ -231,9 +246,11 @@ main(int argc, char *argv[])
   /* #define SR_MON 5 */
   key_t shm_key_in;  /* 64 bit ok */
   int i,j,k,wtow,c,out,all,mon,
+    regis,x,y,x0,x00,xt0,y0,y00,iscl,xw,ins,yh,yh2,yh10,nch0,
     size,chsel,nch=0,search,seconds,tbufp=0,zero,nsec,aa,bb,end,
     eobsize,eobsize_count,tout,rawdump,quiet,
     hexdump;
+  struct termios old={0};
   /*- 64bit ok
     int shmid_in
     -*/
@@ -246,6 +263,7 @@ main(int argc, char *argv[])
   WIN_sr sr;
   static int32_w abuf[HEADER_5B];  /* 64 bit ok */
   time_t tow,time_end,time_now;    /* 64 bit ok */
+  time_t tt0,tt1,tts;
   long wsize;         /* 64 bit ok */
   uint32_w  wsize4;   /* 64 bit ok */
   unsigned int packet_id;      /* 64 bit ok */
@@ -261,6 +279,8 @@ main(int argc, char *argv[])
   FILE *fplist,*fp;
   char *tmpdir,fname[1024];
   static unsigned int mask[8]={0x80,0x40,0x20,0x10,0x08,0x04,0x02,0x01};
+  static int ns[]={1,2,3,5,10,20,30,60};
+  static int scl[]={1,2,4,8,16,32,64,128,256,512,1024,2048,4096};
 #define setch(a) (chlist[a>>3]|=mask[a&0x07])
 #define testch(a) (chlist[a>>3]&mask[a&0x07])
 
@@ -276,11 +296,11 @@ main(int argc, char *argv[])
 
   if((progname=strrchr(argv[0],'/')) != NULL) progname++;
   else progname=argv[0];
-  search=out=all=seconds=win=zero=mon=tout=rawdump=quiet=hexdump=0;
+  search=out=all=seconds=win=zero=mon=tout=rawdump=quiet=hexdump=regis=0;
   fplist=stdout;
   *fname=0;
 
-  while((c=getopt(argc,argv,"amoqrs:twf:xzL:H:B:R:"))!=-1)
+  while((c=getopt(argc,argv,"admoqrs:twf:xzL:H:B:R:"))!=-1)
     {
     switch(c)
       {
@@ -317,6 +337,27 @@ main(int argc, char *argv[])
         break;
       case 'z':   /* read from the beginning of the SHM buffer */
         zero=1;
+        break;
+      case 'd':   /* DEC ReGIS output */
+        regis=tout=out=quiet=1;
+        iscl=3;
+        ins=4;
+        xw=600;
+        yh=30;
+        xt0=15;
+        x00=xt0+100;
+        y00=400;
+        yh2=yh/2;
+        yh10=10;
+        tt0=tt1=0;
+        fpout=stdout;
+        fplist=stderr;
+        if(tcgetattr(0, &old) < 0) perror("tcsetattr()");
+        old.c_lflag &= ~ICANON;
+        old.c_lflag &= ~ECHO;
+        old.c_cc[VMIN] = 1;
+        old.c_cc[VTIME] = 0;
+        if(tcsetattr(0, TCSANOW, &old) < 0) perror("tcsetattr ICANON");
         break;
       case 't':   /* text out */
         tout=out=1;
@@ -491,6 +532,7 @@ reset:
     ptw=buf+4;
 
   eobsize_count=eobsize;
+  nch0=nch;
   nch=end=0;
 
   for(;;)
@@ -641,14 +683,71 @@ last_out:     if((wsize=ptw-buf)>10)
                 buf[3]=wsize4;      /* size (L) */
                 if(tout) /* convert to text before output */
                   {
-                  fprintf(fpout,"%02X %02X %02X %02X %02X %02X %d\n",
-                    buf[4],buf[5],buf[6],buf[7],buf[8],buf[9],nch);
+                  if(regis)
+                    {
+                    /* check key input */
+                    if(getch2()=='\e') /* if the first char is esc */
+                      {
+                      getch2();        /* skip [ */
+                      switch(getch2()) /* the real value */
+                        {
+                        case 'A': /* UP */
+                          if(--iscl<0) iscl=0;
+                          break;
+                        case 'B': /* DOWN */
+                          if(++iscl==sizeof(scl)/sizeof(*scl))
+                            iscl=sizeof(scl)/sizeof(*scl)-1;
+                          break;
+                        case 'C': /* RIGHT */
+                          if(++ins==sizeof(ns)/sizeof(*ns))
+                            ins=sizeof(ns)/sizeof(*ns)-1;
+                          break;
+                        case 'D': /* LEFT */
+                          if(--ins<0) ins=0;
+                          break;
+                        }
+                      }
+                    /* end of key-in check */
+                    tts=bcd_t(buf+4);
+                    if(tt1==0 || tts<tt0 || tts>=tt1)
+                      {
+                      if(tt1==0) for(i=0;i<22-nch0*2;i++) fprintf(fpout,"\n");
+                      tt0=tts;
+                      tt1=tt0+ns[ins];
+                      for(i=0;i<nch0*2+3;i++) fprintf(fpout,"\n");
+                      fprintf(fpout,"\ePp");
+                      printf("S(M0(D)M1(W))S(I1,A[0,0][999,999])W(I0)");
+                     /* fprintf(fpout,"S(I3,A[0,0][999,999])");
+                      fprintf(fpout,"W(I0)");*/
+                      fprintf(fpout,"P[0,%d]",y00+10);
+                      fprintf(fpout,
+   "T(U[12,15],S[12,15])[10,0]'%02X%02X%02X %02X%02X%02X %d   1/%d   %ds'",
+               buf[4],buf[5],buf[6],buf[7],buf[8],buf[9],nch,scl[iscl],ns[ins]);
+                      fprintf(fpout,"\e\\");
+                      }
+                    }
+                  else
+                    {
+                    fprintf(fpout,"%02X %02X %02X %02X %02X %02X %d\n",
+                      buf[4],buf[5],buf[6],buf[7],buf[8],buf[9],nch);
+                    }
                   ptw=buf+10;
                   while(ptw<buf+wsize)
                     {
                     ptw+=win2fix(ptw,abuf,&ch,&sr);
-                    if ( SR > 0 ) fprintf(fpout,"%04X %d",ch,SR);
-                    else          fprintf(fpout,"%04X %d",ch,sr);
+                    if(regis)
+                      {
+                      fprintf(fpout,"\ePp");
+                      y0=y00+(chindex[ch]+1)*yh;
+                      fprintf(fpout,"P[%d,%d]",xt0,y0);
+                      fprintf(fpout,"T' %04X %d '",ch,sr);
+                      y0+=yh10;
+                      }
+                    else
+                      {
+                      if ( SR > 0 ) fprintf(fpout,"%04X %d",ch,SR);
+                      else          fprintf(fpout,"%04X %d",ch,sr);
+                      }
                     if ( filter_flag ) {   /* filtering start */
 		      /* fprintf(stderr, "Filtering!!!\n"); */
                       chid=chindex[ch];
@@ -670,9 +769,30 @@ last_out:     if((wsize=ptw-buf)>10)
                       for(i=0;i<sr;i++)
                         abuf[i]=(int)(dbuf[i]*flt[chid].gn_filt);
 		    }                     /* filtering end */
-                    if ( SR > 0 ) for(i=0;i<SR;i++) fprintf(fpout," %d",abuf[i*sr/SR]);
-                    else          for(i=0;i<sr;i++) fprintf(fpout," %d",abuf[i]);
-                    fprintf(fpout,"\n");
+                    if(regis)
+                      {
+                      x0=x00+xw*(tts-tt0)/ns[ins];
+                      x=x0;
+                      y=y0-abuf[0]/scl[iscl];
+                      if(y>y0+yh2) y=y0+yh2;
+                      else if(y<y0-yh2) y=y0-yh2;
+                      fprintf(fpout,"P[%d,%d]",x,y);
+                      for(i=1;i<sr;i++)
+                        {
+                        x=x0+(i*xw)/(ns[ins]*sr);
+                        y=y0-abuf[i]/scl[iscl];
+                        if(y>y0+yh2) y=y0+yh2;
+                        else if(y<y0-yh2) y=y0-yh2;
+                        fprintf(fpout,"V[%d,%d]",x,y);
+                        }
+                      fprintf(fpout,"\e\\");
+                      }
+                    else
+                      {
+                      if(SR>0) for(i=0;i<SR;i++) fprintf(fpout," %d",abuf[i*sr/SR]);
+                      else     for(i=0;i<sr;i++) fprintf(fpout," %d",abuf[i]);
+                      fprintf(fpout,"\n");
+                      }
                     fflush(fpout);
                     }
                   }
@@ -688,15 +808,15 @@ last_out:     if((wsize=ptw-buf)>10)
               memcpy(ptw,tms,6); /* TS */
               ptw+=6;
               nch=0;
-              }
+              }  /* if new time */
             memcpy(ptw,ptr,gs);
             ptw+=gs;
             nch++;
-            }
+            }  /* if(out) */
           }
         ptr+=gs;
-        } while(ptr<ptr_lim);
-      }
+        } while(ptr<ptr_lim);    /* do */
+      }  /* if(search || all) */
     else
       {
       for(j=0;j<8;j++) sprintf(tbuf+strlen(tbuf),"%02X",*ptr++);

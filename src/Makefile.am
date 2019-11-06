@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.58 2019/09/07 12:48:47 urabe Exp $
+# $Id: Makefile.am,v 1.59 2019/11/06 05:20:16 urabe Exp $
 #
 
 ##### Version number of shared libraries.
@@ -355,7 +355,7 @@ events_SOURCES = events.c $(WIN_LIBH)
 events_LDADD = $(WIN_NORMAL_LIB) -lm
 
 order_SOURCES = order.c $(WIN_LIBH)
-order_LDADD = $(WIN_LOG_LTLIB) $(WIN_NORMAL_LIB) @LIBSHMGET@
+order_LDADD = $(WIN_LOG_LTLIB) $(WIN_NORMAL_LIB) @LIBSHMGET@ -lpthread
 
 raw_mon_SOURCES = raw_mon.c $(WIN_LIBH)
 raw_mon_LDADD = $(WIN_LOG_LTLIB) $(WIN_NORMAL_LIB) @LIBSHMGET@
@@ -387,7 +387,7 @@ cormeisei_SOURCES = cormeisei.c $(WIN_LIBH)
 cormeisei_LDADD = $(WIN_LOG_LTLIB) $(WIN_NORMAL_LIB) @LIBSHMGET@
 
 shmdump_SOURCES = shmdump.c $(WIN_LIBH)
-shmdump_LDADD = $(WIN_NORMAL_LIB) @LIBSHMGET@ -lm
+shmdump_LDADD = $(WIN_NORMAL_LIB) @LIBSHMGET@ -lm -lncurses
 
 shmcounter_SOURCES = shmcounter.c $(WIN_LIBH)
 shmcounter_LDADD = $(WIN_NORMAL_LIB) @LIBSHMGET@

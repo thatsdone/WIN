@@ -1,4 +1,13 @@
- $Id: ChangeLog,v 1.251 2019/09/12 10:57:15 urabe Exp $
+ $Id: ChangeLog,v 1.252 2019/11/06 05:20:13 urabe Exp $
+
+2019-11-06 Urabe Taku <urabe@telemetra.jp>
+	* Version 3.0.7 released.
+	* src/wdisk.c : added options -a,-m,-h,-d,-c,-t.
+	* prog/insert_raw2 : added options -a,-m,-h,-d,-c,-t / GNU date.
+	* src/order.c : improved logic in -al (sysclk+late).
+	* src/shmdump.c : added -d (experimental ReGIS wave monitor mode)
+	* src/Makefile.am : added -lpthread to order_LDADD
+	* man/wdisk.1 man/insert_raw2.1 man/shmdump.1 : updated
 
 2019-09-12 Urabe Taku <urabe@telemetra.jp>
 	* man/raw_shift.1 : fixed unexpected change introduced in 2019-9-7.

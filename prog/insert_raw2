@@ -3,6 +3,8 @@
 #   wdisk, wadd2 and raw2mon are required.
 # 2002.5.28 Urabe
 # 2002.9.11 Urabe added raw2mon function
+# 2019.11.6  for new wdisk (urabe)
+#
 ## insert_raw.prm
 #/dat/raw        # raw data dir
 #/dat/raw_late   # time-out data dir
@@ -10,16 +12,105 @@
 #3               # wait min. from raw LATEST
 #/dat/mon        # mon data dir
 #
-# read prm file
+
+WDISK=wdisk
+
 cleanup(){
-rm -rf $tmpdir1; exit
+rm -rf $tmpdir1
+exit
 }
+
+# check date command
+if [ "`date -j -v +1M -f %y%m%d%H.%M 19102419.30 +%y%m%d%H.%M 2>/dev/null`" = "19102419.31" ]
+then
+  sys=BSD
+  FLOCK="lockf -k"
+elif [ `date -d "\`echo 19102419.30|sed 's/\(......\)\(..\)*\./\1 \2/'\` 1 minute" "+%y%m%d%H.%M"` = "19102419.31" ]
+then
+  sys=GNU
+  FLOCK="flock"
+else
+  echo wrong date command. 
+  exit
+fi
+
+datej() { # usage: datej WAIT_MIN LATEST
+if [ "$sys" = "BSD" ]
+then
+  date -j -v `printf "%+d" $1`M -f %y%m%d%H.%M $2 +%y%m%d%H.%M
+elif [ "$sys" = "GNU" ]
+then
+  date -d "`echo $2|sed 's/\(......\)\(..\)*\./\1 \2/'` $1 minute" "+%y%m%d%H.%M"
+fi
+}
+
+read_latest() {
+if [ "$op_h" = "h" -o "$op_d" = "d" -o "$op_n" = "n" ]
+then
+  datej -"$waitmin" "`date +%y%m%d%H.%M`"
+else
+  if [ "$op_a" = "a" ]
+  then
+    while [ ! -s $rawdir/.wdisk/LATEST ]
+    do
+      sleep 10
+    done
+    latest=`cat $rawdir/.wdisk/LATEST`
+  else
+    while [ ! -s $rawdir/LATEST ]
+    do
+      sleep 10
+    done
+    latest=`cat $rawdir/LATEST`
+  fi
+  datej -"$waitmin" "$latest"
+fi
+}
+
+# process wdisk options
+while getopts "Dacdhmnst:" op
+do
+  case $op in
+    a)
+      op_a="a"
+      ;;
+    c)
+      op_c="c"
+      ;;
+    d)
+      op_d="d"
+      ;;
+    h)
+      op_h="h"
+      ;;
+    m)
+      op_m="m"
+      ;;
+    m)
+      op_n="n"
+      ;;
+    t)
+      chfile="$OPTARG"
+      op_t="t"
+      ;;
+  esac
+done
+if [ -z "$op_a$op_c$op_d$op_h$op_m$op_t" ]
+then
+  wdiskopts=""
+else
+  wdiskopts="-$op_a$op_c$op_d$op_h$op_m$op_t $chfile"
+fi
+#echo $wdiskopts
+shift $(($OPTIND - 1))
 
 if [ ! -f "$1" ]
 then
-  echo insert_raw2 [paramfile]
+  echo insert_raw2 [-wdisk options...] [paramfile]
   exit
 fi
+
+# read prm file
 rawdir=`grep -v '^#' $1|head -1|awk '{print $1}'`
 latedir=`grep -v '^#' $1|tail +2|head -1|awk '{print $1}'`
 tmpdir=`grep -v '^#' $1|tail +3|head -1|awk '{print $1}'`
@@ -27,39 +118,38 @@ waitmin=`grep -v '^#' $1|tail +4|head -1|awk '{print $1}'`
 mondir=`grep -v '^#' $1|tail +5|head -1|awk '{print $1}'`
 #echo $rawdir $latedir $tmpdir $waitmin $mondir
 #
-if [ ! -d $rawdir ]
+if [ ! -d "$rawdir" ]
 then
-  echo $rawdir : no directory !
+  echo "$rawdir" : no directory !
   exit
 fi
 if [ "$mondir" -a ! -d "$mondir" ]
 then
-  echo $mondir : no directory !
+  echo "$mondir" : no directory !
   exit
 fi
-if [ ! -d $latedir ]
+if [ ! -d "$latedir" ]
 then
-  echo $latedir : no directory !
+  echo "$latedir" : no directory !
   exit
 fi
-if [ ! -d $tmpdir ]
+if [ ! -d "$tmpdir" ]
 then
-  echo $tmpdir : no directory !
+  echo "$tmpdir" : no directory !
   exit
 fi
-if [ -s $latedir/USED ]
+if [ -s "$latedir"/USED ]
 then
-  latest1=`cat $latedir/USED`
-  latest1=`date -j -v +1M -f %y%m%d%H.%M "$latest1" +%y%m%d%H.%M`
+  latest1=`cat "$latedir"/USED`
+  latest1=$(datej +1 "$latest1")
 else
-  latest=`cat $rawdir/LATEST`
-  latest1=`date -j -v -"$waitmin"M -f %y%m%d%H.%M "$latest" +%y%m%d%H.%M`
+  latest1=$(read_latest)
 fi
 #echo $latest $latest1
 #
 trap cleanup 2 15
-tmpdir1=$tmpdir/insert_raw2.$$
-mkdir $tmpdir1
+tmpdir1="$tmpdir"/insert_raw2.$$
+mkdir "$tmpdir1"
 #
 # start
 #
@@ -67,33 +157,59 @@ while true
 do
   if [ -s "$latedir/$latest1" ]
   then
-#    echo $latedir/$latest1
-    cat $latedir/$latest1 | wdisk - $tmpdir1 0 > /dev/null 2>&1
-    (cd $tmpdir1;ls -1 [0-9]*)|
-    while read file
-    do
-      if [ ! -f "$rawdir/$file" ]
-      then
-        touch $rawdir/$file
-      fi
-#      echo wadd2 $rawdir/$file $tmpdir1/$file
-      wadd2 $rawdir/$file $tmpdir1/$file
-       if [ "$mondir" ]
-       then
-         raw2mon < $rawdir/$file >$mondir/$file
-       fi
-    done
-    rm -f $tmpdir1/*
+#   echo $latedir/$latest1
+    cat "$latedir/$latest1" | $WDISK $wdiskopts - $tmpdir1 0 > /dev/null 2>&1
+
+    if [ "$op_a" = "a" ]
+    then
+      (cd "$tmpdir1";ls */*)|
+      while read file
+      do
+        if [ ! -f "$rawdir/$file" ]
+        then
+          subdir=`dirname $rawdir/$file`
+          if [ ! -d "$subdir" ]
+          then
+            mkdir "$subdir"
+          fi
+          touch "$rawdir/$file"
+        fi
+#       echo wadd2 "$rawdir/$file" "$tmpdir1/$file"
+        $FLOCK "$rawdir/$file" wadd2 "$rawdir/$file" "$tmpdir1/$file"
+        if [ "$op_d" = "d" ]
+        then
+          touch $rawdir/.wdisk/`basename $file|cut -c1-6`
+        elif [ "$op_h" = "h" ]
+        then
+          touch $rawdir/.wdisk/`basename $file|cut -c1-8`
+        else
+          touch $rawdir/.wdisk/`basename $file|cut -c1-11`
+        fi
+      done
+    else
+      (cd "$tmpdir1";ls -1 [0-9]*)|
+      while read file
+      do
+        if [ ! -f "$rawdir/$file" ]
+        then
+          touch "$rawdir/$file"
+        fi
+#       echo wadd2 "$rawdir/$file" "$tmpdir1/$file"
+        $FLOCK "$rawdir/$file" wadd2 "$rawdir/$file" "$tmpdir1/$file"
+        if [ "$mondir" ]
+        then
+          raw2mon < "$rawdir/$file" > "$mondir/$file"
+        fi
+      done
+    fi
+    rm -rf "$tmpdir1"/* "$tmpdir1"/.wdisk
   fi
-  echo $latest1 > $latedir/USED
-  latest1=`date -j -v +1M -f %y%m%d%H.%M "$latest1" +%y%m%d%H.%M`
-  latest=`cat $rawdir/LATEST`
-  latest2=`date -j -v -"$waitmin"M -f %y%m%d%H.%M "$latest" +%y%m%d%H.%M`
-  while [ "$latest1" \> "$latest2" ]
+
+  echo "$latest1" > "$latedir"/USED
+  latest1=$(datej +1 "$latest1")
+  while [ "$latest1" \> "$(read_latest)" ]
   do
-#    echo sleep
+#   echo sleep
     sleep 20
-    latest=`cat $rawdir/LATEST`
-    latest2=`date -j -v -"$waitmin"M -f %y%m%d%H.%M "$latest" +%y%m%d%H.%M`
   done
 done

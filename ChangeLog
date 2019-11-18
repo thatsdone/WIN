@@ -1,4 +1,7 @@
- $Id: ChangeLog,v 1.252 2019/11/06 05:20:13 urabe Exp $
+ $Id: ChangeLog,v 1.253 2019/11/18 02:52:21 urabe Exp $
+
+2019-11-18 Urabe Taku <urabe@telemetra.jp>
+	* src/Makefile.am : deleted unnecessary -lncurses in shmdump_LDADD
 
 2019-11-06 Urabe Taku <urabe@telemetra.jp>
 	* Version 3.0.7 released.

@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.am,v 1.59 2019/11/06 05:20:16 urabe Exp $
+# $Id: Makefile.am,v 1.60 2019/11/18 02:52:22 urabe Exp $
 #
 
 ##### Version number of shared libraries.
@@ -387,7 +387,7 @@ cormeisei_SOURCES = cormeisei.c $(WIN_LIBH)
 cormeisei_LDADD = $(WIN_LOG_LTLIB) $(WIN_NORMAL_LIB) @LIBSHMGET@
 
 shmdump_SOURCES = shmdump.c $(WIN_LIBH)
-shmdump_LDADD = $(WIN_NORMAL_LIB) @LIBSHMGET@ -lm -lncurses
+shmdump_LDADD = $(WIN_NORMAL_LIB) @LIBSHMGET@ -lm
 
 shmcounter_SOURCES = shmcounter.c $(WIN_LIBH)
 shmcounter_LDADD = $(WIN_NORMAL_LIB) @LIBSHMGET@

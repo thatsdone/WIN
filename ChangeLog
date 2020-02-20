@@ -1,4 +1,9 @@
- $Id: ChangeLog,v 1.253 2019/11/18 02:52:21 urabe Exp $
+ $Id: ChangeLog,v 1.254 2020/02/20 13:56:10 urabe Exp $
+
+2020-02-20 Urabe Taku <urabe@telemetra.jp>
+	* Version 3.0.8 released.
+	* src/recvt.c : added option -l. Default of min psize to accept is 16.
+	* man/recvt.1 : updated.
 
 2019-11-18 Urabe Taku <urabe@telemetra.jp>
 	* src/Makefile.am : deleted unnecessary -lncurses in shmdump_LDADD

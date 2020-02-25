@@ -1,4 +1,7 @@
- $Id: ChangeLog,v 1.254 2020/02/20 13:56:10 urabe Exp $
+ $Id: ChangeLog,v 1.255 2020/02/25 05:23:03 urabe Exp $
+
+2020-02-25 Urabe Taku <urabe@telemetra.jp>
+	* man/recvt.1 : small correction.
 
 2020-02-20 Urabe Taku <urabe@telemetra.jp>
 	* Version 3.0.8 released.

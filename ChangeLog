@@ -1,4 +1,7 @@
- $Id: ChangeLog,v 1.255 2020/02/25 05:23:03 urabe Exp $
+ $Id: ChangeLog,v 1.256 2020/05/27 09:09:25 uehira Exp $
+
+2020-05-27 Uehira Kenji <uehira@bosai.go.jp>
+	* man/raw_shift.1 : refixed unexpected change introduced in 2019-9-7.
 
 2020-02-25 Urabe Taku <urabe@telemetra.jp>
 	* man/recvt.1 : small correction.

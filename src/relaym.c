@@ -1,4 +1,4 @@
-/* $Id: relaym.c,v 1.12.2.4 2014/09/25 14:29:05 uehira Exp $ */
+/* $Id: relaym.c,v 1.12.2.5 2020/05/27 10:11:37 uehira Exp $ */
 
 /*
  * 2004-11-26 MF relay.c:
@@ -13,6 +13,7 @@
  *
  * 2010-10-04 64bit check.
  * 2014-04-07 NIC for receive can be specified by -i (IPv4 & IPv6)
+ * 2019-03-15 deduplication mode (-P, -p [n_pkts], -t [window_sec]) /urabe
  */
 
 #ifdef HAVE_CONFIG_H
@@ -59,12 +60,14 @@
 #define MAXSQ     256    /* squence number (0 - 255) [unsigned char : 0xff] */
 #define N_HOST    100    /* max. number of host */
 #define N_DHOST   128    /* max. number of destination host */
+#define N_DDP     10     /* default n of packets back in dedup (<=BUFNO) */
+#define S_DDP     3      /* default time window (s) in dedup */
 
 #define MAXNAMELEN   1025
 #define MAXMSG       1025
 
 static const char rcsid[] =
-  "$Id: relaym.c,v 1.12.2.4 2014/09/25 14:29:05 uehira Exp $";
+  "$Id: relaym.c,v 1.12.2.5 2020/05/27 10:11:37 uehira Exp $";
 
 /* destination host info. */
 struct hostinfo {
@@ -86,6 +89,8 @@ int  exit_status, syslog_mode;
 static int            daemon_mode;
 static ssize_t        psize[BUFNO];
 static uint8_w        sbuf[BUFNO][MAXMESG];
+static time_t         rtime[BUFNO];
+static uint16_w       crc[BUFNO];
 static uint8_w        sq[N_DHOST];
 static int            sqindx[N_DHOST][MAXSQ];
 static char           *chfile;
@@ -140,6 +145,7 @@ main(int argc, char *argv[])
   int   i, j;
   char mcastgroup[256]; /* multicast address */
   char interface[256];  /* interface for receive */
+  int ddp,t_ddp,n_ddp,skip;
 
   if ((progname = strrchr(argv[0], '/')) != NULL)
     progname++;
@@ -157,8 +163,11 @@ main(int argc, char *argv[])
   sockbuf = DEFAULT_RCVBUF;  /* default socket buffer size in KB */
   for (i = 0; i < N_HOST; i++)
     ht[i].host[0] = '\0';
+  ddp=0;
+  n_ddp=N_DDP;
+  t_ddp=S_DDP;
 
-  while ((c = getopt(argc, argv, "b:Dd:f:g:i:Nnr")) != -1)
+  while ((c = getopt(argc, argv, "b:Dd:f:g:i:NnPp:rt:")) != -1)
     switch (c) {
     case 'b':           /* preferred socket buffer size (KB) */
       sockbuf=atoi(optarg);
@@ -192,8 +201,19 @@ main(int argc, char *argv[])
     case 'n':           /* supress info on abnormal packets */
       no_pinfo=1;
       break;
+    case 'P':           /* dedup mode on */
+      ddp=1;
+      break;
+    case 'p':           /* n of packets back in dedup mode */
+      n_ddp=atoi(optarg);
+      ddp=1;
+      break;
     case 'r':           /* disable resend request */
       noreq=1;
+      break;
+    case 't':           /* time window (s) in dedup mode */
+      t_ddp=atoi(optarg);
+      ddp=1;
       break;
     default:
       usage();
@@ -280,6 +300,12 @@ main(int argc, char *argv[])
     write_log("packet numbers pass through");
   if (noreq)
     write_log("resend request disabled");
+  if (ddp) {
+    if(n_ddp>BUFNO) n_ddp=BUFNO;  
+    (void)snprintf(msg, sizeof(msg), "dedup on, n_pkts_back=%d, sec_window=%d",
+      n_ddp,t_ddp);
+    write_log(msg);
+  }
 
   /* set signal handler */
   signal(SIGTERM, (void *)end_program);
@@ -338,7 +364,26 @@ main(int argc, char *argv[])
 		    (unsigned int)sbuf[bufno][1],
 		    ct->soc, fromlen, psize[bufno], noreq, nopno) < 0)
 	continue;
-      
+
+      if(ddp) {
+        skip=0;
+        crc[bufno]=crc16(0,sbuf[bufno]+2,psize[bufno]);
+        rtime[bufno]=tv2.tv_sec;
+        if((i=bufno-1)<0) i=BUFNO-1;
+        for(j=0;j<n_ddp;j++) {
+          if(psize[i]<=2 || rtime[bufno]-rtime[i]>t_ddp) {
+            break; /* buffer invalid or too old */
+          }
+          if(crc[i]==crc[bufno] && psize[i]==psize[bufno] &&
+              memcmp(sbuf[bufno]+2,sbuf[i]+2,psize[i])==0) {
+            skip=1;
+            break; /* same CRC & size & content */
+          } 
+          if(--i<0) i=BUFNO-1;
+        }
+        if(skip) continue;
+      }
+
       /* delay */
       if (delay > 0 && idletime > 0.5)
 	(void)usleep(delay * 1000);
@@ -432,11 +477,11 @@ usage(void)
   (void)fprintf(stderr, "Usage of %s :\n", progname);
   if (daemon_mode)
     (void)fprintf(stderr,
-		  "  %s (-Nnr) (-b [sbuf(KB)]) (-f [host_file]) (-g [mcast_group]) (-i [interface]) [in_port] [param] (logfile)\n",
+		  "  %s (-NnPr) (-b [sbuf(KB)]) (-f [host_file]) (-g [mcast_group]) (-i [interface]) (-p [pkts_ddp]) (-t [sec_ddp]) [in_port] [param] (logfile)\n",
 		  progname);
   else
     (void)fprintf(stderr,
-		  "  %s (-DNnr) (-b [sbuf(KB)]) (-f [host_file]) (-g [mcast_group]) (-i [interface]) [in_port] [param] (logfile)\n",
+		  "  %s (-DNnPr) (-b [sbuf(KB)]) (-f [host_file]) (-g [mcast_group]) (-i [interface]) (-p [pkts_ddp]) (-t [sec_ddp]) [in_port] [param] (logfile)\n",
 		  progname);
   exit(1);
 }

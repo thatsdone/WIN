@@ -1,19 +1,21 @@
-.TH relaym 1W "2014.4.6" "WIN SYSTEM" "WIN SYSTEM"
+.TH relaym 1W "2019.3.18" "WIN SYSTEM" "WIN SYSTEM"
 .SH 名称
 relaym, relaymd - win 形式データのIP上の複数の宛先への中継
 .SH 形式
-.\" relaym [\-\fBDnr\fR] [\-\fBb\fI bufsiz\fR] [\-\fBd\fI\ delay\fR] [\-\fBf\fI ctlfile\fR]
-relaym [\-\fBDNnr\fR] [\-\fBb\fI bufsiz\fR] [\-\fBf\fI ctlfile\fR]
+.\" relaym [\-\fBDnPr\fR] [\-\fBb\fI bufsiz\fR] [\-\fBd\fI\ delay\fR] [\-\fBf\fI ctlfile\fR]
+relaym [\-\fBDNnPr\fR] [\-\fBb\fI bufsiz\fR] [\-\fBf\fI ctlfile\fR]
 [\-\fBg\fI\ group\fR] [\-\fBi\fI\ interface\fR]
+[\-\fBp\fI pkts_ddp\fR] [\-\fBt\fI sec_ddp\fR] 
 .I inport
 .I paramfile
 [
 .I logfile
 ]
 .LP
-.\" relaymd [\-\fBnr\fR] [\-\fBb\fI bufsiz\fR] [\-\fBd\fI\ delay\fR] [\-\fBf\fI ctlfile\fR]
-relaymd [\-\fBNnr\fR] [\-\fBb\fI bufsiz\fR] [\-\fBf\fI ctlfile\fR]
+.\" relaymd [\-\fBnPr\fR] [\-\fBb\fI bufsiz\fR] [\-\fBd\fI\ delay\fR] [\-\fBf\fI ctlfile\fR]
+relaymd [\-\fBNnPr\fR] [\-\fBb\fI bufsiz\fR] [\-\fBf\fI ctlfile\fR]
 [\-\fBg\fI\ group\fR] [\-\fBi\fI\ interface\fR]
+[\-\fBp\fI pkts_ddp\fR] [\-\fBt\fI sec_ddp\fR] 
 .I inport
 .I paramfile
 [
@@ -24,7 +26,7 @@ relaym は、自ホストの UDP ポート番号
 .I \ inport
 に送られてくる win 形式のデータを受信し、パラメータファイル
 .I \ paramfile
-に記述されたホストへ送信します。
+に記述されたホストへ転送します。
 relaym は受信したパケットのパケット番
 号を検査しますがタイムスタンプは検査しません。
 .LP
@@ -68,6 +70,7 @@ relaym はパケット番号の連続性を監視して
 の組）を認識することが
 できます。100ヶ所を超えると、recvt は送信元テーブルを一旦白紙に戻し、
 改めて登録を始めます。
+relaymが転送先からの再送要求に応えることができるのは過去128パケットまでです。
 .SH オプション
 .IP "\fB\-b \fIbufsiz" 5
 受信ソケットバッファサイズを
@@ -120,12 +123,32 @@ IPマルチキャストアドレス
 .IP "\fB\-n" 5
 拒否すべき送り元アドレスからのパケットや重複して受信した再送パケット
 についての情報をログに報告しません。
+.IP "\fB\-P" 5
+入力パケットが、過去\fI sec_ddp \fR秒以内または\fI pkts_ddp \fRパケット以内に
+転送したパケットと、パケット番号部分を除いて同じ内容である場合、
+転送せず廃棄します（dedup機能）。\fI sec_ddp \fRと\fI pkts_ddp \fRの値は
+それぞれオプション \fB\-t\fR と \fB\-p\fR
+で指定することができ、指定しない場合のデフォルト値は
+それぞれ3秒と10パケットです。このdedup機能は共有メモリ上のデータを
+扱うプログラム raw_ddp(1W) でのそれとほぼ同等のものです。
+.IP "\fB\-p \fIpkts_ddp" 5
+dedup機能において、
+.I pkts_ddp
+をこの値に指定します。設定可能な上限値は128です。
+このオプションを指定した場合はオプション \fB\-P\fR を指定しなくても
+dedup機能が有効になります。
 .IP "\fB\-r" 5
 再送要求パケットを送信しません。
 DVB衛星配信ボードによる受信のような一方通行の伝送路の場合には、
 これにより不要なパケット送信を抑制することができます。
+.IP "\fB\-t \fIsec_ddp" 5
+dedup機能において、
+.I sec_ddp
+をこの値に指定します。設定可能な上限値はありません。
+このオプションを指定した場合はオプション \fB\-P\fR を指定しなくても
+dedup機能が有効になります。
 .SH ソース 
 .TP
 `relaym.c'
 .SH 関連事項
-winformat(1W), recvt(1W), send_raw(1W), order(1W), relay(1W)
+winformat(1W), recvt(1W), send_raw(1W), order(1W), relay(1W), raw_ddp(1W)

@@ -1,4 +1,4 @@
-/* $Id: recvt.c,v 1.33.2.3 2014/09/25 14:29:03 uehira Exp $ */
+/* $Id: recvt.c,v 1.33.2.4 2020/05/27 10:11:36 uehira Exp $ */
 /*-
  "recvt.c"      4/10/93 - 6/2/93,7/2/93,1/25/94    urabe
                 2/3/93,5/25/94,6/16/94 
@@ -61,7 +61,8 @@
                 2013.9.17 NIC for receive can be specified by -i IP_address (IPv4)
                 2014.2.13 bug in -i for multicast fixed (IPv4)
                 2014.6.27 bug in main() : 'static' struct ch_hist  chhist; fixed.
--*/
+                2020.2.20 min packet size to accept (opt.-l with default 16 b) 
+ -*/
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -118,7 +119,7 @@
 #define N_PNOS    62    /* length of packet nos. history >=2 */
 
 static const char rcsid[] =
-  "$Id: recvt.c,v 1.33.2.3 2014/09/25 14:29:03 uehira Exp $";
+  "$Id: recvt.c,v 1.33.2.4 2020/05/27 10:11:36 uehira Exp $";
 
 static uint8_w rbuf[MAXMESG],ch_table[WIN_CHMAX];
 static char *chfile[N_CHFILE];
@@ -686,16 +687,16 @@ usage(void)
   if (daemon_mode)
     fprintf(stderr,
 	    " usage : '%s (-AaBenMNr) (-d [len(s)]) (-m [pre(m)]) (-p [post(m)]) \\\n\
-              (-i [interface]) (-g [mcast_group]) (-s sbuf(KB)) \\\n\
-              (-o [src_host]:[src_port]) (-f [ch file]) \\\n\
-              [port] [shm_key] [shm_size(KB)] ([ctl file]/- ([log file]))'\n",
+       (-i [interface]) (-g [mcast_group]) (-s [sbuf(KB)]) (-l [min psize(b)])\\\n\
+       (-o [src_host]:[src_port]) (-f [ch file])\\\n\
+       [port] [shm_key] [shm_size(KB)] ([ctl file]/- ([log file]))'\n",
 	    progname);
   else
     fprintf(stderr,
 	    " usage : '%s (-AaBDenMNr) (-d [len(s)]) (-m [pre(m)]) (-p [post(m)]) \\\n\
-              (-i [interface]) (-g [mcast_group]) (-s sbuf(KB)) \\\n\
-              (-o [src_host]:[src_port]) (-f [ch file]) (-y [req_delay])\\\n\
-              [port] [shm_key] [shm_size(KB)] ([ctl file]/- ([log file]))'\n",
+       (-i [interface]) (-g [mcast_group]) (-s [sbuf(KB)]) (-l [min psize(b)])\\\n\
+       (-o [src_host]:[src_port]) (-f [ch file]) (-y [req_delay])\\\n\
+       [port] [shm_key] [shm_size(KB)] ([ctl file]/- ([log file]))'\n",
 	    progname);
 }
 
@@ -709,7 +710,8 @@ main(int argc, char *argv[])
   uint8_w *ptr,tm[6],*ptr_size,*ptr_size2;  /*- 64bit ok -*/
   char host_name[1024];  /*- 64bit ok -*/
   int i,j,k,sock,all,c,mon,eobsize,      /*- 64bit ok -*/
-    sbuf,noreq,no_ts,no_pno,req_delay;   /*- 64bit ok -*/
+    sbuf,noreq,no_ts,no_pno,req_delay,   /*- 64bit ok -*/
+    min_psize;
   socklen_t fromlen;  /*- 64bit ok -*/
   size_t size,pl,nn;     /*- 64bit ok -*/
   ssize_t n,nlen;  /*- 64bit ok -*/
@@ -742,7 +744,8 @@ main(int argc, char *argv[])
   chhist.n=N_HIST;
   n_chfile=1;
   req_delay=0;
-  while((c=getopt(argc,argv,"AaBDd:ef:g:i:m:MNno:p:rs:y:"))!=-1)
+  min_psize=16; /* default minimum packet size */
+  while((c=getopt(argc,argv,"AaBDd:ef:g:i:l:m:MNno:p:rs:y:"))!=-1)
     {
     switch(c)
       {
@@ -786,6 +789,10 @@ main(int argc, char *argv[])
 	  fprintf(stderr,"'%s': -i option : Buffer overrun!\n",progname);
 	  exit(1);
 	}
+        break;
+      case 'l':   /* minimum packet size to accept */
+        min_psize=atol(optarg);
+        if(min_psize<0) min_psize=0;
         break;
       case 'm':   /* time limit before RT in minutes */
         pre=atol(optarg);
@@ -994,6 +1001,8 @@ main(int argc, char *argv[])
       inet_ntoa(host_addr.sin_addr),ntohs(host_addr.sin_port));
     write_log(tb);
     }
+  snprintf(tb,sizeof(tb),"minimum packet size: %d bytes",min_psize);
+  write_log(tb);
 
   signal(SIGTERM,(void *)end_program);
   signal(SIGINT,(void *)end_program);
@@ -1024,6 +1033,17 @@ main(int argc, char *argv[])
 
     fromlen=sizeof(from_addr);
     n=recvfrom(sock,rbuf,MAXMESG,0,(struct sockaddr *)&from_addr,&fromlen);
+    if(n<min_psize)
+      {
+      if(!no_pinfo)
+        {
+        snprintf(tb,sizeof(tb),"too small packet(%d) from %s:%d",
+          n,inet_ntoa(from_addr.sin_addr),ntohs(from_addr.sin_port));
+        write_log(tb);
+        }
+      continue;
+      }
+
 #if DEBUG0
     if(rbuf[0]==rbuf[1]) printf("%d ",rbuf[0]);
     else printf("%d(%d) ",rbuf[0],rbuf[1]);

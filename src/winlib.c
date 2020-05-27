@@ -1,4 +1,4 @@
-/* $Id: winlib.c,v 1.3.2.7 2016/04/01 04:05:22 uehira Exp $ */
+/* $Id: winlib.c,v 1.3.2.8 2020/05/27 10:11:37 uehira Exp $ */
 
 /*-
  * winlib.c  (Uehira Kenji)
@@ -1963,3 +1963,21 @@ check_4byte_diff(int32_w a, int32_w b)
       return (0);
   }
 }
+
+/* calculate CRC16 */
+uint16_w
+crc16(uint16_w crc,uint8_w *ptr,int len)
+{
+#define CRC16POLY 0xa001
+  int i,j;
+  crc=~crc;
+  for(i=0;i<len;i++) {
+    crc^=ptr[i];
+    for(j=0;j<8;j++) {
+      if(crc&1) crc=(crc>>1)^CRC16POLY;
+      else crc>>=1;
+    }
+  }
+  return ~crc;
+}
+

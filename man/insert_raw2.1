@@ -1,38 +1,78 @@
 '\" t
-.TH insert_raw2 1W "2002.5.31" "WIN SYSTEM" "WIN SYSTEM"
-.SH 名称
-insert_raw2 - タイムアウトしたデータを１分ファイルに挿入
+.TH insert_raw2 1W "2019.10.30" "WIN SYSTEM" "WIN SYSTEM"
+.SH 呼称
+insert_raw2 - タイムアウトしたデータを分/時/日ファイルに挿入
 .SH 形式
-insert_raw2
+.I insert_raw2
+[-\fIacdhm\fP] [-\fIt chfile\fP]
 .I prmfile
-.LP
 .SH 解説
-insert_raw2 は insert_raw(1W) の高速(低負荷)版で、シェルスクリプトです。
-insert_raw2 は、wdiskts(1W) によって生成された、
+\fIinsert_raw2\fP はもともと insert_raw(1W) の高速(低負荷)版
+として作られたシェルスクリプトです。
+\fIinsert_raw2\fP は、wdiskts(1W) によって生成された、
 order(1W) にタイムアウトしたデータファイルを読み、
-wdisk(1W) が書いた１分ファイル(連続ファイル)の適切な位置に挿入します。
+wdisk(1W) が書いた分/日/時ファイル(連続ファイル)の適切な位置に挿入します。
+.br
+\fIinsert_raw2\fP は wdisk(1W) のさまざまな出力ファイル形式
+（チャネル毎のディレクトリ、分ファイル、時ファイル、日ファイル、
+観測点名.成分名のディレクトリや拡張子）に対応しています。
+そのために、\fIinsert_raw2\fP には wdisk(1W) と同じオプションを
+付ける必要があります。\fIinsert_raw2\fP が必要とするオプションは
+上記のコマンド形式の通りですが、それ以外に \fIinsert_raw2\fP が
+必要としない wdisk(1W) のオプションを付けても無視するだけで
+害はありません。したがって、同時に実行されている wdisk(1W) の
+オプションをそのまま付けても問題ありません。
 .I prmfile
 は
+.LP
 .nf
-━━━━━ここから━━━━━
-# This file is insert_raw's parameter file
-/dat/raw                # raw data dir
-/dat/raw_timeouts       # time-out data dir
-/dat/tmp                # temporary dir
-3                       # wait min. from raw LATEST
-━━━━━ここまで━━━━━             ^^^
+\fIrawdir\fP                  # raw data dir
+\fIraw_late_dir\fP            # time-out data dir
+\fItmpdir\fP                  # temporary dir
+\fIminutes\fP                 # wait min. from raw LATEST
 .fi
-のようになっています。# で始まる行はコメントです。4つ目の数字は raw の
-LATEST より 3分前のファイルまでは即座にタイムアウトデータを挿入すると
-いう値です。
 .LP
-insert_raw2 は内部で wdisk(1W) と wadd2(1W) を利用しています。
-insert_raw2 は内部で 'date -j'コマンドを使用していますが、これは
-FreeBSD4.X以降でしか利用できないようです。
+のようになっています。# で始まる行はコメントです。また各行の１項目め
+だけが読まれます。１行目の \fIrawdir\fPは wdisk(1W) の出力ディレクトリ、
+２行目の \fIraw_late_dir\fP は wdiskts(1W) の出力ディレクトリ、
+３行目の \fItmpdir\fP は作業用のディレクトリです。
+４行目の \fIminutes\fP は \fIraw_late_dir\fP で、
+\fIrawdir\fP の LATEST より 何分前に生成された
+タイムアウト・データファイルまでをRAWファイルに挿入するかを示す値です。
+LATESTファイルがない場合は、代わりに実時刻の値が使われます。
+さらに５行目
 .LP
-insert_raw2 は引数なしで起動すると簡単な使用法を表示します。
+.nf
+\fImondir\fP                  # mon data dir
+.fi
+.LP
+がある場合はディレクトリ \fImondir\fP のMONファイルにもデータの挿入を
+行ないますが、これは
+RAW/MONファイルの形式が１分ファイルで、かつチャネル毎のディレクトリに
+分かれていない場合のみに機能します。MONデータについては raw_mon(1W)を
+参照してください。
+.LP
+\fIinsert_raw2\fP は \fIraw_late_dir\fP の中のどのファイルまでを
+処理したかを示す USED ファイルを \fIraw_late_dir\fP に作ります。
+前回の USED ファイルが残っている場合、起動後の \fIinsert_raw2\fP は
+その次のファイルから処理を始めます。
+.LP
+\fIinsert_raw2\fP は内部で wdisk(1W) と wadd2(1W) を利用しています。
+.I prmfile
+に５行目がある場合は、raw2mon(1W) も利用します。
+.LP
+\fIinsert_raw2\fP は引数なしで起動すると簡単な使用法を表示します。
+.LP
+\fIinsert_raw2\fP は、出力ファイルの操作中（wadd2(1W)の実行中）
+には出力ファイルに排他的ロック
+（アドバイザリーロック）をかけます。これは wdisk(1W)
+との間で同時書き込みによる矛盾が生じないようにするためです。
+特に時/日ファイルの場合には、\fIinsert_raw2\fP と wdisk(1W)の
+書き込み時期が重なることは不可避なのでこのようにしてあります。
+.SH オプション
+wdisk(1W)を参照してください。
 .SH ソース 
 .TP
 `insert_raw2'
 .SH 関連事項
-insert_raw(1W), wdisk(1W), wadd2(1W)
+insert_raw(1W), wdisk(1W), wdiskts(1W), wadd2(1W), raw2mon(1W), raw_mon(1W)

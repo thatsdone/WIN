@@ -1,10 +1,10 @@
 #
-# $Id: Makefile.am,v 1.45.2.12 2018/09/21 06:41:08 uehira Exp $
+# $Id: Makefile.am,v 1.45.2.13 2020/05/27 10:11:34 uehira Exp $
 #
 
 ##### Version number of shared libraries.
 # if you modify 'winlib.c', you must also modify LIB_WINSYSTEM_VERSION.
-LIB_WINSYSTEM_VERSION = -version-info 4:1:2
+LIB_WINSYSTEM_VERSION = -version-info 4:1:3
 
 # if you modify  'winlib_log.c', you must also modify LIB_WINLOG_VERSION.
 LIB_WINLOG_VERSION = -version-info 2:0:1
@@ -167,6 +167,7 @@ install-exec-hook:
 	(rm -f $(DESTDIR)@bindir@/raw_mond; cd $(DESTDIR)@bindir@ && @LN_S@ raw_mon raw_mond)
 	(rm -f $(DESTDIR)@bindir@/raw_timed; cd $(DESTDIR)@bindir@ && @LN_S@ raw_time raw_timed)
 	(rm -f $(DESTDIR)@bindir@/raw_rawd; cd $(DESTDIR)@bindir@ && @LN_S@ raw_raw raw_rawd)
+	(rm -f $(DESTDIR)@bindir@/raw_ddpd; cd $(DESTDIR)@bindir@ && @LN_S@ raw_ddp raw_ddpd)
 	(rm -f $(DESTDIR)@bindir@/wdisktsd; cd $(DESTDIR)@bindir@ && @LN_S@ wdiskts wdisktsd)
 	(rm -f $(DESTDIR)@bindir@/recvstatus2d; cd $(DESTDIR)@bindir@ && @LN_S@ recvstatus2 recvstatus2d)
 	(rm -f $(DESTDIR)@bindir@/recvstatus3d; cd $(DESTDIR)@bindir@ && @LN_S@ recvstatus3 recvstatus3d)
@@ -210,6 +211,7 @@ uninstall-local:
 	rm -f $(DESTDIR)@bindir@/raw_mond
 	rm -f $(DESTDIR)@bindir@/raw_timed
 	rm -f $(DESTDIR)@bindir@/raw_rawd
+	rm -f $(DESTDIR)@bindir@/raw_ddpd
 	rm -f $(DESTDIR)@bindir@/wdisktsd
 	rm -f $(DESTDIR)@bindir@/recvstatus2d
 	rm -f $(DESTDIR)@bindir@/recvstatus3d
@@ -360,7 +362,7 @@ events_SOURCES = events.c $(WIN_LIBH)
 events_LDADD = $(WIN_NORMAL_LIB) -lm
 
 order_SOURCES = order.c $(WIN_LIBH)
-order_LDADD = $(WIN_LOG_LTLIB) $(WIN_NORMAL_LIB) @LIBSHMGET@
+order_LDADD = $(WIN_LOG_LTLIB) $(WIN_NORMAL_LIB) @LIBSHMGET@ -lpthread
 
 raw_mon_SOURCES = raw_mon.c $(WIN_LIBH)
 raw_mon_LDADD = $(WIN_LOG_LTLIB) $(WIN_NORMAL_LIB) @LIBSHMGET@
@@ -376,8 +378,14 @@ timeout_SOURCES = timeout.c $(SUBFUNC_H)
 raw_raw_SOURCES = raw_raw.c $(WIN_LIBH)
 raw_raw_LDADD = $(WIN_LOG_LTLIB) $(WIN_NORMAL_LIB) @LIBSHMGET@
 
+raw_ddp_SOURCES = raw_ddp.c $(WIN_LIBH)
+raw_ddp_LDADD = $(WIN_LOG_LTLIB) $(WIN_NORMAL_LIB) @LIBSHMGET@
+
 raw_shift_SOURCES = raw_shift.c $(WIN_LIBH)
 raw_shift_LDADD = $(WIN_LOG_LTLIB) $(WIN_NORMAL_LIB) @LIBSHMGET@
+
+raw_snd_SOURCES = raw_snd.c $(WIN_LIBH)
+raw_snd_LDADD = $(WIN_LOG_LTLIB) $(WIN_NORMAL_LIB) @LIBSHMGET@
 
 raw_100_SOURCES = raw_100.c $(WIN_LIBH)
 raw_100_LDADD = $(WIN_LOG_LTLIB) $(WIN_NORMAL_LIB) @LIBSHMGET@

@@ -1,13 +1,13 @@
-.TH recvt 1W "2013.9.18" "WIN SYSTEM" "WIN SYSTEM"
-.UC 4
-.SH 名称
+.TH recvt 1W "2020.2.25" "WIN SYSTEM" "WIN SYSTEM"
+.SH 呼称
 recvt, recvtd - IPによる win 形式データの受信
 .SH 形式
 .IP
 .ti -7
 recvt [\-\fBAaBDenMNr\fR] [\-\fBd\fI pkts\fR] [\-\fBf\fI chfile\fR]
 [\-\fBg\fI group\fR]
-[\-\fBi\fI interface\fR] [\-\fBm\fI before\fR] [\-\fBo\fI src_host:src_port\fR]
+[\-\fBi\fI interface\fR] [\-\fBl\fI min_psize\fR]
+[\-\fBm\fI before\fR] [\-\fBo\fI src_host:src_port\fR]
 [\-\fBp\fI after\fR] [\-\fBs\fI bufsiz\fR] [\-\fBy\fI req_delay\fR]
 .I port
 .I shmkey
@@ -21,7 +21,8 @@ recvt [\-\fBAaBDenMNr\fR] [\-\fBd\fI pkts\fR] [\-\fBf\fI chfile\fR]
 .ti -7
 recvtd [\-\fBAaBenMNr\fR] [\-\fBd\fI pkts\fR] [\-\fBf\fI chfile\fR]
 [\-\fBg\fI group\fR]
-[\-\fBi\fI interface\fR] [\-\fBm\fI before\fR] [\-\fBo\fI src_host:src_port\fR]
+[\-\fBi\fI interface\fR] [\-\fBl\fI min_psize\fR]
+[\-\fBm\fI before\fR] [\-\fBo\fI src_host:src_port\fR]
 [\-\fBp\fI after\fR] [\-\fBs\fI bufsiz\fR] [\-\fBy\fI req_delay\fR]
 .I port
 .I shmkey
@@ -340,6 +341,11 @@ IPマルチキャストアドレス
 IPアドレス
 .I interface
 で指定します。再送要求パケットの送信元もこのIPアドレスになります。
+.IP "\fB\-l \fImin_psize" 5
+ペイロード部分のサイズが
+.I min_psize
+バイト未満の小さいパケットは不正パケットとみなして無視します。
+デフォールトは16バイトです。
 .IP "\fB\-m \fIbefore" 5
 マシンの内部時計の時刻よりも before分以上前の(遅れた)タイムスタンプを
 もつパケットを、不正なパケットとして廃棄します。
@@ -355,7 +361,8 @@ MON形式のデータを受信します。受信するデータがMON形式のときは
 .IP "\fB\-n" 5
 拒否すべき送り元アドレスからのパケット、重複して受信した再送パケット、
 不正なチャネルヘッダーをもつパケット、不正(許容時間範囲外を含む)な
-タイムスタンプをもつパケットについての情報をログに報告しません。
+タイムスタンプをもつパケット、サイズが小さ過ぎるパケットについての
+情報をログに報告しません。
 .IP "\fB\-o \fIsrc_host:src_port" 5
 ホスト
 .I src_host

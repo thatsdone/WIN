@@ -1,67 +1,48 @@
 '\" t
-.TH wdisk 1W "2002.5.31" "WIN SYSTEM" "WIN SYSTEM"
-.SH 名称
+.TH wdisk 1W "2019.11.6" "WIN SYSTEM" "WIN SYSTEM"
+.SH 呼称
 wdisk, wdisk60, wdiskd, wdisk60d - win 形式データのディスクファイルへの書き込み
 .SH 形式
-wdisk [\-\fBDns\fR]
-.I shmkey
-.I outdir
-[
-.I nfiles/freespace(-s)
-[
-.I logfile
-]]
+.I wdisk
+[-\fIDacdhmns\fP] [-\fIt chfile\fP] \fIshmkey outdir\fP
+[\fInfiles/freespace\fP [\fIlogfile\fP]]
 .br
-wdiskd [\-\fBns\fR]
-.I shmkey
-.I outdir
-[
-.I nfiles/freespace(-s)
-[
-.I logfile
-]]
+.I wdiskd
+[-\fIacdhmns\fP] [-\fIt chfile\fP] \fIshmkey outdir\fP
+[\fInfiles/freespace\fP [\fIlogfile\fP]]
 .br
-wdisk60 [\-\fBDns\fR]
-.I shmkey
-.I outdir
-[
-.I nfiles/freespace(-s)
-[
-.I logfile
-]]
 .br
-wdisk60d [\-\fBns\fR]
-.I shmkey
-.I outdir
-[
-.I nfiles/freespace(-s)
-[
-.I logfile
-]]
-.LP
+.I wdisk60
+[-\fIDacns\fP] [-\fIt chfile\fP] \fIshmkey outdir\fP
+[\fInfiles/freespace\fP [\fIlogfile\fP]]
+.br
+.I wdisk60d
+[-\fIacns\fP] [-\fIt chfile\fP] \fIshmkey outdir\fP
+[\fInfiles/freespace\fP [\fIlogfile\fP]]
 .SH 解説
-wdisk、wdisk60、wdiskd、wdisk60d は、キー
+.I wdisk、wdisk60、wdiskd、wdisk60d
+は、キー
 .I \ shmkey
 の共有メモリ・セグメントに書き込まれている、時間順に整列され
 た win 形式のデータを、ディスクのディレクトリ
 .I \ outdir
 の中に、win 形式のファイルとして書き込みます。
 .I \ shmkey
-として '\-'を指定した場合は、入力データは共有メモリのかわりに
-標準入力から読み込まれます。その場合の入力データの
+として '\-'を指定した場合は、入力データを共有メモリのかわりに
+標準入力から読み込みます。その場合の入力データの
 形式は wdiskts(1W) の出力ファイルと同じです。
-wdisk では、ファイルは
-１分間分ずつ、'YYMMDDhh.mm' の形式の名前をもつファイルに
-まとめられます。
-wdisk60 では、ファイルは
-１時間分ずつ、'YYMMDDhh' の形式の名前をもつファイルに
-まとめられます。
+wdisk の出力ファイルの形式は、
+１分間分ずつ'YYMMDDhh.mm' の形式の名前で、
+１時間分ずつ'YYMMDDhh' の形式の名前で、
+１日間分ずつ'YYMMDD' の形式の名前で、
+のいずれかを選ぶことができます。デフォルトは１番目の形式です。
+wdisk60 では２番目の形式がデフォルトです。
 .I \ nfiles
 は保存するべき最大のファイル数で、常時最新の
 .I \ nfiles
 個のファイルが保存され、それより古いファイルは消されていきます。ただし、
 オプション
-\fB\-s\fR
+\fI\-s\fP
 を指定した場合は、常に確保すべきスペース(MB)を指定したことになります。
 .I nfiles/freespace
 を指定しないか、'0' を指定すると、ファイルを自動的に消すことは
@@ -69,7 +50,7 @@ wdisk60 では、ファイルは
 .LP
 wdiskd, wdisk60d は daemon モードで起動します。wdisk, wdisk60 でオプショ
 ン
-\fB\-D\fR
+\fI\-D\fP
 を指定した時と同じ動作です。
 .LP
 ログファイル名
@@ -81,25 +62,81 @@ wdiskd, wdisk60d は daemon モードで起動します。wdisk, wdisk60 でオプショ
 .LP
 wdisk, wdisk60, wdiskd, wdisk60d は引数なしで起動すると簡単な使用法を
 表示します。
+.LP
+wdisk, wdisk60, wdiskd, wdisk60d は、書き込みの瞬間だけ出力ファイルを
+オープンし、その間に限り、出力ファイルに排他的ロック
+（アドバイザリーロック）をかけます。これは insert_raw2(1W) 等
+との間で同時書き込みによる矛盾が生じないようにするためです。
+.LP
+出力が時/日ファイルやチャネル毎ディレクトリの形式の場合、
+これらの
+出力ファイルに order(1W) / wdiskts(1W) が生成した
+遅延データを差し込むには、
+insert_raw2(1W) を使用する必要があります。
 .SH 共有メモリ上の形式
 order(1W) を参照してください。
 .SH オプション
-.IP "\fB\-D" 5
+.IP "\fI\-D\fP" 5
 daemon モードで起動します。
-.IP "\fB\-s" 5
-保存すべきファイルを、ファイル数ではなく、常に確保すべきスペースで指定
-するようにします。MB 単位で第3引数に指定します。
-.IP "\fB\-n" 5
-次節に書いてある動作状況を示すファイルのうち、MAX を除く BUSY、COUNT、
+.IP "\fI\-a\fP" 5
+出力ファイルをチャネル毎のディレクトリに分けて書き込みます。
+この場合、
+.I outdir
+下に16進数4桁のチャネル番号を名前とするディレクトリが作られ、その下に
+出力ファイルが書き出されます。ただし、後述の標識ファイル類は、
+.I outdir
+直下ではなく、そこに作られる .wdisk という名前のディレクトリの下に作られます。
+ここには、データファイル名と同じ名前で大きさがゼロである管理作業用の
+ダミーファイルも作られ、これらはwdiskがファイル数を管理するために
+使われます。
+.IP "\fI\-c\fP" 5
+このオプションを\fI-a\fPオプションとともに指定すると、出力ファイル名に
+チャネル番号(16進数4桁)の拡張子が付けられます。
+このオプションを付けると\fI-a\fPも付けたものとみなされます。
+.IP "\fI\-d\fP" 5
+出力ファイルを、'YYMMDD' の形式の名前をもつ１日分ずつのファイルにします。
+.IP "\fI\-h\fP" 5
+出力ファイルを、'YYMMDDhh' の形式の名前をもつ１時間分ずつのファイルにします。
+wdisk60, wdisk60d ではこれがデフォルトです。
+.IP "\fI\-m\fP" 5
+出力ファイルを、'YYMMDDhh.mm' の形式の名前をもつ１分間分ずつのファイルにします。
+wdisk, wdiskd ではこれがデフォルトです。
+.IP "\fI\-n\fP" 5
+次節に書いてある動作状況を示す標識ファイルのうち、MAX を除く BUSY、COUNT、
 LATEST、OLDEST のファイルを作りません。このオプションを指定した時は、
 events(1W)、insert_raw(1W)、wtape(1W)といったこれらの動作状況を見るプ
 ログラムは動かせません。
-.SH ファイル
+.IP "\fI\-s\fP" 5
+保存すべき出力ファイルを、ファイル数ではなく、常に確保すべきスペースで指定
+するようにします。MB 単位で第3引数に指定します。
+.IP "\fI\-t chfile\fP" 5
+このオプションを\fI-a\fPオプションとともに指定すると、
+.I outdir
+下に作られる、チャネル毎のディレクトリの名前が「観測点名.成分名」の
+形式になります。
+このオプションを付けると\fI-a\fPも付けたものとみなされます。
+チャネル番号と観測点名・成分名の対応を指示するために、チャネル表ファイル
+.I chfile
+を指定する必要があります。チャネル表ファイルの形式については
+win(1W)を参照してください。
+さらに\fI-c\fPオプションも指定してある場合は、
+出力ファイルには「観測点名.成分名」の形式の拡張子が付けられます。
+.br
+.I chfile
+に含まれないチャネルについては、ディレクトリ名、拡張子ともに、
+「観測点名.成分名」ではなくチャネル番号になります。
+.br
+wdisk, wdisk60, wdiskd, wdisk60d プロセスは、HUPシグナルを受けると
+.I chfile
+を読み直します。
+.SH 標識ファイル
 wdisk, wdisk60, wdiskd, wdisk60d は出力ディレクトリ
 .I \ outdir
-に次のようなテキストファイルを作り、
+に（ただし \fI-a\fPオプションを指定した場合は
+.I outdir/.wdisk
+に）次のようなテキストファイルを作り、
 それぞれの内容によって動作状況を示します。
-ただし、オプション \fB\-n\fR を指定した場合は MAX のみ作成します。
+ただし、オプション \fI\-n\fP を指定した場合は MAX のみ作成します。
 
 .RS
 .TS
@@ -119,4 +156,4 @@ wdisk, wdisk60, wdiskd, wdisk60d の動作中でもファイル MAX を書き換える
 .TP
 `wdisk.c'
 .SH 関連事項
-winformat(1W), order(1W), wtape(1W)
+winformat(1W), order(1W), wtape(1W), win(1W), insert_raw(1W), insert_raw2(1W)

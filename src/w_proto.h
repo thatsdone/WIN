@@ -1,4 +1,4 @@
-/* $Id: w_proto.h,v 1.3.2.5 2016/01/05 07:26:58 uehira Exp $ */
+/* $Id: w_proto.h,v 1.3.2.6 2020/05/27 10:11:37 uehira Exp $ */
 
 #ifndef _WPROTO_H_
 #define _WPROTO_H_
@@ -56,6 +56,7 @@ size_t FinalB_read(struct FinalB *, FILE *);
 size_t FinalB_write(struct FinalB, FILE *);
 int split_host_port(char [], char **, char **);
 int check_4byte_diff(int32_w, int32_w);
+uint16_w crc16(uint16_w,uint8_w *,int);
 
 /* win_xmalloc etc. */
 void * win_xmalloc(size_t);

@@ -1,10 +1,10 @@
 #
-# $Id: Makefile.am,v 1.60 2019/11/18 02:52:22 urabe Exp $
+# $Id: Makefile.am,v 1.61 2020/05/28 02:01:56 uehira Exp $
 #
 
 ##### Version number of shared libraries.
 # if you modify 'winlib.c', you must also modify LIB_WINSYSTEM_VERSION.
-LIB_WINSYSTEM_VERSION = -version-info 4:1:3
+LIB_WINSYSTEM_VERSION = -version-info 5:0:3
 
 # if you modify  'winlib_log.c', you must also modify LIB_WINLOG_VERSION.
 LIB_WINLOG_VERSION = -version-info 2:0:1

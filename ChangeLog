@@ -1,4 +1,8 @@
- $Id: ChangeLog,v 1.257 2020/05/28 02:01:54 uehira Exp $
+ $Id: ChangeLog,v 1.258 2020/08/27 06:07:02 uehira Exp $
+
+2020-08-27 Uehira Kenji <uehira@bosai.go.jp>
+	* Version 3.0.10 released.
+	* man/pickfile.1, man.en/pickfile.1 : fixed typo.
 
 2020-05-28 Uehira Kenji <uehira@bosai.go.jp>
 	* Version 3.0.9 released.

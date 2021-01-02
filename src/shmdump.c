@@ -1,4 +1,4 @@
-/* $Id: shmdump.c,v 1.29 2019/11/06 05:20:17 urabe Exp $ */
+/* $Id: shmdump.c,v 1.30 2021/01/02 05:53:39 nakagawa Exp $ */
 /*  program "shmdump.c" 6/14/94 urabe */
 /*  revised 5/29/96 */
 /*  Little Endian (uehira) 8/27/96 */
@@ -24,6 +24,7 @@
 /*  2004.10.14 XINETD compile option */
 /*  2008.4.5 bug fix : unsigned long wsize -> long wsize */
 /*  2019.11.6 -d (DEC ReGIS output mode) urabe */
+/*  2020.1.2 bug fix : parameter to judge tow or not */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -74,7 +75,7 @@ struct Filter
 };
 
 static const char rcsid[] =
-  "$Id: shmdump.c,v 1.29 2019/11/06 05:20:17 urabe Exp $";
+  "$Id: shmdump.c,v 1.30 2021/01/02 05:53:39 nakagawa Exp $";
 
 static char *progname,outfile[256];
 static int win;
@@ -586,7 +587,7 @@ reset:
     ptr=ptr_save=shm_in->d+shp_in+4;
     ptr_lim=shm_in->d+shp_in+size_in;
     if(eobsize) ptr_lim-=4;
-    if(*ptr>0x20 && *ptr<0x90) /* with tow */
+    if(*ptr>0x38 && *ptr<0x90) /* with tow */
       {
       wtow=1;
       tow=(time_t)mkuint4(ptr);

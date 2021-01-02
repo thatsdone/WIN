@@ -1,4 +1,8 @@
- $Id: ChangeLog,v 1.258 2020/08/27 06:07:02 uehira Exp $
+ $Id: ChangeLog,v 1.259 2021/01/02 05:53:40 nakagawa Exp $
+
+2021-01-02 Shigeki Nakagawa <nakagawa@eri.u-tokyo.ac.jp>
+	* Version 3.0.11 released.
+	* src/shmdump.c : bug fix : parameter to judge tow or not
 
 2020-08-27 Uehira Kenji <uehira@bosai.go.jp>
 	* Version 3.0.10 released.
